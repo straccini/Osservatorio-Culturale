@@ -1,7 +1,7 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.15.5 · deployment @184 del 05/05/2026
+**Versione corrente**: v4.15.6 · deployment @185 del 05/05/2026
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
@@ -269,6 +269,12 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 - `Index.html`: pagina `#page-libri`; `_libroCardHtml_`; `renderLibriList`; form aggiungi libro (admin); `OC.saveLibro()` + `OC.setupLibri()`
 - `Styles.html`: classi `.lb-row`, `.lb-editore`, `.lb-autore`, `.lb-anno`, form CSS
 - ⚠️ **Setup obbligatorio**: aprire sezione Libri e cliccare "Inizializza foglio" oppure eseguire `setupPubblicazioniSheet()` da editor GAS
+
+### ✅ Sprint N15 (2026-05-05) — Archivio: fix ripristino + chip sync + titoli cliccabili
+- `Index.html`: `restoreFromArchivio(tipo, id, el)` — nuova funzione che chiama GAS `restore(tipo, id)`, rimuove la card dal DOM archivio, aggiorna `_cacheArchivio`, invalida la cache del tipo corretto (`_cacheBandi`/`_cacheNews`/ecc.) perché l'elemento ricompaia nella lista, mostra toast; aggiunta all'API pubblica `OC`
+- `Index.html`: `_archivioCardHtml_` — bottone Ripristina aggiornato da `OC.restoreItem` a `OC.restoreFromArchivio` (fix bug critico: prima la chiamata GAS `restore()` non veniva mai eseguita)
+- `Index.html`: `_archivioCardHtml_` — titolo card ora cliccabile come link se `it.link` è disponibile (`<a>` con `event.stopPropagation()`)
+- `Index.html`: `renderArchivio` — aggiunta chiamata `_syncChips_('archivioFilters', _filterArchivioTipo, 'tipo')` a fine render per allineare chip attivo al filtro corrente
 
 ### ✅ Sprint N14 (2026-05-05) — Ricerca cliccabile, sync filtri, fix race condition stats
 - `Index.html`: `renderHome` — rimosse 2 righe che resettavano `statVideo`/`statLibri` a `—` dopo che hydrate le aveva già populate correttamente (race condition risolta)

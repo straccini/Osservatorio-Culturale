@@ -3507,6 +3507,7 @@
       html += _archivioCardHtml_(it);
     });
     wrap.innerHTML = html;
+    _syncChips_('archivioFilters', _filterArchivioTipo, 'tipo');
   }
 
   function _archivioCardHtml_(it) {
@@ -3518,8 +3519,11 @@
     var badge   = it.fonte || it.ente || it.serie || it.canale || it.editore || '';
     var sub     = it.sommario ? esc(trunc(it.sommario, 120)) : '';
     var meta    = it.data || it.anno || '';
-    var restoreBtn = '<button class="act-btn" onclick="OC.restoreItem(\''
+    var restoreBtn = '<button class="act-btn" onclick="OC.restoreFromArchivio(\''
       + esc(tipo) + '\',\'' + esc(it.id) + '\',this)" title="Ripristina">&#8593; Ripristina</button>';
+    var titleHtml = link
+      ? '<h4 class="br-title"><a href="' + link + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none" onclick="event.stopPropagation()">' + titolo + '</a></h4>'
+      : '<h4 class="br-title">' + titolo + '</h4>';
 
     return '<div class="br-row ' + tipoCol + '-row" style="opacity:.85">'
       + '<div class="br-left">'
@@ -3527,7 +3531,7 @@
       +     '<span class="' + tipoCol + '-' + (tipo==='bando'?'tag':'fonte') + '" style="font-size:10px">' + esc(tipoLbl) + '</span>'
       +     (badge ? '<span class="tag low" style="margin-left:4px">' + esc(badge) + '</span>' : '')
       +   '</div>'
-      +   '<h4 class="br-title">' + titolo + '</h4>'
+      +   titleHtml
       +   (sub ? '<p class="br-summary">' + sub + '</p>' : '')
       + '</div>'
       + '<div class="br-right">'
@@ -3581,6 +3585,30 @@
     showToast('Elemento ripristinato nella lista', 'ok');
     // Aggiorna empty state cestino
     if (!Object.keys(_trash).length) loadCestino();
+  }
+
+  function restoreFromArchivio(tipo, id, el) {
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          var card = (el && el.closest) ? el.closest('.br-row') : null;
+          if (card) card.remove();
+          if (_cacheArchivio) {
+            _cacheArchivio = _cacheArchivio.filter(function(x){ return !(x.tipo === tipo && x.id === id); });
+            if (!_cacheArchivio.length) renderArchivio([]);
+          }
+          // Invalida cache tipo per far ricomparire l'elemento nella lista
+          if (tipo === 'bando')                        _cacheBandi   = null;
+          else if (tipo === 'item' || tipo === 'news') _cacheNews    = null;
+          else if (tipo === 'podcast')                 _cachePodcast = null;
+          else if (tipo === 'video')                   _cacheVideo   = null;
+          else if (tipo === 'libro')                   _cacheLibri   = null;
+          showToast('Elemento ripristinato', 'ok');
+        } else { showToast('Errore ripristino', 'err'); }
+      })
+      .withFailureHandler(function(e){ showToast('Errore: ' + (e.message || e), 'err'); })
+      .restore(tipo, id);
   }
 
   function emptyTrash() {
@@ -4083,6 +4111,7 @@
     loadArchivio: loadArchivio,
     loadCestino: loadCestino,
     restoreItem: restoreItem,
+    restoreFromArchivio: restoreFromArchivio,
     emptyTrash: emptyTrash,
     exportArchivio: exportArchivio,
     // Detail panel + cache
