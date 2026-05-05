@@ -1,7 +1,7 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.14.9 · deployment @178 del 05/05/2026
+**Versione corrente**: v4.15.0 · deployment @179 del 05/05/2026
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
@@ -269,6 +269,12 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 - `Index.html`: pagina `#page-libri`; `_libroCardHtml_`; `renderLibriList`; form aggiungi libro (admin); `OC.saveLibro()` + `OC.setupLibri()`
 - `Styles.html`: classi `.lb-row`, `.lb-editore`, `.lb-autore`, `.lb-anno`, form CSS
 - ⚠️ **Setup obbligatorio**: aprire sezione Libri e cliccare "Inizializza foglio" oppure eseguire `setupPubblicazioniSheet()` da editor GAS
+
+### ✅ Sprint N9 (2026-05-05) — Statistiche + fix export archivio
+- `Index.html`: nuova `#page-stats` con `loadStatsPage()` (3 chiamate parallele: `getStats`, `getVideoListV42`, `getLibriListV42`) e `renderStatsPage()` — KPI grid 5 tipi, barre per ambito (news), top 5 tematiche podcast, info scanner
+- `Index.html`: `exportArchivio()` riscritta — usa `_cacheArchivio` se disponibile (zero re-fetch), altrimenti scarica tutti e 5 i tipi; colonne CSV estese (autore/canale/serie)
+- `Index.html`: `PAGE_TITLES.stats = 'Statistiche'`; dispatch `if (page==='stats') loadStatsPage()`
+- `Styles.html`: classi `.st-kpi-grid`, `.st-kpi-card`, `.st-kpi-val`, `.st-kpi-label`, `.st-section-title`, `.st-ambiti`, `.st-amb-row`, `.st-bar-wrap`, `.st-bar`, `.st-info-grid`, `.st-info-card`
 
 ### ✅ Sprint N8 (2026-05-05) — Archivio: upgrade completo
 - `Workflow_unified.js`: `_wfConfig_` esteso con casi `video` (foglio Podcast, StatoRecord text) e `libro` (foglio Pubblicazioni, Stato text) — abilita `restore()` per entrambi i tipi

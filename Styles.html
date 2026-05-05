@@ -737,6 +737,70 @@ body.is-home-page .topbar-search{display:none}
 }
 
 /* ==========================================================
+   SPRINT N9 — PAGINA STATISTICHE
+   ========================================================== */
+.st-kpi-grid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+  gap:14px; margin-bottom:28px;
+}
+.st-kpi-card{
+  background:var(--surface); border:1px solid var(--rule);
+  border-radius:var(--r-md); padding:18px 16px;
+  display:flex; flex-direction:column; gap:4px;
+}
+.st-kpi-val{
+  font-family:var(--font-display); font-size:32px; font-weight:700;
+  line-height:1; letter-spacing:-0.02em;
+}
+.st-kpi-label{
+  font-family:var(--font-ui); font-size:11px; font-weight:600;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--ink-2);
+}
+.st-kpi-sub{
+  font-family:var(--font-ui); font-size:11px; color:var(--ink-3);
+  margin-top:2px;
+}
+.st-section-title{
+  font-family:var(--font-ui); font-size:11px; font-weight:700;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--ink-2);
+  margin-bottom:12px; padding-bottom:6px;
+  border-bottom:1px solid var(--rule);
+}
+.st-ambiti{ display:flex; flex-direction:column; gap:8px; }
+.st-amb-row{
+  display:grid; grid-template-columns:200px 1fr 40px;
+  align-items:center; gap:10px;
+}
+@media(max-width:600px){
+  .st-amb-row{ grid-template-columns:120px 1fr 36px; }
+}
+.st-amb-label{
+  font-family:var(--font-ui); font-size:12px; color:var(--ink-2);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.st-bar-wrap{
+  background:var(--surface-2); border-radius:3px; height:8px; overflow:hidden;
+}
+.st-bar{
+  height:100%; border-radius:3px; transition:width .4s ease;
+}
+.st-amb-cnt{
+  font-family:var(--font-ui); font-size:12px; font-weight:600;
+  color:var(--ink-2); text-align:right;
+}
+.st-info-grid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:12px;
+}
+.st-info-card{
+  background:var(--surface); border:1px solid var(--rule);
+  border-radius:var(--r-sm); padding:12px 14px;
+  display:flex; flex-direction:column; gap:4px;
+}
+.st-info-card span{ font-family:var(--font-ui); font-size:11px; color:var(--ink-3); }
+.st-info-card b{ font-family:var(--font-display); font-size:20px; color:var(--ink); }
+
+/* ==========================================================
    SPRINT N6 — PAGINA RICERCA GLOBALE
    ========================================================== */
 .sr-query-bar{

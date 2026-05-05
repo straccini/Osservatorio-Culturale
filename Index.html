@@ -680,6 +680,20 @@
       </div>
     </section>
 
+    <!-- ===== PAGE STATS (Sprint N9) ===== -->
+    <section class="page" id="page-stats">
+      <div class="page-head">
+        <div class="page-eyebrow">Osservatorio Culturale &middot; Admin</div>
+        <h1 class="page-title"><em>Statistiche</em></h1>
+        <p class="page-sub">Panoramica quantitativa di tutti i contenuti monitorati.</p>
+      </div>
+      <div id="statsContent" aria-live="polite">
+        <div class="home-list-skeleton"></div>
+        <div class="home-list-skeleton"></div>
+        <div class="home-list-skeleton"></div>
+      </div>
+    </section>
+
     <!-- ===== PAGE DIGEST READER (Sprint 1.3 - 2026-05-01): fix bug "vuoto" ===== -->
     <section class="page" id="page-digest">
       <div class="section-head" style="margin-top:0">
@@ -870,7 +884,7 @@
 
   var PAGE_TITLES = {
     home:'Home', bandi:'Radar Bandi', news:'News & RSS', podcast:'Podcast', video:'Video & YouTube', libri:'Libri & Pubblicazioni',
-    search:'Ricerca', ambito:'Ambito', digest:'Digest Reader', admin:'Pannello admin',
+    search:'Ricerca', stats:'Statistiche', ambito:'Ambito', digest:'Digest Reader', admin:'Pannello admin',
     matrix:'Valuta il tuo museo', 'matrix-landing':'MuseMu Matrix',
     settings:'Impostazioni', archivio:'Archivio', cestino:'Cestino'
   };
@@ -931,6 +945,7 @@
     if (page==='admin')    loadAdminPanel();
     if (page==='settings') loadSettingsPage();  // Sprint 1.3 D2.5
     if (page==='search')   { /* loadSearch called with query via OC.search */ }
+    if (page==='stats')    loadStatsPage();
     if (page==='archivio') loadArchivio();
     if (page==='cestino')  loadCestino();
     // v4.5.1 — A1 Ambiti navigabili
@@ -3039,6 +3054,110 @@
   }
 
   // ==========================================================
+  // SPRINT N9 — PAGINA STATISTICHE
+  // ==========================================================
+  function loadStatsPage() {
+    var wrap = $('statsContent');
+    if (!wrap) return;
+    wrap.innerHTML = '<div class="home-list-skeleton"></div><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div>';
+    if (!hasGAS()) { wrap.innerHTML = '<div class="sr-hint">Statistiche disponibili solo online.</div>'; return; }
+
+    var _stats = null, _video = null, _libri = null;
+    function tryRender() {
+      if (_stats === null || _video === null || _libri === null) return;
+      renderStatsPage(_stats, _video, _libri);
+    }
+    google.script.run
+      .withSuccessHandler(function(d){ _stats = d || {}; tryRender(); })
+      .withFailureHandler(function(){ _stats = {}; tryRender(); })
+      .getStats();
+    google.script.run
+      .withSuccessHandler(function(d){ _video = Array.isArray(d) ? d : []; tryRender(); })
+      .withFailureHandler(function(){ _video = []; tryRender(); })
+      .getVideoListV42(500);
+    google.script.run
+      .withSuccessHandler(function(d){ _libri = Array.isArray(d) ? d : []; tryRender(); })
+      .withFailureHandler(function(){ _libri = []; tryRender(); })
+      .getLibriListV42(500);
+  }
+
+  function renderStatsPage(s, video, libri) {
+    var wrap = $('statsContent');
+    if (!wrap) return;
+    s = s || {};
+    var AMBITI_NOMI = ['', 'Identità e narrazione', 'Inclusione e accessibilità', 'Programma e collezioni', 'Comunità e welfare', 'Digital, AI e governance'];
+    var AMB_COLORS  = ['', 'var(--amb-1)', 'var(--amb-2)', 'var(--amb-3)', 'var(--amb-4)', 'var(--amb-5)'];
+
+    // KPI principali
+    var podTot = s.podTotale || 0;
+    var vidTot = video.length;
+    var libTot = libri.length;
+    var newsTot = s.total || 0;
+    var bandiTot = s.bandiAttivi || 0;
+    var kpiHtml = '<div class="st-kpi-grid">'
+      + _stKpi_('News', newsTot, s.unread ? s.unread+' non lette' : '', 'var(--ink)')
+      + _stKpi_('Bandi attivi', bandiTot, s.bandiUrgenti ? s.bandiUrgenti+' urgenti' : '', '#B91C1C')
+      + _stKpi_('Podcast', podTot, s.podNuovi ? s.podNuovi+' non ascoltati' : '', '#D97706')
+      + _stKpi_('Video', vidTot, '', '#C8102E')
+      + _stKpi_('Libri', libTot, '', '#4A3F7A')
+      + '</div>';
+
+    // Barra per ambito (news)
+    var perAmb = s.perAmbito || {};
+    var maxAmb = Math.max.apply(null, [1].concat(Object.values ? Object.values(perAmb) : [perAmb[1]||0,perAmb[2]||0,perAmb[3]||0,perAmb[4]||0,perAmb[5]||0]));
+    var ambHtml = '<div class="st-section-title">Distribuzione news per ambito</div><div class="st-ambiti">';
+    for (var a=1; a<=5; a++) {
+      var cnt = perAmb[a] || 0;
+      var pct = maxAmb > 0 ? Math.round(cnt / maxAmb * 100) : 0;
+      ambHtml += '<div class="st-amb-row">'
+        + '<span class="st-amb-label">0'+a+' '+esc(AMBITI_NOMI[a])+'</span>'
+        + '<div class="st-bar-wrap"><div class="st-bar" style="width:'+pct+'%;background:'+AMB_COLORS[a]+'"></div></div>'
+        + '<span class="st-amb-cnt">'+cnt+'</span>'
+        + '</div>';
+    }
+    ambHtml += '</div>';
+
+    // Podcast per tematica (top 5)
+    var podTema = s.podPerTematica || {};
+    var temaSorted = Object.keys(podTema).sort(function(a,b){ return podTema[b]-podTema[a]; }).slice(0,5);
+    var maxTema = temaSorted.length ? podTema[temaSorted[0]] : 1;
+    var temaHtml = '';
+    if (temaSorted.length) {
+      temaHtml = '<div class="st-section-title" style="margin-top:24px">Top tematiche podcast</div><div class="st-ambiti">';
+      temaSorted.forEach(function(t){
+        var cnt2 = podTema[t];
+        var pct2 = Math.round(cnt2 / maxTema * 100);
+        temaHtml += '<div class="st-amb-row">'
+          + '<span class="st-amb-label">'+esc(t)+'</span>'
+          + '<div class="st-bar-wrap"><div class="st-bar" style="width:'+pct2+'%;background:#D97706"></div></div>'
+          + '<span class="st-amb-cnt">'+cnt2+'</span>'
+          + '</div>';
+      });
+      temaHtml += '</div>';
+    }
+
+    // Scanner info
+    var scannerHtml = '<div class="st-section-title" style="margin-top:24px">Scanner &amp; manutenzione</div>'
+      + '<div class="st-info-grid">'
+      + '<div class="st-info-card"><span>Fonti attive</span><b>'+(s.fonti !== undefined ? s.fonti : '—')+'</b></div>'
+      + '<div class="st-info-card"><span>Articoli ultimo mese</span><b>'+(s.articoliMese !== undefined ? s.articoliMese : '—')+'</b></div>'
+      + '<div class="st-info-card"><span>Salvati</span><b>'+(s.saved||0)+'</b></div>'
+      + '<div class="st-info-card"><span>Bandi urgenti (&le;20gg)</span><b>'+(s.bandiUrgenti||0)+'</b></div>'
+      + '<div class="st-info-card"><span>Prossimo digest</span><b style="font-size:12px">'+(s.prossimoScan||'—')+'</b></div>'
+      + '</div>';
+
+    wrap.innerHTML = kpiHtml + ambHtml + temaHtml + scannerHtml;
+  }
+
+  function _stKpi_(label, val, sub, color) {
+    return '<div class="st-kpi-card">'
+      + '<b class="st-kpi-val" style="color:'+color+'">'+val+'</b>'
+      + '<span class="st-kpi-label">'+esc(label)+'</span>'
+      + (sub ? '<span class="st-kpi-sub">'+esc(sub)+'</span>' : '')
+      + '</div>';
+  }
+
+  // ==========================================================
   // SPRINT N6 — RICERCA GLOBALE
   // ==========================================================
   var _lastSearch = '';
@@ -3337,28 +3456,18 @@
   }
 
   function exportArchivio() {
-    // Raccoglie tutti gli elementi archiviati (dall'archivioList già renderizzato) + esporta CSV
-    if (!hasGAS()) {
-      showToast('Esportazione non disponibile offline', 'warn');
-      return;
-    }
-    showToast('Preparazione esportazione…', 'ok', 2000);
-    var allItems = [];
-    var pending = 3;
-    function onDone(list, tipo) {
-      (list || []).forEach(function(it) { it._tipo = tipo; allItems.push(it); });
-      pending--;
-      if (pending > 0) return;
-      if (!allItems.length) { showToast('Nessun elemento archiviato da esportare', 'warn'); return; }
-      // Build CSV
-      var rows = [['Tipo','ID','Titolo','Fonte/Ente','Data','Ambito','Score','Link']];
-      allItems.forEach(function(it) {
+    // Sprint N9 fix: usa _cacheArchivio (già caricato da loadArchivio) se disponibile,
+    // altrimenti ri-scarica tutti e 5 i tipi.
+    function _buildAndDownloadCsv(items) {
+      if (!items.length) { showToast('Nessun elemento archiviato da esportare', 'warn'); return; }
+      var rows = [['Tipo','ID','Titolo','Fonte/Ente/Autore','Data','Ambito','Score','Link']];
+      items.forEach(function(it) {
         rows.push([
-          it._tipo || it.tipo || '',
+          it.tipo || '',
           it.id || '',
           it.titolo || '',
-          it.fonte || it.ente || it.show || '',
-          it.data || '',
+          it.fonte || it.ente || it.serie || it.canale || it.autore || '',
+          it.data || it.anno || '',
           it.ambito || it.settore || '',
           it.score != null ? it.score : '',
           it.link || it.url || ''
@@ -3367,20 +3476,36 @@
       var csv = rows.map(function(r){
         return r.map(function(c){
           var s = String(c).replace(/"/g,'""');
-          return (s.indexOf(',') > -1 || s.indexOf('"') > -1 || s.indexOf('\n') > -1) ? '"'+s+'"' : s;
+          return (s.indexOf(',')>-1||s.indexOf('"')>-1||s.indexOf('\n')>-1) ? '"'+s+'"' : s;
         }).join(',');
       }).join('\r\n');
-      var blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+      var blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
-      a.href = url; a.download = 'OC_Archivio_' + new Date().toISOString().slice(0,10) + '.csv';
+      a.href = url; a.download = 'OC_Archivio_'+new Date().toISOString().slice(0,10)+'.csv';
       document.body.appendChild(a); a.click();
       setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 600);
-      showToast('CSV scaricato — ' + allItems.length + ' elementi', 'ok');
+      showToast('CSV scaricato — '+items.length+' elementi', 'ok');
     }
-    google.script.run.withSuccessHandler(function(r){ onDone((r&&r.items)||[], 'news'); }).withFailureHandler(function(){ onDone([], 'news'); }).getArchivedItems('news');
-    google.script.run.withSuccessHandler(function(r){ onDone((r&&r.items)||[], 'bando'); }).withFailureHandler(function(){ onDone([], 'bando'); }).getArchivedItems('bando');
-    google.script.run.withSuccessHandler(function(r){ onDone((r&&r.items)||[], 'podcast'); }).withFailureHandler(function(){ onDone([], 'podcast'); }).getArchivedItems('podcast');
+
+    if (_cacheArchivio && _cacheArchivio.length) {
+      _buildAndDownloadCsv(_cacheArchivio);
+      return;
+    }
+    if (!hasGAS()) { showToast('Esportazione non disponibile offline', 'warn'); return; }
+    showToast('Preparazione esportazione…', 'ok', 2000);
+    var allItems = [], pending = 5;
+    function onDone(list) {
+      allItems = allItems.concat(list || []);
+      if (--pending > 0) return;
+      _buildAndDownloadCsv(allItems);
+    }
+    ['news','bando','podcast','video','libro'].forEach(function(t){
+      google.script.run
+        .withSuccessHandler(function(r){ onDone((r&&r.items)||[]); })
+        .withFailureHandler(function(){ onDone([]); })
+        .getArchivedItems(t);
+    });
   }
 
   // ----------------------------------------------------------
