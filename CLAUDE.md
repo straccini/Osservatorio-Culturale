@@ -1,7 +1,7 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.15.6 · deployment @185 del 05/05/2026
+**Versione corrente**: v4.15.7 · deployment @186 del 05/05/2026
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
@@ -269,6 +269,18 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 - `Index.html`: pagina `#page-libri`; `_libroCardHtml_`; `renderLibriList`; form aggiungi libro (admin); `OC.saveLibro()` + `OC.setupLibri()`
 - `Styles.html`: classi `.lb-row`, `.lb-editore`, `.lb-autore`, `.lb-anno`, form CSS
 - ⚠️ **Setup obbligatorio**: aprire sezione Libri e cliccare "Inizializza foglio" oppure eseguire `setupPubblicazioniSheet()` da editor GAS
+
+### ✅ Sprint N16 (2026-05-05) — Preferiti: estensione a bandi, podcast, video
+- `UltimiBandi.js`: `_radarBandiRows_` — aggiunto `iSalv = _findCol_(...)` e campo `salvato` nella riga push; `_mapBando_` — aggiunto `salvato: x.salvato === true || ...` nell'oggetto restituito
+- `UltimiBandi.js`: `getPodcastListV42` — aggiunto `iSalv`, `salvPod` in push, `salvato: !!x.salvato` nel map output
+- `UltimiBandi.js`: `getVideoListV42` — aggiunto `iSalv`, `salvVid` in push, `salvato: !!x.salvato` nel map output
+- `Index.html`: `_brRowHtml_` (bandi) — aggiunto bottone `★ Salva` (`br-act-save`) con stato iniziale da `b.salvato`; `saveCard('bando', id, this)`
+- `Index.html`: `_podcastCardHtml_` — aggiunto bottone `★ Salva` con stato da `p.salvato`; `saveCard('podcast', id, this)`
+- `Index.html`: `_videoCardHtml_` — aggiunto bottone `★ Salva` con stato da `v.salvato`; `saveCard('video', id, this)`
+- `Index.html`: `renderBandiList` — aggiunto `if (preset === 'salvati' && !b.salvato) return`
+- `Index.html`: `renderPodcastList2` — aggiunto `if (preset === 'salvati' && !p.salvato) return`
+- `Index.html`: `renderVideoList` — aggiunto `if (preset === 'salvati' && !v.salvato) return`
+- `Index.html`: `#bandiFilters`, `#podcastFilters`, `#videoFilters` — aggiunto chip `★ Salvati` (`data-preset="salvati"`) a ciascuna barra filtri
 
 ### ✅ Sprint N15 (2026-05-05) — Archivio: fix ripristino + chip sync + titoli cliccabili
 - `Index.html`: `restoreFromArchivio(tipo, id, el)` — nuova funzione che chiama GAS `restore(tipo, id)`, rimuove la card dal DOM archivio, aggiorna `_cacheArchivio`, invalida la cache del tipo corretto (`_cacheBandi`/`_cacheNews`/ecc.) perché l'elemento ricompaia nella lista, mostra toast; aggiunta all'API pubblica `OC`

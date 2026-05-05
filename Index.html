@@ -165,6 +165,7 @@
         <button class="filter-chip active" data-preset="tutti">Tutti i bandi</button>
         <button class="filter-chip" data-preset="recenti">Ultimi rilevati</button>
         <button class="filter-chip" data-preset="urgenti10">&#9889; Scade 10gg</button>
+        <button class="filter-chip" data-preset="salvati">&#9733; Salvati</button>
       </div>
       <div class="filters filters-secondary" id="bandiTematicheFilters">
         <span class="filters-label">Tematica:</span>
@@ -220,6 +221,7 @@
         <span class="filters-label">Vista:</span>
         <button class="filter-chip active" data-preset="tutti">Tutti i podcast</button>
         <button class="filter-chip" data-preset="recenti">Ultime 7gg</button>
+        <button class="filter-chip" data-preset="salvati">&#9733; Salvati</button>
       </div>
       <div class="filters filters-secondary" id="podcastTematicheFilters">
         <span class="filters-label">Tematica:</span>
@@ -247,6 +249,7 @@
         <span class="filters-label">Vista:</span>
         <button class="filter-chip active" data-preset="tutti">Tutti i video</button>
         <button class="filter-chip" data-preset="recenti">Ultime 7gg</button>
+        <button class="filter-chip" data-preset="salvati">&#9733; Salvati</button>
       </div>
       <div class="filters filters-secondary" id="videoTematicheFilters">
         <span class="filters-label">Tematica:</span>
@@ -1347,8 +1350,10 @@
 
     // Bottoni azione
     var id = String(b.id || '');
+    var salvato = !!b.salvato;
     var acts = '<div class="br-acts">'
       + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'bando\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Letto</button>'
+      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'bando\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;' : '&#9734;') + '</button>'
       + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'bando\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Archiv.</button>'
       + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'bando\',\'' + esc(id) + '\',this)">&#128465;</button>'
       + '</div>';
@@ -1521,8 +1526,10 @@
     var temaCls = ambN > 0 ? ' br-a' + ambN : '';
 
     var id = String(p.id || '');
+    var salvato = !!p.salvato;
     var acts = '<div class="br-acts">'
       + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'podcast\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Ascoltato</button>'
+      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'podcast\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;' : '&#9734;') + '</button>'
       + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'podcast\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Arch.</button>'
       + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'podcast\',\'' + esc(id) + '\',this)">&#128465;</button>'
       + '</div>';
@@ -1584,6 +1591,7 @@
       // L1 preset
       if (preset === 'recenti'   && !b.isRecente) return;
       if (preset === 'urgenti10' && !(giorni !== null && giorni >= 0 && giorni <= 10)) return;
+      if (preset === 'salvati'   && !b.salvato) return;
 
       shown++;
       if (isUrgent && (preset === 'tutti' || preset === 'urgenti10'))
@@ -1743,7 +1751,8 @@
     list.forEach(function(p) {
       var ambN = _ambNum_(p.ambito) || _ambNum_(p.tematica) || 0;
       if (fAmb > 0 && ambN !== fAmb) return;
-      if (preset === 'recenti' && !p.isRecente) return;
+      if (preset === 'recenti'  && !p.isRecente) return;
+      if (preset === 'salvati'  && !p.salvato)   return;
       shown++;
       if (p.isRecente) recenti.push(p);
       else             altri.push(p);
@@ -1791,8 +1800,10 @@
     var temaCls = ambN > 0 ? ' br-a' + ambN : '';
 
     var id = String(v.id || '');
+    var salvato = !!v.salvato;
     var acts = '<div class="br-acts">'
       + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'podcast\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Visto</button>'
+      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'video\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;' : '&#9734;') + '</button>'
       + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'podcast\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Arch.</button>'
       + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'podcast\',\'' + esc(id) + '\',this)">&#128465;</button>'
       + '</div>';
@@ -1837,7 +1848,8 @@
     list.forEach(function(v) {
       var ambN = _ambNum_(v.ambito) || _ambNum_(v.tematica) || 0;
       if (fAmb > 0 && ambN !== fAmb) return;
-      if (preset === 'recenti' && !v.isRecente) return;
+      if (preset === 'recenti'  && !v.isRecente) return;
+      if (preset === 'salvati'  && !v.salvato)   return;
       shown++;
       if (v.isRecente) recenti.push(v);
       else             altri.push(v);

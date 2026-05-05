@@ -166,6 +166,7 @@ function getPodcastListV42(limit) {
     var iAmb    = _findCol_(head, ['Ambito','Ambito_ID','Ambito_Tematico']);
     var iStato  = _findCol_(head, ['StatoRecord','Stato_Record','stato_record','STATO_RECORD']);
     var iScore  = _findCol_(head, ['Score','score','SCORE']);
+    var iSalv   = _findCol_(head, ['Salvato','salvato','SALVATO','Saved']);
     if (iTit < 0) iTit = 1;
 
     var sette_fa = new Date(Date.now() - 7 * 86400000);
@@ -179,6 +180,7 @@ function getPodcastListV42(limit) {
         if (st === 'archiviato') continue;
       }
       var rawData = iData >= 0 ? row[iData] : '';
+      var salvPod = iSalv >= 0 ? row[iSalv] : false;
       out.push({
         id      : String(r),
         titolo  : row[iTit],
@@ -188,7 +190,8 @@ function getPodcastListV42(limit) {
         durata  : iDurata>=0 ? row[iDurata] : '',
         tematica: iTema>=0   ? row[iTema]   : '',
         ambito  : iAmb>=0    ? row[iAmb]    : '',
-        score   : iScore>=0  ? Math.round(Number(row[iScore])||0) : 0
+        score   : iScore>=0  ? Math.round(Number(row[iScore])||0) : 0,
+        salvato : salvPod === true || salvPod === 'TRUE' || salvPod === 1 || String(salvPod).toLowerCase() === 'true'
       });
     }
     out.sort(function(a,b){
@@ -208,7 +211,8 @@ function getPodcastListV42(limit) {
         tematica : String(x.tematica||''),
         ambito   : String(x.ambito||''),
         score    : x.score,
-        isRecente: !!(dataObj && !isNaN(dataObj.getTime()) && dataObj >= sette_fa)
+        isRecente: !!(dataObj && !isNaN(dataObj.getTime()) && dataObj >= sette_fa),
+        salvato  : !!x.salvato
       };
     });
   } catch (e) { console.error('getPodcastListV42:', e); return []; }
@@ -322,6 +326,7 @@ function getVideoListV42(limit) {
     var iAmb   = _findCol_(head, ['Ambito','Ambito_ID','Ambito_Tematico']);
     var iStato = _findCol_(head, ['StatoRecord','Stato_Record','stato_record','STATO_RECORD']);
     var iScore = _findCol_(head, ['Score','score','SCORE']);
+    var iSalv  = _findCol_(head, ['Salvato','salvato','SALVATO','Saved']);
     if (iTit < 0) iTit = 2;
 
     var sette_fa = new Date(Date.now() - 7 * 86400000);
@@ -337,6 +342,7 @@ function getVideoListV42(limit) {
         if (st === 'archiviato') continue;
       }
       var rawData = iData >= 0 ? row[iData] : '';
+      var salvVid = iSalv >= 0 ? row[iSalv] : false;
       out.push({
         id     : String(r),
         titolo : row[iTit],
@@ -345,7 +351,8 @@ function getVideoListV42(limit) {
         data   : rawData,
         tematica: iTema>=0  ? row[iTema]   : '',
         ambito : iAmb>=0    ? row[iAmb]    : '',
-        score  : iScore>=0  ? Math.round(Number(row[iScore])||0) : 0
+        score  : iScore>=0  ? Math.round(Number(row[iScore])||0) : 0,
+        salvato: salvVid === true || salvVid === 'TRUE' || salvVid === 1 || String(salvVid).toLowerCase() === 'true'
       });
     }
     out.sort(function(a,b){
@@ -364,7 +371,8 @@ function getVideoListV42(limit) {
         tematica: String(x.tematica||''),
         ambito  : String(x.ambito||''),
         score   : x.score,
-        isRecente: !!(dataObj && !isNaN(dataObj.getTime()) && dataObj >= sette_fa)
+        isRecente: !!(dataObj && !isNaN(dataObj.getTime()) && dataObj >= sette_fa),
+        salvato : !!x.salvato
       };
     });
   } catch (e) { console.error('getVideoListV42:', e); return []; }
@@ -386,6 +394,7 @@ function _radarBandiRows_(sh) {
   var iScad   = head.indexOf('Scadenza');
   var iLink   = head.indexOf('Link');
   var iStato  = head.indexOf('StatoRecord');
+  var iSalv   = _findCol_(head, ['Salvato','salvato','SALVATO','Saved']);
   if (iTitolo < 0) iTitolo = 1;
   var oggi = new Date(); oggi.setHours(0,0,0,0);
   var out = [];
@@ -410,7 +419,8 @@ function _radarBandiRows_(sh) {
       ambito  : iAmb   >= 0 ? row[iAmb]   : '',
       scadenza: rawScad,
       giorni  : giorni,
-      link    : iLink  >= 0 ? row[iLink]  : ''
+      link    : iLink  >= 0 ? row[iLink]  : '',
+      salvato : iSalv  >= 0 ? row[iSalv]  : false
     });
   }
   return out;
@@ -435,7 +445,8 @@ function _mapBando_(x) {
     giorni  : x.giorni,
     isUrgent: isUrgent,
     dataRil : _fmtBreveUB_(x.dataRil),
-    link    : String(x.link || '')
+    link    : String(x.link || ''),
+    salvato : x.salvato === true || x.salvato === 'TRUE' || x.salvato === 1 || String(x.salvato).toLowerCase() === 'true'
   };
 }
 
