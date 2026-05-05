@@ -1,7 +1,7 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.15.7 · deployment @186 del 05/05/2026
+**Versione corrente**: v4.15.8 · deployment @187 del 05/05/2026
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
@@ -269,6 +269,11 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 - `Index.html`: pagina `#page-libri`; `_libroCardHtml_`; `renderLibriList`; form aggiungi libro (admin); `OC.saveLibro()` + `OC.setupLibri()`
 - `Styles.html`: classi `.lb-row`, `.lb-editore`, `.lb-autore`, `.lb-anno`, form CSS
 - ⚠️ **Setup obbligatorio**: aprire sezione Libri e cliccare "Inizializza foglio" oppure eseguire `setupPubblicazioniSheet()` da editor GAS
+
+### ✅ Sprint N17 (2026-05-05) — Fix isRecente bandi + badge urgenti sidebar
+- `UltimiBandi.js`: `_mapBando_` — aggiunto calcolo `isRecente` (dataRil entro 30gg); prima il campo era assente → chip "Ultimi rilevati" in pagina Bandi restituiva sempre 0 risultati
+- `Sidebar.html`: aggiunto `<span class="nav-badge" id="badge-bandi-urgenti">` al nav item "Radar Bandi" — attiva il badge urgenti già calcolato da `renderSidebarBadges` (chiamata via `data.badges.bandiUrgenti` da `getHomepageDataV42`)
+- `Index.html`: `renderBandiList` — label contatore (`bandiCount`) ora descrittiva per preset: "X salvati" / "X rilevati negli ultimi 30gg" / "X in scadenza entro 10gg" invece del generico "X di Y bandi"
 
 ### ✅ Sprint N16 (2026-05-05) — Preferiti: estensione a bandi, podcast, video
 - `UltimiBandi.js`: `_radarBandiRows_` — aggiunto `iSalv = _findCol_(...)` e campo `salvato` nella riga push; `_mapBando_` — aggiunto `salvato: x.salvato === true || ...` nell'oggetto restituito

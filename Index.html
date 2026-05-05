@@ -1600,7 +1600,12 @@
         altri.push({ b:b, giorni:giorni });
     });
 
-    if (cnt) cnt.textContent = shown < total ? shown + ' di ' + total + ' bandi' : total + ' bandi monitorati';
+    if (cnt) {
+      if (preset === 'salvati')    cnt.textContent = shown + ' salvati';
+      else if (preset === 'recenti')    cnt.textContent = shown + ' rilevati negli ultimi 30gg';
+      else if (preset === 'urgenti10')  cnt.textContent = shown + ' in scadenza entro 10gg';
+      else cnt.textContent = shown < total ? shown + ' di ' + total + ' bandi' : total + ' bandi monitorati';
+    }
 
     if (!shown) {
       wrap.innerHTML = '';

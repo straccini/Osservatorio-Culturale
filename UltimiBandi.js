@@ -435,17 +435,21 @@ function _mapBando_(x) {
     scadFmt = _fmtBreveUB_(x.scadenza);
   }
   var isUrgent = x.giorni !== null && x.giorni !== undefined && x.giorni >= 0 && x.giorni <= 7;
+  var dataRilDate = (x.dataRil instanceof Date) ? x.dataRil : (x.dataRil ? new Date(x.dataRil) : null);
+  var trenta_fa = new Date(Date.now() - 30 * 86400000);
+  var isRecente = !!(dataRilDate && !isNaN(dataRilDate.getTime()) && dataRilDate >= trenta_fa);
   return {
-    id      : String(x.idx),
-    titolo  : String(x.titolo  || ''),
-    ente    : String(x.ente    || ''),
-    settore : String(x.settore || ''),
-    ambito  : String(x.ambito  || ''),
-    scadenza: scadFmt,
-    giorni  : x.giorni,
-    isUrgent: isUrgent,
-    dataRil : _fmtBreveUB_(x.dataRil),
-    link    : String(x.link || ''),
+    id       : String(x.idx),
+    titolo   : String(x.titolo  || ''),
+    ente     : String(x.ente    || ''),
+    settore  : String(x.settore || ''),
+    ambito   : String(x.ambito  || ''),
+    scadenza : scadFmt,
+    giorni   : x.giorni,
+    isUrgent : isUrgent,
+    isRecente: isRecente,
+    dataRil  : _fmtBreveUB_(x.dataRil),
+    link     : String(x.link || ''),
     salvato : x.salvato === true || x.salvato === 'TRUE' || x.salvato === 1 || String(x.salvato).toLowerCase() === 'true'
   };
 }
