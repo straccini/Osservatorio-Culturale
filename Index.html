@@ -250,8 +250,10 @@
         </div>
         <div class="kpi">
           <div><b id="ambitoKpiBandi">—</b><span>Bandi</span></div>
-          <div><b id="ambitoKpiNews">—</b><span>News &amp; RSS</span></div>
+          <div><b id="ambitoKpiNews">—</b><span>News</span></div>
           <div><b id="ambitoKpiPodcast">—</b><span>Podcast</span></div>
+          <div><b id="ambitoKpiVideo">—</b><span>Video</span></div>
+          <div><b id="ambitoKpiLibri">—</b><span>Libri</span></div>
         </div>
       </div>
 
@@ -284,6 +286,26 @@
         <div class="skeleton-card"></div>
       </div>
       <div class="empty-state" id="ambitoPodcastEmpty" hidden>Nessun podcast in questo ambito.</div>
+
+      <!-- Video (Sprint N7) -->
+      <div class="section-head" style="margin-top:32px">
+        <div class="left"><h2 class="section-title">&#9654; <em>Video</em></h2></div>
+        <span class="muted" id="ambitoVideoCount">—</span>
+      </div>
+      <div class="news-list" id="ambitoVideoList" aria-live="polite">
+        <div class="skeleton-card"></div>
+      </div>
+      <div class="empty-state" id="ambitoVideoEmpty" hidden>Nessun video in questo ambito.</div>
+
+      <!-- Libri (Sprint N7) -->
+      <div class="section-head" style="margin-top:32px">
+        <div class="left"><h2 class="section-title">&#128214; Libri <em>&amp; pubblicazioni</em></h2></div>
+        <span class="muted" id="ambitoLibriCount">—</span>
+      </div>
+      <div class="news-list" id="ambitoLibriList" aria-live="polite">
+        <div class="skeleton-card"></div>
+      </div>
+      <div class="empty-state" id="ambitoLibriEmpty" hidden>Nessuna pubblicazione in questo ambito.</div>
     </section>
 
     <!-- ===== PAGE SEARCH (Sprint N6) ===== -->
@@ -1829,60 +1851,46 @@
     wrap.innerHTML = html;
   }
 
-  // v4.5.1 — A1 Render pagina Ambito (backend: getAmbitoDataV42(id) → {ambitoId, news[], bandi[], podcast[]})
+  // v4.5.1 + Sprint N7 — Render pagina Ambito ({ambitoId, news[], bandi[], podcast[], video[], libri[]})
   function renderAmbito(data){
-    if (!data) data = { news:[], bandi:[], podcast:[] };
+    if (!data) data = { news:[], bandi:[], podcast:[], video:[], libri:[] };
     var bandi   = data.bandi   || [];
     var news    = data.news    || [];
     var podcast = data.podcast || [];
+    var video   = data.video   || [];
+    var libri   = data.libri   || [];
 
     // KPI + contatori
     var el;
     el=$('ambitoKpiBandi');     if(el) el.textContent = bandi.length;
     el=$('ambitoKpiNews');      if(el) el.textContent = news.length;
     el=$('ambitoKpiPodcast');   if(el) el.textContent = podcast.length;
+    el=$('ambitoKpiVideo');     if(el) el.textContent = video.length;
+    el=$('ambitoKpiLibri');     if(el) el.textContent = libri.length;
     el=$('ambitoBandiCount');   if(el) el.textContent = bandi.length + ' bandi';
     el=$('ambitoNewsCount');    if(el) el.textContent = news.length + ' news';
     el=$('ambitoPodcastCount'); if(el) el.textContent = podcast.length + ' podcast';
+    el=$('ambitoVideoCount');   if(el) el.textContent = video.length + ' video';
+    el=$('ambitoLibriCount');   if(el) el.textContent = libri.length + ' pubblicazioni';
 
-    // Bandi
-    var wB = $('ambitoBandiList');
-    if (wB){
-      if (bandi.length) {
-        var html=''; bandi.forEach(function(b){ html += _brRowHtml_(b); });
-        wB.innerHTML = html;
-        var em=$('ambitoBandiEmpty'); if(em) em.hidden = true;
+    function _fill_(wrId, emId, list, renderFn) {
+      var w = $(wrId), e = $(emId);
+      if (!w) return;
+      if (list.length) {
+        var h=''; list.forEach(function(x){ h += renderFn(x); });
+        w.innerHTML = h;
+        if (e) e.hidden = true;
       } else {
-        wB.innerHTML = '';
-        var em2=$('ambitoBandiEmpty'); if(em2) em2.hidden = false;
+        w.innerHTML = '';
+        if (e) e.hidden = false;
       }
     }
 
-    // News
-    var wN = $('ambitoNewsList');
-    if (wN){
-      if (news.length) {
-        var htmlN=''; news.forEach(function(n){ htmlN += _newsCardHtml_(n); });
-        wN.innerHTML = htmlN;
-        var em3=$('ambitoNewsEmpty'); if(em3) em3.hidden = true;
-      } else {
-        wN.innerHTML = '';
-        var em4=$('ambitoNewsEmpty'); if(em4) em4.hidden = false;
-      }
-    }
-
-    // Podcast
-    var wP = $('ambitoPodcastList');
-    if (wP){
-      if (podcast.length) {
-        var htmlP=''; podcast.forEach(function(p){ htmlP += _podcastCardHtml_(p, false); });
-        wP.innerHTML = htmlP;
-        var em5=$('ambitoPodcastEmpty'); if(em5) em5.hidden = true;
-      } else {
-        wP.innerHTML = '';
-        var em6=$('ambitoPodcastEmpty'); if(em6) em6.hidden = false;
-      }
-    }
+    _fill_('ambitoBandiList',   'ambitoBandiEmpty',   bandi,   function(b){ return _brRowHtml_(b); });
+    _fill_('ambitoNewsList',    'ambitoNewsEmpty',    news,    function(n){ return _newsCardHtml_(n); });
+    _fill_('ambitoPodcastList', 'ambitoPodcastEmpty', podcast, function(p){ return _podcastCardHtml_(p, false); });
+    _fill_('ambitoVideoList',   'ambitoVideoEmpty',   video,   function(v){ return _videoCardHtml_(v); });
+    _fill_('ambitoLibriList',   'ambitoLibriEmpty',   libri,   function(l){ return _libroCardHtml_(l); });
   }
 
   function renderAmbitiCounters(list){
@@ -1891,11 +1899,15 @@
       setCount('news', id, a.news);
       setCount('bandi', id, a.bandi);
       setCount('podcast', id, a.podcast);
-      // chips ambito home (nuovi oggi)
+      // chips ambito home (nuovi oggi) — totale include video e libri se disponibili
       var nn = document.querySelector('[data-new="'+id+'"]');
       if (nn) {
         if (a.nuoviOggi > 0) { nn.hidden = false; nn.textContent = '+' + a.nuoviOggi; }
-        else { nn.textContent = (a.news||0) + (a.bandi||0) + (a.podcast||0); nn.hidden = false; }
+        else {
+          var tot = (a.news||0) + (a.bandi||0) + (a.podcast||0) + (a.video||0) + (a.libri||0);
+          nn.textContent = tot;
+          nn.hidden = false;
+        }
       }
     });
   }

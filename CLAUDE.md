@@ -1,7 +1,7 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.14.7 · deployment @176 del 05/05/2026
+**Versione corrente**: v4.14.8 · deployment @177 del 05/05/2026
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
@@ -269,6 +269,12 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 - `Index.html`: pagina `#page-libri`; `_libroCardHtml_`; `renderLibriList`; form aggiungi libro (admin); `OC.saveLibro()` + `OC.setupLibri()`
 - `Styles.html`: classi `.lb-row`, `.lb-editore`, `.lb-autore`, `.lb-anno`, form CSS
 - ⚠️ **Setup obbligatorio**: aprire sezione Libri e cliccare "Inizializza foglio" oppure eseguire `setupPubblicazioniSheet()` da editor GAS
+
+### ✅ Sprint N7 (2026-05-05) — Pagina Ambito: Video + Libri
+- `Addon_v42.js`: `getAmbitoDataV42` estesa con video (`getVideoListV42` filtrato per ambito) e libri (`getLibriListV42` filtrato per ambito) → payload `{news, bandi, podcast, video, libri}`
+- `Index.html`: `#page-ambito` — KPI bar estesa da 3 a 5 contatori (aggiunto Video + Libri); aggiunte sezioni `#ambitoVideoList` e `#ambitoLibriList` con skeleton + empty state
+- `Index.html`: `renderAmbito()` riscritta con helper `_fill_` generico; gestisce tutti e 5 i tipi usando i renderer già esistenti (`_videoCardHtml_`, `_libroCardHtml_`)
+- `renderAmbitiCounters`: totale chip home include anche `a.video` e `a.libri`
 
 ### ✅ Sprint N6 (2026-05-05) — Ricerca Globale
 - `Addon_v42.js`: `getGlobalSearchV42` estesa con video (foglio Podcast, VID*) e libri (foglio Pubblicazioni) → ritorna `{q, news, bandi, podcast, video, libri}`

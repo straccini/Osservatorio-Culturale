@@ -395,13 +395,29 @@ function getAmbitoDataV42(ambitoId) {
       });
   } catch(e) { pods = []; }
 
+  // === VIDEO (Sprint N7) ===
+  var video = [];
+  try {
+    var vAll = (typeof getVideoListV42 === 'function') ? getVideoListV42(300) : [];
+    video = vAll.filter(function(v){ return Number(v.ambito) === id; });
+  } catch(e) { video = []; }
+
+  // === LIBRI (Sprint N7) ===
+  var libri = [];
+  try {
+    var lAll = (typeof getLibriListV42 === 'function') ? getLibriListV42(300) : [];
+    libri = lAll.filter(function(l){ return Number(l.ambito) === id; });
+  } catch(e) { libri = []; }
+
   return {
     ambitoId: id,
     ambitoLbl: ambitoLblV42_(id),
     ambitoColor: ambitoColorV42_(id),
     news: news,
     bandi: bandi,
-    podcast: pods
+    podcast: pods,
+    video: video,
+    libri: libri
   };
 }
 
