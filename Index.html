@@ -337,10 +337,12 @@
         <button class="filter-chip" data-tipo="news">News</button>
         <button class="filter-chip" data-tipo="bando">Bandi</button>
         <button class="filter-chip" data-tipo="podcast">Podcast</button>
-        <button class="filter-chip" onclick="OC.exportArchivio()" style="margin-left:auto">&#10003; Esporta selezione</button>
+        <button class="filter-chip" data-tipo="video">Video</button>
+        <button class="filter-chip" data-tipo="libro">Libri</button>
+        <button class="filter-chip" onclick="OC.exportArchivio()" style="margin-left:auto">&#10003; Esporta</button>
       </div>
-      <div class="news-list" id="archivioList" aria-live="polite">
-        <div class="skeleton-card"></div><div class="skeleton-card"></div>
+      <div id="archivioList" aria-live="polite">
+        <div class="home-list-skeleton"></div><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div>
       </div>
       <div class="empty-state" id="archivioEmpty" hidden>Nessun contenuto archiviato.</div>
     </section>
@@ -3220,45 +3222,75 @@
       + '</div>';
   }
 
+  // Sprint N8: archivio completo — 5 tipi, card rivista, filtro L1 tipo
+  var _cacheArchivio = null;
+  var _filterArchivioTipo = 'tutti';
+
   function loadArchivio() {
     if (!hasGAS()) return;
     var wrap = $('archivioList');
     var em   = $('archivioEmpty');
-    if (wrap) wrap.innerHTML = '<div class="skeleton-card"></div><div class="skeleton-card"></div>';
-    var allItems = [];
-    var pending = 3;
+    if (wrap) wrap.innerHTML = '<div class="home-list-skeleton"></div><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div>';
+    _cacheArchivio = [];
+    var pending = 5;
     function done(list) {
-      allItems = allItems.concat(list || []);
+      _cacheArchivio = _cacheArchivio.concat(list || []);
       pending--;
       if (pending > 0) return;
-      if (!wrap) return;
-      if (!allItems.length) {
-        wrap.innerHTML = '';
-        if (em) em.hidden = false;
-        return;
-      }
-      if (em) em.hidden = true;
-      var html = '';
-      allItems.forEach(function(it) {
-        html += '<div class="bando-row" style="border-left:3px solid var(--rule);padding-left:14px">'
-          +   '<div class="bando-row-head">'
-          +     '<span class="tag low">' + esc(it.tipo || 'item') + '</span>'
-          +     '<span class="ente">' + esc(it.fonte || it.ente || it.show || '') + '</span>'
-          +   '</div>'
-          +   '<h4 class="bando-row-title">' + esc(it.titolo || '(senza titolo)') + '</h4>'
-          +   '<div class="bando-row-meta">'
-          +     '<span>' + esc(it.data || '') + '</span>'
-          +     '<div class="item-actions">'
-          +       '<button class="act-btn" onclick="OC.restoreItem(\'' + esc(it.tipo) + '\',\'' + esc(it.id) + '\',this)" title="Ripristina">&#8593; Ripristina</button>'
-          +     '</div>'
-          +   '</div>'
-          + '</div>';
-      });
-      wrap.innerHTML = html;
+      renderArchivio(_cacheArchivio);
     }
     google.script.run.withSuccessHandler(function(r){ done((r && r.items) || []); }).withFailureHandler(function(){ done([]); }).getArchivedItems('news');
     google.script.run.withSuccessHandler(function(r){ done((r && r.items) || []); }).withFailureHandler(function(){ done([]); }).getArchivedItems('bando');
     google.script.run.withSuccessHandler(function(r){ done((r && r.items) || []); }).withFailureHandler(function(){ done([]); }).getArchivedItems('podcast');
+    google.script.run.withSuccessHandler(function(r){ done((r && r.items) || []); }).withFailureHandler(function(){ done([]); }).getArchivedItems('video');
+    google.script.run.withSuccessHandler(function(r){ done((r && r.items) || []); }).withFailureHandler(function(){ done([]); }).getArchivedItems('libro');
+  }
+
+  function renderArchivio(all) {
+    var wrap = $('archivioList');
+    var em   = $('archivioEmpty');
+    if (!wrap) return;
+    var list = _filterArchivioTipo === 'tutti' ? all : all.filter(function(x){ return x.tipo === _filterArchivioTipo; });
+    if (!list.length) {
+      wrap.innerHTML = '';
+      if (em) em.hidden = false;
+      return;
+    }
+    if (em) em.hidden = true;
+    var html = '';
+    list.forEach(function(it) {
+      html += _archivioCardHtml_(it);
+    });
+    wrap.innerHTML = html;
+  }
+
+  function _archivioCardHtml_(it) {
+    var tipo    = it.tipo || 'item';
+    var titolo  = esc(it.titolo || '(senza titolo)');
+    var link    = esc(it.link || '');
+    var tipoLbl = { news:'News', bando:'Bando', podcast:'Podcast', video:'Video', libro:'Libro' }[tipo] || tipo;
+    var tipoCol = { news:'nr', bando:'bando', podcast:'pd', video:'vd', libro:'lb' }[tipo] || 'nr';
+    var badge   = it.fonte || it.ente || it.serie || it.canale || it.editore || '';
+    var sub     = it.sommario ? esc(trunc(it.sommario, 120)) : '';
+    var meta    = it.data || it.anno || '';
+    var restoreBtn = '<button class="act-btn" onclick="OC.restoreItem(\''
+      + esc(tipo) + '\',\'' + esc(it.id) + '\',this)" title="Ripristina">&#8593; Ripristina</button>';
+
+    return '<div class="br-row ' + tipoCol + '-row" style="opacity:.85">'
+      + '<div class="br-left">'
+      +   '<div class="br-tags">'
+      +     '<span class="' + tipoCol + '-' + (tipo==='bando'?'tag':'fonte') + '" style="font-size:10px">' + esc(tipoLbl) + '</span>'
+      +     (badge ? '<span class="tag low" style="margin-left:4px">' + esc(badge) + '</span>' : '')
+      +   '</div>'
+      +   '<h4 class="br-title">' + titolo + '</h4>'
+      +   (sub ? '<p class="br-summary">' + sub + '</p>' : '')
+      + '</div>'
+      + '<div class="br-right">'
+      +   (meta ? '<span class="br-date">' + esc(String(meta)) + '</span>' : '')
+      +   (link ? '<a class="br-link" href="' + link + '" target="_blank" rel="noopener">Apri &rarr;</a>' : '')
+      +   '<div class="item-actions" style="margin-top:6px">' + restoreBtn + '</div>'
+      + '</div>'
+      + '</div>';
   }
 
   function loadCestino() {
@@ -3526,7 +3558,7 @@
   document.addEventListener('click', function(e){
     var chip = e.target.closest('.filter-chip');
     if (!chip) return;
-    var bar = chip.closest('#bandiFilters, #bandiTematicheFilters, #newsFilters, #newsTematicheFilters, #podcastFilters, #podcastTematicheFilters, #videoFilters, #videoTematicheFilters, #libriFilters, #libriTematicheFilters');
+    var bar = chip.closest('#bandiFilters, #bandiTematicheFilters, #newsFilters, #newsTematicheFilters, #podcastFilters, #podcastTematicheFilters, #videoFilters, #videoTematicheFilters, #libriFilters, #libriTematicheFilters, #archivioFilters');
     if (!bar) return;
     e.preventDefault();
     // Aggiorna stato visivo solo nella riga cliccata
@@ -3607,6 +3639,9 @@
     } else if (bar.id === 'libriTematicheFilters') {
       _filterLibri.amb = parseInt(chip.getAttribute('data-amb'), 10) || 0;
       if (_cacheLibri) renderLibriList(_cacheLibri);
+    } else if (bar.id === 'archivioFilters') {
+      _filterArchivioTipo = chip.dataset.tipo || 'tutti';
+      if (_cacheArchivio) renderArchivio(_cacheArchivio);
     }
   });
 

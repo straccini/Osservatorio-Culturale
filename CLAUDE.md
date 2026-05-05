@@ -1,7 +1,7 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.14.8 · deployment @177 del 05/05/2026
+**Versione corrente**: v4.14.9 · deployment @178 del 05/05/2026
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
@@ -269,6 +269,13 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 - `Index.html`: pagina `#page-libri`; `_libroCardHtml_`; `renderLibriList`; form aggiungi libro (admin); `OC.saveLibro()` + `OC.setupLibri()`
 - `Styles.html`: classi `.lb-row`, `.lb-editore`, `.lb-autore`, `.lb-anno`, form CSS
 - ⚠️ **Setup obbligatorio**: aprire sezione Libri e cliccare "Inizializza foglio" oppure eseguire `setupPubblicazioniSheet()` da editor GAS
+
+### ✅ Sprint N8 (2026-05-05) — Archivio: upgrade completo
+- `Workflow_unified.js`: `_wfConfig_` esteso con casi `video` (foglio Podcast, StatoRecord text) e `libro` (foglio Pubblicazioni, Stato text) — abilita `restore()` per entrambi i tipi
+- `Workflow_unified.js`: `getArchivedItems` estesa per `tipo='video'` (filtra VID* da Podcast) e `tipo='libro'` (legge Pubblicazioni); fix `podcast`: usa `Serie` e `DataPubblicazione` (colonne reali)
+- `Index.html`: `#archivioFilters` — chip Video + Libri aggiunti; click handler esteso per `archivioFilters` con `_filterArchivioTipo`
+- `Index.html`: `loadArchivio()` riscritta — 5 chiamate parallele, `_cacheArchivio`, `renderArchivio()` con filtro tipo
+- `Index.html`: `_archivioCardHtml_()` — nuova funzione card `.br-row` con badge tipo colorato, badge fonte, link, bottone Ripristina; `renderArchivio()` applica filtro tipo su cache
 
 ### ✅ Sprint N7 (2026-05-05) — Pagina Ambito: Video + Libri
 - `Addon_v42.js`: `getAmbitoDataV42` estesa con video (`getVideoListV42` filtrato per ambito) e libri (`getLibriListV42` filtrato per ambito) → payload `{news, bandi, podcast, video, libri}`

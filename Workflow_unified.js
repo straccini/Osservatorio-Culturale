@@ -85,7 +85,30 @@ function _wfConfig_(tipo) {
         colStatoName:    'StatoRecord',
         valArch:  'archiviato',
         valAttivo:'attivo',
-        legacyAutoArch:  null,           // nessun trigger automatico per podcast in v4.6
+        legacyAutoArch:  null,
+        legacyDeleteAll: null
+      };
+    case 'video':
+      // Video: stesso foglio Podcast, filtra solo ID=VID*, StatoRecord testo
+      return {
+        sheetName: (typeof SH !== 'undefined' && SH.PODCAST) ? SH.PODCAST : 'Podcast',
+        statoMode: 'text',
+        colStatoName:    'StatoRecord',
+        valArch:  'archiviato',
+        valAttivo:'attivo',
+        legacyAutoArch:  null,
+        legacyDeleteAll: null
+      };
+    case 'libro':
+    case 'libri':
+      // Libri: foglio Pubblicazioni, colonna Stato testo
+      return {
+        sheetName: (typeof SH !== 'undefined' && SH.LIBRI) ? SH.LIBRI : 'Pubblicazioni',
+        statoMode: 'text',
+        colStatoName:    'Stato',
+        valArch:  'archiviato',
+        valAttivo:'attivo',
+        legacyAutoArch:  null,
         legacyDeleteAll: null
       };
     default:
@@ -445,16 +468,65 @@ function getArchivedItems(tipo) {
       var rowsp = shp.getDataRange().getValues();
       var hp = rowsp[0];
       var statoColP = hp.indexOf('StatoRecord');
-      var titColP = hp.indexOf('Titolo'), showColP = hp.indexOf('Show');
-      var dataColP = hp.indexOf('DataRilevamento'), temColP = hp.indexOf('Tematica');
+      var titColP = hp.indexOf('Titolo'), serieColP = hp.indexOf('Serie');
+      var dataColP = hp.indexOf('DataPubblicazione'), temColP = hp.indexOf('Tematica');
+      var linkColP = hp.indexOf('Link');
       for (var k = 1; k < rowsp.length; k++) {
+        var idVal = String(rowsp[k][0] || '');
+        if (idVal.indexOf('VID') === 0) continue; // salta video
         if (statoColP >= 0 && String(rowsp[k][statoColP] || '').toLowerCase() === 'archiviato') {
           items.push({
-            id: rowsp[k][0], titolo: rowsp[k][titColP >= 0 ? titColP : 2],
-            show: rowsp[k][showColP >= 0 ? showColP : 3],
-            data: rowsp[k][dataColP >= 0 ? dataColP : 4],
+            id: idVal, titolo: rowsp[k][titColP >= 0 ? titColP : 2],
+            serie: rowsp[k][serieColP >= 0 ? serieColP : 3],
+            data: rowsp[k][dataColP >= 0 ? dataColP : 1],
             tematica: rowsp[k][temColP >= 0 ? temColP : 5],
+            link: rowsp[k][linkColP >= 0 ? linkColP : 8],
             tipo: 'podcast'
+          });
+        }
+      }
+    }
+    if (tipo === 'video') {
+      var shv = ss.getSheetByName('Podcast');
+      if (!shv || shv.getLastRow() < 2) return { ok: true, items: [] };
+      var rowsv = shv.getDataRange().getValues();
+      var hv = rowsv[0];
+      var statoColV = hv.indexOf('StatoRecord');
+      var titColV = hv.indexOf('Titolo'), canaleColV = hv.indexOf('Serie');
+      var dataColV = hv.indexOf('DataPubblicazione'), linkColV = hv.indexOf('Link');
+      for (var v = 1; v < rowsv.length; v++) {
+        var vidId = String(rowsv[v][0] || '');
+        if (vidId.indexOf('VID') !== 0) continue; // solo video
+        if (statoColV >= 0 && String(rowsv[v][statoColV] || '').toLowerCase() === 'archiviato') {
+          items.push({
+            id: vidId, titolo: rowsv[v][titColV >= 0 ? titColV : 2],
+            canale: rowsv[v][canaleColV >= 0 ? canaleColV : 3],
+            data: rowsv[v][dataColV >= 0 ? dataColV : 1],
+            link: rowsv[v][linkColV >= 0 ? linkColV : 8],
+            tipo: 'video'
+          });
+        }
+      }
+    }
+    if (tipo === 'libro') {
+      var shl = ss.getSheetByName('Pubblicazioni');
+      if (!shl || shl.getLastRow() < 2) return { ok: true, items: [] };
+      var rowsl = shl.getDataRange().getValues();
+      var hl = rowsl[0];
+      var idColL = hl.indexOf('ID'), titColL = hl.indexOf('Titolo');
+      var autColL = hl.indexOf('Autore'), editColL = hl.indexOf('Editore');
+      var annoColL = hl.indexOf('Anno'), linkColL = hl.indexOf('Link');
+      var statoColL = hl.indexOf('Stato');
+      for (var l = 1; l < rowsl.length; l++) {
+        if (statoColL >= 0 && String(rowsl[l][statoColL] || '').toLowerCase() === 'archiviato') {
+          items.push({
+            id: idColL >= 0 ? rowsl[l][idColL] : String(l),
+            titolo:  rowsl[l][titColL  >= 0 ? titColL  : 1],
+            autore:  rowsl[l][autColL  >= 0 ? autColL  : 2],
+            editore: rowsl[l][editColL >= 0 ? editColL : 3],
+            anno:    rowsl[l][annoColL >= 0 ? annoColL : 4],
+            link:    rowsl[l][linkColL >= 0 ? linkColL : 8],
+            tipo: 'libro'
           });
         }
       }
