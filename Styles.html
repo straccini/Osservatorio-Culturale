@@ -1909,6 +1909,13 @@ body.is-home-page .topbar-search{display:none}
   .ambito-hero{grid-template-columns:1fr}
   .ambito-kpi{grid-template-columns:repeat(2,1fr)}
   .topbar-hamburger,.menu-btn{display:flex}
+  /* br-row: singola colonna su mobile */
+  .br-row { grid-template-columns: 1fr; }
+  .br-right { flex-direction: row; align-items: center; justify-content: flex-start; text-align: left; flex-wrap: wrap; gap: 8px; }
+  .br-acts { justify-content: flex-start; }
+  .home-pv-grid { grid-template-columns: 1fr; }
+  .st-kpi-grid { grid-template-columns: repeat(2,1fr); }
+  .st-info-grid { grid-template-columns: 1fr; }
 }
 
 /* === BANDO ROW (pagina bandi + ambito, full-width con pulsanti) === */
@@ -2106,6 +2113,18 @@ body.is-home-page .topbar-search{display:none}
 .br-act-save:hover { background: #FEF9C3; border-color: #EAB308; color: #854D0E; }
 .br-act-save-on { color: #854D0E; border-color: #EAB308; background: #FEF9C3; }
 .br-act-save-on:hover { background: #FEF08A; }
+
+/* Dark mode — bottoni azione */
+[data-theme="dark"] .br-act-read  { color: #34D399; border-color: #059669; background: rgba(6,95,70,.18); }
+[data-theme="dark"] .br-act-read:hover  { background: rgba(6,95,70,.32); }
+[data-theme="dark"] .br-act-arch  { color: #FCD34D; border-color: #D97706; background: rgba(146,64,14,.18); }
+[data-theme="dark"] .br-act-arch:hover  { background: rgba(146,64,14,.32); }
+[data-theme="dark"] .br-act-trash { color: #FCA5A5; border-color: #DC2626; background: rgba(153,27,27,.18); }
+[data-theme="dark"] .br-act-trash:hover { background: rgba(153,27,27,.32); }
+[data-theme="dark"] .br-act-save  { color: #A8A29E; border-color: #57534E; background: rgba(30,28,24,.5); }
+[data-theme="dark"] .br-act-save:hover { background: rgba(120,90,14,.22); border-color: #EAB308; color: #FCD34D; }
+[data-theme="dark"] .br-act-save-on { color: #FCD34D; border-color: #EAB308; background: rgba(120,90,14,.28); }
+[data-theme="dark"] .br-act-save-on:hover { background: rgba(120,90,14,.42); }
 
 /* === FILTRI DUE LIVELLI === */
 .filters-primary  { margin-bottom: 2px; }

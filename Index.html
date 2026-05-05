@@ -1063,14 +1063,22 @@
       .getUltimiBandiMonitorati(6);
 
     google.script.run
-      .withSuccessHandler(function(list){ renderVideoHome(list || []); })
+      .withSuccessHandler(function(list){
+        _cacheVideo = list || [];
+        var el = $('statVideo'); if (el) el.textContent = _cacheVideo.length || '—';
+        renderVideoHome(_cacheVideo.slice(0, 4));
+      })
       .withFailureHandler(function(){ renderVideoHome([]); })
-      .getVideoListV42(4);
+      .getVideoListV42(300);
 
     google.script.run
-      .withSuccessHandler(function(list){ renderLibriHome(list || []); })
+      .withSuccessHandler(function(list){
+        _cacheLibri = list || [];
+        var el = $('statLibri'); if (el) el.textContent = _cacheLibri.length || '—';
+        renderLibriHome(_cacheLibri.slice(0, 4));
+      })
       .withFailureHandler(function(){ renderLibriHome([]); })
-      .getLibriListV42(4);
+      .getLibriListV42(500);
   }
 
   var _cacheBandi = null, _cacheNews = null, _cachePodcast = null;
@@ -1441,8 +1449,6 @@
   function renderVideoHome(list){
     var wrap = $('homeVideoList'); if (!wrap) return;
     var em = $('homeVideoEmpty');
-    var el = $('statVideo');
-    if (el) el.textContent = list.length || '—';
     if (!list.length) {
       wrap.innerHTML = '<p class="home-list-empty">Nessun video ancora. Esegui seedVideoMusei() dalla sezione admin.</p>';
       if (em) em.hidden = true;
@@ -1471,8 +1477,6 @@
   function renderLibriHome(list){
     var wrap = $('homeLibriList'); if (!wrap) return;
     var em = $('homeLibriEmpty');
-    var el = $('statLibri');
-    if (el) el.textContent = list.length || '—';
     if (!list.length) {
       wrap.innerHTML = '<p class="home-list-empty">Nessuna pubblicazione. <a href="#" data-goto="libri">Vai alla sezione libri</a> per inizializzare.</p>';
       if (em) em.hidden = true;

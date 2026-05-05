@@ -1,7 +1,7 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.15.3 · deployment @182 del 05/05/2026
+**Versione corrente**: v4.15.4 · deployment @183 del 05/05/2026
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
@@ -269,6 +269,12 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 - `Index.html`: pagina `#page-libri`; `_libroCardHtml_`; `renderLibriList`; form aggiungi libro (admin); `OC.saveLibro()` + `OC.setupLibri()`
 - `Styles.html`: classi `.lb-row`, `.lb-editore`, `.lb-autore`, `.lb-anno`, form CSS
 - ⚠️ **Setup obbligatorio**: aprire sezione Libri e cliccare "Inizializza foglio" oppure eseguire `setupPubblicazioniSheet()` da editor GAS
+
+### ✅ Sprint N13 (2026-05-05) — Home stats, dark mode, mobile responsive
+- `Index.html`: `hydrate()` — fetch video con `getVideoListV42(300)` e libri con `getLibriListV42(500)` (prima erano 4); popola `_cacheVideo`/`_cacheLibri` al caricamento iniziale (evita re-fetch alla navigazione) e aggiorna `statVideo`/`statLibri` con il totale reale (prima mostravano `4` invece del conteggio effettivo)
+- `Index.html`: `renderVideoHome` e `renderLibriHome` — rimossa duplicazione aggiornamento stat (ora gestito da `hydrate`)
+- `Styles.html`: dark mode per tutti i bottoni azione — `[data-theme="dark"] .br-act-read/arch/trash/save/save-on` con colori adattati (verde/ambra/rosso/grigio desaturati su fondo scuro)
+- `Styles.html`: `@media (max-width:900px)` — `.br-row` passa a singola colonna; `.br-right` e `.br-acts` in riga da sinistra; `.home-pv-grid` singola colonna; `.st-kpi-grid` a 2 colonne; `.st-info-grid` singola colonna
 
 ### ✅ Sprint N12 (2026-05-05) — Cestino: fix completo + azioni card
 - `Index.html`: `trashItem` — `.closest` esteso con `.br-row`; selettore titolo esteso con `.br-title` → le nuove card scompaiono correttamente dalla lista
