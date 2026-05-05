@@ -2772,17 +2772,21 @@
       .toggleSaved(tipo, id);
   }
 
+  function _reloadByTipo_(tipo) {
+    if (tipo === 'bando')        loadBandiList(true);
+    else if (tipo === 'item')    loadNewsList(true);
+    else if (tipo === 'podcast') loadPodcastList(true);
+    else if (tipo === 'video')   loadVideoList(true);
+    else if (tipo === 'libro')   loadLibriList(true);
+  }
+
   function archiveCard(tipo, id) {
     if (!hasGAS()) return;
     if (!confirm('Archiviare questo elemento?')) return;
     google.script.run
       .withSuccessHandler(function(r){
-        if (r && r.ok) {
-          // Refresh lista corrente
-          if (tipo === 'bando') loadBandiList(true);
-          else if (tipo === 'item') loadNewsList(true);
-          else if (tipo === 'podcast') loadPodcastList(true);
-        } else { alert('Errore archiviazione: ' + (r && r.error || 'sconosciuto')); }
+        if (r && r.ok) { _reloadByTipo_(tipo); }
+        else { alert('Errore archiviazione: ' + (r && r.error || 'sconosciuto')); }
       })
       .withFailureHandler(function(e){ alert('Errore: '+e); })
       .archive(tipo, id);
@@ -2793,11 +2797,8 @@
     if (!confirm('Eliminare DEFINITIVAMENTE questo elemento?\nL\'azione non e\' reversibile.')) return;
     google.script.run
       .withSuccessHandler(function(r){
-        if (r && r.ok) {
-          if (tipo === 'bando') loadBandiList(true);
-          else if (tipo === 'item') loadNewsList(true);
-          else if (tipo === 'podcast') loadPodcastList(true);
-        } else { alert('Errore eliminazione: ' + (r && r.error || 'sconosciuto')); }
+        if (r && r.ok) { _reloadByTipo_(tipo); }
+        else { alert('Errore eliminazione: ' + (r && r.error || 'sconosciuto')); }
       })
       .withFailureHandler(function(e){ alert('Errore: '+e); })
       .archive(tipo, id);  // archive prima, poi user puo restore o delete da foglio
@@ -3112,6 +3113,12 @@
         if (r && r.ok) {
           var card = (el && el.closest) ? (el.closest('.br-row') || el.closest('.bando-row') || el.closest('.news-row') || el.closest('.pod-item')) : null;
           if (card) card.remove();
+          // Invalida cache per tipo — evita che la card ricompaia al prossimo render
+          if (tipo === 'bando' || tipo === 'bandi') _cacheBandi = null;
+          else if (tipo === 'item' || tipo === 'news') _cacheNews = null;
+          else if (tipo === 'podcast') _cachePodcast = null;
+          else if (tipo === 'video') _cacheVideo = null;
+          else if (tipo === 'libro') _cacheLibri = null;
           showToast('Scheda archiviata', 'ok');
         } else {
           showToast('Archiviazione non riuscita', 'err');
@@ -3123,10 +3130,10 @@
 
   function trashItem(tipo, id, el) {
     var key = tipo + '_' + id;
-    var card = (el && el.closest) ? (el.closest('.bando-row') || el.closest('.news-row') || el.closest('.pod-item')) : null;
+    var card = (el && el.closest) ? (el.closest('.br-row') || el.closest('.bando-row') || el.closest('.news-row') || el.closest('.pod-item')) : null;
     var titolo = '';
     if (card) {
-      var titleEl = card.querySelector('.bando-row-title') || card.querySelector('.news-title') || card.querySelector('.pod-title');
+      var titleEl = card.querySelector('.br-title') || card.querySelector('.bando-row-title') || card.querySelector('.news-title') || card.querySelector('.pod-title');
       if (titleEl) titolo = titleEl.textContent.trim();
     }
     _trash[key] = { tipo: tipo, id: id, titolo: titolo };
@@ -3504,6 +3511,9 @@
       + '</div>';
   }
 
+  var _TIPO_LBL_CT = { bando:'Bando', item:'News', news:'News', podcast:'Podcast', video:'Video', libro:'Libro' };
+  var _TIPO_PAGE_CT = { bando:'bandi', item:'news', news:'news', podcast:'podcast', video:'video', libro:'libri' };
+
   function loadCestino() {
     var wrap = $('cestinoList'); if (!wrap) return;
     var keys = Object.keys(_trash);
@@ -3511,14 +3521,17 @@
     var html = '';
     keys.forEach(function(k) {
       var it = _trash[k];
-      html += '<div class="bando-row" style="border-left:3px solid var(--rule);padding-left:14px">'
-        +   '<div class="bando-row-head"><span class="tag low">' + esc(it.tipo) + '</span></div>'
-        +   '<h4 class="bando-row-title">' + esc(it.titolo || it.id) + '</h4>'
-        +   '<div class="bando-row-meta">'
-        +     '<div class="item-actions">'
-        +       '<button class="act-btn act-read" onclick="OC.restoreItem(\'' + esc(it.tipo) + '\',\'' + esc(it.id) + '\',this)" title="Ripristina">&#8593; Ripristina</button>'
-        +     '</div>'
+      var lbl = _TIPO_LBL_CT[it.tipo] || it.tipo;
+      html += '<div class="br-row" data-trash-key="' + esc(k) + '" style="opacity:.75">'
+        + '<div class="br-left">'
+        +   '<div class="br-tags"><span class="br-badge" style="background:#6B7280;color:#fff;font-size:10px;padding:2px 7px;border-radius:4px;letter-spacing:.04em">' + esc(lbl.toUpperCase()) + '</span></div>'
+        +   '<p class="br-title" style="color:var(--text-muted);text-decoration:line-through">' + esc(it.titolo || it.id) + '</p>'
+        + '</div>'
+        + '<div class="br-right">'
+        +   '<div class="br-acts">'
+        +     '<button class="br-act br-act-read" onclick="event.stopPropagation();OC.restoreItem(\'' + esc(it.tipo) + '\',\'' + esc(it.id) + '\',this)">&#8593;&nbsp;Ripristina</button>'
         +   '</div>'
+        + '</div>'
         + '</div>';
     });
     wrap.innerHTML = html;
@@ -3528,14 +3541,19 @@
     var key = tipo + '_' + id;
     delete _trash[key];
     _updateCestinoBadge();
-    if (hasGAS()) {
-      google.script.run
-        .withSuccessHandler(function(){ showToast('Elemento ripristinato', 'ok'); })
-        .withFailureHandler(function(e){ showToast('Errore ripristino: ' + (e.message || e), 'err'); })
-        .restore(tipo, id);
-    }
-    var card = (el && el.closest) ? (el.closest('.bando-row') || el.closest('.news-row')) : null;
+    // Rimuovi card dalla lista cestino
+    var card = (el && el.closest) ? el.closest('.br-row') : null;
     if (card) card.remove();
+    // Ricarica la lista corretta dalla cache (visibilità immediata, no re-fetch)
+    var page = _TIPO_PAGE_CT[tipo] || '';
+    if (page === 'bandi')   { if (_cacheBandi)   renderBandiList(_cacheBandi);   }
+    else if (page === 'news')    { if (_cacheNews)    renderNewsList2(_cacheNews);    }
+    else if (page === 'podcast') { if (_cachePodcast) renderPodcastList2(_cachePodcast); }
+    else if (page === 'video')   { if (_cacheVideo)   renderVideoList(_cacheVideo);   }
+    else if (page === 'libri')   { if (_cacheLibri)   renderLibriList(_cacheLibri);   }
+    showToast('Elemento ripristinato nella lista', 'ok');
+    // Aggiorna empty state cestino
+    if (!Object.keys(_trash).length) loadCestino();
   }
 
   function emptyTrash() {
