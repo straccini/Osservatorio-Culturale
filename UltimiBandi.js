@@ -95,6 +95,7 @@ function getNewsListV42(limit) {
     var iArch  = _findCol_(head, ['Archiviato','archiviato','ARCHIVIATO']);
     var iScore = _findCol_(head, ['Score','score','SCORE','ScoreAI']);
     var iSomm  = _findCol_(head, ['Sommario','SommarioAI','Descrizione','Description','Summary','Estratto']);
+    var iSalv  = _findCol_(head, ['Salvato','salvato','SALVATO','Saved']);
     var out = [];
     var sette_fa = new Date(Date.now() - 7 * 86400000);
     for (var r=1; r<vals.length; r++){
@@ -103,6 +104,7 @@ function getNewsListV42(limit) {
       if (iArch >= 0 && (row[iArch] === true || row[iArch] === 'TRUE' || row[iArch] === 1)) continue;
       var rawData = iData >= 0 ? row[iData] : '';
       var dataObj = (rawData instanceof Date) ? rawData : (rawData ? new Date(rawData) : null);
+      var salvVal = iSalv >= 0 ? row[iSalv] : false;
       out.push({
         id     : String(r),
         titolo : row[iTit],
@@ -113,7 +115,8 @@ function getNewsListV42(limit) {
         settore: iSett>=0  ? row[iSett]  : '',
         ambito : iAmb>=0   ? row[iAmb]   : '',
         score  : iScore>=0 ? Math.round(Number(row[iScore])||0) : 0,
-        sommario: iSomm>=0 ? String(row[iSomm]||'') : ''
+        sommario: iSomm>=0 ? String(row[iSomm]||'') : '',
+        salvato: salvVal === true || salvVal === 'TRUE' || salvVal === 1 || String(salvVal).toLowerCase() === 'true'
       });
     }
     out.sort(function(a,b){
@@ -133,7 +136,8 @@ function getNewsListV42(limit) {
         ambito   : String(x.ambito||''),
         score    : x.score,
         sommario : String(x.sommario||''),
-        isRecente: isRecente
+        isRecente: isRecente,
+        salvato  : !!x.salvato
       };
     });
   } catch (e) { console.error('getNewsListV42:', e); return []; }
@@ -237,6 +241,7 @@ function getLibriListV42(limit) {
     var iFon  = _findCol_(head, ['Fonte','Source']);
     var iStat = _findCol_(head, ['Stato','StatoRecord','stato']);
     var iScor = _findCol_(head, ['Score','score','SCORE']);
+    var iSalv = _findCol_(head, ['Salvato','salvato','SALVATO','Saved']);
     if (iTit < 0) iTit = 1;
 
     var trenta_fa = new Date(Date.now() - 30 * 86400000);
@@ -250,6 +255,7 @@ function getLibriListV42(limit) {
       }
       var rawData = iData >= 0 ? row[iData] : '';
       var dataObj = (rawData instanceof Date) ? rawData : (rawData ? new Date(rawData) : null);
+      var salvLibro = iSalv >= 0 ? row[iSalv] : false;
       out.push({
         id         : String(r),
         titolo     : row[iTit],
@@ -263,7 +269,8 @@ function getLibriListV42(limit) {
         copertina  : iCop>=0  ? row[iCop]  : '',
         fonte      : iFon>=0  ? row[iFon]  : '',
         score      : iScor>=0 ? Math.round(Number(row[iScor])||0) : 0,
-        dataObj    : dataObj
+        dataObj    : dataObj,
+        salvato    : salvLibro === true || salvLibro === 'TRUE' || salvLibro === 1 || String(salvLibro).toLowerCase() === 'true'
       });
     }
     out.sort(function(a,b){
@@ -286,7 +293,8 @@ function getLibriListV42(limit) {
         fonte      : String(x.fonte||''),
         score      : x.score,
         dataAggiunta: _fmtBreveUB_(x.dataObj),
-        isRecente  : !!(x.dataObj && !isNaN(x.dataObj.getTime()) && x.dataObj >= trenta_fa)
+        isRecente  : !!(x.dataObj && !isNaN(x.dataObj.getTime()) && x.dataObj >= trenta_fa),
+        salvato    : !!x.salvato
       };
     });
   } catch(e) { console.error('getLibriListV42:', e); return []; }

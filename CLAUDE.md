@@ -1,7 +1,7 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.15.1 · deployment @180 del 05/05/2026
+**Versione corrente**: v4.15.2 · deployment @181 del 05/05/2026
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
@@ -269,6 +269,15 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 - `Index.html`: pagina `#page-libri`; `_libroCardHtml_`; `renderLibriList`; form aggiungi libro (admin); `OC.saveLibro()` + `OC.setupLibri()`
 - `Styles.html`: classi `.lb-row`, `.lb-editore`, `.lb-autore`, `.lb-anno`, form CSS
 - ⚠️ **Setup obbligatorio**: aprire sezione Libri e cliccare "Inizializza foglio" oppure eseguire `setupPubblicazioniSheet()` da editor GAS
+
+### ✅ Sprint N11 (2026-05-05) — Preferiti + fix filterBandi
+- `UltimiBandi.js`: `getNewsListV42` — aggiunto campo `salvato` (colonna `Salvato` del foglio Items); `getLibriListV42` — aggiunto campo `salvato` (colonna `Salvato` del foglio Pubblicazioni)
+- `Index.html`: `_newsCardHtml_` e `_libroCardHtml_` — aggiunto bottone ★ (`br-act-save`) con stato iniziale da `n.salvato`/`b.salvato`; classe `br-act-save-on` per elementi già salvati
+- `Index.html`: `saveCard(tipo, id, el)` — riscritta con toast feedback e toggle visuale del bottone (★ ↔ ☆ + classe `br-act-save-on`)
+- `Index.html`: `OC.filterBandi(preset)` — riscritta: naviga a bandi, imposta `_filterBandi.preset` (mappa `'urgenti'` → `'urgenti10'`), sincronizza chip attivo nella UI, ri-renderizza da cache
+- `Index.html`: chip "★ Salvati" aggiunto a `#newsFilters` e `#libriFilters`; preset `'salvati'` gestito in `renderNewsList2` e `renderLibriList` (filtra `n.salvato === true`)
+- `Index.html`: `archiveItem` e `markItemRead` — `.closest` esteso con `.br-row` (correggeva bug silenzioso: le nuove card non venivano rimosse/marcate visualmente)
+- `Styles.html`: classi `.br-act-save`, `.br-act-save-on`, `.br-act-save:hover`, `.br-act-save-on:hover`
 
 ### ✅ Sprint N10 (2026-05-05) — Detail overlay completo + Pannello Guida
 - `Index.html`: `openDetail` esteso con `_CACHE_MAP` per tutti e 5 i tipi (`_cacheVideo`, `_cacheLibri`); `_PAGE_MAP` per navigazione fallback corretta
