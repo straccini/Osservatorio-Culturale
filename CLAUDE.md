@@ -1,7 +1,7 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.15.0 · deployment @179 del 05/05/2026
+**Versione corrente**: v4.15.1 · deployment @180 del 05/05/2026
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
@@ -269,6 +269,13 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 - `Index.html`: pagina `#page-libri`; `_libroCardHtml_`; `renderLibriList`; form aggiungi libro (admin); `OC.saveLibro()` + `OC.setupLibri()`
 - `Styles.html`: classi `.lb-row`, `.lb-editore`, `.lb-autore`, `.lb-anno`, form CSS
 - ⚠️ **Setup obbligatorio**: aprire sezione Libri e cliccare "Inizializza foglio" oppure eseguire `setupPubblicazioniSheet()` da editor GAS
+
+### ✅ Sprint N10 (2026-05-05) — Detail overlay completo + Pannello Guida
+- `Index.html`: `openDetail` esteso con `_CACHE_MAP` per tutti e 5 i tipi (`_cacheVideo`, `_cacheLibri`); `_PAGE_MAP` per navigazione fallback corretta
+- `Index.html`: `_renderDetail_` — label tipo dinamica (`_TIPO_LBL`); meta grid adattiva (canale/editore/autore/anno per tipo); link label adattiva (`_LINK_LBL`); bottoni azione per tipo (libro senza Cestino; etichetta Visto/Ascoltato/Letto corretta)
+- `Index.html`: `OC.openVideo` e `OC.openLibro` aggiunti all'API pubblica
+- `Index.html`: `#oc-guida-overlay` + `#oc-guida-panel` — pannello slide-in con sezioni Navigazione, Ambiti, Ricerca, Azioni, Setup admin, Supporto; `OC.openGuida()` / `OC.closeGuida()`; `data-action="openGuida"` della sidebar ora funzionante
+- `Styles.html`: CSS `#oc-guida-overlay`, `#oc-guida-panel`, `.guida-section`, `.guida-h3`, `.guida-list`
 
 ### ✅ Sprint N9 (2026-05-05) — Statistiche + fix export archivio
 - `Index.html`: nuova `#page-stats` con `loadStatsPage()` (3 chiamate parallele: `getStats`, `getVideoListV42`, `getLibriListV42`) e `renderStatsPage()` — KPI grid 5 tipi, barre per ambito (news), top 5 tematiche podcast, info scanner

@@ -2179,6 +2179,60 @@ body.is-home-page .topbar-search{display:none}
 }
 #oc-detail-overlay.open { display: flex; }
 
+/* ===== GUIDA PANEL (Sprint N10) ===== */
+#oc-guida-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 901;
+  background: rgba(26,24,21,.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+#oc-guida-overlay.open { display: flex; }
+#oc-guida-panel {
+  width: min(500px, 92vw);
+  height: 100dvh;
+  background: var(--surface);
+  border-left: 1px solid var(--rule);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  animation: panel-in .22s ease;
+}
+.guida-section {
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--rule);
+}
+.guida-h3 {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin: 0 0 10px;
+}
+.guida-list {
+  margin: 0;
+  padding-left: 18px;
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  color: var(--ink-2);
+  line-height: 1.7;
+}
+.guida-list li { margin-bottom: 4px; }
+.guida-list code {
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
 #oc-detail-panel {
   width: min(560px, 92vw);
   height: 100dvh;

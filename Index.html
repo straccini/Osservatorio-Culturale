@@ -68,6 +68,78 @@
   </div>
 </div>
 
+<!-- ===== GUIDA PANEL (Sprint N10) ===== -->
+<div id="oc-guida-overlay" role="dialog" aria-modal="true" aria-labelledby="oc-guida-title">
+  <div id="oc-guida-panel">
+    <div class="detail-topbar">
+      <span class="tag low">Guida &amp; Supporto</span>
+      <button class="detail-close" onclick="OC.closeGuida()" aria-label="Chiudi guida">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="detail-body" id="oc-guida-body">
+      <h2 class="detail-title" id="oc-guida-title">Osservatorio Culturale</h2>
+      <div class="detail-summary" style="margin-bottom:0">
+        <p>Piattaforma editoriale per la cultura e i musei — curata dall&rsquo;AI scanner, navigabile in tempo reale.</p>
+      </div>
+
+      <div class="guida-section">
+        <h3 class="guida-h3">Sezioni principali</h3>
+        <ul class="guida-list">
+          <li><b>Home</b> — panoramica completa: bandi, news, podcast, video, libri.</li>
+          <li><b>Radar Bandi</b> — bandi culturali monitorati con filtro urgenza e ambito.</li>
+          <li><b>News</b> — articoli raccolti da fonti istituzionali e media di settore.</li>
+          <li><b>Podcast</b> — episodi audio da canali culturali selezionati.</li>
+          <li><b>Video</b> — contenuti YouTube da musei e istituzioni culturali.</li>
+          <li><b>Libri</b> — pubblicazioni consigliate su musealizzazione e cultura.</li>
+        </ul>
+      </div>
+
+      <div class="guida-section">
+        <h3 class="guida-h3">Navigazione per Ambito</h3>
+        <p>I 5 ambiti tematici filtrano trasversalmente tutti i contenuti. Clicca un ambito dalla sidebar o dalle chips della home per vedere bandi, news, podcast, video e libri correlati.</p>
+        <ol class="guida-list">
+          <li><b>01</b> Identit&agrave; e narrazione museale</li>
+          <li><b>02</b> Inclusione e accessibilit&agrave;</li>
+          <li><b>03</b> Programma, mostre e collezioni</li>
+          <li><b>04</b> Comunit&agrave; e welfare culturale</li>
+          <li><b>05</b> Digital, AI e governance</li>
+        </ol>
+      </div>
+
+      <div class="guida-section">
+        <h3 class="guida-h3">Ricerca</h3>
+        <p>Usa la barra di ricerca in alto o quella della home. La ricerca &egrave; cross-sezione: trova risultati in bandi, news, podcast, video e libri contemporaneamente.</p>
+      </div>
+
+      <div class="guida-section">
+        <h3 class="guida-h3">Azioni sui contenuti</h3>
+        <ul class="guida-list">
+          <li><b>&#10003; Letto / Visto / Ascoltato</b> — marca come consultato.</li>
+          <li><b>&#8659; Arch.</b> — sposta nell&rsquo;Archivio (ripristinabile).</li>
+          <li><b>&#128465; Cestino</b> — rimozione temporanea dalla sessione.</li>
+          <li><b>Salva</b> (dove disponibile) — aggiunge ai preferiti.</li>
+        </ul>
+      </div>
+
+      <div class="guida-section">
+        <h3 class="guida-h3">Setup iniziale (solo admin)</h3>
+        <ul class="guida-list">
+          <li>Esegui <code>addFontiNewsNuove()</code> per aggiungere le 10 nuove fonti news.</li>
+          <li>Esegui <code>setupPubblicazioniSheet()</code> oppure clicca &ldquo;Inizializza foglio&rdquo; nella sezione Libri.</li>
+          <li>Esegui <code>setupMatrixSheets()</code> per i fogli MuseMu Matrix.</li>
+        </ul>
+      </div>
+
+      <div class="guida-section" style="border-bottom:none;padding-bottom:0">
+        <h3 class="guida-h3">Supporto</h3>
+        <p>Per assistenza: <a href="mailto:s.straccini@gmail.com" style="color:var(--amb-4)">s.straccini@gmail.com</a><br>
+        Versione: <span id="guidaVersion">v4.15.0</span> &middot; Osservatorio Culturale &middot; Duemilamusei</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="app">
 
   <!-- ===== SIDEBAR ===== -->
@@ -3521,8 +3593,15 @@
   function openDetail(tipo, id) {
     var data = _detailCache[tipo + '_' + id];
     if (data) { _renderDetail_(tipo, data); return; }
-    // Fallback — cerca nei cache renderer
-    var lista = (tipo === 'bando') ? (_cacheBandi || []) : (tipo === 'news') ? (_cacheNews || []) : (_cachePodcast || []);
+    // Cerca nei cache renderer per tutti e 5 i tipi
+    var _CACHE_MAP = {
+      bando:   _cacheBandi   || [],
+      news:    _cacheNews    || [],
+      podcast: _cachePodcast || [],
+      video:   _cacheVideo   || [],
+      libro:   _cacheLibri   || []
+    };
+    var lista = _CACHE_MAP[tipo] || [];
     for (var i=0; i<lista.length; i++) {
       if (String(lista[i].id) === String(id)) {
         _detailCache[tipo+'_'+id] = lista[i];
@@ -3530,8 +3609,9 @@
         return;
       }
     }
-    // Non trovato in cache — apri la pagina relativa
-    go(tipo === 'bando' ? 'bandi' : tipo === 'news' ? 'news' : 'podcast');
+    // Non trovato — apri la pagina relativa
+    var _PAGE_MAP = { bando:'bandi', news:'news', podcast:'podcast', video:'video', libro:'libri' };
+    go(_PAGE_MAP[tipo] || tipo);
     showToast('Apri la scheda dalla lista', 'warn');
   }
 
@@ -3542,7 +3622,8 @@
     if (!overlay || !body) return;
 
     // Label tipo
-    var tipoLabel = tipo === 'bando' ? 'Bando' : tipo === 'news' ? 'News' : 'Podcast';
+    var _TIPO_LBL = { bando:'Bando', news:'News', podcast:'Podcast', video:'Video', libro:'Libro' };
+    var tipoLabel = _TIPO_LBL[tipo] || tipo;
     if (tipoEl) tipoEl.textContent = tipoLabel;
 
     var ambN  = parseInt(d.ambito || d.amb || 0, 10) || 0;
@@ -3559,30 +3640,35 @@
       ? '<span class="score-badge '+(d.score>=70?'high':d.score>=40?'med':'')+'">' + d.score + '% pertinente</span>'
       : '';
 
-    // Meta grid
+    // Meta grid — adattiva per tipo
     var meta = '';
-    if (d.ente || d.fonte || d.show) {
-      meta += '<div class="dm-item"><span class="dm-label">Fonte</span> '+esc(d.ente||d.fonte||d.show||'')+'</div>';
-    }
-    if (d.scadenza || (tipo==='bando' && d.data)) {
-      meta += '<div class="dm-item"><span class="dm-label">Scadenza</span> '+esc(d.scadenza||d.data||'')+'</div>';
-    }
-    if (tipo !== 'bando' && d.data) {
-      meta += '<div class="dm-item"><span class="dm-label">Data</span> '+esc(d.data||'')+'</div>';
-    }
-    if (d.durata) {
-      meta += '<div class="dm-item"><span class="dm-label">Durata</span> '+esc(d.durata)+'</div>';
-    }
-    if (ambLbl) {
-      meta += '<div class="dm-item"><span class="dm-label">Ambito</span> '+esc(ambLbl)+'</div>';
-    }
+    // Fonte / canale / editore / ente
+    var fonteVal = d.ente || d.fonte || d.serie || d.canale || d.editore || '';
+    var fonteLbl = tipo==='bando' ? 'Ente' : tipo==='video' ? 'Canale' : tipo==='libro' ? 'Editore' : 'Fonte';
+    if (fonteVal) meta += '<div class="dm-item"><span class="dm-label">'+fonteLbl+'</span> '+esc(fonteVal)+'</div>';
+    // Autore (libri)
+    if (d.autore) meta += '<div class="dm-item"><span class="dm-label">Autore</span> '+esc(d.autore)+'</div>';
+    // Anno (libri)
+    if (d.anno) meta += '<div class="dm-item"><span class="dm-label">Anno</span> '+esc(String(d.anno))+'</div>';
+    // Scadenza (bandi)
+    if (tipo==='bando' && d.scadenza) meta += '<div class="dm-item"><span class="dm-label">Scadenza</span> '+esc(d.scadenza)+'</div>';
+    // Data pubblicazione
+    if (tipo !== 'bando' && tipo !== 'libro' && d.data) meta += '<div class="dm-item"><span class="dm-label">Data</span> '+esc(d.data)+'</div>';
+    // Durata (podcast)
+    if (d.durata) meta += '<div class="dm-item"><span class="dm-label">Durata</span> '+esc(d.durata)+'</div>';
+    // Tematica
+    var temaVal = d.tematica || d.settore || '';
+    if (temaVal && tipo !== 'libro') meta += '<div class="dm-item"><span class="dm-label">Tematica</span> '+esc(temaVal)+'</div>';
+    // Ambito
+    if (ambLbl) meta += '<div class="dm-item"><span class="dm-label">Ambito</span> '+esc(ambLbl)+'</div>';
 
     // Summary / abstract
-    var summary = d.sommario || d.abstract || d.descrizione || d.tematica || '';
+    var summary = d.sommario || d.descrizione || d.abstract || d.tematica || '';
 
     // Link primario
     var linkUrl = d.link || d.url || d.fonte_url || '';
-    var linkLabel = tipo === 'bando' ? 'Vai al bando →' : tipo === 'podcast' ? 'Ascolta episodio →' : 'Leggi articolo →';
+    var _LINK_LBL = { bando:'Vai al bando →', podcast:'Ascolta episodio →', video:'Guarda su YouTube →', libro:'Vai alla scheda →', news:'Leggi articolo →' };
+    var linkLabel = _LINK_LBL[tipo] || 'Apri →';
 
     var html = '';
     html += '<div class="detail-eyebrow '+(ambCls ? 'a'+ambN : '')+'">';
@@ -3605,9 +3691,13 @@
         + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
         + linkLabel+'</a>';
     }
-    html += '<button class="act-btn act-archive" onclick="OC.archiveItem(\''+esc(tipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()">⇓ Archivia</button>';
-    html += '<button class="act-btn act-read" onclick="OC.markItemRead(\''+esc(tipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()">✓ Letto</button>';
-    html += '<button class="act-btn act-trash" onclick="OC.trashItem(\''+esc(tipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()">🗑 Cestino</button>';
+    var _readLbl = tipo==='video' ? '✓ Visto' : tipo==='podcast' ? '✓ Ascoltato' : '✓ Letto';
+    var _wfTipo  = (tipo==='news') ? 'item' : tipo;
+    html += '<button class="act-btn act-read" onclick="OC.markItemRead(\''+esc(_wfTipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()">'+_readLbl+'</button>';
+    html += '<button class="act-btn act-archive" onclick="OC.archiveItem(\''+esc(_wfTipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()">⇓ Archivia</button>';
+    if (tipo !== 'libro') {
+      html += '<button class="act-btn act-trash" onclick="OC.trashItem(\''+esc(_wfTipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()">🗑 Cestino</button>';
+    }
     html += '</div>';
 
     body.innerHTML = html;
@@ -3629,14 +3719,34 @@
   (function(){
     document.addEventListener('click', function(e){
       var overlay = $('oc-detail-overlay');
-      if (!overlay || !overlay.classList.contains('open')) return;
-      var panel = $('oc-detail-panel');
-      if (panel && !panel.contains(e.target)) closeDetail();
+      if (overlay && overlay.classList.contains('open')) {
+        var panel = $('oc-detail-panel');
+        if (panel && !panel.contains(e.target)) closeDetail();
+      }
+      var govl = $('oc-guida-overlay');
+      if (govl && govl.classList.contains('open')) {
+        var gpanel = $('oc-guida-panel');
+        if (gpanel && !gpanel.contains(e.target)) closeGuida();
+      }
     });
     document.addEventListener('keydown', function(e){
-      if (e.key === 'Escape') closeDetail();
+      if (e.key === 'Escape') { closeDetail(); closeGuida(); }
     });
   })();
+
+  function openGuida() {
+    var overlay = $('oc-guida-overlay');
+    if (overlay) { overlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
+    // Aggiorna versione dinamicamente
+    var vEl = $('guidaVersion');
+    if (vEl) vEl.textContent = (typeof OC_VERSION !== 'undefined' ? OC_VERSION : 'v4.15.0');
+  }
+
+  function closeGuida() {
+    var overlay = $('oc-guida-overlay');
+    if (overlay) overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
 
   // ==========================================================
   // F) EVENT HANDLERS
@@ -3789,8 +3899,12 @@
     openBando:   function(id){ openDetail('bando', id); },
     openNews:    function(id){ openDetail('news', id); },
     openPodcast: function(id){ openDetail('podcast', id); },
+    openVideo:   function(id){ openDetail('video', id); },
+    openLibro:   function(id){ openDetail('libro', id); },
     openDetail:  openDetail,
     closeDetail: closeDetail,
+    openGuida:   openGuida,
+    closeGuida:  closeGuida,
     showToast:   showToast,
     openUrl:     function(url){ if (url) window.open(url,'_blank','noopener'); },
     setupLibri: function(){
