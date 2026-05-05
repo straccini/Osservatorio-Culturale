@@ -415,10 +415,11 @@ function getAmbitoDataV42(ambitoId) {
  */
 function getGlobalSearchV42(q) {
   q = (q || '').toString().toLowerCase().trim();
-  if (!q) return { q:'', news:[], bandi:[], podcast:[] };
+  if (!q) return { q:'', news:[], bandi:[], podcast:[], video:[], libri:[] };
 
-  var nOut = [], bOut = [], pOut = [];
+  var nOut = [], bOut = [], pOut = [], vOut = [], lOut = [];
 
+  // News
   try {
     var n = (typeof getItems === 'function') ? getItems({ limit: 500 }) : [];
     n = Array.isArray(n) ? n : (n && n.items) || [];
@@ -429,6 +430,7 @@ function getGlobalSearchV42(q) {
     }
   } catch(e) {}
 
+  // Bandi
   try {
     var b = (typeof getBandiRadar === 'function') ? (getBandiRadar() || []) : [];
     for (var j=0;j<b.length && bOut.length<20;j++){
@@ -438,6 +440,7 @@ function getGlobalSearchV42(q) {
     }
   } catch(e) {}
 
+  // Podcast
   try {
     var p = getPodcastRecenti(50);
     for (var k=0;k<p.length && pOut.length<10;k++){
@@ -446,7 +449,30 @@ function getGlobalSearchV42(q) {
     }
   } catch(e) {}
 
-  return { q:q, news:nOut, bandi:bOut, podcast:pOut };
+  // Video (foglio Podcast, ID=VID*)
+  try {
+    var vList = (typeof getVideoListV42 === 'function') ? getVideoListV42(200) : [];
+    vList = Array.isArray(vList) ? vList : [];
+    for (var vi=0;vi<vList.length && vOut.length<10;vi++){
+      var tv = (vList[vi].titolo || '').toString().toLowerCase();
+      var cv = (vList[vi].canale || '').toString().toLowerCase();
+      if (tv.indexOf(q) !== -1 || cv.indexOf(q) !== -1) vOut.push(vList[vi]);
+    }
+  } catch(e) {}
+
+  // Libri (foglio Pubblicazioni)
+  try {
+    var lList = (typeof getLibriListV42 === 'function') ? getLibriListV42(200) : [];
+    lList = Array.isArray(lList) ? lList : [];
+    for (var li=0;li<lList.length && lOut.length<10;li++){
+      var tl = (lList[li].titolo || '').toString().toLowerCase();
+      var al = (lList[li].autore || '').toString().toLowerCase();
+      var dl = (lList[li].descrizione || '').toString().toLowerCase();
+      if (tl.indexOf(q) !== -1 || al.indexOf(q) !== -1 || dl.indexOf(q) !== -1) lOut.push(lList[li]);
+    }
+  } catch(e) {}
+
+  return { q:q, news:nOut, bandi:bOut, podcast:pOut, video:vOut, libri:lOut };
 }
 
 // ---------- 5. Utility locali (suffisso V42 per evitare collisioni) ----------

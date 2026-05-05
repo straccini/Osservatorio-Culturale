@@ -286,6 +286,23 @@
       <div class="empty-state" id="ambitoPodcastEmpty" hidden>Nessun podcast in questo ambito.</div>
     </section>
 
+    <!-- ===== PAGE SEARCH (Sprint N6) ===== -->
+    <section class="page" id="page-search">
+      <div class="page-head">
+        <div class="page-eyebrow">Osservatorio Culturale &middot; Ricerca</div>
+        <h1 class="page-title"><em>Risultati</em></h1>
+        <p class="page-sub" id="searchSubtitle">Digita una parola chiave per cercare in tutte le sezioni.</p>
+      </div>
+      <div class="sr-query-bar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="searchInput" type="text" placeholder="Nuova ricerca&hellip;" aria-label="Ricerca globale" onkeydown="if(event.key==='Enter') OC.search(this.value)" />
+        <button type="button" onclick="OC.search(document.getElementById('searchInput').value)">Cerca</button>
+      </div>
+      <div id="searchResults" aria-live="polite">
+        <div class="sr-hint">Usa la barra di ricerca sopra o le chips suggerite nella home.</div>
+      </div>
+    </section>
+
     <!-- ===== PAGE ARCHIVIO ===== -->
     <section class="page" id="page-archivio">
       <div class="page-head">
@@ -829,7 +846,7 @@
 
   var PAGE_TITLES = {
     home:'Home', bandi:'Radar Bandi', news:'News & RSS', podcast:'Podcast', video:'Video & YouTube', libri:'Libri & Pubblicazioni',
-    ambito:'Ambito', digest:'Digest Reader', admin:'Pannello admin',
+    search:'Ricerca', ambito:'Ambito', digest:'Digest Reader', admin:'Pannello admin',
     matrix:'Valuta il tuo museo', 'matrix-landing':'MuseMu Matrix',
     settings:'Impostazioni', archivio:'Archivio', cestino:'Cestino'
   };
@@ -889,6 +906,7 @@
     if (page==='libri')    loadLibriList(false);
     if (page==='admin')    loadAdminPanel();
     if (page==='settings') loadSettingsPage();  // Sprint 1.3 D2.5
+    if (page==='search')   { /* loadSearch called with query via OC.search */ }
     if (page==='archivio') loadArchivio();
     if (page==='cestino')  loadCestino();
     // v4.5.1 — A1 Ambiti navigabili
@@ -3006,6 +3024,190 @@
     if (card) card.classList.add('item-letto');
   }
 
+  // ==========================================================
+  // SPRINT N6 — RICERCA GLOBALE
+  // ==========================================================
+  var _lastSearch = '';
+
+  function loadSearch(q) {
+    _lastSearch = q || '';
+    var wrap = $('searchResults');
+    var sub  = $('searchSubtitle');
+    var inp  = $('searchInput');
+    if (inp) inp.value = _lastSearch;
+    if (!_lastSearch) {
+      if (wrap) wrap.innerHTML = '<div class="sr-hint">Digita una parola chiave per cercare in tutte le sezioni.</div>';
+      if (sub) sub.textContent = 'Digita una parola chiave per cercare in tutte le sezioni.';
+      return;
+    }
+    if (sub) sub.textContent = 'Ricerca in corso per \u201c' + _lastSearch + '\u201d\u2026';
+    if (wrap) wrap.innerHTML = '<div class="home-list-skeleton"></div><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div>';
+    if (!hasGAS()) {
+      if (wrap) wrap.innerHTML = '<div class="sr-hint">Ricerca disponibile solo online.</div>';
+      return;
+    }
+    google.script.run
+      .withSuccessHandler(renderSearchResults)
+      .withFailureHandler(function(e){
+        if (wrap) wrap.innerHTML = '<div class="sr-hint">Errore durante la ricerca. Riprova.</div>';
+        console.error('search error:', e);
+      })
+      .getGlobalSearchV42(_lastSearch);
+  }
+
+  function renderSearchResults(data) {
+    var wrap = $('searchResults');
+    var sub  = $('searchSubtitle');
+    if (!wrap) return;
+    data = data || { q:'', news:[], bandi:[], podcast:[], video:[], libri:[] };
+
+    var total = (data.news||[]).length + (data.bandi||[]).length + (data.podcast||[]).length + (data.video||[]).length + (data.libri||[]).length;
+    var q = data.q || _lastSearch;
+
+    if (sub) {
+      sub.textContent = total
+        ? total + ' risultat' + (total===1?'o':'i') + ' per \u201c' + q + '\u201d'
+        : 'Nessun risultato per \u201c' + q + '\u201d';
+    }
+
+    if (!total) {
+      wrap.innerHTML = '<div class="sr-hint">Nessun risultato trovato. Prova con parole diverse o controlla la sezione dedicata.</div>';
+      return;
+    }
+
+    var html = '';
+
+    // --- Bandi ---
+    if ((data.bandi||[]).length) {
+      html += _srGroup_('Radar Bandi', data.bandi.length, function(){
+        var s = '';
+        data.bandi.forEach(function(b){
+          var titolo = b.titolo || b.Titolo || '(senza titolo)';
+          var ente   = b.ente   || b.Ente   || '';
+          var scad   = b.scadenza || b.Scadenza || '';
+          var link   = b.link   || b.Link   || b.URL || '';
+          var giorni = b.giorni !== undefined ? b.giorni : -1;
+          var urgTag = (giorni >= 0 && giorni <= 7) ? '<span class="sr-badge urgente">Scade tra '+giorni+'gg</span>' : '';
+          s += '<div class="br-row sr-row">'
+            + '<div class="br-left">'
+            +   '<div class="br-tags"><span class="sr-badge bando">Bando</span>'+urgTag+'</div>'
+            +   '<h4 class="br-title">'+esc(titolo)+'</h4>'
+            +   '<div class="br-meta"><span>'+esc(ente)+'</span></div>'
+            + '</div>'
+            + '<div class="br-right">'
+            +   (scad ? '<span class="br-date">Scade '+esc(scad)+'</span>' : '')
+            +   (link ? '<a class="br-link" href="'+esc(link)+'" target="_blank" rel="noopener">Apri &rarr;</a>' : '')
+            + '</div>'
+            + '</div>';
+        });
+        return s;
+      });
+    }
+
+    // --- News ---
+    if ((data.news||[]).length) {
+      html += _srGroup_('News', data.news.length, function(){
+        var s = '';
+        data.news.forEach(function(n){
+          var titolo = n.titolo || n.Titolo || '(senza titolo)';
+          var fonte  = n.fonte  || n.Fonte  || '';
+          var sommario = n.sommario || n.SommarioAI || '';
+          var link   = n.link || n.FonteURL || n.URL || '';
+          s += '<div class="br-row nr-row sr-row">'
+            + '<div class="br-left">'
+            +   '<div class="br-tags"><span class="nr-fonte">'+esc(fonte)+'</span></div>'
+            +   '<h4 class="br-title">'+esc(titolo)+'</h4>'
+            +   (sommario ? '<p class="br-summary">'+esc(trunc(sommario,160))+'</p>' : '')
+            + '</div>'
+            + '<div class="br-right">'
+            +   (link ? '<a class="br-link" href="'+esc(link)+'" target="_blank" rel="noopener">&nearr; Leggi</a>' : '')
+            + '</div>'
+            + '</div>';
+        });
+        return s;
+      });
+    }
+
+    // --- Podcast ---
+    if ((data.podcast||[]).length) {
+      html += _srGroup_('Podcast', data.podcast.length, function(){
+        var s = '';
+        data.podcast.forEach(function(p){
+          var titolo = p.titolo || '(senza titolo)';
+          var show   = p.serie  || p.show  || p.fonte || '';
+          var link   = p.link   || '';
+          s += '<div class="br-row pd-row sr-row">'
+            + '<div class="br-left">'
+            +   '<div class="br-tags"><span class="pd-show">'+esc(show)+'</span></div>'
+            +   '<h4 class="br-title">'+esc(titolo)+'</h4>'
+            + '</div>'
+            + '<div class="br-right">'
+            +   (link ? '<a class="br-link" href="'+esc(link)+'" target="_blank" rel="noopener">&#127911; Ascolta</a>' : '')
+            + '</div>'
+            + '</div>';
+        });
+        return s;
+      });
+    }
+
+    // --- Video ---
+    if ((data.video||[]).length) {
+      html += _srGroup_('Video', data.video.length, function(){
+        var s = '';
+        data.video.forEach(function(v){
+          var titolo = v.titolo || '(senza titolo)';
+          var canale = v.canale || '';
+          var link   = v.link   || '';
+          s += '<div class="br-row vd-row sr-row">'
+            + '<div class="br-left">'
+            +   '<div class="br-tags"><span class="vd-canale">'+esc(canale)+'</span></div>'
+            +   '<h4 class="br-title">'+esc(titolo)+'</h4>'
+            + '</div>'
+            + '<div class="br-right">'
+            +   (link ? '<a class="br-link" href="'+esc(link)+'" target="_blank" rel="noopener">&#9654; Guarda</a>' : '')
+            + '</div>'
+            + '</div>';
+        });
+        return s;
+      });
+    }
+
+    // --- Libri ---
+    if ((data.libri||[]).length) {
+      html += _srGroup_('Libri', data.libri.length, function(){
+        var s = '';
+        data.libri.forEach(function(lb){
+          var titolo  = lb.titolo  || '(senza titolo)';
+          var autore  = lb.autore  || '';
+          var editore = lb.editore || '';
+          var anno    = lb.anno    || '';
+          var link    = lb.link    || '';
+          s += '<div class="br-row lb-row sr-row">'
+            + '<div class="br-left">'
+            +   '<div class="br-tags"><span class="lb-editore">'+esc(editore)+'</span></div>'
+            +   '<h4 class="br-title">'+esc(titolo)+'</h4>'
+            +   '<div class="lb-autore">'+esc(autore)+'</div>'
+            + '</div>'
+            + '<div class="br-right">'
+            +   (anno ? '<span class="lb-anno">'+esc(anno)+'</span>' : '')
+            +   (link ? '<a class="br-link" href="'+esc(link)+'" target="_blank" rel="noopener">Apri &rarr;</a>' : '')
+            + '</div>'
+            + '</div>';
+        });
+        return s;
+      });
+    }
+
+    wrap.innerHTML = html;
+  }
+
+  function _srGroup_(label, count, renderFn) {
+    return '<div class="sr-group">'
+      + '<div class="sr-group-head"><span class="sr-group-label">'+esc(label)+'</span><span class="sr-group-count">'+count+'</span></div>'
+      + renderFn()
+      + '</div>';
+  }
+
   function loadArchivio() {
     if (!hasGAS()) return;
     var wrap = $('archivioList');
@@ -3406,14 +3608,10 @@
     doLogout: doLogout,
     loadAmbito: loadAmbito,
     search: function(q){
+      q = (q || '').trim();
       if (!q) return;
-      go('news');
-      if (hasGAS()) {
-        google.script.run
-          .withSuccessHandler(function(r){ console.log('search:',r); })
-          .withFailureHandler(console.error)
-          .getGlobalSearchV42(q);
-      }
+      go('search');
+      loadSearch(q);
     },
     filterBandi: function(preset){ go('bandi'); },
     openBando:   function(id){ openDetail('bando', id); },

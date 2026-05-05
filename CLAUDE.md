@@ -1,7 +1,7 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.14.0 · deployment @165 del 05/05/2026
+**Versione corrente**: v4.14.7 · deployment @176 del 05/05/2026
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
@@ -23,8 +23,8 @@
 |---|---|
 | `Index.html` | Container principale, assembla tutti i moduli |
 | `Topbar.html` | Header: search globale + breadcrumb + profilo utente |
-| `Sidebar.html` | Navigazione laterale: Home/Bandi/News/Podcast + 5 ambiti + strumenti admin |
-| `HomeView.html` | Vista home: hero + bandi urgenti + 5 ambiti + news/podcast/stats |
+| `Sidebar.html` | Navigazione laterale: Home/Bandi/News/Podcast/Video/Libri + 5 ambiti + strumenti admin |
+| `HomeView.html` | Vista home "rivista digitale": hero + stats bar + bandi + news + podcast+video + libri + ambiti chips |
 | `Navigation.html` | **Orchestrator JS frontend**: oggetto globale `OC` con metodi |
 | `Styles.html` | CSS — design system editoriale v4.12 (palette carta da museo, dark mode, tipografia) |
 | `Digestreader.html` | Pagina dedicata digest reader (link da email digest) |
@@ -38,7 +38,7 @@
 | `Sprint0_Module.js` | Refactoring Sprint 0: counter unificati, ScanLog, digest bandi 3gg, alias `sendBandiAlert` | |
 | `Addon_v42.js` | Endpoint v4.2: `getHomepageDataV42`, `getAmbitoDataV42`, `getGlobalSearchV42`, `migraBandiAmbito` | Estensione di Codice.gs |
 | `Scannerbandi.js` | Modulo scanner bandi dedicato | |
-| `UltimiBandi.js` | Endpoint `getUltimiBandiMonitorati`, `getBandiListV42`, `getNewsListV42`, `getPodcastListV42` | |
+| `UltimiBandi.js` | Endpoint `getUltimiBandiMonitorati`, `getBandiListV42`, `getNewsListV42`, `getPodcastListV42`, `getVideoListV42`, `getLibriListV42` | Sprint N1-N4 |
 | `CurrentUser_v44.js` | Sistema utenti/ruoli (admin/editor/lettore/guest) | |
 | `Admin_v44.js` | Dashboard admin |  |
 | `Newsletter_v44.js` | Gestione newsletter (flusso approve via Telegram) | |
@@ -109,7 +109,7 @@ Dopo `clasp push` la distribuzione attiva NON cambia automaticamente: per portar
 - `autoArchiveOld(tipo, soglia_giorni)` — automatico (chiamato da trigger)
 - `autoDeleteVeryOld(tipo, soglia_mesi)` — distruttivo, chiamato manualmente
 
-Tipi supportati: `'bando' | 'item' | 'news' | 'podcast'`.
+Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 
 ### Workflow record (legacy, da Codice.js — @deprecated dopo Sprint 1.1)
 - `toggleLettoBando(body)`, `archiviaRecord(body)`, `ripristinaRecord(body)`, `deleteArchiviato(body)`, `deleteArchivioBulk(ids)`, `deleteArchivioTutto()`, `autoArchiviaNotizieVecchie()`, `archiviaNotizieOlderThan(giorni)`, `eliminaArchiviatiTutti()`, `autoArchiviaScaduti()`, `toggleItemField(id,field)`, `setItemField(id,field,value)`
@@ -123,10 +123,23 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast'`.
 - `bandiEvery3Days()` / `sendBandiAlert()` ★ alias INT-7 — Telegram alert bandi ogni 72h
 - `getDigestLog()`
 
+### Dati sezioni rivista digitale (Sprint N1-N4)
+- `getNewsListV42(limit)` — news dal foglio Items (colonna FonteURL per link, DataPubblicazione per data)
+- `getPodcastListV42(limit)` — podcast dal foglio Podcast (filtra VID esclusi, StatoRecord≠archiviato)
+- `getVideoListV42(limit)` — video dal foglio Podcast (solo ID=VID*, colonna DataPubblicazione)
+- `getLibriListV42(limit)` — libri dal foglio Pubblicazioni (isRecente = aggiunto negli ultimi 30gg)
+- `getGlobalSearchV42(q)` — ricerca cross-sezione: news, bandi, podcast, video, libri → `{q, news[], bandi[], podcast[], video[], libri[]}`
+- `addLibro(body)` — aggiunta manuale libro (editor/admin); doPost action `addLibro`
+- `setupPubblicazioniSheet()` — crea foglio Pubblicazioni + seed 10 titoli; doPost action `setupPubblicazioniSheet`
+
 ### Setup e amministrazione
 - `setupTriggers_v46()` — pulizia + ricreazione trigger Sprint 0
 - `setupSheets()`, `initSheetsIfMissing()` — bootstrap struttura dati
 - `setAdminEmails(csv)`, `setEditorEmails(csv)`, `getAdminEmails()`
+- `addFontiIstituzionali()` — aggiunge 10 fonti news istituzionali al foglio Fonti (one-shot)
+- `addFontiNewsNuove()` — aggiunge 10 nuove fonti news qualitative (Sprint N1, one-shot)
+- `addFonteVideoYoutube(body)` — aggiunge canale YouTube alle fonti podcast/video
+- `populaSeedVideoYoutubeMusei()` — seed 10 canali musei italiani YouTube (one-shot)
 
 ---
 
@@ -137,15 +150,20 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast'`.
 **Spreadsheet RADAR BANDI**: separato, ID `1cz35EBUY63kLBe3hpkIYG8ReEr6oNwRLwRzzKm_t7t0`, aperto via `getSheetRadar()` (Codice.js riga 882)
 
 ### Fogli principali
-- `Items` — news rilevate (colonne: ID, Titolo, Fonte, FonteURL, Data, Ambito, Score, Letto, Salvato, Archiviato, InclusiNelDigest, SommarioAI, TagAI, ...)
-- `RADAR BANDI` — bandi (in Spreadsheet separato; colonne: TITOLO, ENTE, SETTORE, AMBITO, SCADENZA, DATA_RILEVAMENTO, STATO_RECORD ['attivo'|'archiviato'], LETTO_BANDO, ...)
-- `Podcast` — podcast (colonne: ID, Titolo, Show, URL, DataRilevamento, Tematica, Ascoltato, StatoRecord, ...)
-- `Fonti` — fonti RSS attive
-- `MailingList` — destinatari digest (colonne: Email, Nome, Attivo, ...)
-- `LOG` — log invii digest
-- `ScanLog` ★ Sprint 0 — log scansioni (Timestamp, NomeFonte, Tipo, Esito, NumNuovi, Errore)
+- `Items` — news rilevate · header: `ID, Ambito, AmbitoLabel, Fonte, FonteURL, Titolo, Estratto, SommarioAI, SommarioEditato, TagAI, Score, Tipologia, DataPubblicazione, DataAcquisizione, Scadenza, Letto, Salvato, Archiviato, InclusiNelDigest`
+- `RADAR BANDI` — bandi (Spreadsheet separato ID `1cz35EBUY63kLBe3hpkIYG8ReEr6oNwRLwRzzKm_t7t0`) · header: `Data_Rilevamento, Titolo, Ente, Settore, Ambito, Scadenza, Link, StatoRecord, ...`
+- `Podcast` — podcast **e video** (ID=VID* per i video) · header: `ID, DataRilevamento, Titolo, Serie, Autore, Tematica, Durata, DataPubblicazione, Link, SommarioAI, TagAI, Score, Fonte, Ascoltato, DaAscoltare, InclusiNelDigest, StatoRecord`
+- `Pubblicazioni` ★ Sprint N4 — libri/pubblicazioni curate · header: `ID, Titolo, Autore, Editore, Anno, Ambito, Tematica, Descrizione, Link, Copertina_URL, DataAggiunta, Fonte, Stato, Score, Letto, Salvato`
+- `Fonti` — fonti RSS attive · header: `ID, Nome, URL, RSSURL, Ambito, AmbitoLabel, Attiva, UltimaScansione, NumItemRaccolti`
+- `MailingList` — destinatari digest
 - `DigestLog` ★ Sprint 0 — log digest inviati
+- `ScanLog` ★ Sprint 0 — log scansioni
 - `SocialFonti`, `FontiBandi` — fonti dedicate per categoria
+
+### ⚠️ Colonne critiche per i mapper (bug storici risolti Sprint N1-N2)
+- **Items**: URL articolo → colonna `FonteURL` (non `Link`/`URL`); data → `DataPubblicazione` (non `Data`)
+- **Podcast**: data → `DataPubblicazione` (non `Data_Pubblicazione`); show/canale → `Serie` (non `Show`)
+- **Video**: stesso foglio Podcast, filtro `String(ID).startsWith('VID')`
 
 ### Fogli ScriptProperties usati
 - `OC_ADMIN_EMAILS` — CSV email admin (default: `s.straccini@gmail.com`)
@@ -223,6 +241,46 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast'`.
 - `Scannerbandi.js`: aggiunta `FONTI_NEWS_ISTITUZIONALI` (+10 RSS: ICOM, Federculture, Symbola, Fitzcarraldo, MuseumNext, Artribune, GiornaledelleFondazioni, Tafter, Doppiozero, Patrimonio ER)
 - `Codice.js`: aggiunta `addFontiIstituzionali()` — setup one-shot per aggiungere le 10 nuove fonti news al foglio `Fonti`
 - ⚠️ **Setup obbligatorio**: eseguire `addFontiIstituzionali()` una volta da editor GAS dopo deploy
+
+### ✅ Sprint N1 (2026-05-05) — News: card rivista digitale
+- `UltimiBandi.js`: `getNewsListV42` — fix colonne `FonteURL` (link articolo) e `DataPubblicazione` (data); aggiunto campo `sommario`
+- `Scannerbandi.js`: +10 fonti in `FONTI_NEWS_ISTITUZIONALI` (Finestre sull'Arte, Exibart, Il Giornale dell'Arte, FAI, MiC, The Art Newspaper, Treccani, Apollo, AIB, Touring Club)
+- `Codice.js`: aggiunta `addFontiNewsNuove()` — one-shot setup nuove fonti
+- `Index.html`: nuova `_newsCardHtml_` con layout `.br-row`; `renderNewsList2` con preset+amb; filtri 2 livelli (`#newsFilters` L1 + `#newsTematicheFilters` L2)
+- `Styles.html`: classi `.nr-row`, `.nr-fonte`, `.nr-data`, `.nr-data-right`, `.nr-score`
+- ⚠️ **Setup obbligatorio**: eseguire `addFontiNewsNuove()` una volta da editor GAS
+
+### ✅ Sprint N2 (2026-05-05) — Podcast: card rivista digitale
+- `UltimiBandi.js`: `getPodcastListV42` — fix colonne `DataPubblicazione` e `Serie`
+- `Index.html`: `_podcastCardHtml_` riscritta con `.br-row`; `renderPodcastList2` con 2 livelli; filtri `#podcastFilters` L1 + `#podcastTematicheFilters` L2
+- `Styles.html`: classi `.pd-row`, `.pd-recente`, `.pd-show`
+
+### ✅ Sprint N3 (2026-05-05) — Video: pagina dedicata YouTube
+- `UltimiBandi.js`: nuova `getVideoListV42(limit)` — legge foglio Podcast, filtra `ID=VID*`, restituisce `canale`, `isRecente`
+- `Sidebar.html`: voce "Video" con icona telecamera
+- `Index.html`: pagina `#page-video` completa; `_videoCardHtml_`; `renderVideoList`; filtri 2 livelli; `loadVideoList` in `hydrate`
+- `Styles.html`: classi `.vd-row`, `.vd-recente`, `.vd-canale`
+- Per popolare: eseguire `seedVideoMusei()` dall'admin (10 canali musei italiani)
+
+### ✅ Sprint N4 (2026-05-05) — Libri: nuova sezione pubblicazioni
+- `Codice.js`: `SH.LIBRI = 'Pubblicazioni'`; `setupPubblicazioniSheet()` con 10 seed bibliografici; `getLibriList()`; `addLibro()`; routing doPost
+- `UltimiBandi.js`: nuova `getLibriListV42(limit)` — legge foglio Pubblicazioni, `isRecente` = aggiunto negli ultimi 30gg
+- `Sidebar.html`: voce "Libri" con icona libro
+- `Index.html`: pagina `#page-libri`; `_libroCardHtml_`; `renderLibriList`; form aggiungi libro (admin); `OC.saveLibro()` + `OC.setupLibri()`
+- `Styles.html`: classi `.lb-row`, `.lb-editore`, `.lb-autore`, `.lb-anno`, form CSS
+- ⚠️ **Setup obbligatorio**: aprire sezione Libri e cliccare "Inizializza foglio" oppure eseguire `setupPubblicazioniSheet()` da editor GAS
+
+### ✅ Sprint N6 (2026-05-05) — Ricerca Globale
+- `Addon_v42.js`: `getGlobalSearchV42` estesa con video (foglio Podcast, VID*) e libri (foglio Pubblicazioni) → ritorna `{q, news, bandi, podcast, video, libri}`
+- `Index.html`: nuova `#page-search` con barra ricerca inline + `id="searchResults"`; `loadSearch(q)` + `renderSearchResults(data)` + `_srGroup_()` helper; `OC.search(q)` riscritta per navigare a `search` e chiamare `loadSearch`; `PAGE_TITLES.search = 'Ricerca'`
+- Risultati raggruppati per tipo (Bandi / News / Podcast / Video / Libri) con badge colorati e link diretti; header gruppo con etichetta + contatore pill
+- `Styles.html`: classi `.sr-query-bar`, `.sr-hint`, `.sr-group`, `.sr-group-head`, `.sr-group-label`, `.sr-group-count`, `.sr-row`, `.sr-badge` (con varianti `.bando`, `.urgente`)
+- Compatibile con hero search Home + global search Topbar (entrambi chiamano `OC.search()`)
+
+### ✅ Sprint N5 (2026-05-05) — Home: rivista digitale
+- `HomeView.html`: redesign completo — stats bar (5 pill bandi/news/podcast/video/libri); sezione "News segnalate" (8 righe); griglia "Podcast + Video" 2 colonne (4+4); sezione "Libri" (4 righe); ambiti compatti come chips con contatore
+- `Index.html`: `renderHome` aggiornato per stats bar; nuove `renderVideoHome` e `renderLibriHome`; `hydrate` carica anche `getVideoListV42(4)` e `getLibriListV42(4)`; `renderAmbitiCounters` aggiornato per `.hamb-chip`
+- `Styles.html`: classi `.home-stats-bar`, `.hstat`, `.home-pv-grid`, `.hamb-chip`, `.hamb-num`, `.hamb-name`, `.hamb-count`
 
 ---
 

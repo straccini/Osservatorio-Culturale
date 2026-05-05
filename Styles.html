@@ -737,6 +737,54 @@ body.is-home-page .topbar-search{display:none}
 }
 
 /* ==========================================================
+   SPRINT N6 — PAGINA RICERCA GLOBALE
+   ========================================================== */
+.sr-query-bar{
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--rule-strong);
+  border-radius:var(--r-md); padding:10px 16px;
+  margin-bottom:28px;
+}
+.sr-query-bar svg{ color:var(--ink-3); flex-shrink:0; }
+.sr-query-bar input{
+  flex:1; border:none; outline:none; background:transparent;
+  font-family:var(--font-display); font-size:15px; color:var(--ink);
+}
+.sr-query-bar button{
+  background:var(--ink); color:#fff; border:none;
+  padding:7px 16px; border-radius:var(--r-sm);
+  font-family:var(--font-ui); font-size:12px; font-weight:600;
+  cursor:pointer; white-space:nowrap;
+}
+.sr-hint{
+  font-family:var(--font-display); font-size:14px; color:var(--ink-3);
+  font-style:italic; padding:24px 0;
+}
+.sr-group{ margin-bottom:32px; }
+.sr-group-head{
+  display:flex; align-items:center; gap:10px;
+  border-bottom:2px solid var(--rule-strong);
+  padding-bottom:8px; margin-bottom:16px;
+}
+.sr-group-label{
+  font-family:var(--font-ui); font-size:11px; font-weight:700;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--ink-2);
+}
+.sr-group-count{
+  font-family:var(--font-ui); font-size:11px; font-weight:600;
+  color:#fff; background:var(--ink-3);
+  border-radius:10px; padding:1px 7px; line-height:1.6;
+}
+.sr-row{ margin-bottom:10px; }
+.sr-badge{
+  display:inline-block; font-family:var(--font-ui); font-size:10px;
+  font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  padding:2px 7px; border-radius:3px; margin-right:4px;
+}
+.sr-badge.bando{ background:var(--accent-soft,#EEF0FF); color:var(--accent,#3B4FBE); }
+.sr-badge.urgente{ background:#FFF0F0; color:#B91C1C; }
+
+/* ==========================================================
    SECTION HEADS — stile rivista
    ========================================================== */
 .section-head{
