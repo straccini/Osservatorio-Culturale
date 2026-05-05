@@ -1,0 +1,3539 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Osservatorio Culturale · Duemilamusei</title>
+
+  <!-- URL GAS (sostituita da doGet string-replace) -->
+  <script>var GAS_URL = 'GAS_URL_PLACEHOLDER';</script>
+
+  <!-- ===== Design System Editoriale Museale v4.12 ===== -->
+  <?!= include('Styles'); ?>
+
+  <!-- Stili supplementari Index.html — solo componenti NON coperti da Stiles.html v4.12 -->
+  <style>
+  /* Logout button sidebar */
+  .logout-btn{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--r-sm);font-size:13px;color:var(--ink-2);width:100%;transition:background .12s,color .12s;font-family:var(--font-ui)}
+  .logout-btn:hover{background:var(--amb-1-soft);color:var(--danger)}
+  .logout-btn svg{flex:0 0 16px}
+
+  /* Muted */
+  .muted{color:var(--ink-3);font-size:13px}
+
+  /* Compatibilità card-ambito legacy (non più in uso nei renderer v4.12) */
+  .card-ambito{background:var(--surface);border:1px solid var(--rule);border-left:3px solid var(--amb,var(--ink-3));border-radius:0;padding:18px 18px 14px 22px;cursor:pointer;display:flex;flex-direction:column;gap:10px;min-height:148px;transition:border-color .15s}
+  .card-ambito.a1{--amb:var(--amb-1)}.card-ambito.a2{--amb:var(--amb-2)}.card-ambito.a3{--amb:var(--amb-3)}.card-ambito.a4{--amb:var(--amb-4)}.card-ambito.a5{--amb:var(--amb-5)}
+
+  /* Admin panel */
+  .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
+  .admin-card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r-md);padding:20px}
+  .admin-card h3{font-family:var(--font-display);font-size:17px;margin:0 0 12px 0;color:var(--ink)}
+  .admin-card p.hint{font-size:13px;color:var(--ink-3);line-height:1.5;margin:0 0 14px 0}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;transition:.15s;border:1px solid transparent;font-family:var(--font-ui)}
+  .btn-primary{background:var(--ink);color:var(--paper)}.btn-primary:hover{background:var(--ink-2)}
+  .btn-secondary{background:var(--surface-2);color:var(--ink);border-color:var(--rule)}.btn-secondary:hover{background:var(--surface);border-color:var(--rule-2)}
+  .btn-warning{background:#FEF3C7;color:#92400E;border-color:#FDE68A}.btn-warning:hover{background:#FDE68A}
+  .digest-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--rule);font-size:13px;gap:10px}
+  .digest-row:last-child{border-bottom:none}
+  .digest-row .status{font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em}
+  .digest-row .status.bozza{background:var(--surface-2);color:var(--ink-3)}
+  .digest-row .status.in_attesa_approvazione{background:#FEF3C7;color:#92400E}
+  .digest-row .status.inviato{background:#DCFCE7;color:#166534}
+  .admin-counts{display:flex;gap:14px;margin:8px 0 14px 0;font-size:13px;color:var(--ink-3)}
+  .admin-counts b{color:var(--ink);font-weight:600}
+  .preview-iframe{width:100%;min-height:520px;border:1px solid var(--rule);border-radius:var(--r-sm);background:#fff;margin-top:10px}
+
+  /* Responsive admin */
+  @media (max-width:900px){.admin-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<!-- ===== TOAST CONTAINER ===== -->
+<div id="oc-toast-container" aria-live="polite" aria-atomic="false"></div>
+
+<!-- ===== DETAIL OVERLAY ===== -->
+<div id="oc-detail-overlay" role="dialog" aria-modal="true" aria-labelledby="oc-detail-title">
+  <div id="oc-detail-panel">
+    <div class="detail-topbar">
+      <span id="oc-detail-tipo" class="tag low"></span>
+      <button class="detail-close" id="oc-detail-close" onclick="OC.closeDetail()" aria-label="Chiudi">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="detail-body" id="oc-detail-body">
+      <!-- Populated by OC.openDetail() -->
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- ===== SIDEBAR ===== -->
+  <?!= include('Sidebar'); ?>
+
+  <main class="main">
+
+    <!-- ===== TOPBAR ===== -->
+    <?!= include('Topbar'); ?>
+
+    <!-- ===== HOME ===== -->
+    <?!= include('HomeView'); ?>
+
+    <!-- ===== PAGE BANDI ===== -->
+    <section class="page" id="page-bandi">
+      <div class="page-head">
+        <div class="page-eyebrow">Osservatorio Culturale &middot; Bandi</div>
+        <h1 class="page-title">Radar <em>Bandi</em></h1>
+        <p class="page-sub" id="bandiCount">Caricamento&hellip;</p>
+      </div>
+      <div class="filters filters-primary" id="bandiFilters">
+        <span class="filters-label">Vista:</span>
+        <button class="filter-chip active" data-preset="tutti">Tutti i bandi</button>
+        <button class="filter-chip" data-preset="recenti">Ultimi rilevati</button>
+        <button class="filter-chip" data-preset="urgenti10">&#9889; Scade 10gg</button>
+      </div>
+      <div class="filters filters-secondary" id="bandiTematicheFilters">
+        <span class="filters-label">Tematica:</span>
+        <button class="filter-chip active" data-amb="0">Tutte</button>
+        <button class="filter-chip" data-amb="1">01 Identit&agrave;</button>
+        <button class="filter-chip" data-amb="2">02 Inclusione</button>
+        <button class="filter-chip" data-amb="3">03 Programma</button>
+        <button class="filter-chip" data-amb="4">04 Comunit&agrave;</button>
+        <button class="filter-chip" data-amb="5">05 Digital &amp; AI</button>
+      </div>
+      <div id="bandiList" aria-live="polite">
+        <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
+      </div>
+      <div class="empty-state" id="bandiEmpty" hidden>Nessun bando trovato.</div>
+    </section>
+
+    <!-- ===== PAGE NEWS ===== -->
+    <section class="page" id="page-news">
+      <div class="page-head">
+        <div class="page-eyebrow">Osservatorio Culturale &middot; News</div>
+        <h1 class="page-title">News <em>&amp; RSS</em></h1>
+        <p class="page-sub" id="newsCount">Caricamento&hellip;</p>
+      </div>
+      <div class="filters filters-primary" id="newsFilters">
+        <span class="filters-label">Vista:</span>
+        <button class="filter-chip active" data-preset="tutte">Tutte le news</button>
+        <button class="filter-chip" data-preset="recenti">Ultime 7gg</button>
+      </div>
+      <div class="filters filters-secondary" id="newsTematicheFilters">
+        <span class="filters-label">Tematica:</span>
+        <button class="filter-chip active" data-amb="0">Tutte</button>
+        <button class="filter-chip" data-amb="1">01 Identit&agrave;</button>
+        <button class="filter-chip" data-amb="2">02 Inclusione</button>
+        <button class="filter-chip" data-amb="3">03 Programma</button>
+        <button class="filter-chip" data-amb="4">04 Comunit&agrave;</button>
+        <button class="filter-chip" data-amb="5">05 Digital &amp; AI</button>
+      </div>
+      <div class="news-list" id="newsListFull" aria-live="polite">
+        <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
+      </div>
+      <div class="empty-state" id="newsEmpty" hidden>Nessuna news trovata.</div>
+    </section>
+
+    <!-- ===== PAGE PODCAST ===== -->
+    <section class="page" id="page-podcast">
+      <div class="page-head">
+        <div class="page-eyebrow">Osservatorio Culturale &middot; Podcast</div>
+        <h1 class="page-title"><em>Podcast</em></h1>
+        <p class="page-sub" id="podcastCount">Caricamento&hellip;</p>
+      </div>
+      <div class="filters filters-primary" id="podcastFilters">
+        <span class="filters-label">Vista:</span>
+        <button class="filter-chip active" data-preset="tutti">Tutti i podcast</button>
+        <button class="filter-chip" data-preset="recenti">Ultime 7gg</button>
+      </div>
+      <div class="filters filters-secondary" id="podcastTematicheFilters">
+        <span class="filters-label">Tematica:</span>
+        <button class="filter-chip active" data-amb="0">Tutte</button>
+        <button class="filter-chip" data-amb="1">01 Identit&agrave;</button>
+        <button class="filter-chip" data-amb="2">02 Inclusione</button>
+        <button class="filter-chip" data-amb="3">03 Programma</button>
+        <button class="filter-chip" data-amb="4">04 Comunit&agrave;</button>
+        <button class="filter-chip" data-amb="5">05 Digital &amp; AI</button>
+      </div>
+      <div class="news-list" id="podcastListFull" aria-live="polite">
+        <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
+      </div>
+      <div class="empty-state" id="podcastEmpty" hidden>Nessun podcast trovato.</div>
+    </section>
+
+    <!-- ===== PAGE VIDEO ===== -->
+    <section class="page" id="page-video">
+      <div class="page-head">
+        <div class="page-eyebrow">Osservatorio Culturale &middot; Video</div>
+        <h1 class="page-title">Video <em>&amp; YouTube</em></h1>
+        <p class="page-sub" id="videoCount">Caricamento&hellip;</p>
+      </div>
+      <div class="filters filters-primary" id="videoFilters">
+        <span class="filters-label">Vista:</span>
+        <button class="filter-chip active" data-preset="tutti">Tutti i video</button>
+        <button class="filter-chip" data-preset="recenti">Ultime 7gg</button>
+      </div>
+      <div class="filters filters-secondary" id="videoTematicheFilters">
+        <span class="filters-label">Tematica:</span>
+        <button class="filter-chip active" data-amb="0">Tutte</button>
+        <button class="filter-chip" data-amb="1">01 Identit&agrave;</button>
+        <button class="filter-chip" data-amb="2">02 Inclusione</button>
+        <button class="filter-chip" data-amb="3">03 Programma</button>
+        <button class="filter-chip" data-amb="4">04 Comunit&agrave;</button>
+        <button class="filter-chip" data-amb="5">05 Digital &amp; AI</button>
+      </div>
+      <div class="news-list" id="videoListFull" aria-live="polite">
+        <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
+      </div>
+      <div class="empty-state" id="videoEmpty" hidden>Nessun video trovato.</div>
+    </section>
+
+    <!-- ===== PAGE LIBRI ===== -->
+    <section class="page" id="page-libri">
+      <div class="page-head">
+        <div class="page-eyebrow">Osservatorio Culturale &middot; Libri</div>
+        <h1 class="page-title">Libri <em>&amp; Pubblicazioni</em></h1>
+        <p class="page-sub" id="libriCount">Caricamento&hellip;</p>
+      </div>
+      <div class="filters filters-primary" id="libriFilters">
+        <span class="filters-label">Vista:</span>
+        <button class="filter-chip active" data-preset="tutti">Tutti</button>
+        <button class="filter-chip" data-preset="recenti">Ultimi 30gg</button>
+      </div>
+      <div class="filters filters-secondary" id="libriTematicheFilters">
+        <span class="filters-label">Tematica:</span>
+        <button class="filter-chip active" data-amb="0">Tutte</button>
+        <button class="filter-chip" data-amb="1">01 Identit&agrave;</button>
+        <button class="filter-chip" data-amb="2">02 Inclusione</button>
+        <button class="filter-chip" data-amb="3">03 Programma</button>
+        <button class="filter-chip" data-amb="4">04 Comunit&agrave;</button>
+        <button class="filter-chip" data-amb="5">05 Digital &amp; AI</button>
+      </div>
+      <div id="libriAddForm" class="lb-add-form" style="display:none">
+        <h3 class="lb-add-title">Aggiungi pubblicazione</h3>
+        <div class="lb-add-grid">
+          <input id="lbTitolo"  class="lb-input" type="text"   placeholder="Titolo *" />
+          <input id="lbAutore"  class="lb-input" type="text"   placeholder="Autore/i" />
+          <input id="lbEditore" class="lb-input" type="text"   placeholder="Editore" />
+          <input id="lbAnno"    class="lb-input" type="number" placeholder="Anno" style="width:100px" />
+          <select id="lbAmbito" class="lb-input">
+            <option value="0">— Ambito —</option>
+            <option value="1">01 Identità</option>
+            <option value="2">02 Inclusione</option>
+            <option value="3">03 Programma</option>
+            <option value="4">04 Comunità</option>
+            <option value="5">05 Digital &amp; AI</option>
+          </select>
+          <input id="lbLink"    class="lb-input" type="url"    placeholder="URL scheda libro" style="grid-column:1/-1" />
+          <textarea id="lbDesc" class="lb-input" placeholder="Descrizione breve" rows="2" style="grid-column:1/-1;resize:vertical"></textarea>
+        </div>
+        <button class="lb-add-btn" onclick="OC.saveLibro()">Salva pubblicazione</button>
+        <span id="lbFeedback" style="font-size:12px;color:var(--ink-3);margin-left:10px"></span>
+      </div>
+      <div class="news-list" id="libriListFull" aria-live="polite">
+        <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
+      </div>
+      <div class="empty-state" id="libriEmpty" hidden>Nessuna pubblicazione trovata.&nbsp;
+        <button class="lb-setup-btn" onclick="OC.setupLibri()">Inizializza foglio con 10 titoli seed</button>
+      </div>
+    </section>
+
+    <!-- ===== PAGE AMBITO (v4.12) ===== -->
+    <section class="page" id="page-ambito">
+      <div class="ambito-hero" id="ambitoHero">
+        <div>
+          <div class="hero-num" id="ambitoEyebrow">Ambito</div>
+          <h1 id="ambitoName">—</h1>
+          <p class="lede" id="ambitoDesc">Seleziona un ambito dalla sidebar per visualizzare bandi, news e podcast correlati.</p>
+        </div>
+        <div class="kpi">
+          <div><b id="ambitoKpiBandi">—</b><span>Bandi</span></div>
+          <div><b id="ambitoKpiNews">—</b><span>News &amp; RSS</span></div>
+          <div><b id="ambitoKpiPodcast">—</b><span>Podcast</span></div>
+        </div>
+      </div>
+
+      <!-- Bandi -->
+      <div class="section-head" style="margin-top:0">
+        <div class="left"><h2 class="section-title">Bandi</h2></div>
+        <span class="muted" id="ambitoBandiCount">—</span>
+      </div>
+      <div class="urgent-grid" id="ambitoBandiList" aria-live="polite">
+        <div class="skeleton-card"></div><div class="skeleton-card"></div>
+      </div>
+      <div class="empty-state" id="ambitoBandiEmpty" hidden>Nessun bando in questo ambito.</div>
+
+      <!-- News -->
+      <div class="section-head">
+        <div class="left"><h2 class="section-title">News <em>&amp; RSS</em></h2></div>
+        <span class="muted" id="ambitoNewsCount">—</span>
+      </div>
+      <div class="news-list" id="ambitoNewsList" aria-live="polite">
+        <div class="skeleton-card"></div><div class="skeleton-card"></div>
+      </div>
+      <div class="empty-state" id="ambitoNewsEmpty" hidden>Nessuna news in questo ambito.</div>
+
+      <!-- Podcast -->
+      <div class="section-head">
+        <div class="left"><h2 class="section-title"><em>Podcast</em></h2></div>
+        <span class="muted" id="ambitoPodcastCount">—</span>
+      </div>
+      <div class="news-list" id="ambitoPodcastList" aria-live="polite">
+        <div class="skeleton-card"></div>
+      </div>
+      <div class="empty-state" id="ambitoPodcastEmpty" hidden>Nessun podcast in questo ambito.</div>
+    </section>
+
+    <!-- ===== PAGE ARCHIVIO ===== -->
+    <section class="page" id="page-archivio">
+      <div class="page-head">
+        <div class="page-eyebrow">Osservatorio Culturale &middot; Archivio</div>
+        <h1 class="page-title"><em>Archivio</em></h1>
+        <p class="page-sub">Contenuti archiviati &mdash; esportabili o ripristinabili</p>
+      </div>
+      <div class="filters" id="archivioFilters">
+        <button class="filter-chip active" data-tipo="tutti">Tutti</button>
+        <button class="filter-chip" data-tipo="news">News</button>
+        <button class="filter-chip" data-tipo="bando">Bandi</button>
+        <button class="filter-chip" data-tipo="podcast">Podcast</button>
+        <button class="filter-chip" onclick="OC.exportArchivio()" style="margin-left:auto">&#10003; Esporta selezione</button>
+      </div>
+      <div class="news-list" id="archivioList" aria-live="polite">
+        <div class="skeleton-card"></div><div class="skeleton-card"></div>
+      </div>
+      <div class="empty-state" id="archivioEmpty" hidden>Nessun contenuto archiviato.</div>
+    </section>
+
+    <!-- ===== PAGE CESTINO ===== -->
+    <section class="page" id="page-cestino">
+      <div class="page-head">
+        <div class="page-eyebrow">Osservatorio Culturale &middot; Cestino</div>
+        <h1 class="page-title"><em>Cestino</em></h1>
+        <p class="page-sub" id="cestinoCount">Elementi rimossi &mdash; recuperabili o da eliminare definitivamente</p>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:18px">
+        <button class="btn btn-primary" onclick="OC.emptyTrash()">Svuota cestino</button>
+      </div>
+      <div class="news-list" id="cestinoList" aria-live="polite">
+        <div class="empty-state">Il cestino &egrave; vuoto.</div>
+      </div>
+    </section>
+
+    <!-- ===== PAGE MATRIX LANDING (Sprint 2 Step 5A - 2026-05-01): pagina commerciale ===== -->
+    <section class="page" id="page-matrix-landing">
+      <!-- Hero -->
+      <div style="background:linear-gradient(135deg,#4A7884 0%,#2E5266 60%,#1F3A4A 100%);color:#fff;padding:54px 36px;border-radius:14px;margin:0 0 28px">
+        <div style="font-size:12px;letter-spacing:.16em;text-transform:uppercase;opacity:.85">Duemilamusei · MuseMu Matrix</div>
+        <h1 class="serif" style="font-size:34px;margin:14px 0 12px;line-height:1.2;max-width:760px">Il tuo museo è pronto per i prossimi 5 anni?</h1>
+        <p style="font-size:17px;line-height:1.6;max-width:680px;opacity:.95">10 minuti di autovalutazione strutturata, un report PDF gratuito, una roadmap chiara per orientare il cambiamento — senza impegno, senza vendita.</p>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:24px">
+          <button onclick="OC.go('matrix')" style="background:#9C6A36;color:#fff;border:none;padding:14px 28px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(184,144,42,.35)">Inizia l'autovalutazione gratuita →</button>
+          <a href="mailto:s.straccini@gmail.com?subject=MuseMu%20Matrix%20-%20Vorrei%20parlarne%20prima" style="display:inline-block;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4);padding:14px 24px;border-radius:8px;font-size:14px;text-decoration:none">Voglio prima parlarne con te</a>
+        </div>
+        <div style="margin-top:28px;font-size:13px;opacity:.85;border-top:1px solid rgba(255,255,255,.15);padding-top:16px;max-width:680px">
+          Modello sviluppato dal team che ha curato Pesaro Capitale Italiana della Cultura 2024, il Museo Nazionale Rossini e il Fellini Museum di Rimini, con oltre 100 progetti museali in 30 anni di pratica.
+        </div>
+      </div>
+
+      <!-- Cosa ottieni -->
+      <div style="margin:36px 0 24px">
+        <div style="font-size:12px;color:#9C6A36;letter-spacing:.1em;text-transform:uppercase;font-weight:600">Cosa ricevi</div>
+        <h2 style="font-size:24px;color:#2E5266;margin:6px 0 18px">Tre output concreti, da subito</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px">
+          <div style="background:#fff;border:1px solid #E5E5E5;border-radius:10px;padding:22px;border-top:4px solid #4A7884">
+            <div style="font-size:28px;margin-bottom:8px">📊</div>
+            <h3 style="font-size:16px;color:#4A7884;margin:0 0 8px">Diagnosi su 10 dimensioni</h3>
+            <p style="font-size:13px;color:#555;line-height:1.6;margin:0">Score 0-100 per ciascuna delle 10 dimensioni del modello (identità, patrimonio, spazi, programma, servizi, digital, accessibilità, audience, governance, welfare).</p>
+          </div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-radius:10px;padding:22px;border-top:4px solid #9C6A36">
+            <div style="font-size:28px;margin-bottom:8px">📄</div>
+            <h3 style="font-size:16px;color:#9C6A36;margin:0 0 8px">Report PDF dettagliato</h3>
+            <p style="font-size:13px;color:#555;line-height:1.6;margin:0">Profilo identitario, mappatura per dimensione, top 3 opportunità prioritarie, raccomandazioni di intervento, roadmap a 3 fasi.</p>
+          </div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-radius:10px;padding:22px;border-top:4px solid #2E5266">
+            <div style="font-size:28px;margin-bottom:8px">🗺️</div>
+            <h3 style="font-size:16px;color:#2E5266;margin:0 0 8px">Roadmap personalizzata</h3>
+            <p style="font-size:13px;color:#555;line-height:1.6;margin:0">Percorso a 3 orizzonti temporali (0-6 / 6-18 / 18-36 mesi) coerente con il framework Musei Sensibili e con le risorse della tua struttura.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Come funziona -->
+      <div style="background:#F5F0E1;padding:28px;border-radius:12px;margin:28px 0">
+        <div style="font-size:12px;color:#6B5418;letter-spacing:.1em;text-transform:uppercase;font-weight:600">Come funziona</div>
+        <h2 style="font-size:24px;color:#2E5266;margin:6px 0 22px">Tre passaggi, un'ora del tuo tempo in tutto</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px">
+          <div style="display:flex;gap:14px">
+            <div style="flex-shrink:0;width:36px;height:36px;background:#4A7884;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700">1</div>
+            <div>
+              <h4 style="font-size:14px;color:#2E5266;margin:0 0 4px">Compili il questionario</h4>
+              <p style="font-size:13px;color:#555;line-height:1.5;margin:0">Adattivo: salta ciò che non ti riguarda. ~10 minuti. Anonimo per default.</p>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px">
+            <div style="flex-shrink:0;width:36px;height:36px;background:#9C6A36;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700">2</div>
+            <div>
+              <h4 style="font-size:14px;color:#2E5266;margin:0 0 4px">Ricevi il report PDF</h4>
+              <p style="font-size:13px;color:#555;line-height:1.5;margin:0">Subito a video, opzionalmente per email. Condivisibile con il consiglio di amministrazione.</p>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px">
+            <div style="flex-shrink:0;width:36px;height:36px;background:#2E5266;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700">3</div>
+            <div>
+              <h4 style="font-size:14px;color:#2E5266;margin:0 0 4px">Confronto opzionale</h4>
+              <p style="font-size:13px;color:#555;line-height:1.5;margin:0">Se vuoi, una conversazione di 30 minuti gratuita per leggere insieme i risultati. Senza impegno.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Per chi è pensato -->
+      <div style="margin:28px 0">
+        <div style="font-size:12px;color:#9C6A36;letter-spacing:.1em;text-transform:uppercase;font-weight:600">Per chi è pensato</div>
+        <h2 style="font-size:24px;color:#2E5266;margin:6px 0 14px">Direttori, conservatori, responsabili museali</h2>
+        <div style="background:#fff;border:1px solid #E5E5E5;border-radius:10px;padding:20px">
+          <ul style="list-style:none;padding:0;margin:0;color:#555;font-size:14px;line-height:1.9">
+            <li>▸ <b>Musei civici</b> di piccola e media dimensione (5.000-100.000 visitatori/anno)</li>
+            <li>▸ <b>Fondazioni museali</b> e <b>dimore storiche</b> aperte al pubblico</li>
+            <li>▸ <b>Sistemi museali</b> e <b>reti territoriali</b> che vogliono mappare lo stato delle proprie sedi</li>
+            <li>▸ <b>Conservatori, curatori, responsabili educational</b> che cercano un metodo strutturato di analisi</li>
+            <li>▸ <b>Amministratori e referenti politici</b> che devono valutare lo stato di una struttura del territorio</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Le 10 dimensioni -->
+      <div style="margin:28px 0">
+        <div style="font-size:12px;color:#9C6A36;letter-spacing:.1em;text-transform:uppercase;font-weight:600">Cosa misura il modello</div>
+        <h2 style="font-size:24px;color:#2E5266;margin:6px 0 14px">10 dimensioni, 43 domande mirate</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px">
+          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid #4A7884;padding:12px 16px;border-radius:6px"><b style="color:#4A7884">D1</b> Identità e marca · <span style="color:#666">posizionamento istituzionale</span></div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid #4A7884;padding:12px 16px;border-radius:6px"><b style="color:#4A7884">D2</b> Patrimonio e collezioni · <span style="color:#666">conservazione, ricerca, accessibilità</span></div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid #4A7884;padding:12px 16px;border-radius:6px"><b style="color:#4A7884">D3</b> Spazi e allestimenti · <span style="color:#666">facility e progetto espositivo</span></div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid #4A7884;padding:12px 16px;border-radius:6px"><b style="color:#4A7884">D4</b> Programma educativo · <span style="color:#666">mediazione, didattica, divulgazione</span></div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid #4A7884;padding:12px 16px;border-radius:6px"><b style="color:#4A7884">D5</b> Servizi al visitatore · <span style="color:#666">accoglienza, CRM, fidelizzazione</span></div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid #9C6A36;padding:12px 16px;border-radius:6px"><b style="color:#9C6A36">D6</b> Maturità digitale · <span style="color:#666">infrastruttura, dati, AI</span></div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid #9C6A36;padding:12px 16px;border-radius:6px"><b style="color:#9C6A36">D7</b> Accessibilità · <span style="color:#666">fisica, cognitiva, sensoriale, linguistica</span></div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid #9C6A36;padding:12px 16px;border-radius:6px"><b style="color:#9C6A36">D8</b> Audience engagement · <span style="color:#666">community, partecipazione, social</span></div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid #9C6A36;padding:12px 16px;border-radius:6px"><b style="color:#9C6A36">D9</b> Governance · <span style="color:#666">strategia, partnership, fundraising</span></div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid #9C6A36;padding:12px 16px;border-radius:6px"><b style="color:#9C6A36">D10</b> Welfare culturale · <span style="color:#666">impatto sociale, pubblici fragili</span></div>
+        </div>
+        <p style="font-size:12px;color:#888;margin-top:10px;font-style:italic">Le dimensioni 1-5 misurano i fondamentali tradizionali, le 6-10 i fattori di trasformazione contemporanea (Musei Sensibili).</p>
+      </div>
+
+      <!-- Trust signals -->
+      <div style="background:#fff;border:1px solid #E5E5E5;border-radius:12px;padding:28px;margin:28px 0">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:24px">
+          <div>
+            <div style="font-size:12px;color:#9C6A36;letter-spacing:.1em;text-transform:uppercase;font-weight:600">Chi sviluppa il modello</div>
+            <h3 style="font-size:18px;color:#2E5266;margin:6px 0 10px">Duemilamusei</h3>
+            <p style="font-size:13px;color:#555;line-height:1.6">Studio fondato a Fano nel 1988. 30+ anni di consulenza per il settore culturale, museale e turistico per enti pubblici e privati: Pesaro Musei (Direzione Generale 2022-2025), Pesaro Capitale Italiana della Cultura 2024 (Direzione Generale), Comuni di Recanati e Macerata, Regione Marche.</p>
+          </div>
+          <div>
+            <div style="font-size:12px;color:#9C6A36;letter-spacing:.1em;text-transform:uppercase;font-weight:600">Cosa abbiamo fatto</div>
+            <h3 style="font-size:18px;color:#2E5266;margin:6px 0 10px">Oltre 100 progetti</h3>
+            <ul style="list-style:none;padding:0;margin:0;color:#555;font-size:13px;line-height:1.9">
+              <li>· Museo Nazionale Rossini (2019)</li>
+              <li>· Fellini Museum Rimini (2021-2022)</li>
+              <li>· Pesaro Capitale Italiana Cultura 2024</li>
+              <li>· Museo delle Terre Marchigiane (gestione)</li>
+              <li>· 100+ progetti di musealizzazione e allestimento</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ -->
+      <div style="margin:28px 0">
+        <div style="font-size:12px;color:#9C6A36;letter-spacing:.1em;text-transform:uppercase;font-weight:600">Domande frequenti</div>
+        <h2 style="font-size:24px;color:#2E5266;margin:6px 0 14px">Quello che vorresti chiedere</h2>
+        <div style="display:grid;grid-template-columns:1fr;gap:10px">
+          <details style="background:#fff;border:1px solid #E5E5E5;border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:#2E5266">Quanto costa l'autovalutazione?</summary><p style="font-size:13px;color:#555;line-height:1.6;margin:10px 0 0">Il questionario, il report PDF e l'eventuale confronto di 30 minuti sono <b>completamente gratuiti</b>. A costo zero per la tua struttura. Eventuali approfondimenti consulenziali successivi sono a preventivo, su tua espressa richiesta.</p></details>
+          <details style="background:#fff;border:1px solid #E5E5E5;border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:#2E5266">I miei dati saranno usati per altri scopi?</summary><p style="font-size:13px;color:#555;line-height:1.6;margin:10px 0 0">No. Le risposte sono <b>anonime per default</b>. Email e contatti vengono raccolti <b>solo se esprimi opt-in granulare</b> alla fine del questionario, conformemente al Reg. UE 2016/679 (GDPR). Il consenso è revocabile in ogni momento.</p></details>
+          <details style="background:#fff;border:1px solid #E5E5E5;border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:#2E5266">Quanto è scientifico il modello?</summary><p style="font-size:13px;color:#555;line-height:1.6;margin:10px 0 0">Il modello MuseMu Matrix v1.0.2 è ispirato a <i>Museum Matrix</i> di Matthias Henkel, integrato con il framework <b>Musei Sensibili</b> sviluppato da Duemilamusei in 30 anni di pratica e con un sistema di consistency check interni che riducono i bias di autovalutazione.</p></details>
+          <details style="background:#fff;border:1px solid #E5E5E5;border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:#2E5266">Cosa succede dopo che ricevo il PDF?</summary><p style="font-size:13px;color:#555;line-height:1.6;margin:10px 0 0">Niente di automatico. Il PDF resta tuo e puoi usarlo come strumento interno (consiglio di amministrazione, pianificazione strategica, candidature a bandi). Se vuoi, puoi richiedere una conversazione gratuita di 30 minuti per leggerlo insieme. <b>Nessuna telefonata commerciale, nessuna newsletter non richiesta.</b></p></details>
+          <details style="background:#fff;border:1px solid #E5E5E5;border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:#2E5266">Posso sospendere e riprendere il questionario?</summary><p style="font-size:13px;color:#555;line-height:1.6;margin:10px 0 0">Nella versione attuale (v1.0.2) il questionario va completato in un'unica sessione. La funzione di salvataggio intermedio è prevista per la v1.1 (rilascio Q3 2026).</p></details>
+        </div>
+      </div>
+
+      <!-- CTA finale -->
+      <div style="background:linear-gradient(135deg,#9C6A36 0%,#8E6E1F 100%);color:#fff;padding:42px 32px;border-radius:12px;text-align:center;margin:28px 0">
+        <h2 style="font-size:26px;margin:0 0 12px;font-family:Georgia,serif">Pronti a iniziare?</h2>
+        <p style="font-size:15px;line-height:1.6;max-width:560px;margin:0 auto 22px;opacity:.95">10 minuti per avere uno strumento di lavoro che normalmente costa migliaia di euro di consulenza esterna. Senza impegno, senza vendita, senza follow-up indesiderato.</p>
+        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+          <button onclick="OC.go('matrix')" style="background:#fff;color:#8E6E1F;border:none;padding:14px 28px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">Inizia ora l'autovalutazione →</button>
+          <a href="mailto:s.straccini@gmail.com?subject=MuseMu%20Matrix%20-%20Richiesta%20informazioni" style="display:inline-block;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.6);padding:14px 24px;border-radius:8px;font-size:14px;text-decoration:none">Scrivimi prima</a>
+        </div>
+        <div style="margin-top:24px;font-size:12px;opacity:.85">
+          Silvano Straccini · Duemilamusei · Fano (PU) · <a href="mailto:s.straccini@gmail.com" style="color:#fff">s.straccini@gmail.com</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PAGE MATRIX (Sprint 2 - 2026-04-30): MuseMu Matrix questionario ===== -->
+    <section class="page" id="page-matrix">
+      <div id="matrix-mount">
+        <div class="empty-state">Caricamento del questionario in corso...</div>
+      </div>
+    </section>
+
+    <!-- ===== PAGE ADMIN ===== -->
+    <section class="page" id="page-admin">
+      <div class="section-head" style="margin-top:0">
+        <h2 class="section-title">Pannello amministratore</h2>
+        <span class="muted" id="adminStatus">—</span>
+      </div>
+
+      <div class="admin-grid">
+
+        <div class="admin-card">
+          <h3>📨 Nuova newsletter / digest</h3>
+          <p class="hint">Prepara automaticamente una newsletter con i bandi in scadenza, le news recenti e i podcast più ascoltati. L'invio richiederà autorizzazione esplicita via Telegram.</p>
+          <div class="admin-counts">
+            <span><b id="adminLastBandi">—</b> bandi</span>
+            <span><b id="adminLastNews">—</b> news</span>
+            <span><b id="adminLastPodcast">—</b> podcast</span>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" data-action="generaDigest">⚡ Prepara bozza</button>
+            <button class="btn btn-secondary" data-action="testTelegram">📣 Test Telegram</button>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <h3>📊 Stato Telegram bot</h3>
+          <p class="hint">Il bot Telegram riceve le richieste di autorizzazione invio. Configura token e chat_id dalle ScriptProperties.</p>
+          <div id="telegramStatus" style="font-size:13px;color:var(--ink-2);margin-bottom:10px">Verifica in corso…</div>
+          <button class="btn btn-secondary" data-action="checkTelegram">🔄 Verifica configurazione</button>
+        </div>
+
+      </div>
+
+      <!-- Sprint 1.3 (2026-05-01) — Gestione fonti dati (bandi + podcast/video) -->
+      <div class="admin-card" style="margin-bottom:20px">
+        <h3>📡 Gestione fonti dati (bandi + podcast/video)</h3>
+        <p class="hint">Visualizza le fonti scanner attive e aggiungi rapidamente canali YouTube museali. Per modifiche complete usa il foglio Google.</p>
+        <div id="fontiStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px">
+          <div style="background:#F5F0E1;border-left:3px solid #9C6A36;padding:12px 14px;border-radius:6px">
+            <div style="font-size:11px;color:#6B5418;letter-spacing:.06em;text-transform:uppercase;font-weight:700">Fonti bandi</div>
+            <div style="font-size:22px;font-weight:700;color:#2E5266;margin-top:4px"><span id="statFontiBandiAttive">—</span> <span style="font-size:13px;color:#888">/ <span id="statFontiBandiTot">—</span></span></div>
+          </div>
+          <div style="background:#EEF6F8;border-left:3px solid #4A7884;padding:12px 14px;border-radius:6px">
+            <div style="font-size:11px;color:#4A7884;letter-spacing:.06em;text-transform:uppercase;font-weight:700">Podcast audio</div>
+            <div style="font-size:22px;font-weight:700;color:#2E5266;margin-top:4px"><span id="statFontiPodAudio">—</span></div>
+          </div>
+          <div style="background:#F0EBFA;border-left:3px solid #6B5C9A;padding:12px 14px;border-radius:6px">
+            <div style="font-size:11px;color:#6B5C9A;letter-spacing:.06em;text-transform:uppercase;font-weight:700">Video YouTube</div>
+            <div style="font-size:22px;font-weight:700;color:#2E5266;margin-top:4px"><span id="statFontiPodVideo">—</span></div>
+          </div>
+        </div>
+        <div style="background:#FAFAFA;border:1px solid #E5E5E5;border-radius:8px;padding:14px;margin-bottom:14px">
+          <div style="font-size:13px;font-weight:600;color:#2E5266;margin-bottom:8px">➕ Aggiungi canale YouTube museale</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 160px auto;gap:8px;align-items:end">
+            <div>
+              <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Nome canale</label>
+              <input type="text" id="ytNome" placeholder="es. Museo Nazionale Rossini" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/>
+            </div>
+            <div>
+              <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">URL canale (handle, channel_id, user)</label>
+              <input type="text" id="ytUrl" placeholder="https://www.youtube.com/@nomeCanale" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/>
+            </div>
+            <div>
+              <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Tematica</label>
+              <select id="ytTematica" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px">
+                <option>Musei &amp; Patrimonio</option>
+                <option>Arte Contemporanea</option>
+                <option>Politiche Culturali</option>
+                <option>Tecnologia &amp; Cultura</option>
+                <option>Accessibilita</option>
+                <option>Audience &amp; Welfare</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" data-action="addYouTube" style="white-space:nowrap">Aggiungi</button>
+          </div>
+          <div id="ytResult" style="margin-top:8px;font-size:12px;min-height:18px"></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-secondary" data-action="seedVideoMusei">🎬 Seed 10 canali musei italiani</button>
+          <button class="btn btn-secondary" data-action="reloadFontiStats">🔄 Ricarica statistiche</button>
+          <button class="btn btn-secondary" data-action="testDigestEmail">✉️ Invia digest test (a me)</button>
+        </div>
+      </div>
+
+      <!-- Sprint 1.3 D2.1+D2.2 (2026-05-01) — Tagging Matrix sui contenuti -->
+      <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #4A7884">
+        <h3>🏷️ Tagging MuseMu Matrix sui contenuti</h3>
+        <p class="hint">Classifica News/Bandi/Podcast sulle 10 dimensioni Matrix (D1-D10). Necessario per il digest segmentato dei compilatori. Il tagger usa keyword esplicite (350+ termini IT/EN); precisione ~70% al primo passaggio. Idempotente.</p>
+        <div id="taggingStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px">
+          <div style="background:#FAFAFA;border:1px solid #E5E5E5;padding:10px 14px;border-radius:6px">
+            <div style="font-size:11px;color:#666;letter-spacing:.05em;text-transform:uppercase;font-weight:700">News (Items)</div>
+            <div style="font-size:18px;font-weight:700;color:#2E5266;margin-top:4px"><span id="tagItemsTagged">—</span> / <span id="tagItemsTot">—</span> <span id="tagItemsPct" style="font-size:12px;color:#4A7884;font-weight:600;margin-left:4px"></span></div>
+          </div>
+          <div style="background:#FAFAFA;border:1px solid #E5E5E5;padding:10px 14px;border-radius:6px">
+            <div style="font-size:11px;color:#666;letter-spacing:.05em;text-transform:uppercase;font-weight:700">Bandi (Radar)</div>
+            <div style="font-size:18px;font-weight:700;color:#2E5266;margin-top:4px"><span id="tagBandiTagged">—</span> / <span id="tagBandiTot">—</span> <span id="tagBandiPct" style="font-size:12px;color:#4A7884;font-weight:600;margin-left:4px"></span></div>
+          </div>
+          <div style="background:#FAFAFA;border:1px solid #E5E5E5;padding:10px 14px;border-radius:6px">
+            <div style="font-size:11px;color:#666;letter-spacing:.05em;text-transform:uppercase;font-weight:700">Podcast / Video</div>
+            <div style="font-size:18px;font-weight:700;color:#2E5266;margin-top:4px"><span id="tagPodTagged">—</span> / <span id="tagPodTot">—</span> <span id="tagPodPct" style="font-size:12px;color:#4A7884;font-weight:600;margin-left:4px"></span></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn btn-secondary" data-action="setupMatrixCols">⚙️ 1) Setup colonna MatrixDim</button>
+          <button class="btn btn-primary" data-action="tagMatrixBatch">▶️ 2) Tagga batch 200 record</button>
+          <button class="btn btn-secondary" data-action="tagMatrixAll">♾️ 3) Tagga TUTTI (richiede tempo)</button>
+          <button class="btn btn-secondary" data-action="testMatrixTagger">🧪 Test su frasi campione</button>
+          <button class="btn btn-secondary" data-action="reloadTagStats">🔄 Ricarica</button>
+        </div>
+        <div id="taggerResult" style="margin-top:8px;font-size:12px;min-height:18px;color:#666"></div>
+      </div>
+
+      <!-- Sprint 1.3 D2.3+D2.4 (2026-05-01) — Digest segmentato MuseMu Matrix -->
+      <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #9C6A36">
+        <h3>✉️ Digest segmentato per compilatori MuseMu Matrix</h3>
+        <p class="hint">Genera bozze email personalizzate per ogni compilatore Matrix (top 3 gap del museo + contenuti pertinenti). Idempotente: salta gli utenti con bozze recenti (&lt;6gg).</p>
+
+        <!-- D2.4: Box stato cron -->
+        <div id="cronStatusBox" style="background:#FAFAFA;border:1px solid #E5E5E5;border-radius:6px;padding:12px 14px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:11px;color:#666;letter-spacing:.05em;text-transform:uppercase;font-weight:700">Cron weekly</div>
+            <div id="cronStatusText" style="font-size:14px;font-weight:600;color:#666;margin-top:3px">Verifica in corso…</div>
+            <div id="cronLastRun" style="font-size:11px;color:#888;margin-top:2px"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-secondary" data-action="setupCronDigest" style="font-size:12px;padding:6px 12px">⏰ Attiva cron martedì 06:00</button>
+            <button class="btn btn-secondary" data-action="removeCronDigest" style="font-size:12px;padding:6px 12px">🛑 Disattiva</button>
+            <button class="btn btn-secondary" data-action="testCronManual" style="font-size:12px;padding:6px 12px">🧪 Esegui ora (test)</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn btn-primary" data-action="generaQueueAll">🔄 Genera bozze per tutti i compilatori</button>
+          <button class="btn btn-secondary" data-action="testDigestSegmentato">🧪 Test bozza personalizzata (mio responseId)</button>
+          <button class="btn btn-warning" data-action="inviaTuttiPending">📤 Invia tutti i 'draft' pending</button>
+          <button class="btn btn-secondary" data-action="reloadQueue">🔄 Ricarica queue</button>
+        </div>
+        <div id="digestQueueWrap" style="margin-top:12px">
+          <div class="empty-state sm">Premi 'Ricarica queue' per visualizzare bozze.</div>
+        </div>
+        <div id="digestSegmResult" style="margin-top:8px;font-size:12px;min-height:18px;color:#666"></div>
+      </div>
+
+      <div class="admin-card" style="margin-bottom:20px">
+        <h3>📜 Bozze e invii recenti</h3>
+        <div id="digestList">
+          <div class="empty-state sm">Caricamento elenco digest…</div>
+        </div>
+      </div>
+
+      <div class="admin-card" id="previewWrap" hidden>
+        <h3>👁 Anteprima newsletter</h3>
+        <div id="previewInfo" style="font-size:13px;color:var(--ink-3);margin-bottom:10px"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <button class="btn btn-warning" data-action="richiediAutorizzazione">🔐 Richiedi autorizzazione invio</button>
+          <button class="btn btn-secondary" data-action="chiudiAnteprima">Chiudi anteprima</button>
+        </div>
+        <iframe id="previewFrame" class="preview-iframe" sandbox="allow-same-origin"></iframe>
+      </div>
+    </section>
+
+    <!-- ===== PAGE DIGEST READER (Sprint 1.3 - 2026-05-01): fix bug "vuoto" ===== -->
+    <section class="page" id="page-digest">
+      <div class="section-head" style="margin-top:0">
+        <h2 class="section-title">Digest Reader</h2>
+        <span class="muted">Bozze + invii</span>
+      </div>
+      <div class="admin-card">
+        <h3>📨 Gestione digest</h3>
+        <p class="hint">Le funzioni di generazione, anteprima e invio digest si trovano nel <b>Pannello admin</b>.</p>
+        <ul style="font-size:13px;color:#444;line-height:1.8;margin:0 0 14px 18px">
+          <li><b>Digest generalista</b> (a tutti gli iscritti MailingList): Pannello admin → card "Nuova newsletter / digest"</li>
+          <li><b>Digest segmentato</b> per compilatori MuseMu Matrix: Pannello admin → card "Digest segmentato per compilatori"</li>
+          <li><b>Cron settimanale automatico</b>: Pannello admin → box "Cron weekly" nella card Digest segmentato</li>
+        </ul>
+        <button class="btn btn-primary" data-page="admin">Vai al Pannello admin →</button>
+      </div>
+    </section>
+
+    <!-- ===== PAGE SETTINGS (Sprint 1.3 - 2026-05-01): gestione fonti dati completa ===== -->
+    <section class="page" id="page-settings">
+      <div class="section-head" style="margin-top:0">
+        <h2 class="section-title">Impostazioni</h2>
+        <span class="muted" id="settingsStatus">—</span>
+      </div>
+
+      <!-- Tab navigation -->
+      <div style="display:flex;gap:6px;margin-bottom:18px;border-bottom:2px solid #E5E5E5;flex-wrap:wrap">
+        <button class="settings-tab active" data-tab="bandi" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#4A7884;border-bottom:3px solid #4A7884;margin-bottom:-2px;cursor:pointer">📡 Fonti bandi</button>
+        <button class="settings-tab" data-tab="podcast" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">🎙️ Podcast & Video</button>
+        <button class="settings-tab" data-tab="utenti" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">👥 Utenti & Accessi</button>
+        <button class="settings-tab" data-tab="config" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">⚙️ Configurazione</button>
+      </div>
+
+      <!-- TAB BANDI -->
+      <div class="settings-tab-content" data-tab-content="bandi">
+        <div class="admin-card" style="margin-bottom:14px">
+          <h3>📡 Fonti bandi monitorate</h3>
+          <p class="hint">Lo scanner bandi gira automaticamente martedì e venerdì 07:00 su tutte le fonti attive. Aggiungi/disattiva qui per personalizzare.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+            <button class="btn btn-secondary" data-action="reloadFontiBandiTable">🔄 Ricarica</button>
+            <button class="btn btn-primary" data-action="showAddBandiForm">➕ Aggiungi nuova fonte bandi</button>
+            <button class="btn btn-secondary" data-action="openSheetFontiBandi">📋 Apri foglio FontiBandi</button>
+          </div>
+          <div id="addBandiForm" style="background:#FAFAFA;border:1px solid #E5E5E5;border-radius:8px;padding:14px;margin-bottom:12px;display:none">
+            <div style="font-size:13px;font-weight:600;color:#2E5266;margin-bottom:8px">Nuova fonte bandi</div>
+            <div style="display:grid;grid-template-columns:1fr 2fr 160px auto;gap:8px;align-items:end">
+              <div><label style="font-size:11px;color:#666;display:block">Nome</label><input type="text" id="fbNome" placeholder="es. Regione Umbria - Cultura" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
+              <div><label style="font-size:11px;color:#666;display:block">URL</label><input type="text" id="fbUrl" placeholder="https://..." style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
+              <div><label style="font-size:11px;color:#666;display:block">Categoria</label><select id="fbCat" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"><option>Ministero</option><option>Regione</option><option>UE</option><option>Aggregatore</option><option>Fondazione</option><option>Rivista</option></select></div>
+              <button class="btn btn-primary" data-action="addBandi" style="white-space:nowrap">Aggiungi</button>
+            </div>
+            <div id="addBandiResult" style="margin-top:8px;font-size:12px"></div>
+          </div>
+          <div id="fontiBandiTable" style="overflow-x:auto"><div class="empty-state sm">Premi Ricarica per caricare le fonti bandi.</div></div>
+        </div>
+      </div>
+
+      <!-- TAB PODCAST & VIDEO -->
+      <div class="settings-tab-content" data-tab-content="podcast" hidden>
+        <div class="admin-card" style="margin-bottom:14px">
+          <h3>🎙️ Fonti Podcast e Video YouTube</h3>
+          <p class="hint">Aggiungi feed RSS audio (podcast) o canali YouTube/playlist (video). Lo scanner risolve automaticamente gli @handle YouTube.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+            <button class="btn btn-secondary" data-action="reloadFontiPodTable">🔄 Ricarica</button>
+            <button class="btn btn-primary" data-action="showAddPodForm">➕ Aggiungi RSS audio</button>
+            <button class="btn btn-primary" data-action="showAddYouTubeForm">🎬 Aggiungi canale YouTube</button>
+            <button class="btn btn-secondary" data-action="seedVideoMusei">🚀 Seed 10 canali musei italiani</button>
+            <button class="btn btn-secondary" data-action="openSheetFontiPodcast">📋 Apri foglio FontiPodcast</button>
+          </div>
+          <div id="addPodForm" style="background:#FAFAFA;border:1px solid #E5E5E5;border-radius:8px;padding:14px;margin-bottom:12px;display:none">
+            <div style="font-size:13px;font-weight:600;color:#2E5266;margin-bottom:8px">Nuova fonte podcast (RSS audio)</div>
+            <div style="display:grid;grid-template-columns:1fr 2fr 160px auto;gap:8px;align-items:end">
+              <div><label style="font-size:11px;color:#666;display:block">Nome</label><input type="text" id="fpNome" placeholder="es. Treccani Cultura" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
+              <div><label style="font-size:11px;color:#666;display:block">URL feed RSS</label><input type="text" id="fpUrl" placeholder="https://...feed.xml" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
+              <div><label style="font-size:11px;color:#666;display:block">Tematica</label><select id="fpTematica" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"><option>Musei & Patrimonio</option><option>Arte Contemporanea</option><option>Politiche Culturali</option><option>Tecnologia & Cultura</option><option>Accessibilita</option><option>Audience & Welfare</option></select></div>
+              <button class="btn btn-primary" data-action="addPodcast" style="white-space:nowrap">Aggiungi</button>
+            </div>
+            <div id="addPodResult" style="margin-top:8px;font-size:12px"></div>
+          </div>
+          <div id="addYouTubeFormSettings" style="background:#FAFAFA;border:1px solid #E5E5E5;border-radius:8px;padding:14px;margin-bottom:12px;display:none">
+            <div style="font-size:13px;font-weight:600;color:#2E5266;margin-bottom:8px">Nuovo canale YouTube</div>
+            <div style="display:grid;grid-template-columns:1fr 2fr 160px auto;gap:8px;align-items:end">
+              <div><label style="font-size:11px;color:#666;display:block">Nome canale</label><input type="text" id="ytNomeS" placeholder="es. Museo Nazionale Rossini" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
+              <div><label style="font-size:11px;color:#666;display:block">URL canale</label><input type="text" id="ytUrlS" placeholder="https://www.youtube.com/@nomeCanale o /channel/UCxxx o feed completo" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
+              <div><label style="font-size:11px;color:#666;display:block">Tematica</label><select id="ytTemS" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"><option>Musei & Patrimonio</option><option>Arte Contemporanea</option><option>Politiche Culturali</option><option>Tecnologia & Cultura</option><option>Accessibilita</option><option>Audience & Welfare</option></select></div>
+              <button class="btn btn-primary" data-action="addYouTubeSettings" style="white-space:nowrap">Aggiungi</button>
+            </div>
+            <div id="addYouTubeResultS" style="margin-top:8px;font-size:12px"></div>
+          </div>
+          <div id="fontiPodTable" style="overflow-x:auto"><div class="empty-state sm">Premi Ricarica per caricare le fonti podcast/video.</div></div>
+        </div>
+      </div>
+
+      <!-- TAB UTENTI & ACCESSI (Sprint 1.4 - 2026-05-01) -->
+      <div class="settings-tab-content" data-tab-content="utenti" hidden>
+        <div class="admin-card" style="margin-bottom:14px;border-left:4px solid #9C6A36">
+          <h3>👥 Gestione utenti, ruoli e opt-in email</h3>
+          <p class="hint">Tabella unica utenti consolidata (ex MailingList + ContactsMatrix + Admin). Approva/sospendi utenti, cambia ruoli, gestisci opt-in granulari per ogni servizio.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+            <select id="utentiFiltroStato" onchange="reloadUtentiTable()" style="padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px">
+              <option value="">Tutti gli stati</option>
+              <option value="pending">In attesa di approvazione</option>
+              <option value="attivo">Attivi</option>
+              <option value="sospeso">Sospesi</option>
+              <option value="rifiutato">Rifiutati</option>
+            </select>
+            <select id="utentiFiltroRuolo" onchange="reloadUtentiTable()" style="padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px">
+              <option value="">Tutti i ruoli</option>
+              <option value="admin">Admin</option>
+              <option value="editor">Editor</option>
+              <option value="lettore">Lettore</option>
+              <option value="ospite">Ospite</option>
+            </select>
+            <button class="btn btn-secondary" data-action="reloadUtentiTable">🔄 Ricarica</button>
+            <button class="btn btn-primary" data-action="showInvitaUtenteForm">➕ Invita nuovo utente</button>
+            <button class="btn btn-secondary" data-action="runMigraUtenti">🔁 Migrazione one-shot</button>
+          </div>
+          <div id="utentiStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:14px">
+            <div style="background:#FAFAFA;border:1px solid #E5E5E5;padding:10px;border-radius:6px"><div style="font-size:11px;color:#666;text-transform:uppercase;font-weight:700">Totale</div><div id="statUtTot" style="font-size:20px;font-weight:700;color:#2E5266">—</div></div>
+            <div style="background:#FAFAFA;border-left:3px solid #9C6A36;padding:10px;border-radius:6px"><div style="font-size:11px;color:#9C6A36;text-transform:uppercase;font-weight:700">In attesa</div><div id="statUtPending" style="font-size:20px;font-weight:700;color:#2E5266">—</div></div>
+            <div style="background:#FAFAFA;border-left:3px solid #3F7A5E;padding:10px;border-radius:6px"><div style="font-size:11px;color:#3F7A5E;text-transform:uppercase;font-weight:700">Attivi</div><div id="statUtAttivi" style="font-size:20px;font-weight:700;color:#2E5266">—</div></div>
+            <div style="background:#FAFAFA;border-left:3px solid #6B5C9A;padding:10px;border-radius:6px"><div style="font-size:11px;color:#6B5C9A;text-transform:uppercase;font-weight:700">Admin</div><div id="statUtAdmin" style="font-size:20px;font-weight:700;color:#2E5266">—</div></div>
+          </div>
+          <div id="invitaUtenteForm" style="background:#FAFAFA;border:1px solid #E5E5E5;border-radius:8px;padding:14px;margin-bottom:12px;display:none">
+            <div style="font-size:13px;font-weight:600;color:#2E5266;margin-bottom:8px">Invita nuovo utente (verrà aggiunto come "attivo" subito)</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 130px auto;gap:8px;align-items:end">
+              <div><label style="font-size:11px;color:#666;display:block">Email</label><input type="email" id="invEmail" placeholder="email@museo.it" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
+              <div><label style="font-size:11px;color:#666;display:block">Nome</label><input type="text" id="invNome" placeholder="Nome Cognome" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
+              <div><label style="font-size:11px;color:#666;display:block">Ruolo</label><select id="invRuolo" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"><option>lettore</option><option>editor</option><option>admin</option></select></div>
+              <button class="btn btn-primary" data-action="invitaUtente" style="white-space:nowrap">Invita</button>
+            </div>
+            <div id="invResult" style="margin-top:8px;font-size:12px"></div>
+          </div>
+          <div id="utentiTable" style="overflow-x:auto"><div class="empty-state sm">Premi "Ricarica" per caricare gli utenti.</div></div>
+          <div id="utentiResult" style="margin-top:10px;font-size:12px;min-height:18px"></div>
+        </div>
+      </div>
+
+      <!-- TAB CONFIGURAZIONE -->
+      <div class="settings-tab-content" data-tab-content="config" hidden>
+        <div class="admin-card" style="margin-bottom:14px">
+          <h3>⚙️ Configurazione sistema</h3>
+          <p class="hint">Stato generale dei trigger automatici, integrazioni e versione webapp.</p>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;width:200px">Versione webapp</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600">v4.12.2 (Sprint 1.5 Editoriale Museale - grafica applicata)</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Bot Telegram</td><td style="padding:8px;border-bottom:1px solid #eee" id="settingsTgStatus">verifica…</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Cron digest weekly</td><td style="padding:8px;border-bottom:1px solid #eee" id="settingsCronStatus">verifica…</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Trigger scanner bandi</td><td style="padding:8px;border-bottom:1px solid #eee">Mar+Ven 07:00 (lunediMattina + scanSources)</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">URL webapp</td><td style="padding:8px;border-bottom:1px solid #eee;font-family:monospace;font-size:11px;word-break:break-all" id="settingsWebUrl">—</td></tr>
+          </table>
+        </div>
+        <div class="admin-card" style="margin-bottom:14px">
+          <h3>🔧 Manutenzione operativa</h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:10px">
+            <div style="padding:12px;background:#FAFAFA;border:1px solid #E5E5E5;border-radius:6px">
+              <div style="font-size:13px;font-weight:600;color:#2E5266;margin-bottom:6px">Migrazione ambito sui bandi esistenti</div>
+              <p style="font-size:12px;color:#666;margin:0 0 10px">Ricalcola la colonna AMBITO sui bandi storici per renderli visibili nelle pagine ambito (oggi solo 6/95 visibili).</p>
+              <button class="btn btn-secondary" data-action="runMigraBandiAmbito" style="font-size:12px;padding:6px 14px">▶️ Esegui migrazione</button>
+            </div>
+            <div style="padding:12px;background:#FAFAFA;border:1px solid #E5E5E5;border-radius:6px">
+              <div style="font-size:13px;font-weight:600;color:#2E5266;margin-bottom:6px">Re-tag Matrix incrementale</div>
+              <p style="font-size:12px;color:#666;margin:0 0 10px">Esegui da Pannello admin → card "Tagging MuseMu Matrix" per applicare il tagger ai contenuti non ancora taggati.</p>
+              <button class="btn btn-secondary" data-page="admin" style="font-size:12px;padding:6px 14px">→ Vai al Pannello admin</button>
+            </div>
+            <div style="padding:12px;background:#FFF8E7;border:1px solid #F0D78C;border-radius:6px">
+              <div style="font-size:13px;font-weight:600;color:#7A5A00;margin-bottom:6px">🗂 Archivio massivo</div>
+              <p style="font-size:12px;color:#666;margin:0 0 10px">Archivia in un colpo solo bandi/news/podcast piu vecchi di N giorni (default 30). Reversibile dal foglio.</p>
+              <button class="btn btn-secondary" data-action="runAutoArchive" style="font-size:12px;padding:6px 14px">▶️ Archivia massivo</button>
+            </div>
+            <div style="padding:12px;background:#FBEAEA;border:1px solid #E8B4B4;border-radius:6px">
+              <div style="font-size:13px;font-weight:600;color:#8B1E1E;margin-bottom:6px">🗑 Eliminazione definitiva</div>
+              <p style="font-size:12px;color:#666;margin:0 0 10px">⚠️ Distruttiva. Elimina record archiviati piu vecchi di N mesi (default 12). Conferma doppia richiesta.</p>
+              <button class="btn btn-secondary" data-action="runAutoDelete" style="font-size:12px;padding:6px 14px;color:#8B1E1E;border-color:#E8B4B4">▶️ Elimina archiviati vecchi</button>
+            </div>
+          </div>
+          <div id="settingsResult" style="margin-top:10px;font-size:12px;color:#666"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ===== Navigation & Data JS ===== -->
+<script>
+(function(){
+  'use strict';
+
+  var PAGE_TITLES = {
+    home:'Home', bandi:'Radar Bandi', news:'News & RSS', podcast:'Podcast', video:'Video & YouTube', libri:'Libri & Pubblicazioni',
+    ambito:'Ambito', digest:'Digest Reader', admin:'Pannello admin',
+    matrix:'Valuta il tuo museo', 'matrix-landing':'MuseMu Matrix',
+    settings:'Impostazioni', archivio:'Archivio', cestino:'Cestino'
+  };
+  // Sprint 1.3 (2026-05-01): rinomina ambiti per allineamento Matrix v1.0.2
+  var AMBITI = {
+    1:{nome:'Identità e narrazione museale',  color:'var(--amb-1)', cls:'a1', matrixDims:['D1','D8']},
+    2:{nome:'Inclusione e accessibilità',     color:'var(--amb-2)', cls:'a2', matrixDims:['D7']},
+    3:{nome:'Programma, mostre e collezioni', color:'var(--amb-3)', cls:'a3', matrixDims:['D2','D3','D4','D5']},
+    4:{nome:'Comunità e welfare culturale',   color:'var(--amb-4)', cls:'a4', matrixDims:['D8','D10']},
+    5:{nome:'Digital, AI e governance',       color:'var(--amb-5)', cls:'a5', matrixDims:['D6','D9']}
+  };
+  // Descrizioni hero pagina Ambito (Sprint 1.3 — riallineate Matrix)
+  var AMBITI_DESC = {
+    1:'Identità del museo, posizionamento strategico, marca istituzionale e narrazione contemporanea. Storytelling, branding museale e visione d\'insieme.',
+    2:'Accessibilità ampliata: fisica, cognitiva, sensoriale, linguistica. Easy-to-Read, percorsi tattili, sottotitolazione, mediazione plurilingue. Pubblici fragili e diritto culturale.',
+    3:'Programma educativo, mostre temporanee, gestione collezioni, conservazione, ricerca scientifica, allestimenti permanenti e servizi al visitatore. I fondamentali del mestiere museale.',
+    4:'Audience engagement, comunità locali, partecipazione, welfare culturale e impatto sociale. Programmi per pubblici fragili, partnership territoriali, rigenerazione.',
+    5:'Maturità digitale, AI applicata al patrimonio, dati e KPI, infrastruttura tecnologica, governance, partnership istituzionali, fundraising e sostenibilità economica.'
+  };
+
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function $(id){ return document.getElementById(id); }
+  function $$(sel, root){ return (root||document).querySelectorAll(sel); }
+  function ambClsFor(a){ var n=parseInt(a,10); return (n>=1&&n<=5)?AMBITI[n].cls:''; }
+  function ambLblFor(a){ var n=parseInt(a,10); return (n>=1&&n<=5)?('Ambito 0'+n+' · '+AMBITI[n].nome):''; }
+  function trunc(s,n){ s=String(s||''); if(s.length<=n) return s; return s.substring(0,n-1).replace(/\s+\S*$/,'')+'…'; }
+
+  // ==========================================================
+  // A) NAVIGAZIONE SPA
+  // ==========================================================
+  function go(page, ambito){
+    var pages = $$('.page');
+    for (var i=0;i<pages.length;i++) pages[i].classList.remove('active');
+    var target = $('page-'+page);
+    if (target) target.classList.add('active');
+
+    var navs = $$('.nav-item');
+    for (var j=0;j<navs.length;j++) navs[j].classList.remove('active');
+    var sel = '.nav-item[data-page="'+page+'"]';
+    if (page==='ambito' && ambito) sel += '[data-ambito="'+ambito+'"]';
+    var nav = document.querySelector(sel);
+    if (nav) { nav.classList.add('active'); nav.setAttribute('aria-current','page'); }
+
+    var crumb = $('breadcrumb');
+    if (crumb) {
+      if (page==='ambito' && ambito && AMBITI[ambito]){
+        crumb.innerHTML = '<span>Osservatorio</span><span class="sep">/</span><span>Ambiti</span><span class="sep">/</span><b>'+esc(AMBITI[ambito].nome)+'</b>';
+      } else {
+        crumb.innerHTML = '<span>Osservatorio</span><span class="sep">/</span><b>'+esc(PAGE_TITLES[page]||'Home')+'</b>';
+      }
+    }
+
+    if (page==='bandi')    loadBandiList(false);
+    if (page==='news')     loadNewsList(false);
+    if (page==='podcast')  loadPodcastList(false);
+    if (page==='video')    loadVideoList(false);
+    if (page==='libri')    loadLibriList(false);
+    if (page==='admin')    loadAdminPanel();
+    if (page==='settings') loadSettingsPage();  // Sprint 1.3 D2.5
+    if (page==='archivio') loadArchivio();
+    if (page==='cestino')  loadCestino();
+    // v4.5.1 — A1 Ambiti navigabili
+    if (page==='ambito' && ambito) loadAmbito(ambito);
+    // Sprint 2 — MuseMu Matrix questionario
+    if (page==='matrix' && window.OC_Matrix && typeof window.OC_Matrix.init === 'function') {
+      try { window.OC_Matrix.init(); } catch(e){ console.error('OC_Matrix.init:', e); }
+    }
+
+    window.scrollTo({top:0,behavior:'smooth'});
+    var sb = $('sidebar'); if (sb) sb.classList.remove('open');
+  }
+
+  // ==========================================================
+  // B) DATA LOADER
+  // ==========================================================
+  function hasGAS(){ return typeof google !== 'undefined' && google.script && google.script.run; }
+
+  function hydrate(){
+    // Identità utente (v4.4)
+    if (hasGAS()) {
+      google.script.run
+        .withSuccessHandler(setUser)
+        .withFailureHandler(function(err){ console.warn('getCurrentUser_v44:', err); })
+        .getCurrentUser_v44();
+    }
+
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(data){
+        if (!data) return;
+        renderHome(data);
+        renderSidebarBadges(data.badges || {});
+      })
+      .withFailureHandler(function(err){ console.error('getHomepageDataV42:', err); })
+      .getHomepageDataV42();
+
+    google.script.run
+      .withSuccessHandler(function(list){ renderUltimiBandi(list || []); })
+      .withFailureHandler(function(err){ console.error('getUltimiBandiMonitorati:', err); renderUltimiBandi([]); })
+      .getUltimiBandiMonitorati(6);
+
+    google.script.run
+      .withSuccessHandler(function(list){ renderVideoHome(list || []); })
+      .withFailureHandler(function(){ renderVideoHome([]); })
+      .getVideoListV42(4);
+
+    google.script.run
+      .withSuccessHandler(function(list){ renderLibriHome(list || []); })
+      .withFailureHandler(function(){ renderLibriHome([]); })
+      .getLibriListV42(4);
+  }
+
+  var _cacheBandi = null, _cacheNews = null, _cachePodcast = null;
+  var _filterBandi = { preset: 'tutti', amb: 0 };
+  var _filterNews  = { preset: 'tutte', amb: 0 };
+  var _filterPodcast = { preset: 'tutti', amb: 0 };
+  var _cacheVideo    = null;
+  var _filterVideo   = { preset: 'tutti', amb: 0 };
+  var _cacheLibri    = null;
+  var _filterLibri   = { preset: 'tutti', amb: 0 };
+  var _trash = {};
+
+  function loadBandiList(force){
+    if (!hasGAS()) return;
+    if (_cacheBandi && !force) { renderBandiList(_cacheBandi); return; }
+    skeletonIn('bandiList');
+    google.script.run
+      .withSuccessHandler(function(list){ _cacheBandi = list || []; renderBandiList(_cacheBandi); })
+      .withFailureHandler(function(err){ console.error(err); renderBandiList([]); })
+      .getBandiListV42(500);
+  }
+  function loadNewsList(force){
+    if (!hasGAS()) return;
+    if (_cacheNews && !force) { renderNewsList2(_cacheNews); return; }
+    skeletonIn('newsListFull');
+    google.script.run
+      .withSuccessHandler(function(list){ _cacheNews = list || []; renderNewsList2(_cacheNews); })
+      .withFailureHandler(function(err){ console.error(err); renderNewsList2([]); })
+      .getNewsListV42(500);
+  }
+  function loadPodcastList(force){
+    if (!hasGAS()) return;
+    if (_cachePodcast && !force) { renderPodcastList2(_cachePodcast); return; }
+    skeletonIn('podcastListFull');
+    google.script.run
+      .withSuccessHandler(function(list){ _cachePodcast = list || []; renderPodcastList2(_cachePodcast); })
+      .withFailureHandler(function(err){ console.error(err); renderPodcastList2([]); })
+      .getPodcastListV42(300);
+  }
+
+  function loadVideoList(force){
+    if (!hasGAS()) return;
+    if (_cacheVideo && !force) { renderVideoList(_cacheVideo); return; }
+    skeletonIn('videoListFull');
+    google.script.run
+      .withSuccessHandler(function(list){ _cacheVideo = list || []; renderVideoList(_cacheVideo); })
+      .withFailureHandler(function(err){ console.error(err); renderVideoList([]); })
+      .getVideoListV42(300);
+  }
+
+  function loadLibriList(force){
+    if (!hasGAS()) return;
+    if (_cacheLibri && !force) { renderLibriList(_cacheLibri); return; }
+    skeletonIn('libriListFull');
+    google.script.run
+      .withSuccessHandler(function(list){ _cacheLibri = list || []; renderLibriList(_cacheLibri); })
+      .withFailureHandler(function(err){ console.error(err); renderLibriList([]); })
+      .getLibriListV42(500);
+  }
+
+  // v4.5.1 — A1 Loader pagina Ambito
+  function loadAmbito(id){
+    if (!hasGAS() || !id) return;
+    var amb = AMBITI[id]; if (!amb) return;
+
+    // Hero: aggiorna classe (per colore + retinatura) e contenuti testuali
+    var hero = $('ambitoHero');
+    if (hero) hero.className = 'ambito-hero ' + amb.cls;
+    var el;
+    el=$('ambitoEyebrow'); if(el) el.textContent = 'Ambito 0'+id;
+    el=$('ambitoName');    if(el) el.textContent = amb.nome;
+    el=$('ambitoDesc');    if(el) el.textContent = AMBITI_DESC[id] || '';
+
+    // Reset KPI + skeleton liste
+    el=$('ambitoKpiBandi');   if(el) el.textContent = '—';
+    el=$('ambitoKpiNews');    if(el) el.textContent = '—';
+    el=$('ambitoKpiPodcast'); if(el) el.textContent = '—';
+    el=$('ambitoBandiCount');   if(el) el.textContent = '—';
+    el=$('ambitoNewsCount');    if(el) el.textContent = '—';
+    el=$('ambitoPodcastCount'); if(el) el.textContent = '—';
+    skeletonIn('ambitoBandiList');
+    skeletonIn('ambitoNewsList');
+    skeletonIn('ambitoPodcastList');
+    el=$('ambitoBandiEmpty');   if(el) el.hidden = true;
+    el=$('ambitoNewsEmpty');    if(el) el.hidden = true;
+    el=$('ambitoPodcastEmpty'); if(el) el.hidden = true;
+
+    google.script.run
+      .withSuccessHandler(renderAmbito)
+      .withFailureHandler(function(err){
+        console.error('getAmbitoDataV42:', err);
+        renderAmbito({ ambitoId:id, news:[], bandi:[], podcast:[] });
+      })
+      .getAmbitoDataV42(id);
+  }
+
+  function skeletonIn(id){ var el=$(id); if(!el)return; el.innerHTML='<div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>'; }
+
+  // ==========================================================
+  // C) RENDERING HOME
+  // ==========================================================
+
+  // helper: stelle 1-5 per pertinenza
+  function _starsHtml_(score, ambN) {
+    // score è 0-100, mappa a 1-5 stelle
+    var stars = score == null ? 0 : Math.max(1, Math.min(5, Math.round(score / 20)));
+    var cls = ambN ? 'a'+ambN : '';
+    var html = '<span class="hlr-stars '+cls+'">';
+    for (var i=1; i<=5; i++) {
+      html += '<span class="star '+(i<=stars?'on':'off')+'">&#9733;</span>';
+    }
+    html += '</span>';
+    return html;
+  }
+
+  // helper: ambito badge html (colore via CSS var)
+  function _ambBadgeHtml_(ambN, label) {
+    if (!ambN) return '';
+    return '<span class="hlr-amb a'+ambN+'" style="--amb:var(--amb-'+ambN+');--amb-soft:var(--amb-'+ambN+'-soft)">'+esc(label||('0'+ambN))+'</span>';
+  }
+
+  function renderHome(d){
+    var t=$('homeDataOggi'); if (t && d.dataOggi) t.textContent = d.dataOggi;
+    renderUpdateInfo(d);
+
+    // Stats bar
+    var b = d.badges || {};
+    var totBandi = b.bandi != null ? b.bandi : ((d.bandiUrgenti||[]).length + (d.ultimiBandi||[]).length);
+    var el;
+    el=$('homeBandiTotCount'); if(el && totBandi) el.textContent = totBandi + ' bandi';
+    el=$('statBandi');   if(el) el.textContent = totBandi || '—';
+    el=$('statNews');    if(el) el.textContent = b.news    != null ? b.news    : (d.news    ||[]).length || '—';
+    el=$('statPodcast'); if(el) el.textContent = b.podcast != null ? b.podcast : (d.podcast ||[]).length || '—';
+    el=$('statVideo');   if(el) el.textContent = '—';   // populated separately
+    el=$('statLibri');   if(el) el.textContent = '—';   // populated separately
+
+    // Bandi + News + Podcast
+    var tuttiBandi = (d.bandiUrgenti || []).concat(d.ultimiBandi || []);
+    renderUltimiBandiHome(tuttiBandi);
+    renderNewsHome(d.news || []);
+    renderPodcastHome(d.podcast || []);
+    renderAmbitiCounters(d.ambiti || []);
+
+    // Legacy scanner stats (if elements still exist)
+    var s = d.scanner || {};
+    el=$('stat-fonti');       if(el) el.textContent = s.fonti || 0;
+    el=$('stat-articoli');    if(el) el.textContent = s.articoliMese || 0;
+    el=$('stat-bandi');       if(el) el.textContent = s.bandiAttivi || 0;
+    el=$('stat-accuratezza'); if(el) el.textContent = (s.accuratezza || 0) + '%';
+  }
+
+  // ---- Pillola aggiornamento (INT-1) ----
+  function renderUpdateInfo(d){
+    var pill = $('homeUpdateInfo');
+    var txt  = $('homeUpdateText');
+    if (!pill || !txt) return;
+    var parts = [];
+    if (d.ultimaScansione) parts.push('Aggiornato ' + d.ultimaScansione);
+    var no = d.nuoviOggi || {};
+    if (no.totale && no.totale > 0) {
+      var det = [];
+      if (no.bandi)   det.push(no.bandi   + ' bandi');
+      if (no.news)    det.push(no.news    + ' news');
+      if (no.podcast) det.push(no.podcast + ' podcast');
+      parts.push((det.length ? det.join(' · ') : no.totale + ' contenuti') + ' oggi');
+    }
+    if (parts.length) { txt.textContent = parts.join(' · '); pill.hidden = false; }
+    else pill.hidden = true;
+  }
+
+  // ---- Ultimi bandi monitorati — lista riga con ambito, descrizione, date ----
+  function renderUltimiBandiHome(list){
+    var wrap = $('homeUltimiBandi'); if (!wrap) return;
+    list = (list || []).slice(0, 8);
+    if (!list.length) {
+      wrap.innerHTML = '';
+      var em = $('homeUltimiBandiEmpty'); if (em) em.hidden = false;
+      return;
+    }
+    var em2 = $('homeUltimiBandiEmpty'); if (em2) em2.hidden = true;
+
+    var ambNames = {1:'Identità',2:'Inclusione',3:'Programma',4:'Comunità',5:'Digital & Gov'};
+    var html = '';
+    list.forEach(function(b){
+      var ambN = parseInt(b.ambito,10) || 0;
+      var ambL = ambN ? ambNames[ambN] : '';
+      var giorni = b.giorni != null ? parseInt(b.giorni,10) : null;
+      var isUrgent = giorni !== null && giorni >= 0 && giorni <= 7;
+      var sub = b.sommario || b.descrizione || b.note || (b.ente ? b.ente + (b.settore?' · '+b.settore:'') : (b.settore||''));
+      var url = b.url || b.URL || b.link || '';
+      var onclick = url ? 'OC.openUrl(\''+esc(url)+'\')' : 'OC.openBando(\''+esc(b.id||'')+'\')';
+      // Scadenza formattata
+      var scadHtml = '';
+      if (isUrgent && giorni !== null) {
+        scadHtml = '<span class="hlr-scad urgent">⚡ '+(giorni===0?'Oggi':giorni+'gg')+'</span>';
+      } else if (b.scadenza) {
+        scadHtml = '<span class="hlr-scad">Scade '+esc(b.scadenza)+'</span>';
+      }
+      html += '<div class="home-list-row'+(ambN?' a'+ambN:'')+'" style="'+(ambN?'--amb:var(--amb-'+ambN+');--amb-soft:var(--amb-'+ambN+'-soft)':'')+'" onclick="'+onclick+'">'
+        +   '<div class="hlr-left">'
+        +     '<div class="hlr-tags">'
+        +       _ambBadgeHtml_(ambN, ambL)
+        +       (isUrgent?'<span class="hlr-urgent">Urgente</span>':'')
+        +     '</div>'
+        +     '<p class="hlr-title">'+esc(b.titolo||'(senza titolo)')+'</p>'
+        +     (sub?'<p class="hlr-sub">'+esc(sub)+'</p>':'')
+        +     '<div class="hlr-meta">'
+        +       (b.ente?'<span>'+esc(b.ente)+'</span>':'')
+        +       (b.dataRil?'<span>Rilevato: '+esc(b.dataRil)+'</span>':'')
+        +     '</div>'
+        +   '</div>'
+        +   '<div class="hlr-right">'
+        +     scadHtml
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  // Mantieni alias per compatibilità (chiamato da loadUltimiBandiHome)
+  function renderUltimiBandi(list){ renderUltimiBandiHome(list || []); }
+
+  // Sprint 1.4 D2.5+ (2026-05-01): helper bottoni archiviazione/cancellazione card
+  // Visibili solo a editor/admin (controllato via _canEditCards globale)
+  var _canEditCards = false;
+  function _cardActionsHtml_(tipo, id) {
+    if (!_canEditCards) return '';
+    if (!id) return '';
+    return '<div class="c-actions" onclick="event.stopPropagation()" style="display:flex;gap:6px;margin-top:6px;border-top:1px solid #ECECEE;padding-top:6px">'
+      + '<button title="Salva nei preferiti" onclick="OC.saveCard(\''+esc(tipo)+'\',\''+esc(id)+'\');event.stopPropagation()" style="background:none;border:1px solid #ECECEE;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;color:#666">⭐</button>'
+      + '<button title="Archivia" onclick="OC.archiveCard(\''+esc(tipo)+'\',\''+esc(id)+'\');event.stopPropagation()" style="background:none;border:1px solid #ECECEE;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;color:#666">📥</button>'
+      + '<button title="Elimina" onclick="OC.deleteCard(\''+esc(tipo)+'\',\''+esc(id)+'\');event.stopPropagation()" style="background:none;border:1px solid #ECECEE;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;color:#8B1E1E">🗑</button>'
+      + '</div>';
+  }
+
+  // Nomi brevi ambiti per tag tematica
+  var _TEMA_BREVI = {1:'Identità',2:'Inclusione',3:'Programma',4:'Comunità',5:'Digital & Gov'};
+
+  function _brRowHtml_(b) {
+    var ambN     = _ambNum_(b.ambito) || _ambNum_(b.settore) || 0;
+    var giorni   = (b.giorni != null) ? parseInt(b.giorni, 10) : null;
+    var isUrgent = giorni !== null && giorni >= 0 && giorni <= 7;
+    var isMed    = !isUrgent && giorni !== null && giorni >= 0 && giorni <= 10;
+    var url      = b.link || b.url || b.URL || '';
+    var sommario = b.sommario || b.note || b.descrizione || '';
+
+    // Etichetta tematica: settore se presente, altrimenti nome breve ambito
+    var temaLabel = b.settore || _TEMA_BREVI[ambN] || 'Bando';
+    // Tronca a 30 chars per leggibilità nel box
+    if (temaLabel.length > 30) temaLabel = temaLabel.substring(0, 28) + '…';
+    var temaCls = ambN > 0 ? ' br-a' + ambN : '';
+
+    // Giorni badge
+    var giorniTxt = giorni === null ? '' : giorni < 0 ? 'Scaduto' : giorni === 0 ? 'Oggi!' : giorni + ' gg';
+    var giorniCls = isUrgent ? ' br-gd-urgent' : (isMed ? ' br-gd-med' : ' br-gd-ok');
+    var giorniHtml = giorniTxt ? '<span class="br-giorni' + giorniCls + '">' + esc(giorniTxt) + '</span>' : '';
+
+    // Scadenza
+    var scadHtml = b.scadenza
+      ? '<div class="br-scad' + (isUrgent ? ' br-scad-urgent' : isMed ? ' br-scad-med' : '') + '">' + esc(b.scadenza) + giorniHtml + '</div>'
+      : '<div class="br-scad br-scad-nd">Data n.d.</div>';
+
+    // Link CTA
+    var linkHtml = url
+      ? '<a class="br-link" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Apri scheda ufficiale del bando">&#8599;&nbsp;Apri scheda</a>'
+      : '<span class="br-link br-link-nd">Nessun link</span>';
+
+    // Bottoni azione
+    var id = String(b.id || '');
+    var acts = '<div class="br-acts">'
+      + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'bando\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Letto</button>'
+      + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'bando\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Archiv.</button>'
+      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'bando\',\'' + esc(id) + '\',this)">&#128465;</button>'
+      + '</div>';
+
+    return '<div class="br-row' + (isUrgent ? ' br-urgent' : '') + '" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
+      // — SINISTRA —
+      + '<div class="br-left">'
+      +   '<div class="br-tags">'
+      +     '<span class="br-tema' + temaCls + '">' + esc(temaLabel) + '</span>'
+      +     (isUrgent ? '<span class="br-badge-urgent">&#9889;&nbsp;Urgente</span>' : '')
+      +     (b.isRecente && !isUrgent ? '<span class="br-badge-new">Nuovo</span>' : '')
+      +   '</div>'
+      +   '<p class="br-title"' + (url ? ' onclick="OC.openUrl(\'' + esc(url) + '\')" title="Apri scheda ufficiale"' : '') + '>'
+      +     esc(b.titolo || '(senza titolo)')
+      +   '</p>'
+      +   (sommario ? '<p class="br-summary">' + esc(trunc(sommario, 180)) + '</p>' : '')
+      +   '<div class="br-meta">'
+      +     (b.ente    ? '<span class="br-ente">' + esc(b.ente) + '</span>' : '')
+      +     (b.regione ? '<span class="br-sep">&middot;</span><span>' + esc(b.regione) + '</span>' : '')
+      +     (b.importo ? '<span class="br-sep">&middot;</span><span class="br-importo-inline">&#8364;&nbsp;' + esc(b.importo) + '</span>' : '')
+      +     (b.dataRil ? '<span class="br-sep">&middot;</span><span class="br-rilev">Rilev. ' + esc(b.dataRil) + '</span>' : '')
+      +   '</div>'
+      + '</div>'
+      // — DESTRA —
+      + '<div class="br-right">'
+      +   scadHtml
+      +   linkHtml
+      +   acts
+      + '</div>'
+      + '</div>';
+  }
+
+  // ---- News Home — lista riga max 10, ambito + stelle pertinenza ----
+  function renderNewsHome(list){
+    var wrap = $('homeNewsList'); if (!wrap) return;
+    if (!list.length) { wrap.innerHTML=''; var em=$('homeNewsEmpty'); if(em) em.hidden=false; return; }
+    var em2=$('homeNewsEmpty'); if(em2) em2.hidden=true;
+    var ambNames = {1:'Identità',2:'Inclusione',3:'Programma',4:'Comunità',5:'Digital & Gov'};
+    var html='';
+    list.slice(0,10).forEach(function(n){
+      var ambN = parseInt(n.ambito,10) || 0;
+      var ambL = ambN ? ambNames[ambN] : (n.fonte||'News');
+      var url = n.link || n.url || n.URL || '';
+      var onclick = url ? 'OC.openUrl(\''+esc(url)+'\')' : 'OC.openNews(\''+esc(n.id||'')+'\')';
+      var sub = n.sommario || n.SommarioAI || n.descrizione || '';
+      var score = n.score != null ? parseInt(n.score,10) : null;
+      html += '<div class="home-list-row'+(ambN?' a'+ambN:'')+'" style="'+(ambN?'--amb:var(--amb-'+ambN+');--amb-soft:var(--amb-'+ambN+'-soft)':'')+'" onclick="'+onclick+'">'
+        +   '<div class="hlr-left">'
+        +     '<div class="hlr-tags">'
+        +       _ambBadgeHtml_(ambN, ambL)
+        +       (n.isRecente ? '<span class="hlr-urgent" style="background:#E8F5E9;color:#065F46">Recente</span>' : '')
+        +     '</div>'
+        +     '<p class="hlr-title">'+esc(n.titolo||'(senza titolo)')+'</p>'
+        +     (sub?'<p class="hlr-sub">'+esc(sub)+'</p>':'')
+        +     '<div class="hlr-meta">'
+        +       (n.fonte?'<span>'+esc(n.fonte)+'</span>':'')
+        +       (n.data?'<span>'+esc(n.data)+'</span>':'')
+        +     '</div>'
+        +   '</div>'
+        +   '<div class="hlr-right">'
+        +     (score !== null ? _starsHtml_(score, ambN) : '')
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  // ---- Podcast Home — lista compatta con ambito ----
+  function renderPodcastHome(list){
+    var wrap = $('homePodcastList'); if (!wrap) return;
+    if (!list.length) { wrap.innerHTML=''; var em=$('homePodcastEmpty'); if(em) em.hidden=false; return; }
+    var em2=$('homePodcastEmpty'); if(em2) em2.hidden=true;
+    var ambNames = {1:'Identità',2:'Inclusione',3:'Programma',4:'Comunità',5:'Digital & Gov'};
+    var html='';
+    list.slice(0,6).forEach(function(p){
+      var ambN = parseInt(p.ambito,10) || 5;
+      var ambL = ambN ? ambNames[ambN] : 'Podcast';
+      var url = p.link || p.url || p.URL || '';
+      var onclick = url ? 'OC.openUrl(\''+esc(url)+'\')' : 'OC.openPodcast(\''+esc(p.id||'')+'\')';
+      var show = p.show || p.fonte || '';
+      var dur = p.durata || '';
+      var meta = [show, dur].filter(Boolean).join(' · ');
+      html += '<div class="pod-compact-row a'+ambN+'" style="--amb:var(--amb-'+ambN+');--amb-soft:var(--amb-'+ambN+'-soft)" onclick="'+onclick+'">'
+        +   '<div class="pod-icon">'
+        +     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>'
+        +   '</div>'
+        +   '<div class="pod-info">'
+        +     '<div class="pod-title-s">'+esc(p.titolo||'(senza titolo)')+'</div>'
+        +     '<div class="pod-meta-s">'+esc(ambL)+(meta?' · '+esc(meta):'')+'</div>'
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  // ---- Video Home — lista compatta ----
+  function renderVideoHome(list){
+    var wrap = $('homeVideoList'); if (!wrap) return;
+    var em = $('homeVideoEmpty');
+    var el = $('statVideo');
+    if (el) el.textContent = list.length || '—';
+    if (!list.length) {
+      wrap.innerHTML = '<p class="home-list-empty">Nessun video ancora. Esegui seedVideoMusei() dalla sezione admin.</p>';
+      if (em) em.hidden = true;
+      return;
+    }
+    if (em) em.hidden = true;
+    var html = '';
+    list.slice(0, 4).forEach(function(v){
+      var url = v.link || v.url || '';
+      var canale = v.canale || v.fonte || '';
+      if (canale.length > 22) canale = canale.substring(0,20)+'…';
+      html += '<div class="pod-compact-row" style="--amb:var(--amb-5);--amb-soft:var(--amb-5-soft)" onclick="' + (url ? 'OC.openUrl(\''+esc(url)+'\')' : '') + '">'
+        + '<div class="pod-icon" style="color:var(--amb-5)">'
+        + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>'
+        + '</div>'
+        + '<div class="pod-info">'
+        + '<div class="pod-title-s">' + esc(v.titolo || '(senza titolo)') + '</div>'
+        + '<div class="pod-meta-s">' + (canale ? esc(canale) + ' · ' : '') + esc(v.data || '') + '</div>'
+        + '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  // ---- Libri Home — lista compatta ----
+  function renderLibriHome(list){
+    var wrap = $('homeLibriList'); if (!wrap) return;
+    var em = $('homeLibriEmpty');
+    var el = $('statLibri');
+    if (el) el.textContent = list.length || '—';
+    if (!list.length) {
+      wrap.innerHTML = '<p class="home-list-empty">Nessuna pubblicazione. <a href="#" data-goto="libri">Vai alla sezione libri</a> per inizializzare.</p>';
+      if (em) em.hidden = true;
+      return;
+    }
+    if (em) em.hidden = true;
+    var html = '';
+    list.slice(0, 4).forEach(function(b){
+      var url = b.link || '';
+      var editore = b.editore || '';
+      if (editore.length > 16) editore = editore.substring(0,14)+'…';
+      var ambN = _ambNum_(b.ambito) || _ambNum_(b.tematica) || 0;
+      html += '<div class="home-list-row' + (ambN ? ' a'+ambN : '') + '" style="' + (ambN ? '--amb:var(--amb-'+ambN+');--amb-soft:var(--amb-'+ambN+'-soft)' : '') + '" onclick="' + (url ? 'OC.openUrl(\''+esc(url)+'\')' : 'OC.go(\'libri\')') + '">'
+        + '<div class="hlr-left">'
+        + '<div class="hlr-tags">'
+        + (editore ? '<span class="lb-editore">' + esc(editore) + '</span>' : '')
+        + '</div>'
+        + '<p class="hlr-title">' + esc(b.titolo || '(senza titolo)') + '</p>'
+        + (b.autore ? '<p class="hlr-sub" style="font-style:italic">' + esc(b.autore) + '</p>' : '')
+        + '</div>'
+        + '<div class="hlr-right">'
+        + (b.anno ? '<span class="hlr-scad" style="background:var(--paper-2);color:var(--ink-2);border:1px solid var(--rule)">' + esc(String(b.anno)) + '</span>' : '')
+        + '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  // Mantenuto per compatibilità con altri renderer
+  function _podcastCardHtml_(p, compact){
+    var ambN    = _ambNum_(p.ambito) || _ambNum_(p.tematica) || 0;
+    var url     = p.link || p.url || p.URL || '';
+    var show    = p.show || p.fonte || '';
+    var durata  = p.durata || '';
+    var score   = p.score != null ? parseInt(p.score, 10) : 0;
+    var scoreCls= score >= 80 ? 'high' : (score >= 55 ? 'med' : '');
+
+    var showLabel = show;
+    if (showLabel.length > 28) showLabel = showLabel.substring(0, 26) + '…';
+
+    var temaLabel = p.tematica || _TEMA_BREVI[ambN] || '';
+    if (temaLabel.length > 30) temaLabel = temaLabel.substring(0, 28) + '…';
+    var temaCls = ambN > 0 ? ' br-a' + ambN : '';
+
+    var id = String(p.id || '');
+    var acts = '<div class="br-acts">'
+      + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'podcast\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Ascoltato</button>'
+      + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'podcast\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Arch.</button>'
+      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'podcast\',\'' + esc(id) + '\',this)">&#128465;</button>'
+      + '</div>';
+
+    var linkHtml = url
+      ? '<a class="br-link" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Ascolta episodio">&#127911;&nbsp;Ascolta</a>'
+      : '<span class="br-link br-link-nd">Nessun link</span>';
+
+    return '<div class="br-row pd-row' + (p.isRecente ? ' pd-recente' : '') + '" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
+      + '<div class="br-left">'
+      +   '<div class="br-tags">'
+      +     (showLabel ? '<span class="pd-show">' + esc(showLabel) + '</span>' : '')
+      +     (temaLabel ? '<span class="br-tema' + temaCls + '">' + esc(temaLabel) + '</span>' : '')
+      +     (p.isRecente ? '<span class="br-badge-new">Nuovo</span>' : '')
+      +   '</div>'
+      +   '<p class="br-title"' + (url ? ' onclick="OC.openUrl(\'' + esc(url) + '\')" title="Ascolta episodio"' : '') + '>'
+      +     esc(p.titolo || '(senza titolo)')
+      +   '</p>'
+      +   '<div class="br-meta">'
+      +     (p.data ? '<span class="nr-data">&#128337;&nbsp;' + esc(p.data) + '</span>' : '')
+      +     (durata ? '<span class="br-sep">&middot;</span><span class="nr-data">&#9719;&nbsp;' + esc(durata) + '</span>' : '')
+      +     (score > 0 ? '<span class="br-sep">&middot;</span><span class="nr-score ' + scoreCls + '">AI&nbsp;' + score + '</span>' : '')
+      +   '</div>'
+      + '</div>'
+      + '<div class="br-right">'
+      +   (p.data ? '<div class="nr-data-right">' + esc(p.data) + '</div>' : '')
+      +   linkHtml
+      +   acts
+      + '</div>'
+      + '</div>';
+  }
+
+  // ---- Page Bandi — renderer con filtri 2 livelli (L1=preset, L2=tematica) ----
+  function renderBandiList(list){
+    var wrap = $('bandiList'); if (!wrap) return;
+    var em   = $('bandiEmpty');
+    var cnt  = $('bandiCount');
+    var preset = _filterBandi.preset || 'tutti';
+    var fAmb   = _filterBandi.amb || 0;
+    var total  = list.length;
+    var urgenti = [], altri = [], shown = 0;
+
+    list.forEach(function(b) {
+      var ambN     = _ambNum_(b.ambito) || _ambNum_(b.settore) || 0;
+      var giorni   = b.giorni != null ? parseInt(b.giorni, 10) : null;
+      var isUrgent = giorni !== null && giorni >= 0 && giorni <= 7;
+
+      // L2 tematica
+      if (fAmb > 0 && ambN !== fAmb) return;
+      // L1 preset
+      if (preset === 'recenti'   && !b.isRecente) return;
+      if (preset === 'urgenti10' && !(giorni !== null && giorni >= 0 && giorni <= 10)) return;
+
+      shown++;
+      if (isUrgent && (preset === 'tutti' || preset === 'urgenti10'))
+        urgenti.push({ b:b, giorni:giorni });
+      else
+        altri.push({ b:b, giorni:giorni });
+    });
+
+    if (cnt) cnt.textContent = shown < total ? shown + ' di ' + total + ' bandi' : total + ' bandi monitorati';
+
+    if (!shown) {
+      wrap.innerHTML = '';
+      if (em) { em.textContent = 'Nessun bando trovato per questo filtro.'; em.hidden = false; }
+      return;
+    }
+    if (em) em.hidden = true;
+
+    var html = '';
+    if (urgenti.length) {
+      html += '<div class="section-divider urgent-divider"><span>&#9889; In scadenza entro 7 giorni</span></div>';
+      urgenti.forEach(function(x){ html += _brRowHtml_(x.b); });
+    }
+    if (altri.length) {
+      if (urgenti.length) html += '<div class="section-divider"><span>Tutti i bandi monitorati</span></div>';
+      altri.forEach(function(x){ html += _brRowHtml_(x.b); });
+    }
+    wrap.innerHTML = html;
+  }
+  // ---- News card — rivista digitale della cultura ----
+  function _newsCardHtml_(n) {
+    var ambN     = _ambNum_(n.ambito) || _ambNum_(n.settore) || 0;
+    var url      = n.link || n.url || n.URL || '';
+    var sommario = n.sommario || n.descrizione || '';
+    var score    = n.score != null ? parseInt(n.score, 10) : 0;
+    var scoreCls = score >= 80 ? 'high' : (score >= 55 ? 'med' : '');
+
+    // Fonte badge — identità della testata
+    var fonteLabel = n.fonte || 'Fonte';
+    if (fonteLabel.length > 28) fonteLabel = fonteLabel.substring(0, 26) + '…';
+
+    // Tematica — settore o ambito
+    var temaLabel = n.settore || _TEMA_BREVI[ambN] || '';
+    if (temaLabel.length > 30) temaLabel = temaLabel.substring(0, 28) + '…';
+    var temaCls   = ambN > 0 ? ' br-a' + ambN : '';
+
+    // Bottoni azione
+    var id = String(n.id || '');
+    var acts = '<div class="br-acts">'
+      + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'item\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Letto</button>'
+      + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'item\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Arch.</button>'
+      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'item\',\'' + esc(id) + '\',this)">&#128465;</button>'
+      + '</div>';
+
+    // Link leggi articolo
+    var linkHtml = url
+      ? '<a class="br-link" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Leggi articolo su ' + esc(n.fonte||'fonte') + '">&#8599;&nbsp;Leggi</a>'
+      : '<span class="br-link br-link-nd">Nessun link</span>';
+
+    return '<div class="br-row nr-row' + (n.isRecente ? ' nr-recente' : '') + '" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
+      // — SINISTRA —
+      + '<div class="br-left">'
+      +   '<div class="br-tags">'
+      +     '<span class="nr-fonte">' + esc(fonteLabel) + '</span>'
+      +     (temaLabel ? '<span class="br-tema' + temaCls + '">' + esc(temaLabel) + '</span>' : '')
+      +     (n.isRecente ? '<span class="br-badge-new">Nuovo</span>' : '')
+      +   '</div>'
+      +   '<p class="br-title"' + (url ? ' onclick="OC.openUrl(\'' + esc(url) + '\')" title="Leggi l\'articolo"' : '') + '>'
+      +     esc(n.titolo || '(senza titolo)')
+      +   '</p>'
+      +   (sommario ? '<p class="br-summary">' + esc(trunc(sommario, 200)) + '</p>' : '')
+      +   '<div class="br-meta">'
+      +     (n.data ? '<span class="nr-data">&#128337;&nbsp;' + esc(n.data) + '</span>' : '')
+      +     (score > 0 ? '<span class="br-sep">&middot;</span><span class="nr-score ' + scoreCls + '">AI&nbsp;' + score + '</span>' : '')
+      +   '</div>'
+      + '</div>'
+      // — DESTRA —
+      + '<div class="br-right">'
+      +   (n.data ? '<div class="nr-data-right">' + esc(n.data) + '</div>' : '')
+      +   linkHtml
+      +   acts
+      + '</div>'
+      + '</div>';
+  }
+
+  // ---- Page News — renderer con filtri 2 livelli ----
+  function renderNewsList2(list){
+    var wrap = $('newsListFull'); if (!wrap) return;
+    var em  = $('newsEmpty');
+    var cnt = $('newsCount');
+    var preset = _filterNews.preset || 'tutte';
+    var fAmb   = _filterNews.amb || 0;
+    var total  = list.length;
+    var recenti = [], altri = [], shown = 0;
+
+    list.forEach(function(n) {
+      var ambN = _ambNum_(n.ambito) || _ambNum_(n.settore) || 0;
+      // L2 tematica
+      if (fAmb > 0 && ambN !== fAmb) return;
+      // L1 preset
+      if (preset === 'recenti' && !n.isRecente) return;
+      shown++;
+      if (n.isRecente) recenti.push(n);
+      else             altri.push(n);
+    });
+
+    if (cnt) cnt.textContent = shown < total ? shown + ' di ' + total + ' articoli' : total + ' articoli';
+
+    if (!shown) {
+      wrap.innerHTML = '';
+      if (em) { em.textContent = 'Nessuna news trovata per questo filtro.'; em.hidden = false; }
+      return;
+    }
+    if (em) em.hidden = true;
+
+    var html = '';
+    if (recenti.length && preset === 'tutte') {
+      html += '<div class="section-divider"><span>&#128337; Ultime 7 giorni</span></div>';
+      recenti.forEach(function(n){ html += _newsCardHtml_(n); });
+      if (altri.length) {
+        html += '<div class="section-divider"><span>Archivio news</span></div>';
+        altri.forEach(function(n){ html += _newsCardHtml_(n); });
+      }
+    } else {
+      var allItems = (preset === 'recenti') ? recenti : recenti.concat(altri);
+      allItems.forEach(function(n){ html += _newsCardHtml_(n); });
+    }
+    wrap.innerHTML = html;
+  }
+  function _ambNum_(val) {
+    var n = Number(val);
+    if (n >= 1 && n <= 5) return n;
+    var v = String(val||'').toLowerCase();
+    if (/identit|narraz|tendenz|posizionamento|branding/.test(v)) return 1;
+    if (/inclus|access|gaming|lis|caa|easy.to.read/.test(v))     return 2;
+    if (/programm|mostr|collezion|restauro|patrimoni/.test(v))   return 3;
+    if (/comunit|welfare|audience|partecip|sociale/.test(v))     return 4;
+    if (/digital|ai\b|govern|fundrais|tecnolog|sostenib/.test(v)) return 5;
+    return 0;
+  }
+
+  function renderPodcastList2(list){
+    var wrap = $('podcastListFull'); if (!wrap) return;
+    var em  = $('podcastEmpty');
+    var cnt = $('podcastCount');
+    var preset = _filterPodcast.preset || 'tutti';
+    var fAmb   = _filterPodcast.amb || 0;
+    var total  = list.length;
+    var recenti = [], altri = [], shown = 0;
+
+    list.forEach(function(p) {
+      var ambN = _ambNum_(p.ambito) || _ambNum_(p.tematica) || 0;
+      if (fAmb > 0 && ambN !== fAmb) return;
+      if (preset === 'recenti' && !p.isRecente) return;
+      shown++;
+      if (p.isRecente) recenti.push(p);
+      else             altri.push(p);
+    });
+
+    if (cnt) cnt.textContent = shown < total ? shown + ' di ' + total + ' podcast' : total + ' podcast';
+
+    if (!shown) {
+      wrap.innerHTML = '';
+      if (em) { em.textContent = 'Nessun podcast trovato per questo filtro.'; em.hidden = false; }
+      return;
+    }
+    if (em) em.hidden = true;
+
+    var html = '';
+    if (recenti.length && preset === 'tutti') {
+      html += '<div class="section-divider"><span>&#127911; Ultime 7 giorni</span></div>';
+      recenti.forEach(function(p){ html += _podcastCardHtml_(p, false); });
+      if (altri.length) {
+        html += '<div class="section-divider"><span>Archivio podcast</span></div>';
+        altri.forEach(function(p){ html += _podcastCardHtml_(p, false); });
+      }
+    } else {
+      var allItems = (preset === 'recenti') ? recenti : recenti.concat(altri);
+      allItems.forEach(function(p){ html += _podcastCardHtml_(p, false); });
+    }
+    wrap.innerHTML = html;
+  }
+
+  // ---- Video card — canali YouTube cultura ----
+  function _videoCardHtml_(v) {
+    var ambN     = _ambNum_(v.ambito) || _ambNum_(v.tematica) || 0;
+    var url      = v.link || v.url || v.URL || '';
+    var canale   = v.canale || '';
+    var score    = v.score != null ? parseInt(v.score, 10) : 0;
+    var scoreCls = score >= 80 ? 'high' : (score >= 55 ? 'med' : '');
+
+    var canaleLabel = canale;
+    if (canaleLabel.length > 28) canaleLabel = canaleLabel.substring(0, 26) + '…';
+
+    var temaLabel = v.tematica || _TEMA_BREVI[ambN] || '';
+    if (temaLabel.length > 30) temaLabel = temaLabel.substring(0, 28) + '…';
+    var temaCls = ambN > 0 ? ' br-a' + ambN : '';
+
+    var id = String(v.id || '');
+    var acts = '<div class="br-acts">'
+      + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'podcast\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Visto</button>'
+      + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'podcast\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Arch.</button>'
+      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'podcast\',\'' + esc(id) + '\',this)">&#128465;</button>'
+      + '</div>';
+
+    var linkHtml = url
+      ? '<a class="br-link" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Guarda su YouTube">&#9654;&nbsp;Guarda</a>'
+      : '<span class="br-link br-link-nd">Nessun link</span>';
+
+    return '<div class="br-row vd-row' + (v.isRecente ? ' vd-recente' : '') + '" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
+      + '<div class="br-left">'
+      +   '<div class="br-tags">'
+      +     (canaleLabel ? '<span class="vd-canale">' + esc(canaleLabel) + '</span>' : '')
+      +     (temaLabel   ? '<span class="br-tema' + temaCls + '">' + esc(temaLabel) + '</span>' : '')
+      +     (v.isRecente ? '<span class="br-badge-new">Nuovo</span>' : '')
+      +   '</div>'
+      +   '<p class="br-title"' + (url ? ' onclick="OC.openUrl(\'' + esc(url) + '\')" title="Guarda su YouTube"' : '') + '>'
+      +     esc(v.titolo || '(senza titolo)')
+      +   '</p>'
+      +   '<div class="br-meta">'
+      +     (v.data ? '<span class="nr-data">&#128337;&nbsp;' + esc(v.data) + '</span>' : '')
+      +     (score > 0 ? '<span class="br-sep">&middot;</span><span class="nr-score ' + scoreCls + '">AI&nbsp;' + score + '</span>' : '')
+      +   '</div>'
+      + '</div>'
+      + '<div class="br-right">'
+      +   (v.data ? '<div class="nr-data-right">' + esc(v.data) + '</div>' : '')
+      +   linkHtml
+      +   acts
+      + '</div>'
+      + '</div>';
+  }
+
+  // ---- Page Video — renderer con filtri 2 livelli ----
+  function renderVideoList(list){
+    var wrap = $('videoListFull'); if (!wrap) return;
+    var em  = $('videoEmpty');
+    var cnt = $('videoCount');
+    var preset = _filterVideo.preset || 'tutti';
+    var fAmb   = _filterVideo.amb || 0;
+    var total  = list.length;
+    var recenti = [], altri = [], shown = 0;
+
+    list.forEach(function(v) {
+      var ambN = _ambNum_(v.ambito) || _ambNum_(v.tematica) || 0;
+      if (fAmb > 0 && ambN !== fAmb) return;
+      if (preset === 'recenti' && !v.isRecente) return;
+      shown++;
+      if (v.isRecente) recenti.push(v);
+      else             altri.push(v);
+    });
+
+    if (cnt) cnt.textContent = shown < total ? shown + ' di ' + total + ' video' : total + ' video';
+
+    if (!shown) {
+      wrap.innerHTML = '';
+      if (em) { em.textContent = 'Nessun video trovato per questo filtro.'; em.hidden = false; }
+      return;
+    }
+    if (em) em.hidden = true;
+
+    var html = '';
+    if (recenti.length && preset === 'tutti') {
+      html += '<div class="section-divider"><span>&#9654; Ultime 7 giorni</span></div>';
+      recenti.forEach(function(v){ html += _videoCardHtml_(v); });
+      if (altri.length) {
+        html += '<div class="section-divider"><span>Archivio video</span></div>';
+        altri.forEach(function(v){ html += _videoCardHtml_(v); });
+      }
+    } else {
+      var allItems = (preset === 'recenti') ? recenti : recenti.concat(altri);
+      allItems.forEach(function(v){ html += _videoCardHtml_(v); });
+    }
+    wrap.innerHTML = html;
+  }
+
+  // ---- Libro card — pubblicazioni e saggistica culturale ----
+  function _libroCardHtml_(b) {
+    var ambN     = _ambNum_(b.ambito) || _ambNum_(b.tematica) || 0;
+    var url      = b.link || '';
+    var score    = b.score != null ? parseInt(b.score, 10) : 0;
+    var scoreCls = score >= 80 ? 'high' : (score >= 55 ? 'med' : '');
+
+    var editLabel = b.editore || '';
+    if (editLabel.length > 22) editLabel = editLabel.substring(0, 20) + '…';
+    var temaLabel = b.tematica || _TEMA_BREVI[ambN] || '';
+    if (temaLabel.length > 30) temaLabel = temaLabel.substring(0, 28) + '…';
+    var temaCls = ambN > 0 ? ' br-a' + ambN : '';
+    var id = String(b.id || '');
+
+    var acts = '<div class="br-acts">'
+      + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'libro\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Letto</button>'
+      + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'libro\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Arch.</button>'
+      + '</div>';
+
+    var linkHtml = url
+      ? '<a class="br-link" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Vai alla scheda del libro">&#8599;&nbsp;Scheda</a>'
+      : '<span class="br-link br-link-nd">Nessun link</span>';
+
+    return '<div class="br-row lb-row' + (b.isRecente ? ' lb-recente' : '') + '" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
+      + '<div class="br-left">'
+      +   '<div class="br-tags">'
+      +     (editLabel ? '<span class="lb-editore">' + esc(editLabel) + '</span>' : '')
+      +     (temaLabel ? '<span class="br-tema' + temaCls + '">' + esc(temaLabel) + '</span>' : '')
+      +     (b.isRecente ? '<span class="br-badge-new">Nuovo</span>' : '')
+      +   '</div>'
+      +   '<p class="br-title"' + (url ? ' onclick="OC.openUrl(\'' + esc(url) + '\')" title="Vai alla scheda del libro"' : '') + '>'
+      +     esc(b.titolo || '(senza titolo)')
+      +   '</p>'
+      +   (b.autore ? '<p class="lb-autore">' + esc(b.autore) + '</p>' : '')
+      +   (b.descrizione ? '<p class="br-summary">' + esc(trunc(b.descrizione, 200)) + '</p>' : '')
+      +   '<div class="br-meta">'
+      +     (b.anno ? '<span class="nr-data">&#128214;&nbsp;' + esc(String(b.anno)) + '</span>' : '')
+      +     (b.dataAggiunta ? '<span class="br-sep">&middot;</span><span class="nr-data">aggiunto&nbsp;' + esc(b.dataAggiunta) + '</span>' : '')
+      +     (score > 0 ? '<span class="br-sep">&middot;</span><span class="nr-score ' + scoreCls + '">AI&nbsp;' + score + '</span>' : '')
+      +   '</div>'
+      + '</div>'
+      + '<div class="br-right lb-right">'
+      +   (b.anno ? '<div class="lb-anno">' + esc(String(b.anno)) + '</div>' : '')
+      +   linkHtml
+      +   acts
+      + '</div>'
+      + '</div>';
+  }
+
+  // ---- Page Libri — renderer con filtri 2 livelli ----
+  function renderLibriList(list){
+    var wrap = $('libriListFull'); if (!wrap) return;
+    var em  = $('libriEmpty');
+    var cnt = $('libriCount');
+    var addForm = $('libriAddForm');
+    var preset = _filterLibri.preset || 'tutti';
+    var fAmb   = _filterLibri.amb || 0;
+    var total  = list.length;
+    var recenti = [], altri = [], shown = 0;
+
+    // Mostra form aggiungi solo ad admin
+    if (addForm && _currentUser && _currentUser.role === 'admin') addForm.style.display = '';
+
+    list.forEach(function(b) {
+      var ambN = _ambNum_(b.ambito) || _ambNum_(b.tematica) || 0;
+      if (fAmb > 0 && ambN !== fAmb) return;
+      if (preset === 'recenti' && !b.isRecente) return;
+      shown++;
+      if (b.isRecente) recenti.push(b);
+      else             altri.push(b);
+    });
+
+    if (cnt) cnt.textContent = shown < total ? shown + ' di ' + total + ' pubblicazioni' : total + ' pubblicazioni';
+
+    if (!shown) {
+      wrap.innerHTML = '';
+      if (em) { em.hidden = false; }
+      return;
+    }
+    if (em) em.hidden = true;
+
+    var html = '';
+    if (recenti.length && preset === 'tutti') {
+      html += '<div class="section-divider"><span>&#128214; Aggiunti negli ultimi 30 giorni</span></div>';
+      recenti.forEach(function(b){ html += _libroCardHtml_(b); });
+      if (altri.length) {
+        html += '<div class="section-divider"><span>Catalogo pubblicazioni</span></div>';
+        altri.forEach(function(b){ html += _libroCardHtml_(b); });
+      }
+    } else {
+      var allItems = (preset === 'recenti') ? recenti : recenti.concat(altri);
+      allItems.forEach(function(b){ html += _libroCardHtml_(b); });
+    }
+    wrap.innerHTML = html;
+  }
+
+  // v4.5.1 — A1 Render pagina Ambito (backend: getAmbitoDataV42(id) → {ambitoId, news[], bandi[], podcast[]})
+  function renderAmbito(data){
+    if (!data) data = { news:[], bandi:[], podcast:[] };
+    var bandi   = data.bandi   || [];
+    var news    = data.news    || [];
+    var podcast = data.podcast || [];
+
+    // KPI + contatori
+    var el;
+    el=$('ambitoKpiBandi');     if(el) el.textContent = bandi.length;
+    el=$('ambitoKpiNews');      if(el) el.textContent = news.length;
+    el=$('ambitoKpiPodcast');   if(el) el.textContent = podcast.length;
+    el=$('ambitoBandiCount');   if(el) el.textContent = bandi.length + ' bandi';
+    el=$('ambitoNewsCount');    if(el) el.textContent = news.length + ' news';
+    el=$('ambitoPodcastCount'); if(el) el.textContent = podcast.length + ' podcast';
+
+    // Bandi
+    var wB = $('ambitoBandiList');
+    if (wB){
+      if (bandi.length) {
+        var html=''; bandi.forEach(function(b){ html += _brRowHtml_(b); });
+        wB.innerHTML = html;
+        var em=$('ambitoBandiEmpty'); if(em) em.hidden = true;
+      } else {
+        wB.innerHTML = '';
+        var em2=$('ambitoBandiEmpty'); if(em2) em2.hidden = false;
+      }
+    }
+
+    // News
+    var wN = $('ambitoNewsList');
+    if (wN){
+      if (news.length) {
+        var htmlN=''; news.forEach(function(n){ htmlN += _newsCardHtml_(n); });
+        wN.innerHTML = htmlN;
+        var em3=$('ambitoNewsEmpty'); if(em3) em3.hidden = true;
+      } else {
+        wN.innerHTML = '';
+        var em4=$('ambitoNewsEmpty'); if(em4) em4.hidden = false;
+      }
+    }
+
+    // Podcast
+    var wP = $('ambitoPodcastList');
+    if (wP){
+      if (podcast.length) {
+        var htmlP=''; podcast.forEach(function(p){ htmlP += _podcastCardHtml_(p, false); });
+        wP.innerHTML = htmlP;
+        var em5=$('ambitoPodcastEmpty'); if(em5) em5.hidden = true;
+      } else {
+        wP.innerHTML = '';
+        var em6=$('ambitoPodcastEmpty'); if(em6) em6.hidden = false;
+      }
+    }
+  }
+
+  function renderAmbitiCounters(list){
+    list.forEach(function(a){
+      var id = a.id;
+      setCount('news', id, a.news);
+      setCount('bandi', id, a.bandi);
+      setCount('podcast', id, a.podcast);
+      // chips ambito home (nuovi oggi)
+      var nn = document.querySelector('[data-new="'+id+'"]');
+      if (nn) {
+        if (a.nuoviOggi > 0) { nn.hidden = false; nn.textContent = '+' + a.nuoviOggi; }
+        else { nn.textContent = (a.news||0) + (a.bandi||0) + (a.podcast||0); nn.hidden = false; }
+      }
+    });
+  }
+  function setCount(kind, amb, val){ var el = document.querySelector('[data-count="'+kind+'"][data-amb="'+amb+'"]'); if (el) el.textContent = val || 0; }
+
+  function renderSidebarBadges(b){
+    setBadge('badge-bandi-urgenti', b.bandiUrgenti);
+    setBadge('badge-news',          b.news);
+    setBadge('badge-podcast',       b.podcast);
+    setBadge('badge-notifiche',     b.bandiUrgenti);
+    var amb = b.ambiti || {};
+    for (var i=1;i<=5;i++) setBadge('badge-amb-'+i, amb[i]);
+  }
+  function setBadge(id, val){
+    var el = $(id); if (!el) return;
+    val = Number(val||0);
+    if (val>0) { el.textContent = val; el.hidden = false; }
+    else el.hidden = true;
+  }
+
+  // ==========================================================
+  // D) UTENTE + LOGOUT
+  // ==========================================================
+  var _currentUser = null;
+
+  function setUser(user){
+    if (!user) return;
+    _currentUser = user;
+    var ini = user.initials || user.iniziali || '·';
+    var nome = user.nome || 'Ospite';
+    var ruolo = user.ruolo || 'guest';
+    // Sprint 1.4 D2.5+: abilita bottoni archive/delete sulle card per editor/admin
+    _canEditCards = (ruolo === 'admin' || ruolo === 'editor');
+    var el;
+    el=$('userInitials');       if(el) el.textContent = ini;
+    el=$('userName');           if(el) el.textContent = nome;
+    el=$('userRole');           if(el) el.textContent = ruolo;
+    el=$('topbarUserInitials'); if(el) el.textContent = ini;
+    el=$('topbarUserName');     if(el) el.textContent = nome;
+    el=$('topbarUserRole');     if(el) el.textContent = ruolo;
+
+    var str = $('nav-strumenti');
+    var anyStrumento = false;
+    $$('#nav-strumenti [data-role]').forEach(function(item){
+      var allowed = item.dataset.role.split(',').map(function(s){return s.trim();});
+      if (allowed.indexOf(ruolo) !== -1) { item.hidden = false; anyStrumento = true; }
+      else item.hidden = true;
+    });
+    if (str) str.hidden = !anyStrumento;
+
+    // Logout visibile solo se utente loggato
+    var lb = $('logoutBtn');
+    if (lb) lb.hidden = (ruolo === 'guest');
+  }
+
+  function doLogout(){
+    if (!_currentUser || !_currentUser.logoutUrl) {
+      alert('Logout non disponibile: nessun utente autenticato.');
+      return;
+    }
+    if (confirm('Vuoi disconnetterti dall\'Osservatorio Culturale?')) {
+      window.top.location.href = _currentUser.logoutUrl;
+    }
+  }
+
+  // ==========================================================
+  // E) PANNELLO ADMIN
+  // ==========================================================
+  function loadAdminPanel(){
+    if (!hasGAS()) return;
+    // Stato Telegram
+    checkTelegram();
+    // Stats fonti dati (Sprint 1.3)
+    loadFontiStats();
+    // Stats tagging Matrix (Sprint 1.3 D2.1+D2.2)
+    loadTagStats();
+    // Stato cron digest weekly (Sprint 1.3 D2.4)
+    loadCronStatus();
+    // Elenco digest
+    google.script.run
+      .withSuccessHandler(renderDigestList)
+      .withFailureHandler(function(err){ console.error(err); renderDigestList({ok:false,error:err}); })
+      .adminGetDigestList();
+  }
+
+  // ==========================================================
+  // E.ter) TAGGING MATRIX (Sprint 1.3 D2.1+D2.2 - 2026-05-01)
+  // ==========================================================
+  function loadTagStats(){
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(s){
+        if (!s) return;
+        ['items','bandi','podcast'].forEach(function(k){
+          var prefix = k === 'items' ? 'tagItems' : (k === 'bandi' ? 'tagBandi' : 'tagPod');
+          var st = s[k] || {};
+          var tot = (st.totale != null ? st.totale : '—');
+          var tag = (st.tagged != null ? st.tagged : '—');
+          var pct = (st.percent != null ? (st.percent + '%') : '');
+          if ($(prefix+'Tot'))    $(prefix+'Tot').textContent    = tot;
+          if ($(prefix+'Tagged')) $(prefix+'Tagged').textContent = tag;
+          if ($(prefix+'Pct'))    $(prefix+'Pct').textContent    = pct;
+        });
+      })
+      .withFailureHandler(function(err){ console.error('loadTagStats:', err); })
+      .getMatrixTaggingStats();
+  }
+  function reloadTagStats(){ loadTagStats(); }
+
+  function setupMatrixCols(){
+    if (!hasGAS()) return;
+    var out = $('taggerResult');
+    out.innerHTML = '<span style="color:#666">Aggiunta colonna MatrixDim sui 3 fogli…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.error) { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(r.error)+'</span>'; return; }
+        out.innerHTML = '<span style="color:#3F7A5E">✓ Colonne create. Items col '+esc(r.items||'?')+' · Bandi col '+esc(r.bandi||'?')+' · Podcast col '+esc(r.podcast||'?')+'</span>';
+        loadTagStats();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .setupMatrixDimColumns();
+  }
+
+  function tagMatrixBatch(){
+    if (!hasGAS()) return;
+    var out = $('taggerResult');
+    out.innerHTML = '<span style="color:#666">Tagging batch 200 record per foglio in corso (30-90 sec)…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        var s = '';
+        ['items','bandi','podcast'].forEach(function(k){
+          var x = r && r[k] ? r[k] : {};
+          if (x.error) s += '<div style="color:#8B1E1E">'+k+': '+esc(x.error)+'</div>';
+          else s += '<div style="color:#333"><b>'+k+'</b>: processati '+esc(x.processed||0)+' · taggati <b>'+esc(x.tagged||0)+'</b> · saltati '+esc(x.skipped||0)+'</div>';
+        });
+        out.innerHTML = s;
+        loadTagStats();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .tagMatrixDimRetroattivo({ batchSize: 200 });
+  }
+
+  function tagMatrixAll(){
+    if (!hasGAS()) return;
+    if (!confirm('Lanciare tagging completo (batch 1000)?\nPuò richiedere fino a 5 minuti.\nIdempotente: salta i record già taggati.')) return;
+    var out = $('taggerResult');
+    out.innerHTML = '<span style="color:#666">Tagging batch 1000 in corso (può richiedere 5 minuti)…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        var s = '';
+        ['items','bandi','podcast'].forEach(function(k){
+          var x = r && r[k] ? r[k] : {};
+          if (x.error) s += '<div style="color:#8B1E1E">'+k+': '+esc(x.error)+'</div>';
+          else s += '<div style="color:#333"><b>'+k+'</b>: processati '+esc(x.processed||0)+' · taggati <b>'+esc(x.tagged||0)+'</b> · saltati '+esc(x.skipped||0)+'</div>';
+        });
+        out.innerHTML = s + '<div style="color:#666;margin-top:6px;font-style:italic">Se restano record non taggati, premi di nuovo.</div>';
+        loadTagStats();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .tagMatrixDimRetroattivo({ batchSize: 1000 });
+  }
+
+  function testMatrixTagger(){
+    if (!hasGAS()) return;
+    var out = $('taggerResult');
+    out.innerHTML = '<span style="color:#666">Test tagger su 6 frasi campione…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!Array.isArray(r)) { out.innerHTML = '<span style="color:#8B1E1E">Risultato non valido</span>'; return; }
+        var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><tr><th style="text-align:left;padding:4px;border-bottom:1px solid #ccc">Frase</th><th style="text-align:left;padding:4px;border-bottom:1px solid #ccc;width:120px">Dim assegnate</th></tr>';
+        r.forEach(function(x){
+          html += '<tr><td style="padding:4px;border-bottom:1px solid #eee">'+esc(x.testo)+'</td><td style="padding:4px;border-bottom:1px solid #eee;font-weight:600;color:#4A7884">'+esc(x.dim||'(nessuna)')+'</td></tr>';
+        });
+        html += '</table>';
+        out.innerHTML = html;
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .testMatrixTagger();
+  }
+
+  // ==========================================================
+  // E.quater) DIGEST SEGMENTATO (Sprint 1.3 D2.3 - 2026-05-01)
+  // ==========================================================
+  function generaQueueAll(){
+    if (!hasGAS()) return;
+    if (!confirm('Genera bozze digest personalizzate per TUTTI i compilatori Matrix con email opt-in?\n(idempotente: salta utenti con bozze recenti)')) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Generazione in corso…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.error) { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(r.error)+'</span>'; return; }
+        out.innerHTML = '<span style="color:#3F7A5E">✓ Generati: '+esc(r.generati||0)+' · skipped: '+esc(r.skipped||0)+' · errori: '+esc(r.errori||0)+' (su '+esc(r.totale||0)+' totali)</span>';
+        reloadQueue();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .generateDigestQueueAll({});
+  }
+
+  function testDigestSegmentato(){
+    if (!hasGAS()) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Test su ultimo responseId in ResponsesMatrix + invio a s.straccini@gmail.com…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.error) { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(r.error)+'</span>'; return; }
+        var msg = '<span style="color:#3F7A5E">✓ Generato + inviato</span>';
+        if (r.generate && r.generate.top3Dims) msg += '<div style="font-size:11px;color:#666;margin-top:2px">Top 3 dim: '+esc(r.generate.top3Dims.join(', '))+' · contenuti: '+esc(r.generate.contentCounts.bandi||0)+' bandi · '+esc(r.generate.contentCounts.news||0)+' news · '+esc(r.generate.contentCounts.podcast||0)+' podcast</div>';
+        out.innerHTML = msg;
+        reloadQueue();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .testGenerateDigestSegmentato();
+  }
+
+  function inviaTuttiPending(){
+    if (!hasGAS()) return;
+    if (!confirm('Inviare TUTTE le bozze digest in stato "draft" della queue?\nDestinatari: i singoli compilatori Matrix.')) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Invio in corso…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.error) { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(r.error)+'</span>'; return; }
+        out.innerHTML = '<span style="color:#3F7A5E">✓ Inviati: '+esc(r.sent||0)+' / '+esc(r.total||0)+' · errori: '+esc((r.errors||[]).length)+'</span>';
+        reloadQueue();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .sendAllPendingDigest();
+  }
+
+  function reloadQueue(){
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(r){
+        var wrap = $('digestQueueWrap');
+        if (!wrap) return;
+        var items = (r && r.items) || [];
+        if (!items.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna bozza in queue.</div>'; return; }
+        var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#F5F0E1">'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid #9C6A36;font-weight:700">Email</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid #9C6A36">Stato</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid #9C6A36">Generato</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid #9C6A36">Note</th>'
+          + '</tr></thead><tbody>';
+        items.forEach(function(it){
+          var statusColor = it.Status === 'sent' ? '#3F7A5E' : (it.Status === 'draft' ? '#9C6A36' : '#8B1E1E');
+          html += '<tr><td style="padding:6px;border-bottom:1px solid #eee">'+esc(it.Email||'')+'</td>'
+            + '<td style="padding:6px;border-bottom:1px solid #eee;color:'+statusColor+';font-weight:600">'+esc(it.Status||'')+'</td>'
+            + '<td style="padding:6px;border-bottom:1px solid #eee;color:#666;font-size:11px">'+esc(String(it.GeneratedAt||'').substring(0,16).replace('T',' '))+'</td>'
+            + '<td style="padding:6px;border-bottom:1px solid #eee;color:#666;font-size:11px">'+esc(it.Note||'')+'</td>'
+            + '</tr>';
+        });
+        html += '</tbody></table>';
+        wrap.innerHTML = html;
+      })
+      .withFailureHandler(function(e){ console.error('reloadQueue:', e); })
+      .adminGetDigestQueue({});
+  }
+
+  // ==========================================================
+  // E.cinque) CRON DIGEST WEEKLY (Sprint 1.3 D2.4 - 2026-05-01)
+  // ==========================================================
+  function loadCronStatus(){
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(s){
+        var txt = $('cronStatusText'), last = $('cronLastRun');
+        if (!txt) return;
+        if (s && s.active) {
+          txt.innerHTML = '<span style="color:#3F7A5E">✓ Attivo</span> · martedì ore '+esc(s.hour||'?')+':00';
+        } else {
+          txt.innerHTML = '<span style="color:#8B1E1E">✗ Non attivo</span> · clicca "Attiva cron" per installare';
+        }
+        if (last) {
+          if (s && s.lastRunHumanIt) {
+            var lr = s.lastResult || {};
+            var sg = (lr.segmentati && lr.segmentati.generati) || 0;
+            var ge = (lr.generalista && lr.generalista.ok) ? 1 : 0;
+            last.innerHTML = 'Ultima esecuzione: <b>'+esc(s.lastRunHumanIt)+'</b> · '+sg+' segmentati + '+ge+' generalista';
+          } else {
+            last.textContent = 'Mai eseguito.';
+          }
+        }
+      })
+      .withFailureHandler(function(e){ console.error('loadCronStatus:', e); })
+      .getMatrixDigestTriggerStatus();
+  }
+
+  function setupCronDigest(){
+    if (!hasGAS()) return;
+    if (!confirm('Attivare il cron weekly (martedì 06:00)?\nGenera automaticamente le bozze digest senza inviarle.\nL\'invio resta manuale.')) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Installazione trigger…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          out.innerHTML = '<span style="color:#3F7A5E">✓ Cron attivato. Trigger ID: '+esc(r.triggerId||'')+'</span>';
+          loadCronStatus();
+        } else { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; }
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .setupMatrixDigestTrigger();
+  }
+
+  function removeCronDigest(){
+    if (!hasGAS()) return;
+    if (!confirm('Disattivare il cron weekly?\nDovrai generare le bozze manualmente ogni settimana.')) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Rimozione trigger…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          out.innerHTML = '<span style="color:#3F7A5E">✓ Cron disattivato. Rimossi '+esc(r.removed||0)+' trigger.</span>';
+          loadCronStatus();
+        } else { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; }
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .removeMatrixDigestTrigger();
+  }
+
+  function testCronManual(){
+    if (!hasGAS()) return;
+    if (!confirm('Esegui MANUALMENTE il cron weekly (per test)?\nGenererà bozze segmentate + generalista + notifica Telegram (se configurata).\nNON invierà email ai destinatari.')) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Esecuzione cron in corso (può richiedere fino a 2 minuti)…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.errori && r.errori.length) {
+          out.innerHTML = '<span style="color:#9C6A36">⚠ Eseguito con errori ('+r.errori.length+'): '+esc(r.errori.join(' · '))+'</span>';
+        } else {
+          var sg = (r && r.segmentati && r.segmentati.generati) || 0;
+          var ge = (r && r.generalista && r.generalista.ok) ? 'ok' : 'no';
+          var tg = (r && r.telegram && r.telegram.ok) ? 'ok' : 'no';
+          out.innerHTML = '<span style="color:#3F7A5E">✓ Cron eseguito. Segmentati: '+sg+' bozze · Generalista: '+ge+' · Telegram: '+tg+' · durata '+esc(r&&r.durataSec||0)+'s</span>';
+        }
+        loadCronStatus();
+        reloadQueue();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .testCronGenerateDigestWeekly();
+  }
+
+  // ==========================================================
+  // F) PAGINA IMPOSTAZIONI (Sprint 1.3 D2.5 - 2026-05-01)
+  // ==========================================================
+  function loadSettingsPage() {
+    if (!hasGAS()) return;
+    if (!loadSettingsPage._initialized) {
+      document.querySelectorAll('.settings-tab').forEach(function(btn) {
+        btn.addEventListener('click', function() { switchSettingsTab(btn.getAttribute('data-tab')); });
+      });
+      loadSettingsPage._initialized = true;
+    }
+    reloadFontiBandiTable();
+    loadSettingsConfig();
+  }
+
+  function switchSettingsTab(tabName) {
+    document.querySelectorAll('.settings-tab').forEach(function(btn) {
+      var isActive = btn.getAttribute('data-tab') === tabName;
+      btn.classList.toggle('active', isActive);
+      btn.style.color = isActive ? '#4A7884' : '#888';
+      btn.style.borderBottomColor = isActive ? '#4A7884' : 'transparent';
+    });
+    document.querySelectorAll('.settings-tab-content').forEach(function(div) {
+      div.hidden = (div.getAttribute('data-tab-content') !== tabName);
+    });
+    if (tabName === 'bandi') reloadFontiBandiTable();
+    if (tabName === 'podcast') reloadFontiPodTable();
+    if (tabName === 'utenti') reloadUtentiTable();
+    if (tabName === 'config') loadSettingsConfig();
+  }
+
+  function reloadFontiBandiTable() {
+    if (!hasGAS()) return;
+    var wrap = $('fontiBandiTable');
+    if (wrap) wrap.innerHTML = '<div class="empty-state sm">Caricamento…</div>';
+    google.script.run
+      .withSuccessHandler(function(r) { renderFontiTable(wrap, (r && r.fonti) || [], 'bandi'); })
+      .withFailureHandler(function(e) { if (wrap) wrap.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .getFontiBandi();
+  }
+
+  function showAddBandiForm() {
+    var f = $('addBandiForm');
+    if (f) f.style.display = (f.style.display === 'none' ? 'block' : 'none');
+  }
+
+  function addBandi() {
+    if (!hasGAS()) return;
+    var nome = ($('fbNome')||{}).value || '';
+    var url  = ($('fbUrl')||{}).value || '';
+    var cat  = ($('fbCat')||{}).value || '';
+    var out  = $('addBandiResult');
+    if (!nome.trim() || !url.trim()) { out.innerHTML = '<span style="color:#8B1E1E">Compila nome e URL.</span>'; return; }
+    out.innerHTML = '<span style="color:#666">Aggiunta in corso…</span>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          out.innerHTML = '<span style="color:#3F7A5E">✓ Aggiunta. ID: '+esc(r.id)+'</span>';
+          $('fbNome').value = ''; $('fbUrl').value = '';
+          reloadFontiBandiTable();
+        } else { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; }
+      })
+      .withFailureHandler(function(e) { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .addFonteBandi({ nome: nome.trim(), url: url.trim(), categoria: cat });
+  }
+
+  function openSheetFontiBandi() {
+    google.script.run
+      .withSuccessHandler(function(url){ if (url) window.open(url, '_blank', 'noopener'); else alert('URL foglio non disponibile'); })
+      .withFailureHandler(function(e){ alert('Errore: '+e); })
+      .getMainSheetUrl();
+  }
+
+  function reloadFontiPodTable() {
+    if (!hasGAS()) return;
+    var wrap = $('fontiPodTable');
+    if (wrap) wrap.innerHTML = '<div class="empty-state sm">Caricamento…</div>';
+    google.script.run
+      .withSuccessHandler(function(r) { renderFontiTable(wrap, (r && r.fonti) || [], 'podcast'); })
+      .withFailureHandler(function(e) { if (wrap) wrap.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .getFontiPodcast();
+  }
+
+  function showAddPodForm() {
+    var f = $('addPodForm');
+    var y = $('addYouTubeFormSettings');
+    if (y) y.style.display = 'none';
+    if (f) f.style.display = (f.style.display === 'none' ? 'block' : 'none');
+  }
+
+  function showAddYouTubeForm() {
+    var y = $('addYouTubeFormSettings');
+    var f = $('addPodForm');
+    if (f) f.style.display = 'none';
+    if (y) y.style.display = (y.style.display === 'none' ? 'block' : 'none');
+  }
+
+  function addPodcast() {
+    if (!hasGAS()) return;
+    var nome = ($('fpNome')||{}).value || '';
+    var url  = ($('fpUrl')||{}).value || '';
+    var tem  = ($('fpTematica')||{}).value || 'Musei & Patrimonio';
+    var out  = $('addPodResult');
+    if (!nome.trim() || !url.trim()) { out.innerHTML = '<span style="color:#8B1E1E">Compila nome e URL.</span>'; return; }
+    out.innerHTML = '<span style="color:#666">Aggiunta in corso…</span>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          out.innerHTML = '<span style="color:#3F7A5E">✓ Aggiunta. ID: '+esc(r.id)+'</span>';
+          $('fpNome').value = ''; $('fpUrl').value = '';
+          reloadFontiPodTable();
+        } else { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; }
+      })
+      .withFailureHandler(function(e) { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .addFontePodcast({ nome: nome.trim(), url: url.trim(), tematica: tem });
+  }
+
+  function addYouTubeSettings() {
+    if (!hasGAS()) return;
+    var nome = ($('ytNomeS')||{}).value || '';
+    var url  = ($('ytUrlS')||{}).value || '';
+    var tem  = ($('ytTemS')||{}).value || 'Musei & Patrimonio';
+    var out  = $('addYouTubeResultS');
+    if (!nome.trim() || !url.trim()) { out.innerHTML = '<span style="color:#8B1E1E">Compila nome e URL.</span>'; return; }
+    out.innerHTML = '<span style="color:#666">Risoluzione canale…</span>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          out.innerHTML = '<span style="color:#3F7A5E">✓ Aggiunto. Feed: <code style="font-size:11px">'+esc(r.feedUrl)+'</code></span>';
+          $('ytNomeS').value = ''; $('ytUrlS').value = '';
+          reloadFontiPodTable();
+        } else { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; }
+      })
+      .withFailureHandler(function(e) { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .addFonteVideoYoutube({ nome: nome.trim(), channelUrl: url.trim(), tematica: tem });
+  }
+
+  function openSheetFontiPodcast() {
+    google.script.run
+      .withSuccessHandler(function(url){ if (url) window.open(url, '_blank', 'noopener'); else alert('URL foglio non disponibile'); })
+      .withFailureHandler(function(e){ alert('Errore: '+e); })
+      .getMainSheetUrl();
+  }
+
+  function renderFontiTable(wrap, fonti, kind) {
+    if (!wrap) return;
+    if (!fonti.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna fonte presente. Aggiungi la prima.</div>'; return; }
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
+    html += '<thead><tr style="background:#F5F0E1">';
+    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid #9C6A36">Nome</th>';
+    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid #9C6A36">URL</th>';
+    if (kind === 'bandi') html += '<th style="text-align:left;padding:8px;border-bottom:1px solid #9C6A36">Categoria</th>';
+    if (kind === 'podcast') {
+      html += '<th style="text-align:left;padding:8px;border-bottom:1px solid #9C6A36">Tematica</th>';
+      html += '<th style="text-align:left;padding:8px;border-bottom:1px solid #9C6A36">Tipo</th>';
+    }
+    html += '<th style="text-align:center;padding:8px;border-bottom:1px solid #9C6A36;width:80px">Attiva</th>';
+    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid #9C6A36;width:200px">Azioni</th>';
+    html += '</tr></thead><tbody>';
+    fonti.forEach(function(f) {
+      var attivaCol = f.Attiva === true ? '#3F7A5E' : '#999';
+      var attivaTxt = f.Attiva === true ? '✓ ON' : '✗ OFF';
+      var urlShort = String(f.URL || f.URL_RSS || '').replace(/^https?:\/\/(www\.)?/, '').substring(0, 60);
+      html += '<tr>';
+      html += '<td style="padding:6px;border-bottom:1px solid #eee;font-weight:600;color:#2E5266">'+esc(f.Nome||'')+'</td>';
+      html += '<td style="padding:6px;border-bottom:1px solid #eee;color:#666;font-size:11px;font-family:monospace">'+esc(urlShort)+'</td>';
+      if (kind === 'bandi') html += '<td style="padding:6px;border-bottom:1px solid #eee;color:#444">'+esc(f.Categoria||'')+'</td>';
+      if (kind === 'podcast') {
+        html += '<td style="padding:6px;border-bottom:1px solid #eee;color:#444">'+esc(f.Tematica||'')+'</td>';
+        var tipo = f.TipoContenuto || 'audio';
+        var tipoCol = tipo === 'video' ? '#6B5C9A' : '#4A7884';
+        html += '<td style="padding:6px;border-bottom:1px solid #eee"><span style="background:'+tipoCol+';color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">'+esc(tipo)+'</span></td>';
+      }
+      html += '<td style="padding:6px;border-bottom:1px solid #eee;text-align:center"><span style="color:'+attivaCol+';font-weight:700">'+attivaTxt+'</span></td>';
+      html += '<td style="padding:6px;border-bottom:1px solid #eee">';
+      html += '<button class="btn btn-secondary" data-action="toggleFonteAtt" data-id="'+esc(f.ID)+'" data-kind="'+kind+'" style="font-size:11px;padding:3px 8px;margin-right:4px">' + (f.Attiva ? 'Disattiva' : 'Attiva') + '</button>';
+      if (kind === 'bandi') html += '<button class="btn btn-secondary" data-action="testFonteBandi" data-id="'+esc(f.ID)+'" style="font-size:11px;padding:3px 8px;margin-right:4px">Test</button>';
+      if (kind === 'podcast') html += '<button class="btn btn-secondary" data-action="scanFonte" data-id="'+esc(f.ID)+'" data-kind="'+kind+'" style="font-size:11px;padding:3px 8px;margin-right:4px">Scan</button>';
+      html += '<button class="btn btn-secondary" data-action="delFonte" data-id="'+esc(f.ID)+'" data-kind="'+kind+'" style="font-size:11px;padding:3px 8px;color:#8B1E1E">Elimina</button>';
+      html += '</td></tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+
+  function toggleFonteAtt(id, btn) {
+    if (!hasGAS()) return;
+    var kind = btn ? btn.getAttribute('data-kind') : 'bandi';
+    var fn = kind === 'bandi' ? 'toggleFonteBandiField' : 'toggleFontePodcastField';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (kind === 'bandi') reloadFontiBandiTable(); else reloadFontiPodTable();
+      })
+      .withFailureHandler(function(e) { alert('Errore: '+e); })
+      [fn](id, 'Attiva');
+  }
+
+  function delFonte(id, btn) {
+    if (!hasGAS()) return;
+    if (!confirm('Eliminare definitivamente questa fonte?')) return;
+    var kind = btn ? btn.getAttribute('data-kind') : 'bandi';
+    var fn = kind === 'bandi' ? 'deleteFonteBandiById' : 'deleteFontePodcastById';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (kind === 'bandi') reloadFontiBandiTable(); else reloadFontiPodTable();
+      })
+      .withFailureHandler(function(e) { alert('Errore: '+e); })
+      [fn](id);
+  }
+
+  function testFonteBandi(id) {
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) alert('✓ Fonte raggiungibile.\nStatus: '+r.status+'\nContent: '+r.contentLength+' caratteri');
+        else alert('✗ Errore: '+(r && r.error || 'status '+(r && r.status||'?')));
+      })
+      .withFailureHandler(function(e) { alert('Errore: '+e); })
+      .scanSingolaFonteBandi(id);
+  }
+
+  function scanFonte(id, btn) {
+    if (!hasGAS()) return;
+    var kind = btn ? btn.getAttribute('data-kind') : 'podcast';
+    if (kind !== 'podcast') return;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) { alert('✓ Scan ok. Episodi nuovi: '+r.added); reloadFontiPodTable(); }
+        else alert('✗ Errore: '+(r && r.error || 'sconosciuto'));
+      })
+      .withFailureHandler(function(e) { alert('Errore: '+e); })
+      .scanSingolaFontePodcast(id);
+  }
+
+  function loadSettingsConfig() {
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        var el = $('settingsTgStatus');
+        if (!el) return;
+        if (r && r.hasToken && r.hasChat) el.innerHTML = '<span style="color:#3F7A5E;font-weight:600">✓ Configurato</span>';
+        else el.innerHTML = '<span style="color:#8B1E1E">✗ Mancano: '+(r&&r.hasToken?'':'token ')+(r&&r.hasChat?'':'chat_id')+'</span>';
+      })
+      .getTelegramConfigStatus();
+    google.script.run
+      .withSuccessHandler(function(s) {
+        var el = $('settingsCronStatus');
+        if (!el) return;
+        if (s && s.active) el.innerHTML = '<span style="color:#3F7A5E;font-weight:600">✓ Attivo</span> · martedì ore '+(s.hour||'?')+':00';
+        else el.innerHTML = '<span style="color:#8B1E1E">✗ Non attivo</span>';
+      })
+      .getMatrixDigestTriggerStatus();
+    google.script.run
+      .withSuccessHandler(function(url) {
+        var el = $('settingsWebUrl');
+        if (el) el.textContent = url || '(non disponibile in modalità editor)';
+      })
+      .getWebAppUrl();
+  }
+
+  // ==========================================================
+  // F.bis) GESTIONE UTENTI (Sprint 1.4 - 2026-05-01)
+  // ==========================================================
+  function reloadUtentiTable() {
+    if (!hasGAS()) return;
+    var stato = ($('utentiFiltroStato')||{}).value || '';
+    var ruolo = ($('utentiFiltroRuolo')||{}).value || '';
+    var wrap = $('utentiTable');
+    if (wrap) wrap.innerHTML = '<div class="empty-state sm">Caricamento…</div>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        var items = (r && r.items) || [];
+        renderUtentiTable(wrap, items);
+        updateUtentiStats(items);
+      })
+      .withFailureHandler(function(e) { if (wrap) wrap.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .getAllUtenti({ statoFilter: stato || null, ruoloFilter: ruolo || null });
+  }
+
+  function updateUtentiStats(items) {
+    if ($('statUtTot'))     $('statUtTot').textContent = items.length;
+    if ($('statUtPending')) $('statUtPending').textContent = items.filter(function(u){return u.Stato==='pending';}).length;
+    if ($('statUtAttivi'))  $('statUtAttivi').textContent = items.filter(function(u){return u.Stato==='attivo';}).length;
+    if ($('statUtAdmin'))   $('statUtAdmin').textContent = items.filter(function(u){return u.Ruolo==='admin';}).length;
+  }
+
+  function renderUtentiTable(wrap, items) {
+    if (!wrap) return;
+    if (!items.length) { wrap.innerHTML = '<div class="empty-state sm">Nessun utente. Esegui "Migrazione one-shot" per importare da MailingList+ContactsMatrix.</div>'; return; }
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#F5F0E1">'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid #9C6A36">Email</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid #9C6A36">Nome</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid #9C6A36">Ruolo</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid #9C6A36">Stato</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:1px solid #9C6A36">Digest</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:1px solid #9C6A36">Bandi</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:1px solid #9C6A36">Matrix</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid #9C6A36;width:240px">Azioni</th>'
+      + '</tr></thead><tbody>';
+    items.forEach(function(u) {
+      var statoCol = u.Stato === 'attivo' ? '#3F7A5E' : (u.Stato === 'pending' ? '#9C6A36' : (u.Stato === 'sospeso' ? '#999' : '#8B1E1E'));
+      var ruoloCol = u.Ruolo === 'admin' ? '#6B5C9A' : (u.Ruolo === 'editor' ? '#4A7884' : '#666');
+      function chk(v) { return (v===true||v==='TRUE'||v===1) ? '✓' : '—'; }
+      function chkColor(v) { return (v===true||v==='TRUE'||v===1) ? '#3F7A5E' : '#999'; }
+      html += '<tr>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;font-family:monospace;font-size:11px">'+esc(u.Email||'')+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee">'+esc(u.Nome||'')+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;color:'+ruoloCol+';font-weight:600">'+esc(u.Ruolo||'')+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;color:'+statoCol+';font-weight:600">'+esc(u.Stato||'')+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInDigest)+';font-weight:700;cursor:pointer" onclick="toggleOptIn(\''+esc(u.Email)+'\',\'digest\')" title="Clicca per toggle">'+chk(u.OptInDigest)+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInBandi)+';font-weight:700;cursor:pointer" onclick="toggleOptIn(\''+esc(u.Email)+'\',\'bandi\')" title="Clicca per toggle">'+chk(u.OptInBandi)+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInMatrix)+';font-weight:700;cursor:pointer" onclick="toggleOptIn(\''+esc(u.Email)+'\',\'matrix\')" title="Clicca per toggle">'+chk(u.OptInMatrix)+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee">';
+      if (u.Stato === 'pending') {
+        html += '<button class="btn btn-secondary" onclick="approvaUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#3F7A5E">✓ Approva</button>';
+        html += '<button class="btn btn-secondary" onclick="rifiutaUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#8B1E1E">✗ Rifiuta</button>';
+      } else if (u.Stato === 'attivo') {
+        html += '<select onchange="cambiaRuolo(\''+esc(u.Email)+'\', this.value)" style="font-size:11px;padding:2px 4px;margin-right:4px">';
+        ['admin','editor','lettore','ospite'].forEach(function(r){
+          html += '<option value="'+r+'"'+(u.Ruolo===r?' selected':'')+'>'+r+'</option>';
+        });
+        html += '</select>';
+        html += '<button class="btn btn-secondary" onclick="sospendiUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#999">⏸ Sospendi</button>';
+      } else if (u.Stato === 'sospeso') {
+        html += '<button class="btn btn-secondary" onclick="approvaUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#3F7A5E">↻ Riattiva</button>';
+      }
+      html += '<button class="btn btn-secondary" onclick="eliminaUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;color:#8B1E1E">🗑</button>';
+      html += '</td></tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+
+  function showInvitaUtenteForm() {
+    var f = $('invitaUtenteForm');
+    if (f) f.style.display = (f.style.display === 'none' ? 'block' : 'none');
+  }
+
+  function invitaUtente() {
+    if (!hasGAS()) return;
+    var email = ($('invEmail')||{}).value || '';
+    var nome  = ($('invNome')||{}).value || '';
+    var ruolo = ($('invRuolo')||{}).value || 'lettore';
+    var out = $('invResult');
+    if (!email.trim()) { out.innerHTML = '<span style="color:#8B1E1E">Email obbligatoria.</span>'; return; }
+    out.innerHTML = '<span style="color:#666">Invito in corso…</span>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          out.innerHTML = '<span style="color:#3F7A5E">✓ Utente invitato. Email di benvenuto inviata.</span>';
+          $('invEmail').value = ''; $('invNome').value = '';
+          reloadUtentiTable();
+        } else { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; }
+      })
+      .withFailureHandler(function(e) { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .invitaNuovoUtente({ email: email.trim(), nome: nome.trim(), ruolo: ruolo });
+  }
+
+  function approvaUtente(email) {
+    if (!hasGAS()) return;
+    var ruolo = prompt('Ruolo da assegnare a ' + email + ':\n- admin\n- editor\n- lettore (default)', 'lettore');
+    if (!ruolo) return;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) { reloadUtentiTable(); $('utentiResult').innerHTML = '<span style="color:#3F7A5E">✓ Utente approvato come '+esc(r.ruolo)+'</span>'; }
+        else { $('utentiResult').innerHTML = '<span style="color:#8B1E1E">Errore: '+esc((r&&r.error)||'')+'</span>'; }
+      })
+      .withFailureHandler(function(e){ $('utentiResult').innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .approveUser(email, ruolo.trim());
+  }
+
+  function rifiutaUtente(email) {
+    if (!hasGAS()) return;
+    if (!confirm('Rifiutare la richiesta di ' + email + '?')) return;
+    google.script.run
+      .withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); })
+      .rejectUser(email, 'Rifiutato da admin');
+  }
+
+  function sospendiUtente(email) {
+    if (!hasGAS()) return;
+    if (!confirm('Sospendere l\'utente ' + email + '?')) return;
+    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).suspendUser(email);
+  }
+
+  function eliminaUtente(email) {
+    if (!hasGAS()) return;
+    if (!confirm('Eliminare DEFINITIVAMENTE ' + email + '?')) return;
+    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).deleteUser(email);
+  }
+
+  function cambiaRuolo(email, ruolo) {
+    if (!hasGAS()) return;
+    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).updateUserRuolo(email, ruolo);
+  }
+
+  function toggleOptIn(email, key) {
+    if (!hasGAS()) return;
+    var btn = event.target;
+    var newVal = (btn.textContent.trim() === '—');
+    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).updateUserOptIn(email, key, newVal);
+  }
+
+  // ==========================================================
+  // F.ter) ARCHIVIAZIONE/CANCELLAZIONE CARD (Sprint 1.4 D2.5+ - 2026-05-01)
+  // ==========================================================
+  function saveCard(tipo, id) {
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(r){ console.log('saved:', r); })
+      .withFailureHandler(function(e){ console.error('save:', e); })
+      .toggleSaved(tipo, id);
+  }
+
+  function archiveCard(tipo, id) {
+    if (!hasGAS()) return;
+    if (!confirm('Archiviare questo elemento?')) return;
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          // Refresh lista corrente
+          if (tipo === 'bando') loadBandiList(true);
+          else if (tipo === 'item') loadNewsList(true);
+          else if (tipo === 'podcast') loadPodcastList(true);
+        } else { alert('Errore archiviazione: ' + (r && r.error || 'sconosciuto')); }
+      })
+      .withFailureHandler(function(e){ alert('Errore: '+e); })
+      .archive(tipo, id);
+  }
+
+  function deleteCard(tipo, id) {
+    if (!hasGAS()) return;
+    if (!confirm('Eliminare DEFINITIVAMENTE questo elemento?\nL\'azione non e\' reversibile.')) return;
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          if (tipo === 'bando') loadBandiList(true);
+          else if (tipo === 'item') loadNewsList(true);
+          else if (tipo === 'podcast') loadPodcastList(true);
+        } else { alert('Errore eliminazione: ' + (r && r.error || 'sconosciuto')); }
+      })
+      .withFailureHandler(function(e){ alert('Errore: '+e); })
+      .archive(tipo, id);  // archive prima, poi user puo restore o delete da foglio
+  }
+
+  function runAutoArchive() {
+    if (!hasGAS()) return;
+    var giorni = prompt('Archivia tutti i record piu vecchi di N giorni:\n- bandi scaduti da 30+ giorni\n- news non lette da 60+ giorni\n\nInserisci numero giorni (default 30):', '30');
+    if (!giorni) return;
+    var n = parseInt(giorni, 10);
+    if (isNaN(n) || n < 7) { alert('Numero giorni minimo 7.'); return; }
+    var out = $('settingsResult');
+    if (out) out.innerHTML = '<span style="color:#666">Archiviazione in corso (puo richiedere 1-2 minuti)...</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        var s = '<span style="color:#3F7A5E">✓ Archivio completato:</span>';
+        if (r && r.results) {
+          if (r.results.bando) s += ' bandi=' + (r.results.bando.archiviati||0);
+          if (r.results.item) s += ' news=' + (r.results.item.archiviati||0);
+          if (r.results.podcast) s += ' podcast=' + (r.results.podcast.archiviati||0);
+          s += ' · totale=' + (r.totale||0);
+        }
+        if (out) out.innerHTML = s;
+      })
+      .withFailureHandler(function(e){ if (out) out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .autoArchiveAllOld(n);
+  }
+
+  function runAutoDelete() {
+    if (!hasGAS()) return;
+    var mesi = prompt('Elimina DEFINITIVAMENTE tutti i record archiviati piu vecchi di N mesi.\nInserisci numero mesi (default 12):', '12');
+    if (!mesi) return;
+    var n = parseInt(mesi, 10);
+    if (isNaN(n) || n < 6) { alert('Numero mesi minimo 6 (per sicurezza).'); return; }
+    if (!confirm('Procedere con eliminazione DEFINITIVA dei record archiviati > ' + n + ' mesi? L\'azione e\' irreversibile.')) return;
+    var out = $('settingsResult');
+    if (out) out.innerHTML = '<span style="color:#666">Eliminazione in corso...</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        var s = '<span style="color:#3F7A5E">✓ Eliminato:</span>';
+        if (r && r.results) {
+          if (r.results.bando) s += ' bandi=' + (r.results.bando.eliminati||0);
+          if (r.results.item) s += ' news=' + (r.results.item.eliminati||0);
+          if (r.results.podcast) s += ' podcast=' + (r.results.podcast.eliminati||0);
+          s += ' · totale=' + (r.totale||0);
+        }
+        if (out) out.innerHTML = s;
+      })
+      .withFailureHandler(function(e){ if (out) out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .autoDeleteAllVeryOld(n);
+  }
+
+  function runMigraUtenti() {
+    if (!hasGAS()) return;
+    if (!confirm('Esegui migrazione one-shot da MailingList + ContactsMatrix → Utenti?\nIdempotente, salta utenti già presenti.')) return;
+    var out = $('utentiResult');
+    out.innerHTML = '<span style="color:#666">Migrazione in corso (può richiedere 30-60 sec)…</span>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          out.innerHTML = '<span style="color:#3F7A5E">✓ Migrazione completata. Importati: ' + esc(r.totale||0) +
+            ' (MailingList: '+esc(r.importati.dalMailingList||0)+', Matrix: '+esc(r.importati.daContactsMatrix||0)+', Admin: '+esc(r.importati.daAdminSeed||0)+')</span>';
+          reloadUtentiTable();
+        } else { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc((r&&r.error)||'')+'</span>'; }
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .migraUtentiDaTutto();
+  }
+
+  function runMigraBandiAmbito() {
+    if (!hasGAS()) return;
+    if (!confirm('Eseguire la migrazione ambito sui bandi storici?\nApplica regole keyword per ricalcolare la colonna AMBITO sui bandi senza ambito assegnato.')) return;
+    var out = $('settingsResult');
+    out.innerHTML = '<span style="color:#666">Migrazione in corso (può richiedere fino a 2 minuti)…</span>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) out.innerHTML = '<span style="color:#3F7A5E">✓ Migrazione completata. Aggiornati: '+esc(r.aggiornati||0)+' · saltati: '+esc(r.saltati||0)+'</span>';
+        else out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>';
+      })
+      .withFailureHandler(function(e) { out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc(e)+'</span>'; })
+      .migraBandiAmbito();
+  }
+
+  // ==========================================================
+  // E.bis) GESTIONE FONTI DATI (Sprint 1.3 - 2026-05-01)
+  // ==========================================================
+  function loadFontiStats(){
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(s){
+        if (!s) return;
+        var fb = s.fontiBandi || {totale:0,attive:0};
+        var fp = s.fontiPodcast || {totale:0,attive:0,audio:0,video:0};
+        if ($('statFontiBandiAttive')) $('statFontiBandiAttive').textContent = fb.attive;
+        if ($('statFontiBandiTot'))    $('statFontiBandiTot').textContent    = fb.totale;
+        if ($('statFontiPodAudio'))    $('statFontiPodAudio').textContent    = fp.audio;
+        if ($('statFontiPodVideo'))    $('statFontiPodVideo').textContent    = fp.video;
+      })
+      .withFailureHandler(function(err){ console.error('loadFontiStats:', err); })
+      .getFontiStats();
+  }
+
+  function reloadFontiStats(){ loadFontiStats(); }
+
+  function addYouTube(){
+    if (!hasGAS()) return;
+    var nome = ($('ytNome')||{}).value || '';
+    var url  = ($('ytUrl')||{}).value || '';
+    var tem  = ($('ytTematica')||{}).value || 'Musei & Patrimonio';
+    var out  = $('ytResult');
+    if (!nome.trim() || !url.trim()) { out.innerHTML = '<span style="color:#8B1E1E">Compila nome e URL.</span>'; return; }
+    out.innerHTML = '<span style="color:#666">Risoluzione canale in corso…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          out.innerHTML = '<span style="color:#3F7A5E">✓ Aggiunto. Feed: '+esc(r.feedUrl)+'</span>';
+          $('ytNome').value = ''; $('ytUrl').value = '';
+          loadFontiStats();
+        } else {
+          out.innerHTML = '<span style="color:#8B1E1E">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>';
+        }
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:#8B1E1E">Errore di rete: '+esc(e)+'</span>'; })
+      .addFonteVideoYoutube({ nome: nome.trim(), channelUrl: url.trim(), tematica: tem });
+  }
+
+  function seedVideoMusei(){
+    if (!hasGAS()) return;
+    if (!confirm('Aggiungere 10 canali YouTube musei italiani al foglio FontiPodcast?\n(idempotente: salta i canali gia presenti)')) return;
+    $('adminStatus').textContent = 'Risoluzione canali e aggiunta in corso…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        $('adminStatus').textContent = 'fatto: ' + (r && r.aggiunti||0) + ' aggiunti, ' + (r && r.skip||0) + ' gia presenti, ' + (r && r.errori||0) + ' errori';
+        loadFontiStats();
+      })
+      .withFailureHandler(function(e){ alert('Errore: '+e); $('adminStatus').textContent='errore'; })
+      .populaSeedVideoYoutubeMusei();
+  }
+
+  function testDigestEmail(){
+    if (!hasGAS()) return;
+    if (!confirm('Genera digest generalista e invia a s.straccini@gmail.com (bypass workflow Telegram). Procedere?')) return;
+    $('adminStatus').textContent = 'Generazione + invio email in corso (15-25s)…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          $('adminStatus').textContent = 'email inviata a ' + r.emailSent;
+          alert('✓ Email inviata.\n\n' + (r.message||''));
+        } else {
+          $('adminStatus').textContent = 'errore: ' + (r && r.error || '');
+          alert('Errore: ' + (r && r.error || 'sconosciuto'));
+        }
+      })
+      .withFailureHandler(function(e){ alert('Errore di rete: '+e); $('adminStatus').textContent='errore'; })
+      .testInviaDigestGeneralista();
+  }
+
+  function renderDigestList(res){
+    var wrap = $('digestList'); if (!wrap) return;
+    if (!res || !res.ok) { wrap.innerHTML = '<div class="empty-state sm">Impossibile caricare l\'elenco digest.</div>'; return; }
+    if (!res.items || !res.items.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna newsletter ancora creata.</div>'; return; }
+    var html = '';
+    res.items.forEach(function(it){
+      var act = (it.stato === 'bozza')
+        ? ('<button class="btn btn-secondary" data-action="openPreview" data-id="'+esc(it.id)+'" style="padding:4px 10px;font-size:11px">Anteprima</button>')
+        : (it.stato === 'in_attesa_approvazione'
+            ? '<span class="muted">in attesa autorizzazione…</span>'
+            : '<span class="muted">inviato: '+(it.destinatari||0)+'</span>');
+      html += ''
+        + '<div class="digest-row">'
+        +   '<div style="flex:1;min-width:0"><b>'+esc(it.soggetto||'(senza soggetto)')+'</b><br>'
+        +     '<small class="muted">'+esc(it.id)+' · '+esc(it.data||'')+' · '+esc(it.autore||'')+'</small>'
+        +   '</div>'
+        +   '<span class="status '+esc(it.stato||'')+'">'+esc((it.stato||'').replace(/_/g,' '))+'</span>'
+        +   act
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function checkTelegram(){
+    if (!hasGAS()) return;
+    $('telegramStatus').textContent = 'Verifica in corso…';
+    google.script.run
+      .withSuccessHandler(function(res){
+        var el = $('telegramStatus');
+        if (!el) return;
+        if (!res || !res.ok) { el.innerHTML = '<span style="color:var(--danger)">⚠️ Accesso negato</span>'; return; }
+        var ok = res.hasToken && res.hasChat;
+        el.innerHTML = ok
+          ? '<span style="color:var(--success)">✓ Configurato (token+chat_id presenti)</span>'
+          : '<span style="color:var(--danger)">✗ Mancano: '+(res.hasToken?'':'token ')+(res.hasChat?'':'chat_id')+'</span>';
+      })
+      .withFailureHandler(function(err){ $('telegramStatus').textContent = 'Errore: '+err; })
+      .getTelegramConfigStatus();
+  }
+
+  function testTelegram(){
+    if (!hasGAS()) return;
+    if (!confirm('Invio messaggio di test Telegram all\'admin. Procedere?')) return;
+    google.script.run
+      .withSuccessHandler(function(r){
+        alert(r && r.ok ? '✓ Messaggio Telegram inviato.' : '✗ Errore: '+(r && (r.error||r.code)||'sconosciuto'));
+      })
+      .withFailureHandler(function(e){ alert('Errore: '+e); })
+      .telegramTest();
+  }
+
+  function generaDigest(){
+    if (!hasGAS()) return;
+    $('adminStatus').textContent = 'Generazione bozza…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || !r.ok) { alert('Errore: '+(r && r.error || 'sconosciuto')); $('adminStatus').textContent='errore'; return; }
+        $('adminStatus').textContent = 'Bozza creata: '+r.id;
+        if (r.counts) {
+          $('adminLastBandi').textContent   = (r.counts.bandiUrgenti||0) + (r.counts.bandiRecenti||0);
+          $('adminLastNews').textContent    = r.counts.news    || 0;
+          $('adminLastPodcast').textContent = r.counts.podcast || 0;
+        }
+        loadAdminPanel();
+        openPreview(r.id);
+      })
+      .withFailureHandler(function(e){ alert('Errore: '+e); $('adminStatus').textContent='errore'; })
+      .adminGenerateDigestDraft({});
+  }
+
+  function openPreview(draftId){
+    if (!hasGAS()) return;
+    $('adminStatus').textContent = 'Caricamento anteprima…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || !r.ok) { alert('Errore anteprima: '+(r&&r.error||'')); return; }
+        $('previewWrap').hidden = false;
+        $('previewWrap').dataset.draftId = r.id;
+        $('previewInfo').innerHTML = '<b>'+esc(r.soggetto)+'</b> · ID: <code>'+esc(r.id)+'</code>';
+        var frame = $('previewFrame');
+        var doc = frame.contentDocument || frame.contentWindow.document;
+        doc.open(); doc.write(r.html); doc.close();
+        $('adminStatus').textContent = 'anteprima pronta';
+        $('previewWrap').scrollIntoView({behavior:'smooth', block:'start'});
+      })
+      .withFailureHandler(function(e){ alert('Errore: '+e); })
+      .adminPreviewNewsletterHtml(draftId);
+  }
+
+  function richiediAutorizzazione(){
+    if (!hasGAS()) return;
+    var draftId = $('previewWrap').dataset.draftId;
+    if (!draftId) return;
+    if (!confirm('Inviare richiesta di autorizzazione via Telegram?\nRiceverai un link per confermare l\'invio effettivo.')) return;
+    $('adminStatus').textContent = 'Invio notifica Telegram…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || !r.ok) { alert('Errore: '+(r&&r.error||'')); return; }
+        var tg = r.telegram || {};
+        if (tg.ok) {
+          alert('✓ Notifica Telegram inviata.\nControlla il bot per ricevere il link di autorizzazione invio.');
+        } else {
+          alert('⚠️ Notifica Telegram non inviata ('+(tg.error||tg.code||'errore')+').\nUsa il link diretto:\n'+r.approveUrl);
+        }
+        $('adminStatus').textContent = 'in attesa autorizzazione';
+        loadAdminPanel();
+      })
+      .withFailureHandler(function(e){ alert('Errore: '+e); })
+      .adminRequestSendAuthorization(draftId);
+  }
+
+  function chiudiAnteprima(){ $('previewWrap').hidden = true; }
+
+  // ==========================================================
+  // F.quattro) ARCHIVIO / CESTINO / AZIONI RECORD
+  // ==========================================================
+  function _updateCestinoBadge() {
+    var keys = Object.keys(_trash);
+    var el = $('badge-cestino');
+    if (!el) return;
+    if (keys.length > 0) { el.textContent = keys.length; el.hidden = false; }
+    else { el.hidden = true; }
+    var cnt = $('cestinoCount');
+    if (cnt) cnt.textContent = keys.length > 0
+      ? (keys.length + ' element' + (keys.length === 1 ? 'o' : 'i') + ' — recuperabili o da eliminare definitivamente')
+      : 'Il cestino \u00e8 vuoto.';
+  }
+
+  // ----------------------------------------------------------
+  // TOAST — feedback utente su azioni async
+  // ----------------------------------------------------------
+  function showToast(msg, type, dur) {
+    var icons = {
+      ok:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+      warn: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+      err:  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+    };
+    var container = $('oc-toast-container');
+    if (!container) return;
+    type = type || 'ok';
+    var t = document.createElement('div');
+    t.className = 'oc-toast ' + type;
+    t.innerHTML = (icons[type] || '') + '<span>' + esc(msg) + '</span>';
+    container.appendChild(t);
+    setTimeout(function(){
+      t.classList.add('out');
+      setTimeout(function(){ if (t.parentNode) t.parentNode.removeChild(t); }, 350);
+    }, dur || 3200);
+  }
+
+  function archiveItem(tipo, id, el) {
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          var card = (el && el.closest) ? (el.closest('.bando-row') || el.closest('.news-row') || el.closest('.pod-item')) : null;
+          if (card) card.remove();
+          showToast('Scheda archiviata', 'ok');
+        } else {
+          showToast('Archiviazione non riuscita', 'err');
+        }
+      })
+      .withFailureHandler(function(e){ showToast('Errore: ' + (e.message || e), 'err'); })
+      .archive(tipo, id);
+  }
+
+  function trashItem(tipo, id, el) {
+    var key = tipo + '_' + id;
+    var card = (el && el.closest) ? (el.closest('.bando-row') || el.closest('.news-row') || el.closest('.pod-item')) : null;
+    var titolo = '';
+    if (card) {
+      var titleEl = card.querySelector('.bando-row-title') || card.querySelector('.news-title') || card.querySelector('.pod-title');
+      if (titleEl) titolo = titleEl.textContent.trim();
+    }
+    _trash[key] = { tipo: tipo, id: id, titolo: titolo };
+    if (card) card.remove();
+    _updateCestinoBadge();
+    showToast('Spostato nel cestino', 'warn');
+  }
+
+  function markItemRead(tipo, id, el) {
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(){ showToast('Segnato come letto', 'ok'); })
+      .withFailureHandler(function(e){ showToast('Errore: ' + (e.message || e), 'err'); })
+      .markRead(tipo, id);
+    var card = (el && el.closest) ? (el.closest('.bando-row') || el.closest('.news-row') || el.closest('.pod-item')) : null;
+    if (card) card.classList.add('item-letto');
+  }
+
+  function loadArchivio() {
+    if (!hasGAS()) return;
+    var wrap = $('archivioList');
+    var em   = $('archivioEmpty');
+    if (wrap) wrap.innerHTML = '<div class="skeleton-card"></div><div class="skeleton-card"></div>';
+    var allItems = [];
+    var pending = 3;
+    function done(list) {
+      allItems = allItems.concat(list || []);
+      pending--;
+      if (pending > 0) return;
+      if (!wrap) return;
+      if (!allItems.length) {
+        wrap.innerHTML = '';
+        if (em) em.hidden = false;
+        return;
+      }
+      if (em) em.hidden = true;
+      var html = '';
+      allItems.forEach(function(it) {
+        html += '<div class="bando-row" style="border-left:3px solid var(--rule);padding-left:14px">'
+          +   '<div class="bando-row-head">'
+          +     '<span class="tag low">' + esc(it.tipo || 'item') + '</span>'
+          +     '<span class="ente">' + esc(it.fonte || it.ente || it.show || '') + '</span>'
+          +   '</div>'
+          +   '<h4 class="bando-row-title">' + esc(it.titolo || '(senza titolo)') + '</h4>'
+          +   '<div class="bando-row-meta">'
+          +     '<span>' + esc(it.data || '') + '</span>'
+          +     '<div class="item-actions">'
+          +       '<button class="act-btn" onclick="OC.restoreItem(\'' + esc(it.tipo) + '\',\'' + esc(it.id) + '\',this)" title="Ripristina">&#8593; Ripristina</button>'
+          +     '</div>'
+          +   '</div>'
+          + '</div>';
+      });
+      wrap.innerHTML = html;
+    }
+    google.script.run.withSuccessHandler(function(r){ done((r && r.items) || []); }).withFailureHandler(function(){ done([]); }).getArchivedItems('news');
+    google.script.run.withSuccessHandler(function(r){ done((r && r.items) || []); }).withFailureHandler(function(){ done([]); }).getArchivedItems('bando');
+    google.script.run.withSuccessHandler(function(r){ done((r && r.items) || []); }).withFailureHandler(function(){ done([]); }).getArchivedItems('podcast');
+  }
+
+  function loadCestino() {
+    var wrap = $('cestinoList'); if (!wrap) return;
+    var keys = Object.keys(_trash);
+    if (!keys.length) { wrap.innerHTML = '<div class="empty-state">Il cestino \u00e8 vuoto.</div>'; return; }
+    var html = '';
+    keys.forEach(function(k) {
+      var it = _trash[k];
+      html += '<div class="bando-row" style="border-left:3px solid var(--rule);padding-left:14px">'
+        +   '<div class="bando-row-head"><span class="tag low">' + esc(it.tipo) + '</span></div>'
+        +   '<h4 class="bando-row-title">' + esc(it.titolo || it.id) + '</h4>'
+        +   '<div class="bando-row-meta">'
+        +     '<div class="item-actions">'
+        +       '<button class="act-btn act-read" onclick="OC.restoreItem(\'' + esc(it.tipo) + '\',\'' + esc(it.id) + '\',this)" title="Ripristina">&#8593; Ripristina</button>'
+        +     '</div>'
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function restoreItem(tipo, id, el) {
+    var key = tipo + '_' + id;
+    delete _trash[key];
+    _updateCestinoBadge();
+    if (hasGAS()) {
+      google.script.run
+        .withSuccessHandler(function(){ showToast('Elemento ripristinato', 'ok'); })
+        .withFailureHandler(function(e){ showToast('Errore ripristino: ' + (e.message || e), 'err'); })
+        .restore(tipo, id);
+    }
+    var card = (el && el.closest) ? (el.closest('.bando-row') || el.closest('.news-row')) : null;
+    if (card) card.remove();
+  }
+
+  function emptyTrash() {
+    if (!Object.keys(_trash).length) { showToast('Il cestino è già vuoto', 'warn'); return; }
+    if (!confirm('Svuotare il cestino? Gli elementi non verranno archiviati nel backend.')) return;
+    _trash = {};
+    _updateCestinoBadge();
+    loadCestino();
+    showToast('Cestino svuotato', 'ok');
+  }
+
+  function exportArchivio() {
+    // Raccoglie tutti gli elementi archiviati (dall'archivioList già renderizzato) + esporta CSV
+    if (!hasGAS()) {
+      showToast('Esportazione non disponibile offline', 'warn');
+      return;
+    }
+    showToast('Preparazione esportazione…', 'ok', 2000);
+    var allItems = [];
+    var pending = 3;
+    function onDone(list, tipo) {
+      (list || []).forEach(function(it) { it._tipo = tipo; allItems.push(it); });
+      pending--;
+      if (pending > 0) return;
+      if (!allItems.length) { showToast('Nessun elemento archiviato da esportare', 'warn'); return; }
+      // Build CSV
+      var rows = [['Tipo','ID','Titolo','Fonte/Ente','Data','Ambito','Score','Link']];
+      allItems.forEach(function(it) {
+        rows.push([
+          it._tipo || it.tipo || '',
+          it.id || '',
+          it.titolo || '',
+          it.fonte || it.ente || it.show || '',
+          it.data || '',
+          it.ambito || it.settore || '',
+          it.score != null ? it.score : '',
+          it.link || it.url || ''
+        ]);
+      });
+      var csv = rows.map(function(r){
+        return r.map(function(c){
+          var s = String(c).replace(/"/g,'""');
+          return (s.indexOf(',') > -1 || s.indexOf('"') > -1 || s.indexOf('\n') > -1) ? '"'+s+'"' : s;
+        }).join(',');
+      }).join('\r\n');
+      var blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'OC_Archivio_' + new Date().toISOString().slice(0,10) + '.csv';
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 600);
+      showToast('CSV scaricato — ' + allItems.length + ' elementi', 'ok');
+    }
+    google.script.run.withSuccessHandler(function(r){ onDone((r&&r.items)||[], 'news'); }).withFailureHandler(function(){ onDone([], 'news'); }).getArchivedItems('news');
+    google.script.run.withSuccessHandler(function(r){ onDone((r&&r.items)||[], 'bando'); }).withFailureHandler(function(){ onDone([], 'bando'); }).getArchivedItems('bando');
+    google.script.run.withSuccessHandler(function(r){ onDone((r&&r.items)||[], 'podcast'); }).withFailureHandler(function(){ onDone([], 'podcast'); }).getArchivedItems('podcast');
+  }
+
+  // ----------------------------------------------------------
+  // DETAIL OVERLAY — scheda completa bando / news / podcast
+  // ----------------------------------------------------------
+  var _detailCache = {};   // id → oggetto dati
+
+  function _ambLabel_(n) {
+    var map = {1:'Identità',2:'Inclusione',3:'Programma',4:'Comunità',5:'Digital & Gov'};
+    return n ? ('Ambito 0'+n+' — '+(map[n]||'')) : '';
+  }
+
+  function openDetail(tipo, id) {
+    var data = _detailCache[tipo + '_' + id];
+    if (data) { _renderDetail_(tipo, data); return; }
+    // Fallback — cerca nei cache renderer
+    var lista = (tipo === 'bando') ? (_cacheBandi || []) : (tipo === 'news') ? (_cacheNews || []) : (_cachePodcast || []);
+    for (var i=0; i<lista.length; i++) {
+      if (String(lista[i].id) === String(id)) {
+        _detailCache[tipo+'_'+id] = lista[i];
+        _renderDetail_(tipo, lista[i]);
+        return;
+      }
+    }
+    // Non trovato in cache — apri la pagina relativa
+    go(tipo === 'bando' ? 'bandi' : tipo === 'news' ? 'news' : 'podcast');
+    showToast('Apri la scheda dalla lista', 'warn');
+  }
+
+  function _renderDetail_(tipo, d) {
+    var overlay = $('oc-detail-overlay');
+    var body    = $('oc-detail-body');
+    var tipoEl  = $('oc-detail-tipo');
+    if (!overlay || !body) return;
+
+    // Label tipo
+    var tipoLabel = tipo === 'bando' ? 'Bando' : tipo === 'news' ? 'News' : 'Podcast';
+    if (tipoEl) tipoEl.textContent = tipoLabel;
+
+    var ambN  = parseInt(d.ambito || d.amb || 0, 10) || 0;
+    var ambCls = ambN ? 'a'+ambN : '';
+    var ambLbl = _ambLabel_(ambN);
+
+    // Urgency badge for bandi
+    var urgBadge = '';
+    if (tipo === 'bando' && d.isUrgent) {
+      urgBadge = '<span style="background:#FEF2F2;color:#991B1B;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.03em">⚡ Scade in '+esc(String(d.giorni))+' giorni</span>';
+    }
+
+    var score = d.score != null && d.score > 0
+      ? '<span class="score-badge '+(d.score>=70?'high':d.score>=40?'med':'')+'">' + d.score + '% pertinente</span>'
+      : '';
+
+    // Meta grid
+    var meta = '';
+    if (d.ente || d.fonte || d.show) {
+      meta += '<div class="dm-item"><span class="dm-label">Fonte</span> '+esc(d.ente||d.fonte||d.show||'')+'</div>';
+    }
+    if (d.scadenza || (tipo==='bando' && d.data)) {
+      meta += '<div class="dm-item"><span class="dm-label">Scadenza</span> '+esc(d.scadenza||d.data||'')+'</div>';
+    }
+    if (tipo !== 'bando' && d.data) {
+      meta += '<div class="dm-item"><span class="dm-label">Data</span> '+esc(d.data||'')+'</div>';
+    }
+    if (d.durata) {
+      meta += '<div class="dm-item"><span class="dm-label">Durata</span> '+esc(d.durata)+'</div>';
+    }
+    if (ambLbl) {
+      meta += '<div class="dm-item"><span class="dm-label">Ambito</span> '+esc(ambLbl)+'</div>';
+    }
+
+    // Summary / abstract
+    var summary = d.sommario || d.abstract || d.descrizione || d.tematica || '';
+
+    // Link primario
+    var linkUrl = d.link || d.url || d.fonte_url || '';
+    var linkLabel = tipo === 'bando' ? 'Vai al bando →' : tipo === 'podcast' ? 'Ascolta episodio →' : 'Leggi articolo →';
+
+    var html = '';
+    html += '<div class="detail-eyebrow '+(ambCls ? 'a'+ambN : '')+'">';
+    if (ambLbl) html += '<span class="de-amb">'+esc(ambLbl)+'</span>';
+    if (urgBadge) html += urgBadge;
+    if (score) html += score;
+    html += '</div>';
+
+    html += '<h2 class="detail-title" id="oc-detail-title">'+esc(d.titolo || '(senza titolo)')+'</h2>';
+
+    if (meta) html += '<div class="detail-meta">'+meta+'</div>';
+
+    if (summary) {
+      html += '<div class="detail-summary">'+esc(summary)+'</div>';
+    }
+
+    html += '<div class="detail-actions">';
+    if (linkUrl) {
+      html += '<a href="'+esc(linkUrl)+'" target="_blank" rel="noopener noreferrer" class="detail-btn-primary">'
+        + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
+        + linkLabel+'</a>';
+    }
+    html += '<button class="act-btn act-archive" onclick="OC.archiveItem(\''+esc(tipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()">⇓ Archivia</button>';
+    html += '<button class="act-btn act-read" onclick="OC.markItemRead(\''+esc(tipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()">✓ Letto</button>';
+    html += '<button class="act-btn act-trash" onclick="OC.trashItem(\''+esc(tipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()">🗑 Cestino</button>';
+    html += '</div>';
+
+    body.innerHTML = html;
+    // Apply ambito color
+    if (ambCls) body.className = 'detail-body '+ambCls;
+    else body.className = 'detail-body';
+
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDetail() {
+    var overlay = $('oc-detail-overlay');
+    if (overlay) overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // Chiudi overlay cliccando fuori dal panel
+  (function(){
+    document.addEventListener('click', function(e){
+      var overlay = $('oc-detail-overlay');
+      if (!overlay || !overlay.classList.contains('open')) return;
+      var panel = $('oc-detail-panel');
+      if (panel && !panel.contains(e.target)) closeDetail();
+    });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') closeDetail();
+    });
+  })();
+
+  // ==========================================================
+  // F) EVENT HANDLERS
+  // ==========================================================
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('[data-page]');
+    if (el && !el.hidden) { e.preventDefault(); go(el.dataset.page, el.dataset.ambito); return; }
+    el = e.target.closest('[data-goto]');
+    if (el) { e.preventDefault(); go(el.dataset.goto); return; }
+    el = e.target.closest('[data-action]');
+    if (el) {
+      var act = el.dataset.action;
+      if (OC[act] && typeof OC[act]==='function') { e.preventDefault(); OC[act](el.dataset.id); }
+    }
+  });
+
+  var tog = $('toggleSidebar');
+  if (tog) tog.addEventListener('click', function(){ var sb=$('sidebar'); if(sb) sb.classList.toggle('open'); });
+
+  // === ACCORDION: ambiti tematici sidebar ===
+  (function(){
+    var btn  = $('ambitiToggle');
+    var body = $('ambitiList');
+    if (!btn || !body) return;
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      var expanded = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      if (expanded) { body.classList.add('collapsed'); }
+      else          { body.classList.remove('collapsed'); }
+    });
+  })();
+
+  document.addEventListener('keydown', function(e){
+    if ((e.metaKey||e.ctrlKey) && e.key && e.key.toLowerCase()==='k'){
+      e.preventDefault();
+      var s = $('globalSearch') || $('heroSearch');
+      if (s) s.focus();
+    }
+    if (e.key==='Escape'){ var sb=$('sidebar'); if(sb) sb.classList.remove('open'); }
+  });
+
+  document.addEventListener('click', function(e){
+    var chip = e.target.closest('.filter-chip');
+    if (!chip) return;
+    var bar = chip.closest('#bandiFilters, #bandiTematicheFilters, #newsFilters, #newsTematicheFilters, #podcastFilters, #podcastTematicheFilters, #videoFilters, #videoTematicheFilters, #libriFilters, #libriTematicheFilters');
+    if (!bar) return;
+    e.preventDefault();
+    // Aggiorna stato visivo solo nella riga cliccata
+    var chips = bar.querySelectorAll('.filter-chip');
+    for (var i=0;i<chips.length;i++) chips[i].classList.remove('active');
+    chip.classList.add('active');
+
+    if (bar.id === 'bandiFilters') {
+      // L1 preset — resetta L2 a "Tutte"
+      _filterBandi.preset = chip.dataset.preset || 'tutti';
+      _filterBandi.amb = 0;
+      var lvl2 = document.getElementById('bandiTematicheFilters');
+      if (lvl2) {
+        lvl2.querySelectorAll('.filter-chip').forEach(function(c){ c.classList.remove('active'); });
+        var first = lvl2.querySelector('.filter-chip[data-amb="0"]');
+        if (first) first.classList.add('active');
+      }
+      if (_cacheBandi) renderBandiList(_cacheBandi);
+    } else if (bar.id === 'bandiTematicheFilters') {
+      // L2 tematica — non tocca L1
+      _filterBandi.amb = parseInt(chip.getAttribute('data-amb'), 10) || 0;
+      if (_cacheBandi) renderBandiList(_cacheBandi);
+    } else if (bar.id === 'newsFilters') {
+      // L1 preset — resetta L2 a "Tutte"
+      _filterNews.preset = chip.dataset.preset || 'tutte';
+      _filterNews.amb = 0;
+      var nLvl2 = document.getElementById('newsTematicheFilters');
+      if (nLvl2) {
+        nLvl2.querySelectorAll('.filter-chip').forEach(function(c){ c.classList.remove('active'); });
+        var nFirst = nLvl2.querySelector('.filter-chip[data-amb="0"]');
+        if (nFirst) nFirst.classList.add('active');
+      }
+      if (_cacheNews) renderNewsList2(_cacheNews);
+    } else if (bar.id === 'newsTematicheFilters') {
+      // L2 tematica — non tocca L1
+      _filterNews.amb = parseInt(chip.getAttribute('data-amb'), 10) || 0;
+      if (_cacheNews) renderNewsList2(_cacheNews);
+    } else if (bar.id === 'podcastFilters') {
+      // L1 preset — resetta L2 a "Tutte"
+      _filterPodcast.preset = chip.dataset.preset || 'tutti';
+      _filterPodcast.amb = 0;
+      var pLvl2 = document.getElementById('podcastTematicheFilters');
+      if (pLvl2) {
+        pLvl2.querySelectorAll('.filter-chip').forEach(function(c){ c.classList.remove('active'); });
+        var pFirst = pLvl2.querySelector('.filter-chip[data-amb="0"]');
+        if (pFirst) pFirst.classList.add('active');
+      }
+      if (_cachePodcast) renderPodcastList2(_cachePodcast);
+    } else if (bar.id === 'podcastTematicheFilters') {
+      // L2 tematica — non tocca L1
+      _filterPodcast.amb = parseInt(chip.getAttribute('data-amb'), 10) || 0;
+      if (_cachePodcast) renderPodcastList2(_cachePodcast);
+    } else if (bar.id === 'videoFilters') {
+      // L1 preset — resetta L2 a "Tutte"
+      _filterVideo.preset = chip.dataset.preset || 'tutti';
+      _filterVideo.amb = 0;
+      var vLvl2 = document.getElementById('videoTematicheFilters');
+      if (vLvl2) {
+        vLvl2.querySelectorAll('.filter-chip').forEach(function(c){ c.classList.remove('active'); });
+        var vFirst = vLvl2.querySelector('.filter-chip[data-amb="0"]');
+        if (vFirst) vFirst.classList.add('active');
+      }
+      if (_cacheVideo) renderVideoList(_cacheVideo);
+    } else if (bar.id === 'videoTematicheFilters') {
+      // L2 tematica — non tocca L1
+      _filterVideo.amb = parseInt(chip.getAttribute('data-amb'), 10) || 0;
+      if (_cacheVideo) renderVideoList(_cacheVideo);
+    } else if (bar.id === 'libriFilters') {
+      _filterLibri.preset = chip.dataset.preset || 'tutti';
+      _filterLibri.amb = 0;
+      var lLvl2 = document.getElementById('libriTematicheFilters');
+      if (lLvl2) {
+        lLvl2.querySelectorAll('.filter-chip').forEach(function(c){ c.classList.remove('active'); });
+        var lFirst = lLvl2.querySelector('.filter-chip[data-amb="0"]');
+        if (lFirst) lFirst.classList.add('active');
+      }
+      if (_cacheLibri) renderLibriList(_cacheLibri);
+    } else if (bar.id === 'libriTematicheFilters') {
+      _filterLibri.amb = parseInt(chip.getAttribute('data-amb'), 10) || 0;
+      if (_cacheLibri) renderLibriList(_cacheLibri);
+    }
+  });
+
+  // ==========================================================
+  // G) API PUBBLICA OC
+  // ==========================================================
+  window.OC = {
+    go: go,
+    hydrate: hydrate,
+    setUser: setUser,
+    doLogout: doLogout,
+    loadAmbito: loadAmbito,
+    search: function(q){
+      if (!q) return;
+      go('news');
+      if (hasGAS()) {
+        google.script.run
+          .withSuccessHandler(function(r){ console.log('search:',r); })
+          .withFailureHandler(console.error)
+          .getGlobalSearchV42(q);
+      }
+    },
+    filterBandi: function(preset){ go('bandi'); },
+    openBando:   function(id){ openDetail('bando', id); },
+    openNews:    function(id){ openDetail('news', id); },
+    openPodcast: function(id){ openDetail('podcast', id); },
+    openDetail:  openDetail,
+    closeDetail: closeDetail,
+    showToast:   showToast,
+    openUrl:     function(url){ if (url) window.open(url,'_blank','noopener'); },
+    setupLibri: function(){
+      if (!hasGAS()) return;
+      var btn = document.querySelector('.lb-setup-btn');
+      if (btn) btn.disabled = true;
+      google.script.run
+        .withSuccessHandler(function(r){ _cacheLibri = null; loadLibriList(true); })
+        .withFailureHandler(function(e){ alert('Errore setup: ' + e); })
+        .setupPubblicazioniSheet();
+    },
+    saveLibro: function(){
+      var fb = $('lbFeedback');
+      var titolo = ($('lbTitolo')||{}).value || '';
+      if (!titolo.trim()) { if(fb) fb.textContent = 'Titolo obbligatorio'; return; }
+      if (fb) fb.textContent = 'Salvataggio…';
+      var body = {
+        titolo   : titolo.trim(),
+        autore   : ($('lbAutore')||{}).value || '',
+        editore  : ($('lbEditore')||{}).value || '',
+        anno     : ($('lbAnno')||{}).value || '',
+        ambito   : ($('lbAmbito')||{}).value || '0',
+        link     : ($('lbLink')||{}).value || '',
+        descrizione: ($('lbDesc')||{}).value || ''
+      };
+      if (!hasGAS()) { if(fb) fb.textContent = 'GAS non disponibile'; return; }
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (r && r.ok) {
+            if(fb) fb.textContent = 'Salvato!';
+            ['lbTitolo','lbAutore','lbEditore','lbAnno','lbLink','lbDesc'].forEach(function(id){ var el=$( id); if(el) el.value=''; });
+            _cacheLibri = null; loadLibriList(true);
+          } else { if(fb) fb.textContent = (r&&r.error)||'Errore'; }
+        })
+        .withFailureHandler(function(e){ if(fb) fb.textContent = 'Errore: '+e; })
+        .addLibro(body);
+    },
+    openNotifiche: function(){ OC.filterBandi('urgenti'); },
+    // Admin actions
+    generaDigest: generaDigest,
+    testTelegram: testTelegram,
+    checkTelegram: checkTelegram,
+    openPreview: openPreview,
+    richiediAutorizzazione: richiediAutorizzazione,
+    chiudiAnteprima: chiudiAnteprima,
+    // Sprint 1.3 - Fonti dati admin
+    addYouTube: addYouTube,
+    seedVideoMusei: seedVideoMusei,
+    reloadFontiStats: reloadFontiStats,
+    testDigestEmail: testDigestEmail,
+    // Sprint 1.3 D2.1+D2.2 - Tagging Matrix admin
+    setupMatrixCols: setupMatrixCols,
+    tagMatrixBatch: tagMatrixBatch,
+    tagMatrixAll: tagMatrixAll,
+    testMatrixTagger: testMatrixTagger,
+    reloadTagStats: reloadTagStats,
+    // Sprint 1.3 D2.3 - Digest segmentato admin
+    generaQueueAll: generaQueueAll,
+    testDigestSegmentato: testDigestSegmentato,
+    inviaTuttiPending: inviaTuttiPending,
+    reloadQueue: reloadQueue,
+    // Sprint 1.3 D2.4 - Cron weekly admin
+    setupCronDigest: setupCronDigest,
+    removeCronDigest: removeCronDigest,
+    testCronManual: testCronManual,
+    // Sprint 1.3 D2.5 - Pagina Impostazioni
+    reloadFontiBandiTable: reloadFontiBandiTable,
+    showAddBandiForm: showAddBandiForm,
+    addBandi: addBandi,
+    openSheetFontiBandi: openSheetFontiBandi,
+    reloadFontiPodTable: reloadFontiPodTable,
+    showAddPodForm: showAddPodForm,
+    showAddYouTubeForm: showAddYouTubeForm,
+    addPodcast: addPodcast,
+    addYouTubeSettings: addYouTubeSettings,
+    openSheetFontiPodcast: openSheetFontiPodcast,
+    toggleFonteAtt: toggleFonteAtt,
+    delFonte: delFonte,
+    testFonteBandi: testFonteBandi,
+    scanFonte: scanFonte,
+    runMigraBandiAmbito: runMigraBandiAmbito,
+    // Sprint 1.4 - Gestione utenti
+    reloadUtentiTable: reloadUtentiTable,
+    showInvitaUtenteForm: showInvitaUtenteForm,
+    invitaUtente: invitaUtente,
+    runMigraUtenti: runMigraUtenti,
+    // Sprint 1.4 D2.5+ - Archiviazione/cancellazione card
+    saveCard: saveCard,
+    archiveCard: archiveCard,
+    deleteCard: deleteCard,
+    runAutoArchive: runAutoArchive,
+    runAutoDelete: runAutoDelete,
+    // Fix 7 — Archivio / Cestino
+    archiveItem: archiveItem,
+    trashItem: trashItem,
+    markItemRead: markItemRead,
+    loadArchivio: loadArchivio,
+    loadCestino: loadCestino,
+    restoreItem: restoreItem,
+    emptyTrash: emptyTrash,
+    exportArchivio: exportArchivio,
+    // Detail panel + cache
+    _detailCache: _detailCache
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hydrate);
+  else hydrate();
+
+})();
+</script>
+
+<!-- Sprint 2 (2026-04-30): include modulo MuseMu Matrix (questionario + report) -->
+<?!= include('MatrixApp'); ?>
+
+</body>
+</html>

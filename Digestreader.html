@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Digest Osservatorio Culturale</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Editoriale Museale — Carta da museo (v4.12) */
+  --bg:#FAF8F4; --surface:#FFFFFF; --surface-alt:#F3F0E9;
+  --ink:#1A1815; --ink-2:#3A3631; --muted:#6E6A62;
+  --border:#E5E1D8; --border-strong:#D5D0C4;
+  --accent:#7A2A1A; --accent-2:#5C1F12;
+  --success:#2E5E3A; --warning:#9A6A14;
+  /* Compat alias usati nel template originale */
+  --navy:#1A1815; --gold:#9C6A36; --green:#2E5E3A; --red:#7A2A1A;
+  --purple:#6B5C9A; --blue:#3C6A95; --text:#1A1815;
+  /* Tipografia editoriale museale */
+  --font-ui:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-serif:'Newsreader','Source Serif 4',Georgia,serif;
+  --font-italic:'Instrument Serif',Georgia,serif;
+  --font-mono:ui-monospace,'JetBrains Mono',monospace;
+}
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap');
+body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+/* HEADER editoriale */
+.rd-header{background:var(--bg);padding:20px 24px;position:sticky;top:0;z-index:50;border-bottom:1px solid var(--border)}
+.rd-brand{font-family:var(--font-serif);font-style:italic;font-size:18px;font-weight:500;color:var(--accent);letter-spacing:-.01em}
+.rd-sub{font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.18em;margin-top:2px;font-weight:600}
+.rd-meta{margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rd-dest{font-size:14px;font-weight:600;color:var(--ink)}
+.rd-exp{font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-left:auto;letter-spacing:.1em;text-transform:uppercase}
+.rd-badge{display:inline-block;font-family:var(--font-mono);font-size:10px;padding:3px 9px;border-radius:0;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--border)}
+.bd-not{color:var(--blue);border-color:var(--blue)}
+.bd-ban{color:var(--gold);border-color:var(--gold)}
+.bd-pod{color:var(--purple);border-color:var(--purple)}
+
+/* TOOLBAR */
+.rd-toolbar{background:var(--surface-alt);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:84px;z-index:40}
+.rd-sel-info{font-family:var(--font-mono);font-size:11px;color:var(--muted);flex:1;letter-spacing:.04em}
+.rd-sel-info strong{color:var(--ink);font-weight:700}
+.btn{font-family:var(--font-ui);font-size:11px;padding:10px 18px;border-radius:0;cursor:pointer;font-weight:600;border:none;transition:all .12s;white-space:nowrap;letter-spacing:.12em;text-transform:uppercase}
+.btn-primary{background:var(--ink);color:#fff}
+.btn-primary:hover{background:#000}
+.btn-primary:disabled{background:var(--border-strong);cursor:not-allowed;color:var(--muted)}
+.btn-outline{background:transparent;color:var(--ink);border:1px solid var(--ink)}
+.btn-outline:hover{background:var(--ink);color:#fff}
+.btn-gold{background:var(--accent);color:#fff}
+.btn-gold:hover{background:var(--accent-2)}
+
+/* SEZIONI */
+.rd-section{padding:24px 24px 10px}
+.rd-sec-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.rd-sec-title{font-family:var(--font-mono);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.18em;border-left:3px solid;padding-left:10px}
+.sec-not{color:var(--blue);border-color:var(--blue)}
+.sec-ban{color:var(--gold);border-color:var(--gold)}
+.sec-pod{color:var(--purple);border-color:var(--purple)}
+.rd-sec-cnt{font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-left:4px;letter-spacing:.06em}
+
+/* CARD ARTICOLO */
+.rd-card{background:var(--surface);border:1px solid var(--border);border-radius:0;padding:18px;margin-bottom:10px;cursor:pointer;transition:border-color .15s,box-shadow .15s;position:relative}
+.rd-card:hover{border-color:var(--ink-2);box-shadow:0 2px 8px rgba(27,27,27,.06)}
+.rd-card.selected{border-color:var(--ink);background:var(--surface-alt);border-left:3px solid var(--accent)}
+.rd-card-chk{position:absolute;top:16px;right:16px;width:18px;height:18px;accent-color:var(--accent);cursor:pointer;z-index:2}
+.rd-card-cat{display:inline-block;font-family:var(--font-mono);font-size:10px;padding:3px 9px;border-radius:0;font-weight:600;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;border:1px solid currentColor}
+.a1{color:#C8102E}.a2{color:#3A6E48}.a3{color:#1F4E5F}.a4{color:#7A4E2D}.a5{color:#1F1F1F}
+.rd-card-title{font-size:15px;font-weight:600;color:var(--ink);line-height:1.4;margin-bottom:6px;padding-right:28px;letter-spacing:-.005em}
+.rd-card-meta{font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;letter-spacing:.04em;text-transform:uppercase}
+.rd-card-sum{font-size:13.5px;color:var(--ink-2);line-height:1.6;margin-bottom:10px}
+.rd-card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tag{font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:0;background:transparent;color:var(--muted);border:1px solid var(--border);letter-spacing:.04em;text-transform:uppercase}
+.rd-card-foot{display:flex;align-items:center;gap:10px}
+.btn-read{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-ui);font-size:11px;font-weight:600;color:var(--ink);border:1px solid var(--ink);border-radius:0;padding:6px 12px;text-decoration:none;background:transparent;transition:all .15s;letter-spacing:.1em;text-transform:uppercase}
+.btn-read:hover{background:var(--ink);color:#fff}
+.score-dots{display:flex;gap:3px}
+.dot{width:6px;height:6px;border-radius:0;background:var(--border)}.dot.on{background:var(--success)}
+
+/* BANDO CARD */
+.rd-bando{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:0;padding:16px 18px;margin-bottom:10px;cursor:pointer;transition:all .15s;position:relative}
+.rd-bando:hover{border-color:var(--ink-2);border-left-color:var(--gold)}
+.rd-bando.selected{border-color:var(--gold);background:var(--surface-alt)}
+.rd-ban-status{display:inline-block;font-family:var(--font-mono);font-size:10px;padding:3px 9px;border-radius:0;font-weight:600;margin-bottom:8px;letter-spacing:.12em;text-transform:uppercase;border:1px solid currentColor}
+.rd-ban-title{font-size:15px;font-weight:600;color:var(--ink);line-height:1.4;margin-bottom:4px;padding-right:30px;letter-spacing:-.005em}
+.rd-ban-meta{font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap;letter-spacing:.04em;text-transform:uppercase}
+.rd-ban-scad{font-family:var(--font-mono);font-size:10px;font-weight:600;padding:3px 9px;border-radius:0;display:inline-block;letter-spacing:.12em;text-transform:uppercase;border:1px solid currentColor}
+.scad-urg{color:var(--accent)}
+.scad-warn{color:var(--gold)}
+.scad-ok{color:var(--success)}
+.btn-bando{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-ui);font-size:11px;font-weight:600;color:var(--ink);border:1px solid var(--ink);border-radius:0;padding:6px 12px;text-decoration:none;background:transparent;letter-spacing:.1em;text-transform:uppercase}
+.btn-bando:hover{background:var(--ink);color:#fff}
+
+/* PODCAST CARD */
+.rd-pod{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:0;padding:16px 18px;margin-bottom:10px;cursor:pointer;transition:all .15s;position:relative}
+.rd-pod:hover{border-color:var(--ink-2)}
+.rd-pod.selected{border-color:var(--purple);background:var(--surface-alt)}
+.rd-pod-serie{font-family:var(--font-mono);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.18em;color:var(--purple);margin-bottom:6px}
+.rd-pod-title{font-size:14px;font-weight:600;color:var(--ink);line-height:1.4;margin-bottom:5px;padding-right:30px;letter-spacing:-.005em}
+.rd-pod-meta{font-family:var(--font-mono);font-size:10px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;letter-spacing:.04em;text-transform:uppercase}
+.dur-pill{background:transparent;color:var(--purple);border:1px solid var(--purple);border-radius:0;padding:2px 8px;font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.08em}
+.btn-listen{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-ui);font-size:11px;font-weight:600;color:var(--ink);border:1px solid var(--ink);border-radius:0;padding:6px 12px;text-decoration:none;background:transparent;letter-spacing:.1em;text-transform:uppercase}
+.btn-listen:hover{background:var(--ink);color:#fff}
+
+/* EMPTY STATE */
+.rd-empty{text-align:center;padding:48px 24px;color:var(--muted);font-size:13px;font-style:italic}
+
+/* FOOTER */
+.rd-footer{background:var(--surface-alt);border-top:1px solid var(--border);padding:20px 24px;text-align:center}
+.rd-footer p{font-family:var(--font-mono);font-size:10px;color:var(--muted);line-height:1.7;letter-spacing:.06em;text-transform:uppercase;font-weight:500}
+.rd-footer a{color:var(--accent);font-weight:600}
+
+/* MODALE PDF */
+.pdf-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px}
+.pdf-overlay.open{display:flex}
+.pdf-box{background:#fff;border-radius:16px;padding:24px;max-width:420px;width:100%;text-align:center}
+.pdf-box h3{font-size:17px;font-weight:700;color:var(--navy);margin-bottom:8px}
+.pdf-box p{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6}
+.spin{display:inline-block;width:20px;height:20px;border:3px solid rgba(0,0,0,.1);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.toast.show{opacity:1}
+
+@media(min-width:768px){
+  .rd-main{max-width:700px;margin:0 auto}
+}
+</style>
+</head>
+<body>
+<div id="rd-main" class="rd-main">
+
+  <!-- HEADER -->
+  <div class="rd-header">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+      <div>
+        <div class="rd-brand">Osservatorio Culturale</div>
+        <div class="rd-sub">Duemilamusei · Fano · Digest personale</div>
+      </div>
+      <div style="text-align:right">
+        <div id="rd-data" style="font-size:11px;color:rgba(255,255,255,.4)">-</div>
+        <div id="rd-scad" style="font-size:10px;color:rgba(255,255,255,.25);margin-top:2px"></div>
+      </div>
+    </div>
+    <div class="rd-meta">
+      <div class="rd-dest" id="rd-nome">Caricamento...</div>
+      <div style="display:flex;gap:5px;margin-left:auto;flex-wrap:wrap" id="rd-badges"></div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="rd-toolbar">
+    <div class="rd-sel-info" id="sel-info"><strong>0</strong> elementi selezionati</div>
+    <button class="btn btn-outline" onclick="selAll()">Seleziona tutto</button>
+    <button class="btn btn-outline" onclick="deselAll()">Deseleziona</button>
+    <button class="btn btn-gold" id="btn-pdf" onclick="openPdfModal()" disabled>↓ Scarica PDF</button>
+  </div>
+
+  <!-- CONTENUTO PRINCIPALE -->
+  <div id="rd-content" style="padding-bottom:40px">
+    <div class="rd-empty">
+      <div style="font-size:32px;margin-bottom:12px">⏳</div>
+      Caricamento del digest in corso...
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="rd-footer">
+    <p>
+      Osservatorio Culturale · <a href="https://www.duemilamusei.it" target="_blank">Duemilamusei</a> · Fano (PU)<br>
+      Link personale valido 30 giorni · <a href="mailto:info@duemilamusei.it">info@duemilamusei.it</a>
+    </p>
+  </div>
+</div>
+
+<!-- MODALE PDF -->
+<div class="pdf-overlay" id="pdf-overlay">
+  <div class="pdf-box">
+    <div style="font-size:36px;margin-bottom:10px">📄</div>
+    <h3>Scarica il tuo digest PDF</h3>
+    <p id="pdf-msg">Seleziona gli elementi che vuoi includere nel PDF, poi clicca su "Genera PDF".</p>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:6px" id="pdf-btns">
+      <button class="btn btn-outline" onclick="closePdfModal()">Annulla</button>
+      <button class="btn btn-primary" onclick="generatePdf()">Genera e scarica PDF</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var GAS_URL = 'GAS_URL_PLACEHOLDER';
+var READER_DATA = READER_DATA_PLACEHOLDER;
+
+var SEL_ITEMS   = new Set();
+var SEL_BANDI   = new Set();
+var SEL_PODCAST = new Set();
+
+// Ambito labels / colori — Sprint 1.3 (2026-05-01) allineati Matrix
+var AL = {1:'Identità e narrazione museale',2:'Inclusione e accessibilità',3:'Programma, mostre e collezioni',4:'Comunità e welfare culturale',5:'Digital, AI e governance'};
+var AC = {1:'a1',2:'a2',3:'a3',4:'a4',5:'a5'};
+var PC_MAP = {rosso:'#EF4444',arancio:'#F59E0B',verde:'#10B981',blu:'#3B82F6',giallo:'#EAB308',grigio:'#9CA3AF'};
+
+window.onload = function() {
+  if (!READER_DATA || READER_DATA.error) {
+    document.getElementById('rd-content').innerHTML =
+      '<div class="rd-empty"><div style="font-size:32px;margin-bottom:12px">⚠️</div><strong>' +
+      (READER_DATA && READER_DATA.error ? READER_DATA.error : 'Dati non disponibili') + '</strong></div>';
+    return;
+  }
+
+  // Header
+  var d = READER_DATA;
+  document.getElementById('rd-nome').textContent = d.destinatario ? 'Ciao ' + d.destinatario + '!' : 'Il tuo digest';
+  if (d.savedAt) {
+    var dt = new Date(d.savedAt);
+    document.getElementById('rd-data').textContent = 'Digest del ' + dt.toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
+  }
+  if (d.scadenza) {
+    var scad = new Date(d.scadenza);
+    var diff = Math.round((scad - new Date()) / 86400000);
+    document.getElementById('rd-scad').textContent = 'Scade tra ' + diff + ' giorni';
+  }
+
+  // Badge contatori
+  var badges = document.getElementById('rd-badges');
+  if (d.items && d.items.length)   badges.innerHTML += '<span class="rd-badge bd-not">' + d.items.length + ' notizie</span>';
+  if (d.bandi && d.bandi.length)   badges.innerHTML += '<span class="rd-badge bd-ban">' + d.bandi.length + ' bandi</span>';
+  if (d.podcast && d.podcast.length) badges.innerHTML += '<span class="rd-badge bd-pod">' + d.podcast.length + ' podcast</span>';
+
+  // Render sezioni
+  var html = '';
+  html += renderNotizie(d.items || []);
+  html += renderBandi(d.bandi || []);
+  html += renderPodcast(d.podcast || []);
+
+  if (!html.trim() || ((!d.items||!d.items.length) && (!d.bandi||!d.bandi.length) && (!d.podcast||!d.podcast.length))) {
+    html = '<div class="rd-empty"><div style="font-size:32px;margin-bottom:12px">📭</div>Il digest è vuoto per questo periodo.</div>';
+  }
+
+  document.getElementById('rd-content').innerHTML = html;
+  updateSelInfo();
+};
+
+function renderNotizie(items) {
+  if (!items.length) return '';
+  var html = '<div class="rd-section">';
+  html += '<div class="rd-sec-hdr">';
+  html += '<div class="rd-sec-title sec-not">Notizie &amp; Tendenze</div>';
+  html += '<span class="rd-sec-cnt">' + items.length + ' articoli</span>';
+  html += '</div>';
+  items.forEach(function(it) {
+    var stars = [1,2,3,4,5].map(function(i){ return '<span class="dot' + (i<=(it.Score||0)?' on':'') + '"></span>'; }).join('');
+    var tags = (it.TagAI||'').split(',').slice(0,3).filter(function(t){return t.trim();}).map(function(t){
+      return '<span class="tag">' + t.trim() + '</span>';
+    }).join('');
+    html += '<div class="rd-card" id="nc-' + esc(it.ID) + '" onclick="toggleItem(' + JSON.stringify(String(it.ID)) + ',this)">';
+    html += '<input type="checkbox" class="rd-card-chk" id="chk-nc-' + esc(it.ID) + '" onclick="event.stopPropagation()" onchange="toggleItem(' + JSON.stringify(String(it.ID)) + ',document.getElementById(\'nc-' + esc(it.ID) + '\'))">';
+    if (it.Ambito) html += '<span class="rd-card-cat ' + (AC[it.Ambito]||'') + '">' + (AL[it.Ambito]||'') + '</span>';
+    html += '<div class="rd-card-title">' + esc(it.Titolo||'-') + '</div>';
+    html += '<div class="rd-card-meta"><span>' + esc(it.Fonte||'') + '</span>';
+    if (it.DataPubblicazione) html += '<span>·</span><span>' + esc(it.DataPubblicazione) + '</span>';
+    html += '<span style="margin-left:auto"><span class="score-dots">' + stars + '</span></span>';
+    html += '</div>';
+    if (it.SommarioAI) html += '<div class="rd-card-sum">' + esc(it.SommarioAI) + '</div>';
+    if (tags) html += '<div class="rd-card-tags">' + tags + '</div>';
+    html += '<div class="rd-card-foot">';
+    if (it.FonteURL) html += '<a class="btn-read" href="' + it.FonteURL + '" target="_blank" onclick="event.stopPropagation()">Leggi ↗</a>';
+    html += '</div></div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderBandi(bandi) {
+  if (!bandi.length) return '';
+  var html = '<div class="rd-section">';
+  html += '<div class="rd-sec-hdr">';
+  html += '<div class="rd-sec-title sec-ban">Bandi &amp; Finanziamenti</div>';
+  html += '<span class="rd-sec-cnt">' + bandi.length + ' opportunità</span>';
+  html += '</div>';
+  bandi.forEach(function(b) {
+    var dl = b.scadenza ? Math.round((new Date(b.scadenza) - new Date()) / 86400000) : null;
+    var scadCls = dl===null ? '' : dl<=7 ? 'scad-urg' : dl<=30 ? 'scad-warn' : 'scad-ok';
+    var scadTxt = dl===null ? '' : dl<0 ? 'Scaduto' : 'Scade in ' + dl + ' gg';
+    var priColor = PC_MAP[b.priorita||'blu'] || '#3B82F6';
+    html += '<div class="rd-bando" id="bc-' + esc(b.id) + '" onclick="toggleBando(' + JSON.stringify(String(b.id)) + ',this)">';
+    html += '<input type="checkbox" class="rd-card-chk" id="chk-bc-' + esc(b.id) + '" onclick="event.stopPropagation()" onchange="toggleBando(' + JSON.stringify(String(b.id)) + ',document.getElementById(\'bc-' + esc(b.id) + '\'))">';
+    html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">';
+    html += '<span style="width:8px;height:8px;border-radius:50%;background:' + priColor + ';flex-shrink:0;display:inline-block"></span>';
+    html += '<span style="font-size:10px;color:#aaa">' + esc(b.ente||'') + '</span>';
+    if (b.livello) html += '<span style="font-size:9px;background:#f4f2ed;padding:1px 5px;border-radius:4px;color:#777">' + esc(b.livello) + '</span>';
+    if (scadTxt) html += '<span class="rd-ban-scad ' + scadCls + '">' + scadTxt + '</span>';
+    html += '</div>';
+    html += '<div class="rd-ban-title">' + esc(b.titolo||'-') + '</div>';
+    html += '<div class="rd-ban-meta">';
+    if (b.regione) html += '<span>' + esc(b.regione) + '</span>';
+    if (b.settore) html += '<span>·</span><span>' + esc(b.settore) + '</span>';
+    if (b.importo) html += '<span>·</span><span style="font-weight:600;color:#0F6E56">EUR ' + Number(b.importo).toLocaleString('it-IT') + '</span>';
+    html += '</div>';
+    if (b.note) html += '<div style="font-size:12px;color:#5a5a5a;line-height:1.5;margin-bottom:10px;border-left:2px solid #B8902A;padding-left:8px">' + esc(b.note) + '</div>';
+    html += '<div style="display:flex;gap:7px;flex-wrap:wrap">';
+    if (b.link) html += '<a class="btn-bando" href="' + b.link + '" target="_blank" onclick="event.stopPropagation()">📄 Apri bando</a>';
+    if (b.urlEnte && b.urlEnte !== b.link) html += '<a class="btn-bando" href="' + b.urlEnte + '" target="_blank" onclick="event.stopPropagation()" style="color:#B8902A;border-color:rgba(184,144,42,.25)">🏛 Sito ente</a>';
+    html += '</div></div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderPodcast(podcast) {
+  if (!podcast.length) return '';
+  var html = '<div class="rd-section">';
+  html += '<div class="rd-sec-hdr">';
+  html += '<div class="rd-sec-title sec-pod">Podcast Culturali</div>';
+  html += '<span class="rd-sec-cnt">' + podcast.length + ' episodi</span>';
+  html += '</div>';
+  podcast.forEach(function(p) {
+    html += '<div class="rd-pod" id="pc-' + esc(p.ID) + '" onclick="togglePodcast(' + JSON.stringify(String(p.ID)) + ',this)">';
+    html += '<input type="checkbox" class="rd-card-chk" id="chk-pc-' + esc(p.ID) + '" onclick="event.stopPropagation()" onchange="togglePodcast(' + JSON.stringify(String(p.ID)) + ',document.getElementById(\'pc-' + esc(p.ID) + '\'))">';
+    if (p.Serie) html += '<div class="rd-pod-serie">' + esc(p.Serie) + '</div>';
+    html += '<div class="rd-pod-title">' + esc(p.Titolo||'-') + '</div>';
+    html += '<div class="rd-pod-meta">';
+    if (p.Tematica) html += '<span>' + esc(p.Tematica) + '</span>';
+    if (p.Durata && p.Durata > 0) html += '<span class="dur-pill">⏱ ' + p.Durata + ' min</span>';
+    if (p.DataPubblicazione) html += '<span>·</span><span>' + esc(p.DataPubblicazione) + '</span>';
+    html += '</div>';
+    if (p.Sommario) html += '<div style="font-size:12px;color:#5a5a5a;line-height:1.5;margin-bottom:9px">' + esc(p.Sommario) + '</div>';
+    html += '<div style="display:flex;gap:7px">';
+    if (p.Link) html += '<a class="btn-listen" href="' + p.Link + '" target="_blank" onclick="event.stopPropagation()">▶ Ascolta</a>';
+    html += '</div></div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function toggleItem(id, card) {
+  var chk = document.getElementById('chk-nc-' + id);
+  if (SEL_ITEMS.has(id)) {
+    SEL_ITEMS.delete(id);
+    card.classList.remove('selected');
+    if (chk) chk.checked = false;
+  } else {
+    SEL_ITEMS.add(id);
+    card.classList.add('selected');
+    if (chk) chk.checked = true;
+  }
+  updateSelInfo();
+}
+
+function toggleBando(id, card) {
+  var chk = document.getElementById('chk-bc-' + id);
+  if (SEL_BANDI.has(id)) {
+    SEL_BANDI.delete(id);
+    card.classList.remove('selected');
+    if (chk) chk.checked = false;
+  } else {
+    SEL_BANDI.add(id);
+    card.classList.add('selected');
+    if (chk) chk.checked = true;
+  }
+  updateSelInfo();
+}
+
+function togglePodcast(id, card) {
+  var chk = document.getElementById('chk-pc-' + id);
+  if (SEL_PODCAST.has(id)) {
+    SEL_PODCAST.delete(id);
+    card.classList.remove('selected');
+    if (chk) chk.checked = false;
+  } else {
+    SEL_PODCAST.add(id);
+    card.classList.add('selected');
+    if (chk) chk.checked = true;
+  }
+  updateSelInfo();
+}
+
+function updateSelInfo() {
+  var tot = SEL_ITEMS.size + SEL_BANDI.size + SEL_PODCAST.size;
+  var info = document.getElementById('sel-info');
+  if (info) {
+    info.innerHTML = '<strong>' + tot + '</strong> element' + (tot===1?'o':'i') + ' selezionat' + (tot===1?'o':'i');
+  }
+  var btn = document.getElementById('btn-pdf');
+  if (btn) btn.disabled = (tot === 0);
+}
+
+function selAll() {
+  var d = READER_DATA;
+  (d.items||[]).forEach(function(it){ var c=document.getElementById('nc-'+it.ID);if(c&&!c.classList.contains('selected'))toggleItem(String(it.ID),c); });
+  (d.bandi||[]).forEach(function(b){ var c=document.getElementById('bc-'+b.id);if(c&&!c.classList.contains('selected'))toggleBando(String(b.id),c); });
+  (d.podcast||[]).forEach(function(p){ var c=document.getElementById('pc-'+p.ID);if(c&&!c.classList.contains('selected'))togglePodcast(String(p.ID),c); });
+}
+
+function deselAll() {
+  var d = READER_DATA;
+  (d.items||[]).forEach(function(it){ var c=document.getElementById('nc-'+it.ID);if(c&&c.classList.contains('selected'))toggleItem(String(it.ID),c); });
+  (d.bandi||[]).forEach(function(b){ var c=document.getElementById('bc-'+b.id);if(c&&c.classList.contains('selected'))toggleBando(String(b.id),c); });
+  (d.podcast||[]).forEach(function(p){ var c=document.getElementById('pc-'+p.ID);if(c&&c.classList.contains('selected'))togglePodcast(String(p.ID),c); });
+}
+
+function openPdfModal() {
+  var tot = SEL_ITEMS.size + SEL_BANDI.size + SEL_PODCAST.size;
+  if (tot === 0) { showToast('Seleziona almeno un elemento'); return; }
+  document.getElementById('pdf-msg').textContent = tot + ' element' + (tot===1?'o':'i') + ' selezionat' + (tot===1?'o':'i') + ' — pronto per generare il PDF.';
+  document.getElementById('pdf-overlay').classList.add('open');
+}
+
+function closePdfModal() {
+  document.getElementById('pdf-overlay').classList.remove('open');
+}
+
+function generatePdf() {
+  var btns = document.getElementById('pdf-btns');
+  btns.innerHTML = '<div class="spin"></div><span style="font-size:13px;color:#5a5a5a;margin-left:8px">Generazione PDF...</span>';
+
+  var d = READER_DATA;
+  var selItems = (d.items||[]).filter(function(it){ return SEL_ITEMS.has(String(it.ID)); });
+  var selBandi = (d.bandi||[]).filter(function(b){ return SEL_BANDI.has(String(b.id)); });
+  var selPod   = (d.podcast||[]).filter(function(p){ return SEL_PODCAST.has(String(p.ID)); });
+
+  // Genera PDF locale tramite print CSS
+  var pdfWin = window.open('', '_blank', 'width=800,height=700');
+  pdfWin.document.write(buildPdfHTML(selItems, selBandi, selPod, d.destinatario));
+  pdfWin.document.close();
+  pdfWin.focus();
+  setTimeout(function(){ pdfWin.print(); }, 500);
+
+  closePdfModal();
+  showToast('PDF pronto — usa Stampa → Salva come PDF');
+}
+
+function buildPdfHTML(items, bandi, podcast, nome) {
+  var date = new Date().toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
+  var html = '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Digest Osservatorio Culturale</title>';
+  html += '<style>body{font-family:Georgia,serif;font-size:12pt;line-height:1.6;color:#1a1a1a;max-width:700px;margin:0 auto;padding:20px}';
+  html += 'h1{font-size:18pt;color:#0F2744;border-bottom:2px solid #0F2744;padding-bottom:8px;margin-bottom:4px}';
+  html += '.subtitle{font-size:10pt;color:#aaa;margin-bottom:24px}';
+  html += 'h2{font-size:12pt;text-transform:uppercase;letter-spacing:.1em;color:#5a5a5a;margin:20px 0 12px;border-left:3px solid;padding-left:8px}';
+  html += '.sec-not{border-color:#185FA5;color:#185FA5}.sec-ban{border-color:#B8902A;color:#854F0B}.sec-pod{border-color:#5B2D8E;color:#5B2D8E}';
+  html += '.item{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #eee;page-break-inside:avoid}';
+  html += '.item-title{font-size:13pt;font-weight:bold;color:#0F2744;margin-bottom:4px}';
+  html += '.item-meta{font-size:9pt;color:#aaa;margin-bottom:6px}';
+  html += '.item-sum{font-size:11pt;color:#5a5a5a}';
+  html += '.item-url{font-size:9pt;color:#185FA5;word-break:break-all}';
+  html += '.ban-title{font-size:12pt;font-weight:bold;color:#0F2744;margin-bottom:3px}';
+  html += '.ban-meta{font-size:9pt;color:#aaa;margin-bottom:5px}';
+  html += '.ban-note{font-size:10pt;color:#5a5a5a;border-left:2px solid #B8902A;padding-left:7px;margin:6px 0}';
+  html += '.pod-title{font-size:12pt;font-weight:bold;color:#0F2744;margin-bottom:3px}';
+  html += '.footer{margin-top:32px;padding-top:12px;border-top:1px solid #eee;font-size:9pt;color:#aaa;text-align:center}';
+  html += '@media print{body{padding:0}h2{page-break-after:avoid}}';
+  html += '</style></head><body>';
+  html += '<h1>Digest Osservatorio Culturale</h1>';
+  html += '<div class="subtitle">Duemilamusei · Fano' + (nome ? ' · Per ' + nome : '') + ' · ' + date + '</div>';
+
+  if (items.length) {
+    html += '<h2 class="sec-not">Notizie &amp; Tendenze</h2>';
+    items.forEach(function(it) {
+      html += '<div class="item"><div class="item-title">' + (it.Titolo||'-') + '</div>';
+      html += '<div class="item-meta">' + (it.Fonte||'') + (it.DataPubblicazione?' · '+it.DataPubblicazione:'') + '</div>';
+      if (it.SommarioAI) html += '<div class="item-sum">' + it.SommarioAI + '</div>';
+      if (it.FonteURL) html += '<div class="item-url">' + it.FonteURL + '</div>';
+      html += '</div>';
+    });
+  }
+
+  if (bandi.length) {
+    html += '<h2 class="sec-ban">Bandi &amp; Finanziamenti</h2>';
+    bandi.forEach(function(b) {
+      var dl = b.scadenza ? Math.round((new Date(b.scadenza)-new Date())/86400000) : null;
+      html += '<div class="item"><div class="ban-title">' + (b.titolo||'-') + '</div>';
+      html += '<div class="ban-meta">' + (b.ente||'') + (b.regione?' · '+b.regione:'') + (b.settore?' · '+b.settore:'') + (b.importo?' · EUR '+Number(b.importo).toLocaleString('it-IT'):'') + (dl!==null?' · Scade in '+dl+' gg':'') + '</div>';
+      if (b.note) html += '<div class="ban-note">' + b.note + '</div>';
+      if (b.link) html += '<div class="item-url">' + b.link + '</div>';
+      html += '</div>';
+    });
+  }
+
+  if (podcast.length) {
+    html += '<h2 class="sec-pod">Podcast Culturali</h2>';
+    podcast.forEach(function(p) {
+      html += '<div class="item"><div class="pod-title">' + (p.Titolo||'-') + '</div>';
+      html += '<div class="ban-meta">' + (p.Serie||'') + (p.Tematica?' · '+p.Tematica:'') + (p.Durata&&p.Durata>0?' · '+p.Durata+' min':'') + '</div>';
+      if (p.Sommario) html += '<div class="item-sum">' + p.Sommario + '</div>';
+      if (p.Link) html += '<div class="item-url">' + p.Link + '</div>';
+      html += '</div>';
+    });
+  }
+
+  html += '<div class="footer">Osservatorio Culturale · Duemilamusei · info@duemilamusei.it</div>';
+  html += '</body></html>';
+  return html;
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, dur) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, dur||3000);
+}
+</script>
+</body>
+</html>

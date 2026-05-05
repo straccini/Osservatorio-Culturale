@@ -1,0 +1,1098 @@
+<!--
+  ============================================================
+  OSSERVATORIO CULTURALE — NAVIGATION.HTML (v4.2 redesign)
+  ------------------------------------------------------------
+  File GAS: "Navigation"
+  Include nel Index.html DOPO il markup.
+  ------------------------------------------------------------
+  Espone oggetto globale OC con API:
+      OC.go(page, ambitoId)
+      OC.hydrate()              — carica dati iniziali (home + badge)
+      OC.loadAmbito(id)
+      OC.search(query)
+      OC.filterBandi(preset)
+      OC.openBando(id) / openNews(id) / openPodcast(id)
+      OC.setUser(user)          — aggiorna avatar + ruolo + visibilita
+      OC.openGuida() / openNotifiche() / openUserMenu()
+  ============================================================
+-->
+<script>
+(function(){
+  'use strict';
+
+  // -------- Config --------
+  var PAGE_TITLES = {
+    home:'Home', bandi:'Radar Bandi', news:'News', podcast:'Podcast',
+    ambito:'Ambito', digest:'Digest Reader', data:'Gestione Dati',
+    stats:'Statistiche', settings:'Impostazioni',
+    matrix:'Valuta il tuo museo',  // Sprint 2 - MuseMu Matrix questionario
+    archivio:'Archivio', cestino:'Cestino'
+  };
+
+  // 5 ambiti reali (coerenti con Constants.js OC_AMBITI)
+  // Sprint 1.3 (2026-05-01): rinomina per allineamento Matrix v1.0.2
+  // Sprint B (2026-05-03): aggiunte desc e cls per hero v4.12
+  var AMBITI = {
+    1:{nome:'Identità e narrazione museale',  color:'var(--amb-1)', cls:'a1', desc:'Identità del museo, posizionamento strategico, marca istituzionale e narrazione contemporanea.'},
+    2:{nome:'Inclusione e accessibilità',     color:'var(--amb-2)', cls:'a2', desc:'Accessibilità ampliata: fisica, cognitiva, sensoriale, linguistica. Pubblici fragili e diritto culturale.'},
+    3:{nome:'Programma, mostre e collezioni', color:'var(--amb-3)', cls:'a3', desc:'Programma educativo, mostre, gestione collezioni, conservazione, allestimenti e servizi al visitatore.'},
+    4:{nome:'Comunità e welfare culturale',   color:'var(--amb-4)', cls:'a4', desc:'Audience engagement, comunità locali, partecipazione, welfare culturale e impatto sociale.'},
+    5:{nome:'Digital, AI e governance',       color:'var(--amb-5)', cls:'a5', desc:'Maturità digitale, AI applicata al patrimonio, governance, fundraising e sostenibilità economica.'}
+  };
+
+  // -------- Helper sicurezza --------
+  function esc(s){
+    return String(s==null?'':s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function $(id){ return document.getElementById(id); }
+  function $$(sel, root){ return (root||document).querySelectorAll(sel); }
+
+  // ==========================================================
+  //  A) NAVIGAZIONE SPA
+  // ==========================================================
+  function go(page, ambito){
+    // 1. Attiva pagina target
+    var pages = $$('.page');
+    for (var i=0;i<pages.length;i++) pages[i].classList.remove('active');
+    var target = $('page-'+page);
+    if (target) target.classList.add('active');
+
+    // 2. Aggiorna nav-item attivo
+    var navs = $$('.nav-item');
+    for (var j=0;j<navs.length;j++) navs[j].classList.remove('active');
+    var sel = '.nav-item[data-page="'+page+'"]';
+    if (page==='ambito' && ambito) sel += '[data-ambito="'+ambito+'"]';
+    var nav = document.querySelector(sel);
+    if (nav) {
+      nav.classList.add('active');
+      nav.setAttribute('aria-current','page');
+    }
+
+    // 3. Breadcrumb
+    var crumb = $('breadcrumb');
+    if (crumb) {
+      if (page==='ambito' && ambito && AMBITI[ambito]){
+        crumb.innerHTML =
+          '<span>Osservatorio</span><span class="sep">/</span>'+
+          '<span>Ambiti</span><span class="sep">/</span>'+
+          '<b>'+esc(AMBITI[ambito].nome)+'</b>';
+      } else {
+        crumb.innerHTML =
+          '<span>Osservatorio</span><span class="sep">/</span>'+
+          '<b>'+esc(PAGE_TITLES[page]||'Home')+'</b>';
+      }
+    }
+
+    // 4. Aggiorna hero ambito se presente
+    if (page==='ambito' && ambito && AMBITI[ambito]) {
+      var hero = $('ambitoHero');
+      if (hero) {
+        // applica classe colore ambito (rimuovi vecchia)
+        ['a1','a2','a3','a4','a5'].forEach(function(c){ hero.classList.remove(c); });
+        hero.classList.add(AMBITI[ambito].cls);
+      }
+      var e = $('ambitoEyebrow');  if (e) e.textContent = 'Ambito 0'+ambito;
+      var n = $('ambitoName');     if (n) n.textContent = AMBITI[ambito].nome;
+      var d = $('ambitoDesc');     if (d) d.textContent = AMBITI[ambito].desc;
+      loadAmbito(ambito);
+    }
+
+    // 5. Lazy loader pagine dati (Sprint D)
+    if (page === 'bandi')    loadBandi();
+    if (page === 'news')     loadNews();
+    if (page === 'podcast')  loadPodcast();
+    if (page === 'archivio' && window.OC && typeof window.OC.loadArchivio === 'function') window.OC.loadArchivio();
+    if (page === 'cestino'  && window.OC && typeof window.OC.loadCestino  === 'function') window.OC.loadCestino();
+
+    // 6. UX
+    window.scrollTo({top:0, behavior:'smooth'});
+    var sb = $('sidebar');
+    if (sb) sb.classList.remove('open');
+
+    // INT-5 (Sprint 1.1): aggiungi/rimuovi classe is-home-page al body
+    // per nascondere search topbar quando si è in home (evita doppia barra).
+    if (page === 'home') document.body.classList.add('is-home-page');
+    else document.body.classList.remove('is-home-page');
+
+    // Sprint 2 (2026-04-30): inizializza/risveglia il modulo MuseMu Matrix quando si apre la pagina
+    if (page === 'matrix' && window.OC_Matrix && typeof window.OC_Matrix.init === 'function') {
+      window.OC_Matrix.init();
+    }
+  }
+
+  // ==========================================================
+  //  B) DATA LOADER (google.script.run → Addon_v42.gs)
+  // ==========================================================
+
+  function hasGAS(){
+    return typeof google !== 'undefined' && google.script && google.script.run;
+  }
+
+  function hydrate(){
+    // Popola Home + badge sidebar all'avvio.
+    if (!hasGAS()) { return; }
+    google.script.run
+      .withSuccessHandler(function(data){
+        if (!data) return;
+        renderHome(data);
+        renderSidebarBadges(data.badges || {});
+        // Sprint D: carica ultimi bandi monitorati (sezione separata home)
+        loadUltimiBandiHome();
+      })
+      .withFailureHandler(function(err){
+        console.error('getHomepageDataV42:', err);
+      })
+      .getHomepageDataV42();
+  }
+
+  function loadAmbito(ambitoId){
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(renderAmbito)
+      .withFailureHandler(function(err){ console.error('getAmbitoDataV42:',err); })
+      .getAmbitoDataV42(ambitoId);
+  }
+
+  // ==========================================================
+  //  C) RENDERING
+  // ==========================================================
+
+  function renderHome(d){
+    // Data oggi
+    var t = $('homeDataOggi');
+    if (t && d.dataOggi) t.textContent = d.dataOggi;
+
+    // INT-1 (Sprint 1.1): pillola freschezza dati sotto hero
+    renderUpdateInfo(d);
+
+    // Bandi urgenti
+    renderBandiUrgenti(d.bandiUrgenti || []);
+    var totBandi = (d.badges && d.badges.bandi) != null ? d.badges.bandi : (d.bandiUrgenti||[]).length;
+    var tb = $('homeBandiTotCount'); if (tb) tb.textContent = totBandi;
+
+    // Ultimi bandi monitorati
+    renderUltimiBandi(d.ultimiBandi || []);
+
+    // Popola detail cache con i dati home
+    _cacheForDetail_('bando',   (d.bandiUrgenti || []).concat(d.ultimiBandi || []));
+    _cacheForDetail_('news',    d.news    || []);
+    _cacheForDetail_('podcast', d.podcast || []);
+
+    // Contatori ambiti
+    renderAmbitiCounters(d.ambiti || []);
+
+    // News
+    renderNewsList(d.news || []);
+
+    // Podcast
+    renderPodcastList(d.podcast || []);
+
+    // Scanner
+    var s = d.scanner || {};
+    var el;
+    el = $('stat-fonti');       if (el) el.textContent = s.fonti || 0;
+    el = $('stat-articoli');    if (el) el.textContent = s.articoliMese || 0;
+    el = $('stat-bandi');       if (el) el.textContent = s.bandiAttivi || 0;
+    el = $('stat-accuratezza'); if (el) el.textContent = (s.accuratezza || 0) + '%';
+  }
+
+  // INT-1 (Sprint 1.1): popola la pillola sotto hero con info di freschezza dati.
+  // Mostra: ora ultima scansione + numero contenuti nuovi rilevati oggi.
+  // Se l'API non fornisce i dati, la pillola resta nascosta (graceful).
+  function renderUpdateInfo(d){
+    var pill = $('homeUpdateInfo');
+    var txt  = $('homeUpdateText');
+    if (!pill || !txt) return;
+
+    var parts = [];
+    if (d.ultimaScansione) {
+      // d.ultimaScansione è del formato 'dd/MM/yyyy HH:mm' (vedi getUltimaScansione in Codice.js)
+      var pieces = String(d.ultimaScansione).split(' ');
+      var ora = pieces.length > 1 ? pieces[1] : '';
+      parts.push(ora ? ('Aggiornato alle ' + ora) : ('Aggiornato il ' + d.ultimaScansione));
+    }
+    var no = d.nuoviOggi || {};
+    if (no.totale && no.totale > 0) {
+      var dettaglio = [];
+      if (no.bandi)   dettaglio.push(no.bandi   + ' bandi');
+      if (no.news)    dettaglio.push(no.news    + ' news');
+      if (no.podcast) dettaglio.push(no.podcast + ' podcast');
+      var label = dettaglio.length ? dettaglio.join(' · ') : (no.totale + ' contenuti');
+      parts.push(label + ' oggi');
+    }
+
+    if (parts.length === 0) {
+      pill.hidden = true;
+      return;
+    }
+    txt.textContent = parts.join(' · ');
+    pill.hidden = false;
+  }
+
+  function renderBandiUrgenti(list){
+    var wrap = $('homeBandiUrgenti');
+    if (!wrap) return;
+    if (!list.length) {
+      wrap.innerHTML = '';
+      var em = $('homeBandiEmpty'); if (em) em.hidden = false;
+      return;
+    }
+    var em2 = $('homeBandiEmpty'); if (em2) em2.hidden = true;
+
+    var html = '';
+    list.forEach(function(b){
+      var prioCls = b.priorita==='med' ? 'prio-med' : (b.priorita==='low' ? 'prio-low' : '');
+      var prioLbl = b.priorita==='urgent' ? 'Urgente' : (b.priorita==='med' ? 'Medio' : 'Standard');
+      var bUrl = b.link || b.url || '';
+      var bClick = bUrl ? 'OC.openUrl(\'' + esc(bUrl) + '\')' : 'OC.openBando(\'' + esc(b.id) + '\')';
+      html += ''
+        + '<div class="bando-card '+prioCls+'" onclick="'+bClick+'" title="'+(bUrl?'Apri scheda ufficiale':'Vai ai bandi')+'">'
+        +   '<div class="bando-meta">'
+        +     '<span class="tag '+esc(b.priorita)+'">'+prioLbl+' · '+esc(b.giorni)+' giorni</span>'
+        +     '<span>'+esc(b.ente)+'</span>'
+        +   '</div>'
+        +   '<h3 class="bando-title">'+esc(b.titolo)+'</h3>'
+        +   '<div class="bando-footer">'
+        +     '<span>'+esc(b.settore||b.ambito||'')+(b.importo?' · '+esc(b.importo):'')+'</span>'
+        +     '<span class="days">Scade '+esc(b.scadenza)+(bUrl?' ↗':'')+'</span>'
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function renderAmbitiCounters(list){
+    list.forEach(function(a){
+      var id = a.id;
+      // FIX 2: solo contatore "nuovi oggi" — rimuovi setCount news/bandi/podcast
+      var nn = document.querySelector('[data-new="'+id+'"]');
+      if (nn) {
+        var nuovi = a.nuoviOggi || (a.news || 0) + (a.bandi || 0) + (a.podcast || 0);
+        if (nuovi > 0) { nn.hidden = false; nn.textContent = '+' + nuovi; }
+        else { nn.textContent = '\u2014'; nn.hidden = false; }
+      }
+    });
+  }
+
+  function renderNewsList(list){
+    var wrap = $('homeNewsList');
+    if (!wrap) return;
+    if (!list.length) {
+      wrap.innerHTML = '';
+      var em = $('homeNewsEmpty'); if (em) em.hidden = false;
+      return;
+    }
+    var em2 = $('homeNewsEmpty'); if (em2) em2.hidden = true;
+
+    var html = '';
+    list.forEach(function(n, idx){
+      var nUrl = n.link || n.url || '';
+      var nClick = nUrl ? 'OC.openUrl(\'' + esc(nUrl) + '\')' : 'OC.openNews(\'' + esc(n.id) + '\')';
+      var num = String(idx+1); if (num.length<2) num = '0'+num;
+      html += ''
+        + '<div class="home-list-row" onclick="'+nClick+'" title="'+(nUrl?'Apri articolo':'Vai alle news')+'">'
+        +   '<div class="hlr-left">'
+        +     '<div class="hlr-tags"><span class="hlr-amb">'+esc(n.settore||n.ambito||'News')+'</span></div>'
+        +     '<p class="hlr-title">'+esc(n.titolo)+'</p>'
+        +     '<p class="hlr-meta"><b>'+esc(n.fonte)+'</b>'+(n.data?' · '+esc(n.data):'')+'</p>'
+        +   '</div>'
+        +   '<div class="hlr-right">'
+        +     (n.score ? '<div class="hlr-scad">AI '+esc(n.score)+'</div>' : '')
+        +     (nUrl ? '<div class="hlr-date">↗ Apri</div>' : '')
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function renderPodcastList(list){
+    var wrap = $('homePodcastList');
+    if (!wrap) return;
+    if (!list.length) {
+      wrap.innerHTML = '';
+      var em = $('homePodcastEmpty'); if (em) em.hidden = false;
+      return;
+    }
+    var em2 = $('homePodcastEmpty'); if (em2) em2.hidden = true;
+
+    var html = '';
+    list.forEach(function(p){
+      var pUrl = p.link || p.url || '';
+      var pClick = pUrl ? 'OC.openUrl(\'' + esc(pUrl) + '\')' : 'OC.openPodcast(\'' + esc(p.id) + '\')';
+      html += ''
+        + '<div class="pod-item" onclick="'+pClick+'" title="'+(pUrl?'Apri episodio':'Vai ai podcast')+'">'
+        +   '<div class="pod-cover">'
+        +     '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>'
+        +   '</div>'
+        +   '<div class="pod-body">'
+        +     '<h4 class="pod-title">'+esc(p.titolo)+'</h4>'
+        +     '<div class="pod-meta">'+esc(p.show||p.fonte||'')+(p.durata?' · '+esc(p.durata):'')+'</div>'
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  // ==========================================================
+  //  D) LAZY LOADERS — Bandi / News / Podcast (Sprint D)
+  // ==========================================================
+
+  // Cache e stato filtro
+  var _cache = { bandi: null, news: null, podcast: null };
+  var _filter = { bandi: { amb: 0, preset: 'tutti' }, news: { amb: 0 }, podcast: { amb: 0 } };
+
+  // ------ Helper: giorni alla scadenza da 'dd/MM/yyyy' ------
+  function _calcGiorni_(scadStr) {
+    if (!scadStr) return null;
+    var p = String(scadStr).split('/');
+    if (p.length !== 3) return null;
+    var d = new Date(Number(p[2]), Number(p[1])-1, Number(p[0]));
+    if (isNaN(d.getTime())) return null;
+    return Math.round((d.getTime() - Date.now()) / 86400000);
+  }
+
+  // ------ Helper: normalizza ambito → numero 1-5 (FIX 4: fallback settore) ------
+  function _ambNum_(val, settore) {
+    var n = Number(val);
+    if (n >= 1 && n <= 5) return n;
+    var v = String(val||'').toLowerCase();
+    if (/identit|narraz|tendenz|posizionamento|branding/.test(v)) return 1;
+    if (/inclus|access|gaming|lis|caa|easy.to.read/.test(v))     return 2;
+    if (/programm|mostr|collezion|restauro|patrimoni/.test(v))   return 3;
+    if (/comunit|welfare|audience|partecip|sociale/.test(v))     return 4;
+    if (/digital|ai\b|govern|fundrais|tecnolog|sostenib/.test(v)) return 5;
+    if (settore) {
+      var s = String(settore).toLowerCase();
+      if (/musei|mostre|patrimoni|restauro|reti.cultural|conservaz/.test(s)) return 3;
+      if (/turismo|borghi|territoriale|dmo|valorizzaz|welfare|audience/.test(s)) return 4;
+      if (/digital|ai\b|tecnolog|governance|fundrais/.test(s)) return 5;
+      if (/inclus|access/.test(s)) return 2;
+    }
+    return 0;
+  }
+
+  // ------ Helper: popola OC._detailCache per openDetail overlay ------
+  function _cacheForDetail_(tipo, list) {
+    if (!window.OC || !OC._detailCache) return;
+    (list || []).forEach(function(item) {
+      if (item && item.id != null) OC._detailCache[tipo + '_' + item.id] = item;
+    });
+  }
+
+  // ------ Loader: Bandi lista completa ------
+  function loadBandi() {
+    if (!hasGAS()) return;
+    if (_cache.bandi !== null) { renderBandiListFull(_cache.bandi); return; }
+    var wrap = $('bandiList');
+    if (wrap) wrap.innerHTML = '<div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>';
+    google.script.run
+      .withSuccessHandler(function(list) {
+        _cache.bandi = list || [];
+        _cacheForDetail_('bando', _cache.bandi);
+        renderBandiListFull(_cache.bandi);
+      })
+      .withFailureHandler(function(e) { console.error('getBandiListV42:', e); })
+      .getBandiListV42(500);
+  }
+
+  // ------ Loader: News lista completa ------
+  function loadNews() {
+    if (!hasGAS()) return;
+    if (_cache.news !== null) { renderNewsListFull(_cache.news); return; }
+    var wrap = $('newsListFull');
+    if (wrap) wrap.innerHTML = '<div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>';
+    google.script.run
+      .withSuccessHandler(function(list) {
+        _cache.news = list || [];
+        _cacheForDetail_('news', _cache.news);
+        renderNewsListFull(_cache.news);
+      })
+      .withFailureHandler(function(e) { console.error('getNewsListV42:', e); })
+      .getNewsListV42(500);
+  }
+
+  // ------ Loader: Podcast lista completa ------
+  function loadPodcast() {
+    if (!hasGAS()) return;
+    if (_cache.podcast !== null) { renderPodcastListFull(_cache.podcast); return; }
+    var wrap = $('podcastListFull');
+    if (wrap) wrap.innerHTML = '<div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>';
+    google.script.run
+      .withSuccessHandler(function(list) {
+        _cache.podcast = list || [];
+        _cacheForDetail_('podcast', _cache.podcast);
+        renderPodcastListFull(_cache.podcast);
+      })
+      .withFailureHandler(function(e) { console.error('getPodcastListV42:', e); })
+      .getPodcastListV42(300);
+  }
+
+  // ------ Loader: Ultimi bandi home (sezione separata) ------
+  function loadUltimiBandiHome() {
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(renderUltimiBandi)
+      .withFailureHandler(function(e) { console.error('getUltimiBandiMonitorati:', e); })
+      .getUltimiBandiMonitorati(6);
+  }
+
+  // ------ Helper: render scheda bando (Radar — grid 2 col, stile home-list-row esteso) ------
+  function _bv5RowHtml_(b, ambNum, giorni) {
+    var isUrgent = giorni !== null && giorni >= 0 && giorni <= 7;
+    var isMed    = !isUrgent && giorni !== null && giorni >= 0 && giorni <= 10;
+    var isScad   = giorni !== null && giorni < 0;
+    var url      = b.link || b.url || b.URL || '';
+    var sommario = b.sommario || b.note || b.descrizione || '';
+
+    // Etichetta tematica — settore testuale colorato per ambito
+    var temaLabel = b.settore || (ambNum > 0 ? ['','Identità','Inclusione','Programma','Comunità','Digital & Gov'][ambNum] : '') || 'Bando';
+    var temaCls   = ambNum > 0 ? ' br-a' + ambNum : '';
+
+    // Giorni rimanenti — badge colorato
+    var giorniTxt = giorni === null ? '' : isScad ? 'Scaduto' : giorni === 0 ? 'Oggi!' : giorni + ' gg';
+    var giorniCls = isUrgent ? ' br-gd-urgent' : (isMed ? ' br-gd-med' : ' br-gd-ok');
+    var giorniHtml = giorniTxt ? '<span class="br-giorni' + giorniCls + '">' + esc(giorniTxt) + '</span>' : '';
+
+    // Scadenza — data leggibile
+    var scadHtml = b.scadenza
+      ? '<div class="br-scad' + (isUrgent ? ' br-scad-urgent' : isMed ? ' br-scad-med' : '') + '">'
+        + esc(b.scadenza) + giorniHtml
+        + '</div>'
+      : '<div class="br-scad br-scad-nd">Data n.d.</div>';
+
+    // Importo — solo se presente
+    var importoHtml = b.importo
+      ? '<div class="br-importo">&#8364;&nbsp;' + esc(b.importo) + '</div>'
+      : '';
+
+    // Link — bottone principale CTA, sempre visibile se URL presente
+    var linkHtml = url
+      ? '<a class="br-link" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="' + esc(b.titolo||'') + '">'
+        + '&#8599; Apri scheda'
+        + '</a>'
+      : '<span class="br-link br-link-nd">Nessun link</span>';
+
+    return '<div class="br-row' + (isUrgent ? ' br-urgent' : '') + '" data-amb="' + ambNum + '" data-id="' + esc(b.id) + '">'
+      // — COLONNA SINISTRA —
+      + '<div class="br-left">'
+      // Tag: tematica + urgenza
+      +   '<div class="br-tags">'
+      +     '<span class="br-tema' + temaCls + '">' + esc(temaLabel) + '</span>'
+      +     (isUrgent ? '<span class="br-badge-urgent">&#9889; Urgente</span>' : '')
+      +     (b.isRecente && !isUrgent ? '<span class="br-badge-new">Nuovo</span>' : '')
+      +   '</div>'
+      // Titolo
+      +   '<p class="br-title"' + (url ? ' onclick="OC.openUrl(\'' + esc(url) + '\')" title="Apri scheda ufficiale"' : '') + '>'
+      +     esc(b.titolo || '(senza titolo)')
+      +   '</p>'
+      // Sommario
+      +   (sommario ? '<p class="br-summary">' + esc(sommario) + '</p>' : '')
+      // Meta: ente · regione · importo · rilevato
+      +   '<div class="br-meta">'
+      +     (b.ente    ? '<span class="br-ente">' + esc(b.ente) + '</span>' : '')
+      +     (b.regione ? '<span class="br-sep">&middot;</span><span>' + esc(b.regione) + '</span>' : '')
+      +     (b.importo ? '<span class="br-sep">&middot;</span><span class="br-importo-inline">&#8364; ' + esc(b.importo) + '</span>' : '')
+      +     (b.dataRil ? '<span class="br-sep">&middot;</span><span class="br-rilev">Rilevato ' + esc(b.dataRil) + '</span>' : '')
+      +   '</div>'
+      + '</div>'
+      // — COLONNA DESTRA —
+      + '<div class="br-right">'
+      +   scadHtml
+      +   linkHtml
+      +   '<div class="br-acts">'
+      +     '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'bando\',\'' + esc(b.id) + '\',this)" title="Segna come letto">&#10003; Letto</button>'
+      +     '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'bando\',\'' + esc(b.id) + '\',this)" title="Archivia bando">&#8659; Archiv.</button>'
+      +     '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'bando\',\'' + esc(b.id) + '\',this)" title="Elimina bando">&#128465;</button>'
+      +   '</div>'
+      + '</div>'
+      + '</div>';
+  }
+
+  // ------ Renderer: Bandi lista pagina (schede v5 con filtri 2 livelli) ------
+  function renderBandiListFull(list) {
+    var wrap = $('bandiList');
+    var cnt  = $('bandiCount');
+    if (!wrap) return;
+
+    var fAmb   = _filter.bandi.amb;
+    var preset = _filter.bandi.preset || 'tutti';
+    var total  = list.length;
+    var urgenti = [], altri = [], shown = 0;
+
+    list.forEach(function(b) {
+      var ambNum   = _ambNum_(b.ambito, b.settore);
+      var giorni   = b.giorni != null ? b.giorni : _calcGiorni_(b.scadenza);
+      var isUrgent = giorni !== null && giorni >= 0 && giorni <= 7;
+
+      // Filtro tematica (livello 2)
+      if (fAmb > 0 && ambNum !== fAmb) return;
+
+      // Filtro preset (livello 1)
+      if (preset === 'recenti'   && !b.isRecente) return;
+      if (preset === 'urgenti10' && !(giorni !== null && giorni >= 0 && giorni <= 10)) return;
+
+      shown++;
+      // Urgenti (≤7gg) in sezione separata per "tutti" e "urgenti10"
+      if (isUrgent && (preset === 'tutti' || preset === 'urgenti10'))
+        urgenti.push({ b:b, ambNum:ambNum, giorni:giorni });
+      else
+        altri.push({ b:b, ambNum:ambNum, giorni:giorni });
+    });
+
+    if (cnt) cnt.textContent = shown < total
+      ? shown + ' di ' + total + ' bandi'
+      : total + ' bandi monitorati';
+
+    if (!shown) {
+      wrap.innerHTML = '';
+      var em = $('bandiEmpty'); if (em) { em.textContent = 'Nessun bando trovato per questo filtro.'; em.hidden = false; }
+      return;
+    }
+    var em2 = $('bandiEmpty'); if (em2) em2.hidden = true;
+
+    var html = '';
+    if (urgenti.length) {
+      html += '<div class="section-divider urgent-divider"><span>&#9889; In scadenza nei prossimi 7 giorni</span></div>';
+      urgenti.forEach(function(item){ html += _bv5RowHtml_(item.b, item.ambNum, item.giorni); });
+    }
+    if (altri.length) {
+      if (urgenti.length) html += '<div class="section-divider"><span>Tutti i bandi monitorati</span></div>';
+      altri.forEach(function(item){ html += _bv5RowHtml_(item.b, item.ambNum, item.giorni); });
+    }
+    wrap.innerHTML = html;
+  }
+
+  // ------ Renderer: News lista pagina ------
+  function renderNewsListFull(list) {
+    var wrap = $('newsListFull');
+    var cnt  = $('newsCount');
+    if (!wrap) return;
+
+    var fAmb = _filter.news.amb;
+    var html = '', idx = 0;
+    var recenti = [], altri = [];
+
+    list.forEach(function(n) {
+      var ambNum = _ambNum_(n.ambito || n.settore);
+      if (fAmb > 0 && ambNum !== fAmb) return;
+      if (n.isRecente) recenti.push({ n:n, ambNum:ambNum });
+      else             altri.push({ n:n, ambNum:ambNum });
+    });
+
+    var allItems = recenti.concat(altri);
+    if (cnt) cnt.textContent = allItems.length + ' articoli' + (fAmb > 0 ? ' (filtro att.)' : '');
+
+    if (!allItems.length) {
+      wrap.innerHTML = '';
+      var em = $('newsEmpty'); if (em) { em.textContent = 'Nessuna news trovata per questo filtro.'; em.hidden = false; }
+      return;
+    }
+    var em2 = $('newsEmpty'); if (em2) em2.hidden = true;
+
+    if (recenti.length && altri.length) {
+      html += '<div class="section-divider"><span>&#127381; Ultime 7 giorni</span></div>';
+    }
+    recenti.forEach(function(item) {
+      var n = item.n; idx++;
+      var num = String(idx); if (num.length<2) num='0'+num;
+      var score = n.score; var scoreCls = score>=80?'high':(score>=60?'med':'');
+      html += '<div class="news-row" data-amb="'+item.ambNum+'" onclick="OC.openNews(\''+esc(n.id)+'\')">'
+        +   '<div class="news-num">'+num+'</div>'
+        +   '<div class="news-body">'
+        +     '<div class="news-tags">'
+        +       '<span class="news-tag recente-badge">Recente</span>'
+        +       '<span class="news-tag">'+esc(n.settore || n.ambito || '—')+'</span>'
+        +       (score ? '<span class="score-badge '+scoreCls+'">AI '+esc(score)+'</span>' : '')
+        +     '</div>'
+        +     '<h4 class="news-title">'+esc(n.titolo)+'</h4>'
+        +     '<div class="news-meta"><b>'+esc(n.fonte)+'</b>'+(n.data?' · '+esc(n.data):'')+'</div>'
+        +   '</div>'
+        + '</div>';
+    });
+    if (recenti.length && altri.length) {
+      html += '<div class="section-divider"><span>Archivio articoli</span></div>';
+    }
+    altri.forEach(function(item) {
+      var n = item.n; idx++;
+      var num = String(idx); if (num.length<2) num='0'+num;
+      var score = n.score; var scoreCls = score>=80?'high':(score>=60?'med':'');
+      html += '<div class="news-row" data-amb="'+item.ambNum+'" onclick="OC.openNews(\''+esc(n.id)+'\')">'
+        +   '<div class="news-num">'+num+'</div>'
+        +   '<div class="news-body">'
+        +     '<div class="news-tags">'
+        +       '<span class="news-tag">'+esc(n.settore || n.ambito || '—')+'</span>'
+        +       (score ? '<span class="score-badge '+scoreCls+'">AI '+esc(score)+'</span>' : '')
+        +     '</div>'
+        +     '<h4 class="news-title">'+esc(n.titolo)+'</h4>'
+        +     '<div class="news-meta"><b>'+esc(n.fonte)+'</b>'+(n.data?' · '+esc(n.data):'')+'</div>'
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  // ------ Renderer: Podcast lista pagina ------
+  function renderPodcastListFull(list) {
+    var wrap = $('podcastListFull');
+    var cnt  = $('podcastCount');
+    if (!wrap) return;
+
+    var fAmb = _filter.podcast.amb;
+    var filtered = (fAmb > 0) ? list.filter(function(p) {
+      return _ambNum_(p.tematica || p.ambito) === fAmb;
+    }) : list.slice();
+
+    var recenti = filtered.filter(function(p){ return p.isRecente; });
+    var altri   = filtered.filter(function(p){ return !p.isRecente; });
+
+    if (cnt) cnt.textContent = filtered.length + ' episodi' + (fAmb > 0 ? ' (filtro att.)' : '');
+
+    if (!filtered.length) {
+      wrap.innerHTML = '';
+      var em = $('podcastEmpty'); if (em) em.hidden = false;
+      return;
+    }
+    var em2 = $('podcastEmpty'); if (em2) em2.hidden = true;
+
+    var html = '';
+    if (recenti.length && altri.length) {
+      html += '<div class="section-divider"><span>&#127381; Ultimi 7 giorni</span></div>';
+    }
+    recenti.forEach(function(p) {
+      var score = p.score || 0;
+      var scoreCls = score >= 80 ? 'high' : (score >= 60 ? 'med' : '');
+      html += '<div class="pod-item" onclick="OC.openPodcast(\''+esc(p.id)+'\')">'
+        +   '<div class="pod-cover"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>'
+        +   '<div class="pod-body">'
+        +     '<div class="pod-tags"><span class="news-tag recente-badge">Recente</span> '+esc(p.tematica||p.ambito||'')+(score ? ' &nbsp;<span class="score-badge '+scoreCls+'">AI '+esc(score)+'</span>' : '')+'</div>'
+        +     '<h4 class="pod-title">'+esc(p.titolo)+'</h4>'
+        +     '<div class="pod-meta"><b>'+esc(p.show||p.fonte||'')+'</b>'+(p.data?' · '+esc(p.data):'')+(p.durata?' · '+esc(p.durata):'')+'</div>'
+        +   '</div>'
+        + '</div>';
+    });
+    if (recenti.length && altri.length) {
+      html += '<div class="section-divider"><span>Archivio podcast</span></div>';
+    }
+    altri.forEach(function(p) {
+      var score = p.score || 0;
+      var scoreCls = score >= 80 ? 'high' : (score >= 60 ? 'med' : '');
+      html += '<div class="pod-item" onclick="OC.openPodcast(\''+esc(p.id)+'\')">'
+        +   '<div class="pod-cover"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>'
+        +   '<div class="pod-body">'
+        +     '<div class="pod-tags">'+esc(p.tematica||p.ambito||'')+(score ? ' &nbsp;<span class="score-badge '+scoreCls+'">AI '+esc(score)+'</span>' : '')+'</div>'
+        +     '<h4 class="pod-title">'+esc(p.titolo)+'</h4>'
+        +     '<div class="pod-meta"><b>'+esc(p.show||p.fonte||'')+'</b>'+(p.data?' · '+esc(p.data):'')+(p.durata?' · '+esc(p.durata):'')+'</div>'
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  // ==========================================================
+  //  E) FILTER CHIP HANDLER (Sprint D)
+  // ==========================================================
+  function handleFilterChip(chip) {
+    var container = chip.closest('.filters');
+    if (!container) return;
+    // aggiorna stato visivo nella riga del chip cliccato
+    container.querySelectorAll('.filter-chip').forEach(function(c) { c.classList.remove('active'); });
+    chip.classList.add('active');
+
+    var ambVal = Number(chip.dataset.amb || 0);
+    var preset = chip.dataset.preset || '';
+
+    // Determina quale pagina/lista gestire
+    var pageEl = chip.closest('.page');
+    if (!pageEl) return;
+    var pageId = pageEl.id;
+
+    if (pageId === 'page-bandi') {
+      if (container.id === 'bandiTematicheFilters') {
+        // Livello 2: filtro tematica (non resetta L1)
+        _filter.bandi.amb = ambVal;
+      } else {
+        // Livello 1: filtro principale → resetta anche L2 a "Tutte"
+        _filter.bandi.preset = preset || 'tutti';
+        _filter.bandi.amb = 0;
+        var lvl2 = document.getElementById('bandiTematicheFilters');
+        if (lvl2) {
+          lvl2.querySelectorAll('.filter-chip').forEach(function(c) { c.classList.remove('active'); });
+          var first = lvl2.querySelector('.filter-chip[data-amb="0"]');
+          if (first) first.classList.add('active');
+        }
+      }
+      if (_cache.bandi !== null) renderBandiListFull(_cache.bandi);
+    } else if (pageId === 'page-news') {
+      _filter.news.amb = ambVal;
+      if (_cache.news !== null) renderNewsListFull(_cache.news);
+    } else if (pageId === 'page-podcast') {
+      _filter.podcast.amb = ambVal;
+      if (_cache.podcast !== null) renderPodcastListFull(_cache.podcast);
+    }
+  }
+
+  function renderSidebarBadges(b){
+    // Badge numerici sidebar (mostra solo se > 0)
+    setBadge('badge-bandi', b.bandi);
+    setBadge('badge-bandi-urgenti', b.bandiUrgenti);
+    setBadge('badge-news', b.news);
+    setBadge('badge-podcast', b.podcast);
+    setBadge('badge-notifiche', b.bandiUrgenti);
+
+    var amb = b.ambiti || {};
+    for (var i=1;i<=5;i++) setBadge('badge-amb-'+i, amb[i]);
+  }
+  function setBadge(id, val){
+    var el = $(id); if (!el) return;
+    val = Number(val||0);
+    if (val > 0) { el.textContent = val; el.hidden = false; }
+    else { el.hidden = true; }
+  }
+
+  // FIX 5+6: row-based layout, summaries, dates, score badges, action buttons
+  function renderAmbito(data){
+    if (!data) return;
+
+    // Popola detail cache con i dati ambito
+    _cacheForDetail_('bando',   data.bandi   || []);
+    _cacheForDetail_('news',    data.news    || []);
+    _cacheForDetail_('podcast', data.podcast || []);
+
+    // KPI hero
+    var kb = $('ambitoKpiBandi');    if (kb) kb.textContent = (data.bandi||[]).length;
+    var kn = $('ambitoKpiNews');     if (kn) kn.textContent = (data.news||[]).length;
+    var kp = $('ambitoKpiPodcast');  if (kp) kp.textContent = (data.podcast||[]).length;
+
+    // Contatori sezione
+    var cb = $('ambitoBandiCount');  if (cb) cb.textContent = (data.bandi||[]).length + ' bandi';
+    var cn = $('ambitoNewsCount');   if (cn) cn.textContent = (data.news||[]).length + ' news';
+    var cp = $('ambitoPodcastCount');if (cp) cp.textContent = (data.podcast||[]).length + ' podcast';
+
+    // --- Lista bandi (row-based; urgenti prima) ---
+    var nodeB = $('ambitoBandiList');
+    if (nodeB) {
+      if (!(data.bandi||[]).length) {
+        nodeB.innerHTML = '';
+        var eb = $('ambitoBandiEmpty'); if (eb) eb.hidden = false;
+      } else {
+        var emB = $('ambitoBandiEmpty'); if (emB) emB.hidden = true;
+        // sort: urgenti prima, poi per scadenza
+        var bandiSorted = (data.bandi||[]).slice().sort(function(a,b){
+          var ag = a.giorni != null ? a.giorni : 9999;
+          var bg = b.giorni != null ? b.giorni : 9999;
+          var aUrg = ag >= 0 && ag <= 7;
+          var bUrg = bg >= 0 && bg <= 7;
+          if (aUrg && !bUrg) return -1;
+          if (!aUrg && bUrg) return 1;
+          return ag - bg;
+        });
+        var hB = '';
+        var urgShown = false, altriShown = false;
+        bandiSorted.forEach(function(b){
+          var giorni = b.giorni;
+          var isUrgent = giorni !== null && giorni !== undefined && giorni >= 0 && giorni <= 7;
+          // intestazioni sezione
+          if (isUrgent && !urgShown) {
+            hB += '<div class="section-divider urgent-divider"><span>⚡ In scadenza nei prossimi 7 giorni</span></div>';
+            urgShown = true;
+          } else if (!isUrgent && !altriShown) {
+            if (urgShown) hB += '<div class="section-divider"><span>Ultimi bandi monitorati</span></div>';
+            altriShown = true;
+          }
+          var tagCls = isUrgent ? 'urgent' : (giorni !== null && giorni <= 14 ? 'med' : 'low');
+          var giorniLbl = giorni === null || giorni === undefined ? '' : (giorni < 0 ? ' · Scaduto' : giorni === 0 ? ' · Oggi!' : ' · '+giorni+' gg');
+          var score = b.score || 0;
+          var scoreCls = score >= 80 ? 'high' : (score >= 60 ? 'med' : '');
+          var scoreHtml = score ? '<span class="score-badge '+scoreCls+'">Pertinenza: '+esc(score)+'</span>' : '';
+          var summary = b.sommario || b.note || b.descrizione || '';
+          var url = b.link || b.url || b.URL || '';
+          var onclick = url ? 'OC.openUrl(\''+esc(url)+'\')' : 'OC.openBando(\''+esc(b.id)+'\')';
+          hB += '<div class="bando-row'+(isUrgent?' bando-urgent':'')+'" data-id="'+esc(b.id)+'" onclick="'+onclick+'">'
+            +   '<div class="bando-row-head">'
+            +     '<span class="tag '+tagCls+'">'+esc(b.settore||b.ambito||'Bando')+'</span>'
+            +     '<span class="ente">'+esc(b.ente||'')+'</span>'
+            +     scoreHtml
+            +   '</div>'
+            +   '<h4 class="bando-row-title">'+esc(b.titolo||'(senza titolo)')+'</h4>'
+            +   (summary ? '<p class="bando-row-summary">'+esc(summary)+'</p>' : '')
+            +   '<div class="bando-row-meta">'
+            +     (b.scadenza ? '<span'+(isUrgent?' style="color:#C8102E;font-weight:600"':'')+'><b>Scade:</b> '+esc(b.scadenza)+esc(giorniLbl)+'</span>' : '')
+            +     (b.dataRil ? '<span>Rilevato: '+esc(b.dataRil)+'</span>' : '')
+            +     '<div class="item-actions">'
+            +       '<button class="act-btn act-read" onclick="event.stopPropagation();OC.markItemRead(\'bando\',\''+esc(b.id)+'\',this)" title="Segna come letto">&#10003; Letto</button>'
+            +       '<button class="act-btn act-archive" onclick="event.stopPropagation();OC.archiveItem(\'bando\',\''+esc(b.id)+'\',this)" title="Archivia">&#8659; Archivia</button>'
+            +       '<button class="act-btn act-trash" onclick="event.stopPropagation();OC.trashItem(\'bando\',\''+esc(b.id)+'\',this)" title="Cestino">&#128465; Elimina</button>'
+            +     '</div>'
+            +   '</div>'
+            + '</div>';
+        });
+        nodeB.innerHTML = hB;
+      }
+    }
+
+    // --- Lista news (FIX 5: row con summary+date; FIX 6: score) ---
+    var nodeN = $('ambitoNewsList');
+    if (nodeN) {
+      if (!(data.news||[]).length) {
+        nodeN.innerHTML = '';
+        var en = $('ambitoNewsEmpty'); if (en) en.hidden = false;
+      } else {
+        var emN = $('ambitoNewsEmpty'); if (emN) emN.hidden = true;
+        var hN = '';
+        data.news.forEach(function(n, idx){
+          var num = String(idx+1); if (num.length<2) num='0'+num;
+          var score = n.score;
+          var scoreCls = (score >= 80) ? 'high' : (score >= 60 ? 'med' : '');
+          var scoreHtml = score != null ? '<span class="score-badge '+scoreCls+'">AI '+esc(score)+'</span>' : '';
+          var summary = n.sommario || n.SommarioAI || n.descrizione || '';
+          var url = n.link || n.url || n.URL || '';
+          var onclick = url ? 'OC.openUrl(\''+esc(url)+'\')' : 'OC.openNews(\''+esc(n.id)+'\')';
+          hN += '<div class="news-row bando-row" onclick="'+onclick+'">'
+            +   '<div class="bando-row-head">'
+            +     '<span class="news-num" style="flex:none">'+num+'</span>'
+            +     '<span class="news-tag">'+esc(n.ambitoLbl||n.ambito||'')+'</span>'
+            +     scoreHtml
+            +   '</div>'
+            +   '<h4 class="bando-row-title news-title">'+esc(n.titolo||'(senza titolo)')+'</h4>'
+            +   (summary ? '<p class="bando-row-summary">'+esc(summary)+'</p>' : '')
+            +   '<div class="bando-row-meta">'
+            +     '<b>'+esc(n.fonte||'')+'</b>'
+            +     (n.data ? '<span> · '+esc(n.data)+'</span>' : '')
+            +     '<div class="item-actions">'
+            +       '<button class="act-btn act-read" onclick="event.stopPropagation();OC.markItemRead(\'news\',\''+esc(n.id)+'\',this)" title="Segna come letto">&#10003; Letto</button>'
+            +       '<button class="act-btn act-archive" onclick="event.stopPropagation();OC.archiveItem(\'news\',\''+esc(n.id)+'\',this)" title="Archivia">&#8659; Archivia</button>'
+            +       '<button class="act-btn act-trash" onclick="event.stopPropagation();OC.trashItem(\'news\',\''+esc(n.id)+'\',this)" title="Cestino">&#128465; Elimina</button>'
+            +     '</div>'
+            +   '</div>'
+            + '</div>';
+        });
+        nodeN.innerHTML = hN;
+      }
+    }
+
+    // --- Lista podcast (FIX 5: row con durata+date; FIX 6: score) ---
+    var nodeP = $('ambitoPodcastList');
+    if (nodeP) {
+      if (!(data.podcast||[]).length) {
+        nodeP.innerHTML = '';
+        var ep = $('ambitoPodcastEmpty'); if (ep) ep.hidden = false;
+      } else {
+        var emP = $('ambitoPodcastEmpty'); if (emP) emP.hidden = true;
+        var hP = '';
+        data.podcast.forEach(function(p){
+          var score = p.score;
+          var scoreCls = (score >= 80) ? 'high' : (score >= 60 ? 'med' : '');
+          var scoreHtml = score != null ? '<span class="score-badge '+scoreCls+'">AI '+esc(score)+'</span>' : '';
+          var url = p.link || p.url || p.URL || '';
+          var onclick = url ? 'OC.openUrl(\''+esc(url)+'\')' : 'OC.openPodcast(\''+esc(p.id)+'\')';
+          hP += '<div class="bando-row" onclick="'+onclick+'">'
+            +   '<div class="bando-row-head">'
+            +     '<span class="tag low">&#127897;&#65039; Podcast</span>'
+            +     '<span class="ente">'+esc(p.show||p.fonte||'')+'</span>'
+            +     scoreHtml
+            +   '</div>'
+            +   '<h4 class="bando-row-title">'+esc(p.titolo||'(senza titolo)')+'</h4>'
+            +   '<div class="bando-row-meta">'
+            +     (p.durata ? '<span>Durata: '+esc(p.durata)+'</span>' : '')
+            +     (p.data ? '<span>'+esc(p.data)+'</span>' : '')
+            +     '<div class="item-actions">'
+            +       '<button class="act-btn act-read" onclick="event.stopPropagation();OC.markItemRead(\'podcast\',\''+esc(p.id)+'\',this)" title="Segna come letto">&#10003; Letto</button>'
+            +       '<button class="act-btn act-archive" onclick="event.stopPropagation();OC.archiveItem(\'podcast\',\''+esc(p.id)+'\',this)" title="Archivia">&#8659; Archivia</button>'
+            +       '<button class="act-btn act-trash" onclick="event.stopPropagation();OC.trashItem(\'podcast\',\''+esc(p.id)+'\',this)" title="Cestino">&#128465; Elimina</button>'
+            +     '</div>'
+            +   '</div>'
+            + '</div>';
+        });
+        nodeP.innerHTML = hP;
+      }
+    }
+  }
+
+  function renderUltimiBandi(list){
+    var wrap = $('homeUltimiBandi');
+    if (!wrap) return;
+    if (!list.length) {
+      wrap.innerHTML = '';
+      var em = $('homeUltimiBandiEmpty'); if (em) em.hidden = false;
+      return;
+    }
+    var em2 = $('homeUltimiBandiEmpty'); if (em2) em2.hidden = true;
+    var html = '';
+    list.forEach(function(b){
+      var bUrl = b.link || b.url || '';
+      var bClick = bUrl ? 'OC.openUrl(\'' + esc(bUrl) + '\')' : 'OC.go(\'bandi\')';
+      var isUrgent = b.giorni !== null && b.giorni !== undefined && b.giorni >= 0 && b.giorni <= 7;
+      html += '<div class="home-list-row" onclick="'+bClick+'" title="'+(bUrl?'Apri scheda ufficiale':'Vai a Radar Bandi')+'">'
+        +   '<div class="hlr-left">'
+        +     '<div class="hlr-tags">'
+        +       '<span class="hlr-amb">'+esc(b.settore||b.ambito||'Bando')+'</span>'
+        +       (isUrgent ? '<span class="hlr-urgent">&#9889; Scade tra '+esc(b.giorni)+' gg</span>' : '')
+        +     '</div>'
+        +     '<p class="hlr-title">'+esc(b.titolo)+'</p>'
+        +     '<p class="hlr-sub">'+esc(b.ente||'')+'</p>'
+        +   '</div>'
+        +   '<div class="hlr-right">'
+        +     '<div class="hlr-scad'+(isUrgent?' urgent':'')+'">'+(b.scadenza?esc(b.scadenza):'&mdash;')+'</div>'
+        +     (bUrl ? '<div class="hlr-date">&#8599; Apri fonte</div>' : '')
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  // ==========================================================
+  //  D) GESTIONE UTENTE & RUOLO
+  // ==========================================================
+  function setUser(user){
+    if (!user) return;
+    var ini = user.iniziali || (user.nome ? (user.nome[0]||'·').toUpperCase() : '·');
+    var el;
+    el = $('userInitials');        if (el) el.textContent = ini;
+    el = $('userName');            if (el) el.textContent = user.nome || 'Ospite';
+    el = $('userRole');            if (el) el.textContent = user.ruolo || 'lettore';
+    el = $('topbarUserInitials');  if (el) el.textContent = ini;
+    el = $('topbarUserName');      if (el) el.textContent = user.nome || 'Ospite';
+    el = $('topbarUserRole');      if (el) el.textContent = user.ruolo || 'lettore';
+
+    var ruolo = (user.ruolo||'lettore').toLowerCase();
+    var str = $('nav-strumenti');
+    var anyStrumento = false;
+
+    $$('#nav-strumenti [data-role]').forEach(function(item){
+      var allowed = item.dataset.role.split(',').map(function(s){return s.trim();});
+      if (allowed.indexOf(ruolo) !== -1) { item.hidden = false; anyStrumento = true; }
+      else item.hidden = true;
+    });
+    if (str) str.hidden = !anyStrumento;
+  }
+
+  // ==========================================================
+  //  E) EVENT HANDLERS
+  // ==========================================================
+  document.addEventListener('click', function(e){
+    // Filter chip
+    var fc = e.target.closest('.filter-chip');
+    if (fc) { e.preventDefault(); handleFilterChip(fc); return; }
+
+    var el = e.target.closest('[data-page]');
+    if (el) {
+      e.preventDefault();
+      go(el.dataset.page, el.dataset.ambito);
+      return;
+    }
+    el = e.target.closest('[data-goto]');
+    if (el) { e.preventDefault(); go(el.dataset.goto); return; }
+    el = e.target.closest('[data-action]');
+    if (el) {
+      var act = el.dataset.action;
+      if (OC[act] && typeof OC[act]==='function') { e.preventDefault(); OC[act](); }
+    }
+  });
+
+  // Toggle sidebar mobile
+  var tog = $('toggleSidebar');
+  if (tog) tog.addEventListener('click', function(){
+    var sb = $('sidebar'); if (sb) sb.classList.toggle('open');
+  });
+
+  // Accordion: ambiti tematici sidebar
+  (function(){
+    var btn  = $('ambitiToggle');
+    var body = $('ambitiList');
+    if (!btn || !body) return;
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      var expanded = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!expanded));
+      if (expanded) body.classList.add('collapsed');
+      else          body.classList.remove('collapsed');
+    });
+  })();
+
+  // Keyboard shortcut ⌘K / Ctrl+K
+  document.addEventListener('keydown', function(e){
+    if ((e.metaKey||e.ctrlKey) && e.key && e.key.toLowerCase()==='k'){
+      e.preventDefault();
+      var s = $('globalSearch') || $('heroSearch');
+      if (s) s.focus();
+    }
+    if (e.key==='Escape'){
+      var sb = $('sidebar'); if (sb) sb.classList.remove('open');
+    }
+  });
+
+  // ==========================================================
+  //  F) API pubblica OC — EXTEND rather than replace (FIX 7: preserve Index.html admin functions)
+  // ==========================================================
+  var _ocNav = {
+    go: go,
+    hydrate: hydrate,
+    loadAmbito: loadAmbito,
+    loadBandi: loadBandi,
+    loadNews: loadNews,
+    loadPodcast: loadPodcast,
+    setUser: setUser,
+
+    search: function(q){
+      if (!q) return;
+      go('news');
+      if (hasGAS()) {
+        google.script.run
+          .withSuccessHandler(function(results){
+            console.log('Ricerca "'+q+'":', results);
+          })
+          .withFailureHandler(console.error)
+          .getGlobalSearchV42(q);
+      }
+    },
+
+    filterBandi: function(preset){
+      go('bandi');
+      setTimeout(function(){
+        var chip = document.querySelector('#page-bandi .filter-chip[data-filter="'+preset+'"]');
+        if (chip) chip.click();
+      }, 200);
+    },
+
+    openUrl: function(url){ if (url) window.open(url, '_blank', 'noopener'); },
+
+    openBando: function(id){
+      var cached = window.OC && OC._detailCache && OC._detailCache['bando_'+id];
+      var url = cached ? (cached.link || cached.url || cached.URL || '') : '';
+      if (url) { window.open(url, '_blank', 'noopener'); } else { go('bandi'); }
+    },
+    openNews: function(id){
+      var cached = window.OC && OC._detailCache && OC._detailCache['news_'+id];
+      var url = cached ? (cached.link || cached.url || cached.URL || '') : '';
+      if (url) { window.open(url, '_blank', 'noopener'); } else { go('news'); }
+    },
+    openPodcast: function(id){
+      var cached = window.OC && OC._detailCache && OC._detailCache['podcast_'+id];
+      var url = cached ? (cached.link || cached.url || cached.URL || '') : '';
+      if (url) { window.open(url, '_blank', 'noopener'); } else { go('podcast'); }
+    },
+    openGuida:    function(){ window.open('https://duemilamusei.it/osservatorio/guida','_blank'); },
+    openNotifiche:function(){ window.OC.filterBandi('urgenti'); },
+    openUserMenu: function(){ /* dropdown da implementare */ }
+  };
+
+  // Extend existing OC (preserving Index.html admin functions) rather than replacing
+  if (!window.OC) window.OC = {};
+  Object.keys(_ocNav).forEach(function(k){ window.OC[k] = _ocNav[k]; });
+  var OC = window.OC; // local alias
+
+  // INT-5 (Sprint 1.1): all'avvio l'utente è in home, quindi
+  // marca subito il body con is-home-page (la search topbar parte nascosta).
+  if (document.body) document.body.classList.add('is-home-page');
+
+  // Auto-hydrate al DOMContentLoaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', hydrate);
+  } else {
+    hydrate();
+  }
+
+})();
+</script>

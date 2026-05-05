@@ -1,0 +1,981 @@
+<!--
+  ============================================================================
+   MatrixApp.html — Frontend MuseMu Matrix (Sprint 2 — 2026-04-30)
+  ============================================================================
+   Questionario adattivo + report finale, integrato nell'Osservatorio Culturale.
+
+   ARCHITETTURA:
+   - Si monta in #matrix-mount dentro Index.html
+   - Si auto-inizializza alla prima apertura della pagina (#page-matrix) chiamata
+     da Navigation.html: window.OC_Matrix.init()
+   - Carica lo schema dal backend (getMatrixSchema)
+   - Renderizza dinamicamente: anagrafica → 43 domande core (gateway+skip) →
+     sezione 11 (auto-prioritizzazione) → sezione 12 (follow-up) → REPORT
+   - Salva al termine via saveMatrixResponse → riceve scoring/profilo/top3
+   - Mostra report con cross-link agli ambiti dell'OC
+
+   BACKEND DEPENDENCIES (Matrix_v1.gs):
+     getMatrixSchema()        — schema 43 domande
+     saveMatrixResponse(data) — salva + calcola
+     saveMatrixContact(data)  — opt-in follow-up
+     getMatrixReport(id)      — pacchetto report
+
+   PRIVACY:
+   - response_id = UUID generato server-side
+   - dati personali: nessuno obbligatorio (museo name optional)
+   - email: solo se opt-in Sezione 12 (tabella separata)
+
+  ============================================================================
+-->
+
+<!-- ====================== STILI MATRIX ====================== -->
+<style>
+  /* ============================================================
+     MATRIX APP — Editoriale Museale (v4.12 — Carta da museo)
+     Allineato a Stiles.html v4.12: --paper, --ink, --link, --font-display (Newsreader), --font-italic (Instrument Serif)
+     ============================================================ */
+  .mx-app { font-family: var(--font-ui); color: var(--ink); }
+
+  /* Hero questionario — carta da museo con cerchi ciliegia editoriale */
+  .mx-hero {
+    background: var(--surface); color: var(--ink); padding: 48px 44px; border:1px solid var(--rule, var(--border)); border-radius: var(--radius); margin-bottom: 24px;
+    position:relative; overflow:hidden;
+  }
+  .mx-hero::before { content:''; position:absolute; right:-100px; top:-100px; width:340px; height:340px; border-radius:50%; background:var(--link, var(--accent)); opacity:.05; pointer-events:none; }
+  .mx-hero::after { content:''; position:absolute; right:-20px; top:40px; width:200px; height:200px; border-radius:50%; border:1.5px solid var(--link, var(--accent)); opacity:.18; pointer-events:none; }
+  .mx-hero h1 { margin: 0 0 8px; font-family: var(--font-display, var(--font-serif)); font-weight: 500; font-size: 46px; line-height:1.05; letter-spacing:-0.02em; color:var(--ink); position:relative; z-index:1; max-width: 22ch; }
+  .mx-hero h1 em { font-family: var(--font-italic); font-style:italic; color: var(--link, var(--accent)); font-weight:400; }
+  .mx-hero .mx-eyebrow { font-family: var(--font-ui); font-size: 10px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--link, var(--accent)); margin-bottom: 12px; position:relative; z-index:1; }
+  .mx-hero p { margin: 14px 0 0; font-size: 14px; line-height: 1.55; max-width: 620px; color:var(--ink-3); position:relative; z-index:1; }
+
+  /* Progress bar — minimalista editoriale */
+  .mx-progress { background: var(--surface); border: 1px solid var(--border); border-radius: 0; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; }
+  .mx-progress-track { flex: 1; height: 4px; background: var(--surface-alt); border-radius: 0; overflow: hidden; }
+  .mx-progress-fill { height: 100%; background: var(--accent); transition: width .3s ease; }
+  .mx-progress-text { font-family: var(--font-mono); font-size: 11px; color: var(--ink-2); font-weight: 600; letter-spacing:.06em; text-transform:uppercase; }
+
+  /* Card sezione */
+  .mx-section { background: var(--surface); border: 1px solid var(--border); border-radius: 0; padding: 28px 32px; margin-bottom: 16px; }
+  .mx-section h2 { margin: 0 0 6px; font-family: var(--font-display, var(--font-serif)); font-weight:500; font-size: 28px; line-height:1.15; letter-spacing:-0.015em; color: var(--ink); }
+  .mx-section h2 em { font-family: var(--font-italic); font-style:italic; color: var(--link, var(--accent)); }
+  .mx-section .mx-section-sub { color: var(--ink-3); font-size: 13px; margin: 0 0 22px; line-height:1.55; max-width:64ch; }
+
+  /* Domanda */
+  .mx-q { padding: 22px 0; border-bottom: 1px solid var(--border); }
+  .mx-q:last-child { border-bottom: none; }
+  .mx-q-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .mx-q-code { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--ink); background: var(--surface-alt); padding: 4px 9px; border-radius: 0; letter-spacing: .12em; text-transform:uppercase; border:1px solid var(--border); }
+  .mx-q-gateway { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--accent); background: transparent; padding: 4px 9px; border-radius: 0; letter-spacing: .12em; text-transform:uppercase; border:1px solid var(--accent); }
+  .mx-q-text { flex: 1 1 100%; font-size: 15.5px; line-height: 1.5; color: var(--ink); margin: 6px 0; font-weight:500; }
+  .mx-help-btn { background: transparent; border: 1px solid var(--border); border-radius: 50%; width: 22px; height: 22px; font-weight: 700; color: var(--ink-2); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; font-size: 12px; transition: all .15s; }
+  .mx-help-btn:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .mx-help-box { background: var(--surface-alt); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0; margin: 12px 0; font-size: 13px; line-height: 1.55; color:var(--ink-2); }
+  .mx-help-box .mx-help-label { font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 10px; text-transform: uppercase; letter-spacing: .14em; display: block; margin-bottom: 8px; }
+  .mx-help-box p { margin: 6px 0; }
+  .mx-help-box em { color: var(--ink-3); font-style:italic; }
+
+  /* Likert: 5 bottoni evolutivi — Direzione B */
+  .mx-likert { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; }
+  .mx-likert-btn {
+    border: 1px solid var(--border); background: var(--surface); padding: 16px 12px;
+    border-radius: 0; cursor: pointer; transition: all .15s ease;
+    text-align: left; font-family: inherit; color: var(--ink-2);
+  }
+  .mx-likert-btn:hover { border-color: var(--ink); background: var(--surface-alt); color:var(--ink); }
+  .mx-likert-btn.selected { border-color: var(--ink); background: var(--ink); color: #fff; }
+  .mx-likert-num { font-family: var(--font-mono); display: inline-block; width: 24px; height: 24px; border:1px solid var(--ink-3); text-align: center; line-height: 22px; font-weight: 600; font-size: 11px; margin-bottom: 8px; letter-spacing:0; }
+  .mx-likert-btn.selected .mx-likert-num { border-color: rgba(255,255,255,.5); color: #fff; background: var(--accent); }
+  .mx-likert-label { display: block; font-size: 12px; line-height: 1.4; color: inherit; }
+
+  /* Multiselect */
+  .mx-multiselect { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 12px; }
+  .mx-ms-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 0; cursor: pointer; transition: all .15s ease; background: var(--surface); }
+  .mx-ms-item:hover { background: var(--surface-alt); border-color: var(--ink-3); }
+  .mx-ms-item.selected { background: var(--surface-alt); border-color: var(--ink); border-left:3px solid var(--accent); }
+  .mx-ms-check { width: 18px; height: 18px; border: 1.5px solid var(--ink-3); border-radius: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--surface); margin-top:2px; }
+  .mx-ms-item.selected .mx-ms-check { background: var(--accent); border-color: var(--accent); }
+  .mx-ms-item.selected .mx-ms-check::after { content: '\2713'; color: #fff; font-size: 12px; font-weight: 700; }
+  .mx-ms-label { font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+  .mx-ms-item.selected .mx-ms-label { color: var(--ink); }
+  .mx-ms-other { display: flex; align-items: center; gap: 8px; padding: 8px 14px; }
+  .mx-ms-other input { flex: 1; border: none; border-bottom: 1.5px solid var(--ink); border-radius: 0; padding: 8px 2px; font-family: inherit; font-size: 13px; background:transparent; outline:none; color:var(--ink); }
+  .mx-ms-hint { color: var(--ink-3); font-size: 12px; font-style: italic; margin: 8px 0; }
+
+  /* Factual */
+  .mx-factual { display: grid; gap: 6px; margin-top: 12px; }
+  .mx-factual-item { padding: 12px 16px; border: 1px solid var(--border); border-radius: 0; cursor: pointer; background: var(--surface); font-size: 13.5px; line-height: 1.45; color:var(--ink-2); transition: all .15s; }
+  .mx-factual-item:hover { border-color: var(--ink-2); background: var(--surface-alt); color:var(--ink); }
+  .mx-factual-item.selected { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  /* Anagrafica — input editoriale (underline) */
+  .mx-anag-row { margin-bottom: 22px; }
+  .mx-anag-row label { font-family: var(--font-mono); display: block; font-size: 10px; font-weight:600; color: var(--ink-3); margin-bottom: 6px; letter-spacing:.14em; text-transform:uppercase; }
+  .mx-anag-row select, .mx-anag-row input[type=text] { width: 100%; padding: 10px 2px; border: none; border-bottom: 1.5px solid var(--ink); border-radius: 0; font-family: inherit; font-size: 16px; background: transparent; outline:none; color:var(--ink); }
+  .mx-anag-row select:focus, .mx-anag-row input[type=text]:focus { border-bottom-color: var(--accent); }
+
+  /* Skip message empatico */
+  .mx-skip-message { background: var(--surface-alt); border-left: 3px solid var(--success); padding: 14px 18px; margin: 14px 0; border-radius: 0; font-size: 13px; line-height: 1.5; color: var(--success); font-style:italic; }
+
+  /* Bottoni navigazione — Direzione B */
+  .mx-nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--border); }
+  .mx-btn { padding: 14px 26px; border: none; border-radius: 0; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s ease; letter-spacing:.14em; text-transform:uppercase; display:inline-flex; align-items:center; gap:10px; }
+  .mx-btn-primary { background: var(--ink); color: #fff; }
+  .mx-btn-primary:hover { background: #000; }
+  .mx-btn-primary:disabled { background: var(--ink-4); cursor: not-allowed; }
+  .mx-btn-secondary { background: transparent; color: var(--ink); border: 1px solid var(--ink); }
+  .mx-btn-secondary:hover { background: var(--ink); color: #fff; }
+
+  /* REPORT — Editoriale Museale v4.12 */
+  .mx-report-hero { background: var(--surface); color: var(--ink); padding: 48px 36px; border:1px solid var(--rule, var(--border)); border-left:4px solid var(--link, var(--accent)); border-radius: var(--radius); margin-bottom: 24px; text-align: left; }
+  .mx-report-hero .mx-profile-code { font-family: var(--font-italic); font-style:italic; font-size: 56px; font-weight: 400; margin: 10px 0 4px; line-height:1.0; letter-spacing:-0.02em; color:var(--link, var(--accent)); }
+  .mx-report-hero .mx-profile-name { font-family: var(--font-display, var(--font-serif)); font-size: 26px; font-weight:500; opacity: .92; margin-bottom: 18px; line-height:1.2; }
+  .mx-report-hero .mx-synth-score { font-family: var(--font-display, var(--font-serif)); font-size: 48px; font-weight: 600; margin: 18px 0 4px; color:var(--ink); letter-spacing:-0.02em; }
+  .mx-report-hero .mx-synth-label { font-family: var(--font-ui); font-size: 10px; opacity: .7; letter-spacing: .18em; text-transform: uppercase; font-weight:600; }
+
+  /* Radar dimensioni — visualizzazione a barre orizzontali */
+  .mx-dim-bars { display: grid; gap: 10px; }
+  .mx-dim-row { display: grid; grid-template-columns: 240px 1fr 60px; gap: 14px; align-items: center; }
+  .mx-dim-name { font-size: 13px; color: var(--ink-2, #374151); font-weight: 500; }
+  .mx-dim-bar-track { background: #F0EDE8; height: 14px; border-radius: 999px; overflow: hidden; position: relative; }
+  .mx-dim-bar-fill { height: 100%; transition: width .8s ease; border-radius: 999px; }
+  .mx-dim-bar-fill.low { background: #E07A5F; }
+  .mx-dim-bar-fill.mid { background: #B8902A; }
+  .mx-dim-bar-fill.high { background: #0F6E56; }
+  .mx-dim-score { font-size: 14px; font-weight: 700; color: var(--ink, #111827); text-align: right; }
+
+  /* Top 3 opportunità */
+  .mx-opp-list { display: grid; gap: 14px; }
+  .mx-opp-card { border: 1px solid #E7E5E0; border-radius: 10px; padding: 18px 20px; background: #fff; border-left: 4px solid #B8902A; }
+  .mx-opp-card .mx-opp-rank { font-size: 11px; color: #B8902A; font-weight: 700; letter-spacing: .08em; }
+  .mx-opp-card h3 { margin: 4px 0 6px; font-size: 16px; color: #185FA5; }
+  .mx-opp-card .mx-opp-meta { font-size: 12px; color: var(--ink-3, #6B7280); margin-bottom: 8px; }
+  .mx-opp-card .mx-opp-reading { font-size: 13px; color: var(--ink-2, #374151); }
+
+  /* Servizi raccomandati */
+  .mx-services { display: grid; gap: 12px; }
+  .mx-service-card { border: 1px solid #E7E5E0; border-radius: 10px; padding: 14px 18px; background: #FAFAF7; }
+  .mx-service-card .mx-service-code { font-size: 11px; color: #185FA5; font-weight: 700; }
+  .mx-service-card h4 { margin: 4px 0; font-size: 14px; color: var(--ink, #111827); }
+  .mx-service-card p { margin: 0; font-size: 12px; color: var(--ink-3, #6B7280); line-height: 1.5; }
+
+  /* Roadmap fasi */
+  .mx-roadmap { display: grid; gap: 12px; }
+  .mx-phase { padding: 16px 20px; border-radius: 10px; }
+  .mx-phase-1 { background: #FFF8E5; border-left: 4px solid #B8902A; }
+  .mx-phase-2 { background: #F4ECDF; border-left: 4px solid #2E5266; }
+  .mx-phase-3 { background: #E8F2FB; border-left: 4px solid #185FA5; }
+  .mx-phase h4 { margin: 0 0 6px; font-size: 14px; color: var(--ink, #111827); }
+  .mx-phase p { margin: 4px 0; font-size: 13px; color: var(--ink-2, #374151); line-height: 1.5; }
+
+  /* CTA finale */
+  .mx-cta { background: linear-gradient(135deg, #185FA5, #0F6E56); color: #fff; padding: 28px 32px; border-radius: 12px; margin-top: 20px; text-align: center; }
+  .mx-cta h3 { margin: 0 0 10px; font-family: var(--font-serif, 'Source Serif 4', serif); font-size: 22px; }
+  .mx-cta p { margin: 0 0 16px; font-size: 14px; opacity: .92; }
+  .mx-cta .mx-btn-primary { background: #B8902A; }
+  .mx-cta .mx-btn-primary:hover { background: #A07F22; }
+
+  /* Loading / errori */
+  .mx-loading { text-align: center; padding: 60px 20px; color: var(--ink-3, #6B7280); }
+  .mx-error { background: #FBECEC; color: #8B1E1E; padding: 16px 20px; border-radius: 8px; margin: 12px 0; font-size: 13px; border-left: 4px solid #8B1E1E; }
+
+  /* Mobile */
+  @media (max-width: 720px) {
+    .mx-likert { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+    .mx-likert-btn { padding: 10px 6px; }
+    .mx-likert-label { font-size: 10px; }
+    .mx-dim-row { grid-template-columns: 1fr; gap: 4px; }
+    .mx-dim-name { font-size: 12px; }
+  }
+</style>
+
+<!-- ====================== JAVASCRIPT MATRIX ====================== -->
+<script>
+(function() {
+  'use strict';
+
+  // ====== STATO ======
+  var state = {
+    initialized: false,
+    schema: null,
+    currentStep: 'intro', // intro | anagrafica | questions | section11 | section12 | report
+    currentDimensionIndex: 0, // per mostrare dimensione per dimensione
+    currentSection11Item: 0,
+    responses: {},        // { "D1.1": 4, "D2.4": ["iccd_schede"], ... }
+    section11: {},
+    section12: { preferences: {}, email: '', nome: '', consent: false },
+    museumProfile: {},
+    museumName: '',
+    tooltipOpened: [],
+    timeStart: null,
+    timePerQuestion: {},
+    questionStartTime: null,
+    responseId: null,
+    report: null
+  };
+
+  // ====== HELPERS ======
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function el(html) { var d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function hasGAS() { return typeof google !== 'undefined' && google.script && google.script.run; }
+
+  function checkActiveCondition(condition) {
+    if (!condition) return true; // gateway
+    // condition es. "D1.1>=3" o "D1.1=5"
+    var m = condition.match(/^(D\d+\.\d+)(>=|<=|=|>|<)(\d+)$/);
+    if (!m) return true;
+    var qCode = m[1], op = m[2], val = parseInt(m[3], 10);
+    var resp = state.responses[qCode];
+    if (resp === undefined || resp === null) return false;
+    var n = Number(resp);
+    if (isNaN(n)) return false;
+    if (op === '>=') return n >= val;
+    if (op === '<=') return n <= val;
+    if (op === '=') return n === val;
+    if (op === '>') return n > val;
+    if (op === '<') return n < val;
+    return true;
+  }
+
+  // ====== INIT ======
+  function init() {
+    if (state.initialized) return;
+    state.initialized = true;
+    state.timeStart = new Date().toISOString();
+    var mount = $('#matrix-mount');
+    if (!mount) return;
+    mount.innerHTML = '<div class="mx-app"><div class="mx-loading">Caricamento del questionario in corso…</div></div>';
+    if (!hasGAS()) {
+      mount.innerHTML = '<div class="mx-app"><div class="mx-error">Impossibile collegarsi al server. Apri questa pagina dalla webapp Osservatorio Culturale.</div></div>';
+      return;
+    }
+    google.script.run
+      .withSuccessHandler(function(schema) {
+        if (!schema || !schema.questions) {
+          mount.innerHTML = '<div class="mx-app"><div class="mx-error">Schema non valido. Contatta l\'amministratore.</div></div>';
+          return;
+        }
+        state.schema = schema;
+        renderIntro();
+      })
+      .withFailureHandler(function(err) {
+        mount.innerHTML = '<div class="mx-app"><div class="mx-error">Errore caricamento schema: ' + esc(err && err.message || err) + '</div></div>';
+      })
+      .getMatrixSchema();
+  }
+
+  // ====== RENDER INTRO ======
+  function renderIntro() {
+    var mount = $('#matrix-mount');
+    var s = state.schema;
+    mount.innerHTML = ''
+      + '<div class="mx-app">'
+      + '  <div class="mx-hero">'
+      + '    <div class="mx-eyebrow">DUEMILAMUSEI · MuseMu Matrix ' + esc(s.metadata.modelVersion) + '</div>'
+      + '    <h1>Valuta il tuo museo</h1>'
+      + '    <p>Strumento gratuito di autovalutazione per musei e luoghi della cultura. Misura il vostro museo su 10 dimensioni complementari, calibrate sulla Definizione ICOM 2022 e sul framework Musei Sensibili. Tempo di compilazione: 5-10 minuti. Compilazione completamente <b>anonima</b>.</p>'
+      + '  </div>'
+      + '  <div class="mx-section">'
+      + '    <h2>Come funziona</h2>'
+      + '    <p class="mx-section-sub">Il questionario è adattivo: se siete all\'inizio del percorso su una dimensione, il sistema salta gli approfondimenti. Niente domande inutili.</p>'
+      + '    <div style="display:grid;gap:14px;margin:18px 0">'
+      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:#185FA5;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">1</div><div><b>Anagrafica</b> · 5 dati anonimi sull\'istituzione (~1 min)</div></div>'
+      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:#185FA5;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">2</div><div><b>43 domande</b> sulle 10 dimensioni · adattive · linguaggio costruttivo, mai giudicante (~7-10 min)</div></div>'
+      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:#185FA5;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">3</div><div><b>Le vostre priorità</b> · 6 domande di riflessione (~2 min)</div></div>'
+      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:#0F6E56;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">✓</div><div><b>Report personalizzato</b> · profilo del vostro museo + 3 opportunità di sviluppo prioritarie + servizi pertinenti</div></div>'
+      + '    </div>'
+      + '    <div style="background:#F4ECDF;padding:14px 18px;border-radius:8px;font-size:13px;color:#555;margin-top:16px">'
+      + '      <b>Privacy.</b> La compilazione è completamente anonima (UUID generato automaticamente). Nessun dato personale obbligatorio. Solo se al termine vorrete ricevere informazioni di follow-up vi sarà chiesta un\'email, conservata in tabella separata. Trattamento dati conforme al Regolamento UE 2016/679 (GDPR).'
+      + '    </div>'
+      + '  </div>'
+      + '  <div class="mx-nav">'
+      + '    <span></span>'
+      + '    <button class="mx-btn mx-btn-primary" id="mxStartBtn">Inizia il questionario →</button>'
+      + '  </div>'
+      + '</div>';
+    $('#mxStartBtn').addEventListener('click', function() {
+      state.currentStep = 'anagrafica';
+      renderAnagrafica();
+    });
+  }
+
+  // ====== RENDER ANAGRAFICA ======
+  function renderAnagrafica() {
+    var mount = $('#matrix-mount');
+    var s = state.schema;
+    var html = '<div class="mx-app">' + renderProgress(0.05);
+    html += '<div class="mx-section">';
+    html += '<h2>Anagrafica</h2>';
+    html += '<p class="mx-section-sub">5 dati anonimi sulla vostra istituzione. Servono per calibrare il benchmark di confronto. Il nome del museo è opzionale.</p>';
+    s.anagrafica.forEach(function(a) {
+      html += '<div class="mx-anag-row">';
+      html += '<label>' + esc(a.text) + (a.required ? ' *' : '') + '</label>';
+      if (a.type === 'single') {
+        html += '<select data-anag="' + esc(a.code) + '">';
+        html += '<option value="">— seleziona —</option>';
+        (a.options || []).forEach(function(opt) {
+          html += '<option value="' + esc(opt) + '">' + esc(opt) + '</option>';
+        });
+        html += '</select>';
+      } else if (a.type === 'open') {
+        html += '<input type="text" data-anag="' + esc(a.code) + '" placeholder="Opzionale — può restare vuoto" />';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '<div class="mx-nav">';
+    html += '<button class="mx-btn mx-btn-secondary" id="mxBackBtn">← Indietro</button>';
+    html += '<button class="mx-btn mx-btn-primary" id="mxNextBtn">Inizia le domande →</button>';
+    html += '</div>';
+    html += '</div>';
+    mount.innerHTML = html;
+
+    // Event listeners
+    document.querySelectorAll('[data-anag]').forEach(function(el) {
+      el.addEventListener('change', function() {
+        var code = this.getAttribute('data-anag');
+        if (code === 'A_OPT_NAME') state.museumName = this.value.trim();
+        else state.museumProfile[code] = this.value;
+      });
+    });
+    $('#mxBackBtn').addEventListener('click', function() { state.currentStep = 'intro'; renderIntro(); });
+    $('#mxNextBtn').addEventListener('click', function() {
+      var required = s.anagrafica.filter(function(a) { return a.required; });
+      var missing = required.filter(function(a) { return !state.museumProfile[a.code]; });
+      if (missing.length > 0) {
+        alert('Completa i campi obbligatori: ' + missing.map(function(m) { return m.text; }).join(', '));
+        return;
+      }
+      state.currentStep = 'questions';
+      state.currentDimensionIndex = 0;
+      renderQuestionsForDimension();
+    });
+  }
+
+  // ====== RENDER DOMANDE PER DIMENSIONE ======
+  function renderQuestionsForDimension() {
+    var s = state.schema;
+    var dim = s.dimensions[state.currentDimensionIndex];
+    if (!dim) {
+      // Dimensioni terminate → passa a Sezione 11
+      state.currentStep = 'section11';
+      state.currentSection11Item = 0;
+      renderSection11();
+      return;
+    }
+    // Filtra domande della dimensione che sono attive
+    var allDimQ = s.questions.filter(function(q) { return q.dimension === dim.code; });
+    var visibleQ = allDimQ.filter(function(q) { return checkActiveCondition(q.activeIf); });
+
+    var totalDim = s.dimensions.length;
+    var progressRatio = 0.05 + 0.65 * ((state.currentDimensionIndex + 0.5) / totalDim);
+
+    var html = '<div class="mx-app">' + renderProgress(progressRatio);
+    html += '<div class="mx-section">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px">';
+    html += '<h2>' + esc(dim.code) + ' — ' + esc(dim.name) + '</h2>';
+    html += '<span style="color:#6B7280;font-size:12px">Dimensione ' + (state.currentDimensionIndex + 1) + ' di ' + totalDim + '</span>';
+    html += '</div>';
+    html += '<p class="mx-section-sub">' + esc(dim.subDimensions.join(' · ')) + '</p>';
+
+    visibleQ.forEach(function(q) { html += renderQuestionHTML(q); });
+    html += '</div>';
+    html += '<div class="mx-nav">';
+    html += '<button class="mx-btn mx-btn-secondary" id="mxBackBtn">← Indietro</button>';
+    html += '<button class="mx-btn mx-btn-primary" id="mxNextBtn">Avanti →</button>';
+    html += '</div>';
+    html += '</div>';
+    document.querySelector('#matrix-mount').innerHTML = html;
+    attachQuestionListeners();
+    $('#mxBackBtn').addEventListener('click', function() {
+      if (state.currentDimensionIndex > 0) {
+        state.currentDimensionIndex--;
+        renderQuestionsForDimension();
+      } else {
+        state.currentStep = 'anagrafica'; renderAnagrafica();
+      }
+    });
+    $('#mxNextBtn').addEventListener('click', function() {
+      // Verifica gateway compilato
+      var gateway = visibleQ.filter(function(q) { return q.isGateway; })[0];
+      if (gateway && (state.responses[gateway.code] === undefined || state.responses[gateway.code] === null)) {
+        alert('Per favore rispondi alla domanda principale prima di proseguire.');
+        return;
+      }
+      // Se gateway 1 o 2, mostra messaggio empatico se non ancora mostrato
+      if (gateway && Number(state.responses[gateway.code]) <= 2) {
+        showSkipMessage(dim);
+      } else {
+        state.currentDimensionIndex++;
+        renderQuestionsForDimension();
+      }
+    });
+  }
+
+  function showSkipMessage(dim) {
+    var mount = $('#matrix-mount');
+    var msg = '<div class="mx-app">' + renderProgress(0.05 + 0.65 * ((state.currentDimensionIndex + 1) / state.schema.dimensions.length));
+    msg += '<div class="mx-section">';
+    msg += '<h2>Andiamo avanti</h2>';
+    msg += '<div class="mx-skip-message">';
+    msg += 'Costruire ' + esc(dim.name.toLowerCase()) + ' è un percorso che richiede tempo. Abbiamo soluzioni dedicate per chi sta avviando questo lavoro: ne parleremo nel report finale. Procediamo con la prossima dimensione.';
+    msg += '</div>';
+    msg += '</div>';
+    msg += '<div class="mx-nav"><span></span><button class="mx-btn mx-btn-primary" id="mxNextBtn">Continua →</button></div>';
+    msg += '</div>';
+    mount.innerHTML = msg;
+    $('#mxNextBtn').addEventListener('click', function() {
+      state.currentDimensionIndex++;
+      renderQuestionsForDimension();
+    });
+  }
+
+  function renderQuestionHTML(q) {
+    var html = '<div class="mx-q" data-q="' + esc(q.code) + '">';
+    html += '<div class="mx-q-head">';
+    html += '<span class="mx-q-code">' + esc(q.code) + '</span>';
+    if (q.isGateway) html += '<span class="mx-q-gateway">domanda principale</span>';
+    html += '<button class="mx-help-btn" data-help="' + esc(q.code) + '" title="Aiuto">?</button>';
+    html += '<p class="mx-q-text">' + esc(q.text) + '</p>';
+    html += '</div>';
+    html += '<div class="mx-help-box" id="help-' + esc(q.code) + '" style="display:none">';
+    if (q.tooltip) {
+      html += '<span class="mx-help-label">Aiuto alla compilazione</span>';
+      html += '<p><b>Cosa intendiamo. </b>' + esc(q.tooltip.definition || '') + '</p>';
+      if (q.tooltip.example) html += '<p><em><b>Un esempio. </b>' + esc(q.tooltip.example) + '</em></p>';
+      if (q.tooltip.reference) html += '<p style="color:#888;font-size:11px"><b>Riferimento. </b>' + esc(q.tooltip.reference) + '</p>';
+    }
+    html += '</div>';
+
+    if (q.type === 'likert') {
+      html += '<div class="mx-likert">';
+      (q.labels || []).forEach(function(lbl, idx) {
+        var n = idx + 1;
+        var sel = state.responses[q.code] === n ? 'selected' : '';
+        html += '<button class="mx-likert-btn ' + sel + '" data-likert="' + esc(q.code) + '" data-val="' + n + '">';
+        html += '<span class="mx-likert-num">' + n + '</span>';
+        html += '<span class="mx-likert-label">' + esc(lbl) + '</span>';
+        html += '</button>';
+      });
+      html += '</div>';
+    } else if (q.type === 'multiselect_compositive') {
+      html += '<p class="mx-ms-hint">Le opzioni sono compositive e non esclusive: seleziona tutte quelle che si applicano.</p>';
+      html += '<div class="mx-multiselect">';
+      var current = state.responses[q.code] || [];
+      (q.options || []).forEach(function(opt) {
+        var sel = current.indexOf(opt.value) !== -1 ? 'selected' : '';
+        html += '<div class="mx-ms-item ' + sel + '" data-ms="' + esc(q.code) + '" data-val="' + esc(opt.value) + '">';
+        html += '<div class="mx-ms-check"></div>';
+        html += '<span class="mx-ms-label">' + esc(opt.label) + '</span>';
+        html += '</div>';
+      });
+      if (q.allowOther) {
+        var otherVal = (state.responses[q.code + '_other'] || '');
+        html += '<div class="mx-ms-other"><span style="font-size:13px;color:#6B7280">Altro non compreso sopra:</span><input type="text" data-ms-other="' + esc(q.code) + '" placeholder="Specifica…" value="' + esc(otherVal) + '"/></div>';
+      }
+      html += '</div>';
+    } else if (q.type === 'factual_single') {
+      html += '<div class="mx-factual">';
+      (q.choices || []).forEach(function(ch) {
+        var sel = state.responses[q.code] === ch.value ? 'selected' : '';
+        html += '<div class="mx-factual-item ' + sel + '" data-factual="' + esc(q.code) + '" data-val="' + esc(ch.value) + '">' + esc(ch.label) + '</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function attachQuestionListeners() {
+    // Help button
+    document.querySelectorAll('[data-help]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        var code = this.getAttribute('data-help');
+        var box = $('#help-' + code);
+        if (box) {
+          var visible = box.style.display !== 'none';
+          box.style.display = visible ? 'none' : 'block';
+          if (!visible && state.tooltipOpened.indexOf(code) === -1) state.tooltipOpened.push(code);
+        }
+      });
+    });
+    // Likert
+    document.querySelectorAll('[data-likert]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        var code = this.getAttribute('data-likert');
+        var val = parseInt(this.getAttribute('data-val'), 10);
+        state.responses[code] = val;
+        // Toggle selected
+        var siblings = document.querySelectorAll('[data-likert="' + code + '"]');
+        siblings.forEach(function(s) { s.classList.remove('selected'); });
+        this.classList.add('selected');
+        // Se è il gateway e cambia il valore, possiamo dover ri-renderizzare per mostrare/nascondere approfondimenti
+        var s = state.schema;
+        var question = s.questions.filter(function(q) { return q.code === code; })[0];
+        if (question && question.isGateway) {
+          // Re-render solo la dimensione corrente per attivare/disattivare approfondimenti
+          renderQuestionsForDimension();
+        }
+      });
+    });
+    // Multiselect items
+    document.querySelectorAll('[data-ms]').forEach(function(item) {
+      item.addEventListener('click', function() {
+        var code = this.getAttribute('data-ms');
+        var val = this.getAttribute('data-val');
+        if (!Array.isArray(state.responses[code])) state.responses[code] = [];
+        var idx = state.responses[code].indexOf(val);
+        if (idx === -1) { state.responses[code].push(val); this.classList.add('selected'); }
+        else { state.responses[code].splice(idx, 1); this.classList.remove('selected'); }
+      });
+    });
+    // Multiselect other text
+    document.querySelectorAll('[data-ms-other]').forEach(function(inp) {
+      inp.addEventListener('input', function() {
+        var code = this.getAttribute('data-ms-other');
+        state.responses[code + '_other'] = this.value;
+      });
+    });
+    // Factual
+    document.querySelectorAll('[data-factual]').forEach(function(item) {
+      item.addEventListener('click', function() {
+        var code = this.getAttribute('data-factual');
+        var val = this.getAttribute('data-val');
+        state.responses[code] = val;
+        var siblings = document.querySelectorAll('[data-factual="' + code + '"]');
+        siblings.forEach(function(s) { s.classList.remove('selected'); });
+        this.classList.add('selected');
+      });
+    });
+  }
+
+  // ====== RENDER SEZIONE 11 ======
+  function renderSection11() {
+    var s = state.schema;
+    var html = '<div class="mx-app">' + renderProgress(0.85);
+    html += '<div class="mx-section">';
+    html += '<h2>Le vostre priorità</h2>';
+    html += '<p class="mx-section-sub">' + esc(s.section11.description) + '</p>';
+    s.section11.items.forEach(function(item) {
+      html += '<div class="mx-q" data-q="' + esc(item.code) + '">';
+      html += '<div class="mx-q-head"><span class="mx-q-code">' + esc(item.code) + '</span><p class="mx-q-text">' + esc(item.text) + '</p></div>';
+      if (item.type === 'multiselect_max3' || item.type === 'multiselect') {
+        html += '<div class="mx-multiselect">';
+        var current = state.section11[item.code] || [];
+        (item.options || []).forEach(function(opt) {
+          var sel = current.indexOf(opt.value) !== -1 ? 'selected' : '';
+          html += '<div class="mx-ms-item ' + sel + '" data-ms11="' + esc(item.code) + '" data-val="' + esc(opt.value) + '"';
+          if (item.type === 'multiselect_max3') html += ' data-max="3"';
+          html += '><div class="mx-ms-check"></div><span class="mx-ms-label">' + esc(opt.label) + '</span></div>';
+        });
+        html += '</div>';
+      } else if (item.type === 'likert') {
+        html += '<div class="mx-likert">';
+        (item.labels || []).forEach(function(lbl, idx) {
+          var n = idx + 1;
+          var sel = state.section11[item.code] === n ? 'selected' : '';
+          html += '<button class="mx-likert-btn ' + sel + '" data-likert11="' + esc(item.code) + '" data-val="' + n + '">';
+          html += '<span class="mx-likert-num">' + n + '</span><span class="mx-likert-label">' + esc(lbl) + '</span></button>';
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '<div class="mx-nav">';
+    html += '<button class="mx-btn mx-btn-secondary" id="mxBackBtn">← Indietro</button>';
+    html += '<button class="mx-btn mx-btn-primary" id="mxNextBtn">Vedi il vostro report →</button>';
+    html += '</div></div>';
+    document.querySelector('#matrix-mount').innerHTML = html;
+
+    // Listeners
+    document.querySelectorAll('[data-ms11]').forEach(function(item) {
+      item.addEventListener('click', function() {
+        var code = this.getAttribute('data-ms11');
+        var val = this.getAttribute('data-val');
+        var max = parseInt(this.getAttribute('data-max') || '0', 10);
+        if (!Array.isArray(state.section11[code])) state.section11[code] = [];
+        var idx = state.section11[code].indexOf(val);
+        if (idx === -1) {
+          if (max > 0 && state.section11[code].length >= max) {
+            alert('Seleziona al massimo ' + max + ' opzioni.');
+            return;
+          }
+          state.section11[code].push(val); this.classList.add('selected');
+        } else {
+          state.section11[code].splice(idx, 1); this.classList.remove('selected');
+        }
+      });
+    });
+    document.querySelectorAll('[data-likert11]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        var code = this.getAttribute('data-likert11');
+        var val = parseInt(this.getAttribute('data-val'), 10);
+        state.section11[code] = val;
+        var siblings = document.querySelectorAll('[data-likert11="' + code + '"]');
+        siblings.forEach(function(s) { s.classList.remove('selected'); });
+        this.classList.add('selected');
+      });
+    });
+    $('#mxBackBtn').addEventListener('click', function() {
+      state.currentStep = 'questions';
+      state.currentDimensionIndex = state.schema.dimensions.length - 1;
+      renderQuestionsForDimension();
+    });
+    $('#mxNextBtn').addEventListener('click', submitAndShowReport);
+  }
+
+  // ====== SUBMIT + REPORT ======
+  function submitAndShowReport() {
+    var mount = $('#matrix-mount');
+    mount.innerHTML = '<div class="mx-app"><div class="mx-loading">Elaborazione del vostro profilo in corso…</div></div>';
+    var payload = {
+      responseId: state.responseId,
+      responses: state.responses,
+      section11: state.section11,
+      museumProfile: state.museumProfile,
+      museumName: state.museumName,
+      timestampInizio: state.timeStart,
+      timestampFine: new Date().toISOString(),
+      tooltipOpened: state.tooltipOpened,
+      timePerQuestion: state.timePerQuestion,
+      completionStatus: 'complete'
+    };
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (!result || !result.ok) {
+          mount.innerHTML = '<div class="mx-app"><div class="mx-error">Errore nel salvataggio: ' + esc(result && result.error || 'sconosciuto') + '</div></div>';
+          return;
+        }
+        state.responseId = result.responseId;
+        // Carica il report completo
+        google.script.run
+          .withSuccessHandler(function(report) {
+            if (!report || !report.ok) {
+              mount.innerHTML = '<div class="mx-app"><div class="mx-error">Errore caricamento report.</div></div>';
+              return;
+            }
+            state.report = report;
+            renderReport();
+          })
+          .withFailureHandler(function(err) {
+            mount.innerHTML = '<div class="mx-app"><div class="mx-error">Errore caricamento report: ' + esc(err) + '</div></div>';
+          })
+          .getMatrixReport(state.responseId);
+      })
+      .withFailureHandler(function(err) {
+        mount.innerHTML = '<div class="mx-app"><div class="mx-error">Errore di salvataggio: ' + esc(err && err.message || err) + '</div></div>';
+      })
+      .saveMatrixResponse(payload);
+  }
+
+  function renderReport() {
+    var r = state.report;
+    var s = state.schema;
+    var html = '<div class="mx-app">';
+    // Hero report
+    html += '<div class="mx-report-hero">';
+    html += '<div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.85">Il vostro profilo MuseMu Matrix</div>';
+    if (r.museumName) html += '<div style="font-size:18px;margin-top:6px;opacity:.9">' + esc(r.museumName) + '</div>';
+    html += '<div class="mx-profile-code">' + esc(r.profileAssigned) + '</div>';
+    var profileObj = (s.profiles || []).filter(function(p){ return p.code === r.profileAssigned; })[0];
+    html += '<div class="mx-profile-name">' + esc(profileObj ? profileObj.name : '') + '</div>';
+    html += '<div class="mx-synth-score">' + esc(r.syntheticScore) + ' <span style="font-size:24px;opacity:.7">/100</span></div>';
+    html += '<div class="mx-synth-label">punteggio sintetico complessivo</div>';
+    html += '</div>';
+
+    // Sprint 2 Step 4 — Barra azioni report (PDF download + email)
+    html += '<div class="mx-section" style="background:#F5F0E1;border-left:3px solid #B8902A;padding:18px 20px;margin-top:18px">';
+    html += '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between">';
+    html += '<div>';
+    html += '<div style="font-size:13px;color:#6B5418;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Il vostro report PDF è pronto</div>';
+    html += '<div style="font-size:13px;color:#6B5418;margin-top:2px">Scaricalo, condividilo internamente o ricevilo via email per archivio.</div>';
+    html += '</div>';
+    html += '<div style="display:flex;gap:10px;flex-wrap:wrap">';
+    html += '<button class="mx-btn mx-btn-primary" id="mxBtnDownloadPDF">📄 Scarica PDF</button>';
+    html += '<button class="mx-btn" id="mxBtnEmailJump" style="background:#fff;border:1px solid #B8902A;color:#6B5418">✉️ Inviamelo per email</button>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div id="mxPdfStatus" style="margin-top:10px;font-size:13px;color:#6B5418"></div>';
+    html += '</div>';
+
+    // Descrizione profilo
+    html += '<div class="mx-section">';
+    html += '<h2>Lettura del vostro profilo</h2>';
+    html += '<p style="font-size:14px;line-height:1.7;color:#374151;margin-top:8px">' + esc(r.profileDescription) + '</p>';
+    html += '</div>';
+
+    // Mappa decagonale (barre)
+    html += '<div class="mx-section">';
+    html += '<h2>Le 10 dimensioni</h2>';
+    html += '<p class="mx-section-sub">Scoring 0-100 per ogni dimensione del modello.</p>';
+    html += '<div class="mx-dim-bars">';
+    s.dimensions.forEach(function(d) {
+      var sc = r.scoringDimensions[d.code] || 0;
+      var cls = sc < 33 ? 'low' : sc < 66 ? 'mid' : 'high';
+      html += '<div class="mx-dim-row">';
+      html += '<span class="mx-dim-name"><b>' + esc(d.code) + '</b> ' + esc(d.name) + '</span>';
+      html += '<div class="mx-dim-bar-track"><div class="mx-dim-bar-fill ' + cls + '" style="width:' + sc + '%"></div></div>';
+      html += '<span class="mx-dim-score">' + esc(sc) + '</span>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+
+    // Top 3 opportunità
+    if (r.top3Opportunities && r.top3Opportunities.length) {
+      html += '<div class="mx-section">';
+      html += '<h2>Le 3 opportunità di sviluppo prioritarie</h2>';
+      html += '<p class="mx-section-sub">Le 3 dimensioni con maggior margine di crescita: aree dove un investimento mirato può produrre impatto rapido.</p>';
+      html += '<div class="mx-opp-list">';
+      r.top3Opportunities.forEach(function(opp) {
+        html += '<div class="mx-opp-card">';
+        html += '<div class="mx-opp-rank">OPPORTUNITÀ #' + esc(opp.rank) + '</div>';
+        html += '<h3>' + esc(opp.dimensionCode) + ' — ' + esc(opp.dimensionName) + '</h3>';
+        html += '<div class="mx-opp-meta">Scoring attuale: <b>' + esc(opp.score) + '/100</b> · ' + esc(opp.reading) + '</div>';
+        html += '</div>';
+      });
+      html += '</div></div>';
+    }
+
+    // Servizi raccomandati
+    if (r.serviceRecommendations && r.serviceRecommendations.length) {
+      html += '<div class="mx-section">';
+      html += '<h2>Servizi Duemilamusei pertinenti</h2>';
+      html += '<p class="mx-section-sub">Per ognuna delle 3 opportunità prioritarie, il servizio del catalogo Duemilamusei più adatto.</p>';
+      html += '<div class="mx-services">';
+      r.serviceRecommendations.forEach(function(svc) {
+        html += '<div class="mx-service-card">';
+        html += '<div class="mx-service-code">Per opportunità ' + esc(svc.opportunityCode) + ' · ' + esc(svc.serviceCode) + '</div>';
+        html += '<h4>' + esc(svc.serviceName) + '</h4>';
+        html += '<p>' + esc(svc.serviceDescription) + '</p>';
+        // Sprint 2 Step 4 — Cross-link Osservatorio Culturale
+        if (svc.ocLinkLabel && (svc.ocAmbito || svc.ocPage)) {
+          var attr = svc.ocAmbito
+            ? 'data-oc-page="ambito" data-oc-ambito="' + esc(svc.ocAmbito) + '"'
+            : 'data-oc-page="' + esc(svc.ocPage) + '"';
+          html += '<a href="#" class="mx-oc-link" ' + attr + ' style="display:inline-block;margin-top:10px;font-size:12px;color:#0E7490;text-decoration:none;font-weight:600;border-bottom:1px dashed #0E7490;padding-bottom:1px">' + esc(svc.ocLinkLabel) + ' →</a>';
+        }
+        html += '</div>';
+      });
+      html += '</div></div>';
+    }
+
+    // Roadmap
+    if (r.roadmap) {
+      html += '<div class="mx-section">';
+      html += '<h2>La vostra roadmap suggerita</h2>';
+      html += '<p class="mx-section-sub">Percorso a 3 fasi coerente con il framework Musei Sensibili.</p>';
+      html += '<div class="mx-roadmap">';
+      ['phase1','phase2','phase3'].forEach(function(k, idx) {
+        var p = r.roadmap[k];
+        if (!p) return;
+        html += '<div class="mx-phase mx-phase-' + (idx+1) + '">';
+        html += '<h4>' + esc(p.name) + '</h4>';
+        html += '<p><b>Obiettivo:</b> ' + esc(p.objective) + '</p>';
+        if (p.actions && p.actions.length) {
+          html += '<p><b>Azioni:</b> ' + p.actions.map(esc).join(' · ') + '</p>';
+        }
+        html += '</div>';
+      });
+      html += '</div></div>';
+    }
+
+    // Sezione 12 — Follow-up opt-in
+    html += renderSection12HTML();
+
+    // CTA
+    html += '<div class="mx-cta">';
+    html += '<h3>Vuoi diventare un Museo Sensibile?</h3>';
+    html += '<p>Una conversazione di 30-45 minuti, gratuita e senza impegno, per approfondire le opportunità identificate.</p>';
+    var ctaSubject = encodeURIComponent('[MuseMu Matrix] Richiesta primo incontro — ' + (r.museumName || 'struttura'));
+    var ctaBody = encodeURIComponent('Buongiorno,\n\nho completato il questionario MuseMu Matrix (riferimento risposta: ' + r.responseId + ') e desidero fissare un primo incontro per approfondire le opportunità emerse.\n\nGrazie,\n');
+    html += '<a class="mx-btn mx-btn-primary" href="mailto:s.straccini@gmail.com?subject=' + ctaSubject + '&body=' + ctaBody + '" style="text-decoration:none;display:inline-block">Prenota un primo incontro</a>';
+    html += '</div>';
+
+    html += '</div>';
+    document.querySelector('#matrix-mount').innerHTML = html;
+    attachSection12Listeners();
+    attachReportActionsListeners();
+    attachOcCrossLinkListeners();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  // Sprint 2 Step 4 — Listener azioni report PDF/email
+  function attachReportActionsListeners() {
+    var btnDownload = $('#mxBtnDownloadPDF');
+    var btnEmailJump = $('#mxBtnEmailJump');
+    var statusDiv = $('#mxPdfStatus');
+
+    if (btnDownload) btnDownload.addEventListener('click', function() {
+      btnDownload.disabled = true;
+      statusDiv.innerHTML = 'Preparazione del PDF in corso (può richiedere 10-20 secondi)…';
+      google.script.run
+        .withSuccessHandler(function(res) {
+          btnDownload.disabled = false;
+          if (res && res.ok) {
+            statusDiv.innerHTML = '<span style="color:#0F6E56">✓ PDF pronto.</span> <a href="' + res.fileUrl + '" target="_blank" style="color:#0E7490;font-weight:600">Apri PDF →</a>';
+            window.open(res.fileUrl, '_blank');
+          } else {
+            statusDiv.innerHTML = '<span style="color:#8B1E1E">Errore: ' + esc(res && res.error || 'sconosciuto') + '</span>';
+          }
+        })
+        .withFailureHandler(function(err) {
+          btnDownload.disabled = false;
+          statusDiv.innerHTML = '<span style="color:#8B1E1E">Errore di rete: ' + esc(err && err.message || err) + '</span>';
+        })
+        .getMatrixReportPDFUrl(state.responseId);
+    });
+
+    if (btnEmailJump) btnEmailJump.addEventListener('click', function() {
+      // Scroll alla sezione 12 e focus sull'email
+      var emailField = $('#mxEmailInput');
+      if (emailField) {
+        emailField.scrollIntoView({behavior:'smooth', block:'center'});
+        setTimeout(function(){ emailField.focus(); }, 600);
+        statusDiv.innerHTML = 'Compila l\'email qui sotto e conferma per ricevere il PDF.';
+      }
+    });
+  }
+
+  // Sprint 2 Step 4 — Cross-link verso pagine Osservatorio Culturale
+  function attachOcCrossLinkListeners() {
+    document.querySelectorAll('.mx-oc-link').forEach(function(a) {
+      a.addEventListener('click', function(ev) {
+        ev.preventDefault();
+        var page = this.getAttribute('data-oc-page');
+        var ambito = this.getAttribute('data-oc-ambito');
+        if (window.OC && typeof window.OC.go === 'function') {
+          window.OC.go(page, ambito ? parseInt(ambito,10) : null);
+        } else {
+          // Fallback: ricarica con hash
+          window.location.hash = '#' + page + (ambito ? '/' + ambito : '');
+        }
+      });
+    });
+  }
+
+  function renderSection12HTML() {
+    var s = state.schema.section12;
+    var html = '<div class="mx-section">';
+    html += '<h2>Vuoi rimanere informato e ricevere il PDF? (opzionale)</h2>';
+    html += '<p class="mx-section-sub">Ricevi gratuitamente bandi, podcast, casi studio e — confermando qui sotto — il <b>report PDF di questa autovalutazione direttamente nella tua casella di posta</b>. Tutto opt-in granulare.</p>';
+
+    var prefs = s.items[0]; // D12.1
+    html += '<div class="mx-q">';
+    html += '<p class="mx-q-text" style="margin:0 0 10px">' + esc(prefs.text) + '</p>';
+    html += '<div class="mx-multiselect">';
+    (prefs.options || []).forEach(function(opt) {
+      var sel = state.section12.preferences[opt.value] ? 'selected' : '';
+      html += '<div class="mx-ms-item ' + sel + '" data-pref="' + esc(opt.value) + '">';
+      html += '<div class="mx-ms-check"></div><span class="mx-ms-label">' + esc(opt.label) + '</span></div>';
+    });
+    html += '</div></div>';
+
+    html += '<div class="mx-anag-row">';
+    html += '<label>Email di contatto (richiesta solo se hai selezionato almeno una preferenza)</label>';
+    html += '<input type="email" id="mxEmailInput" placeholder="es. nome@museo.it" value="' + esc(state.section12.email) + '" />';
+    html += '</div>';
+
+    html += '<label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#555;margin-top:10px;cursor:pointer">';
+    html += '<input type="checkbox" id="mxConsent"' + (state.section12.consent ? ' checked' : '') + ' style="margin-top:3px"/>';
+    html += '<span>Acconsento al trattamento dei miei dati di contatto per le finalità sopra selezionate, ai sensi del Regolamento UE 2016/679 (GDPR). So di poter revocare il consenso in qualunque momento. Il presente consenso non è condizione per consultare il report di autovalutazione.</span>';
+    html += '</label>';
+    html += '<div class="mx-anag-row" style="margin-top:10px">';
+    html += '<label>Nome del referente (opzionale, per personalizzare l\'email)</label>';
+    html += '<input type="text" id="mxNomeInput" placeholder="es. Maria Rossi" value="' + esc(state.section12.nome || '') + '" />';
+    html += '</div>';
+    html += '<button class="mx-btn mx-btn-primary" id="mxSubmitContact" style="margin-top:14px">Conferma iscrizione + ricevi PDF per email</button>';
+    html += '<div id="mxContactResult" style="margin-top:10px;font-size:13px"></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function attachSection12Listeners() {
+    document.querySelectorAll('[data-pref]').forEach(function(item) {
+      item.addEventListener('click', function() {
+        var v = this.getAttribute('data-pref');
+        state.section12.preferences[v] = !state.section12.preferences[v];
+        this.classList.toggle('selected');
+      });
+    });
+    var emailInput = $('#mxEmailInput');
+    if (emailInput) emailInput.addEventListener('input', function(){ state.section12.email = this.value.trim(); });
+    var nomeInput = $('#mxNomeInput');
+    if (nomeInput) nomeInput.addEventListener('input', function(){ state.section12.nome = this.value.trim(); });
+    var consent = $('#mxConsent');
+    if (consent) consent.addEventListener('change', function(){ state.section12.consent = this.checked; });
+    var btn = $('#mxSubmitContact');
+    if (btn) btn.addEventListener('click', submitContact);
+  }
+
+  // Sprint 2 Step 4 — submitContact ora chiama sendMatrixReportEmail
+  // (che internamente salva il contatto e invia il PDF). Una sola RPC.
+  function submitContact() {
+    var prefsKeys = Object.keys(state.section12.preferences).filter(function(k){ return state.section12.preferences[k]; });
+    var resultDiv = $('#mxContactResult');
+    if (prefsKeys.length === 0) {
+      resultDiv.innerHTML = '<span style="color:#8B1E1E">Seleziona almeno una preferenza prima di procedere.</span>';
+      return;
+    }
+    if (!state.section12.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(state.section12.email)) {
+      resultDiv.innerHTML = '<span style="color:#8B1E1E">Email non valida.</span>';
+      return;
+    }
+    if (!state.section12.consent) {
+      resultDiv.innerHTML = '<span style="color:#8B1E1E">Devi acconsentire al trattamento dati per procedere.</span>';
+      return;
+    }
+    var btn = $('#mxSubmitContact');
+    if (btn) btn.disabled = true;
+    resultDiv.innerHTML = 'Generazione PDF e invio email in corso (15-25 secondi)…';
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (btn) btn.disabled = false;
+        if (result && result.ok) {
+          var msg = '<span style="color:#0F6E56">✓ Iscrizione registrata e report PDF inviato a <b>' + esc(state.section12.email) + '</b>. Controlla la posta in arrivo (anche cartella Spam).</span>';
+          if (result.fileUrl) {
+            msg += '<br><a href="' + result.fileUrl + '" target="_blank" style="color:#0E7490;font-weight:600">Apri il PDF online →</a>';
+          }
+          resultDiv.innerHTML = msg;
+        } else {
+          resultDiv.innerHTML = '<span style="color:#8B1E1E">Errore: ' + esc(result && result.error || 'sconosciuto') + '</span>';
+        }
+      })
+      .withFailureHandler(function(err) {
+        if (btn) btn.disabled = false;
+        resultDiv.innerHTML = '<span style="color:#8B1E1E">Errore di rete: ' + esc(err && err.message || err) + '</span>';
+      })
+      .sendMatrixReportEmail({
+        responseId: state.responseId,
+        email: state.section12.email,
+        nome: state.section12.nome || null,
+        preferences: state.section12.preferences
+      });
+  }
+
+  function renderProgress(ratio) {
+    var pct = Math.min(100, Math.max(0, ratio * 100));
+    var step = '';
+    if (state.currentStep === 'intro') step = 'Inizio';
+    else if (state.currentStep === 'anagrafica') step = 'Anagrafica';
+    else if (state.currentStep === 'questions') {
+      var dim = state.schema.dimensions[state.currentDimensionIndex];
+      step = dim ? ('Dimensione ' + (state.currentDimensionIndex+1) + '/10 · ' + dim.code) : 'Domande';
+    }
+    else if (state.currentStep === 'section11') step = 'Le vostre priorità';
+    else if (state.currentStep === 'report') step = 'Report';
+    return '<div class="mx-progress"><div class="mx-progress-track"><div class="mx-progress-fill" style="width:' + pct + '%"></div></div><div class="mx-progress-text">' + esc(step) + ' · ' + Math.round(pct) + '%</div></div>';
+  }
+
+  // ====== ESPORTA OGGETTO PUBBLICO ======
+  window.OC_Matrix = {
+    init: init,
+    state: state // utile per debug
+  };
+
+})();
+</script>

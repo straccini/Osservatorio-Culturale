@@ -1,0 +1,196 @@
+<!--
+  ============================================================
+  OSSERVATORIO CULTURALE — SIDEBAR.HTML (v4.12 — Redesign Editoriale Museale)
+  Design da: Osservatorio - Redesign Mockup.html (Claude Design, 01/05/2026)
+  Direzione: Carta da museo — Newsreader + Instrument Serif + Inter
+  ------------------------------------------------------------
+  File GAS: "Sidebar"
+  Include nel Index.html via string-replace (pattern tua doGet)
+  oppure via scriptlet <?!= include('Sidebar'); ?>.
+  ------------------------------------------------------------
+  ARCHITETTURA:
+  Il markup e' statico. I dati dinamici (badge, utente, pagina
+  attiva) vengono iniettati DOPO il caricamento via
+      google.script.run.getHomepageDataV42()
+  chiamato dentro Navigation.html (OC.hydrate()).
+  ============================================================
+-->
+<aside class="sidebar" id="sidebar" aria-label="Navigazione principale">
+
+  <!-- ===== Brand — wordmark editoriale con lente integrata ===== -->
+  <div class="brand">
+    <div class="brand-mark">
+      <span class="lens" aria-hidden="true"></span>
+      <b>sservatorio</b>
+    </div>
+    <div class="brand-sub">Culturale &middot; <span id="sidebarVersion">v4.14</span></div>
+  </div>
+
+  <!-- ===== Gruppo: Vista generale ===== -->
+  <div class="nav-group">
+    <div class="nav-label">Vista generale</div>
+
+    <a href="#" class="nav-item active" data-page="home" aria-current="page">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span class="lbl">Home</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="bandi">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+      <span class="lbl">Radar Bandi</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="news">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2z"/><path d="M18 14H10"/><path d="M15 18H10"/><path d="M10 6h8v4h-8V6z"/>
+      </svg>
+      <span class="lbl">News</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="podcast">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>
+      <span class="lbl">Podcast</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="video">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+      </svg>
+      <span class="lbl">Video</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="libri">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+      <span class="lbl">Libri</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="archivio">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>
+      </svg>
+      <span class="lbl">Archivio</span>
+    </a>
+    <a href="#" class="nav-item" data-page="cestino">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+      </svg>
+      <span class="lbl">Cestino</span>
+      <span class="nav-badge" id="badge-cestino" hidden>0</span>
+    </a>
+  </div>
+
+  <!-- ===== Gruppo: Strumenti museo (MuseMu Matrix) ===== -->
+  <div class="nav-group">
+    <div class="nav-label">Strumenti museo</div>
+    <a href="#" class="nav-item nav-item-matrix" data-page="matrix">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M9 21V9"/>
+      </svg>
+      <span class="lbl" style="font-family:var(--font-serif);font-style:italic;font-weight:500"><em>Valuta il tuo museo</em></span>
+      <span class="matrix-tag">10 min</span>
+    </a>
+  </div>
+
+  <!-- ===== Gruppo: Ambiti tematici (5) — accordion ===== -->
+  <div class="nav-group" id="nav-group-ambiti">
+    <button class="nav-label nav-accordion-toggle" id="ambitiToggle" aria-expanded="false" aria-controls="ambitiList" type="button">
+      <span>Ambiti tematici</span>
+      <span class="num" id="nav-label-bandi-num"></span>
+      <svg class="accordion-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </button>
+
+    <div id="ambitiList" class="accordion-body collapsed">
+      <a href="#" class="nav-item amb a1" data-page="ambito" data-ambito="1">
+        <span class="amb-dot"></span>
+        <span class="amb-num">01</span>
+        <span class="amb-name">Identit&agrave; museale</span>
+        <span class="nav-badge" id="badge-amb-1" hidden>0</span>
+      </a>
+      <a href="#" class="nav-item amb a2" data-page="ambito" data-ambito="2">
+        <span class="amb-dot"></span>
+        <span class="amb-num">02</span>
+        <span class="amb-name">Inclusione e accessibilit&agrave;</span>
+        <span class="nav-badge" id="badge-amb-2" hidden>0</span>
+      </a>
+      <a href="#" class="nav-item amb a3" data-page="ambito" data-ambito="3">
+        <span class="amb-dot"></span>
+        <span class="amb-num">03</span>
+        <span class="amb-name">Mostre e collezioni</span>
+        <span class="nav-badge" id="badge-amb-3" hidden>0</span>
+      </a>
+      <a href="#" class="nav-item amb a4" data-page="ambito" data-ambito="4">
+        <span class="amb-dot"></span>
+        <span class="amb-num">04</span>
+        <span class="amb-name">Comunit&agrave; e welfare</span>
+        <span class="nav-badge" id="badge-amb-4" hidden>0</span>
+      </a>
+      <a href="#" class="nav-item amb a5" data-page="ambito" data-ambito="5">
+        <span class="amb-dot"></span>
+        <span class="amb-num">05</span>
+        <span class="amb-name">Digital, AI e gov.</span>
+        <span class="nav-badge" id="badge-amb-5" hidden>0</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ===== Gruppo: Strumenti admin (visibilita' controllata via JS/ruolo) ===== -->
+  <div class="nav-group" id="nav-strumenti" hidden>
+    <div class="nav-label">Strumenti</div>
+
+    <a href="#" class="nav-item" data-page="digest" data-role="editor,admin" hidden>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      <span class="lbl">Digest Reader</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="data" data-role="admin" hidden>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/>
+      </svg>
+      <span class="lbl">Gestione Dati</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="stats" data-role="admin" hidden>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      <span class="lbl">Statistiche</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="settings" data-role="admin" hidden>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span class="lbl">Impostazioni</span>
+    </a>
+  </div>
+
+  <!-- ===== Footer utente ===== -->
+  <div class="sidebar-footer">
+    <a href="#" class="nav-item" data-action="openGuida">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <span class="lbl">Guida &amp; Supporto</span>
+    </a>
+    <div class="user-card" id="userCard">
+      <div class="user-avatar" id="userInitials">&middot;</div>
+      <div class="user-info">
+        <b id="userName">Ospite</b>
+        <span id="userRole">lettore</span>
+      </div>
+    </div>
+  </div>
+
+</aside>

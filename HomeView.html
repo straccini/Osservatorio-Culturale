@@ -1,0 +1,199 @@
+<!--
+  ============================================================
+  OSSERVATORIO CULTURALE — HOMEVIEW.HTML
+  Sprint N5 — Home redesign "Rivista Digitale"
+  Sezioni: bandi urgenti · news · podcast+video · libri · ambiti
+  ============================================================
+-->
+
+<section class="page active" id="page-home">
+
+  <!-- ===== MASTHEAD ===== -->
+  <div class="home-masthead">
+    <div class="masthead-meta">
+      <b>Osservatorio Culturale</b>
+      <span id="homeDataOggi">&mdash;</span>
+    </div>
+    <div class="masthead-update" id="homeUpdateInfo" hidden>
+      <span class="update-dot" aria-hidden="true"></span>
+      <span id="homeUpdateText">&mdash;</span>
+    </div>
+  </div>
+
+  <!-- ===== HERO ===== -->
+  <div class="hero-eyebrow">Intelligenza culturale &middot; Radar &middot; Museo</div>
+  <h1 class="home-headline">
+    Tutto il mondo<br>della <em>cultura,</em><br>in un&rsquo;unica vista.
+  </h1>
+  <p class="home-deck">
+    News curate, bandi in scadenza, podcast, video e libri dagli ambiti
+    strategici &mdash; aggiornato in tempo reale dall&rsquo;AI scanner.
+  </p>
+
+  <!-- Ricerca -->
+  <div class="home-search">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input id="heroSearch" type="text" placeholder="Cerca bandi, news, ambiti o parole chiave&hellip;" aria-label="Ricerca rapida" />
+    <button type="button" onclick="OC.search(document.getElementById('heroSearch').value)">Cerca</button>
+  </div>
+
+  <!-- Chips suggerimento -->
+  <div class="home-chips">
+    <span class="label">Scopri</span>
+    <button class="home-chip" type="button" onclick="OC.search('PNRR cultura')">PNRR cultura</button>
+    <button class="home-chip" type="button" onclick="OC.filterBandi('urgenti')">Bandi &le; 7 giorni</button>
+    <button class="home-chip" type="button" onclick="OC.search('AI musei')">AI per musei</button>
+    <button class="home-chip" type="button" onclick="OC.go('libri')">Libri &amp; pubblicazioni</button>
+    <button class="home-chip" type="button" onclick="OC.search('accessibilita museo')">Accessibilit&agrave; museo</button>
+  </div>
+
+  <!-- ===== STATS BAR ===== -->
+  <div class="home-stats-bar" id="homeStatsBar">
+    <a href="#" class="hstat" data-goto="bandi">
+      <b id="statBandi">&mdash;</b><span>bandi</span>
+    </a>
+    <span class="hstat-sep">&middot;</span>
+    <a href="#" class="hstat" data-goto="news">
+      <b id="statNews">&mdash;</b><span>news</span>
+    </a>
+    <span class="hstat-sep">&middot;</span>
+    <a href="#" class="hstat" data-goto="podcast">
+      <b id="statPodcast">&mdash;</b><span>podcast</span>
+    </a>
+    <span class="hstat-sep">&middot;</span>
+    <a href="#" class="hstat" data-goto="video">
+      <b id="statVideo">&mdash;</b><span>video</span>
+    </a>
+    <span class="hstat-sep">&middot;</span>
+    <a href="#" class="hstat" data-goto="libri">
+      <b id="statLibri">&mdash;</b><span>libri</span>
+    </a>
+  </div>
+
+  <!-- ===== BANDI IN SCADENZA ===== -->
+  <div class="section-head">
+    <div class="left">
+      <h2 class="section-title">Bandi <em>in evidenza</em></h2>
+    </div>
+    <button class="section-action" type="button" data-goto="bandi">
+      Radar Bandi &rarr; <span id="homeBandiTotCount"></span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+  </div>
+  <div id="homeUltimiBandi" aria-live="polite">
+    <div class="home-list-skeleton"></div>
+    <div class="home-list-skeleton"></div>
+    <div class="home-list-skeleton"></div>
+  </div>
+  <div class="empty-state" id="homeUltimiBandiEmpty" hidden>Nessun bando monitorato.</div>
+
+  <!-- ===== NEWS SEGNALATE ===== -->
+  <div class="section-head" style="margin-top:44px">
+    <div class="left">
+      <h2 class="section-title">News <em>segnalate</em></h2>
+    </div>
+    <button class="section-action" type="button" data-goto="news">
+      Tutte le news &rarr;
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+  </div>
+  <div id="homeNewsList" aria-live="polite">
+    <div class="home-list-skeleton"></div>
+    <div class="home-list-skeleton"></div>
+    <div class="home-list-skeleton"></div>
+  </div>
+  <div class="empty-state" id="homeNewsEmpty" hidden>Nessuna news segnalata.</div>
+
+  <!-- ===== PODCAST + VIDEO (griglia 2 colonne) ===== -->
+  <div class="home-pv-grid">
+
+    <div class="home-pv-col">
+      <div class="section-head">
+        <div class="left"><h2 class="section-title">&#127911; <em>Podcast</em></h2></div>
+        <button class="section-action" type="button" data-goto="podcast">Tutti &rarr;</button>
+      </div>
+      <div id="homePodcastList" aria-live="polite">
+        <div class="home-list-skeleton"></div>
+        <div class="home-list-skeleton"></div>
+      </div>
+      <div class="empty-state" id="homePodcastEmpty" hidden>Nessun podcast.</div>
+    </div>
+
+    <div class="home-pv-col">
+      <div class="section-head">
+        <div class="left"><h2 class="section-title">&#9654; <em>Video</em></h2></div>
+        <button class="section-action" type="button" data-goto="video">Tutti &rarr;</button>
+      </div>
+      <div id="homeVideoList" aria-live="polite">
+        <div class="home-list-skeleton"></div>
+        <div class="home-list-skeleton"></div>
+      </div>
+      <div class="empty-state" id="homeVideoEmpty" hidden>Nessun video.</div>
+    </div>
+
+  </div>
+
+  <!-- ===== LIBRI ===== -->
+  <div class="section-head" style="margin-top:44px">
+    <div class="left">
+      <h2 class="section-title">&#128214; Libri <em>&amp; pubblicazioni</em></h2>
+    </div>
+    <button class="section-action" type="button" data-goto="libri">
+      Tutte le pubblicazioni &rarr;
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+  </div>
+  <div id="homeLibriList" aria-live="polite">
+    <div class="home-list-skeleton"></div>
+    <div class="home-list-skeleton"></div>
+  </div>
+  <div class="empty-state" id="homeLibriEmpty" hidden>Nessuna pubblicazione.</div>
+
+  <!-- ===== ESPLORA PER AMBITO — chips compatti ===== -->
+  <div class="section-head" style="margin-top:44px">
+    <div class="left"><h2 class="section-title">Esplora per <em>ambito</em></h2></div>
+  </div>
+  <div class="home-ambiti-chips" id="homeAmbiti">
+    <a href="#" class="hamb-chip a1" data-page="ambito" data-ambito="1" style="--amb:var(--amb-1)">
+      <span class="hamb-num">01</span>
+      <span class="hamb-name">Identit&agrave; e narrazione</span>
+      <span class="hamb-count" data-new="1">&mdash;</span>
+    </a>
+    <a href="#" class="hamb-chip a2" data-page="ambito" data-ambito="2" style="--amb:var(--amb-2)">
+      <span class="hamb-num">02</span>
+      <span class="hamb-name">Inclusione e accessibilit&agrave;</span>
+      <span class="hamb-count" data-new="2">&mdash;</span>
+    </a>
+    <a href="#" class="hamb-chip a3" data-page="ambito" data-ambito="3" style="--amb:var(--amb-3)">
+      <span class="hamb-num">03</span>
+      <span class="hamb-name">Programma e collezioni</span>
+      <span class="hamb-count" data-new="3">&mdash;</span>
+    </a>
+    <a href="#" class="hamb-chip a4" data-page="ambito" data-ambito="4" style="--amb:var(--amb-4)">
+      <span class="hamb-num">04</span>
+      <span class="hamb-name">Comunit&agrave; e welfare</span>
+      <span class="hamb-count" data-new="4">&mdash;</span>
+    </a>
+    <a href="#" class="hamb-chip a5" data-page="ambito" data-ambito="5" style="--amb:var(--amb-5)">
+      <span class="hamb-num">05</span>
+      <span class="hamb-name">Digital, AI e governance</span>
+      <span class="hamb-count" data-new="5">&mdash;</span>
+    </a>
+  </div>
+
+  <!-- ===== CARD PROMO MuseMu Matrix ===== -->
+  <div style="border:1px solid var(--amb-4-soft);border-left:4px solid var(--amb-4);border-radius:var(--r-md);padding:22px 26px;margin:44px 0 32px;display:flex;flex-wrap:wrap;align-items:center;gap:20px;justify-content:space-between;background:var(--surface)">
+    <div style="flex:1;min-width:260px">
+      <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--amb-4);letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin-bottom:6px">Strumento gratuito Duemilamusei</div>
+      <h3 style="font-family:var(--font-display);font-size:20px;font-weight:500;color:var(--ink);margin:0 0 6px;line-height:1.3;letter-spacing:-0.01em">Quanto &egrave; pronto il tuo museo per i prossimi 5 anni?</h3>
+      <p style="font-family:var(--font-display);font-size:14px;color:var(--ink-3);line-height:1.6;margin:0">10 minuti di autovalutazione strutturata. Report PDF gratuito con diagnosi su 10 dimensioni, top 3 opportunit&agrave; e roadmap a 3 fasi.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button onclick="OC.go('matrix')" style="background:var(--amb-4);color:#fff;border:none;padding:11px 22px;border-radius:var(--r-sm);font-family:var(--font-ui);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;letter-spacing:.02em">Inizia ora &rarr;</button>
+      <button onclick="OC.go('matrix-landing')" style="background:transparent;color:var(--ink-2);border:1px solid var(--rule);padding:8px 18px;border-radius:var(--r-sm);font-family:var(--font-ui);font-size:12px;cursor:pointer;white-space:nowrap">Scopri di pi&ugrave;</button>
+    </div>
+  </div>
+
+</section>
