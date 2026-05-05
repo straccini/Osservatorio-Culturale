@@ -1212,8 +1212,7 @@
     el=$('statBandi');   if(el) el.textContent = totBandi || '—';
     el=$('statNews');    if(el) el.textContent = b.news    != null ? b.news    : (d.news    ||[]).length || '—';
     el=$('statPodcast'); if(el) el.textContent = b.podcast != null ? b.podcast : (d.podcast ||[]).length || '—';
-    el=$('statVideo');   if(el) el.textContent = '—';   // populated separately
-    el=$('statLibri');   if(el) el.textContent = '—';   // populated separately
+    // statVideo e statLibri sono aggiornati da hydrate() → getVideoListV42/getLibriListV42
 
     // Bandi + News + Podcast
     var tuttiBandi = (d.bandiUrgenti || []).concat(d.ultimiBandi || []);
@@ -1556,6 +1555,15 @@
       + '</div>';
   }
 
+  // Sync chip UI con stato filtro corrente (risolve disallineamento al ritorno sulla pagina)
+  function _syncChips_(barId, activeVal, dataAttr) {
+    var bar = document.getElementById(barId);
+    if (!bar) return;
+    bar.querySelectorAll('.filter-chip').forEach(function(c){
+      c.classList.toggle('active', (c.dataset[dataAttr] || '') === String(activeVal));
+    });
+  }
+
   // ---- Page Bandi — renderer con filtri 2 livelli (L1=preset, L2=tematica) ----
   function renderBandiList(list){
     var wrap = $('bandiList'); if (!wrap) return;
@@ -1603,6 +1611,8 @@
       altri.forEach(function(x){ html += _brRowHtml_(x.b); });
     }
     wrap.innerHTML = html;
+    _syncChips_('bandiFilters', _filterBandi.preset, 'preset');
+    _syncChips_('bandiTematicheFilters', String(_filterBandi.amb || 0), 'amb');
   }
   // ---- News card — rivista digitale della cultura ----
   function _newsCardHtml_(n) {
@@ -1706,6 +1716,8 @@
       allItems.forEach(function(n){ html += _newsCardHtml_(n); });
     }
     wrap.innerHTML = html;
+    _syncChips_('newsFilters', _filterNews.preset, 'preset');
+    _syncChips_('newsTematicheFilters', String(_filterNews.amb || 0), 'amb');
   }
   function _ambNum_(val) {
     var n = Number(val);
@@ -1759,6 +1771,8 @@
       allItems.forEach(function(p){ html += _podcastCardHtml_(p, false); });
     }
     wrap.innerHTML = html;
+    _syncChips_('podcastFilters', _filterPodcast.preset, 'preset');
+    _syncChips_('podcastTematicheFilters', String(_filterPodcast.amb || 0), 'amb');
   }
 
   // ---- Video card — canali YouTube cultura ----
@@ -1851,6 +1865,8 @@
       allItems.forEach(function(v){ html += _videoCardHtml_(v); });
     }
     wrap.innerHTML = html;
+    _syncChips_('videoFilters', _filterVideo.preset, 'preset');
+    _syncChips_('videoTematicheFilters', String(_filterVideo.amb || 0), 'amb');
   }
 
   // ---- Libro card — pubblicazioni e saggistica culturale ----
@@ -1950,6 +1966,8 @@
       allItems.forEach(function(b){ html += _libroCardHtml_(b); });
     }
     wrap.innerHTML = html;
+    _syncChips_('libriFilters', _filterLibri.preset, 'preset');
+    _syncChips_('libriTematicheFilters', String(_filterLibri.amb || 0), 'amb');
   }
 
   // v4.5.1 + Sprint N7 — Render pagina Ambito ({ambitoId, news[], bandi[], podcast[], video[], libri[]})
@@ -3324,7 +3342,8 @@
           var link   = b.link   || b.Link   || b.URL || '';
           var giorni = b.giorni !== undefined ? b.giorni : -1;
           var urgTag = (giorni >= 0 && giorni <= 7) ? '<span class="sr-badge urgente">Scade tra '+giorni+'gg</span>' : '';
-          s += '<div class="br-row sr-row">'
+          var bOnclick = link ? 'OC.openUrl(\''+esc(link)+'\')' : 'OC.openBando(\''+esc(b.id||'')+'\')';
+          s += '<div class="br-row sr-row" onclick="'+bOnclick+'" style="cursor:pointer">'
             + '<div class="br-left">'
             +   '<div class="br-tags"><span class="sr-badge bando">Bando</span>'+urgTag+'</div>'
             +   '<h4 class="br-title">'+esc(titolo)+'</h4>'
@@ -3332,7 +3351,7 @@
             + '</div>'
             + '<div class="br-right">'
             +   (scad ? '<span class="br-date">Scade '+esc(scad)+'</span>' : '')
-            +   (link ? '<a class="br-link" href="'+esc(link)+'" target="_blank" rel="noopener">Apri &rarr;</a>' : '')
+            +   (link ? '<a class="br-link" href="'+esc(link)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">Apri &rarr;</a>' : '')
             + '</div>'
             + '</div>';
         });
@@ -3349,14 +3368,15 @@
           var fonte  = n.fonte  || n.Fonte  || '';
           var sommario = n.sommario || n.SommarioAI || '';
           var link   = n.link || n.FonteURL || n.URL || '';
-          s += '<div class="br-row nr-row sr-row">'
+          var nOnclick = link ? 'OC.openUrl(\''+esc(link)+'\')' : 'OC.openNews(\''+esc(n.id||'')+'\')';
+          s += '<div class="br-row nr-row sr-row" onclick="'+nOnclick+'" style="cursor:pointer">'
             + '<div class="br-left">'
             +   '<div class="br-tags"><span class="nr-fonte">'+esc(fonte)+'</span></div>'
             +   '<h4 class="br-title">'+esc(titolo)+'</h4>'
             +   (sommario ? '<p class="br-summary">'+esc(trunc(sommario,160))+'</p>' : '')
             + '</div>'
             + '<div class="br-right">'
-            +   (link ? '<a class="br-link" href="'+esc(link)+'" target="_blank" rel="noopener">&nearr; Leggi</a>' : '')
+            +   (link ? '<a class="br-link" href="'+esc(link)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">&nearr; Leggi</a>' : '')
             + '</div>'
             + '</div>';
         });
@@ -3372,13 +3392,14 @@
           var titolo = p.titolo || '(senza titolo)';
           var show   = p.serie  || p.show  || p.fonte || '';
           var link   = p.link   || '';
-          s += '<div class="br-row pd-row sr-row">'
+          var pOnclick = link ? 'OC.openUrl(\''+esc(link)+'\')' : 'OC.openPodcast(\''+esc(p.id||'')+'\')';
+          s += '<div class="br-row pd-row sr-row" onclick="'+pOnclick+'" style="cursor:pointer">'
             + '<div class="br-left">'
             +   '<div class="br-tags"><span class="pd-show">'+esc(show)+'</span></div>'
             +   '<h4 class="br-title">'+esc(titolo)+'</h4>'
             + '</div>'
             + '<div class="br-right">'
-            +   (link ? '<a class="br-link" href="'+esc(link)+'" target="_blank" rel="noopener">&#127911; Ascolta</a>' : '')
+            +   (link ? '<a class="br-link" href="'+esc(link)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">&#127911; Ascolta</a>' : '')
             + '</div>'
             + '</div>';
         });
@@ -3394,13 +3415,14 @@
           var titolo = v.titolo || '(senza titolo)';
           var canale = v.canale || '';
           var link   = v.link   || '';
-          s += '<div class="br-row vd-row sr-row">'
+          var vOnclick = link ? 'OC.openUrl(\''+esc(link)+'\')' : 'OC.openVideo(\''+esc(v.id||'')+'\')';
+          s += '<div class="br-row vd-row sr-row" onclick="'+vOnclick+'" style="cursor:pointer">'
             + '<div class="br-left">'
             +   '<div class="br-tags"><span class="vd-canale">'+esc(canale)+'</span></div>'
             +   '<h4 class="br-title">'+esc(titolo)+'</h4>'
             + '</div>'
             + '<div class="br-right">'
-            +   (link ? '<a class="br-link" href="'+esc(link)+'" target="_blank" rel="noopener">&#9654; Guarda</a>' : '')
+            +   (link ? '<a class="br-link" href="'+esc(link)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">&#9654; Guarda</a>' : '')
             + '</div>'
             + '</div>';
         });
@@ -3418,7 +3440,8 @@
           var editore = lb.editore || '';
           var anno    = lb.anno    || '';
           var link    = lb.link    || '';
-          s += '<div class="br-row lb-row sr-row">'
+          var lbOnclick = link ? 'OC.openUrl(\''+esc(link)+'\')' : 'OC.openLibro(\''+esc(lb.id||'')+'\')';
+          s += '<div class="br-row lb-row sr-row" onclick="'+lbOnclick+'" style="cursor:pointer">'
             + '<div class="br-left">'
             +   '<div class="br-tags"><span class="lb-editore">'+esc(editore)+'</span></div>'
             +   '<h4 class="br-title">'+esc(titolo)+'</h4>'
@@ -3426,7 +3449,7 @@
             + '</div>'
             + '<div class="br-right">'
             +   (anno ? '<span class="lb-anno">'+esc(anno)+'</span>' : '')
-            +   (link ? '<a class="br-link" href="'+esc(link)+'" target="_blank" rel="noopener">Apri &rarr;</a>' : '')
+            +   (link ? '<a class="br-link" href="'+esc(link)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">Apri &rarr;</a>' : '')
             + '</div>'
             + '</div>';
         });

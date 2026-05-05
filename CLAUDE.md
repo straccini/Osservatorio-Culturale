@@ -1,7 +1,7 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.15.4 · deployment @183 del 05/05/2026
+**Versione corrente**: v4.15.5 · deployment @184 del 05/05/2026
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
@@ -269,6 +269,11 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 - `Index.html`: pagina `#page-libri`; `_libroCardHtml_`; `renderLibriList`; form aggiungi libro (admin); `OC.saveLibro()` + `OC.setupLibri()`
 - `Styles.html`: classi `.lb-row`, `.lb-editore`, `.lb-autore`, `.lb-anno`, form CSS
 - ⚠️ **Setup obbligatorio**: aprire sezione Libri e cliccare "Inizializza foglio" oppure eseguire `setupPubblicazioniSheet()` da editor GAS
+
+### ✅ Sprint N14 (2026-05-05) — Ricerca cliccabile, sync filtri, fix race condition stats
+- `Index.html`: `renderHome` — rimosse 2 righe che resettavano `statVideo`/`statLibri` a `—` dopo che hydrate le aveva già populate correttamente (race condition risolta)
+- `Index.html`: risultati ricerca (`renderSearchResults`) — tutte e 5 le card (bandi, news, podcast, video, libri) ora hanno `onclick` sulla riga intera; link "Apri/Leggi/Ascolta/Guarda" hanno `event.stopPropagation()` per evitare doppio trigger; onclick apre URL esterno se disponibile, altrimenti apre detail overlay
+- `Index.html`: `_syncChips_(barId, activeVal, dataAttr)` — nuovo helper che sincronizza la classe `.active` sui chip filtro con lo stato corrente del filtro (`_filterBandi`, `_filterNews`, ecc.); chiamato al termine di ogni `renderBandiList`, `renderNewsList2`, `renderPodcastList2`, `renderVideoList`, `renderLibriList` — risolve disallineamento visivo chip al ritorno su una pagina già filtrata
 
 ### ✅ Sprint N13 (2026-05-05) — Home stats, dark mode, mobile responsive
 - `Index.html`: `hydrate()` — fetch video con `getVideoListV42(300)` e libri con `getLibriListV42(500)` (prima erano 4); popola `_cacheVideo`/`_cacheLibri` al caricamento iniziale (evita re-fetch alla navigazione) e aggiorna `statVideo`/`statLibri` con il totale reale (prima mostravano `4` invece del conteggio effettivo)
