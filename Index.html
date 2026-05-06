@@ -3537,6 +3537,8 @@
     var wrap = $('archivioList');
     var em   = $('archivioEmpty');
     if (!wrap) return;
+    // Aggiorna badge sidebar con totale archiviati (indipendente dal filtro)
+    setBadge('badge-archivio', (all || []).length);
     var list = _filterArchivioTipo === 'tutti' ? all : all.filter(function(x){ return x.tipo === _filterArchivioTipo; });
     if (!list.length) {
       wrap.innerHTML = '';

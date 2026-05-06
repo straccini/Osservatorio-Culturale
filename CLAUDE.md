@@ -1,7 +1,7 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.16.0 · deployment @189 del 05/05/2026
+**Versione corrente**: v4.16.1 · deployment @190 del 05/05/2026
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
@@ -269,6 +269,11 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 - `Index.html`: pagina `#page-libri`; `_libroCardHtml_`; `renderLibriList`; form aggiungi libro (admin); `OC.saveLibro()` + `OC.setupLibri()`
 - `Styles.html`: classi `.lb-row`, `.lb-editore`, `.lb-autore`, `.lb-anno`, form CSS
 - ⚠️ **Setup obbligatorio**: aprire sezione Libri e cliccare "Inizializza foglio" oppure eseguire `setupPubblicazioniSheet()` da editor GAS
+
+### ✅ Sprint N20 (2026-05-05) — Badge archivio sidebar + versione stabile v4.16.1
+- `Sidebar.html`: aggiunto `badge-archivio` al nav item "Archivio" — mostra il conteggio totale degli elementi archiviati
+- `Index.html`: `renderArchivio` — aggiunta chiamata `setBadge('badge-archivio', all.length)` all'inizio del render; il badge si aggiorna ad ogni caricamento archivio e si azzera/nasconde se archivio vuoto
+- Versione bumped a v4.16.1 — primo release stabile con preferiti su tutti i 5 tipi, detail overlay completo, DOM refresh da overlay, archivio con ripristino funzionante
 
 ### ✅ Sprint N19 (2026-05-05) — DOM refresh da detail overlay + helper _refreshCurrentList_
 - `Index.html`: `_refreshCurrentList_()` — nuovo helper che rileva la pagina attiva dal DOM (`.page.active`) e ri-renderizza la lista dalla cache corrispondente; garantisce che la card scompaia dalla lista anche quando l'azione (archivio o cestino) è stata lanciata dall'overlay di dettaglio (dove `el=null`)
