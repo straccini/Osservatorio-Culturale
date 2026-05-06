@@ -1,7 +1,7 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.15.8 · deployment @187 del 05/05/2026
+**Versione corrente**: v4.15.9 · deployment @188 del 05/05/2026
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
@@ -269,6 +269,11 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 - `Index.html`: pagina `#page-libri`; `_libroCardHtml_`; `renderLibriList`; form aggiungi libro (admin); `OC.saveLibro()` + `OC.setupLibri()`
 - `Styles.html`: classi `.lb-row`, `.lb-editore`, `.lb-autore`, `.lb-anno`, form CSS
 - ⚠️ **Setup obbligatorio**: aprire sezione Libri e cliccare "Inizializza foglio" oppure eseguire `setupPubblicazioniSheet()` da editor GAS
+
+### ✅ Sprint N18 (2026-05-05) — Detail overlay: ★ Salva + fix archiveItem cache
+- `Index.html`: `_renderDetail_` — aggiunto bottone ★ Salva (`act-save`/`act-save-on`) tra "Letto" e "Archivia"; stato iniziale da `d.salvato`; chiama `OC.saveCard(_wfTipo, id, this)` — ora il ★ è disponibile anche dall'overlay di dettaglio per tutti i 5 tipi
+- `Index.html`: `saveCard` — riscritta per supportare due contesti: card list (`br-act-save-on`, icone ★/☆) e detail overlay (`act-save-on`, testo "★ Salvato"/"☆ Salva"); rileva il contesto dalla classe `act-save`
+- `Index.html`: `archiveItem` callback — aggiunto `_cacheArchivio = null` dopo l'archiviazione (oltre all'invalidazione della cache per tipo già esistente); forza reload dell'archivio al prossimo accesso
 
 ### ✅ Sprint N17 (2026-05-05) — Fix isRecente bandi + badge urgenti sidebar
 - `UltimiBandi.js`: `_mapBando_` — aggiunto calcolo `isRecente` (dataRil entro 30gg); prima il campo era assente → chip "Ultimi rilevati" in pagina Bandi restituiva sempre 0 risultati

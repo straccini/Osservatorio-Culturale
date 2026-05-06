@@ -2793,13 +2793,20 @@
   // ==========================================================
   function saveCard(tipo, id, el) {
     if (!hasGAS()) return;
-    var isSaving = !el || !el.classList.contains('br-act-save-on');
+    // Supporta sia br-act-save-on (card list) che act-save-on (detail overlay)
+    var isDetailBtn = el && el.classList.contains('act-save');
+    var isSaving = !el || !(el.classList.contains('br-act-save-on') || el.classList.contains('act-save-on'));
     google.script.run
       .withSuccessHandler(function(r){
         if (r && r.ok) {
           if (el) {
-            el.classList.toggle('br-act-save-on', isSaving);
-            el.innerHTML = isSaving ? '&#9733;' : '&#9734;';
+            if (isDetailBtn) {
+              el.classList.toggle('act-save-on', isSaving);
+              el.textContent = isSaving ? '★ Salvato' : '☆ Salva';
+            } else {
+              el.classList.toggle('br-act-save-on', isSaving);
+              el.innerHTML = isSaving ? '&#9733;' : '&#9734;';
+            }
             el.title = isSaving ? 'Rimuovi dai preferiti' : 'Salva nei preferiti';
           }
           showToast(isSaving ? 'Salvato nei preferiti' : 'Rimosso dai preferiti', 'ok');
@@ -3158,6 +3165,7 @@
           else if (tipo === 'podcast') _cachePodcast = null;
           else if (tipo === 'video') _cacheVideo = null;
           else if (tipo === 'libro') _cacheLibri = null;
+          _cacheArchivio = null; // forza reload archivio al prossimo accesso
           showToast('Scheda archiviata', 'ok');
         } else {
           showToast('Archiviazione non riuscita', 'err');
@@ -3803,7 +3811,9 @@
     }
     var _readLbl = tipo==='video' ? '✓ Visto' : tipo==='podcast' ? '✓ Ascoltato' : '✓ Letto';
     var _wfTipo  = (tipo==='news') ? 'item' : tipo;
+    var _isSalv  = !!d.salvato;
     html += '<button class="act-btn act-read" onclick="OC.markItemRead(\''+esc(_wfTipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()">'+_readLbl+'</button>';
+    html += '<button class="act-btn act-save'+(_isSalv?' act-save-on':'')+'" title="'+(_isSalv?'Rimuovi dai preferiti':'Salva nei preferiti')+'" onclick="OC.saveCard(\''+esc(_wfTipo)+'\',\''+esc(String(d.id))+'\',this)">' + (_isSalv ? '★ Salvato' : '☆ Salva') + '</button>';
     html += '<button class="act-btn act-archive" onclick="OC.archiveItem(\''+esc(_wfTipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()">⇓ Archivia</button>';
     if (tipo !== 'libro') {
       html += '<button class="act-btn act-trash" onclick="OC.trashItem(\''+esc(_wfTipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()">🗑 Cestino</button>';
