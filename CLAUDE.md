@@ -1,7 +1,7 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.15.9 · deployment @188 del 05/05/2026
+**Versione corrente**: v4.16.0 · deployment @189 del 05/05/2026
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
@@ -269,6 +269,11 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 - `Index.html`: pagina `#page-libri`; `_libroCardHtml_`; `renderLibriList`; form aggiungi libro (admin); `OC.saveLibro()` + `OC.setupLibri()`
 - `Styles.html`: classi `.lb-row`, `.lb-editore`, `.lb-autore`, `.lb-anno`, form CSS
 - ⚠️ **Setup obbligatorio**: aprire sezione Libri e cliccare "Inizializza foglio" oppure eseguire `setupPubblicazioniSheet()` da editor GAS
+
+### ✅ Sprint N19 (2026-05-05) — DOM refresh da detail overlay + helper _refreshCurrentList_
+- `Index.html`: `_refreshCurrentList_()` — nuovo helper che rileva la pagina attiva dal DOM (`.page.active`) e ri-renderizza la lista dalla cache corrispondente; garantisce che la card scompaia dalla lista anche quando l'azione (archivio o cestino) è stata lanciata dall'overlay di dettaglio (dove `el=null`)
+- `Index.html`: `archiveItem` callback — aggiunto `if (!card) _refreshCurrentList_()` dopo l'invalidazione cache; la card ora scompare dalla lista dietro all'overlay senza dover navigare via e tornare
+- `Index.html`: `trashItem` — aggiunto `if (!card) _refreshCurrentList_()` (sincrono, prima dell'aggiornamento badge cestino); stessa correzione per il cestino
 
 ### ✅ Sprint N18 (2026-05-05) — Detail overlay: ★ Salva + fix archiveItem cache
 - `Index.html`: `_renderDetail_` — aggiunto bottone ★ Salva (`act-save`/`act-save-on`) tra "Letto" e "Archivia"; stato iniziale da `d.salvato`; chiama `OC.saveCard(_wfTipo, id, this)` — ora il ★ è disponibile anche dall'overlay di dettaglio per tutti i 5 tipi

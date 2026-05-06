@@ -2818,6 +2818,19 @@
       .toggleSaved(tipo, id);
   }
 
+  // Ri-renderizza la lista della pagina attualmente visibile (da cache)
+  // Chiamata dopo azioni da detail overlay dove el=null e la card non viene rimossa dal DOM
+  function _refreshCurrentList_() {
+    var active = document.querySelector('.page.active');
+    if (!active) return;
+    var page = active.id.replace('page-', '');
+    if      (page === 'bandi'   && _cacheBandi)   renderBandiList(_cacheBandi);
+    else if (page === 'news'    && _cacheNews)    renderNewsList2(_cacheNews);
+    else if (page === 'podcast' && _cachePodcast) renderPodcastList2(_cachePodcast);
+    else if (page === 'video'   && _cacheVideo)   renderVideoList(_cacheVideo);
+    else if (page === 'libri'   && _cacheLibri)   renderLibriList(_cacheLibri);
+  }
+
   function _reloadByTipo_(tipo) {
     if (tipo === 'bando')        loadBandiList(true);
     else if (tipo === 'item')    loadNewsList(true);
@@ -3166,6 +3179,8 @@
           else if (tipo === 'video') _cacheVideo = null;
           else if (tipo === 'libro') _cacheLibri = null;
           _cacheArchivio = null; // forza reload archivio al prossimo accesso
+          // Se chiamato da detail overlay (el=null), rimuovi la card dalla lista corrente
+          if (!card) _refreshCurrentList_();
           showToast('Scheda archiviata', 'ok');
         } else {
           showToast('Archiviazione non riuscita', 'err');
@@ -3185,6 +3200,8 @@
     }
     _trash[key] = { tipo: tipo, id: id, titolo: titolo };
     if (card) card.remove();
+    // Se chiamato da detail overlay (el=null), rimuovi la card dalla lista corrente
+    if (!card) _refreshCurrentList_();
     _updateCestinoBadge();
     showToast('Spostato nel cestino', 'warn');
   }
