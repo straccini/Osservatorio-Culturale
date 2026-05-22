@@ -80,7 +80,7 @@ function doGet(e) {
   // v4.18.66 — Gate landing rimosso: utenti anonimi accedono all'app completa (L0 freemium).
   // Il frontend gestisce le restrizioni L0 (azioni protette richiedono registrazione).
   // LandingPublic.html resta disponibile via ?landing=1 se serve.
-  if (!_hasAnyParam && params.landing === '1') {
+  if (params.landing === '1') {
     return HtmlService.createHtmlOutputFromFile('LandingPublic')
       .setTitle('Sinopia · Osservatorio Culturale · Duemilamusei')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)

@@ -25,7 +25,7 @@
       try { localStorage.setItem('oc_token', OC_SESSION.token); } catch(_){}
     }
   </script>
-  <?var sc = (typeof sondaggioCodice !== 'undefined' && sondaggioCodice) ? sondaggioCodice : ''; ?>
+  <?var sc = (typeof sondaggioCodice !== 'undefined' && sondaggioCodice) ? String(sondaggioCodice).replace(/[^a-zA-Z0-9_]/g, '') : ''; ?>
   <? if (sc) { ?>
   <script>window._sondaggioAutoOpen = '<?= sc ?>';</script>
   <? } ?>
@@ -2716,6 +2716,11 @@
       google.script.run
         .withSuccessHandler(function(u){
           console.log('[OC-DEBUG] getCurrentUser_v44 ->', u);
+          // v4.18.67 — Non sovrascrivere se sessione già ripristinata da localStorage
+          if (OC_SESSION && OC_SESSION.token && (!u || u.ruolo === 'guest' || u.ruolo === 'anonimo')) {
+            console.log('[OC] Skip setUser: sessione localStorage attiva, ignorando guest da getCurrentUser_v44');
+            return;
+          }
           setUser(u);
         })
         .withFailureHandler(function(err){ console.error('[OC-DEBUG] getCurrentUser_v44 FAIL:', err); })
@@ -4485,7 +4490,13 @@
 
   function doLogout(){
     if (confirm('Vuoi disconnetterti dall\'Osservatorio Culturale?')) {
+      var token = '';
+      try { token = localStorage.getItem('oc_token') || ''; } catch(_){}
       try { localStorage.removeItem('oc_token'); } catch(_){}
+      // Invalida token server-side (best-effort, non blocca il logout)
+      if (token && hasGAS()) {
+        try { google.script.run.invalidaSessione(token); } catch(_){}
+      }
       window.OC_SESSION = {};
       var baseUrl = (typeof GAS_URL !== 'undefined' && GAS_URL) ? GAS_URL : window.location.href.split('?')[0];
       window.top.location.href = baseUrl;
@@ -4654,7 +4665,7 @@
           // v4.18.67 — Salva token + attiva sessione subito (senza bisogno di cliccare magic-link)
           if (r.magicLink) {
             var _tok = '';
-            try { var _u = new URL(r.magicLink); _tok = _u.searchParams.get('t') || ''; } catch(_){ try { _tok = r.magicLink.split('t=')[1] || ''; } catch(_2){} }
+            try { var _u = new URL(r.magicLink); _tok = _u.searchParams.get('t') || ''; } catch(_){ try { _tok = (r.magicLink.split('t=')[1] || '').split('&')[0]; } catch(_2){} }
             if (_tok) {
               try { localStorage.setItem('oc_token', _tok); } catch(_){}
               OC_SESSION = { token:_tok, email:email, livello:1, permanente:true };
