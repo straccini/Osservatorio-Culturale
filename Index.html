@@ -20,6 +20,10 @@
     };
     window._ocPermanente = function(){ return !!(OC_SESSION && OC_SESSION.permanente); };
     window._ocReadOnly   = function(){ return !!(OC_SESSION && OC_SESSION.readOnly); };
+    // v4.18.67 — Persistenza sessione in localStorage
+    if (OC_SESSION && OC_SESSION.token) {
+      try { localStorage.setItem('oc_token', OC_SESSION.token); } catch(_){}
+    }
   </script>
   <?var sc = (typeof sondaggioCodice !== 'undefined' && sondaggioCodice) ? sondaggioCodice : ''; ?>
   <? if (sc) { ?>
@@ -2646,6 +2650,41 @@
   function hydrate(){
     // v4.18.11 — avvia autorotation slideshow appena la home è hydratata
     if ($('hcTrack')) _hcStart_();
+    // v4.18.67 — Validazione sessione da localStorage (login automatico)
+    if ((!OC_SESSION || !OC_SESSION.token) && hasGAS()) {
+      var savedToken = '';
+      try { savedToken = localStorage.getItem('oc_token') || ''; } catch(_){}
+      if (savedToken) {
+        google.script.run
+          .withSuccessHandler(function(sess){
+            if (sess && sess.ok && sess.valid) {
+              OC_SESSION = {
+                token: savedToken,
+                email: sess.email || '',
+                livello: sess.livello || 1,
+                permanente: !!sess.permanente,
+                giorniResidui: sess.giorniResidui,
+                scaduta: !!sess.scaduta,
+                readOnly: !!sess.readOnly,
+                matrixCompletato: !!sess.matrixCompletato
+              };
+              _updateTopbarFromSession_(OC_SESSION);
+              try { _updateAnonCtaBar_(); } catch(_){}
+              var navWs = document.getElementById('navItemWorkspace');
+              if (navWs) navWs.hidden = false;
+              console.log('[OC] Sessione ripristinata da localStorage per ' + sess.email);
+            } else {
+              try { localStorage.removeItem('oc_token'); } catch(_){}
+              console.log('[OC] Token localStorage invalido, rimosso');
+            }
+          })
+          .withFailureHandler(function(err){
+            console.error('[OC] Validazione token localStorage fallita:', err);
+            try { localStorage.removeItem('oc_token'); } catch(_){}
+          })
+          .validaSessione(savedToken);
+      }
+    }
     // v4.18.47 — Mostra/nasconde CTA bar anonimo subito (no flash)
     try { _updateAnonCtaBar_(); } catch(_){}
     // v4.18.48 — Mostra/nasconde voce sidebar "La tua area"
@@ -4371,6 +4410,24 @@
   // D) UTENTE + LOGOUT
   // ==========================================================
   var _currentUser = null;
+
+  // v4.18.67 — Aggiorna topbar da sessione localStorage (senza backend getCurrentUser_v44)
+  function _updateTopbarFromSession_(sess) {
+    if (!sess || !sess.email) return;
+    var emailName = sess.email.split('@')[0].replace(/[._]/g, ' ');
+    var nome = emailName.split(' ').map(function(w){ return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
+    var initials = emailName.split(' ').map(function(w){ return w.charAt(0); }).join('').substring(0,2).toUpperCase();
+    var ruolo = sess.livello >= 3 ? 'admin' : sess.livello >= 2 ? 'editor' : 'lettore';
+    var el;
+    el=$('topbarUserInitials'); if(el) el.textContent = initials;
+    el=$('topbarUserName');     if(el) el.textContent = nome;
+    el=$('topbarUserRole');     if(el) el.textContent = ruolo;
+    el=$('userInitials');       if(el) el.textContent = initials;
+    el=$('userName');           if(el) el.textContent = nome;
+    el=$('userRole');           if(el) el.textContent = ruolo;
+    var lb = $('logoutBtn');  if(lb) lb.hidden = false;
+    var li = $('loginBtn');   if(li) li.hidden = true;
+  }
 
   function setUser(user){
     if (!user) return;
