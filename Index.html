@@ -4578,7 +4578,16 @@
 
         if (email && consent && r.sessioneCreata) {
           html += '<div style="background:#EAF3EC;border:1px solid #C0DAC8;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#2D5F3A;line-height:1.5">';
-          html += '<b>Area personale sbloccata</b> — Riceverai un link di accesso all\'indirizzo <code>'+esc(email)+'</code>. Da lì potrai salvare fonti, ricevere digest personalizzati e accedere a tutti i contenuti dell\'Osservatorio.';
+          html += '<b>Area personale sbloccata</b> — Riceverai un link di accesso all\'indirizzo <code>'+esc(email)+'</code>.';
+          if (r.magicLink) {
+            html += ' Oppure <a href="'+esc(r.magicLink)+'" style="color:#2D5F3A;font-weight:600">accedi subito da qui →</a>';
+          }
+          html += '</div>';
+        } else if (email && consent && !r.sessioneCreata) {
+          html += '<div style="background:#FFF3E0;border:1px solid #F0D6A8;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#8B5E14;line-height:1.5">';
+          html += '<b>Sessione non attivata</b> — La compilazione è stata salvata correttamente ma l\'area personale non si è attivata automaticamente. ';
+          html += 'Riceverai comunque la pre-valutazione gratuita all\'indirizzo <code>'+esc(email)+'</code>.';
+          if (r.sessioneErrore) { html += ' <br><span style="font-size:11px;color:#999">(Dettaglio: '+esc(r.sessioneErrore)+')</span>'; }
           html += '</div>';
         } else if (!email || !consent) {
           html += '<div style="background:#FFF8E1;border:1px solid #F0E6C0;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#8B6914;line-height:1.5">';

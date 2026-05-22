@@ -185,12 +185,15 @@ function saveSondaggio(data) {
       try { _emailNotificaSondaggio_(sondaggio, data, responseId, scoreSintetico); } catch(eMail) { Logger.log('Mail notifica: ' + eMail.message); }
 
       // Sblocco sessione permanente (come Matrix)
+      var sessioneResult = null;
       try {
         if (typeof createSessione === 'function') {
-          createSessione(data.email, 'sondaggio_' + sondaggio.codice);
-          Logger.log('Sessione creata per ' + data.email + ' via sondaggio ' + sondaggio.codice);
+          sessioneResult = createSessione(data.email, 'sondaggio_' + sondaggio.codice);
+          Logger.log('Sessione sondaggio: ' + JSON.stringify(sessioneResult));
+        } else {
+          Logger.log('WARN: createSessione non disponibile a runtime');
         }
-      } catch(eSess) { Logger.log('Sessione post-sondaggio: ' + eSess.message); }
+      } catch(eSess) { Logger.log('Sessione post-sondaggio ERRORE: ' + eSess.message); }
 
       // CRM lead scoring (+10pt compilazione sondaggio)
       try {
@@ -208,12 +211,15 @@ function saveSondaggio(data) {
       } catch(eCrm) { Logger.log('CRM hook sondaggio: ' + eCrm.message); }
     }
 
+    var sessioneOk = !!(sessioneResult && sessioneResult.ok);
     return {
       ok: true,
       responseId: responseId,
       scoreSintetico: scoreSintetico,
       sondaggio: sondaggio.nome,
-      sessioneCreata: !!(data.email && data.consent),
+      sessioneCreata: sessioneOk,
+      sessioneErrore: (sessioneResult && !sessioneResult.ok) ? (sessioneResult.error || 'unknown') : null,
+      magicLink: (sessioneResult && sessioneResult.magicLink) || null,
       modelliKB: sondaggio.modelliKB || []
     };
   } catch(e) { return { ok:false, error: e.message }; }
