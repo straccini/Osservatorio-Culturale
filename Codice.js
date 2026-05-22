@@ -62,6 +62,61 @@ function escTok_(s) {
 function doGet(e) {
   var params = (e && e.parameter) || {};
 
+  // v4.18.1 (2026-05-11) — Token admin URL: ?adm=TOKEN attiva sessione admin 24h
+  if (params.adm) {
+    try {
+      if (typeof checkAdminSession === 'function') {
+        var ok = checkAdminSession(params);
+        Logger.log('doGet token admin check: ' + (ok ? 'OK' : 'INVALID'));
+      }
+    } catch(err) { Logger.log('checkAdminSession err: ' + err.message); }
+  }
+
+  // ---------- 0a) Landing pubblica — URL base senza parametri + utente anonimo ----------
+  // Su deploy ANYONE: getActiveUser() restituisce l'email (utente loggato)
+  // Su deploy ANYONE_ANONYMOUS: getActiveUser() restituisce '' (anonimo)
+  var _hasAnyParam = false;
+  for (var _pk in params) { if (params.hasOwnProperty(_pk)) { _hasAnyParam = true; break; } }
+  if (!_hasAnyParam) {
+    var _activeEmail = '';
+    try { _activeEmail = Session.getActiveUser().getEmail(); } catch(_){}
+    if (!_activeEmail) {
+      // Utente anonimo su deploy pubblico → landing Duemilamusei
+      return HtmlService.createHtmlOutputFromFile('LandingPublic')
+        .setTitle('Sinopia · Osservatorio Culturale · Duemilamusei')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+        .addMetaTag('viewport', 'width=device-width,initial-scale=1');
+    }
+    // Utente autenticato su deploy con login → prosegui alla webapp normale
+  }
+
+  // ---------- 0b) Sondaggio pubblico (?survey=accessibilita) — NO AUTH ----------
+  if (params.survey) {
+    try {
+      var surveyTemplate = HtmlService.createTemplateFromFile('SurveyPublic');
+      surveyTemplate.surveyCode = String(params.survey).trim();
+      return surveyTemplate.evaluate()
+        .setTitle('Sondaggio MuseMu Matrix')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+        .addMetaTag('viewport', 'width=device-width,initial-scale=1');
+    } catch(eSurvey) {
+      return HtmlService.createHtmlOutput('<h1>Errore</h1><p>' + String(eSurvey.message) + '</p>')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    }
+  }
+
+  // ---------- 0c) Sondaggio LS2 diretto (?sondaggio=accessibilita) — inline ----------
+  if (params.sondaggio) {
+    try {
+      var sondTemplate = HtmlService.createTemplateFromFile('Index');
+      sondTemplate.sondaggioCodice = String(params.sondaggio).trim();
+      return sondTemplate.evaluate()
+        .setTitle('Autovalutazione · Osservatorio Culturale')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+        .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    } catch(eSond) { Logger.log('doGet sondaggio error: ' + eSond.message); }
+  }
+
   // ---------- 1) Flusso Digest Reader (token) ----------
   if (params.reader === '1' && params.t) {
     try {
@@ -76,6 +131,60 @@ function doGet(e) {
       return HtmlService
         .createHtmlOutput('<h1>Errore</h1><pre>' + escTok_(String(err)) + '</pre>')
         .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    }
+  }
+
+  // ---------- 1-bis-0a) v4.18.54 — Unsubscribe (?action=unsubscribe&e=...&s=...) ----------
+  // Pubblico: NON richiede login (i destinatari delle email non sono autenticati).
+  if (params.action === 'unsubscribe') {
+    try {
+      if (typeof _handleUnsubscribe_ === 'function') {
+        return HtmlService.createHtmlOutput(_handleUnsubscribe_(params))
+          .setTitle('Disiscrizione · Sinopia')
+          .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+      }
+      return HtmlService.createHtmlOutput('<h1>Servizio non disponibile</h1><p>Funzione unsubscribe non trovata.</p>')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    } catch(errU) {
+      return HtmlService.createHtmlOutput('<h1>Errore</h1><pre>' + escTok_(String(errU)) + '</pre>')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    }
+  }
+
+  // ---------- 1-bis-UTM) v4.18.55 — UTM redirect tracker (?utm_target=URL&utm_source=...) ----------
+  if (params.utm_target && typeof utm_handleRedirect === 'function') {
+    return utm_handleRedirect(e.queryString || '');
+  }
+
+  // ---------- 1-bis-0) Manutenzione remota via GET (?maint=KEY&fn=NOME) ----------
+  if (params.maint) {
+    var MAINT_KEY = 'oc-maint-4K9xZq2p8vR1';
+    if (params.maint !== MAINT_KEY) {
+      return HtmlService.createHtmlOutput('{"error":"Chiave non valida"}').setMimeType(ContentService.MimeType.JSON);
+    }
+    var ALLOWED_FN = {
+      correggiSocialFontiFallite: correggiSocialFontiFallite,
+      fetchAndCacheSocialWall:    fetchAndCacheSocialWall,
+      pulisciFontiPodcastBloccate: pulisciFontiPodcastBloccate,
+      scanPodcastDiretto:         scanPodcastDiretto,
+      scanSources:                scanSources,
+      setupFontiAgenti:           setupFontiAgenti,
+      setupProfiloAgenti:         setupProfiloAgenti,
+      seedFontiNormativa:         seedFontiNormativa,
+      seedFontiWelfare:           seedFontiWelfare,
+      seedFontiDigital:           seedFontiDigital,
+      testAgentScan:              testAgentScan
+    };
+    var fnName = params.fn || '';
+    var fn = ALLOWED_FN[fnName];
+    if (!fn) {
+      return ContentService.createTextOutput(JSON.stringify({error:'Funzione non in whitelist: '+fnName})).setMimeType(ContentService.MimeType.JSON);
+    }
+    try {
+      var res = fn();
+      return ContentService.createTextOutput(JSON.stringify({ok:true, fn:fnName, result:res})).setMimeType(ContentService.MimeType.JSON);
+    } catch(e) {
+      return ContentService.createTextOutput(JSON.stringify({ok:false, fn:fnName, error:e.message})).setMimeType(ContentService.MimeType.JSON);
     }
   }
 
@@ -141,10 +250,47 @@ function doGet(e) {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
   var url = ScriptApp.getService().getUrl();
-  var html = page.getContent().replace(/GAS_URL_PLACEHOLDER/g, url);
+
+  // v4.18.7 (2026-05-11) — Iniezione server-side del token admin nel HTML.
+  // Google sandbox strappa ?adm= dal location.search del frontend, quindi
+  // il token deve essere passato via variabile JS server-side validata.
+  var injectedToken = '';
+  try {
+    var rawTok = (params && params.adm) ? String(params.adm).trim() : '';
+    if (rawTok && typeof _validateAdminToken_ === 'function' && _validateAdminToken_(rawTok)) {
+      injectedToken = rawTok;
+    }
+  } catch(injErr) {}
+
+  // v4.18.46 (2026-05-15) — Iniezione token sessione utente (magic-link ?t=TOKEN).
+  // Se valido, frontend si comporta come "Lead identificato" (livello 1); altrimenti anonimo (livello 0).
+  var injectedSession = '{}';
+  try {
+    var sessTok = (params && params.t && !params.reader && !params.approveNl) ? String(params.t).trim() : '';
+    if (sessTok && typeof validaSessione === 'function') {
+      var sessInfo = validaSessione(sessTok);
+      if (sessInfo && sessInfo.ok && sessInfo.valid) {
+        injectedSession = JSON.stringify({
+          token: sessTok,
+          email: sessInfo.email || '',
+          livello: sessInfo.livello || 1,
+          permanente: !!sessInfo.permanente,
+          giorniResidui: sessInfo.giorniResidui,
+          scaduta: !!sessInfo.scaduta,
+          readOnly: !!sessInfo.readOnly,
+          matrixCompletato: !!sessInfo.matrixCompletato
+        });
+      }
+    }
+  } catch(injErr) { Logger.log('inject sessione fallita: ' + injErr.message); }
+
+  var html = page.getContent()
+    .replace(/GAS_URL_PLACEHOLDER/g, url)
+    .replace(/OC_ADMIN_TOKEN_PLACEHOLDER/g, injectedToken)
+    .replace(/OC_SESSION_PLACEHOLDER/g, injectedSession);
 
   return HtmlService.createHtmlOutput(html)
-    .setTitle('Osservatorio Culturale · Duemilamusei')
+    .setTitle('Sinopia · Osservatorio Culturale')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
@@ -526,6 +672,27 @@ function doPost(e) {
       // Digest Reader pubblico (token-based, no auth richiesta)
       case 'getDigestByToken': return jsonOk(getDigestByTokenPublic(body.token||''));
 
+      // Manutenzione remota (chiave segreta, senza login utente)
+      case 'runMaintenance': {
+        const MAINT_KEY = 'oc-maint-4K9xZq2p8vR1';
+        if (body.key !== MAINT_KEY) return jsonOk({ error: 'Chiave non valida' });
+        const ALLOWED = {
+          correggiSocialFontiFallite: correggiSocialFontiFallite,
+          fetchAndCacheSocialWall:    fetchAndCacheSocialWall,
+          pulisciFontiPodcastBloccate: pulisciFontiPodcastBloccate,
+          scanPodcastDiretto:         scanPodcastDiretto,
+          scanSources:                scanSources
+        };
+        const fn = ALLOWED[body.fn];
+        if (!fn) return jsonOk({ error: 'Funzione non in whitelist: ' + body.fn });
+        try {
+          const result = fn();
+          return jsonOk({ ok: true, fn: body.fn, result: result });
+        } catch(e) {
+          return jsonOk({ ok: false, fn: body.fn, error: e.message });
+        }
+      }
+
       default: return jsonOk({ error:'Azione non riconosciuta' });
     }
   } catch(err) {
@@ -764,6 +931,362 @@ function populaSeedVideoYoutubeMusei() {
   });
   Logger.log('=== Seed completato: ' + aggiunti + ' aggiunti, ' + skip + ' gia presenti, ' + errori + ' errori ===');
   return { aggiunti: aggiunti, skip: skip, errori: errori };
+}
+
+/**
+ * Seed RSS podcast culturali italiani (idempotente — salta i già presenti).
+ * Da chiamare una volta dalla webapp admin > Podcast & Video > Seed podcast RSS.
+ */
+function seedFontiPodcastRSS() {
+  Logger.log('=== SEED PODCAST RSS CULTURALI ITALIANI ===');
+  var seed = [
+    { nome:'Rai Radio3 - Wikiradio',         url:'https://www.raiplaysound.it/programmi/wikiradio.xml',                      tematica:'Storia & Patrimonio' },
+    { nome:'Rai Radio3 - Fahrenheit',         url:'https://www.raiplaysound.it/programmi/fahrenheit.xml',                     tematica:'Libri & Letteratura' },
+    { nome:'Rai Radio3 - Hollywood Party',    url:'https://www.raiplaysound.it/programmi/hollywoodparty.xml',                 tematica:'Cinema & Media' },
+    { nome:'Rai Radio3 - Tre soldi',          url:'https://www.raiplaysound.it/programmi/tresoldi.xml',                       tematica:'Politiche Culturali' },
+    { nome:'Artribune Podcast',               url:'https://feeds.buzzsprout.com/1234567.rss',                                 tematica:'Arte Contemporanea' },
+    { nome:'Il Bo Live - Unipd Cultura',      url:'https://ilbolive.unipd.it/it/feed/podcast',                                tematica:'Ricerca & Accademia' },
+    { nome:'Fondazione Golinelli',            url:'https://podcasts-audio.fondazionegolinelli.it/podcast/fondazionegolinelli.xml', tematica:'Innovazione Culturale' },
+    { nome:'Musei in Comune Roma - podcast',  url:'https://www.museicapitolini.org/podcast/feed',                             tematica:'Musei & Patrimonio' }
+  ];
+  _ensureFontiPodTipoContenuto_();
+  var sh = _getFontiPodSheet();
+  var headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+  var iUrl = headers.indexOf('URL_RSS');
+  var existing = new Set();
+  if (sh.getLastRow() > 1) {
+    sh.getRange(2, iUrl+1, sh.getLastRow()-1, 1).getValues().forEach(function(r){
+      existing.add(String(r[0]||'').trim());
+    });
+  }
+  var aggiunti = 0, skip = 0;
+  seed.forEach(function(s) {
+    if (existing.has(s.url)) { skip++; return; }
+    var id = 'FP' + Date.now() + Math.floor(Math.random()*1000);
+    sh.appendRow([id, s.nome, s.url, s.tematica, true, '', 0, 'audio']);
+    existing.add(s.url);
+    aggiunti++;
+    Logger.log('OK: ' + s.nome);
+    Utilities.sleep(100);
+  });
+  Logger.log('=== RSS seed: ' + aggiunti + ' aggiunti, ' + skip + ' gia presenti ===');
+  return { ok:true, aggiunti: aggiunti, skip: skip };
+}
+
+/**
+ * Rimuove dal foglio FontiPodcast tutte le righe con URL raiplaysound.it o feeds.spreaker.com/user
+ * (domini bloccati da GAS). Da eseguire una sola volta per pulire il seed precedente.
+ */
+function pulisciFontiPodcastBloccate() {
+  var sh = _getFontiPodSheet();
+  if (sh.getLastRow() < 2) { Logger.log('FontiPodcast vuoto'); return; }
+  var headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+  var iUrl = headers.indexOf('URL_RSS');
+  var BLOCKLIST = [
+    'raiplaysound.it',          // RAI blocca IP Google
+    'feeds.spreaker.com/user',  // formato user/* non risolve DNS da GAS
+    'feeds.buzzsprout.com',     // ID Buzzsprout erano guessati — tutti 404
+    'podcasts-audio.fondazionegolinelli.it', // DNS error da GAS
+    'museicapitolini.org',      // 404
+    'ilbolive.unipd.it'         // 404
+  ];
+  var data = sh.getDataRange().getValues();
+  var toDelete = [];
+  for (var i = data.length - 1; i >= 1; i--) {
+    var url = String(data[i][iUrl]||'');
+    if (BLOCKLIST.some(function(d){ return url.indexOf(d) !== -1; })) {
+      toDelete.push(i + 1); // 1-indexed
+    }
+  }
+  toDelete.forEach(function(row) { sh.deleteRow(row); });
+  Logger.log('pulisciFontiPodcastBloccate: rimossi ' + toDelete.length + ' feed bloccati');
+  return { ok: true, rimossi: toDelete.length };
+}
+
+// ============================================================================
+// SCANNER VIDEO YOUTUBE — legge FontiPodcast (TipoContenuto='video'),
+// scarica i feed Atom YouTube, scrive righe VID* nel foglio Podcast.
+// Eseguire manualmente o via trigger dopo aver popolato i canali.
+// ============================================================================
+function scanVideoYoutube() {
+  var SS;
+  try {
+    var sheetId = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
+    SS = SpreadsheetApp.getActiveSpreadsheet() || (sheetId ? SpreadsheetApp.openById(sheetId) : null);
+  } catch(e) {
+    var sid = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
+    SS = sid ? SpreadsheetApp.openById(sid) : null;
+  }
+  if (!SS) { Logger.log('ERR scanVideoYoutube: nessun foglio'); return 0; }
+
+  // Foglio Podcast (crea se assente)
+  var shPod = SS.getSheetByName('Podcast');
+  if (!shPod) {
+    shPod = SS.insertSheet('Podcast');
+    var h = ['ID','DataRilevamento','Titolo','Serie','Autore','Tematica','Durata','DataPubblicazione','Link','SommarioAI','TagAI','Score','Fonte','Ascoltato','DaAscoltare','InclusiNelDigest','StatoRecord'];
+    shPod.getRange(1,1,1,h.length).setValues([h]).setFontWeight('bold').setBackground('#5B2D8E').setFontColor('#fff');
+    shPod.setFrozenRows(1);
+  }
+
+  // Dedup su colonna Link (col 9 = index 8)
+  // v4.18.41 — Dedup via URL canonicalizzato (rimuove utm_*, trailing slash, www, ecc.)
+  var existing = new Set();
+  if (shPod.getLastRow() > 1) {
+    shPod.getRange(2, 9, shPod.getLastRow()-1, 1).getValues().forEach(function(r){
+      if (r[0]) {
+        var k = (typeof _canonicalUrl_ === 'function') ? _canonicalUrl_(r[0]) : String(r[0]).trim();
+        if (k) existing.add(k);
+      }
+    });
+  }
+
+  // Leggi fonti video da FontiPodcast
+  var shFonti = _getFontiPodSheet();
+  if (!shFonti || shFonti.getLastRow() < 2) {
+    Logger.log('scanVideoYoutube: FontiPodcast vuoto — esegui prima populaSeedVideoYoutubeMusei()');
+    return 0;
+  }
+  var fVals = shFonti.getDataRange().getValues();
+  var fHead = fVals[0].map(function(h){ return String(h||'').trim(); });
+  var fNome   = fHead.indexOf('Nome');      if (fNome  < 0) fNome  = 1;
+  var fUrl    = fHead.indexOf('URL_RSS');   if (fUrl   < 0) fUrl   = 2;
+  var fTema   = fHead.indexOf('Tematica'); if (fTema  < 0) fTema  = 3;
+  var fAtt    = fHead.indexOf('Attiva');   if (fAtt   < 0) fAtt   = 4;
+  var fTipo   = fHead.indexOf('TipoContenuto');
+
+  var fontiVideo = [];
+  for (var i = 1; i < fVals.length; i++) {
+    var row = fVals[i];
+    if (!row[fUrl]) continue;
+    var attiva = row[fAtt];
+    if (attiva === false || String(attiva).toLowerCase() === 'false') continue;
+    var tipo = fTipo >= 0 ? String(row[fTipo]||'').toLowerCase() : '';
+    if (tipo !== 'video') continue;
+    fontiVideo.push({ nome: row[fNome]||'', url: row[fUrl]||'', tematica: row[fTema]||'Musei & Patrimonio' });
+  }
+
+  if (!fontiVideo.length) {
+    Logger.log('scanVideoYoutube: nessuna fonte video trovata in FontiPodcast');
+    return 0;
+  }
+  Logger.log('scanVideoYoutube: ' + fontiVideo.length + ' canali da scansionare');
+
+  var totalNuovi = 0;
+  fontiVideo.forEach(function(fonte) {
+    try {
+      Logger.log(' Video: ' + fonte.nome);
+      var resp = UrlFetchApp.fetch(fonte.url, {
+        muteHttpExceptions: true, followRedirects: true, deadline: 10,
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; OsservatorioRadar/4.0)' }
+      });
+      if (resp.getResponseCode() !== 200) {
+        Logger.log('  ! HTTP ' + resp.getResponseCode() + ' per ' + fonte.url);
+        return;
+      }
+      var xml = resp.getContentText().slice(0, 80000);
+      // Parse entries dal feed Atom YouTube
+      var entries = _parseYoutubeAtom_(xml);
+      if (!entries.length) { Logger.log('  -> 0 video estratti'); return; }
+      var nuovi = 0;
+      entries.forEach(function(v) {
+        if (!v.titolo || !v.link) return;
+        // v4.18.41 — Dedup via URL canonicalizzato
+        var vKey = (typeof _canonicalUrl_ === 'function') ? _canonicalUrl_(v.link) : v.link;
+        if (existing.has(vKey)) return;
+        var id = 'VID' + Date.now() + '_' + Math.random().toString(36).substr(2,4);
+        shPod.appendRow([
+          id, new Date(), v.titolo, fonte.nome, v.autore||fonte.nome,
+          fonte.tematica, '',
+          v.data ? new Date(v.data) : '',
+          v.link, '', '', 3,
+          fonte.nome, false, false, false, 'attivo'
+        ]);
+        existing.add(vKey);
+        nuovi++;
+        Utilities.sleep(50);
+      });
+      Logger.log('  -> ' + nuovi + ' nuovi video da ' + fonte.nome);
+      totalNuovi += nuovi;
+    } catch(e) {
+      Logger.log('  ERR ' + fonte.nome + ': ' + e.message);
+    }
+    Utilities.sleep(500);
+  });
+
+  Logger.log('=== scanVideoYoutube completato: ' + totalNuovi + ' nuovi video ===');
+  return totalNuovi;
+}
+
+// Parser Atom YouTube — estrae titolo, link, data, autore da ogni <entry>
+function _parseYoutubeAtom_(xml) {
+  var entries = [];
+  var entryRe = /<entry[\s>]([\s\S]*?)<\/entry>/gi;
+  var match;
+  while ((match = entryRe.exec(xml)) !== null) {
+    var block = match[1];
+    var titolo = _xmlText_(block, 'title') || _xmlText_(block, 'media:title') || '';
+    var link = '';
+    var lm = block.match(/rel=["']alternate["'][^>]*href=["']([^"']+)["']/) ||
+             block.match(/href=["']([^"']+)["'][^>]*rel=["']alternate["']/);
+    if (lm) link = lm[1];
+    if (!link) {
+      var vidId = block.match(/yt:videoId>(.*?)<\/yt:videoId>/i);
+      if (vidId) link = 'https://www.youtube.com/watch?v=' + vidId[1].trim();
+    }
+    var data = _xmlText_(block, 'published') || _xmlText_(block, 'updated') || '';
+    var autore = _xmlText_(block, 'name') || '';
+    if (titolo && link) entries.push({ titolo: titolo, link: link, data: data, autore: autore });
+  }
+  return entries;
+}
+
+function _xmlText_(block, tag) {
+  var m = block.match(new RegExp('<' + tag + '[^>]*>([\\s\\S]*?)<\\/' + tag + '>', 'i'));
+  return m ? m[1].replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').trim() : '';
+}
+
+// ============================================================================
+// SCANNER PODCAST DIRETTO — parse RSS 2.0 senza Claude API.
+// Usa lo stesso FONTI_PODCAST di scanPodcast ma non richiede API key.
+// Eseguire manualmente o via trigger; complementare a scanPodcast.
+// ============================================================================
+function scanPodcastDiretto() {
+  var SS;
+  try {
+    var sheetId = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
+    SS = SpreadsheetApp.getActiveSpreadsheet() || (sheetId ? SpreadsheetApp.openById(sheetId) : null);
+  } catch(e) {
+    var sid2 = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
+    SS = sid2 ? SpreadsheetApp.openById(sid2) : null;
+  }
+  if (!SS) { Logger.log('ERR scanPodcastDiretto: nessun foglio'); return 0; }
+
+  var shPod = SS.getSheetByName('Podcast');
+  if (!shPod) {
+    shPod = SS.insertSheet('Podcast');
+    var h2 = ['ID','DataRilevamento','Titolo','Serie','Autore','Tematica','Durata','DataPubblicazione','Link','SommarioAI','TagAI','Score','Fonte','Ascoltato','DaAscoltare','InclusiNelDigest','StatoRecord'];
+    shPod.getRange(1,1,1,h2.length).setValues([h2]).setFontWeight('bold').setBackground('#5B2D8E').setFontColor('#fff');
+    shPod.setFrozenRows(1);
+  }
+
+  // v4.18.41 — Dedup via URL canonicalizzato (rimuove utm_*, trailing slash, www, ecc.)
+  var existing = new Set();
+  if (shPod.getLastRow() > 1) {
+    shPod.getRange(2, 9, shPod.getLastRow()-1, 1).getValues().forEach(function(r){
+      if (r[0]) {
+        var k = (typeof _canonicalUrl_ === 'function') ? _canonicalUrl_(r[0]) : String(r[0]).trim();
+        if (k) existing.add(k);
+      }
+    });
+  }
+
+  var oggi = new Date();
+  var settimanaAnno = getWeekNumberBandi(oggi);
+  var totalNuovi = 0;
+
+  // Costruisce lista fonti: FONTI_PODCAST (array) + FontiPodcast sheet (TipoContenuto='audio')
+  var tutteLeFonti = FONTI_PODCAST.filter(function(f){ return f.priorita !== 2 || settimanaAnno % 2 === 0; });
+  try {
+    var shFP = _getFontiPodSheet();
+    if (shFP && shFP.getLastRow() > 1) {
+      var fpVals = shFP.getDataRange().getValues();
+      var fpHead = fpVals[0].map(function(h){ return String(h||'').trim(); });
+      var fpNome = fpHead.indexOf('Nome'), fpUrl = fpHead.indexOf('URL_RSS');
+      var fpTema = fpHead.indexOf('Tematica'), fpAtt = fpHead.indexOf('Attiva');
+      var fpTipo = fpHead.indexOf('TipoContenuto');
+      for (var fi = 1; fi < fpVals.length; fi++) {
+        var fr = fpVals[fi];
+        if (!fr[fpUrl]) continue;
+        var fatt = fr[fpAtt]; if (fatt === false || String(fatt).toLowerCase() === 'false') continue;
+        var ftipo = fpTipo >= 0 ? String(fr[fpTipo]||'').toLowerCase() : 'audio';
+        if (ftipo !== 'audio' && ftipo !== '') continue;
+        var furl = String(fr[fpUrl]||'').trim();
+        // evita duplicati con FONTI_PODCAST
+        if (tutteLeFonti.some(function(x){ return x.url === furl; })) continue;
+        tutteLeFonti.push({ nome: String(fr[fpNome]||''), url: furl, tematica: String(fr[fpTema]||'Musei & Patrimonio'), priorita:1 });
+      }
+    }
+  } catch(efp) { Logger.log('WARN FontiPodcast sheet: ' + efp.message); }
+
+  Logger.log('scanPodcastDiretto: ' + tutteLeFonti.length + ' fonti totali');
+
+  // Domini bloccati da GAS (RAI blocca IP Google; formato user/* Spreaker non risolve DNS)
+  var SKIP_DOMAINS = ['raiplaysound.it', 'feeds.spreaker.com/user'];
+
+  tutteLeFonti.forEach(function(fonte) {
+    var skipThis = SKIP_DOMAINS.some(function(d) { return fonte.url.indexOf(d) !== -1; });
+    if (skipThis) { Logger.log(' SKIP (dominio bloccato): ' + fonte.nome + ' — ' + fonte.url); return; }
+    try {
+      Logger.log(' PodcastDiretto: ' + fonte.nome);
+      var resp = UrlFetchApp.fetch(fonte.url, {
+        muteHttpExceptions: true, followRedirects: true, deadline: 10,
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; OsservatorioRadar/4.0)' }
+      });
+      if (resp.getResponseCode() !== 200) {
+        Logger.log('  ! HTTP ' + resp.getResponseCode()); return;
+      }
+      // Tronca a 100KB per evitare backtracking catastrofico su feed enormi (RAI)
+      var xml = resp.getContentText().slice(0, 100000);
+      var items = _parseRSSItems_(xml);
+      if (!items.length) { Logger.log('  -> 0 episodi'); return; }
+      var nuovi = 0;
+      items.slice(0, 20).forEach(function(ep) {
+        if (!ep.titolo) return;
+        var link = ep.link || '';
+        // v4.18.41 — Dedup via URL canonicalizzato
+        var epKey = link ? ((typeof _canonicalUrl_ === 'function') ? _canonicalUrl_(link) : link) : '';
+        if (epKey && existing.has(epKey)) return;
+        var id = 'POD' + Date.now() + '_' + Math.random().toString(36).substr(2,4);
+        shPod.appendRow([
+          id, new Date(), ep.titolo, fonte.nome, ep.autore||fonte.nome,
+          fonte.tematica||'Musei & Patrimonio', ep.durata||'',
+          ep.data ? new Date(ep.data) : '', link,
+          ep.sommario||'', '', 3, fonte.nome,
+          false, false, false, 'attivo'
+        ]);
+        if (epKey) existing.add(epKey);
+        nuovi++;
+        Utilities.sleep(50);
+      });
+      Logger.log('  -> ' + nuovi + ' nuovi da ' + fonte.nome);
+      totalNuovi += nuovi;
+    } catch(e) {
+      Logger.log('  ERR ' + fonte.nome + ': ' + e.message);
+    }
+    Utilities.sleep(300);
+  });
+
+  Logger.log('=== scanPodcastDiretto completato: ' + totalNuovi + ' nuovi episodi ===');
+  return totalNuovi;
+}
+
+// Parser RSS 2.0 standard — estrae titolo, link, data, autore, durata, sommario da ogni <item>
+function _parseRSSItems_(xml) {
+  var items = [];
+  var itemRe = /<item[\s>]([\s\S]*?)<\/item>/gi;
+  var match;
+  while ((match = itemRe.exec(xml)) !== null) {
+    var block = match[1];
+    var titolo = _xmlText_(block, 'title') || '';
+    // Link: prima prova <link>, poi enclosure url
+    var link = _xmlText_(block, 'link') || '';
+    if (!link) {
+      var em = block.match(/enclosure[^>]+url=["']([^"']+)["']/i);
+      if (em) link = em[1];
+    }
+    // Pulisci link da eventuali tag CDATA e spazi
+    link = link.replace(/<!\[CDATA\[|\]\]>/g,'').trim();
+    var dataTxt = _xmlText_(block, 'pubDate') || _xmlText_(block, 'published') || '';
+    var durata = _xmlText_(block, 'itunes:duration') || '';
+    var autore = _xmlText_(block, 'itunes:author') || _xmlText_(block, 'author') || '';
+    var sommario = (_xmlText_(block, 'itunes:summary') || _xmlText_(block, 'description') || '').slice(0, 300);
+    var dataObj = null;
+    if (dataTxt) {
+      try { dataObj = new Date(dataTxt); if (isNaN(dataObj.getTime())) dataObj = null; } catch(e2) {}
+    }
+    if (titolo) items.push({ titolo: titolo, link: link, data: dataObj, autore: autore, durata: durata, sommario: sommario });
+  }
+  return items;
 }
 
 function getFontiStats() {
@@ -1251,148 +1774,11 @@ function getSheetRadar() {
   return getMainSS().getSheetByName(SHEET_RADAR);
 }
 
-function getSheetRadarStandaloneLegacy() {
-  const RADAR_SHEET_ID='1cz35EBUY63kLBe3hpkIYG8ReEr6oNwRLwRzzKm_t7t0';
-  return SpreadsheetApp.openById(RADAR_SHEET_ID).getSheetByName(SHEET_RADAR);
-}
-
-/**
- * Sprint 1.3 D2.5h (2026-05-01) — Consolidamento bandi in unico file principale.
- * Migra tutti i bandi dal file standalone al foglio "RADAR BANDI" del file
- * principale. Allinea colonne. Skip duplicati su Titolo+Ente.
- */
-function consolidaBandiInFilePrincipale() {
-  Logger.log('=== CONSOLIDAMENTO BANDI: standalone -> file principale ===');
-  try {
-    var ssSrc = SpreadsheetApp.openById('1cz35EBUY63kLBe3hpkIYG8ReEr6oNwRLwRzzKm_t7t0');
-    var shSrc = ssSrc.getSheetByName(SHEET_RADAR);
-    if (!shSrc) return { error:'foglio standalone "RADAR BANDI" non trovato' };
-    var rowsSrc = shSrc.getLastRow();
-    var colsSrc = shSrc.getLastColumn();
-    if (rowsSrc < 2) return { ok:true, importati:0 };
-    var headersSrc = shSrc.getRange(1,1,1,colsSrc).getValues()[0];
-    var dataSrc    = shSrc.getRange(2,1,rowsSrc-1,colsSrc).getValues();
-    Logger.log('Standalone: ' + (rowsSrc-1) + ' bandi · ' + colsSrc + ' colonne');
-
-    var ssDst = getMainSS();
-    var shDst = ssDst.getSheetByName(SHEET_RADAR);
-    if (!shDst) {
-      shDst = ssDst.insertSheet(SHEET_RADAR);
-      shDst.getRange(1,1,1,colsSrc).setValues([headersSrc])
-        .setFontWeight('bold').setBackground('#0F2744').setFontColor('#fff');
-    }
-    var rowsDst = shDst.getLastRow();
-    var colsDst = shDst.getLastColumn();
-    var headersDst = colsDst > 0 ? shDst.getRange(1,1,1,colsDst).getValues()[0] : [];
-    Logger.log('Destinazione: ' + (rowsDst-1) + ' bandi esistenti · ' + colsDst + ' colonne');
-
-    var headersDstLow = headersDst.map(function(h){ return String(h||'').toLowerCase().trim(); });
-    var addedCols = 0;
-    headersSrc.forEach(function(h, i) {
-      var hLow = String(h||'').toLowerCase().trim();
-      if (!hLow) return;
-      if (headersDstLow.indexOf(hLow) < 0) {
-        var newColIdx = headersDst.length + 1;
-        shDst.getRange(1, newColIdx).setValue(h)
-          .setFontWeight('bold').setBackground('#0F2744').setFontColor('#fff');
-        headersDst.push(h);
-        headersDstLow.push(hLow);
-        addedCols++;
-      }
-    });
-
-    var srcToDstIdx = headersSrc.map(function(h) {
-      return headersDstLow.indexOf(String(h||'').toLowerCase().trim());
-    });
-
-    var iTitDst = headersDstLow.indexOf('titolo bando');
-    if (iTitDst < 0) iTitDst = headersDstLow.indexOf('titolo');
-    var iEntDst = headersDstLow.indexOf('ente erogatore');
-    if (iEntDst < 0) iEntDst = headersDstLow.indexOf('ente');
-
-    var existingKeys = new Set();
-    if (rowsDst > 1) {
-      var dataDst = shDst.getRange(2, 1, rowsDst-1, headersDst.length).getValues();
-      dataDst.forEach(function(r) {
-        if (iTitDst >= 0 && iEntDst >= 0) {
-          var k = String(r[iTitDst]||'').toLowerCase().trim() + '||' + String(r[iEntDst]||'').toLowerCase().trim();
-          if (k !== '||') existingKeys.add(k);
-        }
-      });
-    }
-
-    var iTitSrc = headersSrc.map(function(h){return String(h||'').toLowerCase().trim();}).indexOf('titolo bando');
-    if (iTitSrc < 0) iTitSrc = headersSrc.map(function(h){return String(h||'').toLowerCase().trim();}).indexOf('titolo');
-    var iEntSrc = headersSrc.map(function(h){return String(h||'').toLowerCase().trim();}).indexOf('ente erogatore');
-    if (iEntSrc < 0) iEntSrc = headersSrc.map(function(h){return String(h||'').toLowerCase().trim();}).indexOf('ente');
-
-    var importati = 0, duplicati = 0, errori = 0;
-    var rowsToAppend = [];
-    dataSrc.forEach(function(rSrc, idx) {
-      try {
-        if (iTitSrc >= 0 && iEntSrc >= 0) {
-          var key = String(rSrc[iTitSrc]||'').toLowerCase().trim() + '||' + String(rSrc[iEntSrc]||'').toLowerCase().trim();
-          if (key !== '||' && existingKeys.has(key)) { duplicati++; return; }
-          existingKeys.add(key);
-        }
-        var rDst = new Array(headersDst.length).fill('');
-        for (var c = 0; c < rSrc.length; c++) {
-          var dstIdx = srcToDstIdx[c];
-          if (dstIdx >= 0) rDst[dstIdx] = rSrc[c];
-        }
-        rowsToAppend.push(rDst);
-        importati++;
-      } catch(e) { errori++; }
-    });
-
-    if (rowsToAppend.length) {
-      var startRow = shDst.getLastRow() + 1;
-      shDst.getRange(startRow, 1, rowsToAppend.length, headersDst.length).setValues(rowsToAppend);
-    }
-
-    var totaleFinale = shDst.getLastRow() - 1;
-    Logger.log('=== Consolidamento completato ===');
-    Logger.log('Importati: ' + importati + ' · Duplicati: ' + duplicati + ' · Errori: ' + errori);
-    Logger.log('Totale bandi nel file principale ora: ' + totaleFinale);
-    return {
-      ok: true,
-      importati: importati,
-      duplicati: duplicati,
-      errori: errori,
-      totaleFinale: totaleFinale,
-      colonneAggiunte: addedCols
-    };
-  } catch(e) {
-    Logger.log('ERR: ' + e.message);
-    return { error: e.message };
-  }
-}
-
-// * v3.1 - Eseguire UNA SOLA VOLTA per aggiungere col 18-20 al foglio RADAR BANDI
-// Sicuro su foglio esistente: non sovrascrive dati presenti
-function addNuoveColonneRadar() {
-  const sheet=getSheetRadar();
-  if(!sheet) { Logger.log('ERRORE: Foglio RADAR BANDI non trovato'); return; }
-  const lastRow=sheet.getLastRow();
-  const lastCol=sheet.getLastColumn();
-  const h=sheet.getRange(1,1,1,Math.max(lastCol,20)).getValues()[0];
-
-  const setup=[
-    {col:18, name:'StatoRecord', def:'attivo'},
-    {col:19, name:'UrlEnte',     def:''},
-    {col:20, name:'LettoBando',  def:false},
-  ];
-  setup.forEach(({col,name,def})=>{
-    if(!h[col-1]) sheet.getRange(1,col).setValue(name);
-    if(lastRow>1) {
-      const vals=sheet.getRange(2,col,lastRow-1,1).getValues();
-      const batch=[];
-      vals.forEach((row,i)=>{ if(row[0]===''||row[0]===null||row[0]===undefined) batch.push([def]); else batch.push([row[0]]); });
-      if(batch.length) sheet.getRange(2,col,batch.length,1).setValues(batch);
-    }
-  });
-  Logger.log('OK v3.1: col 18 StatoRecord, 19 UrlEnte, 20 LettoBando - verificate/aggiunte');
-}
+// v4.18.38 (audit 2026-05-14) — Rimosse 3 funzioni morte:
+//   • getSheetRadarStandaloneLegacy()       — fallback Radar ID hardcoded, mai chiamato
+//   • consolidaBandiInFilePrincipale()      — migrazione standalone→principale (Sprint 1.3 D2.5h), già applicata
+//   • addNuoveColonneRadar()                — migrazione schema RADAR colonne 18-20, già applicata
+// Recuperabili da git history se servono per audit.
 
 function diagBandiSheet() {
   const sheet=getSheetRadar();
@@ -1558,6 +1944,10 @@ function applyPriorityColor(sheet,rowIndex,priorita) {
 // ==================================================================
 
 // * v3.1 - Toggle lettura bando (col 20)
+/**
+ * @deprecated v4.18.40 — Usare markRead('bando', id) in Workflow_unified.js.
+ *   Questa funzione lavora sul foglio RADAR BANDI legacy v4.
+ */
 function toggleLettoBando(body) {
   const sheet=getSheetRadar();
   const rowIndex=parseInt((body.id||'').replace('r',''));
@@ -1568,6 +1958,10 @@ function toggleLettoBando(body) {
   return {ok:true, value:newVal};
 }
 
+/**
+ * @deprecated v4.18.40 — Usare archive('bando', id) in Workflow_unified.js.
+ *   Questa funzione lavora sul foglio RADAR BANDI legacy v4 (col STATO_RECORD).
+ */
 function archiviaRecord(body) {
   const sheet=getSheetRadar();
   const rowIndex=parseInt((body.id||'').replace('r',''));
@@ -1576,6 +1970,10 @@ function archiviaRecord(body) {
   return {ok:true};
 }
 
+/**
+ * @deprecated v4.18.40 — Usare restore('bando', id) in Workflow_unified.js.
+ *   Lavora sul foglio RADAR BANDI legacy v4.
+ */
 function ripristinaRecord(body) {
   const sheet=getSheetRadar();
   const rowIndex=parseInt((body.id||'').replace('r',''));
@@ -1584,6 +1982,10 @@ function ripristinaRecord(body) {
   return {ok:true};
 }
 
+/**
+ * @deprecated v4.18.40 — Usare archive() + autoDeleteVeryOld() in Workflow_unified.js.
+ *   Lavora sul foglio RADAR BANDI legacy v4.
+ */
 function deleteArchiviato(body) {
   const sheet=getSheetRadar();
   const rowIndex=parseInt((body.id||'').replace('r',''));
@@ -1594,6 +1996,10 @@ function deleteArchiviato(body) {
   return {ok:true};
 }
 
+/**
+ * @deprecated v4.18.40 — Usare API unificata di Workflow_unified.js (archive/restore bulk).
+ *   Lavora sul foglio RADAR BANDI legacy v4.
+ */
 function deleteArchivioBulk(ids) {
   if(!ids||!ids.length) return {error:'Nessun ID'};
   const sheet=getSheetRadar();
@@ -1609,6 +2015,10 @@ function deleteArchivioBulk(ids) {
   return {ok:true, deleted};
 }
 
+/**
+ * @deprecated v4.18.40 — Usare autoDeleteVeryOld('bando', soglia_mesi) in Workflow_unified.js.
+ *   Lavora sul foglio RADAR BANDI legacy v4.
+ */
 function deleteArchivioTutto() {
   const sheet=getSheetRadar();
   const lastRow=sheet.getLastRow();
@@ -1626,6 +2036,10 @@ function deleteArchivioTutto() {
 // AUTO-ARCHIVIAZIONE NOTIZIE VECCHIE (>30 giorni)
 // Chiamata da lunediMattina - non archivia salvate o in digest
 // ==================================================================
+/**
+ * @deprecated v4.18.40 — Usare autoArchiveOld('news', 30) in Workflow_unified.js.
+ *   Wrapper legacy mantenuto per backward-compat con trigger lunediMattina.
+ */
 function autoArchiviaNotizieVecchie() {
   const sh = getMainSS().getSheetByName(SH.ITEMS);
   if (!sh || sh.getLastRow() < 2) return 0;
@@ -1695,6 +2109,9 @@ function getGestioneStats() {
 }
 
 // Archivia bulk notizie piu' vecchie di N giorni
+/**
+ * @deprecated v4.18.40 — Usare autoArchiveOld('news', giorni) in Workflow_unified.js.
+ */
 function archiviaNotizieOlderThan(giorni) {
   const sh = getMainSS().getSheetByName(SH.ITEMS);
   if (!sh || sh.getLastRow() < 2) return {ok:true, archiviati:0};
@@ -1712,6 +2129,10 @@ function archiviaNotizieOlderThan(giorni) {
 }
 
 // Elimina definitivamente tutti gli archiviati (bulk, dal piu' vecchio)
+/**
+ * @deprecated v4.18.40 — Usare autoDeleteVeryOld('news', soglia_mesi) in Workflow_unified.js.
+ *   Operazione distruttiva: la nuova API ha controlli su soglia temporale invece di "tutti".
+ */
 function eliminaArchiviatiTutti() {
   const sh = getMainSS().getSheetByName(SH.ITEMS);
   if (!sh || sh.getLastRow() < 2) return {ok:true, eliminati:0};
@@ -1725,6 +2146,10 @@ function eliminaArchiviatiTutti() {
 
 
 // Auto-archivia bandi scaduti da 30+ gg (chiamato da lunediMattina in ScannerBandi.gs)
+/**
+ * @deprecated v4.18.40 — Usare cleanupBandiV5Scaduti(30) in Bandi_v5.js per Bandi_v5,
+ *   oppure autoArchiveOld('bando', 30) in Workflow_unified.js per il foglio RADAR BANDI legacy.
+ */
 function autoArchiviaScaduti() {
   const sheet=getSheetRadar();
   if(!sheet||sheet.getLastRow()<2) return 0;
@@ -1836,6 +2261,10 @@ function editSommario(body) {
   return setItemField(body.id,'SommarioEditato',body.sommario);
 }
 
+/**
+ * @deprecated v4.18.40 — Usare markRead('item', id) o toggleSaved('item', id) in Workflow_unified.js
+ *   per i flag specifici. Questa funzione generica accetta qualunque colonna boolean.
+ */
 function toggleItemField(id,field) {
   const sh=getMainSS().getSheetByName(SH.ITEMS);
   const rows=sh.getDataRange().getValues(), h=rows[0];
@@ -1848,6 +2277,11 @@ function toggleItemField(id,field) {
   return {error:'Item non trovato'};
 }
 
+/**
+ * @deprecated v4.18.40 — Usare API dedicate di Workflow_unified.js per i campi specifici
+ *   (markRead, toggleSaved, archive, restore). Questa funzione generica imposta qualunque
+ *   campo del foglio Items.
+ */
 function setItemField(id,field,value) {
   const sh=getMainSS().getSheetByName(SH.ITEMS);
   const rows=sh.getDataRange().getValues(), h=rows[0];
@@ -1996,7 +2430,7 @@ function sendDigest(itemIds, bandiIds, podcastIds) {
         const htmlNoReader = buildDigestHTML(items, dest, null);
         GmailApp.sendEmail(dest.Email, subject, 'Visualizza in HTML.', {
           htmlBody: htmlNoReader,
-          name: 'Osservatorio Culturale - Duemilamusei',
+          name: 'Sinopia · Osservatorio Culturale',
           replyTo: Session.getEffectiveUser().getEmail()
         });
         sent++;
@@ -2041,7 +2475,11 @@ function buildDigestHTML(items, dest, readerUrl) {
     sectionsHTML+=`<tr><td style="padding:24px 0 12px"><div style="display:flex;align-items:center"><div style="width:4px;height:18px;background:${color};border-radius:2px;margin-right:10px;display:inline-block"></div><span style="font-size:12px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.06em">${label}</span><span style="font-size:12px;color:#aaa;margin-left:8px">${grouped[a].length} item</span></div></td></tr><table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e8e5e0">${itemsHTML}</table>`;
   }
   const readerBtn = readerUrl ? `<tr><td style="padding:16px 36px 8px"><div style="background:linear-gradient(135deg,#0F2744,#185FA5);border-radius:10px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px"><div><div style="font-size:13px;font-weight:600;color:#fff">Ciao${nomeDestinatario?' '+nomeDestinatario:''}!</div><div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px">Seleziona gli articoli che ti interessano e scarica il tuo PDF personalizzato.</div></div><a href="${readerUrl}" style="display:inline-block;background:#B8902A;color:#fff;text-decoration:none;padding:9px 18px;border-radius:7px;font-size:12px;font-weight:700;white-space:nowrap">Apri il tuo digest &rarr;</a></div></td></tr>` : '';
-  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Digest</title></head><body style="margin:0;padding:0;background:#f5f3ee;font-family:-apple-system,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f5f3ee" style="padding:28px 0"><tr><td align="center"><table width="620" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e8e5e0"><tr><td style="background:#1a1a1a;padding:28px 36px 24px"><div style="font-size:20px;font-weight:700;color:#fff">Osservatorio Culturale</div><div style="font-size:13px;color:#888;margin-top:4px">Duemilamusei &middot; Digest del ${formatDate(new Date())}</div></td></tr>${readerBtn}<tr><td style="padding:4px 36px 36px"><table width="100%" cellpadding="0" cellspacing="0">${sectionsHTML}</table></td></tr></table></td></tr></table></body></html>`;
+  // v4.18.54 — Footer unsubscribe (link cancellazione iscrizione)
+  const unsubFooter = (dest && (dest.Email || dest.email) && typeof _digestUnsubFooter_ === 'function')
+    ? _digestUnsubFooter_(dest.Email || dest.email, { style: 'standard' })
+    : '';
+  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Digest</title></head><body style="margin:0;padding:0;background:#f5f3ee;font-family:-apple-system,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f5f3ee" style="padding:28px 0"><tr><td align="center"><table width="620" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e8e5e0"><tr><td style="background:#1a1a1a;padding:28px 36px 24px"><div style="font-family:Georgia,serif;font-style:italic;font-size:24px;font-weight:500;color:#E89B7C;letter-spacing:.01em">Sinopia</div><div style="font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#bbb;margin-top:6px">Osservatorio Culturale &middot; Digest del ${formatDate(new Date())}</div></td></tr>${readerBtn}<tr><td style="padding:4px 36px 36px"><table width="100%" cellpadding="0" cellspacing="0">${sectionsHTML}</table></td></tr><tr><td style="border-top:1px solid #eee">${unsubFooter}</td></tr></table></td></tr></table></body></html>`;
 }
 
 // -- SCANNER RSS ---------------------------------------------------
@@ -2060,11 +2498,13 @@ function scanSources() {
       if (!items.length) { Logger.log('  -> 0 item (feed vuoto o non valido)'); continue; }
       let nuovi = 0;
       for(const item of items) {
-        if(existing.has(item.url)) continue;
+        // v4.18.41 — Dedup at-source con URL canonicalizzato (rimuove utm_*, trailing slash, ecc.)
+        const itemKey = (typeof _canonicalUrl_ === 'function') ? _canonicalUrl_(item.url) : item.url;
+        if(existing.has(itemKey)) continue;
         Utilities.sleep(600);
         const ai = processWithAI(item.titolo, item.estratto, fonte.Ambito);
         saveItem(sh, item, fonte, ai);
-        existing.add(item.url);
+        existing.add(itemKey);
         added++;
         nuovi++;
       }
@@ -2120,8 +2560,30 @@ function fetchRSS(url,fonte) {
       const desc = get('description') || get('summary') || get('content');
       const pub = get('pubDate') || get('published') || get('updated');
       if (!titolo || !link) continue;
+      // --- Estrazione immagine: enclosure → media:thumbnail → media:content → <img> nel desc ---
+      let imgUrl = '';
+      try {
+        const encl = entry.getChild('enclosure') || entry.getChild('enclosure', ns);
+        if (encl) {
+          const encType = encl.getAttribute('type') ? encl.getAttribute('type').getValue() : '';
+          if (!encType || encType.startsWith('image/')) {
+            imgUrl = encl.getAttribute('url') ? encl.getAttribute('url').getValue() : '';
+          }
+        }
+      } catch(eImg){}
+      if (!imgUrl) {
+        try {
+          const mediaNs = XmlService.getNamespace('media','http://search.yahoo.com/mrss/');
+          const mediaEl = entry.getChild('thumbnail',mediaNs) || entry.getChild('content',mediaNs);
+          if (mediaEl) imgUrl = mediaEl.getAttribute('url') ? mediaEl.getAttribute('url').getValue() : '';
+        } catch(eMedia){}
+      }
+      if (!imgUrl && desc) {
+        const imgM = desc.match(/<img[^>]+src=["']([^"']+)["']/i);
+        if (imgM) imgUrl = imgM[1];
+      }
       items.push({
-        titolo, url:link,
+        titolo, url:link, imgUrl,
         estratto: desc.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').substring(0,600).trim(),
         data: pub ? new Date(pub) : new Date()
       });
@@ -2161,9 +2623,21 @@ function saveItem(sh,item,fonte,ai) {
     (ai.tag||[]).join(', '),ai.score||3,ai.tipologia||'ricerca',formatDate(item.data),formatDate(new Date()),'',false,false,false,false]);  // * InclusiNelDigest=false: selezione manuale
 }
 
+/**
+ * v4.18.41 — Set di URL già esistenti nel foglio, CANONICALIZZATI per dedup robusto.
+ * Usa _canonicalUrl_ (Constants.js): rimuove protocol/www/trailing slash/utm/anchor.
+ * Cambio di comportamento: ora due URL "diversi" ma equivalenti (es. con/senza
+ * trailing slash, con/senza utm) sono considerati lo stesso → niente più duplicati
+ * news che differiscono solo per parametri di tracking.
+ */
 function getExistingURLs(sh) {
   const rows=sh.getDataRange().getValues(), h=rows[0], col=h.indexOf('FonteURL'), urls=new Set();
-  for(let i=1;i<rows.length;i++) if(rows[i][col]) urls.add(rows[i][col]);
+  for(let i=1;i<rows.length;i++) {
+    if(rows[i][col]) {
+      const canon = (typeof _canonicalUrl_ === 'function') ? _canonicalUrl_(rows[i][col]) : String(rows[i][col]).trim();
+      if (canon) urls.add(canon);
+    }
+  }
   return urls;
 }
 
@@ -2213,7 +2687,7 @@ function fetchAndCacheSocialWall() {
         if(item.data<cutoff) return;
         posts.push({fonte:fonte.Nome,tipo:String(fonte.Tipo||'blog'),categoria:String(fonte.Categoria||''),
           avatar:String(fonte.Avatar||(fonte.Nome||'?').charAt(0).toUpperCase()),titolo:item.titolo,
-          estratto:(item.estratto||'').substring(0,220),url:item.url,
+          estratto:(item.estratto||'').substring(0,220),url:item.url,imgUrl:item.imgUrl||'',
           dataISO:item.data instanceof Date?item.data.toISOString():new Date().toISOString()});
       });
     } catch(err){}
@@ -2255,6 +2729,87 @@ function addSocialFonte(body) {
 
 function deleteSocialFonteById(id){return _deleteRowById(getMainSS().getSheetByName('SocialFonti'),id);}
 function toggleSocialFonteField(id,field){return _toggleField(getMainSS().getSheetByName('SocialFonti'),id,field);}
+
+/**
+ * Seed Social Wall — 15 istituzioni fondamentali del settore cultura italiano/europeo.
+ * Idempotente: salta le URL già presenti. Eseguire una sola volta dopo deploy.
+ */
+function seedSocialFontiIstituzionali() {
+  const SS = getMainSS();
+  let sh = SS.getSheetByName('SocialFonti');
+  if (!sh) sh = _createSocialFontiSheet(SS);
+  const rows = sh.getDataRange().getValues();
+  const existingUrls = new Set(rows.slice(1).map(r => String(r[2]||'').trim()));
+  const seed = [
+    // Istituzioni MiC e pubblica amministrazione
+    { id:'SW10', nome:'MiC — Comunicati',         url:'https://comunicati.cultura.gov.it/feed/',                      tipo:'istituzione',   cat:'Politiche Culturali',    av:'M' },
+    { id:'SW11', nome:'MiC — Musei',              url:'https://musei.cultura.gov.it/feed/',                           tipo:'istituzione',   cat:'Musei & Patrimonio',     av:'M' },
+    // Reti museali e associazioni
+    { id:'SW12', nome:'ICOM Italia',              url:'https://www.icom-italia.org/feed/',                            tipo:'istituzione',   cat:'Musei & Patrimonio',     av:'I' },
+    { id:'SW13', nome:'Federculture',             url:'https://www.federculture.it/feed/',                            tipo:'associazione',  cat:'Politiche Culturali',    av:'F' },
+    { id:'SW14', nome:'MAB Italia',               url:'https://www.mab-italia.org/feed/',                             tipo:'associazione',  cat:'Musei & Patrimonio',     av:'M' },
+    { id:'SW15', nome:'AMACI',                    url:'https://www.amaci.org/feed/',                                  tipo:'associazione',  cat:'Arte Contemporanea',     av:'A' },
+    // Fondazioni e centri ricerca
+    { id:'SW16', nome:'Fondazione Symbola',       url:'https://symbola.net/feed/',                                    tipo:'fondazione',    cat:'Governance & Cultura',   av:'S' },
+    { id:'SW17', nome:'Fondazione Fitzcarraldo',  url:'https://www.fitzcarraldo.it/feed/',                            tipo:'fondazione',    cat:'Gestione Culturale',     av:'F' },
+    { id:'SW18', nome:'Fondazione Feltrinelli',   url:'https://fondazionefeltrinelli.it/feed/',                       tipo:'fondazione',    cat:'Politiche Culturali',    av:'F' },
+    // Grandi musei italiani con blog/news attivi
+    { id:'SW19', nome:'MAXXI Roma',               url:'https://www.maxxi.art/feed/',                                  tipo:'museo',         cat:'Arte Contemporanea',     av:'X' },
+    { id:'SW20', nome:'Triennale Milano',         url:'https://www.triennale.org/feed/',                              tipo:'museo',         cat:'Design & Cultura',       av:'T' },
+    { id:'SW21', nome:'FAI — Fondo Ambiente',     url:'https://www.fondoambiente.it/feed/',                           tipo:'fondazione',    cat:'Musei & Patrimonio',     av:'F' },
+    // Riviste e osservatori settoriali
+    { id:'SW22', nome:'Artribune',                url:'https://www.artribune.com/feed/',                              tipo:'rivista',       cat:'Arte & Mostre',          av:'A' },
+    { id:'SW23', nome:'Giornale delle Fondazioni',url:'https://www.ilgiornaledellefondazioni.com/feed/',               tipo:'rivista',       cat:'Politiche Culturali',    av:'G' },
+    { id:'SW24', nome:'MuseumNext',               url:'https://www.museumnext.com/feed/',                             tipo:'rivista',       cat:'Innovazione Museale',    av:'N' },
+  ];
+  let aggiunti = 0, skip = 0;
+  seed.forEach(function(f) {
+    if (existingUrls.has(f.url)) { skip++; return; }
+    sh.appendRow([f.id + '_' + Date.now(), f.nome, f.url, f.tipo, f.cat, f.av, true, '']);
+    existingUrls.add(f.url);
+    aggiunti++;
+    Utilities.sleep(80);
+  });
+  // Invalida cache social wall
+  PropertiesService.getScriptProperties().deleteProperty('SW_CACHE_TIME');
+  Logger.log('[OK] seedSocialFontiIstituzionali: ' + aggiunti + ' aggiunte, ' + skip + ' già presenti');
+  return { ok: true, aggiunti: aggiunti, skip: skip };
+}
+
+/**
+ * Corregge feed SocialFonti non funzionanti:
+ * - Rimuove URL con dominio morto (economia-cultura.it)
+ * - Aggiorna ICOM senza www → con www
+ * - Sostituisce ilgiornaledellarte.com (no RSS) con Finestre sull'Arte
+ * - Invalida cache SW per forzare refetch
+ * Da eseguire una volta dall'editor GAS.
+ */
+function correggiSocialFontiFallite() {
+  const sh = getMainSS().getSheetByName('SocialFonti');
+  if (!sh || sh.getLastRow() < 2) { Logger.log('SocialFonti vuoto'); return; }
+  const vals = sh.getDataRange().getValues();
+  const h = vals[0];
+  const iUrl = h.indexOf('URL'); const iNome = h.indexOf('Nome');
+  const FIXES = {
+    'https://icom-italia.org/feed/':          'https://www.icom-italia.org/feed/',
+    'https://www.ilgiornaledellarte.com/feed/':'https://www.finestresullarte.info/blog_feed_rss.php',
+  };
+  const DEAD  = ['economia-cultura.it'];
+  let fixed = 0, deleted = 0;
+  for (let i = vals.length - 1; i >= 1; i--) {
+    const url = String(vals[i][iUrl]||'');
+    if (DEAD.some(d => url.indexOf(d) !== -1)) {
+      sh.deleteRow(i + 1); deleted++; continue;
+    }
+    if (FIXES[url]) {
+      sh.getRange(i+1, iUrl+1).setValue(FIXES[url]);
+      Logger.log('Corretto: ' + url + ' → ' + FIXES[url]); fixed++;
+    }
+  }
+  PropertiesService.getScriptProperties().deleteProperty('SW_CACHE_TIME');
+  Logger.log('correggiSocialFontiFallite: ' + fixed + ' corretti, ' + deleted + ' eliminati');
+  return { ok:true, fixed, deleted };
+}
 
 // Sprint G (2026-05-03): Aggiunge fonti istituzionali ICOM / Federculture / Symbola + rete
 // Eseguire UNA SOLA VOLTA dall'editor GAS dopo deploy.
@@ -2444,6 +2999,23 @@ function getFontiBandi() {
   let sh=SS.getSheetByName('FontiBandi'); if(!sh) sh=_createFontiBandiSheet(SS);
   const rows=sh.getDataRange().getValues(), h=rows[0], fonti=[];
   for(let i=1;i<rows.length;i++){if(!rows[i][0])continue;const f={};h.forEach((col,idx)=>{f[col]=rows[i][idx];});fonti.push(f);}
+  try {
+    const sh5 = SS.getSheetByName('FontiBandi_v5');
+    if (sh5) {
+      const r5 = sh5.getDataRange().getValues();
+      const lookupByUrl = {};
+      for (let i = 1; i < r5.length; i++) {
+        if (!r5[i][2]) continue;
+        const url = String(r5[i][2]).trim().toLowerCase();
+        lookupByUrl[url] = { ultimaScan: r5[i][8] || null, ultimoEsito: String(r5[i][9] || ''), failConsec: Number(r5[i][12] || 0) };
+      }
+      fonti.forEach(function(f){
+        const k = String(f.URL || f.URL_RSS || '').trim().toLowerCase();
+        const m = lookupByUrl[k];
+        if (m) { f.ultimaScan = m.ultimaScan ? new Date(m.ultimaScan).toISOString() : null; f.ultimoEsito = m.ultimoEsito; f.failConsec = m.failConsec; }
+      });
+    }
+  } catch(e) { Logger.log('getFontiBandi enrich v5 errore: ' + e.message); }
   return {fonti};
 }
 
@@ -2455,10 +3027,47 @@ function _createFontiBandiSheet(SS) {
 }
 
 function addFonteBandi(body) {
-  const SS=getMainSS();
-  let sh=SS.getSheetByName('FontiBandi'); if(!sh) sh=_createFontiBandiSheet(SS);
-  const id='FB'+Date.now(); sh.appendRow([id,body.nome,body.url,body.categoria||'',true,body.note||'']);
-  return {ok:true,id};
+  // v4.15 (2026-05-09): allineamento v4 -> v5. Ora scrive direttamente in FontiBandi_v5.
+  // Schema 18 colonne (COL_F in Bandi_v5.js). Firma esterna invariata.
+  try {
+    const SS = getMainSS();
+    let sh = SS.getSheetByName('FontiBandi_v5');
+    if (!sh) {
+      // Se v5 non esiste ancora, fallback al vecchio comportamento per non rompere.
+      // Setup v5 va eseguito separatamente via setupBandiV5Schema().
+      let shV4 = SS.getSheetByName('FontiBandi') || _createFontiBandiSheet(SS);
+      const idV4 = 'FB' + Date.now();
+      shV4.appendRow([idV4, body.nome, body.url, body.categoria || '', true, body.note || '']);
+      return { ok: true, id: idV4, warning: 'FontiBandi_v5 non trovato, scritto in v4 legacy. Esegui setupBandiV5Schema()' };
+    }
+    const id = 'FB' + Date.now();
+    // Compila riga con schema v5 a 18 colonne (default sensati per i campi non forniti).
+    const row = new Array(18).fill('');
+    row[0]  = id;                              // ID
+    row[1]  = body.nome || '';                 // Nome
+    row[2]  = body.url || '';                  // URL
+    row[3]  = body.tipo || 'RSS';              // Tipo (default RSS, modificabile)
+    row[4]  = body.categoria || '';            // Categoria
+    row[5]  = Number(body.priorita) || 2;      // Priorita (default 2=media)
+    row[6]  = true;                            // Attiva
+    row[7]  = new Date();                      // DataAggiunta
+    row[8]  = '';                              // UltimaScansione
+    row[9]  = '';                              // UltimoEsito
+    row[10] = 0;                               // NBandiTotali
+    row[11] = 0;                               // NBandiUltimoScan
+    row[12] = 0;                               // FailConsecutivi
+    row[13] = '';                              // UltimoErrore
+    row[14] = body.enteDefault || '';          // EnteDefault
+    row[15] = body.urlEnte || '';              // UrlEnte
+    row[16] = body.livello || 'Vari';          // Livello
+    row[17] = body.note || '';                 // Note
+    sh.appendRow(row);
+    Logger.log('addFonteBandi v5: aggiunta ' + body.nome + ' (id=' + id + ')');
+    return { ok: true, id: id };
+  } catch(e) {
+    Logger.log('addFonteBandi v5 ERRORE: ' + e.message);
+    return { ok: false, error: e.message };
+  }
 }
 function deleteFonteBandiById(id){return _deleteRowById(getMainSS().getSheetByName('FontiBandi'),id);}
 function toggleFonteBandiField(id,field){return _toggleField(getMainSS().getSheetByName('FontiBandi'),id,field);}
@@ -3094,25 +3703,8 @@ function _toggleField(sh,id,field) {
   return {error:'Non trovato'};
 }
 
-function initSheetsIfMissing() {
-  try { getMainSS(); } catch(e) { return; }
-  const SS=getMainSS();
-  const config={
-    [SH.ITEMS]:['ID','Ambito','AmbitoLabel','Fonte','FonteURL','Titolo','Estratto','SommarioAI','SommarioEditato','TagAI','Score','Tipologia','DataPubblicazione','DataAcquisizione','Scadenza','Letto','Salvato','Archiviato','InclusiNelDigest'],
-    [SH.BANDI]:['ID','Titolo','Fonte','FonteURL','DataScadenza','Descrizione','Salvato','Stato'],
-    [SH.FONTI]:['ID','Nome','URL','RSSURL','Ambito','AmbitoLabel','Attiva','UltimaScansione','NumItemRaccolti'],
-    [SH.MAILING]:['ID','Nome','Email','Ruolo','Attivo','DataIscrizione'],
-    [SH.LOG]:['ID','DataInvio','NumItem','Destinatari','Stato'],
-    [SH.PODCAST]:['ID','DataRilevamento','Titolo','Serie','Autore','Tematica','Durata','DataPubblicazione','Link','SommarioAI','TagAI','Score','Fonte','Ascoltato','DaAscoltare','InclusiNelDigest','StatoRecord']
-  };
-  for(const [name,headers] of Object.entries(config)) {
-    if(!SS.getSheetByName(name)) {
-      const sh=SS.insertSheet(name);
-      sh.getRange(1,1,1,headers.length).setValues([headers]).setFontWeight('bold').setBackground('#0F2744').setFontColor('#fff');
-      sh.setFrozenRows(1);
-    }
-  }
-}
+// v4.18.38 (audit 2026-05-14) — Rimossa initSheetsIfMissing(): sostituita da runAllSetupV418()
+// in Setup_v418.js. La nuova catena setup è più completa e idempotente.
 
 function setupSheets() {
   const SS=getMainSS();
