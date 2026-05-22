@@ -2,14 +2,14 @@
   ============================================================
   OSSERVATORIO CULTURALE — STILES.HTML (v4.12 — Redesign Editoriale Museale)
   Design da: Osservatorio - Redesign Mockup.html (Claude Design, 01/05/2026)
-  Direzione: Carta da museo — Newsreader + Instrument Serif + Inter
+  Direzione: Carta da museo — EB Garamond + Instrument Serif + DM Sans
   Palette: --paper warm, --link rosso ciliegia editoriale, dark mode
   Duemilamusei / Silvano Straccini
   ============================================================
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,700;1,400;1,500&family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
 /* ==========================================================
    OSSERVATORIO CULTURALE — Redesign Editoriale Museale
@@ -60,8 +60,8 @@
   --warning:#9A6A14;
   --success:#2E5E3A;
 
-  --font-display:'DM Serif Display','Newsreader',Georgia,serif;
-  --font-italic:'DM Serif Display','Instrument Serif',Georgia,serif;
+  --font-display:'EB Garamond',Georgia,serif;
+  --font-italic:'EB Garamond','Instrument Serif',Georgia,serif;
   --font-ui:'DM Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --font-serif:var(--font-display);
   --font-mono:ui-monospace,'JetBrains Mono',monospace;
@@ -206,7 +206,7 @@
 html,body{margin:0;padding:0}
 /* Base tipografica audit 2026-05-08: 17px per leggibilita.
    font-size convertiti in rem; toggle [data-fontsize] in px assoluti. */
-html{ font-size:15px; line-height:1.5; }
+html{ font-size:16px; line-height:1.5; }
 body{
   font-family:var(--font-ui);
   font-size:1rem;
@@ -323,7 +323,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   cursor:pointer;
   transition:background .15s, color .15s;
   width:100%; text-align:left;
-  font-weight:450;
+  font-weight:500;
 }
 .nav-item svg{
   width:28px !important; height:28px !important;
