@@ -40,33 +40,39 @@ var SCAN_OUTCOME = {
 // Soglia auto-disattivazione fonti
 var FAIL_SOGLIA_DISATTIVAZIONE = 3;
 
-// Schema colonne FontiBandi_v5 (1-indexed per Sheets)
+// Schema colonne FontiBandi_v5 (1-indexed per Sheets) — allineato FU17 (v4.18.52 fix)
+// Migration FU17 ha aggiunto colonna 'Tag' in pos 5 → shift +1 dalle successive.
+// URL_ENTE e NOTE (legacy) ora finiscono in EXTRAS_JSON (col 18) — alias mantenuti
+// per backward-compat scritture occasionali (sovrascrivono extras_json: bug noto, low-impact).
 var COL_F = {
   ID:                 1,
   NOME:               2,
   URL:                3,
-  TIPO:               4,   // RSS|HTML|Sitemap|Gmail
-  CATEGORIA:          5,   // Ministero|Regione|UE|Aggregatore|Fondazione|Rivista|Associazione
-  PRIORITA:           6,   // 1=alta|2=media|3=bassa
-  ATTIVA:             7,   // boolean
-  DATA_AGGIUNTA:      8,
-  ULTIMA_SCANSIONE:   9,
-  ULTIMO_ESITO:       10,
-  N_BANDI_TOTALI:     11,
-  N_BANDI_ULTIMO:     12,
-  FAIL_CONSECUTIVI:   13,
-  ULTIMO_ERRORE:      14,
-  ENTE_DEFAULT:       15,
-  URL_ENTE:           16,
+  TIPO:               4,   // RSS|HTML|Sitemap|YouTube|Gmail
+  TAG:                5,   // ★ NUOVO FU17 — istituzionale|editoriale|audio|video|settoriale
+  CATEGORIA:          6,   // Ministero|Regione|UE|Aggregatore|Fondazione|Rivista|Associazione
+  PRIORITA:           7,   // 1=alta|2=media|3=bassa
+  ATTIVA:             8,   // boolean
+  DATA_AGGIUNTA:      9,
+  ULTIMA_SCANSIONE:   10,  // = UltimaScan in FU17
+  ULTIMO_ESITO:       11,
+  N_BANDI_TOTALI:     12,  // = NRecordTotali in FU17
+  N_BANDI_ULTIMO:     13,  // = NRecordUltimo in FU17
+  FAIL_CONSECUTIVI:   14,
+  ULTIMO_ERRORE:      15,
+  ENTE_DEFAULT:       16,
   LIVELLO:            17,
+  EXTRAS_JSON:        18,  // ★ NUOVO FU17 — contiene legacy urlente, note serializzati
+  // Legacy aliases (deprecated, scritture sovrascrivono extras_json: rifattorizzare in futuro)
+  URL_ENTE:           18,
   NOTE:               18
 };
 
 var COL_F_HEADERS = [
-  'ID','Nome','URL','Tipo','Categoria','Priorita','Attiva',
-  'DataAggiunta','UltimaScansione','UltimoEsito',
-  'NBandiTotali','NBandiUltimoScan','FailConsecutivi','UltimoErrore',
-  'EnteDefault','UrlEnte','Livello','Note'
+  'ID','Nome','URL','Tipo','Tag','Categoria','Priorita','Attiva',
+  'DataAggiunta','UltimaScan','UltimoEsito',
+  'NRecordTotali','NRecordUltimo','FailConsecutivi',
+  'UltimoErrore','EnteDefault','Livello','extras_json'
 ];
 
 // Schema colonne Bandi_v5 (1-indexed)
@@ -515,15 +521,8 @@ function mostraBandiV5Version() {
   } catch(e) { Logger.log(e.message); }
 }
 
-/**
- * Helper menu: mostra stato flag switchover.
- */
-function mostraBandiV5Flag() {
-  try {
-    var attivo = isBandiV5Active();
-    SpreadsheetApp.getUi().alert('Bandi v5.0 - stato flag', 'USE_BANDI_V5 = ' + attivo + '\n\n' + (attivo ? 'Sistema usa il NUOVO motore Bandi v5.' : 'Sistema usa il VECCHIO Scannerbandi v4 (default durante sviluppo).'), SpreadsheetApp.getUi().ButtonSet.OK);
-  } catch(e) { Logger.log(e.message); }
-}
+// v4.18.38 (audit 2026-05-14) — Rimossa mostraBandiV5Flag(): debug helper Properties Service
+//   mai chiamato. Per ispezionare il flag usare direttamente isBandiV5Active() da editor GAS.
 
 
 // ============================================================================
@@ -910,7 +909,18 @@ function _scanSingolaFonte_(ss, shFonti, shBandi, shLog, fonte, rowIdx, fingerpr
     else                          bandi = _parseFonteHTML_(fonte);
 
     bandi.forEach(function(b) {
-      if (_saveBandoV5_(ss, shBandi, b, fonte.id, fonte.nome, fingerprints)) nNuovi++;
+      if (_saveBandoV5_(ss, shBandi, b, fonte.id, fonte.nome, fingerprints)) {
+        nNuovi++;
+        // v4.18.60 — ROC auto-triage: valuta ogni nuovo bando per outreach LS1
+        try {
+          if (typeof roc_triageBando === 'function') {
+            var triage = roc_triageBando(b);
+            if (triage && triage.passa) {
+              Logger.log('    ROC: bando idoneo → ' + (b.titolo || '').slice(0, 60));
+            }
+          }
+        } catch(_roc) { /* non bloccante */ }
+      }
     });
 
     Logger.log('    → ' + bandi.length + ' estratti, ' + nNuovi + ' nuovi');
@@ -1015,7 +1025,26 @@ function scanFontiTutte() {
   Logger.log('  Nuovi bandi inseriti: ' + totaleNuovi);
   Logger.log('================================================================');
 
-  return { ok: totaleOk, fail: totaleFail, saltate: totaleSaltate, nuovi: totaleNuovi };
+  // v4.18.60 — Invalida cache homepage se ci sono nuovi contenuti
+  if (totaleNuovi > 0) {
+    try { PropertiesService.getScriptProperties().deleteProperty('oc_homepage_cache_v1'); } catch(_){}
+  }
+
+  // v4.18.43 (2026-05-15) — Auto-quality-check post-scansione: archivia duplicati semantici
+  // cross-fonte ed assegna ambiti vuoti. Eseguito solo se ci sono stati bandi nuovi (evita lavoro inutile).
+  var qcResult = null;
+  try {
+    if (totaleNuovi > 0) {
+      Logger.log('--- AUTO QUALITY CHECK POST-SCAN ---');
+      qcResult = qualityCheckBandiAuto({ source: 'post-scan' });
+      Logger.log('  Quality check: dup_archiviati=' + (qcResult && qcResult.dup_archiviati || 0)
+        + ' ambiti_assegnati=' + (qcResult && qcResult.tem_ambiti_assegnati || 0));
+    } else {
+      Logger.log('  Nessun bando nuovo: skip quality check post-scan.');
+    }
+  } catch(eQc) { Logger.log('  ⚠ Quality check post-scan FALLITO: ' + eQc.message); }
+
+  return { ok: totaleOk, fail: totaleFail, saltate: totaleSaltate, nuovi: totaleNuovi, qualityCheck: qcResult };
 }
 
 
@@ -1116,87 +1145,10 @@ function onOpen(e) {
 }
 
 
-// ─── AGGIORNA FONTI A RSS DOVE DISPONIBILE ────────────────────────────────
-
-/**
- * Aggiorna 6 fonti da HTML a RSS (WordPress /feed/ pattern).
- * Testa ogni URL prima di aggiornare — se il fetch fallisce, lascia HTML.
- * Esegui una volta sola dopo aver confermato che i crediti Claude sono attivi.
- */
-function aggiornaFontiRSS() {
-  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
-  var shFonti = ss.getSheetByName(SH_FONTI_V5);
-  if (!shFonti) { Logger.log('ERRORE: FontiBandi_v5 non trovato'); return; }
-
-  var CONVERSIONI_RSS = [
-    { id: 'f_artribune_bandi',              rssUrl: 'https://www.artribune.com/tag/bandi/feed/' },
-    { id: 'f_il_giornale_delle_fondazioni', rssUrl: 'https://www.ilgiornaledellefondazioni.com/bandi/feed/' },
-    { id: 'f_icom_italia_opportunit',       rssUrl: 'https://www.icom-italia.org/categoria/avvisi-e-bandi/feed/' },
-    { id: 'f_federculture_bandi',           rssUrl: 'https://www.federculture.it/categoria/bandi/feed/' },
-    { id: 'f_tafter_journal',               rssUrl: 'https://www.tafterjournal.it/feed/' },
-    { id: 'f_fondazione_symbola_bandi',     rssUrl: 'https://symbola.net/approfondimento/bandi-e-opportunita/feed/' }
-  ];
-
-  Logger.log('=== AGGIORNAMENTO FONTI RSS ===');
-
-  var rows = shFonti.getDataRange().getValues();
-  var aggiornate = 0, fallite = 0;
-
-  for (var r = 1; r < rows.length; r++) {
-    var idFonte = rows[r][COL_F.ID - 1];
-    var conv = CONVERSIONI_RSS.filter(function(c) { return idFonte.indexOf(c.id.replace('f_','')) >= 0 || c.id === idFonte; })[0];
-    if (!conv) continue;
-
-    // Test fetch RSS
-    Logger.log('  Test RSS: ' + conv.rssUrl);
-    try {
-      var resp = UrlFetchApp.fetch(conv.rssUrl, { muteHttpExceptions: true, followRedirects: true });
-      var code = resp.getResponseCode();
-      var contenuto = resp.getContentText();
-      var isXml = contenuto.indexOf('<rss') >= 0 || contenuto.indexOf('<feed') >= 0 || contenuto.indexOf('<?xml') >= 0;
-
-      if (code === 200 && isXml) {
-        shFonti.getRange(r + 1, COL_F.URL).setValue(conv.rssUrl);
-        shFonti.getRange(r + 1, COL_F.TIPO).setValue('RSS');
-        shFonti.getRange(r + 1, COL_F.ULTIMO_ERRORE).setValue('');
-        Logger.log('    ✅ Aggiornato a RSS: ' + rows[r][COL_F.NOME - 1]);
-        aggiornate++;
-      } else {
-        Logger.log('    ⚠️  RSS non valido (HTTP ' + code + ', isXml=' + isXml + ') — lascio HTML: ' + rows[r][COL_F.NOME - 1]);
-        fallite++;
-      }
-    } catch(e) {
-      Logger.log('    ✗ Errore fetch: ' + e.message + ' — lascio HTML');
-      fallite++;
-    }
-  }
-
-  Logger.log('=== COMPLETATO: ' + aggiornate + ' aggiornate a RSS, ' + fallite + ' lasciate HTML ===');
-}
-
-
-/**
- * Disabilita le fonti ContributiRegione: usano JavaScript dinamico,
- * GAS non riesce a leggerne il contenuto (0 risultati a ogni scan).
- */
-function disabilitaContributiRegione() {
-  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
-  var shFonti = ss.getSheetByName(SH_FONTI_V5);
-  if (!shFonti) { Logger.log('ERRORE: FontiBandi_v5 non trovato'); return; }
-
-  var rows = shFonti.getDataRange().getValues();
-  var disabilitate = 0;
-  for (var r = 1; r < rows.length; r++) {
-    var nome = (rows[r][COL_F.NOME - 1] || '').toLowerCase();
-    if (nome.indexOf('contributiregione') >= 0) {
-      shFonti.getRange(r + 1, COL_F.ATTIVA).setValue(false);
-      shFonti.getRange(r + 1, COL_F.NOTE).setValue('JS dinamico — GAS non riesce a leggere il contenuto. Monitorare manualmente.');
-      Logger.log('⛔ Disabilitata: ' + rows[r][COL_F.NOME - 1]);
-      disabilitate++;
-    }
-  }
-  Logger.log('Disabilitate ' + disabilitate + ' fonti ContributiRegione.');
-}
+// v4.18.38 (audit 2026-05-14) — Rimosse 2 funzioni one-shot già applicate:
+//   • aggiornaFontiRSS()           — migrazione 6 fonti HTML→RSS (eseguita post-deploy v5)
+//   • disabilitaContributiRegione() — disabilitazione fonti JS dinamico (eseguita una-tantum)
+// Recuperabili da git history se servono nuovamente.
 
 
 /**
@@ -1227,12 +1179,12 @@ function setupBandiV5Triggers() {
     ScriptApp.newTrigger('scanFontiTutte')
       .timeBased()
       .onWeekDay(g.day)
-      .atHour(7)
+      .atHour(1)
       .create();
-    Logger.log('✅ Trigger creato: scanFontiTutte ogni ' + g.label + ' alle 07:00');
+    Logger.log('✅ Trigger creato: scanFontiTutte ogni ' + g.label + ' alle 01:00');
   });
 
-  Logger.log('setupBandiV5Triggers completato — 3 trigger attivi (Lun/Mer/Ven 07:00)');
+  Logger.log('setupBandiV5Triggers completato — 3 trigger attivi (Lun/Mer/Ven 01:00)');
 }
 
 
@@ -1512,67 +1464,135 @@ function testClaudeAPIKey() {
 // Chiamate via google.script.run dal frontend.
 // ============================================================================
 
+// v4.18.38 (audit 2026-05-14) — Rimossa getFontiBandiV5Admin(): duplicato di getFontiV5List().
+//   Il pannello admin usa già getFontiV5List() (Bandi_v5.js più sotto) via google.script.run.
+
 /**
- * Restituisce elenco completo fonti per pannello admin.
- * Usato da page-admin in Index.html per mostrare stato scanner bandi.
+ * Restituisce snapshot stato aggiornamento fonti per masthead home.
+ * Sprint v4.14 (2026-05-08): rende visibile l'indicatore #homeUpdateInfo.
+ * @return {Object} { ok, lastUpdate (Date ISO max UltimaScansione), totale, attive,
+ *                   silenti (fail>=3), labelBreve "12 min fa / oggi 14:25 / 2g fa" }
  */
-function getFontiBandiV5Admin() {
+function getLastFontiUpdate() {
   try {
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
     var sh = ss.getSheetByName(SH_FONTI_V5);
     if (!sh) return { ok: false, err: 'Foglio FontiBandi_v5 non trovato' };
     var vals = sh.getDataRange().getValues();
-    if (vals.length < 2) return { ok: true, fonti: [] };
-    var out = [];
+    if (vals.length < 2) return { ok: true, lastUpdate: null, totale: 0, attive: 0, silenti: 0, labelBreve: 'nessuna fonte' };
+    var maxTs = 0, totale = 0, attive = 0, silenti = 0;
     for (var r = 1; r < vals.length; r++) {
-      var row = vals[r];
-      if (!row[COL_F.ID - 1]) continue;
-      out.push({
-        r         : r + 1,
-        id        : String(row[COL_F.ID - 1]),
-        nome      : String(row[COL_F.NOME - 1] || ''),
-        url       : String(row[COL_F.URL - 1] || ''),
-        tipo      : String(row[COL_F.TIPO - 1] || ''),
-        categoria : String(row[COL_F.CATEGORIA - 1] || ''),
-        priorita  : Number(row[COL_F.PRIORITA - 1] || 2),
-        attiva    : row[COL_F.ATTIVA - 1] === true || row[COL_F.ATTIVA - 1] === 'TRUE',
-        ultimaScan: _fmtBreveV5_(row[COL_F.ULTIMA_SCANSIONE - 1]),
-        ultimoEsito: String(row[COL_F.ULTIMO_ESITO - 1] || ''),
-        nBandiTot : Number(row[COL_F.N_BANDI_TOTALI - 1] || 0),
-        nBandiUlt : Number(row[COL_F.N_BANDI_ULTIMO - 1] || 0),
-        failConsec: Number(row[COL_F.FAIL_CONSECUTIVI - 1] || 0),
-        ultimoErr : String(row[COL_F.ULTIMO_ERRORE - 1] || '').slice(0, 120)
-      });
+      if (!vals[r][COL_F.ID - 1]) continue;
+      totale++;
+      if (vals[r][COL_F.ATTIVA - 1] === true || vals[r][COL_F.ATTIVA - 1] === 'TRUE') attive++;
+      if (Number(vals[r][COL_F.FAIL_CONSECUTIVI - 1] || 0) >= 3) silenti++;
+      var ts = vals[r][COL_F.ULTIMA_SCANSIONE - 1];
+      if (ts) {
+        var ms = (ts instanceof Date) ? ts.getTime() : new Date(ts).getTime();
+        if (ms > maxTs) maxTs = ms;
+      }
     }
-    return { ok: true, fonti: out };
+    var label = '—';
+    if (maxTs > 0) {
+      var diff = (Date.now() - maxTs) / 1000;
+      if      (diff < 60)        label = 'aggiornato ora';
+      else if (diff < 3600)      label = 'aggiornato ' + Math.round(diff/60) + ' min fa';
+      else if (diff < 24*3600)   label = 'aggiornato ' + Math.round(diff/3600) + ' ore fa';
+      else if (diff < 7*24*3600) label = 'aggiornato ' + Math.round(diff/(24*3600)) + ' giorni fa';
+      else                       label = 'ultimo aggiornamento: ' + new Date(maxTs).toLocaleDateString('it-IT');
+    }
+    return {
+      ok: true,
+      lastUpdate: maxTs ? new Date(maxTs).toISOString() : null,
+      totale: totale,
+      attive: attive,
+      silenti: silenti,
+      labelBreve: label
+    };
   } catch(e) { return { ok: false, err: e.message }; }
 }
 
+// v4.18.38 (audit 2026-05-14) — Rimossa toggleFonteV5(fonteId, attiva):
+//   duplicato di toggleFonteUnified(tipo, id, attiva) in Fonti_v1.js.
+//   Il pannello admin usa già toggleFonteUnified via google.script.run.
+
 /**
- * Attiva o disattiva una fonte per ID.
- * Parametro attiva: true|false
+ * v4.18.40 (2026-05-15) — Elenca le fonti bandi DISATTIVATE (Attiva=FALSE esplicito).
+ * Usata dal pannello admin per decidere se riattivare/rimuovere fonti spente in passato.
+ *
+ * @return {Object} { ok, count, list: [{id, nome, url, tipo, categoria, ultimaScan, ultimoEsito, failConsec, ultimoErr, note}] }
  */
-function toggleFonteV5(fonteId, attiva) {
+function getFontiBandiDisattivate() {
   try {
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
     var sh = ss.getSheetByName(SH_FONTI_V5);
-    if (!sh) return { ok: false, err: 'Foglio non trovato' };
+    if (!sh) return { ok: false, error: 'Foglio FontiBandi_v5 non trovato' };
     var vals = sh.getDataRange().getValues();
+    if (vals.length < 2) return { ok: true, count: 0, list: [] };
+
+    // Trova indici colonna per nome (robusto a schemi diversi)
+    var header = vals[0].map(function(h){ return String(h || '').trim().toLowerCase(); });
+    function col_(name) { return header.indexOf(name.toLowerCase()); }
+    var iId      = col_('id');
+    var iNome    = col_('nome');
+    var iUrl     = col_('url');
+    var iTipo    = col_('tipo');
+    var iCat     = col_('categoria');
+    var iAtt     = col_('attiva');
+    var iScan    = col_('ultimascansione'); if (iScan < 0) iScan = col_('ultimascan');
+    var iEsito   = col_('ultimoesito');
+    var iFail    = col_('failconsecutivi');
+    var iErr     = col_('ultimoerrore');
+    var iNote    = col_('note');
+
+    var out = [];
     for (var r = 1; r < vals.length; r++) {
-      if (String(vals[r][COL_F.ID - 1]) === String(fonteId)) {
-        sh.getRange(r + 1, COL_F.ATTIVA).setValue(!!attiva);
-        if (attiva) sh.getRange(r + 1, COL_F.FAIL_CONSECUTIVI).setValue(0);
-        Logger.log((attiva ? '✅ ATTIVATA' : '🔴 DISATTIVATA') + ': ' + vals[r][COL_F.NOME - 1]);
-        return { ok: true, id: fonteId, attiva: !!attiva };
-      }
+      var row = vals[r];
+      if (iId < 0 || !row[iId]) continue;
+      var att = row[iAtt];
+      var isFalse = (att === false || String(att).toUpperCase() === 'FALSE' || String(att).toLowerCase() === 'no');
+      if (!isFalse) continue;
+
+      out.push({
+        id        : String(row[iId] || ''),
+        nome      : iNome >= 0 ? String(row[iNome] || '') : '',
+        url       : iUrl >= 0 ? String(row[iUrl] || '') : '',
+        tipo      : iTipo >= 0 ? String(row[iTipo] || '') : '',
+        categoria : iCat >= 0 ? String(row[iCat] || '') : '',
+        ultimaScan: iScan >= 0 && row[iScan] ? _fmtBreveV5_(row[iScan]) : '—',
+        ultimoEsito: iEsito >= 0 ? String(row[iEsito] || '') : '',
+        failConsec: iFail >= 0 ? Number(row[iFail] || 0) : 0,
+        ultimoErr : iErr >= 0 ? String(row[iErr] || '').slice(0, 200) : '',
+        note      : iNote >= 0 ? String(row[iNote] || '').slice(0, 200) : ''
+      });
     }
-    return { ok: false, err: 'Fonte non trovata: ' + fonteId };
-  } catch(e) { return { ok: false, err: e.message }; }
+    return { ok: true, count: out.length, list: out };
+  } catch(e) { return { ok: false, error: e.message }; }
 }
 
 /**
  * Resetta i fail consecutivi su una fonte (riabilita dopo errori).
  */
+function resetFailFonteV5ByUrl(url) {
+  try {
+    if (!url) return { ok: false, err: 'URL mancante' };
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName(SH_FONTI_V5);
+    if (!sh) return { ok: false, err: 'Foglio FontiBandi_v5 non trovato' };
+    var vals = sh.getDataRange().getValues();
+    var target = String(url).trim().toLowerCase();
+    for (var r = 1; r < vals.length; r++) {
+      if (String(vals[r][COL_F.URL - 1] || '').trim().toLowerCase() === target) {
+        sh.getRange(r + 1, COL_F.FAIL_CONSECUTIVI).setValue(0);
+        sh.getRange(r + 1, COL_F.ULTIMO_ERRORE).setValue('');
+        sh.getRange(r + 1, COL_F.ATTIVA).setValue(true);
+        return { ok: true, id: vals[r][COL_F.ID - 1], nome: vals[r][COL_F.NOME - 1] };
+      }
+    }
+    return { ok: false, err: 'Fonte non trovata in FontiBandi_v5 (URL: ' + url + ')' };
+  } catch(e) { return { ok: false, err: e.message }; }
+}
+
 function resetFailFonteV5(fonteId) {
   try {
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
@@ -1784,12 +1804,10 @@ function disableBandiV5() {
   Logger.log('⚠️ Bandi v5 switchover DISATTIVATO — webapp torna a RADAR BANDI legacy');
 }
 
-/** true se il switchover v5 è attivo */
-function isBandiV5Active() {
-  return PropertiesService.getScriptProperties().getProperty(BANDI_V5_FLAG_PROP) === 'true';
-}
+// v4.18.7 (2026-05-11) — rimossa duplicate isBandiV5Active() (definita prima a riga 393).
+// La duplicate sovrascriveva la prima senza try/catch, riducendo robustezza.
 
-/** Stato corrente del sistema — utile per diagnostica */
+/** Stato corrente del sistema — utile per diagnostica (solo Logger) */
 function statoBandiV5() {
   var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
   var shBandi  = ss.getSheetByName(SH_BANDI_V5);
@@ -1817,6 +1835,1087 @@ function statoBandiV5() {
     Logger.log('  Fonti con ≥3 fail: ' + fallite);
   }
   Logger.log('================================================================');
+}
+
+/**
+ * v4.18.7 (2026-05-11) — Diagnostica F2: stato del sistema fonti+bandi in JSON.
+ * Chiamabile dal frontend admin tramite google.script.run per popolare
+ * la dashboard di gestione fonti monitorate.
+ *
+ * Ritorna:
+ *   {
+ *     ok: bool,
+ *     attivo_v5: bool,                  // flag switchover
+ *     fogli: {
+ *       Bandi_v5:        { exists, rows },
+ *       FontiBandi_v5:   { exists, rows, attive, disattive, fallite },
+ *       FontiBandiLog_v5:{ exists, rows },
+ *       RADAR_BANDI:     { exists, rows }  // foglio legacy
+ *     },
+ *     bandi_v5_recenti: int,    // bandi con scadenza ≥ oggi
+ *     bandi_v5_urgenti: int,    // bandi con scadenza entro 7gg
+ *     timestamp: ISO
+ *   }
+ */
+function getStatoBandiSistema() {
+  var out = { ok: false, timestamp: new Date().toISOString(), attivo_v5: false, fogli: {}, bandi_v5_recenti: 0, bandi_v5_urgenti: 0 };
+  try {
+    out.attivo_v5 = isBandiV5Active();
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) { out.error = 'Spreadsheet non disponibile'; return out; }
+
+    // 4 fogli rilevanti
+    var sheetNames = {
+      'Bandi_v5':         SH_BANDI_V5,
+      'FontiBandi_v5':    SH_FONTI_V5,
+      'FontiBandiLog_v5': SH_FONTI_LOG,
+      'RADAR_BANDI':      (typeof SHEET_RADAR === 'string' && SHEET_RADAR) ? SHEET_RADAR : 'RADAR BANDI'
+    };
+    Object.keys(sheetNames).forEach(function(key){
+      var sh = ss.getSheetByName(sheetNames[key]);
+      out.fogli[key] = sh ? { exists: true, rows: Math.max(0, sh.getLastRow() - 1) } : { exists: false, rows: 0 };
+    });
+
+    // Dettaglio fonti v5 — v4.18.53 lookup dinamico per nome header (resiliente a schema FU17)
+    var shFonti = ss.getSheetByName(SH_FONTI_V5);
+    if (shFonti) {
+      var vals = shFonti.getDataRange().getValues();
+      var attive = 0, disattive = 0, fallite = 0;
+      if (vals.length >= 2) {
+        var H2 = (typeof _fontiV5HeaderMap_ === 'function') ? _fontiV5HeaderMap_(vals[0]) : null;
+        var iId2 = -1, iAtt2 = -1, iFail2 = -1;
+        if (H2) {
+          iId2  = (H2['id'] !== undefined) ? H2['id'] : -1;
+          iAtt2 = (H2['attiva'] !== undefined) ? H2['attiva'] : -1;
+          iFail2 = (H2['failconsecutivi'] !== undefined) ? H2['failconsecutivi'] : -1;
+        }
+        // fallback su COL_F se header lookup non disponibile
+        if (iId2 < 0)  iId2  = (COL_F.ID || 1) - 1;
+        if (iAtt2 < 0) iAtt2 = (COL_F.ATTIVA || 8) - 1;
+        if (iFail2 < 0) iFail2 = (COL_F.FAIL_CONSECUTIVI || 14) - 1;
+        for (var r = 1; r < vals.length; r++) {
+          var row = vals[r];
+          if (!row[iId2]) continue;
+          var isAttiva = row[iAtt2] === true || row[iAtt2] === 'TRUE' || row[iAtt2] === 'true';
+          if (isAttiva) attive++; else disattive++;
+          if (Number(row[iFail2] || 0) >= 3) fallite++;
+        }
+      }
+      out.fogli.FontiBandi_v5.attive = attive;
+      out.fogli.FontiBandi_v5.disattive = disattive;
+      out.fogli.FontiBandi_v5.fallite = fallite;
+    }
+
+    // Conteggio recenti/urgenti su Bandi_v5
+    var shBandi = ss.getSheetByName(SH_BANDI_V5);
+    if (shBandi) {
+      var bv = shBandi.getDataRange().getValues();
+      var oggi = new Date(); oggi.setHours(0,0,0,0);
+      var rec = 0, urg = 0;
+      for (var i = 1; i < bv.length; i++) {
+        var rr = bv[i];
+        if (!rr[COL_B.ID - 1]) continue;
+        var stato = String(rr[COL_B.STATO_RECORD - 1] || '').toLowerCase();
+        if (stato === 'archiviato') continue;
+        var rawScad = rr[COL_B.SCADENZA - 1];
+        var sd = (rawScad instanceof Date) ? rawScad : (rawScad ? new Date(rawScad) : null);
+        if (sd && !isNaN(sd.getTime())) {
+          var d = Math.round((sd.getTime() - oggi.getTime()) / 86400000);
+          if (d >= 0) rec++;
+          if (d >= 0 && d <= 7) urg++;
+        }
+      }
+      out.bandi_v5_recenti = rec;
+      out.bandi_v5_urgenti = urg;
+    }
+
+    out.ok = true;
+  } catch(e) { out.error = e.message; }
+  return out;
+}
+
+/**
+ * v4.18.10 (2026-05-12) — F2.1 elenco fonti con stato (admin diagnostica).
+ * Ritorna array di oggetti — una riga per fonte FontiBandi_v5.
+ * Ordinato: silenti (fail >=3) prima, poi attive, poi disattivate.
+ */
+// v4.18.53 — helper lookup dinamico colonne per nome header (resiliente a schema changes)
+function _fontiV5HeaderMap_(headerRow) {
+  var map = {};
+  for (var i = 0; i < headerRow.length; i++) {
+    var key = String(headerRow[i] || '').trim().toLowerCase();
+    if (key) map[key] = i; // 0-indexed
+  }
+  return map;
+}
+
+function getFontiV5List() {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+    return { ok:false, error:'forbidden' };
+  }
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName(SH_FONTI_V5);
+    if (!sh) return { ok:false, error:'foglio_assente: ' + SH_FONTI_V5 };
+    var vals = sh.getDataRange().getValues();
+    if (vals.length < 2) return { ok:true, fonti:[], count:0, _v:'4.18.53' };
+
+    // v4.18.53 — lookup colonne per nome header (resiliente a schema FU17 vs legacy)
+    var H = _fontiV5HeaderMap_(vals[0]);
+    var col = function(names) {
+      for (var i = 0; i < names.length; i++) {
+        var n = String(names[i]).toLowerCase();
+        if (H[n] !== undefined) return H[n];
+      }
+      return -1; // not found
+    };
+    var iId       = col(['id']);
+    var iNome     = col(['nome','name']);
+    var iUrl      = col(['url']);
+    var iTipo     = col(['tipo','type']);
+    var iTag      = col(['tag']);
+    var iCat      = col(['categoria','category']);
+    var iPri      = col(['priorita','priorità','priority']);
+    var iAtt      = col(['attiva','active']);
+    var iScan     = col(['ultimascan','ultimascansione','ultimascansion','lastscan']);
+    var iEsito    = col(['ultimoesito','lastoutcome']);
+    var iNTot     = col(['nrecordtotali','nbanditotali','ntotali']);
+    var iNUlt     = col(['nrecordultimo','nbandiultimoscan','nultimo']);
+    var iFail     = col(['failconsecutivi','fail']);
+    var iErr      = col(['ultimoerrore','lasterror']);
+    var iLiv      = col(['livello','level']);
+    var iExtras   = col(['extras_json','extras']);
+
+    if (iId === -1 || iAtt === -1) {
+      return { ok:false, error:'header_invalido (id='+iId+', attiva='+iAtt+'). Header letto: '+JSON.stringify(vals[0]) };
+    }
+
+    var tz = Session.getScriptTimeZone() || 'Europe/Rome';
+    var out = [];
+    for (var r = 1; r < vals.length; r++) {
+      var row = vals[r];
+      if (!row[iId]) continue;
+      var attivaRaw = row[iAtt];
+      var attiva = attivaRaw === true || attivaRaw === 'TRUE' || attivaRaw === 'true';
+      var fail = iFail >= 0 ? Number(row[iFail] || 0) : 0;
+      var ts = iScan >= 0 ? row[iScan] : null;
+      var ultima = '';
+      if (ts) {
+        try { ultima = Utilities.formatDate(ts instanceof Date ? ts : new Date(ts), tz, 'dd/MM HH:mm'); } catch(_){}
+      }
+      var urlEnte = '', note = '';
+      if (iExtras >= 0) {
+        try {
+          var extrasRaw = row[iExtras];
+          if (extrasRaw && typeof extrasRaw === 'string' && extrasRaw.charAt(0) === '{') {
+            var extras = JSON.parse(extrasRaw);
+            urlEnte = extras.urlente || extras.UrlEnte || '';
+            note    = extras.note || extras.Note || '';
+          }
+        } catch(_){}
+      }
+      out.push({
+        rowIdx: r + 1,
+        id:        row[iId],
+        nome:      iNome >= 0 ? (row[iNome] || '') : '',
+        url:       iUrl  >= 0 ? (row[iUrl]  || '') : '',
+        tipo:      iTipo >= 0 ? (row[iTipo] || '') : '',
+        tag:       iTag  >= 0 ? (row[iTag]  || '') : '',
+        categoria: iCat  >= 0 ? (row[iCat]  || '') : '',
+        priorita:  iPri  >= 0 ? (row[iPri]  || '') : '',
+        livello:   iLiv  >= 0 ? (row[iLiv]  || '') : '',
+        attiva:    attiva,
+        ultimaScansione: ultima,
+        ultimoEsito: iEsito >= 0 ? (row[iEsito] || '') : '',
+        ultimoErrore: iErr >= 0 ? (row[iErr] || '') : '',
+        nBandiTotali: iNTot >= 0 ? Number(row[iNTot] || 0) : 0,
+        nBandiUltimo: iNUlt >= 0 ? Number(row[iNUlt] || 0) : 0,
+        urlEnte:   urlEnte,
+        note:      note,
+        fail:      fail,
+        silente:   fail >= 3
+      });
+    }
+    out.sort(function(a, b){
+      if (a.silente !== b.silente) return a.silente ? -1 : 1;
+      if (a.attiva !== b.attiva)   return a.attiva ? -1 : 1;
+      return String(a.nome).localeCompare(String(b.nome), 'it');
+    });
+    return { ok:true, fonti: out, count: out.length, _v:'4.18.53' };
+  } catch(e) {
+    var errMsg = (e && (e.message || e.stack || String(e))) || 'unknown_error';
+    try { Logger.log('getFontiV5List ERROR: ' + errMsg); } catch(_){}
+    return { ok:false, error: String(errMsg).substring(0, 500), _v:'4.18.53' };
+  }
+}
+
+/**
+ * v4.18.10 — Attiva/disattiva una fonte FontiBandi_v5.
+ * Param: fonteId (string), attiva (bool)
+ */
+function setFonteV5Attiva(fonteId, attiva) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+    return { ok:false, error:'forbidden' };
+  }
+  try {
+    if (!fonteId) return { ok:false, error:'id_richiesto' };
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName(SH_FONTI_V5);
+    if (!sh) return { ok:false, error:'foglio_assente' };
+    var vals = sh.getDataRange().getValues();
+    for (var r = 1; r < vals.length; r++) {
+      if (String(vals[r][COL_F.ID - 1]) === String(fonteId)) {
+        sh.getRange(r + 1, COL_F.ATTIVA).setValue(!!attiva);
+        return { ok:true, id: fonteId, attiva: !!attiva };
+      }
+    }
+    return { ok:false, error:'id_non_trovato' };
+  } catch(e) { return { ok:false, error: e.message }; }
+}
+
+/**
+ * v4.18.14 (2026-05-12) — F2.2 Cleanup bandi scaduti su Bandi_v5.
+ * Marca come 'archiviato' tutti i bandi con scadenza più vecchia di N giorni (default 30).
+ * NON cancella le righe — reversibile manualmente dal foglio.
+ *
+ * Param opzionale: gg (numero giorni-soglia, default 30)
+ * Ritorna: { ok, archiviati: int, scansionati: int, soglia_gg: int }
+ *
+ * Idempotente: bandi già 'archiviato' vengono saltati.
+ */
+function cleanupBandiV5Scaduti(gg) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+    return { ok:false, error:'forbidden' };
+  }
+  try {
+    var sogliaGg = Number(gg) || 30;
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName(SH_BANDI_V5);
+    if (!sh) return { ok:false, error:'foglio_assente' };
+    var vals = sh.getDataRange().getValues();
+    if (vals.length < 2) return { ok:true, archiviati:0, scansionati:0, soglia_gg:sogliaGg };
+
+    var oggi = new Date(); oggi.setHours(0,0,0,0);
+    var sogliaMs = oggi.getTime() - (sogliaGg * 86400000);
+    var archiviati = 0, scansionati = 0;
+
+    // Itero dall'ultima riga alla prima per evitare problemi se in futuro si decidesse di cancellare.
+    for (var r = 1; r < vals.length; r++) {
+      var row = vals[r];
+      if (!row[COL_B.ID - 1]) continue;
+      scansionati++;
+      var stato = String(row[COL_B.STATO_RECORD - 1] || '').toLowerCase();
+      if (stato === 'archiviato') continue;
+      var rawScad = row[COL_B.SCADENZA - 1];
+      var sd = (rawScad instanceof Date) ? rawScad : (rawScad ? new Date(rawScad) : null);
+      if (!sd || isNaN(sd.getTime())) continue; // senza scadenza valida, non archivio
+      if (sd.getTime() < sogliaMs) {
+        sh.getRange(r + 1, COL_B.STATO_RECORD).setValue('archiviato');
+        archiviati++;
+      }
+    }
+    Logger.log('cleanupBandiV5Scaduti: ' + archiviati + ' archiviati su ' + scansionati + ' scansionati (soglia ' + sogliaGg + 'gg)');
+    return { ok:true, archiviati: archiviati, scansionati: scansionati, soglia_gg: sogliaGg };
+  } catch(e) { return { ok:false, error: e.message }; }
+}
+
+/**
+ * v4.18.16 (2026-05-12) G — Cleanup duplicati alla radice nel foglio Items.
+ * Identifica righe duplicate (stessa FonteURL canonicalizzata, fallback Titolo+Fonte)
+ * e le marca come Archiviato=true. NON cancella righe (reversibile).
+ * Tiene SEMPRE la prima occorrenza per chiave (la più "vecchia").
+ *
+ * Param: { dryRun: bool (default false), limite: int (default 0 = senza limite) }
+ * Ritorna: { ok, scansionati, duplicati_trovati, archiviati, dryRun, sampleDup: [...] }
+ *
+ * Idempotente: righe già Archiviato vengono saltate dal conteggio.
+ */
+function dedupItemsByFingerprint(opts) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+    return { ok:false, error:'forbidden' };
+  }
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var limite = Number(opts.limite) || 0;
+
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var shName = (typeof SH !== 'undefined' && SH && SH.ITEMS) ? SH.ITEMS : 'Items';
+    var sh = ss.getSheetByName(shName);
+    if (!sh) return { ok:false, error:'foglio_Items_assente' };
+
+    var vals = sh.getDataRange().getValues();
+    if (vals.length < 2) return { ok:true, scansionati:0, duplicati_trovati:0, archiviati:0, dryRun:dryRun };
+
+    var head = vals[0].map(function(h){ return String(h||'').trim(); });
+    // Identifica colonne chiave con lookup case-insensitive
+    function findCol(names) {
+      for (var i=0;i<head.length;i++) {
+        var hl = head[i].toLowerCase();
+        for (var j=0;j<names.length;j++) {
+          if (hl === names[j].toLowerCase()) return i; // 0-based
+        }
+      }
+      return -1;
+    }
+    var iURL   = findCol(['FonteURL','Link','URL','Url','url']);
+    var iTit   = findCol(['Titolo','Title','title']);
+    var iFonte = findCol(['Fonte','Source','Feed','Pub']);
+    var iArch  = findCol(['Archiviato','archiviato','ARCHIVIATO']);
+    if (iArch < 0) return { ok:false, error:'colonna_Archiviato_assente' };
+
+    var seenK = {};                  // chiave → indice riga della prima occorrenza
+    var sampleDup = [];              // primi 5 duplicati trovati (per audit)
+    var scansionati = 0, duplicati = 0, archiviati = 0;
+
+    for (var r = 1; r < vals.length; r++) {
+      if (limite > 0 && archiviati >= limite) break;
+      var row = vals[r];
+      // skip righe già archiviate (non le conto nemmeno)
+      var archVal = row[iArch];
+      var giàArch = (archVal === true || archVal === 'TRUE' || archVal === 1 || String(archVal).toLowerCase() === 'true');
+      if (giàArch) continue;
+      scansionati++;
+
+      // Costruisci chiave
+      var urlVal   = iURL >= 0   ? String(row[iURL] || '').trim().toLowerCase().replace(/\/+$/,'') : '';
+      var titVal   = iTit >= 0   ? String(row[iTit] || '').trim().toLowerCase() : '';
+      var fonteVal = iFonte >= 0 ? String(row[iFonte] || '').trim().toLowerCase() : '';
+      var key = urlVal || (titVal + '|' + fonteVal);
+      if (!key || key === '|') continue; // niente chiave utile
+
+      if (seenK[key] != null) {
+        // È una duplicata: marca archiviato
+        duplicati++;
+        if (sampleDup.length < 5) {
+          sampleDup.push({
+            row: r + 1,
+            titolo: String(row[iTit] || '').substring(0, 80),
+            primaOccorrenza: seenK[key] + 1
+          });
+        }
+        if (!dryRun) {
+          sh.getRange(r + 1, iArch + 1).setValue(true);
+          archiviati++;
+        }
+      } else {
+        seenK[key] = r;
+      }
+    }
+
+    Logger.log('dedupItemsByFingerprint dryRun=' + dryRun + ': scansionati=' + scansionati + ' duplicati=' + duplicati + ' archiviati=' + archiviati);
+    return {
+      ok: true,
+      scansionati: scansionati,
+      duplicati_trovati: duplicati,
+      archiviati: archiviati,
+      dryRun: dryRun,
+      sampleDup: sampleDup
+    };
+  } catch(e) { return { ok:false, error: e.message }; }
+}
+
+/**
+ * v4.18.41 (2026-05-15) — Dedup generico per qualsiasi foglio (Items, Podcast, Pubblicazioni).
+ *
+ * Identifica righe con stesso URL canonicalizzato (o titolo+fonte come fallback) e le marca
+ * Archiviato=true (o equivalente Stato='archiviato' per Podcast). Tiene SEMPRE la prima occorrenza.
+ *
+ * Tipi supportati: 'items' (news), 'podcast' (audio+video), 'libri' (Pubblicazioni)
+ *
+ * @param {Object} opts {tipo: 'items'|'podcast'|'libri', dryRun: bool, limite: int}
+ * @return {Object} { ok, tipo, sheetName, scansionati, duplicati_trovati, archiviati, sampleDup }
+ */
+function dedupSheetByFingerprint(opts) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+    return { ok:false, error:'forbidden' };
+  }
+  opts = opts || {};
+  var tipo = String(opts.tipo || 'items').toLowerCase();
+  var dryRun = !!opts.dryRun;
+  var limite = Number(opts.limite) || 0;
+
+  // Config per tipo: foglio target + nome colonna URL + nome colonna flag-archivio + valore archivio
+  var TYPE_CONFIG = {
+    items: {
+      sheet: (typeof SH !== 'undefined' && SH && SH.ITEMS) ? SH.ITEMS : 'Items',
+      urlCols: ['FonteURL','Link','URL','Url','url'],
+      titoloCols: ['Titolo','Title','title'],
+      fonteCols: ['Fonte','Source','Feed','Pub'],
+      archCol: ['Archiviato','archiviato','ARCHIVIATO'],
+      archValueOnArchive: true // boolean true
+    },
+    podcast: {
+      sheet: 'Podcast',
+      urlCols: ['Link','URL','url'],
+      titoloCols: ['Titolo','Title'],
+      fonteCols: ['Fonte','Serie','Source'],
+      archCol: ['StatoRecord','stato'],
+      archValueOnArchive: 'archiviato' // stringa
+    },
+    libri: {
+      sheet: (typeof SH !== 'undefined' && SH && SH.LIBRI) ? SH.LIBRI : 'Pubblicazioni',
+      urlCols: ['Link','URL','url'],
+      titoloCols: ['Titolo','Title'],
+      fonteCols: ['Autore','Editore','Fonte'],
+      archCol: ['Stato','stato','Archiviato'],
+      archValueOnArchive: 'archiviato'
+    }
+  };
+  var cfg = TYPE_CONFIG[tipo];
+  if (!cfg) return { ok:false, error:'tipo_non_supportato', validi:Object.keys(TYPE_CONFIG) };
+
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName(cfg.sheet);
+    if (!sh) return { ok:false, error:'foglio_' + cfg.sheet + '_assente' };
+    var vals = sh.getDataRange().getValues();
+    if (vals.length < 2) {
+      return { ok:true, tipo:tipo, sheetName:cfg.sheet, scansionati:0, duplicati_trovati:0, archiviati:0, dryRun:dryRun };
+    }
+
+    var head = vals[0].map(function(h){ return String(h||'').trim(); });
+    function findCol(names) {
+      for (var i=0;i<head.length;i++) {
+        var hl = head[i].toLowerCase();
+        for (var j=0;j<names.length;j++) if (hl === names[j].toLowerCase()) return i;
+      }
+      return -1;
+    }
+    var iURL   = findCol(cfg.urlCols);
+    var iTit   = findCol(cfg.titoloCols);
+    var iFonte = findCol(cfg.fonteCols);
+    var iArch  = findCol(cfg.archCol);
+    if (iArch < 0) return { ok:false, error:'colonna_archivio_assente_in_'+cfg.sheet };
+
+    var seenK = {};
+    var sampleDup = [];
+    var scansionati = 0, duplicati = 0, archiviati = 0;
+
+    for (var r = 1; r < vals.length; r++) {
+      if (limite > 0 && archiviati >= limite) break;
+      var row = vals[r];
+      var archVal = row[iArch];
+      // Salta righe già archiviate
+      var giàArch = (
+        archVal === true ||
+        String(archVal).toLowerCase() === 'true' ||
+        String(archVal).toLowerCase() === 'archiviato' ||
+        archVal === 1
+      );
+      if (giàArch) continue;
+      scansionati++;
+
+      var urlRaw = iURL >= 0 ? String(row[iURL] || '').trim() : '';
+      var urlCanon = (typeof _canonicalUrl_ === 'function') ? _canonicalUrl_(urlRaw) : urlRaw.toLowerCase();
+      var titVal = iTit >= 0 ? String(row[iTit] || '').trim().toLowerCase() : '';
+      var fonteVal = iFonte >= 0 ? String(row[iFonte] || '').trim().toLowerCase() : '';
+      var key = urlCanon || (titVal + '|' + fonteVal);
+      if (!key || key === '|') continue;
+
+      if (seenK[key] != null) {
+        duplicati++;
+        if (sampleDup.length < 5) {
+          sampleDup.push({
+            row: r + 1,
+            titolo: String(row[iTit] || '').substring(0, 80),
+            primaOccorrenza: seenK[key] + 1
+          });
+        }
+        if (!dryRun) {
+          sh.getRange(r + 1, iArch + 1).setValue(cfg.archValueOnArchive);
+          archiviati++;
+        }
+      } else {
+        seenK[key] = r;
+      }
+    }
+
+    Logger.log('dedupSheetByFingerprint tipo=' + tipo + ' dryRun=' + dryRun
+      + ': scansionati=' + scansionati + ' duplicati=' + duplicati + ' archiviati=' + archiviati);
+    return {
+      ok: true,
+      tipo: tipo,
+      sheetName: cfg.sheet,
+      scansionati: scansionati,
+      duplicati_trovati: duplicati,
+      archiviati: archiviati,
+      dryRun: dryRun,
+      sampleDup: sampleDup
+    };
+  } catch(e) { return { ok:false, error: e.message }; }
+}
+
+/**
+ * v4.18.41 (2026-05-15) — Dedup orchestratore: esegue dedup su TUTTI i fogli supportati.
+ * Chiamato da bottone admin "Pulisci duplicati ovunque" + trigger automatico settimanale.
+ *
+ * @param {Object} opts {dryRun: bool}
+ * @return {Object} { ok, perTipo: { items:{...}, podcast:{...}, libri:{...} }, totale_archiviati }
+ */
+function dedupTuttiIFogli(opts) {
+  opts = opts || {};
+  var out = { ok:true, perTipo: {}, totale_archiviati: 0, totale_duplicati: 0 };
+  ['items','podcast','libri'].forEach(function(tipo){
+    var r = dedupSheetByFingerprint({ tipo: tipo, dryRun: !!opts.dryRun });
+    out.perTipo[tipo] = r;
+    if (r.ok) {
+      out.totale_archiviati += (r.archiviati || 0);
+      out.totale_duplicati  += (r.duplicati_trovati || 0);
+    }
+  });
+  Logger.log('dedupTuttiIFogli dryRun=' + !!opts.dryRun
+    + ': totale_dup=' + out.totale_duplicati + ' archiviati=' + out.totale_archiviati);
+  return out;
+}
+
+/**
+ * v4.18.42 (2026-05-15) — Quality check bandi: trova duplicati semantici cross-fonte,
+ * scadenze sospette e tematiche incoerenti.
+ *
+ * 1) DUPLICATI SEMANTICI: stesso bando pubblicato da fonti diverse (Artribune + sito istituzionale
+ *    + giornale fondazioni → 3 righe per stesso bando). Chiave: ente_normalizzato + scadenza_iso
+ *    + first-50-char-titolo-normalizzato. Tiene la riga con sommario più lungo + score migliore.
+ *
+ * 2) SCADENZE SOSPETTE: vuote, passate da >30gg ma stato='attivo', future >2 anni (errore parsing).
+ *
+ * 3) TEMATICHE INCOERENTI: Ambito vuoto, oppure Ambito non coerente con Settore noto.
+ *    Mapping settore→ambito atteso (semplice keyword match su settore/titolo).
+ *
+ * Idempotente. Modalità dry-run di default (action='audit'). Per applicare correzioni: action='fix-dup' o 'fix-tematiche'.
+ *
+ * @param {Object} opts {action: 'audit'|'fix-dup'|'fix-tematiche', dryRun: bool}
+ * @return {Object} { ok, duplicati, scadenze, tematiche, fixApplied? }
+ */
+function qualityCheckBandi(opts) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+    return { ok:false, error:'forbidden' };
+  }
+  opts = opts || {};
+  var action = String(opts.action || 'audit').toLowerCase();
+
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName(SH_BANDI_V5);
+    if (!sh) return { ok:false, error:'Foglio Bandi_v5 non trovato' };
+    var vals = sh.getDataRange().getValues();
+    if (vals.length < 2) return { ok:true, totale:0, duplicati:[], scadenze:[], tematiche:[] };
+
+    // ===== Helper: normalizza testo per chiave dedup =====
+    function _normText(s) {
+      return String(s || '').toLowerCase()
+        .replace(/[àáâãä]/g,'a').replace(/[èéêë]/g,'e').replace(/[ìíîï]/g,'i')
+        .replace(/[òóôõö]/g,'o').replace(/[ùúûü]/g,'u')
+        .replace(/[^a-z0-9]+/g,' ')
+        .replace(/\s+/g,' ').trim();
+    }
+    function _scadenzaISO(v) {
+      if (!v) return '';
+      try {
+        var d = (v instanceof Date) ? v : new Date(v);
+        if (isNaN(d.getTime())) return '';
+        return Utilities.formatDate(d, Session.getScriptTimeZone() || 'Europe/Rome', 'yyyy-MM-dd');
+      } catch(e) { return ''; }
+    }
+
+    var oggi = new Date(); oggi.setHours(0,0,0,0);
+    var soglia30gg = new Date(oggi.getTime() - 30*86400000);
+    var soglia2anni = new Date(oggi.getTime() + 2*365*86400000);
+
+    // ===== 1. DUPLICATI SEMANTICI =====
+    var bandiAttivi = [];
+    for (var r = 1; r < vals.length; r++) {
+      var row = vals[r];
+      if (!row[COL_B.ID - 1]) continue;
+      if (String(row[COL_B.STATO_RECORD - 1] || '').toLowerCase() === 'archiviato') continue;
+      bandiAttivi.push({
+        rowIdx: r + 1,
+        id: String(row[COL_B.ID - 1]),
+        titolo: String(row[COL_B.TITOLO - 1] || ''),
+        ente: String(row[COL_B.ENTE - 1] || ''),
+        scadenza: row[COL_B.SCADENZA - 1],
+        sommarioLen: String(row[COL_B.SOMMARIO - 1] || '').length,
+        fonteNome: String(row[COL_B.FONTE_NOME - 1] || ''),
+        ambito: row[COL_B.AMBITO - 1],
+        settore: String(row[COL_B.SETTORE - 1] || ''),
+        url: String(row[COL_B.URL_BANDO - 1] || '')
+      });
+    }
+
+    // Costruisci chiavi semantiche
+    var seen = {};
+    var duplicatiGroups = {};
+    bandiAttivi.forEach(function(b){
+      var eNorm = _normText(b.ente).substring(0, 30);
+      var tNorm = _normText(b.titolo).substring(0, 50);
+      var scaISO = _scadenzaISO(b.scadenza);
+      // Chiave: ente + scadenza + titolo(50). Se manca ente, usa fonte.
+      var key = (eNorm || _normText(b.fonteNome).substring(0,20)) + '|' + scaISO + '|' + tNorm;
+      if (!seen[key]) { seen[key] = []; }
+      seen[key].push(b);
+    });
+    var duplicatiList = [];
+    Object.keys(seen).forEach(function(k){
+      if (seen[k].length > 1) {
+        // Ordina: il più completo (sommario più lungo) come primo
+        var group = seen[k].slice().sort(function(a, b){ return b.sommarioLen - a.sommarioLen; });
+        duplicatiGroups[k] = group;
+        duplicatiList.push({
+          key: k.substring(0, 80),
+          count: group.length,
+          tenere: { rowIdx: group[0].rowIdx, id: group[0].id, titolo: group[0].titolo.substring(0,60), fonte: group[0].fonteNome },
+          archiviare: group.slice(1).map(function(b){ return { rowIdx: b.rowIdx, id: b.id, titolo: b.titolo.substring(0,60), fonte: b.fonteNome }; })
+        });
+      }
+    });
+
+    // ===== 2. SCADENZE SOSPETTE =====
+    var scadenzeSospette = [];
+    bandiAttivi.forEach(function(b){
+      var probl = null;
+      if (!b.scadenza) {
+        probl = 'vuota';
+      } else {
+        var d = (b.scadenza instanceof Date) ? b.scadenza : new Date(b.scadenza);
+        if (isNaN(d.getTime())) {
+          probl = 'parsing_fallito';
+        } else if (d < soglia30gg) {
+          probl = 'passata_>30gg_ma_attivo';
+        } else if (d > soglia2anni) {
+          probl = 'futura_>2_anni';
+        }
+      }
+      if (probl) {
+        scadenzeSospette.push({
+          rowIdx: b.rowIdx,
+          id: b.id,
+          titolo: b.titolo.substring(0,60),
+          ente: b.ente.substring(0,40),
+          scadenzaRaw: String(b.scadenza || ''),
+          problema: probl
+        });
+      }
+    });
+
+    // ===== 3. TEMATICHE INCOERENTI =====
+    // Mapping keyword → ambito (1=Identità, 2=Inclusione, 3=Programma, 4=Comunità, 5=Digital)
+    var AMBITO_KEYWORDS = {
+      1: ['identità','identita','identitaria','narrazione','brand','heritage','storia','memoria'],
+      2: ['accessibil','inclus','disabilit','lis ','autismo','etr','easy to read','barriere','sordo','cieco','dsa','autistic'],
+      3: ['mostra','allestimento','collezione','catalogo','esposizione','programmazione','rete museale','riallestimento'],
+      4: ['comunit','welfare','partecipa','giovani','anziani','quartiere','periferia','sociale','territorio','quartiere'],
+      5: ['digital','ai ','intelligenza artificiale','cms','tecnolog','ict','smart','data','virtual','app ','online','sito web']
+    };
+    function inferiscoAmbito(titolo, settore, sommario) {
+      var testo = _normText(titolo + ' ' + (settore || '') + ' ' + (sommario || ''));
+      var scores = {1:0, 2:0, 3:0, 4:0, 5:0};
+      Object.keys(AMBITO_KEYWORDS).forEach(function(amb){
+        AMBITO_KEYWORDS[amb].forEach(function(kw){
+          if (testo.indexOf(_normText(kw)) >= 0) scores[amb]++;
+        });
+      });
+      var maxScore = 0, maxAmb = 0;
+      Object.keys(scores).forEach(function(a){ if (scores[a] > maxScore) { maxScore = scores[a]; maxAmb = Number(a); } });
+      return maxScore > 0 ? maxAmb : null;
+    }
+
+    var tematicheIncoerenti = [];
+    bandiAttivi.forEach(function(b){
+      var ambAttuale = Number(b.ambito) || 0;
+      var ambInferito = inferiscoAmbito(b.titolo, b.settore, '');
+      var probl = null;
+      if (!ambAttuale || ambAttuale < 1 || ambAttuale > 5) {
+        probl = 'ambito_vuoto';
+      } else if (ambInferito && ambInferito !== ambAttuale) {
+        probl = 'ambito_diverso_da_inferito';
+      }
+      if (probl) {
+        tematicheIncoerenti.push({
+          rowIdx: b.rowIdx,
+          id: b.id,
+          titolo: b.titolo.substring(0,60),
+          settore: b.settore.substring(0,30),
+          ambitoAttuale: ambAttuale || null,
+          ambitoSuggerito: ambInferito,
+          problema: probl
+        });
+      }
+    });
+
+    var result = {
+      ok: true,
+      action: action,
+      totaleBandiAttivi: bandiAttivi.length,
+      duplicati: {
+        gruppi: duplicatiList.length,
+        righeDaArchiviare: duplicatiList.reduce(function(s, g){ return s + g.archiviare.length; }, 0),
+        sample: duplicatiList.slice(0, 10)
+      },
+      scadenze: {
+        totale: scadenzeSospette.length,
+        sample: scadenzeSospette.slice(0, 20)
+      },
+      tematiche: {
+        totale: tematicheIncoerenti.length,
+        vuote: tematicheIncoerenti.filter(function(t){ return t.problema === 'ambito_vuoto'; }).length,
+        diverse: tematicheIncoerenti.filter(function(t){ return t.problema === 'ambito_diverso_da_inferito'; }).length,
+        sample: tematicheIncoerenti.slice(0, 20)
+      }
+    };
+
+    // ===== AZIONI CORRETTIVE =====
+    if (action === 'fix-dup') {
+      var archived = 0;
+      Object.keys(duplicatiGroups).forEach(function(k){
+        var group = duplicatiGroups[k];
+        for (var i = 1; i < group.length; i++) {
+          sh.getRange(group[i].rowIdx, COL_B.STATO_RECORD).setValue('archiviato');
+          sh.getRange(group[i].rowIdx, COL_B.NOTE).setValue(
+            (sh.getRange(group[i].rowIdx, COL_B.NOTE).getValue() || '') +
+            ' [dedup-sem v4.18.42: duplicato di rigaID=' + group[0].id + ']'
+          );
+          archived++;
+        }
+      });
+      result.fixApplied = { archiviati: archived };
+    } else if (action === 'fix-tematiche') {
+      var fixed = 0;
+      tematicheIncoerenti.forEach(function(t){
+        if (t.ambitoSuggerito && t.problema === 'ambito_vuoto') {
+          sh.getRange(t.rowIdx, COL_B.AMBITO).setValue(t.ambitoSuggerito);
+          fixed++;
+        }
+        // Per 'ambito_diverso_da_inferito' NON correggiamo automaticamente
+        // (potrebbe essere il tagger sbagliato, non il bando) — solo segnalazione.
+      });
+      result.fixApplied = { ambitiAssegnati: fixed, nota: 'I bandi con ambito_diverso_da_inferito vanno rivisti manualmente' };
+    }
+
+    Logger.log('qualityCheckBandi action=' + action
+      + ' dup_gruppi=' + result.duplicati.gruppi
+      + ' scad_sospette=' + result.scadenze.totale
+      + ' tem_incoerenti=' + result.tematiche.totale);
+    return result;
+  } catch(e) { return { ok:false, error: e.message }; }
+}
+
+/**
+ * v4.18.43 (2026-05-15) — Wrapper "auto" del quality check: esegue fix-dup + fix-tematiche
+ * in modo non interattivo (senza confirm), salta il check admin perché il trigger gira come
+ * USER_DEPLOYING (=Silvano), logga sul foglio QualityCheckLog_v5.
+ *
+ * Chiamato da:
+ *   1. scanFontiTutte() alla fine (se ci sono stati bandi nuovi)
+ *   2. Trigger giornaliero 05:00 (vedi setupQualityCheckBandiTrigger)
+ *
+ * @param {Object} opts {source: 'post-scan'|'daily-05'|'manual'}
+ * @return {Object} {ok, source, timestamp, dup_archiviati, tem_ambiti_assegnati, scad_sospette}
+ */
+function qualityCheckBandiAuto(opts) {
+  opts = opts || {};
+  var source = String(opts.source || 'manual');
+  var t0 = new Date().getTime();
+  var result = { ok:true, source: source, timestamp: new Date().toISOString(), dup_archiviati:0, tem_ambiti_assegnati:0, scad_sospette:0 };
+
+  try {
+    // Step 1: archivia duplicati semantici
+    var rDup = qualityCheckBandi({ action: 'fix-dup' });
+    if (rDup && rDup.ok) {
+      result.dup_archiviati = (rDup.fixApplied && rDup.fixApplied.archiviati) || 0;
+      result.dup_gruppi = (rDup.duplicati && rDup.duplicati.gruppi) || 0;
+      result.scad_sospette = (rDup.scadenze && rDup.scadenze.totale) || 0;
+    } else {
+      result.warning_dup = rDup && rDup.error || 'sconosciuto';
+    }
+    // Step 2: assegna ambiti vuoti
+    var rTem = qualityCheckBandi({ action: 'fix-tematiche' });
+    if (rTem && rTem.ok) {
+      result.tem_ambiti_assegnati = (rTem.fixApplied && rTem.fixApplied.ambitiAssegnati) || 0;
+      result.tem_diversi = (rTem.tematiche && rTem.tematiche.diverse) || 0;
+    } else {
+      result.warning_tem = rTem && rTem.error || 'sconosciuto';
+    }
+
+    result.duration_ms = new Date().getTime() - t0;
+
+    // Step 3: log su foglio QualityCheckLog_v5 (per audit storico)
+    try { _appendQualityCheckLog_(result); } catch(eLog) { Logger.log('Log QC fallito: ' + eLog.message); }
+
+    Logger.log('qualityCheckBandiAuto source=' + source
+      + ': dup_archiviati=' + result.dup_archiviati
+      + ' ambiti_assegnati=' + result.tem_ambiti_assegnati
+      + ' scad_sospette=' + result.scad_sospette
+      + ' (' + result.duration_ms + 'ms)');
+
+    // Step 4: notifica Telegram SOLO se ci sono scadenze sospette (intervento manuale richiesto)
+    if (result.scad_sospette > 0 && typeof _tgSend_ === 'function') {
+      try {
+        _tgSend_('🧪 *Quality check bandi* (' + source + ')\n'
+          + '• Duplicati archiviati: ' + result.dup_archiviati + '\n'
+          + '• Ambiti assegnati: ' + result.tem_ambiti_assegnati + '\n'
+          + '⚠️ *Scadenze sospette*: ' + result.scad_sospette + ' bandi da rivedere manualmente nel foglio Bandi\\_v5');
+      } catch(eTg) {}
+    }
+
+    return result;
+  } catch(e) {
+    result.ok = false;
+    result.error = e.message;
+    Logger.log('qualityCheckBandiAuto ERRORE: ' + e.message);
+    return result;
+  }
+}
+
+/**
+ * v4.18.43 (2026-05-15) — Append riga al foglio QualityCheckLog_v5 (audit storico).
+ * Crea il foglio se non esiste.
+ * @private
+ */
+function _appendQualityCheckLog_(r) {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('QualityCheckLog_v5');
+  if (!sh) {
+    sh = ss.insertSheet('QualityCheckLog_v5');
+    sh.getRange(1, 1, 1, 8).setValues([[
+      'timestamp','source','dup_gruppi','dup_archiviati','tem_ambiti_assegnati','tem_diversi','scad_sospette','duration_ms'
+    ]]).setFontWeight('bold').setBackground('#3F7A5E').setFontColor('#fff');
+    sh.setFrozenRows(1);
+  }
+  sh.appendRow([
+    r.timestamp, r.source,
+    r.dup_gruppi || 0, r.dup_archiviati || 0,
+    r.tem_ambiti_assegnati || 0, r.tem_diversi || 0,
+    r.scad_sospette || 0,
+    r.duration_ms || 0
+  ]);
+}
+
+/**
+ * v4.18.43 (2026-05-15) — Installa trigger time-based GIORNALIERO alle 05:00 che esegue
+ * qualityCheckBandiAuto. Idempotente: rimuove trigger esistente prima di crearlo.
+ *
+ * Da chiamare UNA volta dall'editor GAS o dal pannello admin.
+ */
+function setupQualityCheckBandiTrigger() {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+    return { ok:false, error:'forbidden' };
+  }
+  try {
+    var triggers = ScriptApp.getProjectTriggers();
+    var rimossi = 0;
+    triggers.forEach(function(t) {
+      if (t.getHandlerFunction() === 'qualityCheckBandiAutoDaily') {
+        ScriptApp.deleteTrigger(t); rimossi++;
+      }
+    });
+    // Trigger giornaliero ore 05:00 — chiama un wrapper che setta source='daily-05'
+    ScriptApp.newTrigger('qualityCheckBandiAutoDaily')
+      .timeBased().everyDays(1).atHour(5).nearMinute(0).create();
+    Logger.log('Trigger qualityCheckBandiAutoDaily installato: ogni giorno 05:00. (rimossi ' + rimossi + ' precedenti)');
+    return { ok:true, schedule:'ogni giorno 05:00', rimossi_precedenti: rimossi };
+  } catch(e) { return { ok:false, error: e.message }; }
+}
+
+/**
+ * v4.18.43 (2026-05-15) — Wrapper invocato dal trigger giornaliero (handler dedicato per
+ * tracciabilità del source). Chiama qualityCheckBandiAuto con source='daily-05'.
+ */
+function qualityCheckBandiAutoDaily() {
+  return qualityCheckBandiAuto({ source: 'daily-05' });
+}
+
+/**
+ * v4.18.43 (2026-05-15) — Ritorna le ultime N righe del foglio QualityCheckLog_v5
+ * per visualizzazione storico nel pannello admin.
+ *
+ * @param {Object} opts {limit: int (default 20)}
+ * @return {Object} {ok, rows: [{timestamp, source, dup_gruppi, dup_archiviati, tem_ambiti_assegnati, tem_diversi, scad_sospette, duration_ms}]}
+ */
+function getQualityCheckLog(opts) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+    return { ok:false, error:'forbidden' };
+  }
+  opts = opts || {};
+  var limit = Number(opts.limit) || 20;
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName('QualityCheckLog_v5');
+    if (!sh) return { ok:true, rows: [], note: 'Foglio QualityCheckLog_v5 non ancora creato (verrà popolato alla prima esecuzione)' };
+    var vals = sh.getDataRange().getValues();
+    if (vals.length < 2) return { ok:true, rows: [] };
+    var headers = vals[0];
+    var rows = [];
+    // dalla fine al inizio, max `limit`
+    for (var r = vals.length - 1; r >= 1 && rows.length < limit; r--) {
+      var row = vals[r];
+      var obj = {};
+      headers.forEach(function(h, i){ obj[h] = row[i]; });
+      rows.push(obj);
+    }
+    return { ok:true, rows: rows };
+  } catch(e) { return { ok:false, error: e.message }; }
+}
+
+/**
+ * v4.18.41 (2026-05-15) — Trigger automatico settimanale: pulisce duplicati ogni lunedì alle 06:30.
+ * Pre-condizione lunediMattina(): rimuove i doppi prima del digest.
+ *
+ * Da chiamare UNA volta dall'editor GAS per installare il trigger.
+ */
+function setupDedupAutoTrigger() {
+  // Rimuovi trigger esistente
+  var triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(function(t) {
+    if (t.getHandlerFunction() === 'dedupTuttiIFogli') ScriptApp.deleteTrigger(t);
+  });
+  // Lunedì 06:30 (prima del digest delle 07:00)
+  ScriptApp.newTrigger('dedupTuttiIFogli')
+    .timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(6).nearMinute(30).create();
+  Logger.log('Trigger dedupTuttiIFogli installato per lunedì 06:30.');
+  return { ok:true, schedule: 'lunedì 06:30' };
+}
+
+/**
+ * v4.18.14 (2026-05-12) F2/Campanella — Riepilogo per la campanella notifiche in topbar.
+ * Aggrega in un'unica call: stato scanner, bandi urgenti+nuovi-oggi, fonti silenti, news recenti.
+ *
+ * Ritorna:
+ *   {
+ *     ok, timestamp,
+ *     scanner: { ultimaScan: "12/05 09:55", fontiAttive, fontiSilenti },
+ *     bandi:   { urgenti: int, nuoviOggi: int, totaleAperti: int, top: [ {id,titolo,giorni,scadenza,ente,link} x5 ] },
+ *     news:    { ultime24h: int },
+ *     totalNotifiche: int // numero totale di "cose nuove" oggi (per badge)
+ *   }
+ */
+function getNotificheRiepilogo() {
+  var out = { ok:false, timestamp: new Date().toISOString(), scanner:{}, bandi:{}, news:{}, totalNotifiche:0 };
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) { out.error = 'Spreadsheet non disponibile'; return out; }
+    var tz = Session.getScriptTimeZone() || 'Europe/Rome';
+    var oggi = new Date(); oggi.setHours(0,0,0,0);
+    var ieri24h = Date.now() - (24*3600*1000);
+
+    // === Scanner: stato fonti (ultima scansione + attive/silenti) ===
+    var shFonti = ss.getSheetByName(SH_FONTI_V5);
+    var ultimaScanTs = 0, fontiAttive = 0, fontiSilenti = 0;
+    if (shFonti) {
+      var vF = shFonti.getDataRange().getValues();
+      for (var r = 1; r < vF.length; r++) {
+        if (!vF[r][COL_F.ID - 1]) continue;
+        var att = vF[r][COL_F.ATTIVA - 1] === true || vF[r][COL_F.ATTIVA - 1] === 'TRUE';
+        if (att) fontiAttive++;
+        if (Number(vF[r][COL_F.FAIL_CONSECUTIVI - 1] || 0) >= 3) fontiSilenti++;
+        var ts = vF[r][COL_F.ULTIMA_SCANSIONE - 1];
+        if (ts) {
+          var ms = (ts instanceof Date) ? ts.getTime() : new Date(ts).getTime();
+          if (ms > ultimaScanTs) ultimaScanTs = ms;
+        }
+      }
+    }
+    out.scanner = {
+      ultimaScan: ultimaScanTs ? Utilities.formatDate(new Date(ultimaScanTs), tz, 'dd/MM HH:mm') : '—',
+      fontiAttive: fontiAttive,
+      fontiSilenti: fontiSilenti
+    };
+
+    // === Bandi: urgenti (≤7gg), nuovi rilevati oggi, totale aperti, top 5 urgenti ===
+    var shBandi = ss.getSheetByName(SH_BANDI_V5);
+    var urgenti = 0, nuoviOggi = 0, aperti = 0;
+    var topUrgenti = [];
+    if (shBandi) {
+      var vB = shBandi.getDataRange().getValues();
+      for (var i = 1; i < vB.length; i++) {
+        var b = vB[i];
+        if (!b[COL_B.ID - 1]) continue;
+        var stato = String(b[COL_B.STATO_RECORD - 1] || '').toLowerCase();
+        if (stato === 'archiviato') continue;
+        // scadenza
+        var rawScad = b[COL_B.SCADENZA - 1];
+        var sd = (rawScad instanceof Date) ? rawScad : (rawScad ? new Date(rawScad) : null);
+        var gg = (sd && !isNaN(sd.getTime())) ? Math.round((sd.getTime() - oggi.getTime()) / 86400000) : null;
+        if (gg !== null && gg >= 0) aperti++;
+        if (gg !== null && gg >= 0 && gg <= 7) {
+          urgenti++;
+          if (topUrgenti.length < 5) {
+            topUrgenti.push({
+              id:       b[COL_B.ID - 1],
+              titolo:   b[COL_B.TITOLO - 1] || '(senza titolo)',
+              ente:     b[COL_B.ENTE - 1] || '',
+              scadenza: sd ? Utilities.formatDate(sd, tz, 'dd/MM') : '',
+              giorni:   gg,
+              link:     b[COL_B.URL_BANDO - 1] || b[COL_B.URL_ENTE - 1] || ''
+            });
+          }
+        }
+        // nuovi oggi
+        var rawRil = b[COL_B.DATA_RILEVAMENTO - 1];
+        if (rawRil) {
+          var rd = (rawRil instanceof Date) ? rawRil : new Date(rawRil);
+          if (!isNaN(rd.getTime()) && rd.getTime() >= oggi.getTime()) nuoviOggi++;
+        }
+      }
+      // sort top urgenti per giorni ASC
+      topUrgenti.sort(function(a,b){ return a.giorni - b.giorni; });
+    }
+    out.bandi = { urgenti: urgenti, nuoviOggi: nuoviOggi, totaleAperti: aperti, top: topUrgenti };
+
+    // === News: conteggio ultimi 24h (legge foglio Items) ===
+    var shItems = ss.getSheetByName((typeof SH !== 'undefined' && SH && SH.ITEMS) ? SH.ITEMS : 'Items');
+    var news24 = 0;
+    if (shItems) {
+      var vI = shItems.getDataRange().getValues();
+      if (vI.length > 1) {
+        var head = vI[0].map(function(h){ return String(h||'').trim(); });
+        // cerco colonna data flessibile
+        var iData = -1;
+        for (var k = 0; k < head.length; k++) {
+          var hh = head[k].toLowerCase();
+          if (hh === 'datapubblicazione' || hh === 'data_pubblicazione' || hh === 'data' || hh === 'data_rilevamento' || hh === 'dataacquisizione') { iData = k; break; }
+        }
+        if (iData < 0) iData = 13; // fallback colonna 14 (DataPubblicazione)
+        for (var j = 1; j < vI.length; j++) {
+          var d = vI[j][iData];
+          if (!d) continue;
+          var dt = (d instanceof Date) ? d : new Date(d);
+          if (!isNaN(dt.getTime()) && dt.getTime() >= ieri24h) news24++;
+        }
+      }
+    }
+    out.news = { ultime24h: news24 };
+
+    out.totalNotifiche = urgenti + nuoviOggi + (fontiSilenti > 0 ? 1 : 0);
+    out.ok = true;
+  } catch(e) { out.error = e.message; }
+  return out;
+}
+
+/**
+ * v4.18.10 — Reset fail counter di una fonte (per ripristinarla da silente).
+ * Non rilancia subito lo scan (lo farà il prossimo trigger Lun/Mer/Ven).
+ */
+function riprovaFonteV5(fonteId) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+    return { ok:false, error:'forbidden' };
+  }
+  try {
+    if (!fonteId) return { ok:false, error:'id_richiesto' };
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName(SH_FONTI_V5);
+    if (!sh) return { ok:false, error:'foglio_assente' };
+    var vals = sh.getDataRange().getValues();
+    for (var r = 1; r < vals.length; r++) {
+      if (String(vals[r][COL_F.ID - 1]) === String(fonteId)) {
+        sh.getRange(r + 1, COL_F.FAIL_CONSECUTIVI).setValue(0);
+        sh.getRange(r + 1, COL_F.ULTIMO_ERRORE).setValue('');
+        // Riattiva se era stata auto-disattivata
+        sh.getRange(r + 1, COL_F.ATTIVA).setValue(true);
+        return { ok:true, id: fonteId, fail: 0 };
+      }
+    }
+    return { ok:false, error:'id_non_trovato' };
+  } catch(e) { return { ok:false, error: e.message }; }
 }
 
 
@@ -1968,7 +3067,7 @@ function digestBandiV5(n, toEmail) {
 
 /** Escape HTML per digest email */
 function escHtml(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 /** Escape Telegram HTML */

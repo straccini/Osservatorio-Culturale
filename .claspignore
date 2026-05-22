@@ -1,0 +1,9 @@
+.claude/**
+**/.claude/**
+node_modules/**
+.git/**
+*.md
+landing-netlify/**
+backup-*/**
+*.bak
+~$*.docx

@@ -83,6 +83,82 @@ function getMatrixSchema() {
 }
 
 /**
+ * v4.18.60 — Schema ridotto per sondaggio mirato (LS2).
+ * Restituisce solo le domande di 1-2 dimensioni + anagrafica minima.
+ * Chiamato da MatrixApp.html quando URL contiene ?survey=D7
+ *
+ * @param {string} dimCode — es. "D7" o "D6,D7" (max 2 dimensioni)
+ * @return {Object} { mode:'survey', dimensions, questions, anagrafica, metadata }
+ */
+// Mapping nomi leggibili → codici dimensione per URL pubbliche
+var SURVEY_SLUG_MAP = {
+  'accessibilita': 'D7',
+  'digital':       'D6',
+  'audience':      'D8',
+  'welfare':       'D10',
+  'identita':      'D1',
+  'collezioni':    'D2',
+  'spazi':         'D3',
+  'programma':     'D4',
+  'servizi':       'D5',
+  'governance':    'D9'
+};
+
+// Titoli landing per ogni sondaggio
+var SURVEY_TITLES = {
+  'D7':  'Quanto e accessibile il tuo museo?',
+  'D6':  'Maturita digitale del tuo museo',
+  'D8':  'Il tuo museo coinvolge il pubblico?',
+  'D10': 'Welfare culturale e impatto sociale',
+  'D1':  'Identita e narrazione del tuo museo',
+  'D2':  'Collezioni e patrimonio',
+  'D3':  'Spazi e esperienza del visitatore',
+  'D4':  'Programma e offerta culturale',
+  'D5':  'Servizi e accoglienza',
+  'D9':  'Governance e sostenibilita'
+};
+
+function getMatrixSurveySchema(dimCode) {
+  if (typeof OC_MATRIX_SCHEMA === 'undefined') {
+    throw new Error('Matrix_schema.gs non caricato');
+  }
+  // Risolvi slug leggibili (es. 'accessibilita' → 'D7')
+  var rawDims = String(dimCode || '').split(',').map(function(d){ return d.trim().toLowerCase(); }).filter(Boolean);
+  var dims = rawDims.map(function(d) {
+    return SURVEY_SLUG_MAP[d] || d.toUpperCase();
+  });
+  if (dims.length === 0 || dims.length > 2) {
+    return { ok: false, error: 'Specificare 1-2 dimensioni (es. D7 o accessibilita)' };
+  }
+
+  var schema = OC_MATRIX_SCHEMA;
+  var filteredDimensions = schema.dimensions.filter(function(d){ return dims.indexOf(d.code) >= 0; });
+  var filteredQuestions = schema.questions.filter(function(q){ return dims.indexOf(q.dimension) >= 0; });
+
+  // Anagrafica minima per sondaggio (solo tipologia + nome opzionale)
+  var surveyAnagrafica = schema.anagrafica.filter(function(a){
+    return a.code === 'A1' || a.code === 'A_OPT_NAME';
+  });
+
+  return {
+    mode: 'survey',
+    surveyDimensions: dims,
+    surveyTitle: SURVEY_TITLES[dims[0]] || ('Sondaggio ' + dims.join('+')),
+    metadata: {
+      modelName: schema.metadata.modelName + ' — Sondaggio ' + dims.join('+'),
+      modelVersion: schema.metadata.modelVersion,
+      totalQuestions: filteredQuestions.length,
+      estimatedCompletionTime: filteredQuestions.length <= 5 ? '2-3 minuti' : '4-5 minuti'
+    },
+    dimensions: filteredDimensions,
+    questions: filteredQuestions,
+    anagrafica: surveyAnagrafica,
+    section11: [],
+    section12: schema.section12 || []
+  };
+}
+
+/**
  * Salva le risposte di una compilazione MuseMu Matrix nel foglio ResponsesMatrix.
  * Genera UUID se non fornito (nuova sessione) o aggiorna riga esistente (salva-e-continua).
  *
@@ -140,6 +216,19 @@ function saveMatrixResponse(data) {
     } else {
       _matrixAppendRow_(sheet, row);
     }
+
+    // v4.18.55 — Hook CRM: registra completamento Matrix per lead scoring
+    try {
+      if (typeof crm_onMatrixComplete === 'function') {
+        crm_onMatrixComplete(responseId, {
+          profileAssigned: scoringResult.profile,
+          syntheticScore: scoringResult.syntheticScore
+        });
+      }
+    } catch(eCrm) { Logger.log('crm_onMatrixComplete fallito (non bloccante): ' + eCrm.message); }
+
+    // v4.18.60 — Invalida cache benchmark per includere questa risposta
+    try { PropertiesService.getScriptProperties().deleteProperty('matrix_benchmark_cache_v1'); } catch(_){}
 
     return {
       ok: true,
@@ -236,9 +325,10 @@ function getMatrixReport(responseId) {
  * @param {Object} data
  *   data.responseId  (string)  — FK obbligatoria
  *   data.email       (string)  — obbligatoria
+ *   data.nome        (string)  — opzionale, nome referente per CRM
  *   data.preferences (Object)  — { bandi_pnrr_mic: true, podcast: true, ... }
  *
- * @return {Object} { ok, error? }
+ * @return {Object} { ok, sessionUpgraded?, magicLink?, error? }
  */
 function saveMatrixContact(data) {
   try {
@@ -250,15 +340,37 @@ function saveMatrixContact(data) {
     }
     var sheet = _matrixGetOrCreateContactsSheet_();
     var nowIso = new Date().toISOString();
+    var emailLower = data.email.toLowerCase().trim();
     var row = {
       response_id: data.responseId,
-      email: data.email.toLowerCase().trim(),
+      email: emailLower,
       preferences_json: JSON.stringify(data.preferences || {}),
       consent_timestamp: nowIso,
       consent_text_version: 'v1.0.2-2026-04-30'
     };
     _matrixAppendRow_(sheet, row);
-    return { ok:true };
+
+    // v4.18.46 (2026-05-15) — Upgrade sessione a PERMANENTE: chi completa Matrix
+    // sblocca per sempre l'accesso a Sinopia + workspace personale.
+    var sessionResult = null;
+    try {
+      if (typeof upgradeAPermanente === 'function') {
+        sessionResult = upgradeAPermanente(emailLower);
+      }
+    } catch(eSess) { Logger.log('upgradeAPermanente fallito (non bloccante): ' + eSess.message); }
+
+    // v4.18.55 — Hook CRM: registra opt-in per lead scoring (contatto + preferenze)
+    try {
+      if (typeof crm_onMatrixOptIn === 'function') {
+        crm_onMatrixOptIn(data.responseId, emailLower, data.nome || '', data.preferences || {});
+      }
+    } catch(eCrm) { Logger.log('crm_onMatrixOptIn fallito (non bloccante): ' + eCrm.message); }
+
+    return {
+      ok: true,
+      sessionUpgraded: sessionResult && sessionResult.ok,
+      magicLink: sessionResult && sessionResult.magicLink
+    };
   } catch(e) {
     return { ok:false, error: e.message };
   }
@@ -762,23 +874,7 @@ function testMatrixPDFEmail() {
   return { ok: true, responseId: rid, pdf: pdf, email: email };
 }
 
-/**
- * Verifica che lo schema sia caricato correttamente.
- */
-function checkMatrixSchema() {
-  if (typeof OC_MATRIX_SCHEMA === 'undefined') {
-    Logger.log('ERRORE: OC_MATRIX_SCHEMA non definito. Verificare presenza Matrix_schema.gs');
-    return { ok:false, error:'schema mancante' };
-  }
-  var s = OC_MATRIX_SCHEMA;
-  Logger.log('Schema OK:');
-  Logger.log('  Versione: ' + s.metadata.modelVersion);
-  Logger.log('  Dimensioni: ' + s.dimensions.length);
-  Logger.log('  Domande: ' + s.questions.length);
-  Logger.log('  Profili: ' + s.profiles.length);
-  Logger.log('  Anagrafica: ' + s.anagrafica.length);
-  return { ok:true, version: s.metadata.modelVersion, questions: s.questions.length };
-}
+// v4.18.38 (audit 2026-05-14) — Rimossa checkMatrixSchema(): health-check schema mai chiamato.
 
 // ============================================================================
 // SPRINT 2 STEP 4 — REPORT PDF + EMAIL (2026-05-01)
@@ -1026,12 +1122,122 @@ function _matrixBuildReportDoc_(doc, report) {
     });
   });
 
+  // === SEZIONE 6 (opzionale): MiC SM-LUQV ===
+  // v4.18.37 — Se per questo responseId esiste una compilazione MiC nel foglio
+  // ResponsesMatrixMiC, viene aggiunta una sezione di compliance ministeriale.
+  try {
+    var micData = _matrixGetMicForResponse_(report.responseId);
+    if (micData) {
+      body.appendParagraph('').setAttributes(styleBody);
+      body.appendHorizontalRule();
+      body.appendParagraph('6. Compliance ministeriale MiC (SM-LUQV)').setAttributes(styleH2);
+      body.appendParagraph('Estensione opzionale — autovalutazione degli Standard Minimi di Qualità per musei NON accreditati al Sistema Museale Nazionale (DM 113/2018, Allegato A4).').setAttributes(styleBody);
+
+      // Card percentuale
+      var pctRows = [['Compliance complessiva', micData.complianceScore + '%']];
+      var pctTable = body.appendTable(pctRows);
+      pctTable.getCell(0,0).setBackgroundColor('#FBF7EE').editAsText().setAttributes(styleH3);
+      var pctColor = micData.complianceScore >= 90 ? '#0F6E56' :
+                     micData.complianceScore >= 75 ? '#3F7A5E' :
+                     micData.complianceScore >= 50 ? '#B07B3F' : '#8B1E1E';
+      pctTable.getCell(0,1).setBackgroundColor(pctColor).editAsText().setForegroundColor('#FFFFFF').setBold(true).setFontSize(14);
+      body.appendParagraph(micData.smRispettati + ' / ' + micData.smTotali + ' Standard Minimi rispettati').setAttributes(styleSmall);
+
+      // Lettura
+      var lettura = '';
+      var pct = micData.complianceScore;
+      if (pct >= 90) lettura = 'Il museo è sostanzialmente allineato agli Standard Minimi MiC e può candidarsi al Sistema Museale Nazionale.';
+      else if (pct >= 75) lettura = 'Il museo soddisfa la maggior parte degli Standard Minimi. Restano lacune principalmente formali (atti, documenti programmatici). 2-3 mesi di consulenza mirata sufficienti.';
+      else if (pct >= 50) lettura = 'Livello parziale: alcune funzioni base ci sono ma manca la formalizzazione. Per accreditamento SMN raccomandato percorso 3-6 mesi.';
+      else lettura = 'Lacune significative. Necessario rafforzamento istituzionale (5-12 mesi) prima della candidatura SMN.';
+      body.appendParagraph('').setAttributes(styleBody);
+      body.appendParagraph(lettura).setAttributes(styleBody);
+
+      // Gap critici (se presenti)
+      if (micData.gapCriticiList && micData.gapCriticiList.length) {
+        body.appendParagraph('').setAttributes(styleBody);
+        body.appendParagraph('Standard Minimi non rispettati (' + micData.gapCriticiList.length + ')').setAttributes(styleH3);
+        var SEZIONI = { '1':'Organizzazione', '2':'Collezioni', '3':'Comunicazione' };
+        var gapGroups = {};
+        micData.gapCriticiList.forEach(function(g){
+          var sez = g.sezione || '?';
+          if (!gapGroups[sez]) gapGroups[sez] = [];
+          gapGroups[sez].push(g);
+        });
+        Object.keys(gapGroups).sort().forEach(function(sez){
+          body.appendParagraph(sez + '. ' + (SEZIONI[sez] || 'Altro') + ' (' + gapGroups[sez].length + ')').setAttributes(styleBody);
+          gapGroups[sez].forEach(function(g){
+            var li = body.appendListItem('[' + g.id + '] ' + g.sottoSez + ' — ' + g.testo);
+            li.setGlyphType(DocumentApp.GlyphType.BULLET).editAsText().setFontSize(9);
+          });
+        });
+      }
+      body.appendParagraph('').setAttributes(styleBody);
+      body.appendParagraph('Riferimento: DM 113/2018 · Allegato A4 · Sistema Museale Nazionale (SMN). MiC ID: ' + micData.micId).setAttributes(styleSmall);
+    }
+  } catch(eMic) {
+    Logger.log('Sezione MiC PDF non generata: ' + eMic.message);
+  }
+
   // === FOOTER ===
   body.appendParagraph('').setAttributes(styleBody);
   body.appendHorizontalRule();
   body.appendParagraph(OC_MATRIX_DUEMILAMUSEI_FOOTER).setAttributes(styleSmall);
   body.appendParagraph('Modello MuseMu Matrix ' + OC_MATRIX_VERSION + ' · Risposta: ' + report.responseId).setAttributes(styleSmall);
   body.appendParagraph('Le risposte sono trattate in forma anonima. Il contatto è raccolto solo previo opt-in esplicito ai sensi del Reg. UE 2016/679.').setAttributes(styleSmall);
+}
+
+/**
+ * v4.18.37 — Helper privato: cerca i dati MiC per un dato responseId Matrix.
+ * Ritorna null se non c'è una compilazione MiC associata.
+ */
+function _matrixGetMicForResponse_(matrixResponseId) {
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName('ResponsesMatrixMiC');
+    if (!sh) return null;
+    var data = sh.getDataRange().getValues();
+    if (data.length < 2) return null;
+    var header = data[0].map(function(h){ return String(h || '').trim(); });
+    var iMatrixId  = header.indexOf('matrixResponseId');
+    var iMicId     = header.indexOf('micId');
+    var iSmRis     = header.indexOf('sm_rispettati');
+    var iSmTot     = header.indexOf('sm_totali');
+    var iScore     = header.indexOf('compliance_score');
+    var iGap       = header.indexOf('gap_critici_ids');
+    if (iMatrixId < 0) return null;
+
+    // Trova l'ultima compilazione MiC per questo Matrix (in caso di re-compile)
+    var found = null;
+    for (var r = data.length - 1; r >= 1; r--) {
+      if (String(data[r][iMatrixId]) === String(matrixResponseId)) {
+        found = data[r];
+        break;
+      }
+    }
+    if (!found) return null;
+
+    // Risolvi gap critici (ids → oggetti completi dallo schema MiC)
+    var gapIds = [];
+    try { gapIds = JSON.parse(found[iGap] || '[]'); } catch(_){}
+    var gapList = [];
+    if (typeof OC_MIC_SCHEMA !== 'undefined' && OC_MIC_SCHEMA.domande) {
+      gapIds.forEach(function(id){
+        var q = OC_MIC_SCHEMA.domande.filter(function(x){ return x.id === id; })[0];
+        if (q) gapList.push({ id: q.id, sezione: q.sezione, sottoSez: q.sottoSez, testo: q.testo });
+      });
+    }
+    return {
+      micId: String(found[iMicId] || ''),
+      smRispettati: Number(found[iSmRis] || 0),
+      smTotali: Number(found[iSmTot] || 0),
+      complianceScore: Number(found[iScore] || 0),
+      gapCriticiList: gapList
+    };
+  } catch(e) {
+    Logger.log('_matrixGetMicForResponse_ errore: ' + e.message);
+    return null;
+  }
 }
 
 /**

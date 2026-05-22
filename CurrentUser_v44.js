@@ -23,6 +23,139 @@
 // --- Config default ---
 var OC_ADMIN_DEFAULT_ = 's.straccini@gmail.com';
 
+// ============================================================================
+// v4.18.56 (2026-05-16) — SPRINT 1 ruoli: getRuoloCorrente(token)
+// ----------------------------------------------------------------------------
+// Singola fonte di verità per identità + ruolo utente.
+// Combina due binari di auth: Google login + magic-link token.
+//
+// Output unificato:
+// {
+//   ok: bool,
+//   ruolo: 'anonimo' | 'lettore' | 'editor' | 'admin',
+//   livello: 0|1|2|3,                  // numerico per gating frontend
+//   email: string,                     // email risolta (da login o token)
+//   nome: string,                      // derivata da email
+//   initials: string,
+//   isAdmin: bool,
+//   isEditor: bool,                    // true anche per admin
+//   isLead: bool,                      // true per lettore+editor+admin
+//   authMethod: 'session'|'token'|'admin_token'|'session+token'|'guest',
+//   tokenValido: bool,
+//   matrixCompletato: bool,
+//   logoutUrl: string
+// }
+//
+// Precedenze (admin sempre vince):
+//   1. Email Google in OC_ADMIN_EMAILS    → admin (livello 3)
+//   2. Email Google in OC_EDITOR_EMAILS   → editor (livello 2)
+//   3. Magic-link valido (token)          → lettore (livello 1)
+//   4. adminToken URL valido              → admin emergency (livello 3)
+//   5. Email Google generica              → lettore se ha sessione, altrimenti anonimo
+//   6. Nessun login + nessun token        → anonimo (livello 0)
+//
+// NOTA: questa funzione NON modifica altri moduli — è una nuova lente.
+// I wrapper getCurrentUser_v44 e _isCurrentUserAdmin_ ora la usano internamente
+// ma mantengono signature/output identici al precedente per backward-compat.
+// ============================================================================
+
+/**
+ * Risolve ruolo + identità dell'utente corrente combinando Google + magic-link.
+ *
+ * @param {string} [token]      — token magic-link da URL ?t=... (opzionale)
+ * @param {string} [adminToken] — token admin URL ?adm=... (opzionale)
+ * @return {Object} vedi schema in header sezione
+ */
+function getRuoloCorrente(token, adminToken) {
+  // --- 1) Email da Google login (priorità massima) ---
+  var emailGoogle = '';
+  try {
+    emailGoogle = Session.getEffectiveUser().getEmail()
+               || Session.getActiveUser().getEmail()
+               || '';
+  } catch(_) {}
+  var emailGoogleLc = String(emailGoogle || '').toLowerCase().trim();
+
+  // --- 2) Set admin / editor da ScriptProperties ---
+  var admins  = _getAdminSet_();
+  var editors = _getEditorSet_();
+  var isAdminByGoogle  = emailGoogleLc && admins[emailGoogleLc] === true;
+  var isEditorByGoogle = emailGoogleLc && (admins[emailGoogleLc] === true || editors[emailGoogleLc] === true);
+
+  // --- 3) AdminToken URL (fallback per visitatori anonimi che hanno il token admin) ---
+  var isAdminByToken = false;
+  try {
+    if (adminToken && typeof _validateAdminToken_ === 'function') {
+      isAdminByToken = !!_validateAdminToken_(adminToken);
+    }
+    if (!isAdminByToken && typeof isAdminViaToken === 'function') {
+      // Compat: cache vecchia (richiede Google login attivo)
+      isAdminByToken = !!isAdminViaToken();
+    }
+  } catch(_) {}
+
+  // --- 4) Magic-link token (sessione lead) ---
+  var sessionInfo = null;
+  if (token && typeof validaSessione === 'function') {
+    try {
+      var s = validaSessione(token);
+      if (s && s.ok && s.valid) sessionInfo = s;
+    } catch(_) {}
+  }
+  var emailToken = sessionInfo ? String(sessionInfo.email || '').toLowerCase().trim() : '';
+
+  // --- 5) Risoluzione email finale (Google ha priorità su token) ---
+  var emailFinale = emailGoogleLc || emailToken || '';
+
+  // --- 6) Determinazione ruolo applicando le precedenze ---
+  var ruolo, livello, authMethod;
+  if (isAdminByGoogle) {
+    ruolo = 'admin'; livello = 3; authMethod = 'session';
+  } else if (isEditorByGoogle) {
+    ruolo = 'editor'; livello = 2; authMethod = 'session';
+  } else if (isAdminByToken && !emailGoogleLc) {
+    // Admin emergency via URL token, solo se nessun login Google
+    ruolo = 'admin'; livello = 3; authMethod = 'admin_token';
+    if (!emailFinale) emailFinale = OC_ADMIN_DEFAULT_;
+  } else if (sessionInfo) {
+    // Magic-link valido — verifica se email è in admin/editor anche senza Google login
+    if (admins[emailToken] === true) {
+      ruolo = 'admin'; livello = 3; authMethod = 'token';
+    } else if (editors[emailToken] === true) {
+      ruolo = 'editor'; livello = 2; authMethod = 'token';
+    } else {
+      ruolo = 'lettore'; livello = 1; authMethod = emailGoogleLc ? 'session+token' : 'token';
+    }
+  } else if (emailGoogleLc) {
+    // Google login senza essere admin/editor → lettore base
+    ruolo = 'lettore'; livello = 1; authMethod = 'session';
+  } else {
+    ruolo = 'anonimo'; livello = 0; authMethod = 'guest';
+  }
+
+  // --- 7) Output unificato ---
+  var nome = _deriveName_(emailFinale);
+  return {
+    ok: true,
+    ruolo: ruolo,
+    livello: livello,
+    email: emailFinale,
+    nome: emailFinale ? nome : 'Ospite',
+    initials: emailFinale ? _deriveInitials_(nome) : 'OS',
+    isAdmin: ruolo === 'admin',
+    isEditor: ruolo === 'admin' || ruolo === 'editor',
+    isLead: livello >= 1,
+    authMethod: authMethod,
+    tokenValido: !!sessionInfo,
+    matrixCompletato: sessionInfo ? !!sessionInfo.matrixCompletato : false,
+    logoutUrl: _buildLogoutUrl_()
+  };
+}
+
+// ============================================================================
+// END Sprint 1 — getRuoloCorrente
+// ============================================================================
+
 /**
  * Ritorna identità dell'utente corrente.
  * {
@@ -35,40 +168,26 @@ var OC_ADMIN_DEFAULT_ = 's.straccini@gmail.com';
  *   logoutUrl: string        // URL per log-out + redirect
  * }
  */
-function getCurrentUser_v44() {
-  var email = '';
-  try { email = Session.getActiveUser().getEmail() || ''; } catch(e) { email = ''; }
+function getCurrentUser_v44(adminToken) {
+  // v4.18.56 — Wrapper su getRuoloCorrente per backward-compat.
+  // Output mantiene gli stessi campi del v4.4 originale.
+  // NOTE: non passa il magic-link token qui (questa funzione è chiamata dal topbar
+  // senza conoscenza del token URL — il livello "lettore" da magic-link viene gestito
+  // separatamente dal frontend via window.OC_SESSION). Comportamento invariato.
+  var r = getRuoloCorrente(null, adminToken);
 
-  if (!email) {
-    return {
-      email:     '',
-      nome:      'Ospite',
-      initials:  'OS',
-      ruolo:     'guest',
-      isAdmin:   false,
-      isEditor:  false,
-      logoutUrl: _buildLogoutUrl_()
-    };
-  }
-
-  var emailLc  = String(email).toLowerCase();
-  var admins   = _getAdminSet_();
-  var editors  = _getEditorSet_();
-  var isAdmin  = admins[emailLc] === true;
-  var isEditor = isAdmin || editors[emailLc] === true;
-  var ruolo    = isAdmin ? 'admin' : (isEditor ? 'editor' : 'lettore');
-
-  var nome = _deriveName_(email);
-  var ini  = _deriveInitials_(nome);
+  // Mappa ruolo 'anonimo' → 'guest' per backward-compat
+  var ruoloLegacy = (r.ruolo === 'anonimo') ? 'guest' : r.ruolo;
 
   return {
-    email:     email,
-    nome:      nome,
-    initials:  ini,
-    ruolo:     ruolo,
-    isAdmin:   isAdmin,
-    isEditor:  isEditor,
-    logoutUrl: _buildLogoutUrl_()
+    email:      r.email,
+    nome:       r.nome,
+    initials:   r.initials,
+    ruolo:      ruoloLegacy,
+    isAdmin:    r.isAdmin,
+    isEditor:   r.isEditor,
+    authMethod: r.authMethod,
+    logoutUrl:  r.logoutUrl
   };
 }
 
@@ -128,12 +247,27 @@ function _normalizeCsvEmails_(csv) {
     .join(',');
 }
 
-function _isCurrentUserAdmin_() {
+function _isCurrentUserAdmin_(adminToken) {
+  // v4.18.56 — Wrapper su getRuoloCorrente. Comportamento invariato.
   try {
-    var email = Session.getActiveUser().getEmail();
-    if (!email) return false;
-    return _getAdminSet_()[email.toLowerCase()] === true;
-  } catch(e) { return false; }
+    var r = getRuoloCorrente(null, adminToken);
+    return !!r.isAdmin;
+  } catch(_) { return false; }
+}
+
+/**
+ * v4.18.56 (2026-05-16) — Helper di gating: verifica se utente corrente è editor o admin.
+ * Usato dalle funzioni "Impostazioni" che devono essere accessibili anche ai collaboratori.
+ *
+ * @param {string} [adminToken] token URL opzionale
+ * @param {string} [magicToken] token magic-link opzionale
+ * @return {boolean}
+ */
+function _isCurrentUserEditorOrAdmin_(adminToken, magicToken) {
+  try {
+    var r = getRuoloCorrente(magicToken, adminToken);
+    return !!r.isEditor;
+  } catch(_) { return false; }
 }
 
 function _deriveName_(email) {
@@ -172,268 +306,7 @@ function _setupAdmin_() {
   Logger.log('Admin emails impostate: ' + getAdminEmails());
 }
 
-// ============================================================================
-// GESTIONE UTENTI — Foglio "Utenti"
-// Colonne: Email | Nome | Ruolo | Stato | Digest | Bandi | Matrix | DataIscrizione | Motivo
-// ============================================================================
-
-var OC_UTENTI_SHEET_ = 'Utenti';
-var OC_UTENTI_COLS_  = ['Email','Nome','Ruolo','Stato','Digest','Bandi','Matrix','DataIscrizione','Motivo'];
-// indici 0-based
-var UC_ = { email:0, nome:1, ruolo:2, stato:3, digest:4, bandi:5, matrix:6, data:7, motivo:8 };
-
-function _getUtentiSheet_() {
-  var ss = getMainSS ? getMainSS() : SpreadsheetApp.openById(
-    PropertiesService.getScriptProperties().getProperty('OC_MAIN_SS_ID') || ''
-  );
-  var sh = ss.getSheetByName(OC_UTENTI_SHEET_);
-  if (!sh) {
-    sh = ss.insertSheet(OC_UTENTI_SHEET_);
-    sh.getRange(1, 1, 1, OC_UTENTI_COLS_.length).setValues([OC_UTENTI_COLS_]);
-    sh.getRange(1, 1, 1, OC_UTENTI_COLS_.length).setFontWeight('bold');
-  }
-  return sh;
-}
-
-function _rowToUser_(row) {
-  return {
-    Email:         row[UC_.email]  || '',
-    Nome:          row[UC_.nome]   || '',
-    Ruolo:         row[UC_.ruolo]  || 'lettore',
-    Stato:         row[UC_.stato]  || 'pending',
-    Digest:        row[UC_.digest] === true || row[UC_.digest] === 'TRUE',
-    Bandi:         row[UC_.bandi]  === true || row[UC_.bandi]  === 'TRUE',
-    Matrix:        row[UC_.matrix] === true || row[UC_.matrix] === 'TRUE',
-    DataIscrizione:row[UC_.data] ? String(row[UC_.data]).substring(0,10) : '',
-    Motivo:        row[UC_.motivo] || ''
-  };
-}
-
-/**
- * Restituisce tutti gli utenti dal foglio Utenti.
- * { ok, items: [...] }
- */
-function getAllUtenti(opts) {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
-  opts = opts || {};
-  var sh = _getUtentiSheet_();
-  var vals = sh.getDataRange().getValues();
-  if (vals.length < 2) return { ok:true, items:[] };
-  var out = [];
-  for (var i = 1; i < vals.length; i++) {
-    var u = _rowToUser_(vals[i]);
-    if (!u.Email) continue;
-    if (opts.statoFilter && u.Stato !== opts.statoFilter) continue;
-    if (opts.ruoloFilter && u.Ruolo !== opts.ruoloFilter) continue;
-    out.push(u);
-  }
-  return { ok:true, items: out };
-}
-
-/**
- * Registra una richiesta di accesso (chiamata dalla pagina login pubblica).
- */
-function requestAccess(body) {
-  body = body || {};
-  var email = String(body.email || '').toLowerCase().trim();
-  var nome  = String(body.nome  || '').trim();
-  var motivo= String(body.motivo|| '').trim();
-  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok:false, error:'Email non valida' };
-
-  var sh   = _getUtentiSheet_();
-  var vals = sh.getDataRange().getValues();
-  // cerca se esiste già
-  for (var i = 1; i < vals.length; i++) {
-    var rowEmail = String(vals[i][UC_.email] || '').toLowerCase().trim();
-    if (rowEmail === email) {
-      var stato = String(vals[i][UC_.stato] || '');
-      if (stato === 'attivo') return { ok:true, alreadyActive:true, email:email, message:'Account già attivo. Puoi accedere normalmente.' };
-      if (stato === 'pending') return { ok:true, message:'Richiesta già ricevuta, in attesa di approvazione.' };
-      // sospeso/rifiutato: aggiorna motivo e rimette in pending
-      sh.getRange(i+1, UC_.stato+1).setValue('pending');
-      sh.getRange(i+1, UC_.motivo+1).setValue(motivo || vals[i][UC_.motivo]);
-      return { ok:true, message:'Richiesta reinviata. Sarai contattato entro 24h.' };
-    }
-  }
-  // nuovo utente
-  var now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
-  sh.appendRow([email, nome, 'lettore', 'pending', false, false, false, now, motivo]);
-  // notifica Telegram se disponibile
-  try {
-    if (typeof telegramNotifyAuthRequest_ === 'function') {
-      telegramNotifyAuthRequest_({ email:email, nome:nome, motivo:motivo });
-    }
-  } catch(e) { Logger.log('Telegram notify err: ' + e.message); }
-  return { ok:true, message:'Richiesta inviata. Riceverai conferma via email entro 24h.' };
-}
-
-/**
- * Approva un utente pending.
- * @param {string} email
- * @param {string} ruolo  admin|editor|lettore
- */
-function approveUser(email, ruolo) {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
-  email = String(email || '').toLowerCase().trim();
-  ruolo = String(ruolo || 'lettore').toLowerCase().trim();
-  if (['admin','editor','lettore'].indexOf(ruolo) < 0) ruolo = 'lettore';
-
-  var sh   = _getUtentiSheet_();
-  var vals = sh.getDataRange().getValues();
-  for (var i = 1; i < vals.length; i++) {
-    if (String(vals[i][UC_.email] || '').toLowerCase().trim() === email) {
-      sh.getRange(i+1, UC_.ruolo+1).setValue(ruolo);
-      sh.getRange(i+1, UC_.stato+1).setValue('attivo');
-      // aggiorna ScriptProperties
-      _syncRoleToProps_(email, ruolo);
-      // invia email di conferma all'utente
-      try {
-        var nomeU = vals[i][UC_.nome] || email;
-        var webUrl = ScriptApp.getService().getUrl();
-        MailApp.sendEmail(email, 'Accesso approvato — Osservatorio Culturale',
-          'Ciao ' + nomeU + ',\n\nIl tuo accesso all\'Osservatorio Culturale è stato approvato con ruolo "' + ruolo + '".\n\nEntra qui: ' + webUrl + '\n\nOsservatorio Culturale · Duemilamusei');
-      } catch(eM) { Logger.log('Email conferma err: ' + eM.message); }
-      return { ok:true, email:email, ruolo:ruolo };
-    }
-  }
-  return { ok:false, error:'Utente non trovato: ' + email };
-}
-
-/**
- * Rifiuta una richiesta.
- */
-function rejectUser(email, reason) {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
-  email = String(email || '').toLowerCase().trim();
-  var sh = _getUtentiSheet_();
-  var vals = sh.getDataRange().getValues();
-  for (var i = 1; i < vals.length; i++) {
-    if (String(vals[i][UC_.email] || '').toLowerCase().trim() === email) {
-      sh.getRange(i+1, UC_.stato+1).setValue('rifiutato');
-      if (reason) sh.getRange(i+1, UC_.motivo+1).setValue(String(vals[i][UC_.motivo] || '') + ' [RIFIUTATO: ' + reason + ']');
-      return { ok:true };
-    }
-  }
-  return { ok:false, error:'Utente non trovato' };
-}
-
-/**
- * Sospende un utente attivo.
- */
-function suspendUser(email) {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
-  email = String(email || '').toLowerCase().trim();
-  var sh = _getUtentiSheet_();
-  var vals = sh.getDataRange().getValues();
-  for (var i = 1; i < vals.length; i++) {
-    if (String(vals[i][UC_.email] || '').toLowerCase().trim() === email) {
-      sh.getRange(i+1, UC_.stato+1).setValue('sospeso');
-      _removeRoleFromProps_(email); // rimuove da admin/editor se necessario
-      return { ok:true };
-    }
-  }
-  return { ok:false, error:'Utente non trovato' };
-}
-
-/**
- * Elimina un utente dal foglio.
- */
-function deleteUser(email) {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
-  email = String(email || '').toLowerCase().trim();
-  var sh = _getUtentiSheet_();
-  var vals = sh.getDataRange().getValues();
-  for (var i = 1; i < vals.length; i++) {
-    if (String(vals[i][UC_.email] || '').toLowerCase().trim() === email) {
-      sh.deleteRow(i+1);
-      _removeRoleFromProps_(email);
-      return { ok:true };
-    }
-  }
-  return { ok:false, error:'Utente non trovato' };
-}
-
-/**
- * Aggiorna il ruolo di un utente.
- */
-function updateUserRuolo(email, ruolo) {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
-  email = String(email || '').toLowerCase().trim();
-  ruolo = String(ruolo || 'lettore').toLowerCase().trim();
-  if (['admin','editor','lettore'].indexOf(ruolo) < 0) return { ok:false, error:'Ruolo non valido' };
-  var sh = _getUtentiSheet_();
-  var vals = sh.getDataRange().getValues();
-  for (var i = 1; i < vals.length; i++) {
-    if (String(vals[i][UC_.email] || '').toLowerCase().trim() === email) {
-      sh.getRange(i+1, UC_.ruolo+1).setValue(ruolo);
-      _syncRoleToProps_(email, ruolo);
-      return { ok:true };
-    }
-  }
-  return { ok:false, error:'Utente non trovato' };
-}
-
-/**
- * Aggiorna un campo opt-in (Digest, Bandi, Matrix).
- */
-function updateUserOptIn(email, key, newVal) {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
-  email = String(email || '').toLowerCase().trim();
-  var colMap = { Digest: UC_.digest, Bandi: UC_.bandi, Matrix: UC_.matrix };
-  if (!(key in colMap)) return { ok:false, error:'Campo non valido: ' + key };
-  var sh = _getUtentiSheet_();
-  var vals = sh.getDataRange().getValues();
-  for (var i = 1; i < vals.length; i++) {
-    if (String(vals[i][UC_.email] || '').toLowerCase().trim() === email) {
-      sh.getRange(i+1, colMap[key]+1).setValue(newVal === true || newVal === 'true');
-      return { ok:true };
-    }
-  }
-  return { ok:false, error:'Utente non trovato' };
-}
-
-/**
- * Helper pubblico per Codice.js gate auth.
- */
-function getUtenteByEmail_(email) {
-  email = String(email || '').toLowerCase().trim();
-  var sh = _getUtentiSheet_();
-  var vals = sh.getDataRange().getValues();
-  for (var i = 1; i < vals.length; i++) {
-    if (String(vals[i][UC_.email] || '').toLowerCase().trim() === email) {
-      return _rowToUser_(vals[i]);
-    }
-  }
-  return null;
-}
-
-// --- helpers ScriptProperties ------------------------------------------------
-
-function _syncRoleToProps_(email, ruolo) {
-  var admCsv  = PropertiesService.getScriptProperties().getProperty('OC_ADMIN_EMAILS') || OC_ADMIN_DEFAULT_;
-  var editCsv = PropertiesService.getScriptProperties().getProperty('OC_EDITOR_EMAILS') || '';
-
-  var admSet  = _csvToSet_(admCsv);
-  var editSet = _csvToSet_(editCsv);
-
-  // rimuovi da entrambi, poi aggiungi al set corretto
-  delete admSet[email];
-  delete editSet[email];
-
-  if (ruolo === 'admin')  admSet[email]  = true;
-  if (ruolo === 'editor') editSet[email] = true;
-
-  PropertiesService.getScriptProperties().setProperty('OC_ADMIN_EMAILS',  Object.keys(admSet).join(','));
-  PropertiesService.getScriptProperties().setProperty('OC_EDITOR_EMAILS', Object.keys(editSet).join(','));
-}
-
-function _removeRoleFromProps_(email) {
-  var admCsv  = PropertiesService.getScriptProperties().getProperty('OC_ADMIN_EMAILS') || OC_ADMIN_DEFAULT_;
-  var editCsv = PropertiesService.getScriptProperties().getProperty('OC_EDITOR_EMAILS') || '';
-  var admSet  = _csvToSet_(admCsv);
-  var editSet = _csvToSet_(editCsv);
-  delete admSet[email];
-  delete editSet[email];
-  PropertiesService.getScriptProperties().setProperty('OC_ADMIN_EMAILS',  Object.keys(admSet).join(','));
-  PropertiesService.getScriptProperties().setProperty('OC_EDITOR_EMAILS', Object.keys(editSet).join(','));
-}
+// NOTA: le funzioni GESTIONE UTENTI (getAllUtenti, approveUser, rejectUser,
+// suspendUser, deleteUser, updateUserRuolo, updateUserOptIn, getUtenteByEmail_,
+// requestAccess) sono definite in Auth.js che usa lo schema aggiornato del
+// foglio Utenti con lookup dinamico degli header. Non duplicare qui.

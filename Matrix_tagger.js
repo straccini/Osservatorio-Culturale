@@ -189,12 +189,10 @@ function setupMatrixDimColumns() {
       if (shPod) { res.podcast = _ensureMatrixDimColumn_(shPod); Logger.log('Podcast: colonna ' + res.podcast); }
       else { Logger.log('Podcast: foglio non trovato'); }
     }
-    // Bandi sta su spreadsheet separato (RADAR)
-    if (typeof getSheetRadar === 'function') {
-      var shRadar = getSheetRadar();
-      if (shRadar) { res.bandi = _ensureMatrixDimColumn_(shRadar); Logger.log('RADAR Bandi: colonna ' + res.bandi); }
-      else { Logger.log('RADAR Bandi: getSheetRadar() ritorna null'); }
-    }
+    // v4.18.14 (2026-05-12) F2.3 — Bandi: ora segue switchover v5
+    var shBandiTag = _getBandiSheetForTagging_();
+    if (shBandiTag) { res.bandi = _ensureMatrixDimColumn_(shBandiTag); Logger.log('Bandi (' + shBandiTag.getName() + '): colonna ' + res.bandi); }
+    else { Logger.log('Bandi: nessun foglio trovato (né Bandi_v5 né RADAR BANDI legacy)'); }
   } catch(e) {
     Logger.log('setupMatrixDimColumns errore: ' + e.message);
     return { error: e.message };
@@ -248,7 +246,8 @@ function _tagMatrixDimSheet_(target, batchSize, dryRun) {
       if (!ss) return { error:'spreadsheet null' };
       sh = ss.getSheetByName(target === 'items' ? 'Items' : 'Podcast');
     } else if (target === 'bandi') {
-      sh = (typeof getSheetRadar === 'function') ? getSheetRadar() : null;
+      // v4.18.14 F2.3 — switchover Bandi v5
+      sh = _getBandiSheetForTagging_();
     }
     if (!sh) return { error:'sheet non trovato per ' + target };
   } catch(e) { return { error: e.message }; }
@@ -316,7 +315,8 @@ function _identifyTextColsFor_(target, headers) {
   if (target === 'items') {
     [idx('titolo'), idx('Title'), idx('sommario'), idx('descrizione'), idx('summary'), idx('tag'), idx('tagAI')].forEach(function(c){ if (c) cols.push(c); });
   } else if (target === 'bandi') {
-    [idx('titolo'), idx('settore'), idx('ente'), idx('note'), idx('descrizione'), idx('regione')].forEach(function(c){ if (c) cols.push(c); });
+    // v4.18.14 F2.3 — esteso per coprire colonne Bandi_v5 (Sommario, Soggetti, Livello, Ambito)
+    [idx('titolo'), idx('settore'), idx('ente'), idx('note'), idx('descrizione'), idx('regione'), idx('sommario'), idx('soggetti'), idx('livello'), idx('ambito')].forEach(function(c){ if (c) cols.push(c); });
   } else if (target === 'podcast') {
     [idx('titolo'), idx('sommarioai'), idx('tagai'), idx('tematica'), idx('serie')].forEach(function(c){ if (c) cols.push(c); });
   }
@@ -340,7 +340,8 @@ function getMatrixTaggingStats() {
         var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActive();
         if (ss) sh = ss.getSheetByName(target === 'items' ? 'Items' : 'Podcast');
       } else if (target === 'bandi') {
-        sh = (typeof getSheetRadar === 'function') ? getSheetRadar() : null;
+        // v4.18.14 F2.3 — switchover Bandi v5
+        sh = _getBandiSheetForTagging_();
       }
       if (!sh) { stats[target] = { error:'sheet non trovato' }; return; }
       var lastRow = sh.getLastRow();
@@ -380,6 +381,32 @@ function testMatrixTagger() {
     Logger.log((i+1) + '. ' + t.substring(0,80) + '... -> ' + (dims || '(nessuna)'));
   });
   return samples.map(function(t){ return { testo: t, dim: _tagMatrixDim_(t) }; });
+}
+
+/**
+ * v4.18.14 (2026-05-12) F2.3 — Sceglie il foglio bandi corretto per il tagging Matrix.
+ * Se il switchover v5 è attivo (USE_BANDI_V5=true) e il foglio Bandi_v5 esiste → usa quello.
+ * Altrimenti fallback al legacy RADAR BANDI via getSheetRadar().
+ * Restituisce null se nessuno dei due è disponibile.
+ */
+function _getBandiSheetForTagging_() {
+  try {
+    var useV5 = (typeof isBandiV5Active === 'function') && isBandiV5Active();
+    if (useV5) {
+      var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+      var nome = (typeof SH_BANDI_V5 === 'string' && SH_BANDI_V5) ? SH_BANDI_V5 : 'Bandi_v5';
+      var shV5 = ss && ss.getSheetByName(nome);
+      if (shV5) return shV5;
+      // Se v5 attivo ma foglio assente, log e fallback
+      Logger.log('_getBandiSheetForTagging_: USE_BANDI_V5=true ma foglio "' + nome + '" non trovato, fallback legacy');
+    }
+    // Fallback legacy v4
+    if (typeof getSheetRadar === 'function') return getSheetRadar();
+    return null;
+  } catch(e) {
+    Logger.log('_getBandiSheetForTagging_ errore: ' + e.message);
+    return null;
+  }
 }
 
 // ============================================================================

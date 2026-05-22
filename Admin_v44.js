@@ -22,8 +22,7 @@
  *   adminPreviewNewsletterHtml(draftId)
  *   adminRequestSendAuthorization(draftId)
  *   adminConfirmSendWithToken(draftId, authToken)
- *   adminGetMailingList()
- *   adminSetMailingListRow(row)
+ *   (mailing list gestita via Codice.js: getMailingList/saveMailing/deleteMailing/toggleMailingField)
  * ================================================================
  */
 
@@ -151,7 +150,7 @@ function adminPreviewNewsletterHtml(draftId) {
  * NewsletterLog, e invia notifica Telegram all'admin con link di approvazione.
  *
  * Il link apre il webapp in modalità "approva" (?approveNl=ID&t=TOKEN)
- * che dovrà essere gestito in doGet (vedi Server_v44_doGet_patch_).
+ * gestito in doGet di Codice.js (vedi handler in Newsletter_approve.js, rename v4.18.39).
  */
 function adminRequestSendAuthorization(draftId) {
   if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
@@ -228,54 +227,11 @@ function adminConfirmSendWithToken(draftId, authToken) {
   return { ok:true, sent: res.count || 0, errors: res.errors || [] };
 }
 
-/**
- * Ritorna le righe della MailingList (escluse colonne sensibili).
- */
-function adminGetMailingList() {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
-  var sh = _getOrCreateSheet_(OC_ML_SHEET_, ['Email','Nome','Ruolo','Ambiti','Token','Attivo']);
-  var vals = sh.getDataRange().getValues();
-  if (vals.length < 2) return { ok:true, items:[], count:0 };
-  var out = [];
-  for (var i = 1; i < vals.length; i++) {
-    var r = vals[i];
-    if (!r[0]) continue;
-    out.push({
-      email:  r[0],
-      nome:   r[1] || '',
-      ruolo:  r[2] || 'lettore',
-      ambiti: r[3] || '',
-      attivo: (r[5] === true || String(r[5]).toLowerCase() === 'true' || r[5] === 1 || r[5] === '')
-    });
-  }
-  return { ok:true, items: out, count: out.length };
-}
-
-/**
- * Aggiunge/aggiorna una riga in MailingList. row = {email, nome, ruolo, ambiti, attivo}
- */
-function adminSetMailingListRow(row) {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
-  if (!row || !row.email) return { ok:false, error:'email_required' };
-  var email = String(row.email).trim().toLowerCase();
-  var sh = _getOrCreateSheet_(OC_ML_SHEET_, ['Email','Nome','Ruolo','Ambiti','Token','Attivo']);
-  var vals = sh.getDataRange().getValues();
-  var header = vals[0];
-  var iEmail = 0;
-  var found = -1;
-  for (var i = 1; i < vals.length; i++) {
-    if (String(vals[i][iEmail]).trim().toLowerCase() === email) { found = i; break; }
-  }
-  var token = (found >= 0 && vals[found][4]) ? vals[found][4] : _makeToken_();
-  var attivo = (row.attivo === false) ? false : true;
-  var newRow = [email, row.nome||'', row.ruolo||'lettore', row.ambiti||'', token, attivo];
-  if (found >= 0) {
-    sh.getRange(found+1, 1, 1, newRow.length).setValues([newRow]);
-  } else {
-    sh.appendRow(newRow);
-  }
-  return { ok:true, email:email, token:token };
-}
+// v4.18.39 (audit 2026-05-14) — Rimosse 2 funzioni morte:
+//   • adminGetMailingList()       — duplicato di getMailingList() in Codice.js (sistema attivo)
+//   • adminSetMailingListRow(row) — duplicato di saveMailing() in Codice.js
+// Il pannello mailing list usa getMailingList/saveMailing/deleteMailing/toggleMailingField
+// definiti in Codice.js (riga 2182+).
 
 // ================== PRIVATE HELPERS ==================
 

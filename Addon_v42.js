@@ -40,7 +40,8 @@ function getPodcastRecenti(limit) {
     var raw = (typeof getPodcasts === 'function')
       ? getPodcasts({ stato:'tutti', limit: limit })
       : [];
-    if (!Array.isArray(raw)) raw = (raw && raw.items) || [];
+    // getPodcasts() restituisce {podcasts:[], total:0} — non un array diretto
+    if (!Array.isArray(raw)) raw = (raw && (raw.podcasts || raw.items)) || [];
     return raw.slice(0, limit).map(function(p){
       return {
         id:       p.id || p.ID || p.uid || '',
@@ -69,6 +70,20 @@ function getPodcastRecenti(limit) {
  * @return {Object} payload home (vedi contratto sotto)
  */
 function getHomepageDataV42() {
+  // v4.18.60 — Cache 30min per evitare 3+ full-sheet scan ad ogni caricamento
+  var HP_CACHE_KEY = 'oc_homepage_cache_v1';
+  var HP_CACHE_TTL = 30 * 60 * 1000; // 30 minuti
+  try {
+    var cached = PropertiesService.getScriptProperties().getProperty(HP_CACHE_KEY);
+    if (cached) {
+      var c = JSON.parse(cached);
+      if (c._expiresAt && c._expiresAt > Date.now()) {
+        c._fromCache = true;
+        return c;
+      }
+    }
+  } catch(_) { /* cache miss, procedi normalmente */ }
+
   var tz = Session.getScriptTimeZone() || 'Europe/Rome';
 
   // --- News ---
@@ -76,6 +91,17 @@ function getHomepageDataV42() {
   try {
     var itemsRes = (typeof getItems === 'function') ? getItems({ limit: 200 }) : [];
     news = Array.isArray(itemsRes) ? itemsRes : (itemsRes && itemsRes.items) || [];
+    // v4.18.15 (2026-05-12) D — Dedup news per chiave URL canonicalizzata (fallback titolo+fonte).
+    // Bug: il foglio Items contiene righe duplicate, lo scanner non controlla unicità.
+    var seenK = {};
+    news = news.filter(function(n){
+      var url = String(n.link || n.Link || n.FonteURL || n.url || n.URL || '').trim().toLowerCase().replace(/\/+$/, '');
+      var key = url || (String(n.titolo||n.Titolo||'').trim().toLowerCase() + '|' + String(n.fonte||n.Fonte||'').trim().toLowerCase());
+      if (!key) return true; // se non ho chiave, tengo
+      if (seenK[key]) return false;
+      seenK[key] = true;
+      return true;
+    });
   } catch(e) { news = []; }
 
   // --- Bandi ---
@@ -182,7 +208,8 @@ function getHomepageDataV42() {
 
   // --- Top podcast (3) ---
   var podHome = pods.slice(0,3).map(function(p){
-    return { id:p.id, titolo:p.titolo, fonte:p.fonte, durata:p.durata };
+    return { id:p.id, titolo:p.titolo, fonte:p.fonte, durata:p.durata,
+             link:p.link||'', tematica:p.tematica||'', ambito:p.ambitoId||0 };
   });
 
   // --- Scanner stats ---
@@ -264,7 +291,7 @@ function getHomepageDataV42() {
   nuoviOggi.totale = nuoviOggi.news + nuoviOggi.bandi + nuoviOggi.podcast;
   // --- fine INT-1 ---
 
-  return {
+  var result = {
     dataOggi:        Utilities.formatDate(new Date(), tz, "d MMMM yyyy"),
     ultimaScansione: ultimaScansione,    // INT-1
     nuoviOggi:       nuoviOggi,          // INT-1
@@ -275,6 +302,27 @@ function getHomepageDataV42() {
     scanner:         scanner,
     badges:          badges
   };
+
+  // v4.18.60 — Salva in cache solo dati leggeri (badges, stats, ambiti counts)
+  // Il payload completo (con array news/bandi) supera 9KB PropertiesService.
+  // Cachiamo solo la struttura senza gli array di contenuti.
+  try {
+    var cachePayload = {
+      _expiresAt: Date.now() + HP_CACHE_TTL,
+      dataOggi: result.dataOggi,
+      ultimaScansione: result.ultimaScansione,
+      nuoviOggi: result.nuoviOggi,
+      scanner: result.scanner,
+      badges: result.badges,
+      ambiti: result.ambiti,
+      bandiUrgenti: result.bandiUrgenti.slice(0, 4),  // max 4 urgenti
+      news: result.news,       // solo top 5, gia slice
+      podcast: result.podcast  // solo top 3, gia slice
+    };
+    PropertiesService.getScriptProperties().setProperty(HP_CACHE_KEY, JSON.stringify(cachePayload));
+  } catch(_) { /* quota superata, skip cache */ }
+
+  return result;
 }
 
 // ---------- 3. getAmbitoDataV42 (dettaglio singolo ambito) ----------
@@ -672,42 +720,6 @@ function settoreToAmbitoId_(settore, titolo, ente) {
  *
  * Esegui da editor GAS: Seleziona funzione `migraBandiAmbito` -> Esegui.
  */
-function migraBandiAmbito() {
-  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActive();
-  var sheetName = (typeof SHEET_RADAR === 'string' && SHEET_RADAR) ? SHEET_RADAR : 'RADAR BANDI';
-  var sh = ss.getSheetByName(sheetName);
-  if (!sh) throw new Error('Foglio "' + sheetName + '" non trovato');
-
-  var rng = sh.getDataRange();
-  var vals = rng.getValues();
-  if (vals.length < 2) return 'Foglio vuoto';
-
-  var head = vals[0].map(function(h){ return String(h||'').trim(); });
-  var colAmb = head.indexOf('Ambito');
-  if (colAmb === -1) throw new Error('Aggiungere colonna "Ambito" al foglio "' + sheetName + '" prima di lanciare la migrazione.');
-
-  var colSet = head.indexOf('Settore');
-  var colTit = head.indexOf('Titolo');
-  var colEnte = head.indexOf('Ente');
-
-  var updated = 0, unmapped = 0;
-  for (var r=1; r<vals.length; r++){
-    var row = vals[r];
-    if (row[colAmb] !== '' && row[colAmb] != null) continue;
-
-    var settore = colSet>=0 ? row[colSet] : '';
-    var titolo  = colTit>=0 ? row[colTit] : '';
-    var ente    = colEnte>=0 ? row[colEnte] : '';
-    var amb = settoreToAmbitoId_(settore, titolo, ente);
-    if (amb) {
-      sh.getRange(r+1, colAmb+1).setValue(amb);
-      updated++;
-    } else {
-      unmapped++;
-    }
-  }
-  var msg = 'Migrazione completata: ' + updated + ' bandi aggiornati, ' + unmapped + ' senza match (da compilare a mano).';
-  Logger.log(msg);
-  return msg;
-}
+// migraBandiAmbito() RIMOSSA da Addon_v42 (v4.18.55) — versione corretta è in Codice.js
+// Questa versione usava getMainSS() invece di getSheetRadar() (spreadsheet sbagliato).
 // ============================================================

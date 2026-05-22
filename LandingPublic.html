@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sinopia · Osservatorio Culturale · Duemilamusei</title>
+<meta name="description" content="Intelligence per musei e luoghi della cultura. Sondaggi gratuiti di autovalutazione, bandi, normative, innovazione museale.">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:#FAFAF7;color:#1D1D1F;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:900px;margin:0 auto;padding:0 24px}
+
+.header{padding:20px 0;border-bottom:1px solid #E8E4DC;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}
+.logo-mark{width:32px;height:32px;background:#8B4513;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'DM Serif Display',serif;font-size:16px}
+.logo-text{font-family:'DM Serif Display',serif;font-size:18px;color:#1D1D1F}
+.logo-sub{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#8B4513;font-weight:500}
+.header-cta{font-size:12px;color:#8B4513;text-decoration:none;border:1px solid #8B4513;padding:6px 16px;border-radius:6px;font-weight:500;transition:all .2s}
+.header-cta:hover{background:#8B4513;color:#fff}
+
+.hero{padding:80px 0 60px;text-align:center}
+.hero-eyebrow{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#8B4513;font-weight:500;margin-bottom:16px}
+.hero-title{font-family:'DM Serif Display',serif;font-size:44px;color:#1D1D1F;line-height:1.15;margin-bottom:20px}
+.hero-desc{font-size:17px;color:#666;max-width:560px;margin:0 auto;line-height:1.7;font-weight:300}
+.hero-line{width:48px;height:3px;background:#8B4513;margin:32px auto}
+
+.surveys{padding:40px 0 60px}
+.surveys-title{font-family:'DM Serif Display',serif;font-size:24px;text-align:center;margin-bottom:8px}
+.surveys-sub{font-size:14px;color:#888;text-align:center;margin-bottom:36px;font-weight:300}
+.survey-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.survey-card{background:#FFFFFF;border:1px solid #E8E4DC;border-radius:10px;padding:28px 24px;transition:all .25s;cursor:pointer;text-decoration:none;color:inherit;display:block}
+.survey-card:hover{border-color:#8B4513;box-shadow:0 4px 20px rgba(139,69,19,.08);transform:translateY(-2px)}
+.survey-card-icon{width:48px;height:48px;border:1.5px solid #8B4513;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.survey-card-icon svg{width:24px;height:24px;stroke:#8B4513;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.survey-card-title{font-family:'DM Serif Display',serif;font-size:18px;color:#1D1D1F;margin-bottom:8px}
+.survey-card-desc{font-size:13px;color:#888;line-height:1.5;margin-bottom:14px}
+.survey-card-meta{font-size:11px;color:#B8902A;font-weight:500;letter-spacing:.5px}
+
+.matrix-banner{padding:40px 0;border-top:1px solid #E8E4DC}
+.matrix-inner{background:#fff;border:1px solid #E8E4DC;border-radius:12px;padding:36px;text-align:center}
+.matrix-inner h2{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:10px}
+.matrix-inner p{font-size:14px;color:#666;max-width:480px;margin:0 auto 20px;font-weight:300;line-height:1.6}
+.matrix-btn{display:inline-block;background:#8B4513;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;transition:all .2s}
+.matrix-btn:hover{background:#6D360F}
+.matrix-sub{font-size:12px;color:#aaa;margin-top:12px}
+
+.how{padding:48px 0;border-top:1px solid #E8E4DC}
+.how-title{font-family:'DM Serif Display',serif;font-size:24px;text-align:center;margin-bottom:36px}
+.how-steps{display:flex;gap:32px;justify-content:center}
+.how-step{text-align:center;flex:1;max-width:200px}
+.how-num{width:40px;height:40px;border:1.5px solid #8B4513;color:#8B4513;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-family:'DM Serif Display',serif;font-size:18px}
+.how-step-title{font-size:14px;font-weight:700;margin-bottom:6px}
+.how-step-desc{font-size:12px;color:#888;line-height:1.5}
+
+.about{padding:48px 0;border-top:1px solid #E8E4DC}
+.about-inner{display:flex;gap:40px;align-items:flex-start}
+.about-text{flex:1}
+.about-title{font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:14px}
+.about-desc{font-size:14px;color:#555;line-height:1.7;font-weight:300}
+.about-evidence{flex:0 0 240px;background:#fff;border:1px solid #E8E4DC;border-radius:10px;padding:20px}
+.about-evidence-title{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#8B4513;font-weight:700;margin-bottom:12px}
+.about-stat{margin-bottom:10px}
+.about-stat-n{font-family:'DM Serif Display',serif;font-size:22px;color:#8B4513}
+.about-stat-l{font-size:11px;color:#888}
+
+.footer{padding:32px 0;border-top:1px solid #E8E4DC;text-align:center;font-size:11px;color:#aaa}
+.footer a{color:#8B4513;text-decoration:none}
+
+@media(max-width:640px){
+  .hero{padding:48px 0 36px}
+  .hero-title{font-size:30px}
+  .survey-grid{grid-template-columns:1fr}
+  .how-steps{flex-direction:column;align-items:center}
+  .about-inner{flex-direction:column}
+  .about-evidence{flex:auto;width:100%}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="header">
+    <a class="logo" href="?">
+      <div class="logo-mark">S</div>
+      <div>
+        <div class="logo-text">Sinopia</div>
+        <div class="logo-sub">Duemilamusei</div>
+      </div>
+    </a>
+    <a class="header-cta" href="#sondaggi">Valuta il tuo museo</a>
+  </header>
+
+  <section class="hero">
+    <div class="hero-eyebrow">Osservatorio Culturale</div>
+    <h1 class="hero-title">Intelligence per musei<br>e luoghi della cultura</h1>
+    <p class="hero-desc">Monitoriamo bandi, normative e innovazione per il settore museale italiano. Strumenti gratuiti di autovalutazione per direttori e gestori.</p>
+    <div class="hero-line"></div>
+  </section>
+
+  <section class="surveys" id="sondaggi">
+    <h2 class="surveys-title">Sondaggi mirati gratuiti</h2>
+    <p class="surveys-sub">Scegli l'area che ti interessa. 8 domande, 3 minuti, diagnosi immediata.</p>
+    <div class="survey-grid">
+      <a class="survey-card" href="?survey=accessibilita">
+        <div class="survey-card-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2"/><path d="M12 7.5v5m-4 2l4-2 4 2m-4-2v5"/></svg></div>
+        <div class="survey-card-title">Accessibilita</div>
+        <div class="survey-card-desc">Fisica, cognitiva, sensoriale e digitale. Quanto e inclusivo il tuo museo?</div>
+        <div class="survey-card-meta">8 domande · 3 min &#8594; diagnosi</div>
+      </a>
+      <a class="survey-card" href="?survey=digital">
+        <div class="survey-card-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></svg></div>
+        <div class="survey-card-title">Maturita Digitale</div>
+        <div class="survey-card-desc">Web, social, catalogo digitale, analytics, AI. A che punto sei?</div>
+        <div class="survey-card-meta">8 domande · 3 min &#8594; diagnosi</div>
+      </a>
+      <a class="survey-card" href="?survey=audience">
+        <div class="survey-card-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="17" cy="8" r="2"/><path d="M21 21v-1.5a3 3 0 0 0-2-2.83"/></svg></div>
+        <div class="survey-card-title">Audience &amp; Engagement</div>
+        <div class="survey-card-desc">Segmentazione pubblici, scuole, edutainment, co-creazione.</div>
+        <div class="survey-card-meta">8 domande · 3 min &#8594; diagnosi</div>
+      </a>
+      <a class="survey-card" href="?survey=welfare">
+        <div class="survey-card-icon"><svg viewBox="0 0 24 24"><path d="M12 21C12 21 4 13.5 4 8.5C4 5.46 6.46 3 9.5 3c1.74 0 3.41.81 4.5 2.09A5.99 5.99 0 0 1 18.5 3C21.54 3 24 5.46 24 8.5c0 5-8 12.5-8 12.5"/></svg></div>
+        <div class="survey-card-title">Welfare Culturale</div>
+        <div class="survey-card-desc">Programmi welfare, pubblici fragili, impatto sociale, misurazione.</div>
+        <div class="survey-card-meta">8 domande · 3 min &#8594; diagnosi</div>
+      </a>
+    </div>
+  </section>
+
+  <section class="matrix-banner">
+    <div class="matrix-inner">
+      <h2>MuseMu Matrix &#8212; Valutazione completa</h2>
+      <p>Vuoi una fotografia integrale del tuo museo? 43 domande, 10 dimensioni, profilo personalizzato con roadmap di sviluppo.</p>
+      <a class="matrix-btn" href="?survey=matrix">Compila il Matrix completo &#8594;</a>
+      <div class="matrix-sub">10 minuti · Anonimo · Report immediato</div>
+    </div>
+  </section>
+
+  <section class="how">
+    <h2 class="how-title">Come funziona</h2>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="how-num">1</div>
+        <div class="how-step-title">Compila</div>
+        <div class="how-step-desc">8 domande su una dimensione. Anonimo, senza registrazione.</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">2</div>
+        <div class="how-step-title">Ricevi la diagnosi</div>
+        <div class="how-step-desc">Score e 3 suggerimenti operativi immediati. Nessuna attesa.</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">3</div>
+        <div class="how-step-title">Approfondisci</div>
+        <div class="how-step-desc">Compila il Matrix completo o prenota una consulenza gratuita.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="about">
+    <div class="about-inner">
+      <div class="about-text">
+        <h2 class="about-title">Duemilamusei</h2>
+        <div class="about-desc">Consulenza strategica per lo sviluppo di musei e luoghi della cultura. Dal 1999 progettiamo, gestiamo e innoviamo il patrimonio culturale italiano.<br><br>Direzione di Pesaro Capitale Italiana della Cultura 2024. Gestione di reti museali in Marche, Emilia-Romagna, Puglia. Progettazione del Museo Nazionale Rossini e del Fellini Museum.</div>
+      </div>
+      <div class="about-evidence">
+        <div class="about-evidence-title">In numeri</div>
+        <div class="about-stat"><div class="about-stat-n">25+</div><div class="about-stat-l">anni nel settore</div></div>
+        <div class="about-stat"><div class="about-stat-n">50+</div><div class="about-stat-l">musei gestiti o progettati</div></div>
+        <div class="about-stat"><div class="about-stat-n">1.200</div><div class="about-stat-l">eventi CIC Pesaro 2024</div></div>
+        <div class="about-stat"><div class="about-stat-n">5</div><div class="about-stat-l">regioni attive</div></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    Sinopia · Osservatorio Culturale · Duemilamusei · Fano (PU)<br>
+    <a href="mailto:s.straccini@gmail.com">s.straccini@gmail.com</a> · Dati trattati ai sensi del Reg. UE 2016/679
+  </footer>
+</div>
+
+</body>
+</html>

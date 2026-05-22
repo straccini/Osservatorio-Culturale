@@ -225,36 +225,23 @@ function _logScan_(nomeFonte, tipo, esito, numNuovi, errore) {
  * Eseguire da editor una sola volta dopo deploy v4.6.0.
  */
 function setupTriggers_v46() {
-  // Cancella trigger esistenti
+  // Delega a setupTriggersUnificati (Scannerbandi.js) che è la funzione master
+  if (typeof setupTriggersUnificati === 'function') {
+    setupTriggersUnificati();
+    return ScriptApp.getProjectTriggers().length;
+  }
+  // Fallback se setupTriggersUnificati non disponibile
   var existing = ScriptApp.getProjectTriggers();
   existing.forEach(function(t) { ScriptApp.deleteTrigger(t); });
-  Logger.log('Cancellati ' + existing.length + ' trigger preesistenti');
-
-  // 1. Scan news ogni 6h
-  ScriptApp.newTrigger('scanSources').timeBased().everyHours(6).create();
-
-  // 2. Scan bandi ogni 6h (se la funzione esiste)
-  if (typeof scanBandiAutomatico === 'function') {
-    ScriptApp.newTrigger('scanBandiAutomatico').timeBased().everyHours(6).create();
-  } else {
-    Logger.log('AVVISO: scanBandiAutomatico non trovata, trigger non creato.');
-  }
-
-  // 3. Scan podcast ogni 24h notturno (3:00)
-  if (typeof scanPodcast === 'function') {
-    ScriptApp.newTrigger('scanPodcast').timeBased().everyDays(1).atHour(3).create();
-  }
-
-  // 4. Digest settimanale (gia esistente)
-  if (typeof lunediMattina === 'function') {
-    ScriptApp.newTrigger('lunediMattina').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(7).create();
-  }
-
-  // 5. Digest bandi ogni 3 giorni (NUOVO H3)
-  ScriptApp.newTrigger('bandiEvery3Days').timeBased().everyHours(OC_DIGEST_BANDI_HOURS).create();
-
+  ScriptApp.newTrigger('lunediMattina').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(6).create();
+  ScriptApp.newTrigger('scanSources').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(7).create();
+  ScriptApp.newTrigger('scanPodcast').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(7).nearMinute(30).create();
+  ScriptApp.newTrigger('sendDigestAuto').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(8).create();
+  ScriptApp.newTrigger('scanSources').timeBased().onWeekDay(ScriptApp.WeekDay.THURSDAY).atHour(7).create();
+  ScriptApp.newTrigger('scanPodcast').timeBased().onWeekDay(ScriptApp.WeekDay.THURSDAY).atHour(7).nearMinute(30).create();
+  ScriptApp.newTrigger('sendDigestAuto').timeBased().onWeekDay(ScriptApp.WeekDay.THURSDAY).atHour(8).create();
   var nuovi = ScriptApp.getProjectTriggers();
-  Logger.log('Triggers configurati: ' + nuovi.length);
+  Logger.log('Triggers configurati (fallback): ' + nuovi.length);
   return nuovi.length;
 }
 

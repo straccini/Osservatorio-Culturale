@@ -1,0 +1,6 @@
+# Netlify redirects file
+# Magic-link inbound (?t=TOKEN) → preserva query string nel redirect alla webapp GAS
+# Lascia /index.html servire il proprio JS che fa il redirect dinamico con query string
+
+# Catch-all (per sottopath che non sono /): redirect a webapp con stessa query
+/* https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec 302

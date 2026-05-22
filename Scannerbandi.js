@@ -24,12 +24,26 @@ const SETTORI_INTERESSE = [
 // FONTI BANDI - 35 URL in 6 categorie
 // ==================================================================
 
+// ====================================================================
+// AUDIT FONTI 2026-05-15: 30/46 fonti silenti (mai prodotto bandi).
+// Causa principale: siti JS-rendered → UrlFetchApp riceve HTML senza contenuto.
+// Strategia: mantenere fonti raggiungibili (HTTP 200 + >10KB), commentare le irrecuperabili.
+// Le fonti istituzionali (MiC, Regioni) sono raggiungibili ma il contenuto è caricato via JS.
+// Piano: Fase 1 Agenti → sostituire con RSS feed o scan Gmail come workaround.
+// ====================================================================
+
 const FONTI_MINISTERI = [
+  // SILENTE ma raggiungibile (126KB HTML, 162 link) — contenuto JS-rendered, link presenti in HTML statico
   { nome:'MiC - Bandi e Concorsi',       url:'https://cultura.gov.it/comunicati/bandi-e-concorsi',                                 livello:'Nazionale', ente_default:'MiC - Ministero della Cultura',  url_ente:'https://cultura.gov.it', priorita:1 },
+  // SILENTE ma raggiungibile (126KB, 162 link) — stessa struttura di sopra
   { nome:'MiC - Avvisi',                  url:'https://cultura.gov.it/comunicati/avvisi',                                           livello:'Nazionale', ente_default:'MiC - Ministero della Cultura',  url_ente:'https://cultura.gov.it', priorita:1 },
+  // SILENTE ma raggiungibile (367KB, 329 link) — contenuto ricco, potenzialmente estraibile con prompt migliorato
   { nome:'Ministero del Turismo - Bandi', url:'https://www.ministeroturismo.gov.it/bandi/',                                         livello:'Nazionale', ente_default:'Ministero del Turismo',          url_ente:'https://www.ministeroturismo.gov.it', priorita:1 },
+  // SILENTE — probabilmente JS-rendered (WordPress con caricamento dinamico)
   { nome:'ANCI - Bandi e Opportunita',    url:'https://www.anci.it/categorie/bandi-e-concorsi/',                                    livello:'Nazionale', ente_default:'ANCI',                           url_ente:'https://www.anci.it', priorita:2 },
+  // SILENTE — JS-rendered (React SPA)
   { nome:'Italia Domani - PNRR',          url:'https://www.italiadomani.gov.it/it/opportunita/bandi-amministrazioni-titolari.html', livello:'Nazionale', ente_default:'PNRR - Italia Domani',           url_ente:'https://www.italiadomani.gov.it', priorita:2 },
+  // SILENTE — URL generico (non pagina bandi dedicata)
   { nome:'Invitalia - Bandi Cultura',     url:'https://www.invitalia.it/cosa-facciamo/rafforziamo-le-imprese',                      livello:'Nazionale', ente_default:'Invitalia',                      url_ente:'https://www.invitalia.it', priorita:2 },
 ];
 
@@ -41,7 +55,8 @@ const FONTI_REGIONI = [
   // NB v4.13.1 - rimosso "Regione Puglia - Turismo" perche' URL precedente 404 e categoria specifica non esiste piu' in portale.
   // I bandi turismo Puglia sono comunque indicizzati dalla voce "Regione Puglia - Bandi" piu sotto e da PUGLIAPROMOZIONE.
   { nome:'PugliaPromozione - Bandi',    url:'https://www.agenziapugliapromozione.it/portal/bandi-e-avvisi',                          livello:'Regionale', ente_default:'PugliaPromozione',               url_ente:'https://www.agenziapugliapromozione.it', priorita:2 },
-  { nome:'Regione Puglia - Cultura',    url:'https://www.regione.puglia.it/web/cultura/avvisi-e-bandi',                             livello:'Regionale', ente_default:'Regione Puglia - Cultura',       url_ente:'https://www.regione.puglia.it', priorita:1 },
+  // v4.18.55 — Disattivata: HTTP 404 confermato audit 2026-05-15. Bandi Puglia coperti da "Regione Puglia - Bandi" e PUGLIAPROMOZIONE.
+  // { nome:'Regione Puglia - Cultura',    url:'https://www.regione.puglia.it/web/cultura/avvisi-e-bandi',                             livello:'Regionale', ente_default:'Regione Puglia - Cultura',       url_ente:'https://www.regione.puglia.it', priorita:1 },
   { nome:'Regione Puglia - Bandi',      url:'https://www.regione.puglia.it/web/portale-bandi/home',                                 livello:'Regionale', ente_default:'Regione Puglia',                 url_ente:'https://www.regione.puglia.it', priorita:1 },
   { nome:'PUGLIAPROMOZIONE',            url:'https://www.pugliapromozione.it/bandi-e-avvisi/',                                      livello:'Regionale', ente_default:'PUGLIAPROMOZIONE',               url_ente:'https://www.pugliapromozione.it', priorita:1 },
   { nome:'Puglia Capitale Sociale',     url:'https://www.sistema.puglia.it/portal/page/portal/SistemaPuglia/BandiAvvisi',           livello:'Regionale', ente_default:'Regione Puglia - Politiche Sociali', url_ente:'https://www.sistema.puglia.it', priorita:2 },
@@ -160,18 +175,19 @@ const FONTI_NEWS_ISTITUZIONALI = [
 // FONTI PODCAST CULTURALI - RSS verificati
 // ==================================================================
 
+// NOTA: usare solo feed Spreaker in formato show/ID (NON user/ID — DNS error da GAS).
+// I feed RAI (raiplaysound.it) bloccano le IP di Google usate da GAS.
+// Formato verificato: https://www.spreaker.com/show/SHOWID/episodes/feed
 const FONTI_PODCAST = [
-  { nome:'Giuditta - Storia Arte',     url:'https://www.spreaker.com/show/4545413/episodes/feed', tematica:'Arte & Mostre',       priorita:1 },
-  { nome:'Artribune Podcast',          url:'https://www.artribune.com/feed/podcast/',              tematica:'Arte & Mostre',       priorita:1 },
-  { nome:'Il Museo Strabico',          url:'https://anchor.fm/s/ilmuseostrabico/podcast/rss',     tematica:'Musei & Patrimonio',  priorita:1 },
-  { nome:'Treccani - Parole Cultura',  url:'https://www.treccani.it/podcast/feed/',               tematica:'Gestione Culturale',  priorita:1 },
-  { nome:'ICOM Italia Podcast',        url:'https://feeds.buzzsprout.com/icomitalia.rss',         tematica:'Musei & Patrimonio',  priorita:1 },
-  { nome:'MiC Racconta',               url:'https://cultura.gov.it/podcast/feed/',                tematica:'Politiche Culturali', priorita:1 },
-  { nome:'Fondazione Feltrinelli',     url:'https://www.feltrinellieditore.it/podcast/feed/',     tematica:'Politiche Culturali', priorita:2 },
-  { nome:'Lezioni di Storia',          url:'https://www.laterza.it/podcast/feed/',                tematica:'Musei & Patrimonio',  priorita:2 },
-  { nome:'Chora Media - Cultura',      url:'https://choramedia.com/shows/feed/cultura/',          tematica:'Gestione Culturale',  priorita:2 },
-  { nome:'Turismo Accessibile',        url:'https://feeds.buzzsprout.com/turismoaccessibile.rss', tematica:'Accessibilita',       priorita:2 },
-  { nome:'Digital Cultura',            url:'https://feeds.buzzsprout.com/digitalcultura.rss',     tematica:'Tecnologia & Cultura',priorita:2 },
+  // Priorità 1 — Spreaker show-feed verificati
+  { nome:'Giuditta - Storia Arte',        url:'https://www.spreaker.com/show/4545413/episodes/feed', tematica:'Arte & Mostre',        priorita:1 },
+  { nome:'Artribune Podcast',             url:'https://www.spreaker.com/show/4281664/episodes/feed', tematica:'Arte & Mostre',        priorita:1 },
+  { nome:'Storia dell\'Arte - Gaudio',    url:'https://www.spreaker.com/show/3293837/episodes/feed', tematica:'Arte & Mostre',        priorita:1 },
+  { nome:'Art and Talk - Il podcast',     url:'https://www.spreaker.com/show/3208447/episodes/feed', tematica:'Arte & Mostre',        priorita:1 },
+  { nome:'Le Comari dell\'Arte',          url:'https://www.spreaker.com/show/5806902/episodes/feed', tematica:'Arte & Mostre',        priorita:1 },
+  // Priorità 2 — scansione alternata (settimane pari)
+  { nome:'Ad Arti Spiegate',              url:'https://www.spreaker.com/show/4287650/episodes/feed', tematica:'Arte & Mostre',        priorita:2 },
+  { nome:'Fondazione Golinelli',          url:'https://podcasts-audio.fondazionegolinelli.it/podcast/fondazionegolinelli.xml', tematica:'Innovazione', priorita:2 },
 ];
 
 // ==================================================================
@@ -339,6 +355,22 @@ function salvaNewBandi(sheet, bandi, fonte, titoliEsistenti) {
     applyPriorityColor(sheet, nr, prioritaColore);
     titoliEsistenti.push(titoloNorm);
     count++;
+
+    // v4.18.55 — ROC triage automatico: valuta se il bando è candidabile per outreach musei
+    try {
+      if (typeof roc_triageBando === 'function') {
+        roc_triageBando({
+          titolo: b.titolo,
+          ente: b.ente || fonte.ente_default,
+          settore: b.settore || 'Valorizzazione',
+          importo: b.importo || 0,
+          scadenza: b.scadenza || '',
+          livello: b.livello || fonte.livello || '',
+          url_bando: urlBando,
+          sommario: b.sommario || b.note || ''
+        });
+      }
+    } catch(eRoc) { /* non bloccante */ }
   });
   return count;
 }
@@ -476,12 +508,25 @@ function scanPodcast() {
 
 function setupTriggersUnificati() {
   ScriptApp.getProjectTriggers().forEach(function(t) { ScriptApp.deleteTrigger(t); });
+
+  // Lunedì 06:00 — scan completo + digest settimanale
   ScriptApp.newTrigger('lunediMattina').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(6).create();
+
+  // Martedì 07:00 — scan news RSS + scan podcast/video
   ScriptApp.newTrigger('scanSources').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(7).create();
+  ScriptApp.newTrigger('scanPodcast').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(7).nearMinute(30).create();
+
+  // Martedì 08:00 — digest automatico
   ScriptApp.newTrigger('sendDigestAuto').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(8).create();
-  ScriptApp.newTrigger('scanSources').timeBased().onWeekDay(ScriptApp.WeekDay.FRIDAY).atHour(7).create();
-  ScriptApp.newTrigger('sendDigestAuto').timeBased().onWeekDay(ScriptApp.WeekDay.FRIDAY).atHour(8).create();
-  Logger.log('OK Trigger v4.0: Lun 06:00 lunediMattina | Mar+Ven 07:00 scanSources | Mar+Ven 08:00 sendDigestAuto');
+
+  // Giovedì 07:00 — scan news RSS + scan podcast/video
+  ScriptApp.newTrigger('scanSources').timeBased().onWeekDay(ScriptApp.WeekDay.THURSDAY).atHour(7).create();
+  ScriptApp.newTrigger('scanPodcast').timeBased().onWeekDay(ScriptApp.WeekDay.THURSDAY).atHour(7).nearMinute(30).create();
+
+  // Giovedì 08:00 — digest automatico
+  ScriptApp.newTrigger('sendDigestAuto').timeBased().onWeekDay(ScriptApp.WeekDay.THURSDAY).atHour(8).create();
+
+  Logger.log('OK Trigger v4.1: Lun 06:00 | Mar+Gio 07:00 scanSources | Mar+Gio 07:30 scanPodcast | Mar+Gio 08:00 sendDigestAuto');
 }
 
 // ==================================================================
@@ -641,19 +686,9 @@ function testScannerBandi() {
   if (bandi.length > 0) Logger.log('OK Scanner funzionante!');
 }
 
-function riepilogoFontiBandi() {
-  Logger.log('=== RIEPILOGO FONTI v4.0 ===');
-  Logger.log('Ministeri:      ' + FONTI_MINISTERI.length);
-  Logger.log('Regioni:        ' + FONTI_REGIONI.length);
-  Logger.log('UE:             ' + FONTI_UE.length);
-  Logger.log('Aggregatori:    ' + FONTI_AGGREGATORI.length);
-  Logger.log('Fondazioni:     ' + FONTI_FONDAZIONI.length);
-  Logger.log('Riviste:        ' + FONTI_RIVISTE.length);
-  Logger.log('TOTALE BANDI:   ' + TUTTE_LE_FONTI_BANDI.length);
-  Logger.log('Fonti Arte:     ' + FONTI_ARTICOLI_ARTE.length);
-  Logger.log('Fonti AI:       ' + FONTI_AI_CULTURA.length);
-  Logger.log('Fonti Podcast:  ' + FONTI_PODCAST.length);
-}
+// v4.18.38 (audit 2026-05-14) — Rimossa riepilogoFontiBandi():
+//   diagnostica RSS legacy mai chiamata; auditBandiSystem() (subito sotto) la sostituisce
+//   con output più ricco e via google.script.run dal pannello admin.
 
 // ==================================================================
 // AUDIT COMPLETO SISTEMA BANDI (v4.12.3 - 2026-05-04)
@@ -708,7 +743,7 @@ function auditBandiSystem() {
     var iScad = headers.indexOf('SCADENZA');  if (iScad < 0) iScad = COL.SCADENZA - 1;
     var iStato = headers.indexOf('STATO_RECORD'); if (iStato < 0) iStato = COL.STATO_RECORD - 1;
     var iDataRil = headers.indexOf('DATA_RILEVAMENTO'); if (iDataRil < 0) iDataRil = COL.DATA_RILEVAMENTO - 1;
-    var iAmbito = headers.indexOf('AMBITO'); if (iAmbito < 0) iAmbito = headers.indexOf('Ambiti');
+    var iAmbito = headers.indexOf('AMBITO'); if (iAmbito < 0) iAmbito = headers.indexOf('AMBITI'); if (iAmbito < 0) iAmbito = headers.indexOf('Ambiti'); if (iAmbito < 0) iAmbito = headers.indexOf('Ambito');
 
     var stats = {
       totale: data.length,

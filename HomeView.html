@@ -2,41 +2,71 @@
   ============================================================
   OSSERVATORIO CULTURALE — HOMEVIEW.HTML
   Sprint N5 — Home redesign "Rivista Digitale"
-  Sezioni: bandi urgenti · news · podcast+video · libri · ambiti
+  v4.19.5 — Layout: Libri + Social Wall in griglia 2col sotto podcast/video
   ============================================================
 -->
 
 <section class="page active" id="page-home">
 
-  <!-- ===== MASTHEAD ===== -->
-  <div class="home-masthead">
-    <div class="masthead-meta">
-      <b>Osservatorio Culturale</b>
-      <span id="homeDataOggi">&mdash;</span>
+  <!-- ===== MASTHEAD (v4.18.26 — testata Sinopia · Osservatorio Culturale) ===== -->
+  <div class="home-masthead" style="display:flex;flex-wrap:wrap;align-items:center;gap:18px 22px;padding:10px 0;border-bottom:1px solid var(--rule,#E8E4DC);margin-bottom:18px">
+
+    <!-- Sinistra: titolo testata Osservatorio Culturale -->
+    <div class="masthead-meta" style="display:flex;align-items:baseline;gap:8px;flex-shrink:0">
+      <span style="font-family:var(--font-ui);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink)">Osservatorio Culturale</span>
     </div>
-    <div class="masthead-update" id="homeUpdateInfo" hidden>
-      <span class="update-dot" aria-hidden="true"></span>
-      <span id="homeUpdateText">&mdash;</span>
+
+    <!-- Stats bar inline accanto al titolo -->
+    <div class="masthead-stats" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-family:var(--font-ui);font-size:11.5px;color:var(--ink-2);flex:1 1 auto">
+      <a href="#" data-goto="bandi" title="Vai alla pagina Radar Bandi" style="color:inherit;text-decoration:none;display:inline-flex;align-items:baseline;gap:4px"><b id="statBandi" style="font-size:13px;color:var(--ink);font-weight:700">—</b><span style="letter-spacing:.08em;text-transform:uppercase;font-size:10px;color:var(--ink-3)">bandi</span></a>
+      <span style="color:var(--ink-3);opacity:.5">&middot;</span>
+      <a href="#" data-goto="news" title="Vai alla pagina News" style="color:inherit;text-decoration:none;display:inline-flex;align-items:baseline;gap:4px"><b id="statNews" style="font-size:13px;color:var(--ink);font-weight:700">—</b><span style="letter-spacing:.08em;text-transform:uppercase;font-size:10px;color:var(--ink-3)">news</span></a>
+      <span style="color:var(--ink-3);opacity:.5">&middot;</span>
+      <a href="#" data-goto="podcast" title="Vai alla pagina Podcast" style="color:inherit;text-decoration:none;display:inline-flex;align-items:baseline;gap:4px"><b id="statPodcast" style="font-size:13px;color:var(--ink);font-weight:700">—</b><span style="letter-spacing:.08em;text-transform:uppercase;font-size:10px;color:var(--ink-3)">podcast</span></a>
+      <span style="color:var(--ink-3);opacity:.5">&middot;</span>
+      <a href="#" data-goto="video" title="Vai alla pagina Video" style="color:inherit;text-decoration:none;display:inline-flex;align-items:baseline;gap:4px"><b id="statVideo" style="font-size:13px;color:var(--ink);font-weight:700">—</b><span style="letter-spacing:.08em;text-transform:uppercase;font-size:10px;color:var(--ink-3)">video</span></a>
+      <span style="color:var(--ink-3);opacity:.5">&middot;</span>
+      <a href="#" data-goto="libri" title="Vai alla pagina Libri" style="color:inherit;text-decoration:none;display:inline-flex;align-items:baseline;gap:4px"><b id="statLibri" style="font-size:13px;color:var(--ink);font-weight:700">—</b><span style="letter-spacing:.08em;text-transform:uppercase;font-size:10px;color:var(--ink-3)">libri</span></a>
     </div>
+
+    <!-- Destra: data + indicatore aggiornamento -->
+    <div style="display:flex;align-items:center;gap:14px;flex-shrink:0">
+      <span id="homeDataOggi" style="font-family:var(--font-display);font-style:italic;font-size:13px;color:var(--ink-3)">&mdash;</span>
+      <div class="masthead-update" id="homeUpdateInfo" style="display:inline-flex;align-items:center;gap:6px;font-family:var(--font-ui);font-size:11px;color:var(--ink-3)" title="Stato della scansione automatica delle fonti">
+        <span class="update-dot" aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:#3F7A5E;display:inline-block"></span>
+        <span id="homeUpdateText">aggiornamento fonti in caricamento&hellip;</span>
+      </div>
+    </div>
+
   </div>
 
   <!-- ===== HERO ===== -->
-  <div class="hero-eyebrow">Intelligenza culturale &middot; Radar &middot; Museo</div>
-  <h1 class="home-headline">
-    Tutto il mondo<br>della <em>cultura,</em><br>in un&rsquo;unica vista.
-  </h1>
-  <p class="home-deck">
-    News curate, bandi in scadenza, podcast, video e libri dagli ambiti
-    strategici &mdash; aggiornato in tempo reale dall&rsquo;AI scanner.
-  </p>
+  <div class="hero-eyebrow" style="color:#8B4513">Osservatorio Culturale &middot; Sinopia &middot; il disegno preparatorio della cultura italiana</div>
+  <div class="home-headline-frame" style="position:relative;background:#EEE3D2;border:1px solid #D4BFA0;border-radius:14px;padding:56px 64px;margin:18px 0 22px;overflow:hidden;display:grid;grid-template-columns:1.4fr minmax(280px,0.85fr);gap:24px;align-items:center;min-height:420px">
 
-  <!-- Ricerca -->
-  <div class="home-search">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-    </svg>
-    <input id="heroSearch" type="text" placeholder="Cerca bandi, news, ambiti o parole chiave&hellip;" aria-label="Ricerca rapida" />
-    <button type="button" onclick="OC.search(document.getElementById('heroSearch').value)">Cerca</button>
+    <!-- Texture "intonaco" -->
+    <span aria-hidden="true" style="position:absolute;inset:0;background-image:radial-gradient(circle at 20% 30%, rgba(139,69,19,.04) 0, transparent 30%), radial-gradient(circle at 80% 70%, rgba(139,69,19,.05) 0, transparent 30%);pointer-events:none"></span>
+
+    <!-- Segno verticale a sinistra -->
+    <span aria-hidden="true" style="position:absolute;left:0;top:24px;bottom:24px;width:3px;background:linear-gradient(180deg,#8B4513 0%,#8B4513 50%,#6B3416 100%);border-radius:0 2px 2px 0"></span>
+
+    <!-- COL SX: testo -->
+    <div style="position:relative;z-index:1;text-align:left">
+      <h1 class="home-headline" style="margin:0;text-align:left;line-height:1.05;color:#1F160E">
+        Il <em style="color:#A05A32;font-weight:600">disegno preparatorio</em><br>della cultura italiana,<br>prima che diventi affresco.
+      </h1>
+      <p class="home-deck" style="text-align:left;max-width:56ch;margin:22px 0 0;color:#3A2E22;font-weight:400;font-size:15px;line-height:1.55">
+        <b style="color:#A05A32;font-weight:600">Sinopia</b> &egrave; l&rsquo;Osservatorio che traccia, sotto la superficie, le linee
+        della cultura italiana di oggi: news curate, bandi in scadenza, podcast,
+        video e libri dagli ambiti strategici &mdash; aggiornati in tempo reale.
+      </p>
+    </div>
+
+    <!-- COL DX: immagine angelo sinopia -->
+    <div style="position:relative;height:100%;min-height:360px;display:flex;align-items:center;justify-content:center">
+      <img id="heroAngelImg" src="" alt="" style="width:100%;height:auto;max-height:480px;object-fit:contain;display:block;mix-blend-mode:multiply" />
+    </div>
+
   </div>
 
   <!-- Chips suggerimento -->
@@ -49,107 +79,159 @@
     <button class="home-chip" type="button" onclick="OC.search('accessibilita museo')">Accessibilit&agrave; museo</button>
   </div>
 
-  <!-- ===== STATS BAR ===== -->
-  <div class="home-stats-bar" id="homeStatsBar">
-    <a href="#" class="hstat" data-goto="bandi">
-      <b id="statBandi">&mdash;</b><span>bandi</span>
-    </a>
-    <span class="hstat-sep">&middot;</span>
-    <a href="#" class="hstat" data-goto="news">
-      <b id="statNews">&mdash;</b><span>news</span>
-    </a>
-    <span class="hstat-sep">&middot;</span>
-    <a href="#" class="hstat" data-goto="podcast">
-      <b id="statPodcast">&mdash;</b><span>podcast</span>
-    </a>
-    <span class="hstat-sep">&middot;</span>
-    <a href="#" class="hstat" data-goto="video">
-      <b id="statVideo">&mdash;</b><span>video</span>
-    </a>
-    <span class="hstat-sep">&middot;</span>
-    <a href="#" class="hstat" data-goto="libri">
-      <b id="statLibri">&mdash;</b><span>libri</span>
-    </a>
+  <!-- ===== HOME CAROSELLO (3 slide a rotazione) ===== -->
+  <section class="home-carosello" id="homeCarosello" aria-label="Servizi Duemilamusei in evidenza" onmouseenter="OC.hcPause()" onmouseleave="OC.hcResume()" style="margin:36px 0 36px;position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--rule,#E8E4DC);background:#fff">
+    <div class="home-carosello-track" id="hcTrack" style="display:flex;transition:transform .6s cubic-bezier(.4,0,.2,1);will-change:transform">
+
+      <!-- Slide 1: MUSEMU MATRIX -->
+      <article class="hc-slide" data-hc-idx="0" style="flex:0 0 100%;background:linear-gradient(135deg,#F3F0E9 0%,#FFFFFF 100%);padding:36px 44px;display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:center;min-height:300px">
+        <div>
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:#8B4513;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">MuseMu Matrix &middot; Strumento gratuito</div>
+          <h2 style="font-family:var(--font-display);font-size:1.75rem;line-height:1.15;margin:0 0 12px;color:var(--ink);font-weight:500;letter-spacing:-0.01em">Valuta il tuo museo. <em style="color:#8B4513;font-weight:400">Cresci con dati.</em></h2>
+          <p style="font-family:var(--font-display);font-size:14px;line-height:1.6;color:var(--ink-3);max-width:540px;margin:0 0 18px">Autovalutazione su 10 dimensioni in 5-10 minuti. Anonima per scelta, GDPR-compliant. Ricevi un report grafico con il profilo del museo e le 3 opportunita prioritarie.</p>
+          <button class="btn btn-primary" type="button" data-page="matrix" style="background:#8B4513;color:#fff;border:none;padding:12px 26px;border-radius:8px;font-family:var(--font-ui);font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.02em">Inizia la valutazione gratuita &rarr;</button>
+          <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px">Nessuna registrazione &middot; Anonimo &middot; ~10 min</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #8B4513;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Diagnosi 10 dimensioni</div><div style="font-size:11.5px;color:var(--ink-3)">Modello Henkel + Musei Sensibili</div></div></div>
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #8B4513;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M6 16v4M10 12v8M14 8v12M18 4v16"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Report grafico + PDF</div><div style="font-size:11.5px;color:var(--ink-3)">Radar chart + benchmark settore</div></div></div>
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #8B4513;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">3 opportunita prioritarie</div><div style="font-size:11.5px;color:var(--ink-3)">Servizi Duemilamusei pertinenti</div></div></div>
+        </div>
+      </article>
+
+      <!-- Slide 2: MUSEI SENSIBILI -->
+      <article class="hc-slide" data-hc-idx="1" style="flex:0 0 100%;background:linear-gradient(135deg,#EAF3EC 0%,#FFFFFF 100%);padding:36px 44px;display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:center;min-height:300px">
+        <div>
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:#3F7A5E;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Modello Duemilamusei &middot; Concept strategico</div>
+          <h2 style="font-family:var(--font-display);font-size:1.75rem;line-height:1.15;margin:0 0 12px;color:var(--ink);font-weight:500;letter-spacing:-0.01em">Musei <em style="color:#3F7A5E;font-weight:400">Sensibili</em>. Il museo come presidio identitario.</h2>
+          <p style="font-family:var(--font-display);font-size:14px;line-height:1.6;color:var(--ink-3);max-width:540px;margin:0 0 18px">Una visione del museo che integra accessibilita, welfare culturale, partecipazione della comunita e tecnologie inclusive.</p>
+          <a href="#" onclick="OC.openMuseiSensibili(event)" style="display:inline-block;background:#3F7A5E;color:#fff;border:none;padding:12px 26px;border-radius:8px;font-family:var(--font-ui);font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.02em;text-decoration:none">Scopri il modello &rarr;</a>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center" aria-hidden="true">
+          <svg viewBox="0 0 240 240" width="100%" style="max-width:220px;height:auto" xmlns="http://www.w3.org/2000/svg">
+            <defs><radialGradient id="msg1" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#3F7A5E" stop-opacity=".25"/><stop offset="100%" stop-color="#3F7A5E" stop-opacity="0"/></radialGradient></defs>
+            <circle cx="120" cy="120" r="110" fill="url(#msg1)"/>
+            <circle cx="120" cy="120" r="80" fill="none" stroke="#3F7A5E" stroke-width="1.5" stroke-opacity=".4"/>
+            <circle cx="120" cy="120" r="55" fill="none" stroke="#3F7A5E" stroke-width="1.5" stroke-opacity=".55"/>
+            <circle cx="120" cy="120" r="30" fill="none" stroke="#3F7A5E" stroke-width="1.5" stroke-opacity=".7"/>
+          </svg>
+        </div>
+      </article>
+
+      <!-- Slide 3: CONSULENZA PRE-BANDO -->
+      <article class="hc-slide" data-hc-idx="2" style="flex:0 0 100%;background:linear-gradient(135deg,#E8EDF3 0%,#FFFFFF 100%);padding:36px 44px;display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:center;min-height:300px">
+        <div>
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:#3C6A95;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Servizio Duemilamusei &middot; Gratuito</div>
+          <h2 style="font-family:var(--font-display);font-size:1.75rem;line-height:1.15;margin:0 0 12px;color:var(--ink);font-weight:500;letter-spacing:-0.01em">Pre-progettazione <em style="color:#3C6A95;font-weight:400">gratuita</em> su bando.</h2>
+          <p style="font-family:var(--font-display);font-size:14px;line-height:1.6;color:var(--ink-3);max-width:540px;margin:0 0 18px">Identifichiamo i bandi piu adatti al tuo museo e offriamo una pre-progettazione gratuita: concept, stima, ipotesi di intervento.</p>
+          <a href="#" onclick="return OC.prenotaConsulenza(event,'preBando')" style="display:inline-block;background:#3C6A95;color:#fff;border:none;padding:12px 26px;border-radius:8px;font-family:var(--font-ui);font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.02em;text-decoration:none">Richiedi pre-progettazione &rarr;</a>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #3C6A95;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3C6A95" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h9l5 5v11H6z"/><path d="M15 4v5h5"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Analisi del bando</div><div style="font-size:11.5px;color:var(--ink-3)">Requisiti, premialita, scadenze</div></div></div>
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #3C6A95;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3C6A95" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Concept 2-3 pagine</div><div style="font-size:11.5px;color:var(--ink-3)">Ipotesi intervento + stima</div></div></div>
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #3C6A95;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3C6A95" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Zero impegno</div><div style="font-size:11.5px;color:var(--ink-3)">Nessun obbligo contrattuale</div></div></div>
+        </div>
+      </article>
+
+      <!-- Slide 4: CONSULENZA GENERICA -->
+      <article class="hc-slide" data-hc-idx="3" style="flex:0 0 100%;background:linear-gradient(135deg,#F3EFE6 0%,#FFFFFF 100%);padding:36px 44px;display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:center;min-height:300px">
+        <div>
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:#8B4513;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Consulenza &middot; Gratuita</div>
+          <h2 style="font-family:var(--font-display);font-size:1.75rem;line-height:1.15;margin:0 0 12px;color:var(--ink);font-weight:500;letter-spacing:-0.01em">Prenota una <em style="color:#8B4513;font-weight:400">consulenza</em> gratuita.</h2>
+          <p style="font-family:var(--font-display);font-size:14px;line-height:1.6;color:var(--ink-3);max-width:540px;margin:0 0 18px">Per musei pubblici, privati, fondazioni. 9 aree tematiche. 30-45 minuti di confronto operativo con un esperto.</p>
+          <a href="#" onclick="return OC.prenotaConsulenza(event,'generica')" style="display:inline-block;background:#8B4513;color:#fff;border:none;padding:12px 26px;border-radius:8px;font-family:var(--font-ui);font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.02em;text-decoration:none">Prenota una consulenza &rarr;</a>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #8B4513;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Scegli la tematica</div><div style="font-size:11.5px;color:var(--ink-3)">9 ambiti specialistici + libera</div></div></div>
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #8B4513;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3.09 5.18 2 2 0 0 1 5.08 3h3a2 2 0 0 1 2 1.72c.13.81.36 1.6.68 2.34a2 2 0 0 1-.45 2.11L8.91 10.6a16 16 0 0 0 6.49 6.49l1.43-1.43a2 2 0 0 1 2.11-.45c.74.32 1.53.55 2.34.68a2 2 0 0 1 1.72 2z"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">30-45 minuti di call</div><div style="font-size:11.5px;color:var(--ink-3)">Confronto operativo con un esperto</div></div></div>
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #8B4513;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Nessun obbligo</div><div style="font-size:11.5px;color:var(--ink-3)">Solo supporto, niente contratti vincolanti</div></div></div>
+        </div>
+      </article>
+
+    </div>
+    <!-- Navigazione carosello -->
+    <button type="button" onclick="OC.hcPrev()" aria-label="Slide precedente" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.85);border:1px solid var(--rule);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--ink-2)">&lsaquo;</button>
+    <button type="button" onclick="OC.hcNext()" aria-label="Slide successiva" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.85);border:1px solid var(--rule);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--ink-2)">&rsaquo;</button>
+    <div id="hcDots" style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px"></div>
+  </section>
+
+  <!-- ===== BANDI IN EVIDENZA + NEWS (griglia 2 colonne) ===== -->
+  <div class="home-bn-grid">
+    <div class="home-bn-col">
+      <div class="section-head">
+        <div class="left"><h2 class="section-title">Bandi <em>in evidenza</em></h2></div>
+        <button class="section-action" type="button" data-goto="bandi">Radar &rarr; <span id="homeBandiTotCount"></span></button>
+      </div>
+      <div id="homeUltimiBandi" aria-live="polite"><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div></div>
+      <div class="empty-state" id="homeUltimiBandiEmpty" hidden>Nessun bando monitorato.</div>
+    </div>
+
+    <div class="home-bn-col">
+      <div class="section-head">
+        <div class="left"><h2 class="section-title">News <em>selezionate</em></h2></div>
+        <button class="section-action" type="button" data-goto="news">Tutte &rarr;</button>
+      </div>
+      <div id="homeNewsList" aria-live="polite"><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div></div>
+      <div class="empty-state" id="homeNewsEmpty" hidden>Nessuna news segnalata.</div>
+    </div>
   </div>
 
-  <!-- ===== BANDI IN SCADENZA ===== -->
-  <div class="section-head">
-    <div class="left">
-      <h2 class="section-title">Bandi <em>in evidenza</em></h2>
+  <!-- ===== CANDIDATURE SPECIALI ===== -->
+  <div id="homeCapitaliSection" style="margin-top:36px;background:linear-gradient(135deg,#FBF7EE 0%,#F4ECD8 100%);border:1px solid #D9C896;border-left:4px solid #8B4513;border-radius:14px;padding:28px 32px;position:relative;overflow:hidden">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+      <div>
+        <span style="font-family:var(--font-ui);font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#8B4513">Remember &middot; Candidature speciali</span>
+        <h2 style="font-family:var(--font-display);font-size:1.5rem;margin:4px 0 0;color:#5C3D17;font-weight:500;line-height:1.2">Capitali della <em style="font-family:var(--font-italic);font-weight:400;color:#8B4513">Cultura</em></h2>
+      </div>
+      <button class="section-action" type="button" data-goto="capitali" style="color:#8B4513">Tutte le candidature &rarr; &rarr;</button>
     </div>
-    <button class="section-action" type="button" data-goto="bandi">
-      Radar Bandi &rarr; <span id="homeBandiTotCount"></span>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-    </button>
-  </div>
-  <div id="homeUltimiBandi" aria-live="polite">
-    <div class="home-list-skeleton"></div>
-    <div class="home-list-skeleton"></div>
-    <div class="home-list-skeleton"></div>
-  </div>
-  <div class="empty-state" id="homeUltimiBandiEmpty" hidden>Nessun bando monitorato.</div>
-
-  <!-- ===== NEWS SEGNALATE ===== -->
-  <div class="section-head" style="margin-top:44px">
-    <div class="left">
-      <h2 class="section-title">News <em>segnalate</em></h2>
+    <p style="font-family:var(--font-display);font-size:13px;color:#5C3D17;line-height:1.5;margin:0 0 16px;max-width:700px">Le scadenze ufficiali delle principali candidature riservate ai Comuni e ai territori. Click sulla candidatura per aprire la scheda con tutti i dettagli e una checklist operativa.</p>
+    <div id="homeCapitaliList"></div>
+    <div style="margin-top:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border-top:1px solid rgba(217,200,150,.5);padding-top:14px">
+      <div><div style="font-family:var(--font-display);font-size:14px;font-weight:600;color:#5C3D17">Stai pensando a una candidatura?</div><div style="font-size:12px;color:#8B5E2B">Una call gratuita per valutare insieme tempi, requisiti e strategia.</div></div>
+      <button type="button" onclick="OC.prenotaConsulenza(event,'generica')" style="background:#8B4513;color:#fff;border:none;padding:11px 24px;border-radius:8px;font-family:var(--font-ui);font-size:13.5px;font-weight:600;cursor:pointer;letter-spacing:.02em;flex-shrink:0">Prenota una consulenza &rarr;</button>
     </div>
-    <button class="section-action" type="button" data-goto="news">
-      Tutte le news &rarr;
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-    </button>
   </div>
-  <div id="homeNewsList" aria-live="polite">
-    <div class="home-list-skeleton"></div>
-    <div class="home-list-skeleton"></div>
-    <div class="home-list-skeleton"></div>
-  </div>
-  <div class="empty-state" id="homeNewsEmpty" hidden>Nessuna news segnalata.</div>
 
   <!-- ===== PODCAST + VIDEO (griglia 2 colonne) ===== -->
-  <div class="home-pv-grid">
-
+  <div class="home-pv-grid" style="margin-top:44px">
     <div class="home-pv-col">
       <div class="section-head">
-        <div class="left"><h2 class="section-title">&#127911; <em>Podcast</em></h2></div>
+        <div class="left"><h2 class="section-title">Podcast</h2></div>
         <button class="section-action" type="button" data-goto="podcast">Tutti &rarr;</button>
       </div>
-      <div id="homePodcastList" aria-live="polite">
-        <div class="home-list-skeleton"></div>
-        <div class="home-list-skeleton"></div>
-      </div>
+      <div id="homePodcastList" aria-live="polite"><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div></div>
       <div class="empty-state" id="homePodcastEmpty" hidden>Nessun podcast.</div>
     </div>
-
     <div class="home-pv-col">
       <div class="section-head">
-        <div class="left"><h2 class="section-title">&#9654; <em>Video</em></h2></div>
+        <div class="left"><h2 class="section-title">Video</h2></div>
         <button class="section-action" type="button" data-goto="video">Tutti &rarr;</button>
       </div>
-      <div id="homeVideoList" aria-live="polite">
-        <div class="home-list-skeleton"></div>
-        <div class="home-list-skeleton"></div>
-      </div>
+      <div id="homeVideoList" aria-live="polite"><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div></div>
       <div class="empty-state" id="homeVideoEmpty" hidden>Nessun video.</div>
     </div>
-
   </div>
 
-  <!-- ===== LIBRI ===== -->
-  <div class="section-head" style="margin-top:44px">
-    <div class="left">
-      <h2 class="section-title">&#128214; Libri <em>&amp; pubblicazioni</em></h2>
+  <!-- ===== LIBRI + SOCIAL WALL (griglia 2 colonne) ===== -->
+  <div class="home-lsw-grid" style="margin-top:44px">
+    <div class="home-lsw-col">
+      <div class="section-head">
+        <div class="left"><h2 class="section-title">Libri <em>&amp; pubblicazioni</em></h2></div>
+        <button class="section-action" type="button" data-goto="libri">Tutte &rarr;</button>
+      </div>
+      <div id="homeLibriList" aria-live="polite"><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div></div>
+      <div class="empty-state" id="homeLibriEmpty" hidden>Nessuna pubblicazione.</div>
     </div>
-    <button class="section-action" type="button" data-goto="libri">
-      Tutte le pubblicazioni &rarr;
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-    </button>
+    <div class="home-lsw-col">
+      <div class="section-head">
+        <div class="left"><h2 class="section-title">Social <em>Wall</em></h2></div>
+        <button class="section-action" type="button" data-goto="social">Tutti &rarr;</button>
+      </div>
+      <div id="homeSocialList" aria-live="polite"><div class="home-list-skeleton"></div></div>
+      <div class="empty-state" id="homeSocialEmpty" hidden>Nessun post.</div>
+    </div>
   </div>
-  <div id="homeLibriList" aria-live="polite">
-    <div class="home-list-skeleton"></div>
-    <div class="home-list-skeleton"></div>
-  </div>
-  <div class="empty-state" id="homeLibriEmpty" hidden>Nessuna pubblicazione.</div>
 
   <!-- ===== ESPLORA PER AMBITO — chips compatti ===== -->
   <div class="section-head" style="margin-top:44px">
@@ -168,7 +250,7 @@
     </a>
     <a href="#" class="hamb-chip a3" data-page="ambito" data-ambito="3" style="--amb:var(--amb-3)">
       <span class="hamb-num">03</span>
-      <span class="hamb-name">Programma e collezioni</span>
+      <span class="hamb-name">Mostre e collezioni</span>
       <span class="hamb-count" data-new="3">&mdash;</span>
     </a>
     <a href="#" class="hamb-chip a4" data-page="ambito" data-ambito="4" style="--amb:var(--amb-4)">
@@ -181,19 +263,6 @@
       <span class="hamb-name">Digital, AI e governance</span>
       <span class="hamb-count" data-new="5">&mdash;</span>
     </a>
-  </div>
-
-  <!-- ===== CARD PROMO MuseMu Matrix ===== -->
-  <div style="border:1px solid var(--amb-4-soft);border-left:4px solid var(--amb-4);border-radius:var(--r-md);padding:22px 26px;margin:44px 0 32px;display:flex;flex-wrap:wrap;align-items:center;gap:20px;justify-content:space-between;background:var(--surface)">
-    <div style="flex:1;min-width:260px">
-      <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--amb-4);letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin-bottom:6px">Strumento gratuito Duemilamusei</div>
-      <h3 style="font-family:var(--font-display);font-size:20px;font-weight:500;color:var(--ink);margin:0 0 6px;line-height:1.3;letter-spacing:-0.01em">Quanto &egrave; pronto il tuo museo per i prossimi 5 anni?</h3>
-      <p style="font-family:var(--font-display);font-size:14px;color:var(--ink-3);line-height:1.6;margin:0">10 minuti di autovalutazione strutturata. Report PDF gratuito con diagnosi su 10 dimensioni, top 3 opportunit&agrave; e roadmap a 3 fasi.</p>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <button onclick="OC.go('matrix')" style="background:var(--amb-4);color:#fff;border:none;padding:11px 22px;border-radius:var(--r-sm);font-family:var(--font-ui);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;letter-spacing:.02em">Inizia ora &rarr;</button>
-      <button onclick="OC.go('matrix-landing')" style="background:transparent;color:var(--ink-2);border:1px solid var(--rule);padding:8px 18px;border-radius:var(--r-sm);font-family:var(--font-ui);font-size:12px;cursor:pointer;white-space:nowrap">Scopri di pi&ugrave;</button>
-    </div>
   </div>
 
 </section>

@@ -41,9 +41,24 @@
  */
 
 var OC_DIGEST_QUEUE_SHEET = 'DigestQueue';
+var OC_MATRIX_RESPONSES_SHEET = 'ResponsesMatrix';
+var OC_MATRIX_CONTACTS_SHEET = 'ContactsMatrix';
 var OC_DIGEST_QUEUE_HEADERS = [
   'ID','Email','ResponseId','GeneratedAt','Subject','HtmlBlob','Status','SentAt','Note'
 ];
+
+/**
+ * _h_() — HTML entity escaping per email digest.
+ * Previene XSS e injection nelle email HTML generate.
+ */
+function _h_(val) {
+  return String(val == null ? '' : val)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 // ============================================================================
 // API PUBBLICA
@@ -85,7 +100,7 @@ function generateDigestForUser(email, responseId) {
     var museumName = report.museumName || 'la tua struttura';
     var dataStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy');
     var subject = '[Personalizzato] Aggiornamenti per ' + museumName + ' — ' + dataStr;
-    var html = _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcastByDim);
+    var html = _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcastByDim, email);
 
     // Salva in DigestQueue
     var queueId = _saveDigestQueueRow_({
@@ -393,7 +408,7 @@ function _getRecentDraftsByEmail_(daysBack) {
 // HELPER PRIVATI — Costruzione HTML email personalizzata
 // ============================================================================
 
-function _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcastByDim) {
+function _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcastByDim, email) {
   var museumName = report.museumName || 'la tua struttura';
   var profile = report.profileAssigned || '';
   var score = report.syntheticScore || 0;
@@ -474,8 +489,12 @@ function _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcas
 
   // Footer
   parts.push('<tr><td style="padding:14px 28px 28px 28px;border-top:1px solid #ECECEE;">');
-  parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;">Ricevi questa email perche hai completato il questionario MuseMu Matrix per ' + _h_(museumName) + ' e hai espresso consenso al follow-up. Per modificare le preferenze o cancellarti, rispondi a questo messaggio con oggetto "RIMUOVI". Dati trattati ai sensi del Reg. UE 2016/679.</p>');
-  parts.push('<p style="margin:8px 0 0;font-size:11px;color:#A8A8AA">Duemilamusei · Fano (PU) · s.straccini@gmail.com</p>');
+  parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;">Ricevi questa email perche hai completato il questionario MuseMu Matrix per ' + _h_(museumName) + ' e hai espresso consenso al follow-up. Dati trattati ai sensi del Reg. UE 2016/679.</p>');
+  // v4.18.54 — Footer unsubscribe link
+  if (typeof _digestUnsubFooter_ === 'function' && email) {
+    parts.push(_digestUnsubFooter_(email, { style: 'matrix' }));
+  }
+  parts.push('<p style="margin:8px 0 0;font-size:11px;color:#A8A8AA">Sinopia · Osservatorio Culturale · Fano (PU) · s.straccini@gmail.com</p>');
   parts.push('</td></tr>');
 
   parts.push('</table></td></tr></table></body></html>');
@@ -735,6 +754,111 @@ function testCronGenerateDigestWeekly() {
   var res = cronGenerateDigestWeekly();
   Logger.log(JSON.stringify(res, null, 2));
   return res;
+}
+
+/**
+ * v4.18.16 (2026-05-12) J — Profilazione clienti Matrix per admin.
+ * Aggrega tutti i compilatori MuseMu Matrix con: nome museo, top3 gap, scoring,
+ * email opt-in (se presente), contenuti pertinenti contati per ogni gap.
+ *
+ * Param: { limit: int (default 100), soloConEmail: bool (default false) }
+ * Ritorna: { ok, count, compilatori: [{response_id, museum_name, data, profile,
+ *   syntheticScore, top3 (codici), email, hasOptIn, bandiPertinenti, newsPertinenti}] }
+ */
+function getCompilatoriMatrixSummary(opts) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+    return { ok:false, error:'forbidden' };
+  }
+  opts = opts || {};
+  var limit = Number(opts.limit) || 100;
+  var soloConEmail = !!opts.soloConEmail;
+
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var shR = ss.getSheetByName(OC_MATRIX_RESPONSES_SHEET);
+    if (!shR) return { ok:true, count:0, compilatori:[], note:'Foglio ResponsesMatrix non ancora creato' };
+
+    var valsR = shR.getDataRange().getValues();
+    if (valsR.length < 2) return { ok:true, count:0, compilatori:[] };
+    var headR = valsR[0].map(function(h){ return String(h||'').trim(); });
+
+    function colR(name){ for (var i=0;i<headR.length;i++){ if (headR[i].toLowerCase() === name.toLowerCase()) return i; } return -1; }
+    var iRid     = colR('response_id');
+    var iTi      = colR('timestamp_inizio');
+    var iTf      = colR('timestamp_fine');
+    var iNome    = colR('museum_name');
+    var iProf    = colR('museum_profile_json');
+    var iScor    = colR('scoring_dimensions_json');
+    var iProfile = colR('profile_assigned');
+    var iTop3    = colR('top3_opportunities_json');
+    var iSyn     = colR('synthetic_score');
+    var iStatus  = colR('completion_status');
+
+    // Carica contatti (email + opt-in) in mappa per FK
+    var contactsMap = {};
+    var shC = ss.getSheetByName(OC_MATRIX_CONTACTS_SHEET);
+    if (shC) {
+      var valsC = shC.getDataRange().getValues();
+      if (valsC.length > 1) {
+        var headC = valsC[0].map(function(h){ return String(h||'').trim(); });
+        var iCRid = headC.indexOf('response_id');
+        var iCEm  = headC.indexOf('email');
+        var iCPref = headC.indexOf('preferences_json');
+        for (var c = 1; c < valsC.length; c++) {
+          var rid = valsC[c][iCRid];
+          if (!rid) continue;
+          var prefRaw = iCPref >= 0 ? valsC[c][iCPref] : '';
+          var prefs = {};
+          try { prefs = prefRaw ? JSON.parse(prefRaw) : {}; } catch(_){ prefs = {}; }
+          contactsMap[String(rid)] = {
+            email: iCEm >= 0 ? String(valsC[c][iCEm] || '') : '',
+            optIn: prefs
+          };
+        }
+      }
+    }
+
+    // Itera responses
+    var out = [];
+    for (var r = valsR.length - 1; r >= 1 && out.length < limit; r--) {
+      var row = valsR[r];
+      if (!row[iRid]) continue;
+      var status = iStatus >= 0 ? String(row[iStatus] || '') : 'complete';
+      if (status !== 'complete') continue; // solo completati
+
+      var rid = String(row[iRid]);
+      var contact = contactsMap[rid] || null;
+      if (soloConEmail && (!contact || !contact.email)) continue;
+
+      // Parse top3
+      var top3 = [];
+      try {
+        var t3raw = iTop3 >= 0 ? row[iTop3] : '';
+        var t3arr = t3raw ? JSON.parse(t3raw) : [];
+        top3 = t3arr.slice(0, 3).map(function(x){
+          return {
+            code: x.code || x.dim || '',
+            name: x.name || x.dimName || '',
+            score: Number(x.score || 0)
+          };
+        });
+      } catch(_){ top3 = []; }
+
+      out.push({
+        responseId: rid,
+        museumName: iNome >= 0 ? String(row[iNome] || '') : '',
+        profile: iProfile >= 0 ? String(row[iProfile] || '') : '',
+        syntheticScore: iSyn >= 0 ? Number(row[iSyn] || 0) : 0,
+        top3: top3,
+        dataCompilazione: iTf >= 0 ? row[iTf] : (iTi >= 0 ? row[iTi] : ''),
+        email: contact ? contact.email : '',
+        hasOptIn: !!(contact && contact.email),
+        optInPrefs: contact ? contact.optIn : {}
+      });
+    }
+
+    return { ok:true, count: out.length, compilatori: out };
+  } catch(e) { return { ok:false, error: e.message }; }
 }
 
 // ============================================================================

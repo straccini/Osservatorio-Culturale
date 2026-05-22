@@ -1,7 +1,7 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.16.1 · deployment @190 del 05/05/2026
+**Versione corrente**: v4.18.x · deployment @291 del 15/05/2026
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
@@ -43,7 +43,57 @@
 | `Admin_v44.js` | Dashboard admin |  |
 | `Newsletter_v44.js` | Gestione newsletter (flusso approve via Telegram) | |
 | `Telegram_v44.js` | Bot Telegram per notifiche bandi/news | |
-| `Server_v44_doGet_patch.js` | Hot-fix routing per approve newsletter via link | **Da integrare nel doGet di Codice.js** |
+| `Newsletter_approve.js` (era Server_v44_doGet_patch.js, rinominato v4.18.39) | Handler approvazione newsletter via link Telegram (`_renderApproveNewsletterPage_`, `_executeApproveNewsletter_`) — già wirato in doGet di Codice.js |
+
+### MuseMu Matrix (questionario autovalutazione)
+| File | Responsabilità | Note |
+|---|---|---|
+| `Matrix_v1.js` | Core Matrix: schema, scoring, report PDF, email, save response/contact | Hook CRM + sessioni |
+| `Matrix_schema.js` | Schema completo `OC_MATRIX_SCHEMA` (43 domande, 10 dimensioni, profili P1-P5) | |
+| `Matrix_digest.js` | Digest personalizzato per compilatori (top3 gap × contenuti taggati) | Trigger settimanale |
+| `Matrix_tagger.js` | Auto-tagging bandi/news/podcast per dimensioni Matrix (colonna MatrixDim) | |
+| `Matrix_benchmark_v1.js` | Benchmark dinamico (mediana, p25, p75) su tutte le compilazioni | Cache 6h |
+| `Matrix_MiC_v1.js` | Pre-compilazione MiC da fogli esterni + schema supplementare | |
+
+### Sistema Multi-Agente (v4.18.55+)
+| File | Responsabilità | Note |
+|---|---|---|
+| `AgentConfig.js` | Definizioni 5 agenti (AG1-AG5): fonti, frequenze, ambiti, prompt Claude | Single source of truth |
+| `AgentScanner.js` | Scanner parametrico: fetch → hash dedup → Claude extraction | Retry con backoff |
+| `AgentRouting.js` | Relevance scoring (0-100): regione×dim×tipo×profilo×priorità | Threshold 40 |
+| `AgentDigest.js` | Composizione + invio email tematiche per agente/museo | Daily trigger 07:30 |
+| `AgentSetup.js` | Bootstrap completo: fonti, profili, seed, trigger, diagnostica | Idempotente |
+
+### CRM & Pipeline Commerciale
+| File | Responsabilità | Note |
+|---|---|---|
+| `CRM_v1.js` | Lead scoring automatico (10-100pt), stati lead→mql→sql→hot→cliente | Alert Telegram ≥30pt |
+| `ROC_v1.js` | Bando-driven outreach: triage → match musei → batch email → approvazione | Cap 5-8/mese |
+| `Sessioni_v1.js` | Magic-link sessioni permanenti + workspace utente | All permanent v4.18.47 |
+| `Prenotazioni_v1.js` | Prenotazione consulenza: form → CRM +5pt → email notifica | |
+| `Digest_routing.js` | Digest 2 coorti (generalisti + lead caldi personalizzati) | Trigger lunedì 07:00 |
+| `Privacy_v1.js` | UTM tracking (hash anonimo) + right-to-be-forgotten + trasparenza GDPR | |
+| `Unsubscribe_v1.js` | Gestione disiscrizioni: link tokenizzati, purge multi-sheet, audit trail | |
+
+### Bandi v5 & Fonti
+| File | Responsabilità | Note |
+|---|---|---|
+| `Bandi_v5.js` | Refactoring bandi: schema v5, fonti, dedup fingerprint, quality check auto | Flag `USE_BANDI_V5` |
+| `Fonti_v1.js` | Gestione fonti unificata (14 col): CRUD, semaforo, contatori | |
+| `FontiMigration_v1.js` | Migrazione fonti: Social→News, Podcast split, schema FU17 | One-shot |
+| `Crossref_v1.js` | Cross-reference news×bandi: candidati, approvazione admin | |
+
+### Utility & Infrastruttura
+| File | Responsabilità | Note |
+|---|---|---|
+| `Auth.js` | Autenticazione: `_isCurrentUserAdmin_`, levels, middleware | Sprint 1.4 |
+| `Backend_v415.js` | Endpoint backend v4.15 | |
+| `Setup_v418.js` | Setup fogli e struttura v4.18 | |
+| `KB_v1.js` | Knowledge Base interna | |
+| `Sondaggi_v1.js` | Sondaggi utenti | |
+| `SvgBando_v1.js` | Generazione SVG preview card bandi | |
+| `AdminToken_v1.js` | Token admin per operazioni privilegiate | |
+| `Sheet_Cleanup.js` | Utility pulizia fogli (righe vuote, duplicati) | |
 
 ---
 
@@ -134,7 +184,7 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 
 ### Setup e amministrazione
 - `setupTriggers_v46()` — pulizia + ricreazione trigger Sprint 0
-- `setupSheets()`, `initSheetsIfMissing()` — bootstrap struttura dati
+- `setupSheets()`, `runAllSetupV418()` — bootstrap struttura dati (v4.18.38 — `initSheetsIfMissing` rimossa, sostituita da `runAllSetupV418`)
 - `setAdminEmails(csv)`, `setEditorEmails(csv)`, `getAdminEmails()`
 - `addFontiIstituzionali()` — aggiunge 10 fonti news istituzionali al foglio Fonti (one-shot)
 - `addFontiNewsNuove()` — aggiunge 10 nuove fonti news qualitative (Sprint N1, one-shot)

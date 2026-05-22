@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sinopia · Osservatorio Culturale</title>
+<meta name="description" content="Sinopia è l'osservatorio sulla cultura italiana di Sinopia Consulting: news, bandi, podcast, video e libri dagli ambiti strategici della cultura, aggiornati in tempo reale. Accesso gratuito.">
+<meta name="keywords" content="bandi cultura, osservatorio culturale, musei, finanziamenti cultura, PNRR cultura, accessibilità musei, MuseMu Matrix, Sinopia Consulting">
+<meta name="author" content="Sinopia Consulting">
+
+<!-- Open Graph / social -->
+<meta property="og:title" content="Sinopia · Osservatorio Culturale">
+<meta property="og:description" content="Il disegno preparatorio della cultura italiana: news, bandi, podcast, video e libri aggiornati in tempo reale.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://app.sinopiaconsulting.it">
+<meta property="og:image" content="https://app.sinopiaconsulting.it/og-cover.png">
+<meta property="og:locale" content="it_IT">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- JSON-LD structured data per Google -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Sinopia · Osservatorio Culturale",
+  "description": "Osservatorio sulla cultura italiana di Sinopia Consulting. Aggrega news, bandi, podcast, video e libri dagli ambiti strategici della cultura.",
+  "url": "https://app.sinopiaconsulting.it",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Sinopia Consulting",
+    "url": "https://sinopiaconsulting.it"
+  }
+}
+</script>
+
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#F1E6D6;color:#3A2818;font-family:Georgia,'Times New Roman',serif;-webkit-font-smoothing:antialiased}
+  body{display:flex;align-items:center;justify-content:center;padding:24px;line-height:1.55}
+  .frame{max-width:640px;width:100%;background:#fff;border:1px solid #D4BFA0;border-radius:14px;overflow:hidden;box-shadow:0 18px 48px rgba(60,40,20,.12)}
+  .hero{background:linear-gradient(135deg,#F1E6D6 0%,#FBF7EE 100%);padding:36px 40px;border-bottom:1px solid #D4BFA0;text-align:center}
+  .logo{font-family:Georgia,serif;font-style:italic;font-size:46px;font-weight:500;color:#8B3A1F;letter-spacing:.01em;line-height:1}
+  .eyebrow{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#5C4332;margin-top:8px}
+  .body{padding:32px 40px}
+  h1{font-family:Georgia,serif;font-weight:500;font-size:24px;line-height:1.25;color:#3A2818;margin-bottom:14px}
+  h1 em{font-style:italic;color:#8B3A1F;font-weight:500}
+  p{font-size:15px;color:#5C4332;margin-bottom:14px}
+  .cta-wrap{margin:28px 0 18px;text-align:center}
+  .cta{display:inline-block;background:#8B3A1F;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-family:-apple-system,'Segoe UI',Inter,sans-serif;font-size:15px;font-weight:600;letter-spacing:.02em;transition:background .15s;border:none;cursor:pointer}
+  .cta:hover{background:#6B2A12}
+  .hint{font-family:-apple-system,'Segoe UI',Inter,sans-serif;font-size:11.5px;color:#8B5E2B;text-align:center;margin-top:10px}
+  .footer{padding:18px 40px;border-top:1px solid #E5E1D8;background:#FBF7EE;text-align:center}
+  .footer-text{font-family:-apple-system,'Segoe UI',Inter,sans-serif;font-size:11.5px;color:#8B5E2B;line-height:1.6}
+  .footer-text a{color:#8B3A1F;text-decoration:none;font-weight:600}
+  .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:24px;padding-top:18px;border-top:1px solid #E5E1D8}
+  .feat{font-family:-apple-system,'Segoe UI',Inter,sans-serif;font-size:11.5px;color:#5C4332;text-align:center}
+  .feat-num{font-family:Georgia,serif;font-size:22px;font-weight:600;color:#8B3A1F;display:block;line-height:1;margin-bottom:4px}
+  @media(max-width:520px){
+    .hero{padding:24px 24px}
+    .body{padding:24px 24px}
+    .footer{padding:14px 24px}
+    .logo{font-size:36px}
+    h1{font-size:20px}
+  }
+</style>
+
+<!-- ⚠️ MODIFICARE QUI: incolla l'URL del webapp Apps Script v4.18.x quando deployato -->
+<!-- L'URL si trova in CLAUDE.md: "URL produzione DEFINITIVO" — è quello che inizia con
+     https://script.google.com/macros/s/AKfycby.../exec -->
+<script>
+  var WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec';
+  // Mantieni eventuali query string (per magic-link ?t=TOKEN)
+  function buildAppUrl() {
+    var qs = window.location.search || '';
+    return WEBAPP_URL + qs;
+  }
+  // Auto-redirect dopo 0.8s (dare tempo al motore di scansione di leggere meta tags)
+  setTimeout(function(){
+    // Non auto-redirect se l'utente arriva da bot SEO (User-Agent check non perfetto ma utile)
+    if (/bot|crawl|spider|index|search|google|bing|yandex/i.test(navigator.userAgent)) return;
+    window.location.replace(buildAppUrl());
+  }, 800);
+</script>
+</head>
+<body>
+
+<div class="frame">
+  <div class="hero">
+    <div class="logo">Sinopia</div>
+    <div class="eyebrow">Osservatorio Culturale</div>
+  </div>
+
+  <div class="body">
+    <h1>Il <em>disegno preparatorio</em> della cultura italiana</h1>
+    <p>News, bandi, podcast, video e libri dagli ambiti strategici della cultura italiana &mdash; aggiornati in tempo reale dall'AI scanner. Per musei, fondazioni, comuni ed enti culturali.</p>
+    <p>Esplora gratuitamente. Compila il <strong>MuseMu Matrix</strong> o richiedi una <strong>consulenza gratuita</strong> per sbloccare salvataggi, download e workspace personale.</p>
+
+    <div class="cta-wrap">
+      <a href="#" id="ctaApp" class="cta" onclick="window.location.href=buildAppUrl();return false;">Entra in Sinopia &rarr;</a>
+      <div class="hint">Apertura automatica fra 0,8 secondi&hellip;</div>
+    </div>
+
+    <div class="features">
+      <div class="feat"><span class="feat-num">9</span>Candidature speciali monitorate</div>
+      <div class="feat"><span class="feat-num">280+</span>Bandi attivi cultura</div>
+      <div class="feat"><span class="feat-num">10</span>Dimensioni MuseMu Matrix</div>
+      <div class="feat"><span class="feat-num">25</span>Standard MiC SM-LUQV</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-text">
+      <strong>Sinopia Consulting</strong> &middot; <a href="https://sinopiaconsulting.it" target="_blank" rel="noopener">sinopiaconsulting.it</a><br>
+      Il disegno preparatorio della cultura italiana
+    </div>
+  </div>
+</div>
+
+<noscript>
+  <p style="text-align:center;margin-top:20px"><a href="https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec">Apri Sinopia &rarr;</a></p>
+</noscript>
+
+</body>
+</html>

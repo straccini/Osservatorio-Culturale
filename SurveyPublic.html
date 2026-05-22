@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sondaggio MuseMu Matrix</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --sinopia:#8B4513;--gold:#B8902A;--bg:#FAFAF7;
+  --card:#FFFFFF;--border:#E8E4DC;--text:#1D1D1F;--muted:#8A8A8E;
+  --green:#0F6E56;--radius:10px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}
+.sr-wrap{max-width:640px;margin:0 auto;padding:16px}
+.sr-hero{background:var(--bg);border-bottom:1px solid var(--border);color:var(--text);padding:36px 28px;border-radius:0;text-align:center;margin-bottom:24px}
+.sr-eyebrow{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--sinopia);font-family:'DM Sans',sans-serif;font-weight:500}
+.sr-title{font-family:'DM Serif Display',serif;font-size:24px;font-weight:400;margin:12px 0 8px;line-height:1.2;color:var(--text)}
+.sr-sub{font-size:13px;color:var(--muted);font-family:'DM Sans',sans-serif}
+.sr-stats{display:flex;justify-content:center;gap:24px;margin-top:16px}
+.sr-stat-n{font-size:28px;font-weight:700}
+.sr-stat-l{font-size:11px;opacity:.7;font-family:system-ui,sans-serif}
+.sr-progress{height:5px;background:rgba(255,255,255,.2);border-radius:3px;margin-top:20px;overflow:hidden}
+.sr-progress-bar{height:100%;background:var(--sinopia);border-radius:3px;transition:width .4s ease}
+.sr-back-link{display:inline-block;font-size:12px;color:var(--sinopia);text-decoration:none;margin-bottom:16px;font-weight:500}
+.sr-back-link:hover{text-decoration:underline}
+
+.sr-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+.sr-q-num{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-family:system-ui,sans-serif;margin-bottom:8px}
+.sr-q-text{font-size:16px;font-weight:600;margin-bottom:6px}
+.sr-q-help{font-size:12px;color:var(--muted);margin-bottom:16px;font-family:system-ui,sans-serif;cursor:pointer}
+.sr-q-help:hover{color:var(--teal)}
+.sr-tooltip{display:none;background:#F4ECDF;border-left:3px solid var(--sinopia);padding:12px 14px;border-radius:6px;font-size:12px;color:#6B5418;margin-bottom:14px;font-family:system-ui,sans-serif;line-height:1.5}
+
+.sr-likert{display:flex;gap:6px}
+.sr-likert-btn{flex:1;padding:12px 4px;background:#F4F4F6;border:2px solid transparent;border-radius:8px;text-align:center;cursor:pointer;transition:all .2s;font-family:system-ui,sans-serif}
+.sr-likert-btn:hover{border-color:var(--teal);background:#E8F4F8}
+.sr-likert-btn.active{background:var(--teal);color:#fff;border-color:var(--teal)}
+.sr-likert-lbl{font-size:11px;color:var(--muted);margin-top:4px}
+.sr-likert-btn.active .sr-likert-lbl{color:rgba(255,255,255,.8)}
+.sr-likert-val{font-size:18px;font-weight:700}
+
+.sr-multi{display:flex;flex-direction:column;gap:8px}
+.sr-multi-opt{padding:12px 16px;background:#F4F4F6;border:2px solid transparent;border-radius:8px;cursor:pointer;transition:all .2s;font-size:13px;font-family:system-ui,sans-serif}
+.sr-multi-opt:hover{border-color:var(--teal)}
+.sr-multi-opt.active{background:#E8F4F8;border-color:var(--teal)}
+
+.sr-nav{display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:16px}
+.sr-btn{padding:12px 28px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:system-ui,sans-serif;transition:all .2s}
+.sr-btn-primary{background:var(--sinopia);color:#fff}
+.sr-btn-primary:hover{background:#6D360F}
+.sr-btn-secondary{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.sr-btn-secondary:hover{border-color:var(--teal);color:var(--teal)}
+.sr-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Report */
+.sr-report{margin-top:24px}
+.sr-report-title{font-size:20px;font-weight:700;color:var(--teal);margin-bottom:16px}
+.sr-bar-wrap{height:10px;background:var(--border);border-radius:5px;margin:8px 0 4px;overflow:hidden}
+.sr-bar{height:100%;border-radius:5px;transition:width 1s ease}
+.sr-score-val{font-family:'DM Serif Display',serif;font-size:28px;font-weight:400;color:var(--sinopia)}
+.sr-score-lbl{font-size:13px;color:var(--muted);font-family:system-ui,sans-serif}
+.sr-q-text{font-family:'DM Serif Display',serif}
+.sr-suggest{background:#F4ECDF;border-left:3px solid var(--sinopia);padding:14px 16px;border-radius:6px;margin:8px 0;font-size:13px;line-height:1.6;font-family:system-ui,sans-serif}
+.sr-cta-row{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
+.sr-cta-row .sr-btn{flex:1;min-width:200px;text-align:center}
+
+/* Opt-in */
+.sr-optin{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-top:20px}
+.sr-optin h3{font-size:15px;margin-bottom:8px}
+.sr-optin input[type=email]{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:6px;font-size:14px;margin:8px 0}
+.sr-optin-privacy{font-size:11px;color:var(--muted);font-family:system-ui,sans-serif;margin-top:6px}
+
+.sr-footer{text-align:center;padding:24px;font-size:11px;color:var(--muted);font-family:system-ui,sans-serif}
+.sr-loading{text-align:center;padding:60px 20px;font-size:16px;color:var(--muted)}
+.sr-error{text-align:center;padding:40px;color:#c0392b;background:#fdf0ef;border-radius:var(--radius)}
+
+@media(max-width:480px){
+  .sr-wrap{padding:10px}
+  .sr-hero{padding:28px 18px}
+  .sr-title{font-size:20px}
+  .sr-likert{flex-wrap:wrap}
+  .sr-likert-btn{min-width:calc(20% - 5px)}
+  .sr-cta-row{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="sr-wrap" id="sr-app">
+  <div class="sr-loading">Caricamento sondaggio...</div>
+</div>
+
+<script>
+var SURVEY_CODE = '<?= surveyCode ?>';
+var state = { schema:null, responses:{}, currentQ:0, responseId:null, timeStart:new Date().toISOString() };
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ========== INIT ==========
+google.script.run
+  .withSuccessHandler(function(schema){
+    if(!schema || schema.ok===false){
+      $('sr-app').innerHTML='<div class="sr-error">'+(schema&&schema.error||'Sondaggio non trovato')+'</div>';
+      return;
+    }
+    state.schema=schema;
+    renderQuestion(0);
+  })
+  .withFailureHandler(function(err){
+    $('sr-app').innerHTML='<div class="sr-error">Errore: '+esc(err&&err.message||err)+'</div>';
+  })
+  .getMatrixSurveySchema(SURVEY_CODE);
+
+// ========== RENDER QUESTION ==========
+function renderQuestion(idx){
+  var s=state.schema, qs=s.questions;
+  // Se anagrafica prima (idx < 0 = anagrafica)
+  if(idx>=qs.length){ submitSurvey(); return; }
+  state.currentQ=idx;
+  var q=qs[idx], tot=qs.length, pct=Math.round(idx/tot*100);
+
+  var h='<div class="sr-hero">'
+    +'<div class="sr-eyebrow">DUEMILAMUSEI</div>'
+    +'<div class="sr-title">'+esc(s.surveyTitle||'Sondaggio')+'</div>'
+    +'<div class="sr-sub">'+tot+' domande &middot; '+esc(s.metadata.estimatedCompletionTime)+'</div>'
+    +'<div class="sr-progress"><div class="sr-progress-bar" style="width:'+pct+'%"></div></div>'
+    +'</div>';
+
+  h+='<div class="sr-card">';
+  h+='<div class="sr-q-num">Domanda '+(idx+1)+' di '+tot+'</div>';
+  h+='<div class="sr-q-text">'+esc(q.text)+'</div>';
+  if(q.tooltip){
+    h+='<div class="sr-q-help" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'block\'?\'none\':\'block\'">&#9432; Aiuto</div>';
+    h+='<div class="sr-tooltip">'+esc(q.tooltip)+'</div>';
+  }
+
+  if(q.type==='likert5'){
+    var labels=['Mai/Nulla','Poco','Parziale','Buono','Eccellente'];
+    h+='<div class="sr-likert">';
+    for(var i=1;i<=5;i++){
+      var act=state.responses[q.code]===i?' active':'';
+      h+='<div class="sr-likert-btn'+act+'" onclick="answer(\''+q.code+'\','+i+',this)">'
+        +'<div class="sr-likert-val">'+i+'</div>'
+        +'<div class="sr-likert-lbl">'+labels[i-1]+'</div></div>';
+    }
+    h+='</div>';
+  } else if(q.type==='multiselect_compositive' && q.options){
+    h+='<div class="sr-multi">';
+    var sel=state.responses[q.code]||[];
+    q.options.forEach(function(opt){
+      var val=opt.value||opt;
+      var lbl=opt.label||opt;
+      var act=sel.indexOf(val)>=0?' active':'';
+      h+='<div class="sr-multi-opt'+act+'" onclick="toggleMulti(\''+q.code+'\',\''+esc(val)+'\',this)">'+esc(lbl)+'</div>';
+    });
+    h+='</div>';
+  } else if(q.type==='single' && q.options){
+    h+='<div class="sr-multi">';
+    q.options.forEach(function(opt){
+      var val=opt.value||opt;
+      var lbl=opt.label||opt;
+      var act=state.responses[q.code]===val?' active':'';
+      h+='<div class="sr-multi-opt'+act+'" onclick="answer(\''+q.code+'\',\''+esc(val)+'\',this)">'+esc(lbl)+'</div>';
+    });
+    h+='</div>';
+  }
+
+  h+='<div class="sr-nav">';
+  if(idx>0) h+='<button class="sr-btn sr-btn-secondary" onclick="renderQuestion('+(idx-1)+')">&#8592; Indietro</button>';
+  else h+='<span></span>';
+  var nextLabel=idx===qs.length-1?'Vedi risultato &rarr;':'Avanti &rarr;';
+  h+='<button class="sr-btn sr-btn-primary" id="sr-next" onclick="renderQuestion('+(idx+1)+')">'+nextLabel+'</button>';
+  h+='</div></div>';
+
+  h+='<div class="sr-footer">Compilazione anonima &middot; Nessun dato personale &middot; GDPR</div>';
+  $('sr-app').innerHTML=h;
+}
+
+// ========== ANSWER HANDLERS ==========
+function answer(code,val,el){
+  state.responses[code]=val;
+  var sibs=el.parentNode.children;
+  for(var i=0;i<sibs.length;i++) sibs[i].classList.remove('active');
+  el.classList.add('active');
+}
+function toggleMulti(code,val,el){
+  if(!state.responses[code]) state.responses[code]=[];
+  var arr=state.responses[code], idx=arr.indexOf(val);
+  if(idx>=0){ arr.splice(idx,1); el.classList.remove('active'); }
+  else{ arr.push(val); el.classList.add('active'); }
+}
+
+// ========== SUBMIT ==========
+function submitSurvey(){
+  $('sr-app').innerHTML='<div class="sr-loading">Elaborazione del risultato...</div>';
+  var payload={
+    responses:state.responses,
+    section11:{},
+    museumProfile:{},
+    museumName:'',
+    timestampInizio:state.timeStart,
+    timestampFine:new Date().toISOString(),
+    completionStatus:'survey_'+SURVEY_CODE
+  };
+  google.script.run
+    .withSuccessHandler(function(result){
+      if(!result||!result.ok){
+        $('sr-app').innerHTML='<div class="sr-error">Errore: '+esc(result&&result.error||'sconosciuto')+'</div>';
+        return;
+      }
+      state.responseId=result.responseId;
+      renderReport(result);
+    })
+    .withFailureHandler(function(err){
+      $('sr-app').innerHTML='<div class="sr-error">Errore salvataggio: '+esc(err&&err.message||err)+'</div>';
+    })
+    .saveMatrixResponse(payload);
+}
+
+// ========== REPORT ==========
+function renderReport(result){
+  var dims=state.schema.surveyDimensions;
+  var scoring=result.scoring||{};
+  var dimCode=dims[0]||'';
+  var dimScore=0;
+  if(scoring[dimCode]) dimScore=Math.round(scoring[dimCode]);
+  else{
+    // Media delle sotto-dimensioni
+    var scores=[];
+    for(var k in scoring){ if(k.indexOf(dimCode)===0) scores.push(scoring[k]); }
+    if(scores.length) dimScore=Math.round(scores.reduce(function(a,b){return a+b},0)/scores.length);
+  }
+
+  var barColor=dimScore>=60?'var(--green)':dimScore>=40?'var(--sinopia)':'#c0392b';
+  var reading=dimScore>=80?'Eccellente':dimScore>=60?'Buono':dimScore>=40?'Margine di crescita':dimScore>=20?'Da sviluppare':'Priorita urgente';
+
+  var suggestions=[];
+  if(state.schema.dimensions&&state.schema.dimensions[0]&&state.schema.dimensions[0].subDimensions){
+    state.schema.dimensions[0].subDimensions.forEach(function(sd,i){
+      if(i<3) suggestions.push(sd);
+    });
+  }
+
+  var h='<div class="sr-hero">'
+    +'<div class="sr-eyebrow">RISULTATO</div>'
+    +'<div class="sr-title">'+esc(state.schema.surveyTitle)+'</div>'
+    +'</div>';
+
+  h+='<div class="sr-card sr-report">';
+  h+='<div style="text-align:center;margin-bottom:16px">';
+  h+='<div class="sr-score-val">'+dimScore+'/100</div>';
+  h+='<div class="sr-score-lbl">'+esc(reading)+'</div>';
+  h+='</div>';
+  h+='<div class="sr-bar-wrap"><div class="sr-bar" style="width:'+dimScore+'%;background:'+barColor+'"></div></div>';
+
+  if(suggestions.length){
+    h+='<div style="margin-top:20px;font-size:14px;font-weight:600">Aree di intervento prioritarie:</div>';
+    suggestions.forEach(function(s,i){
+      h+='<div class="sr-suggest"><strong>'+(i+1)+'.</strong> '+esc(s)+'</div>';
+    });
+  }
+
+  h+='<div class="sr-cta-row">';
+  h+='<a href="'+getAppUrl()+'" class="sr-btn sr-btn-primary" style="text-decoration:none;color:#fff">Compila il Matrix completo &rarr;</a>';
+  h+='<a href="'+getAppUrl()+'?action=prenotazione" class="sr-btn sr-btn-secondary" style="text-decoration:none">Prenota consulenza gratuita</a>';
+  h+='</div>';
+  h+='</div>';
+
+  // Opt-in
+  h+='<div class="sr-optin" id="sr-optin-box">';
+  h+='<h3>Ricevi aggiornamenti su questa dimensione</h3>';
+  h+='<p style="font-size:13px;color:#666;font-family:system-ui,sans-serif">Inserisci la tua email per ricevere bandi, normative e best practice selezionate per te. Opzionale.</p>';
+  h+='<input type="email" id="sr-optin-email" placeholder="email@museo.it">';
+  h+='<button class="sr-btn sr-btn-primary" style="width:100%;margin-top:8px" onclick="submitOptIn()">Iscrivimi</button>';
+  h+='<div class="sr-optin-privacy">Dati trattati ai sensi del Reg. UE 2016/679. Puoi cancellarti in qualsiasi momento.</div>';
+  h+='</div>';
+
+  h+='<div class="sr-footer">Sinopia &middot; Osservatorio Culturale &middot; Duemilamusei &middot; Fano (PU)</div>';
+  $('sr-app').innerHTML=h;
+}
+
+function getAppUrl(){
+  try{ return google.script.run.url || ''; }catch(e){ return ''; }
+}
+
+// ========== OPT-IN ==========
+function submitOptIn(){
+  var email=($('sr-optin-email')||{}).value||'';
+  if(!email||email.indexOf('@')<0){ alert('Inserisci un indirizzo email valido'); return; }
+  var box=$('sr-optin-box');
+  box.innerHTML='<p style="text-align:center;color:var(--muted)">Salvataggio...</p>';
+  google.script.run
+    .withSuccessHandler(function(r){
+      box.innerHTML='<p style="text-align:center;color:var(--green);font-weight:600">&#10003; Iscrizione confermata. Grazie!</p>';
+    })
+    .withFailureHandler(function(e){
+      box.innerHTML='<p style="text-align:center;color:#c0392b">Errore: '+esc(e&&e.message||e)+'</p>';
+    })
+    .saveMatrixContact({responseId:state.responseId, email:email, preferences:{digest_tematico:true}});
+}
+</script>
+</body>
+</html>

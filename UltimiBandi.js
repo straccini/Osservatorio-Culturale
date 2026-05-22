@@ -98,10 +98,20 @@ function getNewsListV42(limit) {
     var iSalv  = _findCol_(head, ['Salvato','salvato','SALVATO','Saved']);
     var out = [];
     var sette_fa = new Date(Date.now() - 7 * 86400000);
+    // v4.18.15 (2026-05-12) D — Dedup news: stessa URL canonicalizzata (fallback titolo+fonte).
+    // Il foglio Items può contenere righe duplicate (lo scanner non garantisce unicità).
+    var seenK = {};
     for (var r=1; r<vals.length; r++){
       var row = vals[r];
       if (!row[iTit]) continue;
       if (iArch >= 0 && (row[iArch] === true || row[iArch] === 'TRUE' || row[iArch] === 1)) continue;
+      // Calcolo chiave dedup
+      var urlVal = iLink >= 0 ? String(row[iLink] || '').trim().toLowerCase().replace(/\/+$/, '') : '';
+      var fonteVal = iFonte >= 0 ? String(row[iFonte] || '').trim().toLowerCase() : '';
+      var titVal = String(row[iTit] || '').trim().toLowerCase();
+      var key = urlVal || (titVal + '|' + fonteVal);
+      if (key && seenK[key]) continue; // skip duplicato
+      if (key) seenK[key] = true;
       var rawData = iData >= 0 ? row[iData] : '';
       var dataObj = (rawData instanceof Date) ? rawData : (rawData ? new Date(rawData) : null);
       var salvVal = iSalv >= 0 ? row[iSalv] : false;
@@ -468,3 +478,163 @@ function _fmtBreveUB_(v) {
   }
   return v ? String(v) : '';
 }
+// ============================================================
+//  NORME & RIFERIMENTI NORMATIVI
+//  Foglio: "Norme"
+//  Header: ID | Titolo | Fonte | Link | Ambito | Descrizione | DataAggiunta | Stato
+// ============================================================
+
+var SH_NORME = 'Norme';
+var NORME_HEADER = ['ID','Titolo','Fonte','Link','Ambito','Descrizione','DataAggiunta','Stato'];
+
+function setupNormeSheet() {
+  var ss = getMainSS();
+  var sh = ss.getSheetByName(SH_NORME);
+  if (!sh) {
+    sh = ss.insertSheet(SH_NORME);
+    sh.getRange(1,1,1,NORME_HEADER.length).setValues([NORME_HEADER])
+      .setFontWeight('bold').setBackground('#3C6A95').setFontColor('#fff');
+    sh.setFrozenRows(1);
+    sh.setColumnWidth(2, 320);
+    sh.setColumnWidth(4, 200);
+    sh.setColumnWidth(6, 280);
+    // Seed iniziale
+    var seed = [
+      ['NRM001','Codice dei Beni Culturali e del Paesaggio','D.Lgs. 42/2004','https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2004-01-22;42','1','Testo fondamentale per la tutela e valorizzazione del patrimonio culturale italiano.',''+new Date(),'attivo'],
+      ['NRM002','Accessibilità ai siti web e applicazioni mobili della PA','D.Lgs. 106/2018','https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2018-09-10;106','2','Recepimento della Direttiva UE 2016/2102 sull\'accessibilità digitale.',''+new Date(),'attivo'],
+      ['NRM003','Linee Guida WCAG 2.1 per l\'accessibilità web','W3C — AGID','https://www.w3.org/TR/WCAG21/','2','Standard internazionale per l\'accessibilità dei contenuti web. Obbligatorio per PA (livello AA).',''+new Date(),'attivo'],
+      ['NRM004','Piano Nazionale di Ripresa e Resilienza — Missione Cultura','PNRR M1C3','https://www.governo.it/it/articolo/piano-nazionale-di-ripresa-e-resilienza/16782','5','Framework finanziario europeo per la digitalizzazione e valorizzazione del patrimonio culturale 2021-2026.',''+new Date(),'attivo'],
+      ['NRM005','Statuto ICOM 2022 — Definizione di Museo','ICOM','https://icom.museum/en/resources/standards-guidelines/museum-definition/','1','Nuova definizione di museo ICOM adottata a Praga 2022. Riferimento per la missione museale contemporanea.',''+new Date(),'attivo']
+    ];
+    sh.getRange(2,1,seed.length,NORME_HEADER.length).setValues(seed);
+    Logger.log('setupNormeSheet: foglio creato con '+seed.length+' seed');
+  }
+  return { ok:true, sheetName:SH_NORME };
+}
+
+function getNormeList(limit) {
+  var ss = getMainSS();
+  var sh = ss.getSheetByName(SH_NORME);
+  if (!sh || sh.getLastRow() < 2) return [];
+  limit = limit || 200;
+  var data = sh.getRange(2, 1, sh.getLastRow()-1, NORME_HEADER.length).getValues();
+  var out = [];
+  data.forEach(function(r) {
+    if (!r[0] || String(r[7]||'') === 'archiviato') return;
+    out.push({
+      id          : String(r[0]),
+      titolo      : String(r[1]||''),
+      fonte       : String(r[2]||''),
+      link        : String(r[3]||''),
+      ambito      : String(r[4]||'0'),
+      descrizione : String(r[5]||''),
+      dataAggiunta: r[6] ? Utilities.formatDate(new Date(r[6]), Session.getScriptTimeZone(), 'yyyy-MM-dd') : '',
+      stato       : String(r[7]||'attivo')
+    });
+  });
+  return out.slice(0, limit);
+}
+
+function addNorma(body) {
+  if (!body || !body.titolo) return { error: 'Titolo obbligatorio' };
+  var ss = getMainSS();
+  var sh = ss.getSheetByName(SH_NORME);
+  if (!sh) {
+    setupNormeSheet();
+    sh = ss.getSheetByName(SH_NORME);
+  }
+  var id = 'NRM' + Date.now();
+  sh.appendRow([
+    id,
+    String(body.titolo||''),
+    String(body.fonte||''),
+    String(body.link||''),
+    String(body.ambito||'0'),
+    String(body.descrizione||''),
+    new Date(),
+    'attivo'
+  ]);
+  return { ok:true, id:id };
+}
+
+/**
+ * v4.15 (2026-05-09) — Alias backward-compatibility per chiamate frontend.
+ * Wrapper di setupNormeSheet().
+ */
+function setupNormeSeed() {
+  try {
+    if (typeof setupNormeSheet !== 'function') return { ok: false, error: 'setupNormeSheet non disponibile' };
+    return setupNormeSheet();
+  } catch(e) {
+    Logger.log('setupNormeSeed errore: ' + e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+// ============================================================================
+// DEBUG: debugBandiPipeline() - diagnostica completa caricamento bandi
+// ============================================================================
+function debugBandiPipeline() {
+  var out = {
+    ok: true,
+    generatedAt: new Date().toISOString(),
+    v5Status: {},
+    radarSheet: {},
+    fontiBandi_v5: {},
+    sample: [],
+    errors: []
+  };
+
+  // V5 active check
+  try {
+    out.v5Status.isActive = (typeof isBandiV5Active === 'function') ? isBandiV5Active() : 'fn_missing';
+    out.v5Status.version = (typeof getBandiV5Version === 'function') ? getBandiV5Version() : 'fn_missing';
+  } catch(e) { out.errors.push('v5Status: ' + e.message); }
+
+  // RADAR BANDI sheet
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sheetName = (typeof SHEET_RADAR === 'string' && SHEET_RADAR) ? SHEET_RADAR : 'RADAR BANDI';
+    var sh = ss.getSheetByName(sheetName);
+    if (sh) {
+      out.radarSheet.name = sheetName;
+      out.radarSheet.lastRow = sh.getLastRow();
+      out.radarSheet.lastCol = sh.getLastColumn();
+      if (sh.getLastRow() >= 1) {
+        out.radarSheet.headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+      }
+      // Sample 3 righe
+      if (sh.getLastRow() >= 2) {
+        var samp = sh.getRange(2, 1, Math.min(3, sh.getLastRow()-1), Math.min(8, sh.getLastColumn())).getValues();
+        out.sample = samp.map(function(r){ return r.map(function(c){ return String(c||'').substring(0, 50); }); });
+      }
+    } else {
+      out.radarSheet.error = 'Foglio ' + sheetName + ' NON TROVATO';
+    }
+  } catch(e) { out.errors.push('radarSheet: ' + e.message); }
+
+  // FontiBandi_v5
+  try {
+    var ss2 = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh2 = ss2.getSheetByName('FontiBandi_v5');
+    if (sh2) {
+      out.fontiBandi_v5.exists = true;
+      out.fontiBandi_v5.righe = sh2.getLastRow() - 1;
+    } else {
+      out.fontiBandi_v5.exists = false;
+    }
+  } catch(e) { out.errors.push('fontiBandi_v5: ' + e.message); }
+
+  // Test loading effettivo
+  try {
+    var bandi = (typeof getBandiListV42 === 'function') ? getBandiListV42(5) : null;
+    if (Array.isArray(bandi)) {
+      out.testLoad = { ok: true, count: bandi.length, firstTitolo: bandi[0] ? String(bandi[0].titolo||'').substring(0,80) : null };
+    } else {
+      out.testLoad = { ok: false, returned: typeof bandi };
+    }
+  } catch(e) { out.testLoad = { ok: false, error: e.message }; }
+
+  return out;
+}
+
