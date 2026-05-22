@@ -25,13 +25,13 @@ colors:
   urgente: "#C8102E"
 typography:
   display:
-    fontFamily: "'DM Serif Display', 'Newsreader', Georgia, serif"
+    fontFamily: "'EB Garamond', 'Newsreader', Georgia, serif"
     fontSize: "2.4rem"
     fontWeight: 400
     lineHeight: 1.15
     letterSpacing: "normal"
   headline:
-    fontFamily: "'DM Serif Display', 'Newsreader', Georgia, serif"
+    fontFamily: "'EB Garamond', 'Newsreader', Georgia, serif"
     fontSize: "1.5rem"
     fontWeight: 400
     lineHeight: 1.25
@@ -161,7 +161,7 @@ La palette parte dalla terra: siena, avorio, pergamena. I colori funzionali sono
 
 ## 3. Typography
 
-**Display Font:** DM Serif Display (con Newsreader fallback, Georgia ultimo)
+**Display Font:** EB Garamond (con Newsreader fallback, Georgia ultimo)
 **Body Font:** DM Sans (con Inter fallback, system sans ultimo)
 **Italic Font:** Instrument Serif (italic editoriale per enfasi nei titoli)
 **Mono Font:** JetBrains Mono (solo per codice e token tecnici)
@@ -176,7 +176,7 @@ La palette parte dalla terra: siena, avorio, pergamena. I colori funzionali sono
 - **Label** (600, 0.75rem, letter-spacing 0.08em, uppercase): eyebrow, metadata, badge, contatori. DM Sans.
 
 ### Named Rules
-**The Bembo Rule.** Il font target dell'identita e Bembo. Quando sara disponibile come webfont (o self-hosted), sostituira DM Serif Display come display font. Fino ad allora, DM Serif Display e il proxy operativo. Il carattere e lo stesso: autorevole, classico, mai decorativo.
+**The Bembo Rule.** Il font target dell'identita e Bembo. EB Garamond (Google Fonts, gratuito) e il proxy operativo scelto: stesso ceppo veneziano (Aldus Manutius), autorevole, classico, mai decorativo. Se Bembo Std (Monotype) diverra disponibile via Adobe Fonts o licenza, sostituira EB Garamond senza modifiche strutturali.
 
 **The Serif-for-Structure Rule.** I titoli sono sempre serif. Il corpo e sempre sans. Non mischiare. L'unica eccezione e l'italic editoriale (`<em>` con Instrument Serif) nei titoli composti tipo "Autovalutazione *rapida*".
 
