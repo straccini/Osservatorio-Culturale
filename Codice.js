@@ -77,17 +77,14 @@ function doGet(e) {
   // Su deploy ANYONE_ANONYMOUS: getActiveUser() restituisce '' (anonimo)
   var _hasAnyParam = false;
   for (var _pk in params) { if (params.hasOwnProperty(_pk)) { _hasAnyParam = true; break; } }
-  if (!_hasAnyParam) {
-    var _activeEmail = '';
-    try { _activeEmail = Session.getActiveUser().getEmail(); } catch(_){}
-    if (!_activeEmail) {
-      // Utente anonimo su deploy pubblico → landing Duemilamusei
-      return HtmlService.createHtmlOutputFromFile('LandingPublic')
-        .setTitle('Sinopia · Osservatorio Culturale · Duemilamusei')
-        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-        .addMetaTag('viewport', 'width=device-width,initial-scale=1');
-    }
-    // Utente autenticato su deploy con login → prosegui alla webapp normale
+  // v4.18.66 — Gate landing rimosso: utenti anonimi accedono all'app completa (L0 freemium).
+  // Il frontend gestisce le restrizioni L0 (azioni protette richiedono registrazione).
+  // LandingPublic.html resta disponibile via ?landing=1 se serve.
+  if (!_hasAnyParam && params.landing === '1') {
+    return HtmlService.createHtmlOutputFromFile('LandingPublic')
+      .setTitle('Sinopia · Osservatorio Culturale · Duemilamusei')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+      .addMetaTag('viewport', 'width=device-width,initial-scale=1');
   }
 
   // ---------- 0b) Sondaggio pubblico (?survey=accessibilita) — NO AUTH ----------
