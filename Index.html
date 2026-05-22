@@ -2685,6 +2685,11 @@
           .validaSessione(savedToken);
       }
     }
+    // v4.18.67 — Mostra bottone login se anonimo
+    if (!OC_SESSION || !OC_SESSION.token) {
+      var li = $('loginBtn'); if (li) li.hidden = false;
+      var lb = $('logoutBtn'); if (lb) lb.hidden = true;
+    }
     // v4.18.47 — Mostra/nasconde CTA bar anonimo subito (no flash)
     try { _updateAnonCtaBar_(); } catch(_){}
     // v4.18.48 — Mostra/nasconde voce sidebar "La tua area"
@@ -4460,18 +4465,19 @@
     });
     if (str) str.hidden = !anyStrumento;
 
-    // Logout visibile solo se utente loggato
+    // Login/Logout: mostra uno, nascondi l'altro
     var lb = $('logoutBtn');
-    if (lb) lb.hidden = (ruolo === 'guest');
+    var li = $('loginBtn');
+    if (lb) lb.hidden = (ruolo === 'guest' || ruolo === 'anonimo');
+    if (li) li.hidden = (ruolo !== 'guest' && ruolo !== 'anonimo');
   }
 
   function doLogout(){
-    if (!_currentUser || !_currentUser.logoutUrl) {
-      alert('Logout non disponibile: nessun utente autenticato.');
-      return;
-    }
     if (confirm('Vuoi disconnetterti dall\'Osservatorio Culturale?')) {
-      window.top.location.href = _currentUser.logoutUrl;
+      try { localStorage.removeItem('oc_token'); } catch(_){}
+      window.OC_SESSION = {};
+      var baseUrl = (typeof GAS_URL !== 'undefined' && GAS_URL) ? GAS_URL : window.location.href.split('?')[0];
+      window.top.location.href = baseUrl;
     }
   }
 
@@ -7621,6 +7627,7 @@
       }
     },
     doLogout: doLogout,
+    doLogin: function(){ _openRegistrationModal_('login'); },
     loadAmbito: loadAmbito,
     search: function(q){
       q = (q || '').trim();

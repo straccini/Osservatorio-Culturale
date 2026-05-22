@@ -14,12 +14,15 @@
   Il toggle tema (dark/light) usa localStorage e data-theme su <html>.
   ============================================================
 -->
+<!-- v4.18.63 — Banner CTA rimosso dalla home. Contenuto spostato nel popup timer 5 minuti (Index.html) -->
+<div id="anonCtaBar" hidden></div>
+
 <header class="topbar" role="banner">
 
   <!-- Toggle sidebar mobile -->
   <button class="topbar-hamburger" id="toggleSidebar" aria-label="Apri/chiudi menu">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h16"/>
     </svg>
   </button>
 
@@ -48,6 +51,11 @@
   <!-- Azioni destra -->
   <div class="topbar-actions">
 
+    <!-- Toggle dimensione testo (accessibilità) -->
+    <button class="theme-toggle" id="fontSizeToggle" aria-label="Aumenta/riduci testo" title="Dimensione testo — clicca per cambiare">
+      <span id="fontSizeLabel" style="font-family:var(--font-ui);font-size:13px;font-weight:700;line-height:1;letter-spacing:-.02em">Aa+</span>
+    </button>
+
     <!-- Toggle dark / light mode -->
     <button class="theme-toggle" id="themeToggle" aria-label="Cambia tema" title="Tema chiaro / scuro">
       <!-- Icona sole (light) -->
@@ -68,13 +76,31 @@
       </svg>
     </button>
 
-    <!-- Notifiche -->
-    <button class="topbar-icon" data-action="openNotifiche" aria-label="Notifiche">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-      </svg>
-      <span class="topbar-badge" id="badge-notifiche" hidden>0</span>
-    </button>
+    <!-- Notifiche (v4.18.14 — campanella con dropdown riepilogo) -->
+    <div class="topbar-notif-wrap" style="position:relative">
+      <button class="topbar-icon" data-action="openNotifiche" aria-label="Notifiche" title="Riepilogo: bandi urgenti, nuovi rilevati oggi, stato scanner, news ultime 24h">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span class="topbar-badge" id="badge-notifiche" hidden>0</span>
+      </button>
+      <div id="notifPanel" hidden style="position:absolute;top:calc(100% + 8px);right:0;width:340px;max-width:calc(100vw - 24px);background:#fff;border:1px solid var(--rule,#E5E1D8);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.10),0 2px 4px rgba(0,0,0,.06);z-index:1000;font-family:var(--font-ui);max-height:calc(100vh - 80px);overflow-y:auto">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--rule,#E5E1D8)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <strong style="font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink,#1A1815)">Notifiche · Riepilogo del giorno</strong>
+            <span id="notifPanelInfo" style="font-size:11px;color:var(--ink-3,#6E6A62)">—</span>
+          </div>
+          <p style="margin:0;font-size:11.5px;color:var(--ink-3,#6E6A62);line-height:1.45">Occhiata veloce: bandi che scadono presto, novità di oggi, stato dello scanner. Click su una riga per andare al contesto.</p>
+        </div>
+        <div id="notifPanelBody" style="padding:6px 0">
+          <div style="padding:14px 16px;font-size:13px;color:var(--ink-3,#6E6A62);text-align:center">Caricamento…</div>
+        </div>
+        <div style="padding:10px 16px;border-top:1px solid var(--rule,#E5E1D8);display:flex;justify-content:space-between;gap:8px">
+          <button class="btn btn-secondary" onclick="OC.openNotifiche()" title="Ricarica il riepilogo notifiche" style="font-size:11px;padding:5px 10px">🔄 Aggiorna</button>
+          <button class="btn btn-secondary" onclick="OC.closeNotifiche()" title="Chiudi il pannello" style="font-size:11px;padding:5px 10px">Chiudi</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Profilo utente -->
     <button class="topbar-user" data-action="openUserMenu" aria-label="Profilo utente">
@@ -95,12 +121,54 @@
         <line x1="21" y1="12" x2="9" y2="12"/>
       </svg>
     </button>
+    <!-- Login (visibile solo se anonimo) -->
+    <button class="topbar-icon" id="loginBtn" data-action="doLogin"
+            aria-label="Accedi" title="Accedi o registrati"
+            style="margin-left:4px;background:#8B4513;color:#fff;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:600;font-family:inherit;border:none;cursor:pointer;display:flex;align-items:center;gap:4px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+        <polyline points="10 17 15 12 10 7"/>
+        <line x1="15" y1="12" x2="3" y2="12"/>
+      </svg>
+      Accedi
+    </button>
   </div>
 </header>
 
-<!-- Theme toggle — inizializzazione (eseguito subito, prima del paint) -->
+<!-- Theme toggle + Font size toggle — inizializzazione (eseguito subito, prima del paint) -->
 <script>
 (function(){
+  // ── Font size toggle — 3 livelli: normale / grande / extra-grande ───────
+  var fsBtn   = document.getElementById('fontSizeToggle');
+  var fsLabel = document.getElementById('fontSizeLabel');
+  var FS_LEVELS = ['', 'large', 'xlarge'];
+  var FS_SIZES  = ['13px', '16px', '20px'];
+  var FS_TITLES = [
+    'Testo normale — clicca per ingrandire',
+    'Testo grande — clicca per ingrandire ancora',
+    'Testo extra-grande — clicca per tornare al normale'
+  ];
+  var _fsIdx = 0;
+
+  function applyFontSize(idx) {
+    _fsIdx = ((idx % 3) + 3) % 3;
+    document.documentElement.setAttribute('data-fontsize', FS_LEVELS[_fsIdx]);
+    fsLabel.style.fontSize = FS_SIZES[_fsIdx];
+    fsBtn.title = FS_TITLES[_fsIdx];
+    fsBtn.setAttribute('aria-label', FS_TITLES[_fsIdx]);
+  }
+
+  var savedFs = localStorage.getItem('oc-fontsize');
+  var initIdx = FS_LEVELS.indexOf(savedFs);
+  applyFontSize(initIdx < 0 ? 0 : initIdx);
+
+  fsBtn.addEventListener('click', function(){
+    var next = (_fsIdx + 1) % 3;
+    localStorage.setItem('oc-fontsize', FS_LEVELS[next]);
+    applyFontSize(next);
+  });
+
+  // ── Theme toggle ─────────────────────────────────────────────────────────
   var btn = document.getElementById('themeToggle');
   var iconLight = document.getElementById('themeIconLight');
   var iconDark  = document.getElementById('themeIconDark');
