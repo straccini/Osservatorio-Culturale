@@ -4651,10 +4651,23 @@
         }
 
         if (email && consent && r.sessioneCreata) {
-          html += '<div style="background:#EAF3EC;border:1px solid #C0DAC8;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#2D5F3A;line-height:1.5">';
-          html += '<b>Area personale sbloccata</b> — Riceverai un link di accesso all\'indirizzo <code>'+esc(email)+'</code>.';
+          // v4.18.67 — Salva token + attiva sessione subito (senza bisogno di cliccare magic-link)
           if (r.magicLink) {
-            html += ' Oppure <a href="'+esc(r.magicLink)+'" style="color:#2D5F3A;font-weight:600">accedi subito da qui →</a>';
+            var _tok = '';
+            try { var _u = new URL(r.magicLink); _tok = _u.searchParams.get('t') || ''; } catch(_){ try { _tok = r.magicLink.split('t=')[1] || ''; } catch(_2){} }
+            if (_tok) {
+              try { localStorage.setItem('oc_token', _tok); } catch(_){}
+              OC_SESSION = { token:_tok, email:email, livello:1, permanente:true };
+              if (typeof _updateTopbarFromSession_ === 'function') _updateTopbarFromSession_(OC_SESSION);
+              try { _updateAnonCtaBar_(); } catch(_){}
+              var navWs = document.getElementById('navItemWorkspace');
+              if (navWs) navWs.hidden = false;
+            }
+          }
+          html += '<div style="background:#EAF3EC;border:1px solid #C0DAC8;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#2D5F3A;line-height:1.5">';
+          html += '<b>Area personale sbloccata</b> — Sei ora registrato come <code>'+esc(email)+'</code>. La topbar mostra il tuo profilo.';
+          if (r.magicLink) {
+            html += ' <a href="'+esc(r.magicLink)+'" style="color:#2D5F3A;font-weight:600">Ricarica per accesso completo →</a>';
           }
           html += '</div>';
         } else if (email && consent && !r.sessioneCreata) {
