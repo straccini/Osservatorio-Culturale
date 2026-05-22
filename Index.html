@@ -98,6 +98,13 @@
             <div style="font-size:11.5px;opacity:.85;margin-top:2px">10 minuti · 43 domande · ricevi report personalizzato + accesso completo Sinopia</div>
           </div>
         </button>
+        <button type="button" onclick="OC.closeRegistrationModal(); OC.go('sondaggi-catalogo');" style="background:#3F7A5E;color:#fff;border:none;padding:14px 20px;border-radius:8px;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
+          <span style="width:36px;height:36px;border:1.5px solid rgba(255,255,255,.4);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:700">Autovalutazione rapida</div>
+            <div style="font-size:11.5px;opacity:.85;margin-top:2px">3 minuti · 6 domande · diagnosi immediata + accesso completo</div>
+          </div>
+        </button>
         <button type="button" onclick="OC.closeRegistrationModal(); OC.prenotaConsulenza(event, 'generica');" style="background:#3C6A95;color:#fff;border:none;padding:14px 20px;border-radius:8px;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
           <span style="width:36px;height:36px;border:1.5px solid rgba(255,255,255,.4);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
           <div style="flex:1">
@@ -122,6 +129,10 @@
       <button type="button" onclick="OC.closeNewsletterOptIn();OC.go('matrix');" style="background:#8B4513;color:#fff;border:none;padding:14px 18px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px">
         <span style="width:32px;height:32px;border:1.5px solid rgba(255,255,255,.4);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></span>
         <div><div style="font-weight:700">Compila MuseMu Matrix</div><div style="font-size:11px;opacity:.8;margin-top:2px">10 min · report personalizzato + accesso completo</div></div>
+      </button>
+      <button type="button" onclick="OC.closeNewsletterOptIn();OC.go('sondaggi-catalogo');" style="background:#3F7A5E;color:#fff;border:none;padding:14px 18px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px">
+        <span style="width:32px;height:32px;border:1.5px solid rgba(255,255,255,.4);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
+        <div><div style="font-weight:700">Autovalutazione rapida</div><div style="font-size:11px;opacity:.8;margin-top:2px">3 min · diagnosi + accesso completo</div></div>
       </button>
       <button type="button" onclick="OC.closeNewsletterOptIn();OC.prenotaConsulenza(event,'generica');" style="background:var(--surface-2,#F7F5F0);color:var(--ink,#1D1D1F);border:1px solid var(--rule,#E8E4DC);padding:14px 18px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px">
         <span style="width:32px;height:32px;border:1.5px solid #8B4513;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
@@ -6460,7 +6471,6 @@
   function _closeNewsletterOptIn_() {
     var ov = document.getElementById('oc-newsletter-overlay');
     if (ov) { ov.hidden = true; ov.style.display = 'none'; }
-    localStorage.setItem('oc-nl-prompted', '1');
   }
   function _submitNewsletterOptIn_() {
     var email = (document.getElementById('nlOptInEmail') || {}).value || '';
@@ -6484,15 +6494,23 @@
         .saveMailing({ Email: email, Nome: '', Attivo: true });
     }
   }
-  // Timer 5 minuti: mostra newsletter opt-in una sola volta per utenti anonimi
-  (function _nlTimer_(){
-    if (localStorage.getItem('oc-nl-prompted')) return;
-    setTimeout(function(){
-      if (localStorage.getItem('oc-nl-prompted')) return;
-      // Solo se livello 0 (anonimo)
+  // v4.18.67 — Timer registrazione progressivo: 5min → 10min → ogni 15min
+  (function _regTimerProgressive_(){
+    var delays = [5*60*1000, 10*60*1000, 15*60*1000]; // 5min, 10min, 15min (poi ripete 15)
+    var step = 0;
+    function _schedNext_(){
       if (typeof _ocLivello === 'function' && _ocLivello() > 0) return;
-      _openNewsletterOptIn_();
-    }, 5 * 60 * 1000); // 5 minuti
+      try { if (localStorage.getItem('oc_token')) return; } catch(_){}
+      var delay = step < delays.length ? delays[step] : delays[delays.length - 1];
+      setTimeout(function(){
+        if (typeof _ocLivello === 'function' && _ocLivello() > 0) return;
+        try { if (localStorage.getItem('oc_token')) return; } catch(_){}
+        _openNewsletterOptIn_();
+        step++;
+        _schedNext_();
+      }, delay);
+    }
+    _schedNext_();
   })();
 
   // Mostra/nasconde la CTA bar anonimo basandosi sul livello attuale
