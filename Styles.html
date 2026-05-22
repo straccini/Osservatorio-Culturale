@@ -637,12 +637,8 @@ body.is-home-page .topbar-search{display:none}
 .update-dot::after{
   content:''; position:absolute; inset:-3px; border-radius:50%;
   border:1px solid var(--success); opacity:.4;
-  animation:pulse 2.4s ease-out infinite;
 }
-@keyframes pulse{
-  0%{transform:scale(.6);opacity:.6}
-  100%{transform:scale(1.8);opacity:0}
-}
+
 
 /* Hero headliner */
 .hero-eyebrow{
@@ -960,7 +956,6 @@ body.is-home-page .topbar-search{display:none}
   display:flex; align-items:center; gap:12px;
   padding:12px 16px;
   border:1px solid var(--rule);
-  border-left:3px solid var(--amb);
   border-radius:var(--r-sm);
   background:var(--paper-1);
   text-decoration:none;
@@ -1130,28 +1125,12 @@ body.is-home-page .topbar-search{display:none}
   letter-spacing:.12em; text-transform:uppercase;
   color:var(--ink-3);
 }
-.section-eyebrow .pulse{
-  display:inline-block;
-  width:6px; height:6px; border-radius:50%;
-  background:var(--danger);
-  margin-right:6px;
-  vertical-align:middle;
-}
 .section-title{
   font-family:var(--font-display);
   font-size:2rem; font-weight:500;
   letter-spacing:-0.02em; line-height:1.1;
   color:var(--ink); margin:0;
   display:flex; align-items:center; gap:10px;
-}
-.section-title .pulse{
-  width:9px; height:9px; border-radius:50%;
-  background:var(--danger); position:relative;
-}
-.section-title .pulse::after{
-  content:''; position:absolute; inset:-4px; border-radius:50%;
-  border:2px solid var(--danger); opacity:.4;
-  animation:pulse 1.8s ease-out infinite;
 }
 .section-title em{font-family:var(--font-italic);font-style:italic;font-weight:400}
 .section-action{
@@ -1369,7 +1348,6 @@ body.is-home-page .topbar-search{display:none}
 .ambito-card{
   background:var(--surface);
   border:1px solid var(--rule);
-  border-left:4px solid var(--amb,var(--ink-3));
   border-radius:var(--r-md);
   padding:20px 20px 18px 22px;
   cursor:pointer;
@@ -1672,8 +1650,8 @@ body.is-home-page .topbar-search{display:none}
 .section-divider.urgent-divider span{ color:#C8102E; }
 
 /* ---- News card (.nr-row) ------------------------------------------- */
-.nr-row{ border-left: 3px solid var(--rule); }
-.nr-row.nr-recente{ border-left-color: var(--amb-3); background: rgba(60,106,149,.04); }
+.nr-row{ }
+.nr-row.nr-recente{ background: rgba(60,106,149,.04); }
 
 /* Fonte badge — identità della testata */
 .nr-fonte{
@@ -1835,8 +1813,8 @@ body.is-home-page .topbar-search{display:none}
 }
 
 /* ---- Podcast card (.pd-row) ---------------------------------------- */
-.pd-row{ border-left: 3px solid #8B4513; }
-.pd-row.pd-recente{ border-left-color: var(--amb-4); background: rgba(156,106,54,.04); }
+.pd-row{ }
+.pd-row.pd-recente{ background: rgba(156,106,54,.04); }
 
 /* Show/serie badge */
 .pd-show{
@@ -1852,8 +1830,8 @@ body.is-home-page .topbar-search{display:none}
 }
 
 /* ---- Libro card (.lb-row) ----------------------------------------- */
-.lb-row{ border-left: 3px solid #4A3F7A; }
-.lb-row.lb-recente{ border-left-color: var(--amb-1); background: rgba(107,92,154,.04); }
+.lb-row{ }
+.lb-row.lb-recente{ background: rgba(107,92,154,.04); }
 
 /* Editore badge */
 .lb-editore{
@@ -1939,8 +1917,8 @@ body.is-home-page .topbar-search{display:none}
 }
 
 /* ---- Video card (.vd-row) ----------------------------------------- */
-.vd-row{ border-left: 3px solid #C8102E; }
-.vd-row.vd-recente{ border-left-color: #C8102E; background: rgba(200,16,46,.04); }
+.vd-row{ }
+.vd-row.vd-recente{ background: rgba(200,16,46,.04); }
 
 /* Canale YouTube badge */
 .vd-canale{
@@ -1964,7 +1942,6 @@ body.is-home-page .topbar-search{display:none}
 
 /* Bando-row urgente: bordo sinistra rosso */
 .bando-row.bando-urgent{
-  border-left:3px solid #C8102E;
   background:rgba(200,16,46,.04);
 }
 .bando-row.bando-urgent .bando-row-title{ color:var(--ink); }
@@ -1996,7 +1973,6 @@ body.is-home-page .topbar-search{display:none}
   padding:28px 32px;
   background:var(--surface-2);
   border-radius:var(--r-md);
-  border-left:4px solid var(--rule-strong);
   display:block;
 }
 .page-eyebrow,.eyebrow{
@@ -2140,7 +2116,6 @@ body.is-home-page .topbar-search{display:none}
   gap:48px;
   align-items:start;
   background:var(--amb-soft, var(--surface-2));
-  border-left:5px solid var(--amb, var(--rule-strong));
   border-radius:var(--r-md);
   color:var(--ink);
 }
@@ -2527,7 +2502,7 @@ body.is-home-page .topbar-search{display:none}
 
 /* === PAGE ARCHIVIO / CESTINO === */
 #page-archivio .bando-row,
-#page-cestino  .bando-row { border-left: 3px solid var(--rule); padding-left: 14px; }
+#page-cestino  .bando-row { padding-left: 14px; }
 
 /* ==========================================================
    TOAST NOTIFICATION SYSTEM
@@ -2736,7 +2711,6 @@ body.is-home-page .topbar-search{display:none}
   line-height: 1.65;
   color: var(--ink-2);
   margin-bottom: 24px;
-  border-left: 3px solid var(--rule-2);
   padding-left: 16px;
   font-style: italic;
 }
