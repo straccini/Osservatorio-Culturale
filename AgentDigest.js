@@ -100,7 +100,7 @@ function _sendForAgent_(agenteId, opts) {
         var subject = _buildAgentSubject_(agent, relevant.items);
 
         if (!opts.dryRun) {
-          try { if (MailApp.getRemainingDailyQuota() < 1) { Logger.log('Quota esaurita, invio parziale'); break; } } catch(_){}
+          try { if (MailApp.getRemainingDailyQuota() < 1) { Logger.log('Quota esaurita, invio parziale'); return; } } catch(_){}
           MailApp.sendEmail({
             to: dest.email,
             subject: subject,
