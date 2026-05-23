@@ -582,56 +582,188 @@ function _pulisciHtmlV5_(html) {
 
 // ─── HELPER: chiamata Claude API per estrazione bandi ─────────────────────
 
+/**
+ * v4.18.68 — Pipeline doppio passaggio per estrazione bandi strutturati.
+ *
+ * Pass 1 (Haiku, filtro rumore): verifica se il testo contiene bandi reali.
+ * Pass 2 (Sonnet, estrazione): schema JSON rigido con campi tipizzati.
+ * Retry con backoff esponenziale (max 2 tentativi). Fallback grezzo se fallisce.
+ */
 function _estraiConClaudeV5_(testoHtml, urlFonte, enteDefault) {
   var apiKey = PropertiesService.getScriptProperties().getProperty(ANTHROPIC_KEY_PROP);
   if (!apiKey) throw new Error('CLAUDE_API_KEY non configurata in ScriptProperties');
 
-  var prompt = 'Sei un assistente specializzato nel monitoraggio di bandi e finanziamenti per musei, enti culturali e turismo.\n\n' +
-    'Analizza questo testo estratto dalla pagina: ' + urlFonte + '\n\n' +
-    '--- TESTO ---\n' + testoHtml + '\n--- FINE TESTO ---\n\n' +
-    'Estrai TUTTI i bandi, avvisi, finanziamenti, opportunita presenti. Per ogni bando restituisci un oggetto JSON con questi campi:\n' +
-    '{\n' +
-    '  "titolo": "titolo completo del bando",\n' +
-    '  "ente": "ente erogatore (usa \'' + enteDefault + '\' se non specificato)",\n' +
-    '  "livello": "Nazionale|Regionale|EU|Fondazione|Vari",\n' +
-    '  "regione": "regione se pertinente, altrimenti vuoto",\n' +
-    '  "settore": "settore tematico (es: musei, patrimonio culturale, turismo)",\n' +
-    '  "soggetti": "chi puo partecipare (es: enti pubblici, associazioni, imprese)",\n' +
-    '  "importo": "importo massimo in euro se indicato, altrimenti vuoto",\n' +
-    '  "scadenza": "data scadenza in formato GG/MM/AAAA se presente, altrimenti vuoto",\n' +
-    '  "urlBando": "URL diretto al bando (completo, non relativo)",\n' +
-    '  "sommario": "descrizione sintetica in 2-3 frasi"\n' +
-    '}\n\n' +
-    'Rispondi SOLO con un array JSON valido: [{...}, {...}]. Se non trovi bandi, rispondi con [].';
+  // ── PASS 1: Filtro rumore (Haiku, veloce ed economico) ──
+  var filterPrompt = 'Analizza questo testo estratto da: ' + urlFonte + '\n\n' +
+    '--- TESTO ---\n' + testoHtml.slice(0, 6000) + '\n--- FINE ---\n\n' +
+    'Questo testo contiene bandi, avvisi pubblici, finanziamenti o agevolazioni attive per enti culturali, musei o turismo? ' +
+    'Rispondi SOLO con: {"rilevante": true, "motivo": "breve spiegazione"} oppure {"rilevante": false, "motivo": "breve spiegazione"}';
 
-  var payload = {
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 4096,
-    messages: [{ role: 'user', content: prompt }]
-  };
-
-  var resp = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
-    method: 'post',
-    contentType: 'application/json',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01'
-    },
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true
-  });
-
-  if (resp.getResponseCode() !== 200) {
-    throw new Error('Claude API HTTP ' + resp.getResponseCode() + ': ' + resp.getContentText().slice(0, 200));
+  var filterResult = _claudeApiCall_(apiKey, 'claude-haiku-4-5-20251001', filterPrompt, 256, 2);
+  if (filterResult.fallback) {
+    // API fallita anche dopo retry: salva grezzo
+    return [_bandoGrezzo_(testoHtml, urlFonte, enteDefault, 'filter_api_fail')];
   }
 
-  var body = JSON.parse(resp.getContentText());
-  var testo = body.content && body.content[0] ? body.content[0].text : '[]';
+  var filterJson = _cleanParseJson_(filterResult.text);
+  if (filterJson && filterJson.rilevante === false) {
+    Logger.log('Pass 1 SKIP (non rilevante): ' + urlFonte + ' — ' + (filterJson.motivo || ''));
+    return [];
+  }
 
-  // Estrai JSON dall'eventuale testo circostante
-  var match = testo.match(/\[[\s\S]*\]/);
-  if (!match) return [];
-  try { return JSON.parse(match[0]); } catch(e) { return []; }
+  // ── PASS 2: Estrazione dettagliata (Sonnet, schema rigido) ──
+  var extractPrompt = 'Sei un assistente specializzato nel monitoraggio di bandi e finanziamenti per musei, enti culturali e turismo.\n\n' +
+    'Analizza questo testo dalla pagina: ' + urlFonte + '\n\n' +
+    '--- TESTO ---\n' + testoHtml + '\n--- FINE TESTO ---\n\n' +
+    'Estrai TUTTI i bandi, avvisi, finanziamenti presenti. Per ogni bando restituisci un oggetto JSON con ESATTAMENTE questi campi e tipi:\n' +
+    '{\n' +
+    '  "titolo": "string — titolo completo del bando",\n' +
+    '  "ente": "string — ente erogatore (usa \'' + enteDefault + '\' se non specificato)",\n' +
+    '  "livello": "string — Nazionale|Regionale|EU|Fondazione|Vari",\n' +
+    '  "regione": "string — regione se pertinente, altrimenti stringa vuota",\n' +
+    '  "settore": "string — settore tematico",\n' +
+    '  "soggetti": "string — chi puo partecipare",\n' +
+    '  "importo": "string — importo massimo in euro se indicato, altrimenti stringa vuota",\n' +
+    '  "scadenza": "string — data scadenza YYYY-MM-DD, altrimenti stringa vuota",\n' +
+    '  "urlBando": "string — URL diretto completo al bando",\n' +
+    '  "sommario": "string — descrizione sintetica in 2-3 frasi",\n' +
+    '  "dotazione_finanziaria": "number o null — dotazione totale in euro",\n' +
+    '  "contributo_massimo": "number o null — contributo max per beneficiario",\n' +
+    '  "intensita_aiuto": "string — es. 80%, altrimenti stringa vuota",\n' +
+    '  "territorio": "string — Nazionale o singola regione",\n' +
+    '  "beneficiari_ammessi": ["array di stringhe — es. Comuni, Musei Pubblici, Imprese"],\n' +
+    '  "rischi_bando": ["array di stringhe — clausole critiche: fideiussione, non retroattivita, cofinanziamento, etc."]\n' +
+    '}\n\n' +
+    'REGOLE:\n' +
+    '- La scadenza DEVE essere in formato YYYY-MM-DD (es. 2026-07-31). Se non e chiara, stringa vuota.\n' +
+    '- dotazione_finanziaria e contributo_massimo sono numeri (senza simbolo euro). null se non indicati.\n' +
+    '- beneficiari_ammessi e rischi_bando sono array di stringhe. Array vuoto [] se non presenti.\n' +
+    '- Rispondi SOLO con un array JSON valido: [{...}]. Se non trovi bandi, rispondi con [].';
+
+  var extractResult = _claudeApiCall_(apiKey, 'claude-sonnet-4-6', extractPrompt, 8192, 2);
+  if (extractResult.fallback) {
+    return [_bandoGrezzo_(testoHtml, urlFonte, enteDefault, 'extract_api_fail')];
+  }
+
+  var bandi = _cleanParseJsonArray_(extractResult.text);
+  if (!bandi || !bandi.length) return [];
+
+  // Validazione e normalizzazione campi
+  return bandi.map(function(b) {
+    // Valida scadenza formato YYYY-MM-DD
+    if (b.scadenza && !/^\d{4}-\d{2}-\d{2}$/.test(b.scadenza)) {
+      b.scadenza = _normalizzaData_(b.scadenza);
+    }
+    // Assicura tipi corretti
+    b.dotazione_finanziaria = (typeof b.dotazione_finanziaria === 'number') ? b.dotazione_finanziaria : null;
+    b.contributo_massimo = (typeof b.contributo_massimo === 'number') ? b.contributo_massimo : null;
+    b.intensita_aiuto = String(b.intensita_aiuto || '');
+    b.territorio = String(b.territorio || b.regione || '');
+    b.beneficiari_ammessi = Array.isArray(b.beneficiari_ammessi) ? b.beneficiari_ammessi : [];
+    b.rischi_bando = Array.isArray(b.rischi_bando) ? b.rischi_bando : [];
+    return b;
+  });
+}
+
+/**
+ * Chiamata Claude API con retry e backoff esponenziale.
+ * @return {Object} {text, fallback:boolean}
+ */
+function _claudeApiCall_(apiKey, model, prompt, maxTokens, maxRetry) {
+  for (var attempt = 0; attempt <= maxRetry; attempt++) {
+    try {
+      if (attempt > 0) {
+        Utilities.sleep(Math.pow(2, attempt) * 1000); // 2s, 4s backoff
+      }
+      var resp = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+        method: 'post',
+        contentType: 'application/json',
+        headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        payload: JSON.stringify({ model: model, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] }),
+        muteHttpExceptions: true
+      });
+      var code = resp.getResponseCode();
+      if (code === 200) {
+        var body = JSON.parse(resp.getContentText());
+        var text = (body.content && body.content[0]) ? body.content[0].text : '';
+        return { text: text, fallback: false };
+      }
+      // Rate limit o server error: retry
+      if (code === 429 || code >= 500) {
+        Logger.log('Claude API ' + model + ' HTTP ' + code + ' (attempt ' + (attempt+1) + '/' + (maxRetry+1) + ')');
+        continue;
+      }
+      // Client error (400, 401, 403): non ritentare
+      Logger.log('Claude API ' + model + ' HTTP ' + code + ' (non retryable): ' + resp.getContentText().slice(0, 200));
+      return { text: '', fallback: true };
+    } catch(e) {
+      Logger.log('Claude API ' + model + ' NETWORK error (attempt ' + (attempt+1) + '): ' + e.message);
+      if (attempt === maxRetry) return { text: '', fallback: true };
+    }
+  }
+  return { text: '', fallback: true };
+}
+
+/**
+ * Pulisce markdown code blocks e parsa JSON.
+ */
+function _cleanParseJson_(text) {
+  if (!text) return null;
+  var clean = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+  try { return JSON.parse(clean); } catch(_){}
+  // Fallback: cerca primo { ... }
+  var m = clean.match(/\{[\s\S]*\}/);
+  if (m) { try { return JSON.parse(m[0]); } catch(_){} }
+  return null;
+}
+
+function _cleanParseJsonArray_(text) {
+  if (!text) return [];
+  var clean = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+  try { return JSON.parse(clean); } catch(_){}
+  var m = clean.match(/\[[\s\S]*\]/);
+  if (m) { try { return JSON.parse(m[0]); } catch(_){} }
+  return [];
+}
+
+/**
+ * Record grezzo di fallback: salva comunque il bando contrassegnato per elaborazione manuale.
+ */
+function _bandoGrezzo_(testoHtml, urlFonte, enteDefault, motivo) {
+  var titolo = testoHtml.slice(0, 120).replace(/[\n\r]+/g, ' ').trim();
+  return {
+    titolo: '[DA ELABORARE] ' + titolo,
+    ente: enteDefault || '',
+    livello: 'Vari',
+    regione: '',
+    settore: '',
+    soggetti: '',
+    importo: '',
+    scadenza: '',
+    urlBando: urlFonte,
+    sommario: 'Estrazione automatica fallita (' + motivo + '). Richiede elaborazione manuale.',
+    dotazione_finanziaria: null,
+    contributo_massimo: null,
+    intensita_aiuto: '',
+    territorio: '',
+    beneficiari_ammessi: [],
+    rischi_bando: []
+  };
+}
+
+/**
+ * Normalizza date in formato YYYY-MM-DD.
+ */
+function _normalizzaData_(input) {
+  if (!input) return '';
+  var s = String(input).trim();
+  // GG/MM/AAAA → YYYY-MM-DD
+  var m1 = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  if (m1) return m1[3] + '-' + m1[2].padStart(2,'0') + '-' + m1[1].padStart(2,'0');
+  // AAAA-MM-GG gia ok
+  var m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m2) return s;
+  return '';
 }
 
 
