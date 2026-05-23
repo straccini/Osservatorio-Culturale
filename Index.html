@@ -3490,7 +3490,7 @@
         html += '<div style="font-size:11.5px;color:var(--ink-3);margin-top:2px">' + esc(s.data) + '</div>';
         html += '</div>';
         html += '<div style="display:flex;align-items:center;gap:10px">';
-        html += '<span style="font-family:var(--font-display);font-size:1.25rem;font-weight:600;color:'+fasciaColor+'">' + s.score + '<span style="font-size:0.75rem;opacity:.6">/100</span></span>';
+        html += '<span style="font-family:var(--font-display);font-size:1.25rem;font-weight:600;color:'+fasciaColor+'">' + Number(s.score) + '<span style="font-size:0.75rem;opacity:.6">/100</span></span>';
         html += '<span style="background:'+fasciaColor+'18;color:'+fasciaColor+';font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:4px;letter-spacing:.04em;text-transform:uppercase">' + esc(fasciaLabel) + '</span>';
         html += '</div>';
         html += '<button onclick="OC.openSondaggio(\'' + esc(s.codice) + '\')" style="background:transparent;border:1px solid var(--rule);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:var(--ink-2);cursor:pointer;font-family:inherit">Ricompila</button>';
@@ -3627,7 +3627,7 @@
         html += '<div style="font-size:14px;font-weight:600;color:var(--ink)">' + esc(ag.nome) + '</div>';
         html += '<div style="font-size:11.5px;color:var(--ink-3);margin-top:2px">Frequenza: ' + esc(ag.frequenza || '?') + (ag.ultimoInvio ? ' · Ultimo: ' + esc(ag.ultimoInvio) : '') + '</div>';
         html += '</div>';
-        html += '<button onclick="OC._toggleAgentOptIn_('+ag.id+','+(!ag.optIn)+',this)" style="' + onOffStyle + '">' + onOff + '</button>';
+        html += '<button onclick="OC._toggleAgentOptIn_('+parseInt(ag.id,10)+','+(!ag.optIn)+',this)" style="' + onOffStyle + '">' + onOff + '</button>';
         html += '</div>';
       });
       html += '</div>';

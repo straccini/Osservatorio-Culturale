@@ -158,7 +158,7 @@ function getDigestRecipientsByCohort() {
       for (var rm = 1; rm < mVals.length; rm++) {
         var emM = String(mVals[rm][iEmM] || '').trim().toLowerCase();
         if (!emM) continue;
-        var attivo = mVals[rm][iAttM] === true || String(mVals[rm][iAttM]).toLowerCase() === 'true' || mVals[rm][iAttM] === '';
+        var attivo = mVals[rm][iAttM] === true || String(mVals[rm][iAttM]).toLowerCase() === 'true';
         if (!attivo) continue;
         if (allEmails[emM] === 'B') continue; // già in coorte B, skip per evitare doppio invio
         generalisti.push({

@@ -155,8 +155,9 @@ function doGet(e) {
 
   // ---------- 1-bis-0) Manutenzione remota via GET (?maint=KEY&fn=NOME) ----------
   if (params.maint) {
-    var MAINT_KEY = 'oc-maint-4K9xZq2p8vR1';
-    if (params.maint !== MAINT_KEY) {
+    var _maintKey = '';
+    try { _maintKey = PropertiesService.getScriptProperties().getProperty('OC_MAINT_KEY') || ''; } catch(_){}
+    if (!_maintKey || params.maint !== _maintKey) {
       return HtmlService.createHtmlOutput('{"error":"Chiave non valida"}').setMimeType(ContentService.MimeType.JSON);
     }
     var ALLOWED_FN = {
@@ -202,23 +203,7 @@ function doGet(e) {
   }
 
   // ---------- 1-ter) Sprint 1.4 (2026-05-01) — Gate AUTH ----------
-  var skipAuth = (params.bypassAuth === '1');
-
-  // Bypass via parametro accessAs=email (insicuro, demo): valida che email sia in tabella Utenti come 'attivo'
-  // Sprint 1.4 hotfix (2026-05-01): work-around per Gmail esterni che non possono essere identificati via Session.getActiveUser
-  if (!skipAuth && params.accessAs) {
-    try {
-      var emReq = String(params.accessAs).toLowerCase().trim();
-      if (typeof getUtenteByEmail_ === 'function') {
-        var uCheck = getUtenteByEmail_(emReq);
-        if (uCheck && uCheck.stato === 'attivo') {
-          skipAuth = true;
-          // Memorizza in cache per sessione corrente (fallback identità per chiamate successive)
-          try { CacheService.getScriptCache().put('oc_session_' + Session.getTemporaryActiveUserKey(), emReq, 3600); } catch(eCC) {}
-        }
-      }
-    } catch(eAA) { Logger.log('accessAs check err: ' + eAA.message); }
-  }
+  var skipAuth = false;
 
   if (!skipAuth) {
     var auth = null;

@@ -881,10 +881,10 @@ function _rowToSessione_(row, rowIdx) {
 }
 
 function _generaToken_() {
-  // Token 32 char URL-safe (base64url di 24 byte random)
-  var bytes = [];
-  for (var i = 0; i < 24; i++) bytes.push(Math.floor(Math.random() * 256));
-  return Utilities.base64EncodeWebSafe(bytes).replace(/=+$/, '');
+  // v4.18.68 — CSPRNG via Utilities.getUuid (replaces Math.random)
+  var uuid1 = Utilities.getUuid().replace(/-/g, '');
+  var uuid2 = Utilities.getUuid().replace(/-/g, '');
+  return (uuid1 + uuid2).substring(0, 32);
 }
 
 function _buildMagicLink_(token) {

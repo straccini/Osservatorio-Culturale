@@ -79,6 +79,14 @@ function _sendForAgent_(agenteId, opts) {
 
     Logger.log('  ' + agent.codice + ': ' + destinatari.length + ' destinatari');
 
+    // v4.18.68 — Quota check
+    var remainingQuota = 0;
+    try { remainingQuota = MailApp.getRemainingDailyQuota(); } catch(_){}
+    if (remainingQuota < 1) {
+      Logger.log('WARN: quota email esaurita, invio sospeso');
+      return { ok:false, error:'quota_esaurita' };
+    }
+
     // 2. Per ogni destinatario, calcola contenuti rilevanti e invia
     var inviati = 0, errori = 0;
     var deliverySheet = opts.dryRun ? null : _getOrCreateDeliverySheet_();
@@ -92,6 +100,7 @@ function _sendForAgent_(agenteId, opts) {
         var subject = _buildAgentSubject_(agent, relevant.items);
 
         if (!opts.dryRun) {
+          try { if (MailApp.getRemainingDailyQuota() < 1) { Logger.log('Quota esaurita, invio parziale'); break; } } catch(_){}
           MailApp.sendEmail({
             to: dest.email,
             subject: subject,
@@ -147,10 +156,14 @@ function _getAgentRecipients_(agenteId) {
 
     if (iOptIn >= 0 && iEmail >= 0) {
       var recipients = [];
+      var _seenEmails = {};
       for (var r = 1; r < pData.length; r++) {
         if (pData[r][iOptIn] === true || String(pData[r][iOptIn]).toLowerCase() === 'true') {
+          var em = String(pData[r][iEmail] || '').trim().toLowerCase();
+          if (_seenEmails[em]) continue;
+          _seenEmails[em] = true;
           recipients.push({
-            email: String(pData[r][iEmail] || '').trim().toLowerCase(),
+            email: em,
             responseId: pData[r][iRespId] || ''
           });
         }
@@ -170,12 +183,15 @@ function _getAgentRecipients_(agenteId) {
   var iMatrix = sHead.indexOf('matrix_completato');
 
   var fallback = [];
+  var _seenEmails = {};
   for (var r2 = 1; r2 < sData.length; r2++) {
     var em = String(sData[r2][iSEmail] || '').trim().toLowerCase();
     if (!em) continue;
+    if (_seenEmails[em]) continue;
     if (sData[r2][iRevoked] === true) continue;
     // Solo chi ha completato Matrix riceve le email degli agenti
     if (sData[r2][iMatrix] !== true && String(sData[r2][iMatrix]).toLowerCase() !== 'true') continue;
+    _seenEmails[em] = true;
     fallback.push({ email: em, responseId: '' });
   }
   return fallback;

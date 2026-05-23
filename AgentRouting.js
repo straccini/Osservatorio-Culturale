@@ -95,11 +95,10 @@ function _hardRuleGeografia_(contenuto, museo) {
 
   // Bando nazionale/EU → sempre passa
   var territorio = bandoTerritorio || bandoLivello;
-  if (territorio.indexOf('nazionale') >= 0 || territorio.indexOf('eu') >= 0 ||
-      territorio.indexOf('europeo') >= 0 || territorio === 'vari') return 1;
+  if (/\b(nazionale|europeo|vari)\b/.test(territorio) || territorio === 'eu' || territorio === 'ue') return 1;
 
   // Bando regionale: deve matchare la regione museo
-  var regioneBando = bandoRegione || bandoTerritorio;
+  var regioneBando = bandoRegione || bandoTerritorio || bandoLivello;
   if (regioneBando && regioneBando !== museoRegione) {
     // Verifica anche regioni confinanti (tolleranza)
     if (typeof _isRegioneConfinante_ === 'function' && _isRegioneConfinante_(museoRegione, regioneBando)) {

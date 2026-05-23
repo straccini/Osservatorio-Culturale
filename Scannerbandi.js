@@ -678,7 +678,7 @@ function somiglianzaBandi(a, b) {
 function testScannerBandi() {
   Logger.log('=== TEST SCANNER BANDI v4.0 ===');
   var apiKey = PropertiesService.getScriptProperties().getProperty(ANTHROPIC_KEY_PROP);
-  Logger.log('API Key: ' + (apiKey ? 'SI - ' + apiKey.slice(0,22) + '...' : 'NO'));
+  Logger.log('API Key: ' + (apiKey ? 'SI (configurata)' : 'NO'));
   if (!apiKey) return;
   var testoProva = 'Avviso Unico Cultura 2026 - Regione Marche. Scadenza 15 maggio 2026. Contributi per musei e reti museali. Importo massimo 100.000 euro.';
   var bandi = estraiConClaudeBandi(buildPromptBandi(testoProva, 'TEST', 'https://www.regione.marche.it'), apiKey);

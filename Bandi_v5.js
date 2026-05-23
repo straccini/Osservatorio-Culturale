@@ -27,6 +27,9 @@ var SH_BACKUP_INFO = 'BackupInfo_v5';   // Info dei backup creati
 // Tipi parser supportati
 var PARSER_TYPES = ['RSS', 'HTML', 'Sitemap', 'Gmail'];
 
+// v4.18.68 — Dichiarazione locale (non dipende da Scannerbandi.js)
+var ANTHROPIC_KEY_PROP = ANTHROPIC_KEY_PROP || 'CLAUDE_API_KEY';
+
 // Esiti scansione
 var SCAN_OUTCOME = {
   OK:         'OK',
@@ -1565,7 +1568,7 @@ function testClaudeAPIKey() {
     Logger.log('   Aggiungi: CLAUDE_API_KEY = sk-ant-...');
     return;
   }
-  Logger.log('✅ Chiave trovata: ' + apiKey.slice(0, 15) + '...');
+  Logger.log('✅ Chiave trovata: SI (configurata)');
 
   try {
     var resp = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
