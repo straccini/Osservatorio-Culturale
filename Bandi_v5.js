@@ -661,6 +661,10 @@ function _estraiConClaudeV5_(testoHtml, urlFonte, enteDefault) {
     b.territorio = String(b.territorio || b.regione || '');
     b.beneficiari_ammessi = Array.isArray(b.beneficiari_ammessi) ? b.beneficiari_ammessi : [];
     b.rischi_bando = Array.isArray(b.rischi_bando) ? b.rischi_bando : [];
+    // v4.18.68 — Triage PNRR automatico
+    if (typeof verificaETracciaStatoPNRR === 'function') {
+      try { verificaETracciaStatoPNRR(b); } catch(_){}
+    }
     return b;
   });
 }
