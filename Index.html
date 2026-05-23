@@ -3453,7 +3453,31 @@
       html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Non hai ancora completato il MuseMu Matrix. <a href="#" onclick="OC.go(\'matrix\');return false" style="color:#8B4513;font-weight:600">Compilalo ora →</a></div>';
     }
 
-    // Sezione 2: Bandi salvati
+    // Sezione 2: Sondaggi compilati
+    html += '<div class="section-head"><div class="left"><h2 class="section-title">Sondaggi <em>compilati</em></h2></div><span class="muted">' + (data.sondaggiCompilati ? data.sondaggiCompilati.length : 0) + '</span></div>';
+    if (data.sondaggiCompilati && data.sondaggiCompilati.length) {
+      html += '<div style="display:grid;gap:8px;margin-bottom:24px">';
+      data.sondaggiCompilati.forEach(function(s){
+        var fasciaColor = s.score >= 81 ? '#3F7A5E' : s.score >= 61 ? '#3C6A95' : s.score >= 41 ? '#9C6A36' : '#8C2626';
+        var fasciaLabel = s.score >= 81 ? 'Eccellente' : s.score >= 61 ? 'Buono' : s.score >= 41 ? 'Da sviluppare' : 'Critico';
+        html += '<div style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">';
+        html += '<div style="flex:1;min-width:0">';
+        html += '<div style="font-size:14.5px;font-weight:600;color:var(--ink)">' + esc(s.nome) + '</div>';
+        html += '<div style="font-size:11.5px;color:var(--ink-3);margin-top:2px">' + esc(s.data) + '</div>';
+        html += '</div>';
+        html += '<div style="display:flex;align-items:center;gap:10px">';
+        html += '<span style="font-family:var(--font-display);font-size:1.25rem;font-weight:600;color:'+fasciaColor+'">' + s.score + '<span style="font-size:0.75rem;opacity:.6">/100</span></span>';
+        html += '<span style="background:'+fasciaColor+'18;color:'+fasciaColor+';font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:4px;letter-spacing:.04em;text-transform:uppercase">' + esc(fasciaLabel) + '</span>';
+        html += '</div>';
+        html += '<button onclick="OC.openSondaggio(\'' + esc(s.codice) + '\')" style="background:transparent;border:1px solid var(--rule);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:var(--ink-2);cursor:pointer;font-family:inherit">Ricompila</button>';
+        html += '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessun sondaggio compilato. <a href="#" onclick="OC.go(\'sondaggi-catalogo\');return false" style="color:#8B4513;font-weight:600">Scopri le 6 autovalutazioni rapide →</a></div>';
+    }
+
+    // Sezione 3: Bandi salvati
     html += '<div class="section-head"><div class="left"><h2 class="section-title">Bandi <em>salvati</em></h2></div><span class="muted">' + (data.bandiSalvati ? data.bandiSalvati.length : 0) + '</span></div>';
     if (data.bandiSalvati && data.bandiSalvati.length) {
       html += '<div style="display:grid;gap:8px;margin-bottom:24px">';
@@ -3470,6 +3494,74 @@
       html += '</div>';
     } else {
       html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessun bando salvato. Esplora il <a href="#" onclick="OC.go(\'bandi\');return false" style="color:#8B4513;font-weight:600">Radar Bandi →</a> e clicca ★ per salvare quelli interessanti.</div>';
+    }
+
+    // News salvate
+    html += '<div class="section-head"><div class="left"><h2 class="section-title">News <em>salvate</em></h2></div><span class="muted">' + (data.newsSalvate ? data.newsSalvate.length : 0) + '</span></div>';
+    if (data.newsSalvate && data.newsSalvate.length) {
+      html += '<div style="display:grid;gap:8px;margin-bottom:24px">';
+      data.newsSalvate.forEach(function(n){
+        html += '<div style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">';
+        html += '<div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.3">' + esc(n.titolo) + '</div>';
+        if (n.fonte) html += '<div style="font-size:12px;color:var(--ink-3);margin-top:3px">' + esc(n.fonte) + (n.data ? ' · ' + esc(n.data) : '') + '</div>';
+        html += '</div>';
+        if (n.url) html += '<a href="' + esc(n.url) + '" target="_blank" rel="noopener" style="color:#3C6A95;text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap">apri ↗</a>';
+        html += '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessuna news salvata. <a href="#" onclick="OC.go(\'news\');return false" style="color:#8B4513;font-weight:600">Esplora le News →</a></div>';
+    }
+
+    // Podcast salvati
+    html += '<div class="section-head"><div class="left"><h2 class="section-title">Podcast <em>salvati</em></h2></div><span class="muted">' + (data.podcastSalvati ? data.podcastSalvati.length : 0) + '</span></div>';
+    if (data.podcastSalvati && data.podcastSalvati.length) {
+      html += '<div style="display:grid;gap:8px;margin-bottom:24px">';
+      data.podcastSalvati.forEach(function(p){
+        html += '<div style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">';
+        html += '<div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.3">' + esc(p.titolo) + '</div>';
+        if (p.serie) html += '<div style="font-size:12px;color:var(--ink-3);margin-top:3px">' + esc(p.serie) + (p.data ? ' · ' + esc(p.data) : '') + '</div>';
+        html += '</div>';
+        if (p.url) html += '<a href="' + esc(p.url) + '" target="_blank" rel="noopener" style="color:#3C6A95;text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap">ascolta ↗</a>';
+        html += '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessun podcast salvato. <a href="#" onclick="OC.go(\'podcast\');return false" style="color:#8B4513;font-weight:600">Esplora i Podcast →</a></div>';
+    }
+
+    // Video salvati
+    html += '<div class="section-head"><div class="left"><h2 class="section-title">Video <em>salvati</em></h2></div><span class="muted">' + (data.videoSalvati ? data.videoSalvati.length : 0) + '</span></div>';
+    if (data.videoSalvati && data.videoSalvati.length) {
+      html += '<div style="display:grid;gap:8px;margin-bottom:24px">';
+      data.videoSalvati.forEach(function(v){
+        html += '<div style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">';
+        html += '<div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.3">' + esc(v.titolo) + '</div>';
+        if (v.canale) html += '<div style="font-size:12px;color:var(--ink-3);margin-top:3px">' + esc(v.canale) + (v.data ? ' · ' + esc(v.data) : '') + '</div>';
+        html += '</div>';
+        if (v.url) html += '<a href="' + esc(v.url) + '" target="_blank" rel="noopener" style="color:#3C6A95;text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap">guarda ↗</a>';
+        html += '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessun video salvato. <a href="#" onclick="OC.go(\'video\');return false" style="color:#8B4513;font-weight:600">Esplora i Video →</a></div>';
+    }
+
+    // Libri salvati
+    html += '<div class="section-head"><div class="left"><h2 class="section-title">Libri <em>salvati</em></h2></div><span class="muted">' + (data.libriSalvati ? data.libriSalvati.length : 0) + '</span></div>';
+    if (data.libriSalvati && data.libriSalvati.length) {
+      html += '<div style="display:grid;gap:8px;margin-bottom:24px">';
+      data.libriSalvati.forEach(function(l){
+        html += '<div style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">';
+        html += '<div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.3">' + esc(l.titolo) + '</div>';
+        if (l.autore || l.editore) html += '<div style="font-size:12px;color:var(--ink-3);margin-top:3px">' + esc(l.autore || '') + (l.editore ? ' · ' + esc(l.editore) : '') + '</div>';
+        html += '</div>';
+        if (l.url) html += '<a href="' + esc(l.url) + '" target="_blank" rel="noopener" style="color:#3C6A95;text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap">apri ↗</a>';
+        html += '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessun libro salvato. <a href="#" onclick="OC.go(\'libri\');return false" style="color:#8B4513;font-weight:600">Esplora i Libri →</a></div>';
     }
 
     // Sezione 3: Storico consulenze
@@ -3492,9 +3584,57 @@
       html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessuna consulenza richiesta. Per parlarne con noi: <a href="#" onclick="OC.prenotaConsulenza(event,\'generica\');return false" style="color:#8B4513;font-weight:600">richiedi consulenza gratuita →</a></div>';
     }
 
-    // v4.18.60 — Sezione 5: Agenti tematici (placeholder, popolato async dopo render)
+    // Sezione Agenti tematici
     html += '<div class="section-head"><div class="left"><h2 class="section-title">I tuoi <em>agenti tematici</em></h2></div></div>';
-    html += '<div id="wsAgentiBox" style="margin-bottom:24px"><div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;color:var(--ink-3)">Caricamento preferenze agenti...</div></div>';
+    if (data.profiloAgenti && data.profiloAgenti.agenti) {
+      var agIcons = { Bandi:'📊', Normativa:'📜', Innovazione:'💡', Comunita:'🤝', Digital:'💻' };
+      var agColors = { Bandi:'#8B4513', Normativa:'#3C6A95', Innovazione:'#6B5C9A', Comunita:'#9C6A36', Digital:'#4A7884' };
+      html += '<div style="display:grid;gap:10px;margin-bottom:24px">';
+      data.profiloAgenti.agenti.forEach(function(ag){
+        var ico = agIcons[ag.codice] || '📋';
+        var col = agColors[ag.codice] || '#666';
+        var onOff = ag.optIn ? 'ON' : 'OFF';
+        var onOffStyle = ag.optIn
+          ? 'background:'+col+';color:#fff;padding:4px 12px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.04em;cursor:pointer;border:none;font-family:inherit'
+          : 'background:var(--surface-2);color:var(--ink-3);padding:4px 12px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.04em;cursor:pointer;border:1px solid var(--rule);font-family:inherit';
+        html += '<div style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:14px">';
+        html += '<span style="font-size:22px">' + ico + '</span>';
+        html += '<div style="flex:1;min-width:0">';
+        html += '<div style="font-size:14px;font-weight:600;color:var(--ink)">' + esc(ag.nome) + '</div>';
+        html += '<div style="font-size:11.5px;color:var(--ink-3);margin-top:2px">Frequenza: ' + esc(ag.frequenza || '?') + (ag.ultimoInvio ? ' · Ultimo: ' + esc(ag.ultimoInvio) : '') + '</div>';
+        html += '</div>';
+        html += '<button onclick="OC._toggleAgentOptIn_('+ag.id+','+(!ag.optIn)+',this)" style="' + onOffStyle + '">' + onOff + '</button>';
+        html += '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Profilo agenti non disponibile.</div>';
+    }
+
+    // Sezione Preferenze digest
+    html += '<div class="section-head"><div class="left"><h2 class="section-title">Preferenze <em>digest</em></h2></div></div>';
+    var dp = data.digestPreferenze || {};
+    var segLabel = dp.segmento === 'matrix' ? 'Personalizzato (Matrix)' : 'Generico settimanale';
+    html += '<div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:18px 22px;margin-bottom:24px">';
+    html += '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px">';
+    html += '<div style="flex:1;min-width:200px">';
+    html += '<div style="font-size:12px;color:var(--ink-3);margin-bottom:4px">Tipo digest</div>';
+    html += '<div style="font-size:14px;font-weight:600;color:var(--ink)">' + esc(segLabel) + '</div>';
+    html += '</div>';
+    if (dp.ultimoDigest) {
+      html += '<div style="font-size:12px;color:var(--ink-3)">Ultimo ricevuto: ' + esc(dp.ultimoDigest) + '</div>';
+    }
+    html += '</div>';
+    html += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
+    html += '<label style="font-size:12px;color:var(--ink-3)">Frequenza:</label>';
+    html += '<select id="wsDigestFreq" style="padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff">';
+    ['settimanale','quindicinale','mensile','disattivato'].forEach(function(f){
+      html += '<option value="'+f+'"'+(dp.frequenza===f?' selected':'')+'>'+f.charAt(0).toUpperCase()+f.slice(1)+'</option>';
+    });
+    html += '</select>';
+    html += '<button onclick="OC._saveDigestPrefs_()" style="background:#8B4513;color:#fff;border:none;padding:8px 18px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Salva</button>';
+    html += '</div>';
+    html += '</div>';
 
     // Sezione 6: Compliance MiC (se presente)
     if (data.micCompliance) {
@@ -3511,6 +3651,56 @@
 
     // v4.18.60 — Carica preferenze agenti async dopo il render principale
     if (OC && typeof OC.loadMyAgentiOptIn === 'function') OC.loadMyAgentiOptIn();
+  }
+
+  // v4.18.68 — Handler toggle agente opt-in
+  function _toggleAgentOptIn_(agId, nuovoStato, btn) {
+    var token = (OC_SESSION && OC_SESSION.token) || '';
+    if (!token) { showToast('Sessione non valida', 'err'); return; }
+    btn.disabled = true;
+    btn.textContent = '...';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          btn.textContent = r.attivo ? 'ON' : 'OFF';
+          if (r.attivo) {
+            btn.style.background = '#8B4513'; btn.style.color = '#fff'; btn.style.border = 'none';
+          } else {
+            btn.style.background = 'var(--surface-2)'; btn.style.color = 'var(--ink-3)'; btn.style.border = '1px solid var(--rule)';
+          }
+          showToast('Agente ' + (r.attivo ? 'attivato' : 'disattivato'), 'ok');
+        } else {
+          showToast('Errore: ' + (r && r.error || '?'), 'err');
+          btn.textContent = nuovoStato ? 'OFF' : 'ON';
+        }
+        btn.disabled = false;
+      })
+      .withFailureHandler(function(err){
+        showToast('Errore: ' + (err && err.message || err), 'err');
+        btn.textContent = nuovoStato ? 'OFF' : 'ON';
+        btn.disabled = false;
+      })
+      .toggleAgentOptIn(token, agId, nuovoStato);
+  }
+
+  // v4.18.68 — Handler salva preferenze digest
+  function _saveDigestPrefs_() {
+    var token = (OC_SESSION && OC_SESSION.token) || '';
+    if (!token) { showToast('Sessione non valida', 'err'); return; }
+    var sel = document.getElementById('wsDigestFreq');
+    if (!sel) return;
+    var freq = sel.value;
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          showToast('Preferenze salvate: ' + r.frequenza, 'ok');
+          if (r.frequenza === 'disattivato') showToast('Non riceverai il digest. Puoi riattivarlo qui.', 'warn');
+        } else {
+          showToast('Errore: ' + (r && r.error || '?'), 'err');
+        }
+      })
+      .withFailureHandler(function(err){ showToast('Errore: ' + (err && err.message || err), 'err'); })
+      .updateDigestPreferences(token, { frequenza: freq });
   }
 
   function renderCapitaliPage(list) {
@@ -8419,6 +8609,8 @@
     },
     openSondaggiCatalogo: function(){ OC.go('sondaggi-catalogo'); },
     _submitSondaggio_: _submitSondaggio_,
+    _toggleAgentOptIn_: _toggleAgentOptIn_,
+    _saveDigestPrefs_: _saveDigestPrefs_,
     // v4.18.18 — Setup commerciale (calendario + PDF Musei Sensibili)
     loadCommercialConfig: function(){
       if (!hasGAS()) return;
