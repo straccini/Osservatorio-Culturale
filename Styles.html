@@ -204,10 +204,8 @@
 
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-/* Base tipografica v4.18.67: 16px (1rem). Scale ratio 1.125.
-   Livelli: label 0.75rem · caption 0.875rem · body 1rem · title 1.125rem · headline 1.5rem · display 2.25rem
-   Toggle [data-fontsize] resta in px assoluti per override accessibilita. */
-html{ font-size:16px; line-height:1.5; }
+/* v4.18.68 — Viewport lock per iframe: scroll solo dentro .main-content */
+html{ font-size:16px; line-height:1.5; height:100vh; overflow:hidden; }
 body{
   font-family:var(--font-ui);
   font-size:1rem;
@@ -216,6 +214,8 @@ body{
   background:var(--paper);
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
+  height:100vh;
+  overflow:hidden;
 }
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;padding:0}
@@ -228,7 +228,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .app{
   display:grid;
   grid-template-columns:var(--sidebar-w) 1fr;
-  min-height:100vh;
+  height:100vh;
+  overflow:hidden;
 }
 
 /* ==========================================================
@@ -456,7 +457,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 /* ==========================================================
    MAIN + TOPBAR
    ========================================================== */
-.main{min-width:0;display:flex;flex-direction:column}
+.main{min-width:0;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.main-content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 
 .topbar{
   position:sticky; top:0; z-index:10;
@@ -1234,15 +1236,42 @@ body.is-home-page .topbar-search{display:none}
   font-style:italic;
   font-size:1.125rem;
 }
-.skeleton-card{
-  min-height:160px;
+
+/* v4.18.68 — Skeleton loader system */
+.skeleton{
   background:linear-gradient(90deg,var(--rule) 25%,var(--rule-2) 50%,var(--rule) 75%);
   background-size:200% 100%;
-  animation:shimmer 1.4s infinite;
+  animation:skeleton-loading 1.4s ease-in-out infinite;
+  border-radius:var(--r-sm);
+}
+@keyframes skeleton-loading{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+.skeleton-card{
+  min-height:160px;
   border-radius:var(--r-sm);
   margin-bottom:12px;
 }
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skeleton-text-line{
+  height:14px;
+  border-radius:4px;
+  margin-bottom:10px;
+}
+.skeleton-text-line.short{width:40%}
+.skeleton-text-line.medium{width:65%}
+.skeleton-text-line.long{width:90%}
+.skeleton-row{
+  height:56px;
+  border-radius:var(--r-md);
+  margin-bottom:8px;
+}
+.skeleton-title{
+  height:22px;
+  width:50%;
+  border-radius:4px;
+  margin-bottom:16px;
+}
+/* Nasconde skeleton quando i dati arrivano */
+.skeleton-wrap[data-loaded="true"]{display:none}
 
 /* ==========================================================
    AMBITI — sezione editoriale lista
@@ -2834,12 +2863,9 @@ body.is-home-page .topbar-search{display:none}
 .hlr-stars .star.on  { color: var(--amb, #8B4513); }
 .hlr-stars .star.off { color: var(--rule-2); }
 
-/* Skeleton per home list */
+/* Skeleton per home list — usa sistema .skeleton unificato */
 .home-list-skeleton {
   height: 72px;
-  background: linear-gradient(90deg,var(--rule) 25%,var(--rule-2) 50%,var(--rule) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s infinite;
   border-radius: var(--r-sm);
   margin-bottom: 8px;
 }

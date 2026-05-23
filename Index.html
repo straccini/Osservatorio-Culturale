@@ -329,6 +329,9 @@
     <!-- ===== TOPBAR ===== -->
     <?!= include('Topbar'); ?>
 
+    <!-- v4.18.68 — main-content: unico contenitore scrollabile (fix iframe doppia scrollbar) -->
+    <div class="main-content">
+
     <!-- ===== HOME ===== -->
     <?!= include('HomeView'); ?>
 
@@ -370,7 +373,7 @@
         <button class="filter-chip" onclick="OC.exportBandiCSV()" title="Scarica i bandi filtrati in CSV" style="white-space:nowrap;padding:8px 14px">⤓&nbsp;Esporta CSV</button>
       </div>
       <div id="bandiList" aria-live="polite">
-        <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
       <div class="empty-state" id="bandiEmpty" hidden>Nessun bando trovato.</div>
     </section>
@@ -421,7 +424,7 @@
         </div>
       </div>
       <div class="news-list" id="newsListFull" aria-live="polite">
-        <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
       <div class="empty-state" id="newsEmpty" hidden>Nessuna news trovata.</div>
     </section>
@@ -473,7 +476,7 @@
         </div>
       </div>
       <div class="news-list" id="podcastListFull" aria-live="polite">
-        <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
       <div class="empty-state" id="podcastEmpty" hidden>Nessun podcast trovato.</div>
     </section>
@@ -547,7 +550,7 @@
         </div>
       </div>
       <div class="news-list" id="videoListFull" aria-live="polite">
-        <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
       <div class="empty-state" id="videoEmpty" hidden>Nessun video trovato.</div>
     </section>
@@ -611,7 +614,7 @@
         <span id="lbFeedback" style="font-size:12px;color:var(--ink-3);margin-left:10px"></span>
       </div>
       <div class="news-list" id="libriListFull" aria-live="polite">
-        <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
       <div class="empty-state" id="libriEmpty" hidden>Nessuna pubblicazione trovata.&nbsp;
         <button class="lb-setup-btn" onclick="OC.setupLibri()">Inizializza foglio con 10 titoli seed</button>
@@ -677,7 +680,7 @@
         <span id="nmFeedback" style="font-size:12px;color:var(--ink-3);margin-left:10px"></span>
       </div>
       <div class="news-list" id="normeListFull" aria-live="polite">
-        <div class="skeleton-card"></div><div class="skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
       <div class="empty-state" id="normeEmpty" hidden>Nessuna norma trovata.&nbsp;
         <button class="lb-setup-btn" onclick="OC.setupNorme()">Inizializza foglio</button>
@@ -766,7 +769,7 @@
         <span class="muted" id="ambitoBandiCount">—</span>
       </div>
       <div class="urgent-grid" id="ambitoBandiList" aria-live="polite">
-        <div class="skeleton-card"></div><div class="skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
       <div class="empty-state" id="ambitoBandiEmpty" hidden>Nessun bando in questo ambito.</div>
 
@@ -776,7 +779,7 @@
         <span class="muted" id="ambitoNewsCount">—</span>
       </div>
       <div class="news-list" id="ambitoNewsList" aria-live="polite">
-        <div class="skeleton-card"></div><div class="skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
       <div class="empty-state" id="ambitoNewsEmpty" hidden>Nessuna news in questo ambito.</div>
 
@@ -786,7 +789,7 @@
         <span class="muted" id="ambitoPodcastCount">—</span>
       </div>
       <div class="news-list" id="ambitoPodcastList" aria-live="polite">
-        <div class="skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
       </div>
       <div class="empty-state" id="ambitoPodcastEmpty" hidden>Nessun podcast in questo ambito.</div>
 
@@ -796,7 +799,7 @@
         <span class="muted" id="ambitoVideoCount">—</span>
       </div>
       <div class="news-list" id="ambitoVideoList" aria-live="polite">
-        <div class="skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
       </div>
       <div class="empty-state" id="ambitoVideoEmpty" hidden>Nessun video in questo ambito.</div>
 
@@ -806,7 +809,7 @@
         <span class="muted" id="ambitoLibriCount">—</span>
       </div>
       <div class="news-list" id="ambitoLibriList" aria-live="polite">
-        <div class="skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
       </div>
       <div class="empty-state" id="ambitoLibriEmpty" hidden>Nessuna pubblicazione in questo ambito.</div>
     </section>
@@ -845,7 +848,7 @@
         <button class="filter-chip" onclick="OC.exportArchivio()" style="margin-left:auto">&#10003; Esporta</button>
       </div>
       <div id="archivioList" aria-live="polite">
-        <div class="home-list-skeleton"></div><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div>
+        <div class="skeleton home-list-skeleton"></div><div class="skeleton home-list-skeleton"></div><div class="skeleton home-list-skeleton"></div>
       </div>
       <div class="empty-state" id="archivioEmpty" hidden>Nessun contenuto archiviato.</div>
     </section>
@@ -1517,9 +1520,9 @@
         <p class="page-sub" id="wsUserSub">Qui trovi i tuoi bandi salvati, il report MuseMu Matrix e lo storico delle tue consulenze.</p>
       </div>
       <div id="wsContent" style="margin-top:18px">
-        <div class="home-list-skeleton"></div>
-        <div class="home-list-skeleton"></div>
-        <div class="home-list-skeleton"></div>
+        <div class="skeleton home-list-skeleton"></div>
+        <div class="skeleton home-list-skeleton"></div>
+        <div class="skeleton home-list-skeleton"></div>
       </div>
     </section>
 
@@ -1743,9 +1746,9 @@
 
       <!-- Lista candidature (renderizzata da JS) -->
       <div id="capitaliList" aria-live="polite">
-        <div class="home-list-skeleton" style="height:120px;margin-bottom:14px"></div>
-        <div class="home-list-skeleton" style="height:120px;margin-bottom:14px"></div>
-        <div class="home-list-skeleton" style="height:120px"></div>
+        <div class="skeleton home-list-skeleton" style="height:120px;margin-bottom:14px"></div>
+        <div class="skeleton home-list-skeleton" style="height:120px;margin-bottom:14px"></div>
+        <div class="skeleton home-list-skeleton" style="height:120px"></div>
       </div>
 
       <!-- CTA finale: prenota consulenza -->
@@ -1844,9 +1847,9 @@
         <p class="page-sub">Panoramica quantitativa di tutti i contenuti monitorati.</p>
       </div>
       <div id="statsContent" aria-live="polite">
-        <div class="home-list-skeleton"></div>
-        <div class="home-list-skeleton"></div>
-        <div class="home-list-skeleton"></div>
+        <div class="skeleton home-list-skeleton"></div>
+        <div class="skeleton home-list-skeleton"></div>
+        <div class="skeleton home-list-skeleton"></div>
       </div>
     </section>
 
@@ -2305,6 +2308,8 @@
         </div>
       </div>
     </section>
+
+    </div><!-- /.main-content -->
 
   </main>
 </div>
@@ -2878,7 +2883,7 @@
     if (!hasGAS()) return;
     if (_cacheSocialWall && !force) { renderSocialWall(_cacheSocialWall); return; }
     var list = $('socialWallList');
-    if (list) list.innerHTML = '<div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>';
+    if (list) list.innerHTML = '<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>';
     $('socialEmpty') && ($('socialEmpty').hidden = true);
     google.script.run
       .withSuccessHandler(function(r) { _cacheSocialWall = r || {posts:[]}; renderSocialWall(_cacheSocialWall); })
@@ -3176,7 +3181,7 @@
       .getAmbitoDataV42(id);
   }
 
-  function skeletonIn(id){ var el=$(id); if(!el)return; el.innerHTML='<div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>'; }
+  function skeletonIn(id){ var el=$(id); if(!el)return; el.innerHTML='<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>'; }
 
   // ==========================================================
   // C) RENDERING HOME
@@ -3392,7 +3397,7 @@
       go('home');
       return;
     }
-    wrap.innerHTML = '<div class="home-list-skeleton"></div><div class="home-list-skeleton"></div>';
+    wrap.innerHTML = '<div class="skeleton home-list-skeleton"></div><div class="skeleton home-list-skeleton"></div>';
     if (!hasGAS()) {
       wrap.innerHTML = '<div class="empty-state">Backend non disponibile.</div>';
       return;
@@ -6833,7 +6838,7 @@
   function loadStatsPage() {
     var wrap = $('statsContent');
     if (!wrap) return;
-    wrap.innerHTML = '<div class="home-list-skeleton"></div><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div>';
+    wrap.innerHTML = '<div class="skeleton home-list-skeleton"></div><div class="skeleton home-list-skeleton"></div><div class="skeleton home-list-skeleton"></div>';
     if (!hasGAS()) { wrap.innerHTML = '<div class="sr-hint">Statistiche disponibili solo online.</div>'; return; }
 
     var _stats = null, _video = null, _libri = null;
@@ -6948,7 +6953,7 @@
       return;
     }
     if (sub) sub.textContent = 'Ricerca in corso per \u201c' + _lastSearch + '\u201d\u2026';
-    if (wrap) wrap.innerHTML = '<div class="home-list-skeleton"></div><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div>';
+    if (wrap) wrap.innerHTML = '<div class="skeleton home-list-skeleton"></div><div class="skeleton home-list-skeleton"></div><div class="skeleton home-list-skeleton"></div>';
     if (!hasGAS()) {
       if (wrap) wrap.innerHTML = '<div class="sr-hint">Ricerca disponibile solo online.</div>';
       return;
@@ -7128,7 +7133,7 @@
     if (!hasGAS()) return;
     var wrap = $('archivioList');
     var em   = $('archivioEmpty');
-    if (wrap) wrap.innerHTML = '<div class="home-list-skeleton"></div><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div>';
+    if (wrap) wrap.innerHTML = '<div class="skeleton home-list-skeleton"></div><div class="skeleton home-list-skeleton"></div><div class="skeleton home-list-skeleton"></div>';
     _cacheArchivio = [];
     var pending = 5;
     function done(list) {
