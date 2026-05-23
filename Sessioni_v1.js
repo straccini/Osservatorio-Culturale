@@ -228,7 +228,14 @@ function getUserWorkspaceData(token) {
       bandiSalvati: [],
       matrixResponse: null,
       prenotazioni: [],
-      micCompliance: null
+      micCompliance: null,
+      newsSalvate: [],
+      podcastSalvati: [],
+      videoSalvati: [],
+      libriSalvati: [],
+      sondaggiCompilati: [],
+      profiloAgenti: null,
+      digestPreferenze: null
     };
 
     // 1) Bandi salvati (Bandi_v5 con Salvato=true) — attualmente i preferiti non sono
@@ -320,9 +327,251 @@ function getUserWorkspaceData(token) {
       }
     } catch(eMic) {}
 
+    // 5) News salvate (Items con Salvato=true)
+    try {
+      var shN = ss.getSheetByName('Items');
+      if (shN && shN.getLastRow() > 1) {
+        var nVals = shN.getDataRange().getValues();
+        var nHead = nVals[0];
+        var iNId = nHead.indexOf('ID'), iNTit = nHead.indexOf('Titolo'),
+            iNFonte = nHead.indexOf('Fonte'), iNData = nHead.indexOf('DataPubblicazione'),
+            iNUrl = nHead.indexOf('FonteURL'), iNSalv = nHead.indexOf('Salvato'),
+            iNArch = nHead.indexOf('Archiviato');
+        for (var rn = 1; rn < nVals.length && out.newsSalvate.length < 50; rn++) {
+          if (!(nVals[rn][iNSalv] === true || String(nVals[rn][iNSalv]).toLowerCase() === 'true')) continue;
+          if (String(nVals[rn][iNArch] || '').toLowerCase() === 'true') continue;
+          out.newsSalvate.push({
+            id: String(nVals[rn][iNId] || ''),
+            titolo: String(nVals[rn][iNTit] || ''),
+            fonte: String(nVals[rn][iNFonte] || ''),
+            data: nVals[rn][iNData] ? Utilities.formatDate(new Date(nVals[rn][iNData]), 'Europe/Rome', 'dd MMM yyyy') : '',
+            url: String(nVals[rn][iNUrl] || '')
+          });
+        }
+      }
+    } catch(eN) { Logger.log('workspace news: ' + eN.message); }
+
+    // 6) Podcast e Video salvati (Podcast con Salvato=true)
+    try {
+      var shPod = ss.getSheetByName('Podcast');
+      if (shPod && shPod.getLastRow() > 1) {
+        var podVals = shPod.getDataRange().getValues();
+        var podHead = podVals[0];
+        var iPodId = podHead.indexOf('ID'), iPodTit = podHead.indexOf('Titolo'),
+            iPodSerie = podHead.indexOf('Serie'), iPodData = podHead.indexOf('DataPubblicazione'),
+            iPodUrl = podHead.indexOf('Link'), iPodSalv = podHead.indexOf('Salvato'),
+            iPodStato = podHead.indexOf('StatoRecord');
+        for (var rpod = 1; rpod < podVals.length; rpod++) {
+          var podId = String(podVals[rpod][iPodId] || '');
+          if (!(podVals[rpod][iPodSalv] === true || String(podVals[rpod][iPodSalv]).toLowerCase() === 'true')) continue;
+          if (String(podVals[rpod][iPodStato] || '').toLowerCase() === 'archiviato') continue;
+          if (podId.indexOf('VID') === 0) {
+            if (out.videoSalvati.length < 50) {
+              out.videoSalvati.push({
+                id: podId,
+                titolo: String(podVals[rpod][iPodTit] || ''),
+                canale: String(podVals[rpod][iPodSerie] || ''),
+                data: podVals[rpod][iPodData] ? Utilities.formatDate(new Date(podVals[rpod][iPodData]), 'Europe/Rome', 'dd MMM yyyy') : '',
+                url: String(podVals[rpod][iPodUrl] || '')
+              });
+            }
+          } else {
+            if (out.podcastSalvati.length < 50) {
+              out.podcastSalvati.push({
+                id: podId,
+                titolo: String(podVals[rpod][iPodTit] || ''),
+                serie: String(podVals[rpod][iPodSerie] || ''),
+                data: podVals[rpod][iPodData] ? Utilities.formatDate(new Date(podVals[rpod][iPodData]), 'Europe/Rome', 'dd MMM yyyy') : '',
+                url: String(podVals[rpod][iPodUrl] || '')
+              });
+            }
+          }
+        }
+      }
+    } catch(ePod) { Logger.log('workspace podcast/video: ' + ePod.message); }
+
+    // 7) Libri salvati (Pubblicazioni con Salvato=true)
+    try {
+      var shLib = ss.getSheetByName('Pubblicazioni');
+      if (shLib && shLib.getLastRow() > 1) {
+        var libVals = shLib.getDataRange().getValues();
+        var libHead = libVals[0];
+        var iLibId = libHead.indexOf('ID'), iLibTit = libHead.indexOf('Titolo'),
+            iLibAut = libHead.indexOf('Autore'), iLibEd = libHead.indexOf('Editore'),
+            iLibUrl = libHead.indexOf('Link'), iLibSalv = libHead.indexOf('Salvato');
+        for (var rlib = 1; rlib < libVals.length && out.libriSalvati.length < 50; rlib++) {
+          if (!(libVals[rlib][iLibSalv] === true || String(libVals[rlib][iLibSalv]).toLowerCase() === 'true')) continue;
+          out.libriSalvati.push({
+            id: String(libVals[rlib][iLibId] || ''),
+            titolo: String(libVals[rlib][iLibTit] || ''),
+            autore: String(libVals[rlib][iLibAut] || ''),
+            editore: String(libVals[rlib][iLibEd] || ''),
+            url: String(libVals[rlib][iLibUrl] || '')
+          });
+        }
+      }
+    } catch(eLib) { Logger.log('workspace libri: ' + eLib.message); }
+
+    // 8) Sondaggi LS2 compilati per questa email
+    try {
+      var shSond = ss.getSheetByName('SondaggiMirati');
+      if (shSond && shSond.getLastRow() > 1) {
+        var sondVals = shSond.getDataRange().getValues();
+        var sondHead = sondVals[0];
+        var iSondTs = sondHead.indexOf('timestamp'), iSondCod = sondHead.indexOf('sondaggio_codice'),
+            iSondNome = sondHead.indexOf('sondaggio_nome'), iSondEmail = sondHead.indexOf('email'),
+            iSondRisp = sondHead.indexOf('risposte_json');
+        for (var rs = sondVals.length - 1; rs >= 1 && out.sondaggiCompilati.length < 20; rs--) {
+          if (String(sondVals[rs][iSondEmail] || '').toLowerCase() !== email) continue;
+          var risposte = {};
+          try { risposte = JSON.parse(sondVals[rs][iSondRisp] || '{}'); } catch(_){}
+          var sum = 0, cnt = 0;
+          Object.keys(risposte).forEach(function(k){ var v = Number(risposte[k]); if (v >= 1 && v <= 5) { sum += v; cnt++; } });
+          var score = cnt > 0 ? Math.round((sum / cnt) * 20) : 0;
+          out.sondaggiCompilati.push({
+            codice: String(sondVals[rs][iSondCod] || ''),
+            nome: String(sondVals[rs][iSondNome] || ''),
+            data: sondVals[rs][iSondTs] ? Utilities.formatDate(new Date(sondVals[rs][iSondTs]), 'Europe/Rome', 'dd MMM yyyy') : '',
+            score: score
+          });
+        }
+      }
+    } catch(eSond) { Logger.log('workspace sondaggi: ' + eSond.message); }
+
+    // 9) Profilo agenti (opt-in AG1-5 da ProfiloAgenti)
+    try {
+      var shPA = ss.getSheetByName('ProfiloAgenti');
+      var agentiDefault = [
+        { id:1, codice:'Bandi', nome:'Radar Bandi & Finanziamenti', optIn:true, frequenza:'settimanale', ultimoInvio:null },
+        { id:2, codice:'Normativa', nome:'Normativa & Compliance', optIn:false, frequenza:'mensile', ultimoInvio:null },
+        { id:3, codice:'Innovazione', nome:'Innovazione & Best Practice', optIn:false, frequenza:'quindicinale', ultimoInvio:null },
+        { id:4, codice:'Comunita', nome:'Comunita, Welfare & Accessibilita', optIn:false, frequenza:'mensile', ultimoInvio:null },
+        { id:5, codice:'Digital', nome:'Digital, AI & Governance', optIn:false, frequenza:'quindicinale', ultimoInvio:null }
+      ];
+      if (shPA && shPA.getLastRow() > 1) {
+        var paVals = shPA.getDataRange().getValues();
+        var paHead = paVals[0];
+        var iPaEmail = paHead.indexOf('Email');
+        var iPaOA = [paHead.indexOf('OptIn_AG1'),paHead.indexOf('OptIn_AG2'),paHead.indexOf('OptIn_AG3'),paHead.indexOf('OptIn_AG4'),paHead.indexOf('OptIn_AG5')];
+        var iPaFA = [paHead.indexOf('Freq_AG1'),paHead.indexOf('Freq_AG2'),paHead.indexOf('Freq_AG3'),paHead.indexOf('Freq_AG4'),paHead.indexOf('Freq_AG5')];
+        var iPaUI = [paHead.indexOf('UltimoInvio_AG1'),paHead.indexOf('UltimoInvio_AG2'),paHead.indexOf('UltimoInvio_AG3'),paHead.indexOf('UltimoInvio_AG4'),paHead.indexOf('UltimoInvio_AG5')];
+        for (var rpa = 1; rpa < paVals.length; rpa++) {
+          if (String(paVals[rpa][iPaEmail] || '').toLowerCase() !== email) continue;
+          for (var ag = 0; ag < 5; ag++) {
+            if (iPaOA[ag] >= 0) agentiDefault[ag].optIn = paVals[rpa][iPaOA[ag]] === true || String(paVals[rpa][iPaOA[ag]]).toLowerCase() === 'true';
+            if (iPaFA[ag] >= 0 && paVals[rpa][iPaFA[ag]]) agentiDefault[ag].frequenza = String(paVals[rpa][iPaFA[ag]]);
+            if (iPaUI[ag] >= 0 && paVals[rpa][iPaUI[ag]]) {
+              try { agentiDefault[ag].ultimoInvio = Utilities.formatDate(new Date(paVals[rpa][iPaUI[ag]]), 'Europe/Rome', 'dd MMM yyyy'); } catch(_){}
+            }
+          }
+          break;
+        }
+      }
+      out.profiloAgenti = { agenti: agentiDefault };
+    } catch(ePA) { Logger.log('workspace agenti: ' + ePA.message); }
+
+    // 10) Preferenze digest
+    try {
+      var segmento = 'ordinario';
+      var src = String(sess.source || '').toLowerCase();
+      if (src === 'matrix' || src.indexOf('sondaggio_') === 0) segmento = 'matrix';
+      out.digestPreferenze = {
+        frequenza: 'settimanale',
+        segmento: segmento,
+        ultimoDigest: null
+      };
+      if (out.profiloAgenti && out.profiloAgenti.agenti && out.profiloAgenti.agenti[0]) {
+        out.digestPreferenze.frequenza = out.profiloAgenti.agenti[0].frequenza || 'settimanale';
+      }
+    } catch(eD) { Logger.log('workspace digest: ' + eD.message); }
+
     return out;
   } catch(e) {
     Logger.log('getUserWorkspaceData errore: ' + e.message);
+    return { ok:false, error: e.message };
+  }
+}
+
+/**
+ * v4.18.68 — Toggle opt-in per un agente tematico.
+ * @param {string} token
+ * @param {number} agenteId - 1-5
+ * @param {boolean} attivo
+ * @return {Object} {ok, agenteId, attivo}
+ */
+function toggleAgentOptIn(token, agenteId, attivo) {
+  try {
+    if (!token) return { ok:false, error:'token mancante' };
+    var sh = _getOrCreateSessioniSheet_();
+    var sess = _findSessioneByToken_(sh, token);
+    if (!sess || sess.revoked) return { ok:false, error:'sessione non valida' };
+    var email = sess.email;
+    var agId = Number(agenteId);
+    if (agId < 1 || agId > 5) return { ok:false, error:'agenteId non valido (1-5)' };
+
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var shPA = ss.getSheetByName('ProfiloAgenti');
+    if (!shPA) return { ok:false, error:'ProfiloAgenti non trovato' };
+
+    var paVals = shPA.getDataRange().getValues();
+    var paHead = paVals[0];
+    var iPaEmail = paHead.indexOf('Email');
+    var colName = 'OptIn_AG' + agId;
+    var iCol = paHead.indexOf(colName);
+    if (iCol < 0) return { ok:false, error:'colonna ' + colName + ' non trovata' };
+
+    for (var r = 1; r < paVals.length; r++) {
+      if (String(paVals[r][iPaEmail] || '').toLowerCase() === email) {
+        shPA.getRange(r + 1, iCol + 1).setValue(!!attivo);
+        Logger.log('toggleAgentOptIn: ' + email + ' AG' + agId + ' = ' + attivo);
+        return { ok:true, agenteId:agId, attivo:!!attivo };
+      }
+    }
+    return { ok:false, error:'profilo non trovato per ' + email };
+  } catch(e) {
+    Logger.log('toggleAgentOptIn errore: ' + e.message);
+    return { ok:false, error: e.message };
+  }
+}
+
+/**
+ * v4.18.68 — Aggiorna preferenze digest per l'utente.
+ * @param {string} token
+ * @param {Object} prefs - {frequenza: 'settimanale'|'quindicinale'|'mensile'|'disattivato'}
+ * @return {Object} {ok, frequenza}
+ */
+function updateDigestPreferences(token, prefs) {
+  try {
+    if (!token) return { ok:false, error:'token mancante' };
+    if (!prefs || !prefs.frequenza) return { ok:false, error:'frequenza mancante' };
+    var valide = ['settimanale','quindicinale','mensile','disattivato'];
+    if (valide.indexOf(prefs.frequenza) < 0) return { ok:false, error:'frequenza non valida: ' + prefs.frequenza };
+
+    var sh = _getOrCreateSessioniSheet_();
+    var sess = _findSessioneByToken_(sh, token);
+    if (!sess || sess.revoked) return { ok:false, error:'sessione non valida' };
+    var email = sess.email;
+
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var shPA = ss.getSheetByName('ProfiloAgenti');
+    if (!shPA) return { ok:false, error:'ProfiloAgenti non trovato' };
+
+    var paVals = shPA.getDataRange().getValues();
+    var paHead = paVals[0];
+    var iPaEmail = paHead.indexOf('Email');
+    var iFreq = paHead.indexOf('Freq_AG1');
+    if (iFreq < 0) return { ok:false, error:'colonna Freq_AG1 non trovata' };
+
+    for (var r = 1; r < paVals.length; r++) {
+      if (String(paVals[r][iPaEmail] || '').toLowerCase() === email) {
+        shPA.getRange(r + 1, iFreq + 1).setValue(prefs.frequenza);
+        Logger.log('updateDigestPreferences: ' + email + ' = ' + prefs.frequenza);
+        return { ok:true, frequenza: prefs.frequenza };
+      }
+    }
+    return { ok:false, error:'profilo non trovato per ' + email };
+  } catch(e) {
+    Logger.log('updateDigestPreferences errore: ' + e.message);
     return { ok:false, error: e.message };
   }
 }
