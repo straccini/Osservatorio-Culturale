@@ -28,26 +28,119 @@
  * @param {Object} agent — config agente (da AgentConfig.js)
  * @return {number} 0-100
  */
+/**
+ * v4.18.68 — Sistema ibrido Deterministico + Semantico.
+ *
+ * FASE 1 (Hard Rules): filtri a sbarramento — se falliscono, score = 0.
+ *   - Controllo geografico: bando regionale esclude musei fuori regione.
+ *   - Controllo beneficiari: forma giuridica museo deve essere tra beneficiari_ammessi.
+ *
+ * FASE 2 (Soft Rules): scoring semantico (solo se hard rules superate).
+ *   - regione, dimensione gap, tipologia, profilo, priorita soggettive.
+ *
+ * Tutti i campi null-safe con fallback conservativi.
+ */
 function computeRelevanceScore(contenuto, museo, agent) {
   if (!contenuto || !museo) return 0;
+
+  // ── FASE 1: Hard Rules (sbarramento) ──
+
+  // 1a. Controllo geografico
+  var geoResult = _hardRuleGeografia_(contenuto, museo);
+  if (geoResult === 0) return 0;
+
+  // 1b. Controllo beneficiari
+  var benResult = _hardRuleBeneficiari_(contenuto, museo);
+  if (benResult === 0) return 0;
+
+  // ── FASE 2: Soft Rules (scoring semantico) ──
   var score = 0;
 
-  // 1. Match regionale (30 pt max)
-  score += _matchRegionale_(contenuto, museo) * 30;
+  // 2a. Match regionale soft (30 pt max) — gia filtrato da hard rule, qui affina
+  score += (_matchRegionale_(contenuto, museo) || 0) * 30;
 
-  // 2. Match dimensione gap (25 pt max)
-  score += _matchDimensione_(contenuto, museo, agent) * 25;
+  // 2b. Match dimensione gap (25 pt max)
+  score += (_matchDimensione_(contenuto, museo, agent) || 0) * 25;
 
-  // 3. Match tipologia museo (20 pt max)
-  score += _matchTipologia_(contenuto, museo) * 20;
+  // 2c. Match tipologia museo (20 pt max)
+  score += (_matchTipologia_(contenuto, museo) || 0) * 20;
 
-  // 4. Match livello profilo (15 pt max)
-  score += _matchProfilo_(contenuto, museo) * 15;
+  // 2d. Match livello profilo (15 pt max)
+  score += (_matchProfilo_(contenuto, museo) || 0) * 15;
 
-  // 5. Match priorità soggettive (10 pt max)
-  score += _matchPriorita_(contenuto, museo) * 10;
+  // 2e. Match priorità soggettive (10 pt max)
+  score += (_matchPriorita_(contenuto, museo) || 0) * 10;
 
   return Math.round(Math.min(100, Math.max(0, score)));
+}
+
+// ============================================================================
+// HARD RULES (filtri a sbarramento, ritornano 0 o 1)
+// ============================================================================
+
+/**
+ * Controllo geografico: se il bando e regionale e il museo e in altra regione → 0.
+ * Se dati mancanti → 1 (conservativo, "Da verificare").
+ */
+function _hardRuleGeografia_(contenuto, museo) {
+  var bandoTerritorio = String(contenuto.territorio || '').toLowerCase().trim();
+  var bandoRegione = String(contenuto.regione || '').toLowerCase().trim();
+  var bandoLivello = String(contenuto.livello || '').toLowerCase().trim();
+  var museoRegione = String(museo.regione || '').toLowerCase().trim();
+
+  // Se il bando non ha territorio/livello → conservativo, passa
+  if (!bandoTerritorio && !bandoRegione && !bandoLivello) return 1;
+  // Se il museo non ha regione → conservativo, passa
+  if (!museoRegione) return 1;
+
+  // Bando nazionale/EU → sempre passa
+  var territorio = bandoTerritorio || bandoLivello;
+  if (territorio.indexOf('nazionale') >= 0 || territorio.indexOf('eu') >= 0 ||
+      territorio.indexOf('europeo') >= 0 || territorio === 'vari') return 1;
+
+  // Bando regionale: deve matchare la regione museo
+  var regioneBando = bandoRegione || bandoTerritorio;
+  if (regioneBando && regioneBando !== museoRegione) {
+    // Verifica anche regioni confinanti (tolleranza)
+    if (typeof _isRegioneConfinante_ === 'function' && _isRegioneConfinante_(museoRegione, regioneBando)) {
+      return 1; // confinante, passa
+    }
+    return 0; // fuori regione, sbarramento
+  }
+  return 1;
+}
+
+/**
+ * Controllo beneficiari: se il bando ha beneficiari_ammessi e la tipologia museo non e inclusa → 0.
+ * Se dati mancanti → 1 (conservativo).
+ */
+function _hardRuleBeneficiari_(contenuto, museo) {
+  var beneficiari = contenuto.beneficiari_ammessi;
+  if (!Array.isArray(beneficiari) || beneficiari.length === 0) return 1; // no filtro, passa
+
+  var tipologia = String(museo.tipologia || '').toLowerCase().trim();
+  var natura = String(museo.natura || '').toLowerCase().trim();
+  if (!tipologia && !natura) return 1; // museo senza tipologia, conservativo
+
+  // Cerca match tra tipologia/natura museo e beneficiari ammessi
+  var found = beneficiari.some(function(b) {
+    var bl = String(b).toLowerCase();
+    // Match diretto
+    if (tipologia && bl.indexOf(tipologia) >= 0) return true;
+    if (natura && bl.indexOf(natura) >= 0) return true;
+    // Match per categorie ampie
+    if (bl.indexOf('tutti') >= 0 || bl.indexOf('qualsiasi') >= 0) return true;
+    if (bl.indexOf('enti pubblici') >= 0 && (natura.indexOf('pubblic') >= 0 || natura.indexOf('comunale') >= 0)) return true;
+    if (bl.indexOf('enti locali') >= 0 && natura.indexOf('comunale') >= 0) return true;
+    if (bl.indexOf('comuni') >= 0 && natura.indexOf('comunale') >= 0) return true;
+    if (bl.indexOf('fondazion') >= 0 && natura.indexOf('fondazione') >= 0) return true;
+    if (bl.indexOf('associazion') >= 0 && natura.indexOf('associazione') >= 0) return true;
+    if (bl.indexOf('impres') >= 0 && natura.indexOf('privat') >= 0) return true;
+    if (bl.indexOf('musei') >= 0 || bl.indexOf('museo') >= 0) return true; // musei sempre ammessi
+    return false;
+  });
+
+  return found ? 1 : 0;
 }
 
 // ============================================================================
@@ -190,58 +283,65 @@ function getMuseoProfile(email) {
 // HELPER: Match functions (ritornano 0.0 - 1.0)
 // ============================================================================
 
+// v4.18.68 — Tutti i match helper blindati contro null/undefined
+
 function _matchRegionale_(contenuto, museo) {
-  if (!museo.regione) return 0.5; // no info = neutral
-  var text = ((contenuto.titolo || '') + ' ' + (contenuto.sommario || '')).toLowerCase();
-  var regione = museo.regione.toLowerCase();
-  if (text.indexOf(regione) >= 0) return 1.0;
-  if (text.indexOf('nazionale') >= 0 || text.indexOf('tutte le regioni') >= 0) return 0.7;
-  if (text.indexOf('europeo') >= 0 || text.indexOf('eu') >= 0) return 0.6;
-  return 0.3;
+  try {
+    if (!museo || !museo.regione) return 0.5;
+    var text = (String(contenuto.titolo || '') + ' ' + String(contenuto.sommario || '') + ' ' + String(contenuto.territorio || '')).toLowerCase();
+    var regione = String(museo.regione).toLowerCase();
+    if (text.indexOf(regione) >= 0) return 1.0;
+    if (text.indexOf('nazionale') >= 0 || text.indexOf('tutte le regioni') >= 0) return 0.7;
+    if (text.indexOf('europeo') >= 0 || text.indexOf('eu') >= 0) return 0.6;
+    return 0.3;
+  } catch(_) { return 0.5; }
 }
 
 function _matchDimensione_(contenuto, museo, agent) {
-  if (!museo.topGap || museo.topGap.length === 0) return 0.5;
-  // Controlla se le dimensioni dell'agente sono tra i gap del museo
-  var agentDims = agent.matrixDims || [];
-  var overlap = agentDims.filter(function(d) { return museo.topGap.indexOf(d) >= 0; });
-  if (overlap.length >= 2) return 1.0;
-  if (overlap.length === 1) return 0.7;
-  return 0.3;
+  try {
+    if (!museo || !museo.topGap || !Array.isArray(museo.topGap) || museo.topGap.length === 0) return 0.5;
+    var agentDims = (agent && Array.isArray(agent.matrixDims)) ? agent.matrixDims : [];
+    if (agentDims.length === 0) return 0.5;
+    var overlap = agentDims.filter(function(d) { return museo.topGap.indexOf(d) >= 0; });
+    if (overlap.length >= 2) return 1.0;
+    if (overlap.length === 1) return 0.7;
+    return 0.3;
+  } catch(_) { return 0.5; }
 }
 
 function _matchTipologia_(contenuto, museo) {
-  if (!museo.tipologia) return 0.5;
-  var text = ((contenuto.titolo || '') + ' ' + (contenuto.sommario || '')).toLowerCase();
-  var tipo = museo.tipologia.toLowerCase();
-  // Match diretto
-  if (text.indexOf(tipo) >= 0) return 1.0;
-  // Match per categoria generica
-  if (tipo.indexOf('civico') >= 0 && text.indexOf('comuni') >= 0) return 0.8;
-  if (tipo.indexOf('fondazione') >= 0 && text.indexOf('fondazion') >= 0) return 0.8;
-  if (tipo.indexOf('ecclesiastico') >= 0 && text.indexOf('ecclesiastic') >= 0) return 0.8;
-  return 0.4;
+  try {
+    if (!museo || !museo.tipologia) return 0.5;
+    var text = (String(contenuto.titolo || '') + ' ' + String(contenuto.sommario || '') + ' ' + String(contenuto.soggetti || '')).toLowerCase();
+    var tipo = String(museo.tipologia).toLowerCase();
+    if (text.indexOf(tipo) >= 0) return 1.0;
+    if (tipo.indexOf('civico') >= 0 && text.indexOf('comuni') >= 0) return 0.8;
+    if (tipo.indexOf('fondazione') >= 0 && text.indexOf('fondazion') >= 0) return 0.8;
+    if (tipo.indexOf('ecclesiastico') >= 0 && text.indexOf('ecclesiastic') >= 0) return 0.8;
+    return 0.4;
+  } catch(_) { return 0.5; }
 }
 
 function _matchProfilo_(contenuto, museo) {
-  // Adatta livello contenuto al profilo museo
-  var profilo = museo.profilo || 'P2';
-  var score = Number((contenuto.score || contenuto.relevanceScore || 3));
-  // P1/P5 (baseline) → preferisce contenuti base (score 1-3)
-  if (profilo === 'P1' || profilo === 'P5') return score <= 3 ? 0.8 : 0.4;
-  // P4 (avanzato) → preferisce contenuti avanzati (score 4-5)
-  if (profilo === 'P4') return score >= 4 ? 0.8 : 0.4;
-  // P2/P3 (medio) → neutral
-  return 0.6;
+  try {
+    var profilo = (museo && museo.profilo) ? String(museo.profilo) : 'P2';
+    var score = Number(contenuto.score || contenuto.relevanceScore || 0) || 3;
+    if (profilo === 'P1' || profilo === 'P5') return score <= 3 ? 0.8 : 0.4;
+    if (profilo === 'P4') return score >= 4 ? 0.8 : 0.4;
+    return 0.6;
+  } catch(_) { return 0.5; }
 }
 
 function _matchPriorita_(contenuto, museo) {
-  if (!museo.prioritaSoggettive || museo.prioritaSoggettive.length === 0) return 0.5;
-  var tags = (contenuto.tags || contenuto.sommario || '').toLowerCase();
-  var match = museo.prioritaSoggettive.some(function(p) {
-    return tags.indexOf(p.toLowerCase()) >= 0;
-  });
-  return match ? 1.0 : 0.3;
+  try {
+    if (!museo || !Array.isArray(museo.prioritaSoggettive) || museo.prioritaSoggettive.length === 0) return 0.5;
+    var tags = String(contenuto.tags || contenuto.sommario || '').toLowerCase();
+    if (!tags) return 0.5;
+    var match = museo.prioritaSoggettive.some(function(p) {
+      return p && tags.indexOf(String(p).toLowerCase()) >= 0;
+    });
+    return match ? 1.0 : 0.3;
+  } catch(_) { return 0.5; }
 }
 
 // ============================================================================
