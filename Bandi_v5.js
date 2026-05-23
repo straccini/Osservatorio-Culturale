@@ -28,7 +28,8 @@ var SH_BACKUP_INFO = 'BackupInfo_v5';   // Info dei backup creati
 var PARSER_TYPES = ['RSS', 'HTML', 'Sitemap', 'Gmail'];
 
 // v4.18.68 — Dichiarazione locale (non dipende da Scannerbandi.js)
-var ANTHROPIC_KEY_PROP = ANTHROPIC_KEY_PROP || 'CLAUDE_API_KEY';
+// ANTHROPIC_KEY_PROP dichiarato in Scannerbandi.js (const). Qui usiamo riferimento diretto.
+var _BANDI_API_KEY_PROP_ = 'CLAUDE_API_KEY';
 
 // Esiti scansione
 var SCAN_OUTCOME = {
@@ -593,7 +594,7 @@ function _pulisciHtmlV5_(html) {
  * Retry con backoff esponenziale (max 2 tentativi). Fallback grezzo se fallisce.
  */
 function _estraiConClaudeV5_(testoHtml, urlFonte, enteDefault) {
-  var apiKey = PropertiesService.getScriptProperties().getProperty(ANTHROPIC_KEY_PROP);
+  var apiKey = PropertiesService.getScriptProperties().getProperty(_BANDI_API_KEY_PROP_);
   if (!apiKey) throw new Error('CLAUDE_API_KEY non configurata in ScriptProperties');
 
   // ── PASS 1: Filtro rumore (Haiku, veloce ed economico) ──
@@ -1561,7 +1562,7 @@ function runFase2TestRSS() {
  */
 function testClaudeAPIKey() {
   Logger.log('=== TEST CLAUDE API KEY ===');
-  var apiKey = PropertiesService.getScriptProperties().getProperty(ANTHROPIC_KEY_PROP);
+  var apiKey = PropertiesService.getScriptProperties().getProperty(_BANDI_API_KEY_PROP_);
   if (!apiKey) {
     Logger.log('❌ CLAUDE_API_KEY non trovata in ScriptProperties.');
     Logger.log('   Vai su: Progetto GAS → Impostazioni progetto → Proprietà script');
