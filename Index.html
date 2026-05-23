@@ -233,6 +233,25 @@
 </div>
 
 <!-- ===== DETAIL OVERLAY ===== -->
+<!-- v4.18.68 — Bando Quick View Drawer -->
+<div id="drawerOverlay" onclick="OC.closeBandoDrawer()"></div>
+<div id="bandoDrawer" role="dialog" aria-label="Dettaglio bando">
+  <div class="drawer-topbar">
+    <span style="font-family:var(--font-display);font-size:0.875rem;color:var(--ink-3);font-style:italic">Dettaglio bando</span>
+    <button class="drawer-close" onclick="OC.closeBandoDrawer()" aria-label="Chiudi">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="bandoDrawerBody">
+    <div class="drawer-skeleton">
+      <div class="skeleton skeleton-title"></div>
+      <div class="skeleton skeleton-text-line long"></div>
+      <div class="skeleton skeleton-text-line medium"></div>
+      <div class="skeleton skeleton-text-line short"></div>
+    </div>
+  </div>
+</div>
+
 <div id="oc-detail-overlay" role="dialog" aria-modal="true" aria-labelledby="oc-detail-title">
   <div id="oc-detail-panel">
     <div class="detail-topbar">
@@ -7345,7 +7364,10 @@
 
   function openDetail(tipo, id) {
     var data = _detailCache[tipo + '_' + id];
-    if (data) { _renderDetail_(tipo, data); return; }
+    if (data) {
+      if (tipo === 'bando') { _renderBandoDrawer_(data); return; }
+      _renderDetail_(tipo, data); return;
+    }
     // Cerca nei cache renderer per tutti e 5 i tipi
     var _CACHE_MAP = {
       bando:   _cacheBandi   || [],
@@ -7358,6 +7380,7 @@
     for (var i=0; i<lista.length; i++) {
       if (String(lista[i].id) === String(id)) {
         _detailCache[tipo+'_'+id] = lista[i];
+        if (tipo === 'bando') { _renderBandoDrawer_(lista[i]); return; }
         _renderDetail_(tipo, lista[i]);
         return;
       }
@@ -7366,6 +7389,75 @@
     var _PAGE_MAP = { bando:'bandi', news:'news', podcast:'podcast', video:'video', libro:'libri' };
     go(_PAGE_MAP[tipo] || tipo);
     showToast('Apri la scheda dalla lista', 'warn');
+  }
+
+  // v4.18.68 — Bando Quick View Drawer
+  function _openBandoDrawer_() {
+    var drawer = $('bandoDrawer');
+    var overlay = $('drawerOverlay');
+    if (drawer) drawer.classList.add('drawer-open');
+    if (overlay) overlay.classList.add('active');
+  }
+  function _closeBandoDrawer_() {
+    var drawer = $('bandoDrawer');
+    var overlay = $('drawerOverlay');
+    if (drawer) drawer.classList.remove('drawer-open');
+    if (overlay) overlay.classList.remove('active');
+  }
+  function _renderBandoDrawer_(d) {
+    var body = $('bandoDrawerBody');
+    if (!body) { _renderDetail_('bando', d); return; }
+
+    // Mostra skeleton + apri drawer
+    body.innerHTML = '<div class="drawer-skeleton"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text-line long"></div><div class="skeleton skeleton-text-line medium"></div><div class="skeleton skeleton-text-line short"></div></div>';
+    _openBandoDrawer_();
+
+    // Renderizza dopo un breve delay (simula caricamento, mostra skeleton)
+    setTimeout(function(){
+      var ambN = parseInt(d.ambito || d.amb || 0, 10) || 0;
+      var ambLbl = _ambLabel_(ambN);
+
+      var html = '';
+
+      // Titolo
+      html += '<h2 style="font-family:var(--font-display);font-size:1.5rem;font-weight:500;color:var(--ink);margin:0 0 16px;line-height:1.25">' + esc(d.titolo || '(senza titolo)') + '</h2>';
+
+      // Urgency
+      if (d.isUrgent) {
+        html += '<div style="display:inline-block;background:#FEF2F2;color:#991B1B;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:14px">Scade in ' + esc(String(d.giorni)) + ' giorni</div> ';
+      }
+
+      // Meta
+      html += '<div style="display:grid;gap:8px;margin-bottom:20px;font-size:0.875rem;color:var(--ink-2)">';
+      if (d.ente) html += '<div><span style="color:var(--ink-3);font-size:0.75rem;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Ente</span><br>' + esc(d.ente) + '</div>';
+      if (d.scadenza) html += '<div><span style="color:var(--ink-3);font-size:0.75rem;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Scadenza</span><br>' + esc(d.scadenza) + '</div>';
+      if (d.settore) html += '<div><span style="color:var(--ink-3);font-size:0.75rem;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Settore</span><br>' + esc(d.settore) + '</div>';
+      if (ambLbl) html += '<div><span style="color:var(--ink-3);font-size:0.75rem;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Ambito</span><br>' + esc(ambLbl) + '</div>';
+      if (d.regione) html += '<div><span style="color:var(--ink-3);font-size:0.75rem;text-transform:uppercase;letter-spacing:.04em;font-weight:600">Regione</span><br>' + esc(d.regione) + '</div>';
+      html += '</div>';
+
+      // Sommario
+      var summary = d.sommario || d.descrizione || '';
+      if (summary) {
+        html += '<div style="font-size:0.875rem;color:var(--ink-2);line-height:1.65;margin-bottom:20px;max-width:65ch">' + esc(summary) + '</div>';
+      }
+
+      // Azioni
+      html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
+      var linkUrl = d.link || d.url || '';
+      if (linkUrl) {
+        html += '<a href="' + esc(linkUrl) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#8B4513;color:#fff;padding:10px 20px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;font-family:inherit">';
+        html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+        html += 'Vai al bando</a>';
+      }
+      var _wfTipo = 'bando';
+      var _isSalv = !!d.salvato;
+      html += '<button onclick="OC.saveCard(\'' + esc(_wfTipo) + '\',\'' + esc(String(d.id)) + '\',this)" style="background:transparent;border:1px solid var(--rule);padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;color:var(--ink-2);cursor:pointer;font-family:inherit">' + (_isSalv ? '★ Salvato' : '☆ Salva') + '</button>';
+      html += '<button onclick="OC.archiveItem(\'' + esc(_wfTipo) + '\',\'' + esc(String(d.id)) + '\',null);OC.closeBandoDrawer()" style="background:transparent;border:1px solid var(--rule);padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;color:var(--ink-2);cursor:pointer;font-family:inherit">Archivia</button>';
+      html += '</div>';
+
+      body.innerHTML = html;
+    }, 180);
   }
 
   function _renderDetail_(tipo, d) {
@@ -7485,7 +7577,7 @@
       }
     });
     document.addEventListener('keydown', function(e){
-      if (e.key === 'Escape') { closeDetail(); closeGuida(); }
+      if (e.key === 'Escape') { closeDetail(); closeGuida(); _closeBandoDrawer_(); }
     });
   })();
 
@@ -7888,6 +7980,7 @@
       }
     },
     openBando:   function(id){ openDetail('bando', id); },
+    closeBandoDrawer: function(){ _closeBandoDrawer_(); },
     openNews:    function(id){ openDetail('news', id); },
     openPodcast: function(id){ openDetail('podcast', id); },
     openVideo:   function(id){ openDetail('video', id); },

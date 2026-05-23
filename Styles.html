@@ -2590,6 +2590,65 @@ body.is-home-page .topbar-search{display:none}
 }
 #oc-detail-overlay.open { display: flex; }
 
+/* v4.18.68 — Bando Quick View Drawer: overlay leggero, lista resta visibile */
+#bandoDrawer {
+  position: fixed;
+  top: 0;
+  right: -460px;
+  width: min(450px, 92vw);
+  height: 100vh;
+  background: var(--surface);
+  border-left: 1px solid var(--rule);
+  z-index: 910;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 32px rgba(26,24,21,.12);
+  transition: right 0.3s cubic-bezier(0.22,1,0.36,1);
+}
+#bandoDrawer.drawer-open { right: 0; }
+
+#drawerOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 909;
+  background: rgba(26,24,21,.18);
+  transition: opacity 0.3s ease;
+}
+#drawerOverlay.active { display: block; }
+
+#bandoDrawer .drawer-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+#bandoDrawer .drawer-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--ink-3);
+  transition: background 0.15s;
+}
+#bandoDrawer .drawer-close:hover { background: var(--surface-2); color: var(--ink); }
+#bandoDrawer .drawer-body {
+  padding: 24px 24px 40px;
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+/* Skeleton dentro il drawer */
+#bandoDrawer .drawer-skeleton { padding: 24px; }
+#bandoDrawer .drawer-skeleton .skeleton { margin-bottom: 12px; }
+
 /* ===== GUIDA PANEL (Sprint N10) ===== */
 #oc-guida-overlay {
   display: none;
