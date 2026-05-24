@@ -3423,9 +3423,9 @@
     var salvato = !!b.salvato;
     var acts = '<div class="br-acts">'
       + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'bando\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Letto</button>'
-      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'bando\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;' : '&#9734;') + '</button>'
+      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'bando\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;&nbsp;Salvato' : '&#9734;&nbsp;Salva') + '</button>'
       + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'bando\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Archiv.</button>'
-      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'bando\',\'' + esc(id) + '\',this)">&#128465;</button>'
+      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'bando\',\'' + esc(id) + '\',this)">&#128465;&nbsp;Cestina</button>'
       + '</div>';
 
     return '<div class="br-row' + (isUrgent ? ' br-urgent' : '') + '" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
@@ -3600,9 +3600,9 @@
     var salvato = !!p.salvato;
     var acts = '<div class="br-acts">'
       + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'podcast\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Ascoltato</button>'
-      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'podcast\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;' : '&#9734;') + '</button>'
+      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'podcast\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;&nbsp;Salvato' : '&#9734;&nbsp;Salva') + '</button>'
       + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'podcast\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Arch.</button>'
-      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'podcast\',\'' + esc(id) + '\',this)">&#128465;</button>'
+      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'podcast\',\'' + esc(id) + '\',this)">&#128465;&nbsp;Cestina</button>'
       + '</div>';
 
     var linkHtml = url
@@ -3750,9 +3750,9 @@
     var salvato = !!n.salvato;
     var acts = '<div class="br-acts">'
       + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'item\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Letto</button>'
-      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'item\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;' : '&#9734;') + '</button>'
+      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'item\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;&nbsp;Salvato' : '&#9734;&nbsp;Salva') + '</button>'
       + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'item\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Arch.</button>'
-      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'item\',\'' + esc(id) + '\',this)">&#128465;</button>'
+      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'item\',\'' + esc(id) + '\',this)">&#128465;&nbsp;Cestina</button>'
       + '</div>';
 
     // Link leggi articolo
@@ -3943,9 +3943,9 @@
     var salvato = !!v.salvato;
     var acts = '<div class="br-acts">'
       + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'podcast\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Visto</button>'
-      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'video\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;' : '&#9734;') + '</button>'
+      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'video\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;&nbsp;Salvato' : '&#9734;&nbsp;Salva') + '</button>'
       + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'podcast\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Arch.</button>'
-      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'podcast\',\'' + esc(id) + '\',this)">&#128465;</button>'
+      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'podcast\',\'' + esc(id) + '\',this)">&#128465;&nbsp;Cestina</button>'
       + '</div>';
 
     var linkHtml = url
@@ -4054,7 +4054,7 @@
     var salvato = !!b.salvato;
     var acts = '<div class="br-acts">'
       + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'libro\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Letto</button>'
-      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'libro\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;' : '&#9734;') + '</button>'
+      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'libro\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;&nbsp;Salvato' : '&#9734;&nbsp;Salva') + '</button>'
       + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'libro\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Arch.</button>'
       + '</div>';
 
