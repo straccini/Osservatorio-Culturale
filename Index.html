@@ -1099,55 +1099,23 @@
         <div id="sasRunReport" style="margin-top:14px;font-size:0.75rem;font-family:Consolas,monospace;color:var(--ink-2);white-space:pre-wrap;line-height:1.55;max-height:300px;overflow-y:auto"></div>
       </div>
 
-      <!-- v4.18.69 — Card legacy rimosse: Sinopia Fix, Magic Link Test, FU17, Quality Check,
-           Dedup, Fonti Disattivate, Agenti AI, Social Queue, Diagnostica Fonti, Cross-ref, Tagging
-           → tutte gestite dal Supervisore SAS (MA1-MA4) o non piu necessarie -->
-
-      <!-- Setup commerciale (richiede input umano, non automatizzabile) -->
-      <!-- v4.18.69 — Blocco card legacy rimosso (350+ righe). Gestito da SAS.
-           Sinopia Fix, Magic Link Test, FU17, Quality Check, Dedup, Fonti disattivate,
-           Agenti AI, Social Queue, Diagnostica Fonti, Cross-ref rimossi.
-           Per accesso diretto: usare editor GAS. -->
-      <!-- v4.18.18 (2026-05-13) — Setup commerciale: URL calendario consulenza + PDF Musei Sensibili -->
-      <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #8B4513">
-        <h3>Setup commerciale (calendario + documenti)</h3>
-        <div style="background:#F8EFEF;border:1px solid #E5C5C5;border-left:3px solid #8B4513;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:12.5px;line-height:1.55;color:#5A1F12">
-          <b>A cosa serve</b> &mdash; configura gli URL operativi del funnel commerciale direttamente da qui (no editing codice). Si salvano in ScriptProperties e diventano subito attivi nei bottoni della home/slideshow.
-        </div>
-
-        <!-- Calendario consulenza -->
-        <div style="margin-bottom:18px">
-          <label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:6px">URL calendario consulenza</label>
-          <input type="url" id="cfgCalendarUrl" placeholder="https://cal.com/silvano-straccini  oppure  https://calendar.app.google/XXXX" style="width:100%;padding:10px 12px;border:1px solid #D5D0C4;border-radius:6px;font-size:13px;font-family:monospace" />
-          <div style="font-size:11.5px;color:var(--ink-3);margin-top:6px;line-height:1.5">
-            <b>Opzioni gratuite consigliate:</b><br>
-            • <a href="https://cal.com" target="_blank" rel="noopener" style="color:var(--link);text-decoration:none">Cal.com</a> &mdash; open source, integrazione Google Calendar bidirezionale, eventi illimitati nel piano free. Crea account → connetti Google Calendar → definisci tipi evento (es. "Consulenza 30 min", "Pre-progettazione 1h") → imposta disponibilità → ottieni URL pubblico <code>cal.com/nome-utente</code>.<br>
-            • <a href="https://calendar.google.com/calendar/u/0/r/appointment" target="_blank" rel="noopener" style="color:var(--link);text-decoration:none">Google Appointment Scheduling</a> &mdash; nativo Google Calendar (richiede account Gmail recente o Workspace). Tutto dentro Google, niente terzi.<br>
-            Verrà attivato nel bottone <i>"Prenota consulenza"</i> della home (slideshow slide 3 + altri punti).
+      <!-- Configurazione -->
+      <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin-bottom:20px">
+        <div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin-bottom:14px">Configurazione</div>
+        <div style="display:grid;gap:12px;margin-bottom:14px">
+          <div>
+            <label style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">URL calendario consulenza</label>
+            <input type="url" id="cfgCalendarUrl" placeholder="https://cal.com/silvano-straccini" style="width:100%;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:0.875rem;font-family:inherit" />
+          </div>
+          <div>
+            <label style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">URL PDF Musei Sensibili</label>
+            <input type="url" id="cfgMuseiSensibili" placeholder="https://drive.google.com/file/d/.../view" style="width:100%;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:0.875rem;font-family:inherit" />
           </div>
         </div>
-
-        <!-- PDF Musei Sensibili -->
-        <div style="margin-bottom:18px">
-          <label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:6px">📄 URL PDF Musei Sensibili</label>
-          <input type="url" id="cfgMuseiSensibili" placeholder="https://drive.google.com/file/d/XXXX/view  (link condiviso pubblico)" style="width:100%;padding:10px 12px;border:1px solid #D5D0C4;border-radius:6px;font-size:13px;font-family:monospace" />
-          <div style="font-size:11.5px;color:var(--ink-3);margin-top:6px;line-height:1.5">
-            <b>Come configurarlo</b> (3 passaggi):<br>
-            1. Carica <code>Musei Sensibili — Documento Strategico.pdf</code> (1.2 MB) sul tuo Google Drive<br>
-            2. Click destro sul file → <i>Condividi</i> → cambia accesso a <i>"Chiunque con il link"</i> (visualizzatore) → Copia link<br>
-            3. Incolla il link sopra e clicca <b>Salva</b><br>
-            Verrà attivato nel bottone <i>"Scopri il modello"</i> della home (slideshow slide 2 "Musei Sensibili").
-          </div>
-        </div>
-
-        <!-- v4.18.45 (2026-05-15) — Campi logo + hero RIMOSSI: il logo Sinopia è SVG inline statico
-             nella sidebar (Sidebar.html, no flash all'apertura). L'hero home non usa immagine. -->
-
-        <!-- Azioni -->
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <button class="btn btn-primary" data-action="saveCommercialConfig" title="Salva la configurazione commerciale (calendario + PDF) in ScriptProperties. Attivo immediato.">💾 Salva configurazione</button>
-          <button class="btn btn-secondary" data-action="loadCommercialConfig" title="Ricarica la configurazione attualmente salvata">Ricarica</button>
-          <span id="cfgCommercialStatus" style="font-size:12px;color:var(--ink-3)"></span>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button class="btn btn-primary" data-action="saveCommercialConfig" style="background:#8B4513;color:#fff;border:none;padding:8px 18px;border-radius:6px;font-weight:600;cursor:pointer;font-family:inherit;font-size:0.875rem">Salva</button>
+          <button class="btn btn-secondary" data-action="loadCommercialConfig" style="padding:8px 18px;border-radius:6px;font-family:inherit;font-size:0.875rem">Ricarica</button>
+          <span id="cfgCommercialStatus" style="font-size:0.75rem;color:var(--ink-3)"></span>
         </div>
       </div>
 
