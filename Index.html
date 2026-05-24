@@ -1048,9 +1048,61 @@
     <!-- ===== PAGE ADMIN ===== -->
     <section class="page" id="page-admin">
       <div class="section-head" style="margin-top:0">
-        <h2 class="section-title">Pannello amministratore</h2>
+        <h2 class="section-title">Pannello <em>amministratore</em></h2>
         <span class="muted" id="adminStatus">—</span>
       </div>
+
+      <!-- v4.18.69 — Supervisore Autonomo: unico punto di controllo -->
+      <div style="background:linear-gradient(135deg,#F1E6D6 0%,#FBF7EE 100%);border:1px solid #D4BFA0;border-radius:10px;padding:22px 26px;margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:16px">
+          <div>
+            <div style="font-family:var(--font-display);font-size:1.25rem;color:var(--ink);font-weight:600">Supervisore Sinopia</div>
+            <div style="font-size:0.875rem;color:var(--ink-2);margin-top:4px">Manutenzione, qualita, fonti e monitoraggio in un unico agente autonomo.</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:10px;height:10px;border-radius:50%;background:#3F7A5E" id="sasHealthDot"></div>
+            <span style="font-family:var(--font-display);font-size:1.5rem;font-weight:600;color:var(--ink)" id="sasHealthScore">--</span>
+            <span style="font-size:0.75rem;color:var(--ink-3)">/100</span>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px" id="sasKpiGrid">
+          <div style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:12px 14px;text-align:center">
+            <div style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Fonti attive</div>
+            <div style="font-size:1.25rem;font-weight:700;color:var(--ink);margin-top:4px" id="sasKpiFonti">--</div>
+          </div>
+          <div style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:12px 14px;text-align:center">
+            <div style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Bandi nuovi 7gg</div>
+            <div style="font-size:1.25rem;font-weight:700;color:var(--ink);margin-top:4px" id="sasKpiBandi">--</div>
+          </div>
+          <div style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:12px 14px;text-align:center">
+            <div style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">News 7gg</div>
+            <div style="font-size:1.25rem;font-weight:700;color:var(--ink);margin-top:4px" id="sasKpiNews">--</div>
+          </div>
+          <div style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:12px 14px;text-align:center">
+            <div style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Utenti</div>
+            <div style="font-size:1.25rem;font-weight:700;color:var(--ink);margin-top:4px" id="sasKpiUtenti">--</div>
+          </div>
+          <div style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:12px 14px;text-align:center">
+            <div style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Agenti</div>
+            <div style="font-size:1.25rem;font-weight:700;color:var(--ink);margin-top:4px" id="sasKpiAgenti">--</div>
+          </div>
+        </div>
+
+        <div id="sasRaccomandazioni" style="margin-bottom:16px"></div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" data-action="sasRunNow" style="background:#8B4513;color:#fff;border:none;padding:10px 22px;border-radius:6px;font-weight:600;cursor:pointer;font-family:inherit">Esegui ciclo supervisore</button>
+          <button class="btn btn-secondary" data-action="sasRefresh" style="padding:10px 18px;border-radius:6px;font-family:inherit">Aggiorna KPI</button>
+          <button class="btn btn-secondary" data-action="sasRunWeeklyNow" style="padding:10px 18px;border-radius:6px;font-family:inherit">Analisi settimanale</button>
+        </div>
+        <div id="sasRunReport" style="margin-top:14px;font-size:0.75rem;font-family:Consolas,monospace;color:var(--ink-2);white-space:pre-wrap;line-height:1.55;max-height:300px;overflow-y:auto"></div>
+      </div>
+
+      <!-- Sezioni legacy compattate in details chiudibili -->
+      <details style="margin-bottom:16px">
+        <summary style="cursor:pointer;font-family:var(--font-display);font-size:1rem;font-weight:600;color:var(--ink-2);padding:12px 0">Strumenti avanzati (manutenzione manuale)</summary>
+        <div style="padding-top:12px">
 
       <!-- v4.18.29 — Sinopia Fix one-click: risolve criticità diagnostiche -->
       <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #8B4513;background:linear-gradient(180deg,#FBF7EE 0%,#fff 100%)">
@@ -1528,6 +1580,10 @@
       </div>
 
       <!-- v4.18.11 (2026-05-12) — Card Digest segmentato + Bozze/invii + Anteprima SPOSTATE in #page-digest -->
+
+        </div><!-- /details content -->
+      </details>
+
     </section>
 
     <!-- ===== PAGE CHI SIAMO (v4.18.27 — Osservatorio Culturale · Sinopia) ===== -->
@@ -4723,6 +4779,8 @@
   // v4.18.11 — Admin panel: solo F2 diagnostica + tagging Matrix (le card digest sono in #page-digest)
   function loadAdminPanel(){
     if (!hasGAS()) return;
+    // v4.18.69 — SAS KPI come prima cosa nel pannello admin
+    if (OC && typeof OC.sasRefresh === 'function') OC.sasRefresh();
     loadF2State();
     loadTagStats();
     // v4.18.18 — autoload setup commerciale (URL calendario + PDF Musei Sensibili)
@@ -8457,6 +8515,54 @@
     // v4.18.9 F2 — Diagnostica fonti
     f2Refresh: loadF2State,
     // v4.18.29 — Sinopia Fix one-click (risolve criticità diagnostiche)
+    // v4.18.69 — Supervisore SAS handlers
+    sasRefresh: function(){
+      if (!hasGAS()) return;
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (!r || !r.ok) return;
+          var kpi = r.kpi || {};
+          var el = function(id){ return document.getElementById(id); };
+          var dot = el('sasHealthDot');
+          var score = kpi.piattaformaHealthScore || 0;
+          if (el('sasHealthScore')) el('sasHealthScore').textContent = score;
+          if (dot) dot.style.background = score >= 80 ? '#3F7A5E' : score >= 60 ? '#9C6A36' : '#8C2626';
+          if (el('sasKpiFonti')) el('sasKpiFonti').textContent = (kpi.fontiAttive || 0) + ' (' + (kpi.fontiSilenti || 0) + ' silenti)';
+          if (el('sasKpiBandi')) el('sasKpiBandi').textContent = kpi.bandiNuovi7gg || 0;
+          if (el('sasKpiNews')) el('sasKpiNews').textContent = kpi.newsNuove7gg || 0;
+          if (el('sasKpiUtenti')) el('sasKpiUtenti').textContent = (kpi.sessioniTotali || 0) + ' (+' + (kpi.sessioniNuove7gg || 0) + ')';
+          if (el('sasKpiAgenti')) el('sasKpiAgenti').textContent = (kpi.agentiAttivi || 0) + '/5';
+        })
+        .sasDiagnostica();
+    },
+    sasRunNow: function(){
+      if (!hasGAS()) return;
+      if (!confirm('Esegui il ciclo supervisore completo? (MA1 igiene + MA2 qualita + monitoraggio)')) return;
+      var out = document.getElementById('sasRunReport');
+      if (out) out.textContent = 'Esecuzione in corso...';
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (out) out.textContent = JSON.stringify(r, null, 2);
+          OC.sasRefresh();
+          showToast('Supervisore completato', 'ok');
+        })
+        .withFailureHandler(function(err){ if (out) out.textContent = 'Errore: ' + (err && err.message || err); })
+        .sasRun();
+    },
+    sasRunWeeklyNow: function(){
+      if (!hasGAS()) return;
+      if (!confirm('Esegui analisi strategica settimanale? (MA3 audit + MA4 SEAS + KPI + strategia)')) return;
+      var out = document.getElementById('sasRunReport');
+      if (out) out.textContent = 'Analisi in corso (puo richiedere 1-2 minuti)...';
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (out) out.textContent = JSON.stringify(r, null, 2);
+          OC.sasRefresh();
+          showToast('Analisi settimanale completata', 'ok');
+        })
+        .withFailureHandler(function(err){ if (out) out.textContent = 'Errore: ' + (err && err.message || err); })
+        .sasRunWeekly();
+    },
     runSinopiaFix: function(){
       var out = $('sinopiaFixReport');
       if (!out) return;
