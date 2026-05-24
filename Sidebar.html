@@ -1,8 +1,8 @@
 <!--
   ============================================================
-  OSSERVATORIO CULTURALE — SIDEBAR.HTML (v4.12 — Redesign Editoriale Museale)
-  Design da: Osservatorio - Redesign Mockup.html (Claude Design, 01/05/2026)
-  Direzione: Carta da museo — Newsreader + Instrument Serif + Inter
+  OSSERVATORIO CULTURALE / MUSEMU MATRIX — SIDEBAR.HTML
+  v5.0 — Direzione C Curatoriale Sans (24/05/2026)
+  Tipografia Inter + Inter Tight, accent vermillion #E84B1C
   ------------------------------------------------------------
   File GAS: "Sidebar"
   Include nel Index.html via string-replace (pattern tua doGet)
@@ -23,12 +23,12 @@
       <!-- Logo SVG inline: disegno calligrafico "Sinopia" in tono sinopia, sempre visibile -->
       <svg viewBox="0 0 180 48" width="160" height="42" xmlns="http://www.w3.org/2000/svg" aria-label="Sinopia" role="img" style="display:block">
         <text x="0" y="34"
-              font-family="'DM Serif Display', Georgia, serif"
+              font-family="'Inter Tight', 'Inter', system-ui, sans-serif"
               font-style="normal"
-              font-weight="400"
-              font-size="36"
-              letter-spacing="0.5"
-              fill="#8B4513">Sinopia</text>
+              font-weight="600"
+              font-size="32"
+              letter-spacing="-0.025em"
+              fill="#101010">Sinopia</text>
       </svg>
       <!-- v4.18.45 — brandLogoImg + brandLogoText RIMOSSI: niente più flash testuale all'apertura,
            niente più dipendenza da config admin. Logo statico, sempre uguale, fonte autoritativa. -->
@@ -41,7 +41,7 @@
     <div class="nav-label">Vista generale</div>
 
     <a href="#" class="nav-item active" data-page="home" aria-current="page">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="background:#8B4513;stroke:#fff;border-color:#8B4513">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M4 10l8-6 8 6v9a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/>
       </svg>
       <span class="lbl">Home</span>
@@ -192,7 +192,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 10h16M10 20V10"/>
       </svg>
-      <span class="lbl" style="font-family:var(--font-serif);font-style:italic;font-weight:500"><em>Valuta il tuo museo</em></span>
+      <span class="lbl" style="font-family:var(--font-display);font-style:normal;font-weight:500;letter-spacing:-0.015em"><em style="font-style:normal">Valuta il tuo museo</em></span>
       <span class="matrix-tag">10 min</span>
     </a>
     <a href="#" class="nav-item" data-page="sondaggi-catalogo">

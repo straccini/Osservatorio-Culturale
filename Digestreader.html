@@ -8,21 +8,21 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   /* Editoriale Museale — Carta da museo (v4.12) */
-  --bg:#FAF8F4; --surface:#FFFFFF; --surface-alt:#F3F0E9;
-  --ink:#1A1815; --ink-2:#3A3631; --muted:#6E6A62;
-  --border:#E5E1D8; --border-strong:#D5D0C4;
+  --bg:#FAF8F4; --surface:#FFFFFF; --surface-alt:var(--surface,#F7F7F8);
+  --ink:var(--ink,#101010); --ink-2:var(--ink-2,#3A3A3C); --muted:var(--ink-3,#6E6E73);
+  --border:var(--rule,#E5E5E7); --border-strong:var(--rule-2,#D2D2D7);
   --accent:#7A2A1A; --accent-2:#5C1F12;
-  --success:#2E5E3A; --warning:#9A6A14;
+  --success:var(--success,#0F7B5A); --warning:var(--warning,#B45309);
   /* Compat alias usati nel template originale */
-  --navy:#1A1815; --gold:#9C6A36; --green:#2E5E3A; --red:#7A2A1A;
-  --purple:#6B5C9A; --blue:#3C6A95; --text:#1A1815;
+  --navy:var(--ink,#101010); --gold:#9C6A36; --green:var(--success,#0F7B5A); --red:#7A2A1A;
+  --purple:var(--amb-1,#7C3AED); --blue:var(--amb-3,#2563EB); --text:var(--ink,#101010);
   /* Tipografia editoriale museale */
   --font-ui:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --font-serif:'Newsreader','Source Serif 4',Georgia,serif;
-  --font-italic:'Instrument Serif',Georgia,serif;
+  --font-italic:Georgia,serif;
   --font-mono:ui-monospace,'JetBrains Mono',monospace;
 }
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;600;700&display=swap');
 body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
 
 /* HEADER editoriale */
@@ -297,12 +297,12 @@ function renderBandi(bandi) {
     html += '<div class="rd-ban-meta">';
     if (b.regione) html += '<span>' + esc(b.regione) + '</span>';
     if (b.settore) html += '<span>·</span><span>' + esc(b.settore) + '</span>';
-    if (b.importo) html += '<span>·</span><span style="font-weight:600;color:#0F6E56">EUR ' + Number(b.importo).toLocaleString('it-IT') + '</span>';
+    if (b.importo) html += '<span>·</span><span style="font-weight:600;color:var(--success,#0F7B5A)">EUR ' + Number(b.importo).toLocaleString('it-IT') + '</span>';
     html += '</div>';
-    if (b.note) html += '<div style="font-size:12px;color:#5a5a5a;line-height:1.5;margin-bottom:10px;border-left:2px solid #B8902A;padding-left:8px">' + esc(b.note) + '</div>';
+    if (b.note) html += '<div style="font-size:12px;color:#5a5a5a;line-height:1.5;margin-bottom:10px;border-left:2px solid var(--amb-8,#B45309);padding-left:8px">' + esc(b.note) + '</div>';
     html += '<div style="display:flex;gap:7px;flex-wrap:wrap">';
     if (b.link) html += '<a class="btn-bando" href="' + b.link + '" target="_blank" onclick="event.stopPropagation()">📄 Apri bando</a>';
-    if (b.urlEnte && b.urlEnte !== b.link) html += '<a class="btn-bando" href="' + b.urlEnte + '" target="_blank" onclick="event.stopPropagation()" style="color:#B8902A;border-color:rgba(184,144,42,.25)">🏛 Sito ente</a>';
+    if (b.urlEnte && b.urlEnte !== b.link) html += '<a class="btn-bando" href="' + b.urlEnte + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--amb-8,#B45309);border-color:rgba(184,144,42,.25)">🏛 Sito ente</a>';
     html += '</div></div>';
   });
   html += '</div>';
@@ -439,15 +439,15 @@ function buildPdfHTML(items, bandi, podcast, nome) {
   html += 'h1{font-size:18pt;color:#0F2744;border-bottom:2px solid #0F2744;padding-bottom:8px;margin-bottom:4px}';
   html += '.subtitle{font-size:10pt;color:#aaa;margin-bottom:24px}';
   html += 'h2{font-size:12pt;text-transform:uppercase;letter-spacing:.1em;color:#5a5a5a;margin:20px 0 12px;border-left:3px solid;padding-left:8px}';
-  html += '.sec-not{border-color:#185FA5;color:#185FA5}.sec-ban{border-color:#B8902A;color:#854F0B}.sec-pod{border-color:#5B2D8E;color:#5B2D8E}';
+  html += '.sec-not{border-color:var(--amb-6,#1D4ED8);color:var(--amb-6,#1D4ED8)}.sec-ban{border-color:var(--amb-8,#B45309);color:#854F0B}.sec-pod{border-color:#5B2D8E;color:#5B2D8E}';
   html += '.item{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #eee;page-break-inside:avoid}';
   html += '.item-title{font-size:13pt;font-weight:bold;color:#0F2744;margin-bottom:4px}';
   html += '.item-meta{font-size:9pt;color:#aaa;margin-bottom:6px}';
   html += '.item-sum{font-size:11pt;color:#5a5a5a}';
-  html += '.item-url{font-size:9pt;color:#185FA5;word-break:break-all}';
+  html += '.item-url{font-size:9pt;color:var(--amb-6,#1D4ED8);word-break:break-all}';
   html += '.ban-title{font-size:12pt;font-weight:bold;color:#0F2744;margin-bottom:3px}';
   html += '.ban-meta{font-size:9pt;color:#aaa;margin-bottom:5px}';
-  html += '.ban-note{font-size:10pt;color:#5a5a5a;border-left:2px solid #B8902A;padding-left:7px;margin:6px 0}';
+  html += '.ban-note{font-size:10pt;color:#5a5a5a;border-left:2px solid var(--amb-8,#B45309);padding-left:7px;margin:6px 0}';
   html += '.pod-title{font-size:12pt;font-weight:bold;color:#0F2744;margin-bottom:3px}';
   html += '.footer{margin-top:32px;padding-top:12px;border-top:1px solid #eee;font-size:9pt;color:#aaa;text-align:center}';
   html += '@media print{body{padding:0}h2{page-break-after:avoid}}';

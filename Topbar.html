@@ -1,8 +1,8 @@
 <!--
   ============================================================
-  OSSERVATORIO CULTURALE — TOPBAR.HTML (v4.12 — Redesign Editoriale Museale)
-  Design da: Osservatorio - Redesign Mockup.html (Claude Design, 01/05/2026)
-  Direzione: Carta da museo — Newsreader + Instrument Serif + Inter
+  OSSERVATORIO CULTURALE / MUSEMU MATRIX — TOPBAR.HTML
+  v5.0 — Direzione C Curatoriale Sans (24/05/2026)
+  Tipografia Inter + Inter Tight, accent vermillion #E84B1C
   ------------------------------------------------------------
   File GAS: "Topbar"
   Include nel Index.html.
@@ -84,18 +84,18 @@
         </svg>
         <span class="topbar-badge" id="badge-notifiche" hidden>0</span>
       </button>
-      <div id="notifPanel" hidden style="position:absolute;top:calc(100% + 8px);right:0;width:340px;max-width:calc(100vw - 24px);background:#fff;border:1px solid var(--rule,#E5E1D8);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.10),0 2px 4px rgba(0,0,0,.06);z-index:1000;font-family:var(--font-ui);max-height:calc(100vh - 80px);overflow-y:auto">
-        <div style="padding:14px 16px;border-bottom:1px solid var(--rule,#E5E1D8)">
+      <div id="notifPanel" hidden style="position:absolute;top:calc(100% + 8px);right:0;width:340px;max-width:calc(100vw - 24px);background:#fff;border:1px solid var(--rule,#E5E5E7);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.10),0 2px 4px rgba(0,0,0,.06);z-index:1000;font-family:var(--font-ui);max-height:calc(100vh - 80px);overflow-y:auto">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--rule,#E5E5E7)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <strong style="font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink,#1A1815)">Notifiche · Riepilogo del giorno</strong>
-            <span id="notifPanelInfo" style="font-size:11px;color:var(--ink-3,#6E6A62)">—</span>
+            <strong style="font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink,#101010)">Notifiche · Riepilogo del giorno</strong>
+            <span id="notifPanelInfo" style="font-size:11px;color:var(--ink-3,#6E6E73)">—</span>
           </div>
-          <p style="margin:0;font-size:11.5px;color:var(--ink-3,#6E6A62);line-height:1.45">Occhiata veloce: bandi che scadono presto, novità di oggi, stato dello scanner. Click su una riga per andare al contesto.</p>
+          <p style="margin:0;font-size:11.5px;color:var(--ink-3,#6E6E73);line-height:1.45">Occhiata veloce: bandi che scadono presto, novità di oggi, stato dello scanner. Click su una riga per andare al contesto.</p>
         </div>
         <div id="notifPanelBody" style="padding:6px 0">
-          <div style="padding:14px 16px;font-size:13px;color:var(--ink-3,#6E6A62);text-align:center">Caricamento…</div>
+          <div style="padding:14px 16px;font-size:13px;color:var(--ink-3,#6E6E73);text-align:center">Caricamento…</div>
         </div>
-        <div style="padding:10px 16px;border-top:1px solid var(--rule,#E5E1D8);display:flex;justify-content:space-between;gap:8px">
+        <div style="padding:10px 16px;border-top:1px solid var(--rule,#E5E5E7);display:flex;justify-content:space-between;gap:8px">
           <button class="btn btn-secondary" onclick="OC.openNotifiche()" title="Ricarica il riepilogo notifiche" style="font-size:11px;padding:5px 10px">🔄 Aggiorna</button>
           <button class="btn btn-secondary" onclick="OC.closeNotifiche()" title="Chiudi il pannello" style="font-size:11px;padding:5px 10px">Chiudi</button>
         </div>
@@ -124,7 +124,7 @@
     <!-- Login (visibile solo se anonimo) -->
     <button class="topbar-icon" id="loginBtn" data-action="doLogin"
             aria-label="Accedi" title="Accedi o registrati"
-            style="margin-left:4px;background:#8B4513;color:#fff;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:600;font-family:inherit;border:none;cursor:pointer;display:flex;align-items:center;gap:4px">
+            style="margin-left:4px;background:var(--accent,#E84B1C);color:#fff;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:500;font-family:inherit;border:none;cursor:pointer;display:flex;align-items:center;gap:6px">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
         <polyline points="10 17 15 12 10 7"/>

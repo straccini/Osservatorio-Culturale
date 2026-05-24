@@ -1,15 +1,16 @@
 <!--
   ============================================================
-  OSSERVATORIO CULTURALE — STILES.HTML (v4.12 — Redesign Editoriale Museale)
-  Design da: Osservatorio - Redesign Mockup.html (Claude Design, 01/05/2026)
-  Direzione: Carta da museo — EB Garamond + Instrument Serif + DM Sans
-  Palette: --paper warm, --link rosso ciliegia editoriale, dark mode
+  OSSERVATORIO CULTURALE / MUSEMU MATRIX — STILES.HTML
+  v5.0 — Direzione C Curatoriale Sans (24/05/2026)
+  Palette: bianco puro + ink #101010 + accent vermillion #E84B1C
+  Tipografia: Inter + Inter Tight (sans-only)
+  9 dimensioni MuseMu Matrix ricalibrate per fondo bianco
   Duemilamusei / Silvano Straccini
   ============================================================
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@400;600;700&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700&display=swap" rel="stylesheet" />
 <style>
 /* ==========================================================
    OSSERVATORIO CULTURALE — Redesign Editoriale Museale
@@ -17,52 +18,54 @@
    ========================================================== */
 
 :root{
-  /* Light — Sinopia: avorio freddo + Siena scuro + oro antico */
-  --paper:#FAFAF7;
-  --paper-2:#F3F0EA;
-  --surface:#FFFFFF;
-  --surface-2:#F7F5F0;
-  --rule:#E8E4DC;
-  --rule-2:#D5D0C4;
-  --rule-strong:#1D1D1F;
+  /* Light — Curatoriale Sans su bianco puro */
+  --paper:#FFFFFF;
+  --paper-2:#F7F7F8;
+  --surface:#F7F7F8;
+  --surface-2:#EFEFF1;
+  --rule:#E5E5E7;
+  --rule-2:#D2D2D7;
+  --rule-strong:#101010;
 
-  --ink:#1D1D1F;
-  --ink-2:#3A3631;
-  --ink-3:#6E6A62;
-  --ink-4:#9A958B;
-  --ink-5:#BBB6AC;
+  --ink:#101010;
+  --ink-2:#3A3A3C;
+  --ink-3:#6E6E73;
+  --ink-4:#A1A1A6;
+  --ink-5:#D2D2D7;
 
-  --accent:#8B4513;      /* Siena scuro */
-  --link:#8B4513;        /* Siena scuro */
-  --link-hover:#6D360F;
+  --accent:#E84B1C;      /* Vermillion museo */
+  --accent-soft:#FCEEE7;
+  --accent-hover:#C23A11;
+  --link:#E84B1C;
+  --link-hover:#C23A11;
 
-  /* 5 ambiti OC — desaturati, da volume rilegato */
-  --amb-1:#6B5C9A;  /* 01 Identità — viola pergamena */
-  --amb-2:#3F7A5E;  /* 02 Inclusione — verde salvia */
-  --amb-3:#3C6A95;  /* 03 Programma — blu prussia */
-  --amb-4:#8B4513;  /* 04 Comunità — siena scuro (primario Sinopia) */
-  --amb-5:#4A7884;  /* 05 Digital — petrolio polvere */
+  /* 9 dimensioni MuseMu Matrix — palette contemporanea per fondo bianco */
+  --amb-1:#7C3AED;  /* 01 Brand — viola elettrico */
+  --amb-2:#10916D;  /* 02 Collezione — verde smeraldo */
+  --amb-3:#2563EB;  /* 03 Edificio — blu cobalto */
+  --amb-4:#92400E;  /* 04 Programma/Servizio — orange-800 scurito (radice Sinopia) */
+  --amb-5:#0E7490;  /* 05 Digital/Pubblico — petrolio profondo */
 
   /* tinte chiare degli ambiti per fondo medaglione */
-  --amb-1-soft:#EDE8F4;
-  --amb-2-soft:#E5EFE7;
-  --amb-3-soft:#E4ECF3;
-  --amb-4-soft:#F1E7DA;
-  --amb-5-soft:#E5EDEF;
+  --amb-1-soft:#F3E8FF;
+  --amb-2-soft:#D1FAE5;
+  --amb-3-soft:#DBEAFE;
+  --amb-4-soft:#FFEDD5;
+  --amb-5-soft:#CFFAFE;
 
-  /* Compatibilità Matrix (10 dimensioni) */
-  --amb-6:#2D4FB8; --amb-7:#5C3A7E; --amb-8:#D9A23B;
-  --amb-9:#1F1F1F; --amb-10:#A82A56;
-  --amb-6-soft:#DCE3F4; --amb-7-soft:#E7DEEC; --amb-8-soft:#F6ECD4;
-  --amb-9-soft:#E8E5E1; --amb-10-soft:#F4DEE5;
+  /* Compatibilità Matrix (dimensioni 6-10) */
+  --amb-6:#1D4ED8; --amb-7:#7E22CE; --amb-8:#B45309;
+  --amb-9:#18181B; --amb-10:#BE185D;
+  --amb-6-soft:#E0E7FF; --amb-7-soft:#F3E8FF; --amb-8-soft:#FEF3C7;
+  --amb-9-soft:#E4E4E7; --amb-10-soft:#FCE7F3;
 
-  --danger:#8C2626;
-  --warning:#9A6A14;
-  --success:#2E5E3A;
+  --danger:#C2410C;
+  --warning:#B45309;
+  --success:#0F7B5A;
 
-  --font-display:'EB Garamond',Georgia,serif;
-  --font-italic:'EB Garamond','Instrument Serif',Georgia,serif;
-  --font-ui:'DM Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-display:'Inter Tight','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-italic:'Inter','Inter Tight',sans-serif;
+  --font-ui:'Inter','Inter Tight',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --font-serif:var(--font-display);
   --font-mono:ui-monospace,'JetBrains Mono',monospace;
 
@@ -76,16 +79,16 @@
   --sidebar-w:280px;
   --topbar-h:64px;
 
-  --r-sm:6px;
-  --r-md:10px;
-  --r-lg:14px;
+  --r-sm:8px;
+  --r-md:12px;
+  --r-lg:16px;
   --radius:var(--r-md);
   --radius-lg:var(--r-lg);
 
-  --shadow-soft:0 1px 0 rgba(26,24,21,.04), 0 8px 24px -12px rgba(26,24,21,.10);
+  --shadow-soft:0 0 0 1px rgba(16,16,16,0.04);
   --shadow-1:var(--shadow-soft);
-  --shadow-2:0 4px 16px rgba(26,24,21,.08);
-  --shadow-3:0 10px 32px rgba(26,24,21,.12);
+  --shadow-2:0 1px 3px rgba(16,16,16,0.06), 0 0 0 1px rgba(16,16,16,0.04);
+  --shadow-3:0 8px 24px -8px rgba(16,16,16,0.12), 0 0 0 1px rgba(16,16,16,0.04);
 }
 
 /* ── Accessibilità: 3 livelli testo (data-fontsize = "" | "large" | "xlarge") ───
@@ -171,35 +174,47 @@
 [data-fontsize="xlarge"] .sw-tile-date    { font-size: 12px; }
 
 [data-theme="dark"]{
-  --paper:#1A1815;
-  --paper-2:#15130F;
-  --surface:#211E1A;
-  --surface-2:#1A1815;
-  --rule:#2E2A24;
-  --rule-2:#3A352D;
-  --rule-strong:#FAF8F4;
+  --paper:#0A0A0A;
+  --paper-2:#141414;
+  --surface:#141414;
+  --surface-2:#1F1F1F;
+  --rule:#27272A;
+  --rule-2:#3F3F46;
+  --rule-strong:#FAFAFA;
 
-  --ink:#F2EEE6;
-  --ink-2:#D6D1C6;
-  --ink-3:#9A958B;
-  --ink-4:#6E6A62;
-  --ink-5:#4A4640;
+  --ink:#FAFAFA;
+  --ink-2:#E4E4E7;
+  --ink-3:#A1A1AA;
+  --ink-4:#71717A;
+  --ink-5:#52525B;
 
-  --accent:#F2EEE6;
-  --link:#C4956A;        /* Terra chiara in dark mode */
-  --link-hover:#D9B08C;
+  --accent:#FB6B3D;
+  --accent-soft:#2E1A12;
+  --accent-hover:#FF8761;
+  --link:#FB6B3D;
+  --link-hover:#FF8761;
 
-  --amb-1:#9F90C8;
-  --amb-2:#7AAB8D;
-  --amb-3:#7AA3C5;
-  --amb-4:#C99A6B;
-  --amb-5:#85ADBA;
+  --amb-1:#A78BFA;
+  --amb-2:#34D399;
+  --amb-3:#60A5FA;
+  --amb-4:#FB923C;
+  --amb-5:#22D3EE;
+  --amb-6:#818CF8;
+  --amb-7:#C084FC;
+  --amb-8:#FBBF24;
+  --amb-9:#FAFAFA;
+  --amb-10:#F472B6;
 
-  --amb-1-soft:#2A2434;
-  --amb-2-soft:#1F2C25;
-  --amb-3-soft:#1F2A33;
-  --amb-4-soft:#2F2620;
-  --amb-5-soft:#1F2A2D;
+  --amb-1-soft:#2E1A4D;
+  --amb-2-soft:#0E2920;
+  --amb-3-soft:#1E2540;
+  --amb-4-soft:#2E1A0A;
+  --amb-5-soft:#0F2A2E;
+  --amb-6-soft:#1A1F3E;
+  --amb-7-soft:#2A0E3F;
+  --amb-8-soft:#2A1E04;
+  --amb-9-soft:#27272A;
+  --amb-10-soft:#3E1029;
 }
 
 *{box-sizing:border-box}
@@ -209,18 +224,27 @@ html{ font-size:16px; line-height:1.5; height:100vh; overflow:hidden; }
 body{
   font-family:var(--font-ui);
   font-size:1rem;
-  line-height:1.6;
+  line-height:1.55;
   color:var(--ink);
   background:var(--paper);
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
+  font-feature-settings:'cv11','ss01';
+  letter-spacing:-0.005em;
   height:100vh;
   overflow:hidden;
 }
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;padding:0}
-.serif{font-family:var(--font-display);letter-spacing:-0.01em}
-.italic{font-family:var(--font-italic);font-style:italic;letter-spacing:0}
+.serif,
+.display{font-family:var(--font-display);letter-spacing:-0.02em;font-weight:500}
+.italic{font-family:var(--font-display);font-style:normal;letter-spacing:-0.01em}
+
+h1,h2,h3,h4{font-family:var(--font-display);letter-spacing:-0.025em;line-height:1.15;font-weight:500;margin:0}
+h1{font-size:2.25rem;font-weight:600}
+h2{font-size:1.625rem}
+h3{font-size:1.25rem}
+h4{font-size:1.0625rem}
 
 /* ==========================================================
    APP LAYOUT
@@ -1108,7 +1132,7 @@ body.is-home-page .topbar-search{display:none}
   font-weight:700; letter-spacing:.08em; text-transform:uppercase;
   padding:2px 7px; border-radius:3px; margin-right:4px;
 }
-.sr-badge.bando{ background:var(--accent-soft,#EEF0FF); color:var(--accent,#3B4FBE); }
+.sr-badge.bando{ background:var(--accent-soft,#EEF0FF); color:var(--accent,var(--amb-6,#1D4ED8)); }
 .sr-badge.urgente{ background:#FFF0F0; color:#B91C1C; }
 
 /* ==========================================================
@@ -1720,8 +1744,8 @@ body.is-home-page .topbar-search{display:none}
   padding:1px 5px; border-radius:3px;
   background:var(--paper-2);
 }
-.nr-score.high{ background:#E8F5E9; color:#1B5E20; }
-.nr-score.med { background:#FFF8E1; color:#7B4F00; }
+.nr-score.high{ background:#E8F5E9; color:var(--success,#0F7B5A); }
+.nr-score.med { background:#FFF8E1; color:var(--amb-8,#B45309); }
 
 /* ---- Social Wall — avatar circolare -------------------------------- */
 .sw-avatar{
@@ -1849,7 +1873,7 @@ body.is-home-page .topbar-search{display:none}
 .pd-show{
   display:inline-block;
   background:#FFF3E0;
-  color:#7B4F00;
+  color:var(--amb-8,#B45309);
   font-family:var(--font-ui);
   font-size:0.875rem; font-weight:700;
   letter-spacing:.06em; text-transform:uppercase;
@@ -1866,7 +1890,7 @@ body.is-home-page .topbar-search{display:none}
 .lb-editore{
   display:inline-block;
   background:#F3F0FF;
-  color:#4A3F7A;
+  color:var(--amb-1,#7C3AED);
   font-family:var(--font-ui);
   font-size:0.75rem; font-weight:700;
   letter-spacing:.06em; text-transform:uppercase;
@@ -1953,7 +1977,7 @@ body.is-home-page .topbar-search{display:none}
 .vd-canale{
   display:inline-block;
   background:#FFEBEE;
-  color:#B71C1C;
+  color:var(--danger,#C2410C);
   font-family:var(--font-ui);
   font-size:0.75rem; font-weight:700;
   letter-spacing:.06em; text-transform:uppercase;
@@ -1965,7 +1989,7 @@ body.is-home-page .topbar-search{display:none}
 /* Badge "Recente" */
 .recente-badge{
   background:#E8F5E9 !important;
-  color:#1B5E20 !important;
+  color:var(--success,#0F7B5A) !important;
   font-weight:700 !important;
 }
 
@@ -2344,7 +2368,7 @@ body.is-home-page .topbar-search{display:none}
 
 /* Cestino — rosso */
 .act-btn.act-trash {
-  color: #991B1B;
+  color: var(--danger,#C2410C);
   border-color: #DC2626;
   background: #FEF2F2;
 }
@@ -2352,8 +2376,8 @@ body.is-home-page .topbar-search{display:none}
 
 /* Letto — verde */
 .act-btn.act-read {
-  color: #065F46;
-  border-color: #059669;
+  color: var(--success,#0F7B5A);
+  border-color: var(--success,#0F7B5A);
   background: #ECFDF5;
 }
 .act-btn.act-read:hover { background: #D1FAE5; }
@@ -2365,8 +2389,8 @@ body.is-home-page .topbar-search{display:none}
   background: var(--surface-2, #F0EDE6); color: var(--ink-3);
   letter-spacing: .02em;
 }
-.score-badge.high { background: #E6F4EE; color: #0F6E56; }
-.score-badge.med  { background: #FFF3E0; color: #8B4513; }
+.score-badge.high { background: #E6F4EE; color: var(--success,#0F7B5A); }
+.score-badge.med  { background: #FFF3E0; color: var(--accent,#E84B1C); }
 
 /* ============================================================
    BR-ROW — Radar Bandi: scheda in griglia 2 colonne
@@ -2399,20 +2423,20 @@ body.is-home-page .topbar-search{display:none}
   background: var(--surface-2); color: var(--ink-3);
   white-space: nowrap;
 }
-.br-a1 { background: #EDE8F5; color: #6B5C9A; }
-.br-a2 { background: #E4F0EA; color: #3F7A5E; }
-.br-a3 { background: #E1ECF5; color: #3C6A95; }
-.br-a4 { background: #F5EDE0; color: #8B4513; }
-.br-a5 { background: #E3F0F2; color: #4A7884; }
+.br-a1 { background: #EDE8F5; color: var(--amb-1,#7C3AED); }
+.br-a2 { background: #E4F0EA; color: var(--amb-2,#10916D); }
+.br-a3 { background: #E1ECF5; color: var(--amb-3,#2563EB); }
+.br-a4 { background: #F5EDE0; color: var(--accent,#E84B1C); }
+.br-a5 { background: #E3F0F2; color: var(--amb-5,#0E7490); }
 
 /* Badge urgenza / nuovo */
 .br-badge-urgent {
   font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700;
-  color: #991B1B; background: #FEF2F2; padding: 3px 9px; border-radius: 20px;
+  color: var(--danger,#C2410C); background: #FEF2F2; padding: 3px 9px; border-radius: 20px;
 }
 .br-badge-new {
   font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700;
-  color: #065F46; background: #ECFDF5; padding: 3px 9px; border-radius: 20px;
+  color: var(--success,#0F7B5A); background: #ECFDF5; padding: 3px 9px; border-radius: 20px;
 }
 
 /* Titolo */
@@ -2438,7 +2462,7 @@ body.is-home-page .topbar-search{display:none}
 }
 .br-ente { font-weight: 600; color: var(--ink-2); }
 .br-sep { color: var(--rule-2); }
-.br-importo-inline { color: #065F46; font-weight: 600; }
+.br-importo-inline { color: var(--success,#0F7B5A); font-weight: 600; }
 .br-rilev { font-style: italic; color: var(--ink-4, var(--ink-3)); }
 
 /* ── DESTRA ── */
@@ -2462,7 +2486,7 @@ body.is-home-page .topbar-search{display:none}
   padding: 2px 8px; border-radius: 20px; margin-top: 3px;
   background: var(--surface-2); color: var(--ink-3);
 }
-.br-gd-urgent { background: #FEE2E2; color: #991B1B; }
+.br-gd-urgent { background: #FEE2E2; color: var(--danger,#C2410C); }
 .br-gd-med    { background: #FEF3C7; color: #92400E; }
 .br-gd-ok     { background: var(--surface-2); color: var(--ink-3); }
 
@@ -2491,25 +2515,25 @@ body.is-home-page .topbar-search{display:none}
   cursor: pointer; white-space: nowrap; line-height: 1;
   transition: all .15s; display: inline-flex; align-items: center; gap: 3px;
 }
-.br-act-read  { color: #3F7A5E; border-color: #3F7A5E; background: #F0F7F3; }
+.br-act-read  { color: var(--amb-2,#10916D); border-color: var(--amb-2,#10916D); background: #F0F7F3; }
 .br-act-read:hover  { background: #DCEEe3; }
-.br-act-arch  { color: #8B4513; border-color: #B8902A; background: #FBF7EE; }
+.br-act-arch  { color: var(--accent,#E84B1C); border-color: var(--amb-8,#B45309); background: #FBF7EE; }
 .br-act-arch:hover  { background: #F4ECDF; }
-.br-act-trash { color: #8C2626; border-color: #B04040; background: #FDF2F2; }
+.br-act-trash { color: var(--danger,#C2410C); border-color: var(--danger,#C2410C); background: #FDF2F2; }
 .br-act-trash:hover { background: #F8DADA; }
-.br-act-save  { color: #78716C; border-color: #A8A29E; background: #FAFAF9; font-size: 1rem; padding: 4px 8px; }
-.br-act-save:hover { background: #F4ECDF; border-color: #B8902A; color: #8B4513; }
-.br-act-save-on { color: #8B4513; border-color: #B8902A; background: #F4ECDF; }
+.br-act-save  { color: var(--ink-3,#6E6E73); border-color: var(--ink-4,#A1A1A6); background: #FAFAF9; font-size: 1rem; padding: 4px 8px; }
+.br-act-save:hover { background: #F4ECDF; border-color: var(--amb-8,#B45309); color: var(--accent,#E84B1C); }
+.br-act-save-on { color: var(--accent,#E84B1C); border-color: var(--amb-8,#B45309); background: #F4ECDF; }
 .br-act-save-on:hover { background: #EDE0CA; }
 
 /* Dark mode — bottoni azione */
-[data-theme="dark"] .br-act-read  { color: #34D399; border-color: #059669; background: rgba(6,95,70,.18); }
+[data-theme="dark"] .br-act-read  { color: #34D399; border-color: var(--success,#0F7B5A); background: rgba(6,95,70,.18); }
 [data-theme="dark"] .br-act-read:hover  { background: rgba(6,95,70,.32); }
 [data-theme="dark"] .br-act-arch  { color: #FCD34D; border-color: #D97706; background: rgba(146,64,14,.18); }
 [data-theme="dark"] .br-act-arch:hover  { background: rgba(146,64,14,.32); }
 [data-theme="dark"] .br-act-trash { color: #FCA5A5; border-color: #DC2626; background: rgba(153,27,27,.18); }
 [data-theme="dark"] .br-act-trash:hover { background: rgba(153,27,27,.32); }
-[data-theme="dark"] .br-act-save  { color: #A8A29E; border-color: #57534E; background: rgba(30,28,24,.5); }
+[data-theme="dark"] .br-act-save  { color: var(--ink-4,#A1A1A6); border-color: var(--ink-2,#3A3A3C); background: rgba(30,28,24,.5); }
 [data-theme="dark"] .br-act-save:hover { background: rgba(120,90,14,.22); border-color: #EAB308; color: #FCD34D; }
 [data-theme="dark"] .br-act-save-on { color: #FCD34D; border-color: #EAB308; background: rgba(120,90,14,.28); }
 [data-theme="dark"] .br-act-save-on:hover { background: rgba(120,90,14,.42); }
@@ -2565,9 +2589,9 @@ body.is-home-page .topbar-search{display:none}
   transition: opacity .3s, transform .3s;
 }
 .oc-toast.out { opacity: 0; transform: translateY(8px); }
-.oc-toast.ok   { background: #065F46; }
+.oc-toast.ok   { background: var(--success,#0F7B5A); }
 .oc-toast.warn { background: #92400E; }
-.oc-toast.err  { background: #991B1B; }
+.oc-toast.err  { background: var(--danger,#C2410C); }
 .oc-toast svg  { flex-shrink: 0; opacity: .9; }
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(12px); }
@@ -2876,7 +2900,7 @@ body.is-home-page .topbar-search{display:none}
 .home-list-row .hlr-urgent {
   font-family: var(--font-ui);
   font-size: 0.75rem; font-weight: 700;
-  color: #991B1B;
+  color: var(--danger,#C2410C);
   background: #FEF2F2;
   padding: 2px 7px; border-radius: 20px;
 }
@@ -2919,7 +2943,7 @@ body.is-home-page .topbar-search{display:none}
   white-space: nowrap;
 }
 .hlr-stars .star { font-size: 0.9375rem; line-height: 1; }
-.hlr-stars .star.on  { color: var(--amb, #8B4513); }
+.hlr-stars .star.on  { color: var(--amb, var(--accent,#E84B1C)); }
 .hlr-stars .star.off { color: var(--rule-2); }
 
 /* Skeleton per home list — usa sistema .skeleton unificato */
@@ -2944,23 +2968,4 @@ body.is-home-page .topbar-search{display:none}
 .pod-compact-row:hover { opacity: .75; }
 .pod-compact-row .pod-icon {
   width: 36px; height: 36px;
-  background: var(--amb-soft, var(--surface-2));
-  border-radius: 8px;
-  display: grid; place-items: center;
-  color: var(--amb, var(--ink-3));
-  flex-shrink: 0;
-}
-.pod-compact-row .pod-info { min-width: 0; }
-.pod-compact-row .pod-title-s {
-  font-family: var(--font-display);
-  font-size: 1.0625rem; font-weight: 500;
-  color: var(--ink); line-height: 1.3;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.pod-compact-row .pod-meta-s {
-  font-family: var(--font-ui);
-  font-size: 0.875rem; color: var(--ink-4);
-  margin-top: 2px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-</style>
+  background: var(--amb-soft, var(--surfac

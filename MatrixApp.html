@@ -32,7 +32,7 @@
 <style>
   /* ============================================================
      MATRIX APP — Editoriale Museale (v4.12 — Carta da museo)
-     Allineato a Stiles.html v4.12: --paper, --ink, --link, --font-display (Newsreader), --font-italic (Instrument Serif)
+     Allineato a Styles.html v5.0: --paper, --ink, --link, --font-display (Inter Tight), --font-ui (Inter)
      ============================================================ */
   .mx-app { font-family: var(--font-ui); color: var(--ink); }
 
@@ -135,48 +135,48 @@
   /* Radar dimensioni — visualizzazione a barre orizzontali */
   .mx-dim-bars { display: grid; gap: 10px; }
   .mx-dim-row { display: grid; grid-template-columns: 240px 1fr 60px; gap: 14px; align-items: center; }
-  .mx-dim-name { font-size: 13px; color: var(--ink-2, #374151); font-weight: 500; }
-  .mx-dim-bar-track { background: #F0EDE8; height: 14px; border-radius: 999px; overflow: hidden; position: relative; }
+  .mx-dim-name { font-size: 13px; color: var(--ink-2, var(--ink-2,#3A3A3C)); font-weight: 500; }
+  .mx-dim-bar-track { background: var(--surface-2,#EFEFF1); height: 14px; border-radius: 999px; overflow: hidden; position: relative; }
   .mx-dim-bar-fill { height: 100%; transition: width .8s ease; border-radius: 999px; }
-  .mx-dim-bar-fill.low { background: #E07A5F; }
-  .mx-dim-bar-fill.mid { background: #B8902A; }
-  .mx-dim-bar-fill.high { background: #0F6E56; }
-  .mx-dim-score { font-size: 14px; font-weight: 700; color: var(--ink, #111827); text-align: right; }
+  .mx-dim-bar-fill.low { background: var(--accent,#E84B1C); }
+  .mx-dim-bar-fill.mid { background: var(--amb-8,#B45309); }
+  .mx-dim-bar-fill.high { background: var(--success,#0F7B5A); }
+  .mx-dim-score { font-size: 14px; font-weight: 700; color: var(--ink, var(--ink,#101010)); text-align: right; }
 
   /* Top 3 opportunità */
   .mx-opp-list { display: grid; gap: 14px; }
-  .mx-opp-card { border: 1px solid #E7E5E0; border-radius: 10px; padding: 18px 20px; background: #fff; border-left: 4px solid #B8902A; }
-  .mx-opp-card .mx-opp-rank { font-size: 11px; color: #B8902A; font-weight: 700; letter-spacing: .08em; }
-  .mx-opp-card h3 { margin: 4px 0 6px; font-size: 16px; color: #185FA5; }
-  .mx-opp-card .mx-opp-meta { font-size: 12px; color: var(--ink-3, #6B7280); margin-bottom: 8px; }
-  .mx-opp-card .mx-opp-reading { font-size: 13px; color: var(--ink-2, #374151); }
+  .mx-opp-card { border: 1px solid var(--rule,#E5E5E7); border-radius: 10px; padding: 18px 20px; background: #fff; border-left: 4px solid var(--amb-8,#B45309); }
+  .mx-opp-card .mx-opp-rank { font-size: 11px; color: var(--amb-8,#B45309); font-weight: 700; letter-spacing: .08em; }
+  .mx-opp-card h3 { margin: 4px 0 6px; font-size: 16px; color: var(--amb-6,#1D4ED8); }
+  .mx-opp-card .mx-opp-meta { font-size: 12px; color: var(--ink-3, var(--ink-3,#6E6E73)); margin-bottom: 8px; }
+  .mx-opp-card .mx-opp-reading { font-size: 13px; color: var(--ink-2, var(--ink-2,#3A3A3C)); }
 
   /* Servizi raccomandati */
   .mx-services { display: grid; gap: 12px; }
-  .mx-service-card { border: 1px solid #E7E5E0; border-radius: 10px; padding: 14px 18px; background: #FAFAF7; }
-  .mx-service-card .mx-service-code { font-size: 11px; color: #185FA5; font-weight: 700; }
-  .mx-service-card h4 { margin: 4px 0; font-size: 14px; color: var(--ink, #111827); }
-  .mx-service-card p { margin: 0; font-size: 12px; color: var(--ink-3, #6B7280); line-height: 1.5; }
+  .mx-service-card { border: 1px solid var(--rule,#E5E5E7); border-radius: 10px; padding: 14px 18px; background: var(--surface,#F7F7F8); }
+  .mx-service-card .mx-service-code { font-size: 11px; color: var(--amb-6,#1D4ED8); font-weight: 700; }
+  .mx-service-card h4 { margin: 4px 0; font-size: 14px; color: var(--ink, var(--ink,#101010)); }
+  .mx-service-card p { margin: 0; font-size: 12px; color: var(--ink-3, var(--ink-3,#6E6E73)); line-height: 1.5; }
 
   /* Roadmap fasi */
   .mx-roadmap { display: grid; gap: 12px; }
   .mx-phase { padding: 16px 20px; border-radius: 10px; }
-  .mx-phase-1 { background: #FFF8E5; border-left: 4px solid #B8902A; }
-  .mx-phase-2 { background: #F4ECDF; border-left: 4px solid #2E5266; }
-  .mx-phase-3 { background: #E8F2FB; border-left: 4px solid #185FA5; }
-  .mx-phase h4 { margin: 0 0 6px; font-size: 14px; color: var(--ink, #111827); }
-  .mx-phase p { margin: 4px 0; font-size: 13px; color: var(--ink-2, #374151); line-height: 1.5; }
+  .mx-phase-1 { background: var(--amb-8-soft,#FEF3C7); border-left: 4px solid var(--amb-8,#B45309); }
+  .mx-phase-2 { background: var(--accent-soft,#FCEEE7); border-left: 4px solid var(--ink-2,#3A3A3C); }
+  .mx-phase-3 { background: var(--amb-3-soft,#DBEAFE); border-left: 4px solid var(--amb-6,#1D4ED8); }
+  .mx-phase h4 { margin: 0 0 6px; font-size: 14px; color: var(--ink, var(--ink,#101010)); }
+  .mx-phase p { margin: 4px 0; font-size: 13px; color: var(--ink-2, var(--ink-2,#3A3A3C)); line-height: 1.5; }
 
   /* CTA finale */
-  .mx-cta { background: linear-gradient(135deg, #185FA5, #0F6E56); color: #fff; padding: 28px 32px; border-radius: 12px; margin-top: 20px; text-align: center; }
+  .mx-cta { background: var(--ink,#101010); color: #fff; padding: 28px 32px; border-radius: 12px; margin-top: 20px; text-align: center; }
   .mx-cta h3 { margin: 0 0 10px; font-family: var(--font-serif, 'Source Serif 4', serif); font-size: 22px; }
   .mx-cta p { margin: 0 0 16px; font-size: 14px; opacity: .92; }
-  .mx-cta .mx-btn-primary { background: #B8902A; }
-  .mx-cta .mx-btn-primary:hover { background: #A07F22; }
+  .mx-cta .mx-btn-primary { background: var(--amb-8,#B45309); }
+  .mx-cta .mx-btn-primary:hover { background: var(--accent-hover,#C23A11); }
 
   /* Loading / errori */
-  .mx-loading { text-align: center; padding: 60px 20px; color: var(--ink-3, #6B7280); }
-  .mx-error { background: #FBECEC; color: #8B1E1E; padding: 16px 20px; border-radius: 8px; margin: 12px 0; font-size: 13px; border-left: 4px solid #8B1E1E; }
+  .mx-loading { text-align: center; padding: 60px 20px; color: var(--ink-3, var(--ink-3,#6E6E73)); }
+  .mx-error { background: var(--accent-soft,#FCEEE7); color: var(--danger,#C2410C); padding: 16px 20px; border-radius: 8px; margin: 12px 0; font-size: 13px; border-left: 4px solid var(--danger,#C2410C); }
 
   /* Mobile */
   @media (max-width: 720px) {
@@ -281,7 +281,7 @@
 
   function _showDraftToast_() {
     var el = document.createElement('div');
-    el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#3A2818;color:#F2EEE6;padding:12px 20px;border-radius:8px;font-size:13px;font-family:var(--font-ui,sans-serif);z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.15);display:flex;align-items:center;gap:12px';
+    el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink,#101010);color:var(--paper,#FFFFFF);padding:12px 20px;border-radius:8px;font-size:13px;font-family:var(--font-ui,sans-serif);z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.15);display:flex;align-items:center;gap:12px';
     el.innerHTML = 'Bozza precedente ripristinata <button onclick="this.parentElement.remove()" style="background:rgba(255,255,255,.2);color:#fff;border:none;padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-family:inherit">OK</button>';
     document.body.appendChild(el);
     setTimeout(function(){ if (el.parentElement) el.remove(); }, 5000);
@@ -385,7 +385,7 @@
         + '  </div>'
         + '  <div class="mx-section">'
         + '    <p style="font-size:14px;line-height:1.6;color:#444">Rispondi alle domande in modo sincero: non esiste una risposta giusta. Al termine riceverai una <b>diagnosi immediata</b> sulla dimensione analizzata e suggerimenti operativi personalizzati.</p>'
-        + '    <div style="background:#F4ECDF;padding:14px 18px;border-radius:8px;font-size:13px;color:#555;margin-top:16px">'
+        + '    <div style="background:var(--accent-soft,#FCEEE7);padding:14px 18px;border-radius:8px;font-size:13px;color:#555;margin-top:16px">'
         + '      <b>Privacy.</b> Compilazione anonima (UUID). Nessun dato personale obbligatorio. Conforme GDPR.'
         + '    </div>'
         + '  </div>'
@@ -414,21 +414,21 @@
       + '    <h2>Come funziona</h2>'
       + '    <p class="mx-section-sub">Il questionario è adattivo: se siete all\'inizio del percorso su una dimensione, il sistema salta gli approfondimenti. Niente domande inutili.</p>'
       + '    <div style="display:grid;gap:14px;margin:18px 0">'
-      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:#185FA5;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">1</div><div><b>Anagrafica</b> · 5 dati anonimi sull\'istituzione (~1 min)</div></div>'
-      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:#185FA5;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">2</div><div><b>43 domande</b> sulle 10 dimensioni · adattive · linguaggio costruttivo, mai giudicante (~7-10 min)</div></div>'
-      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:#185FA5;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">3</div><div><b>Le vostre priorità</b> · 6 domande di riflessione (~2 min)</div></div>'
-      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:#0F6E56;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">✓</div><div><b>Report personalizzato</b> · profilo del vostro museo + 3 opportunità di sviluppo prioritarie + servizi pertinenti</div></div>'
+      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:var(--amb-6,#1D4ED8);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">1</div><div><b>Anagrafica</b> · 5 dati anonimi sull\'istituzione (~1 min)</div></div>'
+      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:var(--amb-6,#1D4ED8);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">2</div><div><b>43 domande</b> sulle 10 dimensioni · adattive · linguaggio costruttivo, mai giudicante (~7-10 min)</div></div>'
+      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:var(--amb-6,#1D4ED8);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">3</div><div><b>Le vostre priorità</b> · 6 domande di riflessione (~2 min)</div></div>'
+      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:var(--success,#0F7B5A);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">✓</div><div><b>Report personalizzato</b> · profilo del vostro museo + 3 opportunità di sviluppo prioritarie + servizi pertinenti</div></div>'
       + '    </div>'
-      + '    <div style="background:#F4ECDF;padding:14px 18px;border-radius:8px;font-size:13px;color:#555;margin-top:16px">'
+      + '    <div style="background:var(--accent-soft,#FCEEE7);padding:14px 18px;border-radius:8px;font-size:13px;color:#555;margin-top:16px">'
       + '      <b>Privacy.</b> La compilazione è completamente anonima (UUID generato automaticamente). Nessun dato personale obbligatorio. Solo se al termine vorrete ricevere informazioni di follow-up vi sarà chiesta un\'email, conservata in tabella separata. Trattamento dati conforme al Regolamento UE 2016/679 (GDPR).'
       + '    </div>'
 
       // v4.18.37 — Opt-in MiC SM-LUQV (default disattivato)
-      + '    <div style="margin-top:18px;padding:16px 20px;background:linear-gradient(135deg,#FBF7EE 0%,#F4ECD8 100%);border:1px solid #D9C896;border-left:3px solid #8B4513;border-radius:8px">'
+      + '    <div style="margin-top:18px;padding:16px 20px;background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-left:3px solid var(--accent,#E84B1C);border-radius:8px">'
       + '      <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-family:inherit">'
-      + '        <input type="checkbox" id="mxOptInMiC" style="margin-top:3px;width:18px;height:18px;cursor:pointer;flex-shrink:0;accent-color:#8B4513" />'
-      + '        <span style="flex:1;font-size:13.5px;line-height:1.55;color:#5C3D17">'
-      + '          <b style="display:block;font-size:14px;margin-bottom:4px;color:#8B5E2B;letter-spacing:.02em"> Aggiungi la valutazione ministeriale (opzionale)</b>'
+      + '        <input type="checkbox" id="mxOptInMiC" style="margin-top:3px;width:18px;height:18px;cursor:pointer;flex-shrink:0;accent-color:var(--accent,#E84B1C)" />'
+      + '        <span style="flex:1;font-size:13.5px;line-height:1.55;color:var(--ink-2,#3A3A3C)">'
+      + '          <b style="display:block;font-size:14px;margin-bottom:4px;color:var(--accent-hover,#C23A11);letter-spacing:.02em"> Aggiungi la valutazione ministeriale (opzionale)</b>'
       + '          Vuoi anche il <b>secondo report sui requisiti minimi del MiC</b> (autovalutazione SM-LUQV — DM 113/2018, Allegato A4)? Il sistema riusa <b>22 risposte su 29</b> dal Matrix e ti chiede solo <b>7 informazioni aggiuntive</b> al termine. Tempo extra: ~3 minuti. Riceverai una sezione aggiuntiva nel PDF finale con la percentuale di compliance e i gap critici.'
       + '        </span>'
       + '      </label>'
@@ -525,7 +525,7 @@
     html += '<div class="mx-section">';
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px">';
     html += '<h2>' + esc(dim.code) + ' — ' + esc(dim.name) + '</h2>';
-    html += '<span style="color:#6B7280;font-size:12px">Dimensione ' + (state.currentDimensionIndex + 1) + ' di ' + totalDim + '</span>';
+    html += '<span style="color:var(--ink-3,#6E6E73);font-size:12px">Dimensione ' + (state.currentDimensionIndex + 1) + ' di ' + totalDim + '</span>';
     html += '</div>';
     html += '<p class="mx-section-sub">' + esc(dim.subDimensions.join(' · ')) + '</p>';
 
@@ -624,7 +624,7 @@
       });
       if (q.allowOther) {
         var otherVal = (state.responses[q.code + '_other'] || '');
-        html += '<div class="mx-ms-other"><span style="font-size:13px;color:#6B7280">Altro non compreso sopra:</span><input type="text" data-ms-other="' + esc(q.code) + '" placeholder="Specifica…" value="' + esc(otherVal) + '"/></div>';
+        html += '<div class="mx-ms-other"><span style="font-size:13px;color:var(--ink-3,#6E6E73)">Altro non compreso sopra:</span><input type="text" data-ms-other="' + esc(q.code) + '" placeholder="Specifica…" value="' + esc(otherVal) + '"/></div>';
       }
       html += '</div>';
     } else if (q.type === 'factual_single') {
@@ -887,14 +887,14 @@
         scales: {
           r: {
             min: 0, max: 100,
-            ticks: { stepSize: 25, color: '#9A958B', font: { size: 10 }, backdropColor: 'transparent' },
+            ticks: { stepSize: 25, color: 'var(--ink-4,#A1A1A6)', font: { size: 10 }, backdropColor: 'transparent' },
             grid: { color: 'rgba(26,24,21,0.08)' },
             angleLines: { color: 'rgba(26,24,21,0.10)' },
-            pointLabels: { color: '#1A1815', font: { size: 13, weight: '600' } }
+            pointLabels: { color: 'var(--ink,#101010)', font: { size: 13, weight: '600' } }
           }
         },
         plugins: {
-          legend: { position: 'bottom', labels: { color: '#3A3631', font: { size: 12 }, padding: 14 } },
+          legend: { position: 'bottom', labels: { color: 'var(--ink-2,#3A3A3C)', font: { size: 12 }, padding: 14 } },
           tooltip: { callbacks: { label: function(ctx){ return ctx.dataset.label + ': ' + ctx.parsed.r; } } }
         }
       }
@@ -922,24 +922,24 @@
     html += '</div>';
 
     // Sprint 2 Step 4 — Barra azioni report (PDF download + email)
-    html += '<div class="mx-section" style="background:#F5F0E1;border-left:3px solid #B8902A;padding:18px 20px;margin-top:18px">';
+    html += '<div class="mx-section" style="background:var(--accent-soft,#FCEEE7);border-left:3px solid var(--amb-8,#B45309);padding:18px 20px;margin-top:18px">';
     html += '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between">';
     html += '<div>';
-    html += '<div style="font-size:13px;color:#6B5418;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Il vostro report PDF è pronto</div>';
-    html += '<div style="font-size:13px;color:#6B5418;margin-top:2px">Scaricalo, condividilo internamente o ricevilo via email per archivio.</div>';
+    html += '<div style="font-size:13px;color:var(--ink-3,#6E6E73);font-weight:600;letter-spacing:.04em;text-transform:uppercase">Il vostro report PDF è pronto</div>';
+    html += '<div style="font-size:13px;color:var(--ink-3,#6E6E73);margin-top:2px">Scaricalo, condividilo internamente o ricevilo via email per archivio.</div>';
     html += '</div>';
     html += '<div style="display:flex;gap:10px;flex-wrap:wrap">';
     html += '<button class="mx-btn mx-btn-primary" id="mxBtnDownloadPDF">📄 Scarica PDF</button>';
-    html += '<button class="mx-btn" id="mxBtnEmailJump" style="background:#fff;border:1px solid #B8902A;color:#6B5418">✉️ Inviamelo per email</button>';
+    html += '<button class="mx-btn" id="mxBtnEmailJump" style="background:#fff;border:1px solid var(--amb-8,#B45309);color:var(--ink-3,#6E6E73)">✉️ Inviamelo per email</button>';
     html += '</div>';
     html += '</div>';
-    html += '<div id="mxPdfStatus" style="margin-top:10px;font-size:13px;color:#6B5418"></div>';
+    html += '<div id="mxPdfStatus" style="margin-top:10px;font-size:13px;color:var(--ink-3,#6E6E73)"></div>';
     html += '</div>';
 
     // Descrizione profilo
     html += '<div class="mx-section">';
     html += '<h2>Lettura del vostro profilo</h2>';
-    html += '<p style="font-size:14px;line-height:1.7;color:#374151;margin-top:8px">' + esc(r.profileDescription) + '</p>';
+    html += '<p style="font-size:14px;line-height:1.7;color:var(--ink-2,#3A3A3C);margin-top:8px">' + esc(r.profileDescription) + '</p>';
     html += '</div>';
 
     // Radar chart Chart.js (S3.2 2026-05-11) — confronto user vs benchmark dinamico
@@ -988,7 +988,7 @@
       html += '<div class="mx-section">';
       html += '<h2>Consigli per l\'azione</h2>';
       html += '<p class="mx-section-sub">Per ciascuna dimensione carente, finanziamenti attivi che potrebbero supportare il vostro sviluppo.</p>';
-      html += '<div id="mxBandiConsigli"><div style="padding:20px;color:var(--ink-3,#6E6A62);font-size:13px">Caricamento bandi correlati…</div></div>';
+      html += '<div id="mxBandiConsigli"><div style="padding:20px;color:var(--ink-3,var(--ink-3,#6E6E73));font-size:13px">Caricamento bandi correlati…</div></div>';
       html += '</div>';
     }
 
@@ -1050,23 +1050,23 @@
     // ====== v4.18.28 — ESTENSIONE MiC SM-LUQV (DM 113/2018) ======
     // v4.18.37 — Se l'utente ha scelto opt-in all'inizio, la card opzionale è sostituita da un
     //            banner di transizione e il wizard MiC parte automaticamente. Altrimenti card standard.
-    html += '<section id="mxMicAnchor" class="mx-section" style="background:linear-gradient(135deg,#FBF7EE 0%,#F4ECD8 100%);border:1px solid #D9C896;border-left:4px solid #8B4513;border-radius:14px;padding:28px 32px;margin-top:24px;position:relative;overflow:hidden">';
-    html += '<span aria-hidden="true" style="position:absolute;top:-30px;right:-10px;font-size:160px;color:#8B4513;opacity:.06;line-height:1;pointer-events:none"></span>';
+    html += '<section id="mxMicAnchor" class="mx-section" style="background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-left:4px solid var(--accent,#E84B1C);border-radius:14px;padding:28px 32px;margin-top:24px;position:relative;overflow:hidden">';
+    html += '<span aria-hidden="true" style="position:absolute;top:-30px;right:-10px;font-size:160px;color:var(--accent,#E84B1C);opacity:.06;line-height:1;pointer-events:none"></span>';
     html += '<div style="position:relative;z-index:1">';
     if (state.includeMiC) {
-      html += '<div style="font-family:var(--font-ui,sans-serif);font-size:10.5px;color:#8B5E2B;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Valutazione ministeriale in arrivo</div>';
-      html += '<h3 style="font-family:var(--font-display,Georgia,serif);font-size:1.4rem;line-height:1.2;margin:0 0 12px;color:#5C3D17;font-weight:500">Stiamo preparando la sezione <em>Standard Minimi MiC</em></h3>';
-      html += '<p style="font-family:var(--font-display,Georgia,serif);font-size:14px;color:#5C3D17;line-height:1.6;margin:0 0 8px">Hai scelto di integrare la valutazione ministeriale all\'inizio del questionario. Il sistema sta caricando le risposte pre-compilate dal Matrix e ti chiederà solo le 7 informazioni aggiuntive (statuto, orari, visitatori, segnaletica). La sezione di compliance sarà aggiunta sotto questo report e inclusa nel PDF finale.</p>';
-      html += '<div id="mxMicStatus" style="margin-top:10px;font-size:13px;color:#8B5E2B;font-weight:600">⏳ Caricamento in corso…</div>';
+      html += '<div style="font-family:var(--font-ui,sans-serif);font-size:10.5px;color:var(--accent-hover,#C23A11);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Valutazione ministeriale in arrivo</div>';
+      html += '<h3 style="font-family:var(--font-display,Georgia,serif);font-size:1.4rem;line-height:1.2;margin:0 0 12px;color:var(--ink-2,#3A3A3C);font-weight:500">Stiamo preparando la sezione <em>Standard Minimi MiC</em></h3>';
+      html += '<p style="font-family:var(--font-display,Georgia,serif);font-size:14px;color:var(--ink-2,#3A3A3C);line-height:1.6;margin:0 0 8px">Hai scelto di integrare la valutazione ministeriale all\'inizio del questionario. Il sistema sta caricando le risposte pre-compilate dal Matrix e ti chiederà solo le 7 informazioni aggiuntive (statuto, orari, visitatori, segnaletica). La sezione di compliance sarà aggiunta sotto questo report e inclusa nel PDF finale.</p>';
+      html += '<div id="mxMicStatus" style="margin-top:10px;font-size:13px;color:var(--accent-hover,#C23A11);font-weight:600">⏳ Caricamento in corso…</div>';
     } else {
-      html += '<div style="font-family:var(--font-ui,sans-serif);font-size:10.5px;color:#8B5E2B;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Estensione opzionale &middot; Standard ministeriali</div>';
-      html += '<h3 style="font-family:var(--font-display,Georgia,serif);font-size:1.4rem;line-height:1.2;margin:0 0 12px;color:#5C3D17;font-weight:500">Vuoi anche valutarti sugli <em>Standard Minimi di Qualità MiC</em>?</h3>';
-      html += '<p style="font-family:var(--font-display,Georgia,serif);font-size:14px;color:#5C3D17;line-height:1.6;margin:0 0 16px;max-width:680px">Il questionario di autovalutazione del Ministero della Cultura (Allegato A4 · DM 113/2018) verifica i 25 Standard Minimi necessari per il riconoscimento al Sistema Museale Nazionale e per l\'accesso a numerosi bandi MiC. <b>22 risposte su 29 le ricaviamo direttamente dal tuo Matrix</b>; servono solo 7 informazioni aggiuntive (statuto, orari, visitatori, segnaletica). Tempo: ~3 minuti.</p>';
+      html += '<div style="font-family:var(--font-ui,sans-serif);font-size:10.5px;color:var(--accent-hover,#C23A11);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Estensione opzionale &middot; Standard ministeriali</div>';
+      html += '<h3 style="font-family:var(--font-display,Georgia,serif);font-size:1.4rem;line-height:1.2;margin:0 0 12px;color:var(--ink-2,#3A3A3C);font-weight:500">Vuoi anche valutarti sugli <em>Standard Minimi di Qualità MiC</em>?</h3>';
+      html += '<p style="font-family:var(--font-display,Georgia,serif);font-size:14px;color:var(--ink-2,#3A3A3C);line-height:1.6;margin:0 0 16px;max-width:680px">Il questionario di autovalutazione del Ministero della Cultura (Allegato A4 · DM 113/2018) verifica i 25 Standard Minimi necessari per il riconoscimento al Sistema Museale Nazionale e per l\'accesso a numerosi bandi MiC. <b>22 risposte su 29 le ricaviamo direttamente dal tuo Matrix</b>; servono solo 7 informazioni aggiuntive (statuto, orari, visitatori, segnaletica). Tempo: ~3 minuti.</p>';
       html += '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">';
-      html += '<button class="mx-btn mx-btn-primary" id="mxBtnStartMic" style="background:#8B4513;color:#fff;border:none;padding:12px 26px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.02em">→ Sì, calcola la mia compliance MiC</button>';
-      html += '<button class="mx-btn" id="mxBtnSkipMic" style="background:transparent;color:#8B5E2B;border:1px solid #D9C896;padding:12px 22px;border-radius:8px;font-size:13.5px;font-weight:500;cursor:pointer">No grazie, ho finito</button>';
+      html += '<button class="mx-btn mx-btn-primary" id="mxBtnStartMic" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:12px 26px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.02em">→ Sì, calcola la mia compliance MiC</button>';
+      html += '<button class="mx-btn" id="mxBtnSkipMic" style="background:transparent;color:var(--accent-hover,#C23A11);border:1px solid var(--rule,#E5E5E7);padding:12px 22px;border-radius:8px;font-size:13.5px;font-weight:500;cursor:pointer">No grazie, ho finito</button>';
       html += '</div>';
-      html += '<div id="mxMicStatus" style="margin-top:10px;font-size:12.5px;color:#8B5E2B"></div>';
+      html += '<div id="mxMicStatus" style="margin-top:10px;font-size:12.5px;color:var(--accent-hover,#C23A11)"></div>';
     }
     html += '</div></section>';
 
@@ -1114,7 +1114,7 @@
     google.script.run
       .withSuccessHandler(function(bandi){
         if (!bandi || !bandi.length) {
-          box.innerHTML = '<div style="color:var(--ink-3,#6E6A62);font-size:13px">Nessun bando attivo al momento.</div>';
+          box.innerHTML = '<div style="color:var(--ink-3,var(--ink-3,#6E6E73));font-size:13px">Nessun bando attivo al momento.</div>';
           return;
         }
         var html = '';
@@ -1129,7 +1129,7 @@
           var top2 = matching.slice(0, 2);
 
           html += '<div style="margin-bottom:20px">';
-          html += '<div style="font-size:13px;color:var(--ink-2,#3A3631);line-height:1.6;margin-bottom:10px">';
+          html += '<div style="font-size:13px;color:var(--ink-2,var(--ink-2,#3A3A3C));line-height:1.6;margin-bottom:10px">';
           html += 'Il tuo punteggio in <b>' + esc(opp.dimensionName) + '</b> e del <b>' + esc(String(opp.score)) + '%</b>.';
           if (top2.length > 0) {
             html += ' Ecco dei finanziamenti attivi che potrebbero interessarti:';
@@ -1140,12 +1140,12 @@
 
           if (top2.length > 0) {
             top2.forEach(function(b) {
-              html += '<div style="background:#fff;border:1px solid var(--rule,#E8E4DC);border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">';
+              html += '<div style="background:#fff;border:1px solid var(--rule,var(--rule,#E5E5E7));border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">';
               html += '<div style="flex:1;min-width:0">';
-              html += '<div style="font-size:14px;font-weight:600;color:var(--ink,#1D1D1F);line-height:1.3">' + esc(b.titolo || '') + '</div>';
-              if (b.ente) html += '<div style="font-size:12px;color:var(--ink-3,#6E6A62);margin-top:3px">' + esc(b.ente) + (b.scadenza ? ' · Scade ' + esc(b.scadenza) : '') + '</div>';
+              html += '<div style="font-size:14px;font-weight:600;color:var(--ink,var(--ink,#101010));line-height:1.3">' + esc(b.titolo || '') + '</div>';
+              if (b.ente) html += '<div style="font-size:12px;color:var(--ink-3,var(--ink-3,#6E6E73));margin-top:3px">' + esc(b.ente) + (b.scadenza ? ' · Scade ' + esc(b.scadenza) : '') + '</div>';
               html += '</div>';
-              if (b.url || b.link) html += '<a href="' + esc(b.url || b.link) + '" target="_blank" rel="noopener" style="color:#3C6A95;text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap">Vai al bando ↗</a>';
+              if (b.url || b.link) html += '<a href="' + esc(b.url || b.link) + '" target="_blank" rel="noopener" style="color:var(--amb-3,#2563EB);text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap">Vai al bando ↗</a>';
               html += '</div>';
             });
           }
@@ -1187,13 +1187,13 @@
     if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
 
     if (!hasGAS()) {
-      if (status) status.innerHTML = '<span style="color:#8B1E1E">Backend non disponibile.</span>';
+      if (status) status.innerHTML = '<span style="color:var(--danger,#C2410C)">Backend non disponibile.</span>';
       return;
     }
     google.script.run
       .withSuccessHandler(function(r){
         if (!r || !r.ok) {
-          if (status) status.innerHTML = '<span style="color:#8B1E1E">Errore: ' + esc(r && r.error || 'sconosciuto') + '</span>';
+          if (status) status.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc(r && r.error || 'sconosciuto') + '</span>';
           return;
         }
         stateMic.precompiled = r.precompiled || [];
@@ -1204,7 +1204,7 @@
         renderMicWizard();
       })
       .withFailureHandler(function(err){
-        if (status) status.innerHTML = '<span style="color:#8B1E1E">Errore: ' + esc(err && err.message || err) + '</span>';
+        if (status) status.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc(err && err.message || err) + '</span>';
       })
       .getMicPrecompiled(state.responseId);
   }
@@ -1215,18 +1215,18 @@
     var mount = appendMode ? document.querySelector('#mxMicReportMount') : document.querySelector('#matrix-mount');
     if (!mount) mount = document.querySelector('#matrix-mount');
     var html = appendMode
-      ? '<section class="mx-app mic-wizard-appended" style="margin-top:32px;padding-top:24px;border-top:3px double #D9C896">'
+      ? '<section class="mx-app mic-wizard-appended" style="margin-top:32px;padding-top:24px;border-top:3px double var(--rule,#E5E5E7)">'
       : '<div class="mx-app">';
 
     // Hero MiC
-    html += '<div class="mx-report-hero" style="background:linear-gradient(135deg,#8B4513 0%,#8B5E2B 100%)">';
+    html += '<div class="mx-report-hero" style="background:linear-gradient(135deg,var(--accent,#E84B1C) 0%,var(--accent-hover,#C23A11) 100%)">';
     html += '<div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.85">' + (appendMode ? 'Sezione aggiuntiva · ' : '') + 'Standard Minimi di Qualità · MiC</div>';
     html += '<div class="mx-profile-code" style="font-size:32px;margin-top:10px">Compliance MiC SM-LUQV</div>';
     html += '<div class="mx-profile-name" style="font-size:14px;opacity:.92;font-style:italic;margin-top:6px">DM 113/2018 · Allegato A4 · per musei non accreditati al Sistema Museale Nazionale</div>';
     html += '</div>';
 
     // Card statistiche
-    html += '<div class="mx-section" style="background:#FBF7EE;border-left:3px solid #8B4513;padding:18px 22px;margin-top:18px">';
+    html += '<div class="mx-section" style="background:var(--surface,#F7F7F8);border-left:3px solid var(--accent,#E84B1C);padding:18px 22px;margin-top:18px">';
     html += '<div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:space-around;text-align:center">';
     var stats = [
       { num: stateMic.precompiled.length, lbl: 'Risposte pre-compilate dal Matrix' },
@@ -1234,10 +1234,10 @@
       { num: 25, lbl: 'Standard Minimi (SM) valutati' }
     ];
     stats.forEach(function(s){
-      html += '<div><div style="font-family:var(--font-display);font-size:32px;font-weight:600;color:#8B5E2B;line-height:1">' + s.num + '</div><div style="font-size:11.5px;color:#5C3D17;letter-spacing:.04em;margin-top:4px">' + s.lbl + '</div></div>';
+      html += '<div><div style="font-family:var(--font-display);font-size:32px;font-weight:600;color:var(--accent-hover,#C23A11);line-height:1">' + s.num + '</div><div style="font-size:11.5px;color:var(--ink-2,#3A3A3C);letter-spacing:.04em;margin-top:4px">' + s.lbl + '</div></div>';
     });
     html += '</div>';
-    html += '<p style="margin:14px 0 0;font-size:13px;color:#5C3D17;line-height:1.55;text-align:center"><b>Come funziona:</b> rivedi le risposte pre-compilate (puoi correggerle), compila le 7 domande aggiuntive, ottieni la tua percentuale di compliance MiC.</p>';
+    html += '<p style="margin:14px 0 0;font-size:13px;color:var(--ink-2,#3A3A3C);line-height:1.55;text-align:center"><b>Come funziona:</b> rivedi le risposte pre-compilate (puoi correggerle), compila le 7 domande aggiuntive, ottieni la tua percentuale di compliance MiC.</p>';
     html += '</div>';
 
     // Sezione 1: domande pre-compilate (raggruppate per sezione)
@@ -1254,8 +1254,8 @@
 
     // Bottoni
     html += '<div class="mx-section" style="text-align:center;background:transparent;border:none;padding:24px 0">';
-    html += '<button class="mx-btn mx-btn-primary" id="mxBtnCalcMic" style="background:#8B4513;color:#fff;border:none;padding:14px 34px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:.02em">Calcola la mia compliance MiC →</button>';
-    html += '<div id="mxMicSubmitStatus" style="margin-top:12px;font-size:13px;color:#8B5E2B"></div>';
+    html += '<button class="mx-btn mx-btn-primary" id="mxBtnCalcMic" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:14px 34px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:.02em">Calcola la mia compliance MiC →</button>';
+    html += '<div id="mxMicSubmitStatus" style="margin-top:12px;font-size:13px;color:var(--accent-hover,#C23A11)"></div>';
     html += '</div>';
 
     html += appendMode ? '</section>' : '</div>';
@@ -1265,7 +1265,7 @@
       var anchorBanner = document.getElementById('mxMicAnchor');
       if (anchorBanner) {
         var statusEl = anchorBanner.querySelector('#mxMicStatus');
-        if (statusEl) statusEl.innerHTML = '<span style="color:#3F7A5E">✓ Pre-compilazione completata · compila le domande aggiuntive qui sotto</span>';
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Pre-compilazione completata · compila le domande aggiuntive qui sotto</span>';
       }
       var newSection = mount.querySelector('.mic-wizard-appended');
       if (newSection) newSection.scrollIntoView({behavior:'smooth', block:'start'});
@@ -1288,7 +1288,7 @@
     var html = '';
     Object.keys(groups).sort().forEach(function(sez){
       html += '<div style="margin-bottom:24px">';
-      html += '<h3 style="font-family:var(--font-display,Georgia,serif);font-size:1.05rem;color:#8B5E2B;margin:0 0 12px;border-bottom:1px solid #D9C896;padding-bottom:6px">' + esc(sez + '. ' + (SEZIONI[sez] || 'Altro')) + '</h3>';
+      html += '<h3 style="font-family:var(--font-display,Georgia,serif);font-size:1.05rem;color:var(--accent-hover,#C23A11);margin:0 0 12px;border-bottom:1px solid var(--rule,#E5E5E7);padding-bottom:6px">' + esc(sez + '. ' + (SEZIONI[sez] || 'Altro')) + '</h3>';
       groups[sez].forEach(function(q){
         html += _renderMicQuestion_(q, isPrecompiled);
       });
@@ -1308,7 +1308,7 @@
       confidenceLabel = '<span style="background:' + bg + ';color:' + col + ';font-family:var(--font-ui);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;margin-left:8px">' + lbl + '</span>';
     }
 
-    var html = '<div class="mic-q" data-mic-qid="' + esc(qId) + '" style="background:#fff;border:1px solid var(--rule,#E5E1D8);border-radius:8px;padding:14px 18px;margin-bottom:10px">';
+    var html = '<div class="mic-q" data-mic-qid="' + esc(qId) + '" style="background:#fff;border:1px solid var(--rule,var(--rule,#E5E5E7));border-radius:8px;padding:14px 18px;margin-bottom:10px">';
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px">';
     html += '<div style="flex:1;min-width:0">';
     html += '<div style="font-family:var(--font-ui);font-size:10.5px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">' + esc(q.sottoSez || '') + ' &middot; <span style="font-family:monospace">' + esc(q.id) + '</span></div>';
@@ -1404,20 +1404,20 @@
     if (status) status.textContent = 'Calcolo della tua compliance MiC in corso…';
 
     if (!hasGAS()) {
-      if (status) status.innerHTML = '<span style="color:#8B1E1E">Backend non disponibile.</span>';
+      if (status) status.innerHTML = '<span style="color:var(--danger,#C2410C)">Backend non disponibile.</span>';
       return;
     }
     google.script.run
       .withSuccessHandler(function(r){
         if (!r || !r.ok) {
-          if (status) status.innerHTML = '<span style="color:#8B1E1E">Errore: ' + esc(r && r.error || 'sconosciuto') + '</span>';
+          if (status) status.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc(r && r.error || 'sconosciuto') + '</span>';
           if (btn) { btn.disabled = false; btn.textContent = 'Calcola la mia compliance MiC →'; }
           return;
         }
         renderMicReport(r);
       })
       .withFailureHandler(function(err){
-        if (status) status.innerHTML = '<span style="color:#8B1E1E">Errore di rete: ' + esc(err && err.message || err) + '</span>';
+        if (status) status.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore di rete: ' + esc(err && err.message || err) + '</span>';
         if (btn) { btn.disabled = false; btn.textContent = 'Calcola la mia compliance MiC →'; }
       })
       .saveMicResponse({
@@ -1434,7 +1434,7 @@
 
     var pct = result.complianceScore;
     var gradePct = pct >= 90 ? 'eccellente' : pct >= 75 ? 'buona' : pct >= 50 ? 'parziale' : 'critica';
-    var gradeCol = pct >= 90 ? '#0F6E56' : pct >= 75 ? '#3F7A5E' : pct >= 50 ? '#8B4513' : '#8B1E1E';
+    var gradeCol = pct >= 90 ? 'var(--success,#0F7B5A)' : pct >= 75 ? 'var(--amb-2,#10916D)' : pct >= 50 ? 'var(--accent,#E84B1C)' : 'var(--danger,#C2410C)';
 
     // v4.18.37 — Modalità APPEND vs REPLACE.
     // Se l'utente aveva fatto opt-in all'inizio, il MiC è parte naturale del flusso:
@@ -1445,10 +1445,10 @@
     var mountAnchor = appendMode ? document.querySelector('#mxMicReportMount') : document.querySelector('#matrix-mount');
     if (!mountAnchor) mountAnchor = document.querySelector('#matrix-mount');
 
-    var html = appendMode ? '<section class="mx-app mic-appended" style="margin-top:32px;padding-top:24px;border-top:3px double #D9C896">' : '<div class="mx-app">';
+    var html = appendMode ? '<section class="mx-app mic-appended" style="margin-top:32px;padding-top:24px;border-top:3px double var(--rule,#E5E5E7)">' : '<div class="mx-app">';
 
     // Hero
-    html += '<div class="mx-report-hero" style="background:linear-gradient(135deg,' + gradeCol + ' 0%,#5C3D17 100%)">';
+    html += '<div class="mx-report-hero" style="background:linear-gradient(135deg,' + gradeCol + ' 0%,var(--ink-2,#3A3A3C) 100%)">';
     html += '<div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.85">' + (appendMode ? 'Sezione aggiuntiva · ' : '') + 'Compliance MiC SM-LUQV · Esito</div>';
     html += '<div class="mx-profile-code" style="font-size:54px;margin-top:14px">' + pct + '<span style="font-size:28px;opacity:.7">%</span></div>';
     html += '<div class="mx-profile-name" style="font-size:18px;margin-top:6px">Compliance ' + gradePct + ' &middot; ' + result.smRispettati + ' / ' + result.smTotali + ' Standard Minimi rispettati</div>';
@@ -1462,7 +1462,7 @@
     else if (pct >= 75) lettura = 'Il vostro museo soddisfa la maggior parte degli Standard Minimi. Restano alcune lacune da colmare, principalmente formali (atti di nomina, documenti programmatici): un percorso di consulenza mirata di 2-3 mesi può portarvi alla soglia di accreditamento.';
     else if (pct >= 50) lettura = 'Il livello attuale è parziale: alcune funzioni di base sono presenti ma manca la formalizzazione. Per l\'accreditamento SMN o partecipare a bandi MiC strutturali, raccomandiamo un percorso di consulenza accreditamento (3-6 mesi).';
     else lettura = 'Il vostro museo presenta lacune significative sugli Standard Minimi. È necessario un percorso di rafforzamento istituzionale (5-12 mesi) prima di candidarsi all\'SMN. Possiamo aiutarvi a costruire la roadmap di adeguamento.';
-    html += '<p style="font-size:14px;line-height:1.7;color:#374151;margin-top:8px">' + esc(lettura) + '</p>';
+    html += '<p style="font-size:14px;line-height:1.7;color:var(--ink-2,#3A3A3C);margin-top:8px">' + esc(lettura) + '</p>';
     html += '</div>';
 
     // Gap critici
@@ -1481,10 +1481,10 @@
       html += '<div style="margin-top:16px">';
       Object.keys(groups).sort().forEach(function(sez){
         html += '<div style="margin-bottom:18px">';
-        html += '<h3 style="font-family:var(--font-display);font-size:1.0rem;color:#8B1E1E;margin:0 0 10px;border-bottom:1px solid #FBD0D0;padding-bottom:5px">' + esc(sez + '. ' + (SEZIONI[sez] || 'Altro')) + ' &middot; ' + groups[sez].length + ' SM da colmare</h3>';
+        html += '<h3 style="font-family:var(--font-display);font-size:1.0rem;color:var(--danger,#C2410C);margin:0 0 10px;border-bottom:1px solid #FBD0D0;padding-bottom:5px">' + esc(sez + '. ' + (SEZIONI[sez] || 'Altro')) + ' &middot; ' + groups[sez].length + ' SM da colmare</h3>';
         groups[sez].forEach(function(g){
           html += '<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:#FEF6F6;border:1px solid #FBD0D0;border-radius:6px;margin-bottom:6px">';
-          html += '<span style="background:#8B1E1E;color:#fff;font-family:monospace;font-size:10.5px;padding:2px 6px;border-radius:3px;flex-shrink:0;margin-top:2px">' + esc(g.id) + '</span>';
+          html += '<span style="background:var(--danger,#C2410C);color:#fff;font-family:monospace;font-size:10.5px;padding:2px 6px;border-radius:3px;flex-shrink:0;margin-top:2px">' + esc(g.id) + '</span>';
           html += '<div style="font-size:13px;line-height:1.5;color:#5C2020"><b>' + esc(g.sottoSez) + '</b> &mdash; ' + esc(g.testo) + '</div>';
           html += '</div>';
         });
@@ -1495,12 +1495,12 @@
     }
 
     // CTA consulenza accreditamento
-    html += '<div class="mx-cta" style="background:linear-gradient(135deg,#FBF7EE 0%,#F4ECD8 100%);border:1px solid #D9C896">';
-    html += '<h3 style="color:#5C3D17">Trasformiamo le lacune in roadmap</h3>';
-    html += '<p style="color:#5C3D17">Una call gratuita di 30-45 minuti per definire insieme il percorso più efficace verso l\'accreditamento SMN o l\'accesso al prossimo bando MiC strutturale.</p>';
+    html += '<div class="mx-cta" style="background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7)">';
+    html += '<h3 style="color:var(--ink-2,#3A3A3C)">Trasformiamo le lacune in roadmap</h3>';
+    html += '<p style="color:var(--ink-2,#3A3A3C)">Una call gratuita di 30-45 minuti per definire insieme il percorso più efficace verso l\'accreditamento SMN o l\'accesso al prossimo bando MiC strutturale.</p>';
     var ctaSubject = encodeURIComponent('[MuseMu Matrix + MiC] Consulenza accreditamento — ' + (state.museumName || 'struttura'));
     var ctaBody = encodeURIComponent('Buongiorno,\n\nho completato il MuseMu Matrix e l\'autovalutazione MiC SM-LUQV (compliance: ' + pct + '%, ' + result.smRispettati + '/' + result.smTotali + ' SM rispettati). Vorrei una consulenza sulla roadmap di adeguamento.\n\nRif. Matrix: ' + state.responseId + '\nRif. MiC: ' + result.micId + '\n\nGrazie,\n');
-    html += '<a class="mx-btn mx-btn-primary" href="mailto:s.straccini@gmail.com?subject=' + ctaSubject + '&body=' + ctaBody + '" style="text-decoration:none;display:inline-block;background:#8B4513">Prenota consulenza accreditamento</a>';
+    html += '<a class="mx-btn mx-btn-primary" href="mailto:s.straccini@gmail.com?subject=' + ctaSubject + '&body=' + ctaBody + '" style="text-decoration:none;display:inline-block;background:var(--accent,#E84B1C)">Prenota consulenza accreditamento</a>';
     html += '</div>';
 
     html += appendMode ? '</section>' : '</div>';
@@ -1511,7 +1511,7 @@
       // Nascondi il banner di transizione (ora il report è sotto)
       var anchorBanner = document.getElementById('mxMicAnchor');
       if (anchorBanner) {
-        anchorBanner.innerHTML = '<div style="text-align:center;padding:8px 0;color:#5C3D17;font-family:var(--font-ui,sans-serif);font-size:12px;letter-spacing:.14em;text-transform:uppercase">✓ Sezione MiC SM-LUQV completata &mdash; vedi report sotto</div>';
+        anchorBanner.innerHTML = '<div style="text-align:center;padding:8px 0;color:var(--ink-2,#3A3A3C);font-family:var(--font-ui,sans-serif);font-size:12px;letter-spacing:.14em;text-transform:uppercase">✓ Sezione MiC SM-LUQV completata &mdash; vedi report sotto</div>';
         anchorBanner.style.padding = '14px 20px';
       }
       // Scrolla alla sezione appena renderizzata
@@ -1537,15 +1537,15 @@
         .withSuccessHandler(function(res) {
           btnDownload.disabled = false;
           if (res && res.ok) {
-            statusDiv.innerHTML = '<span style="color:#0F6E56">✓ PDF pronto.</span> <a href="' + res.fileUrl + '" target="_blank" style="color:#0E7490;font-weight:600">Apri PDF →</a>';
+            statusDiv.innerHTML = '<span style="color:var(--success,#0F7B5A)">✓ PDF pronto.</span> <a href="' + res.fileUrl + '" target="_blank" style="color:#0E7490;font-weight:600">Apri PDF →</a>';
             window.open(res.fileUrl, '_blank');
           } else {
-            statusDiv.innerHTML = '<span style="color:#8B1E1E">Errore: ' + esc(res && res.error || 'sconosciuto') + '</span>';
+            statusDiv.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc(res && res.error || 'sconosciuto') + '</span>';
           }
         })
         .withFailureHandler(function(err) {
           btnDownload.disabled = false;
-          statusDiv.innerHTML = '<span style="color:#8B1E1E">Errore di rete: ' + esc(err && err.message || err) + '</span>';
+          statusDiv.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore di rete: ' + esc(err && err.message || err) + '</span>';
         })
         .getMatrixReportPDFUrl(state.responseId);
     });
@@ -1638,15 +1638,15 @@
     var prefsKeys = Object.keys(state.section12.preferences).filter(function(k){ return state.section12.preferences[k]; });
     var resultDiv = $('#mxContactResult');
     if (prefsKeys.length === 0) {
-      resultDiv.innerHTML = '<span style="color:#8B1E1E">Seleziona almeno una preferenza prima di procedere.</span>';
+      resultDiv.innerHTML = '<span style="color:var(--danger,#C2410C)">Seleziona almeno una preferenza prima di procedere.</span>';
       return;
     }
     if (!state.section12.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(state.section12.email)) {
-      resultDiv.innerHTML = '<span style="color:#8B1E1E">Email non valida.</span>';
+      resultDiv.innerHTML = '<span style="color:var(--danger,#C2410C)">Email non valida.</span>';
       return;
     }
     if (!state.section12.consent) {
-      resultDiv.innerHTML = '<span style="color:#8B1E1E">Devi acconsentire al trattamento dati per procedere.</span>';
+      resultDiv.innerHTML = '<span style="color:var(--danger,#C2410C)">Devi acconsentire al trattamento dati per procedere.</span>';
       return;
     }
     var btn = $('#mxSubmitContact');
@@ -1656,18 +1656,18 @@
       .withSuccessHandler(function(result) {
         if (btn) btn.disabled = false;
         if (result && result.ok) {
-          var msg = '<span style="color:#0F6E56">✓ Iscrizione registrata e report PDF inviato a <b>' + esc(state.section12.email) + '</b>. Controlla la posta in arrivo (anche cartella Spam).</span>';
+          var msg = '<span style="color:var(--success,#0F7B5A)">✓ Iscrizione registrata e report PDF inviato a <b>' + esc(state.section12.email) + '</b>. Controlla la posta in arrivo (anche cartella Spam).</span>';
           if (result.fileUrl) {
             msg += '<br><a href="' + result.fileUrl + '" target="_blank" style="color:#0E7490;font-weight:600">Apri il PDF online →</a>';
           }
           resultDiv.innerHTML = msg;
         } else {
-          resultDiv.innerHTML = '<span style="color:#8B1E1E">Errore: ' + esc(result && result.error || 'sconosciuto') + '</span>';
+          resultDiv.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc(result && result.error || 'sconosciuto') + '</span>';
         }
       })
       .withFailureHandler(function(err) {
         if (btn) btn.disabled = false;
-        resultDiv.innerHTML = '<span style="color:#8B1E1E">Errore di rete: ' + esc(err && err.message || err) + '</span>';
+        resultDiv.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore di rete: ' + esc(err && err.message || err) + '</span>';
       })
       .sendMatrixReportEmail({
         responseId: state.responseId,

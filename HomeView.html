@@ -1,15 +1,15 @@
 <!--
   ============================================================
-  OSSERVATORIO CULTURALE — HOMEVIEW.HTML
-  Sprint N5 — Home redesign "Rivista Digitale"
-  v4.19.5 — Layout: Libri + Social Wall in griglia 2col sotto podcast/video
+  OSSERVATORIO CULTURALE / MUSEMU MATRIX — HOMEVIEW.HTML
+  v5.0 — Direzione C Curatoriale Sans (24/05/2026)
+  Layout: Libri + Social Wall in griglia 2col sotto podcast/video
   ============================================================
 -->
 
 <section class="page active" id="page-home">
 
   <!-- ===== MASTHEAD (v4.18.26 — testata Sinopia · Osservatorio Culturale) ===== -->
-  <div class="home-masthead" style="display:flex;flex-wrap:wrap;align-items:center;gap:18px 22px;padding:10px 0;border-bottom:1px solid var(--rule,#E8E4DC);margin-bottom:18px">
+  <div class="home-masthead" style="display:flex;flex-wrap:wrap;align-items:center;gap:18px 22px;padding:10px 0;border-bottom:1px solid var(--rule,#E5E5E7);margin-bottom:18px">
 
     <!-- Sinistra: titolo testata Osservatorio Culturale -->
     <div class="masthead-meta" style="display:flex;align-items:baseline;gap:8px;flex-shrink:0">
@@ -33,7 +33,7 @@
     <div style="display:flex;align-items:center;gap:14px;flex-shrink:0">
       <span id="homeDataOggi" style="font-family:var(--font-display);font-style:italic;font-size:13px;color:var(--ink-3)">&mdash;</span>
       <div class="masthead-update" id="homeUpdateInfo" style="display:inline-flex;align-items:center;gap:6px;font-family:var(--font-ui);font-size:11px;color:var(--ink-3)" title="Stato della scansione automatica delle fonti">
-        <span class="update-dot" aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:#3F7A5E;display:inline-block"></span>
+        <span class="update-dot" aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:var(--success,#0F7B5A);display:inline-block"></span>
         <span id="homeUpdateText">aggiornamento fonti in caricamento&hellip;</span>
       </div>
     </div>
@@ -41,22 +41,16 @@
   </div>
 
   <!-- ===== HERO ===== -->
-  <div class="hero-eyebrow" style="color:#8B4513">Osservatorio Culturale &middot; Sinopia &middot; il disegno preparatorio della cultura italiana</div>
-  <div class="home-headline-frame" style="position:relative;background:#EEE3D2;border:1px solid #D4BFA0;border-radius:14px;padding:56px 64px;margin:18px 0 22px;overflow:hidden;display:grid;grid-template-columns:1.4fr minmax(280px,0.85fr);gap:24px;align-items:center;min-height:420px">
-
-    <!-- Texture "intonaco" -->
-    <span aria-hidden="true" style="position:absolute;inset:0;background-image:radial-gradient(circle at 20% 30%, rgba(139,69,19,.04) 0, transparent 30%), radial-gradient(circle at 80% 70%, rgba(139,69,19,.05) 0, transparent 30%);pointer-events:none"></span>
-
-    <!-- Segno verticale a sinistra -->
-    <span aria-hidden="true" style="position:absolute;left:0;top:24px;bottom:24px;width:3px;background:linear-gradient(180deg,#8B4513 0%,#8B4513 50%,#6B3416 100%);border-radius:0 2px 2px 0"></span>
+  <div class="hero-eyebrow" style="color:var(--accent,#E84B1C);font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;margin-bottom:18px">Osservatorio Culturale &middot; Sinopia &middot; il disegno preparatorio della cultura italiana</div>
+  <div class="home-headline-frame" style="position:relative;background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-radius:16px;padding:56px 64px;margin:18px 0 22px;overflow:hidden;display:grid;grid-template-columns:1.4fr minmax(280px,0.85fr);gap:24px;align-items:center;min-height:420px">
 
     <!-- COL SX: testo -->
     <div style="position:relative;z-index:1;text-align:left">
-      <h1 class="home-headline" style="margin:0;text-align:left;line-height:1.05;color:#1F160E">
-        Il <em style="color:#A05A32;font-weight:600">disegno preparatorio</em><br>della cultura italiana,<br>prima che diventi affresco.
+      <h1 class="home-headline" style="margin:0;text-align:left;line-height:1.02;color:var(--ink,#101010);font-family:var(--font-display);font-weight:600;letter-spacing:-0.03em;font-size:48px">
+        Il <em style="color:var(--ink-4,#A1A1A6);font-weight:500;font-style:normal">disegno preparatorio</em><br>della cultura italiana,<br>prima che diventi affresco.
       </h1>
-      <p class="home-deck" style="text-align:left;max-width:56ch;margin:22px 0 0;color:#3A2E22;font-weight:400;font-size:15px;line-height:1.55">
-        <b style="color:#A05A32;font-weight:600">Sinopia</b> &egrave; l&rsquo;Osservatorio che traccia, sotto la superficie, le linee
+      <p class="home-deck" style="text-align:left;max-width:56ch;margin:22px 0 0;color:var(--ink-3,#6E6E73);font-weight:400;font-size:15px;line-height:1.55;font-family:var(--font-ui)">
+        <b style="color:var(--ink,#101010);font-weight:600">Sinopia</b> &egrave; l&rsquo;Osservatorio che traccia, sotto la superficie, le linee
         della cultura italiana di oggi: news curate, bandi in scadenza, podcast,
         video e libri dagli ambiti strategici &mdash; aggiornati in tempo reale.
       </p>
@@ -80,71 +74,71 @@
   </div>
 
   <!-- ===== HOME CAROSELLO (3 slide a rotazione) ===== -->
-  <section class="home-carosello" id="homeCarosello" aria-label="Servizi Duemilamusei in evidenza" onmouseenter="OC.hcPause()" onmouseleave="OC.hcResume()" style="margin:36px 0 36px;position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--rule,#E8E4DC);background:#fff">
+  <section class="home-carosello" id="homeCarosello" aria-label="Servizi Duemilamusei in evidenza" onmouseenter="OC.hcPause()" onmouseleave="OC.hcResume()" style="margin:36px 0 36px;position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--rule,#E5E5E7);background:#fff">
     <div class="home-carosello-track" id="hcTrack" style="display:flex;transition:transform .6s cubic-bezier(.4,0,.2,1);will-change:transform">
 
       <!-- Slide 1: MUSEMU MATRIX -->
-      <article class="hc-slide" data-hc-idx="0" style="flex:0 0 100%;background:linear-gradient(135deg,#F3F0E9 0%,#FFFFFF 100%);padding:36px 44px;display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:center;min-height:300px">
+      <article class="hc-slide" data-hc-idx="0" style="flex:0 0 100%;background:var(--surface,#F7F7F8);padding:40px 48px;display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:center;min-height:300px">
         <div>
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:#8B4513;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">MuseMu Matrix &middot; Strumento gratuito</div>
-          <h2 style="font-family:var(--font-display);font-size:1.75rem;line-height:1.15;margin:0 0 12px;color:var(--ink);font-weight:500;letter-spacing:-0.01em">Valuta il tuo museo. <em style="color:#8B4513;font-weight:400">Cresci con dati.</em></h2>
+          <div style="font-family:var(--font-ui);font-size:11px;color:var(--accent,#E84B1C);letter-spacing:.18em;text-transform:uppercase;font-weight:600;margin-bottom:14px">MuseMu Matrix &middot; Strumento gratuito</div>
+          <h2 style="font-family:var(--font-display);font-size:1.875rem;line-height:1.1;margin:0 0 14px;color:var(--ink);font-weight:600;letter-spacing:-0.025em">Valuta il tuo museo. <em style="color:var(--accent,#E84B1C);font-weight:500;font-style:normal">Cresci con dati.</em></h2>
           <p style="font-family:var(--font-display);font-size:14px;line-height:1.6;color:var(--ink-3);max-width:540px;margin:0 0 18px">Autovalutazione su 10 dimensioni in 5-10 minuti. Anonima per scelta, GDPR-compliant. Ricevi un report grafico con il profilo del museo e le 3 opportunita prioritarie.</p>
-          <button class="btn btn-primary" type="button" data-page="matrix" style="background:#8B4513;color:#fff;border:none;padding:12px 26px;border-radius:8px;font-family:var(--font-ui);font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.02em">Inizia la valutazione gratuita &rarr;</button>
+          <button class="btn btn-primary" type="button" data-page="matrix" style="background:var(--ink,#101010);color:#fff;border:none;padding:13px 26px;border-radius:999px;font-family:var(--font-ui);font-size:14px;font-weight:500;cursor:pointer;letter-spacing:-0.005em">Inizia la valutazione gratuita &rarr;</button>
           <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px">Nessuna registrazione &middot; Anonimo &middot; ~10 min</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #8B4513;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Diagnosi 10 dimensioni</div><div style="font-size:11.5px;color:var(--ink-3)">Modello Henkel + Musei Sensibili</div></div></div>
-          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #8B4513;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M6 16v4M10 12v8M14 8v12M18 4v16"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Report grafico + PDF</div><div style="font-size:11.5px;color:var(--ink-3)">Radar chart + benchmark settore</div></div></div>
-          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #8B4513;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">3 opportunita prioritarie</div><div style="font-size:11.5px;color:var(--ink-3)">Servizi Duemilamusei pertinenti</div></div></div>
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1px solid var(--ink,#101010);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink,#101010)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Diagnosi 10 dimensioni</div><div style="font-size:11.5px;color:var(--ink-3)">Modello Henkel + Musei Sensibili</div></div></div>
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1px solid var(--ink,#101010);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink,#101010)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M6 16v4M10 12v8M14 8v12M18 4v16"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Report grafico + PDF</div><div style="font-size:11.5px;color:var(--ink-3)">Radar chart + benchmark settore</div></div></div>
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1px solid var(--ink,#101010);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink,#101010)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">3 opportunita prioritarie</div><div style="font-size:11.5px;color:var(--ink-3)">Servizi Duemilamusei pertinenti</div></div></div>
         </div>
       </article>
 
       <!-- Slide 2: MUSEI SENSIBILI -->
-      <article class="hc-slide" data-hc-idx="1" style="flex:0 0 100%;background:linear-gradient(135deg,#EAF3EC 0%,#FFFFFF 100%);padding:36px 44px;display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:center;min-height:300px">
+      <article class="hc-slide" data-hc-idx="1" style="flex:0 0 100%;background:var(--surface,#F7F7F8);padding:40px 48px;display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:center;min-height:300px">
         <div>
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:#3F7A5E;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Modello Duemilamusei &middot; Concept strategico</div>
-          <h2 style="font-family:var(--font-display);font-size:1.75rem;line-height:1.15;margin:0 0 12px;color:var(--ink);font-weight:500;letter-spacing:-0.01em">Musei <em style="color:#3F7A5E;font-weight:400">Sensibili</em>. Il museo come presidio identitario.</h2>
+          <div style="font-family:var(--font-ui);font-size:11px;color:var(--amb-2,#10916D);letter-spacing:.18em;text-transform:uppercase;font-weight:600;margin-bottom:14px">Modello Duemilamusei &middot; Concept strategico</div>
+          <h2 style="font-family:var(--font-display);font-size:1.875rem;line-height:1.1;margin:0 0 14px;color:var(--ink);font-weight:600;letter-spacing:-0.025em">Musei <em style="color:var(--amb-2,#10916D);font-weight:500;font-style:normal">Sensibili</em>. Il museo come presidio identitario.</h2>
           <p style="font-family:var(--font-display);font-size:14px;line-height:1.6;color:var(--ink-3);max-width:540px;margin:0 0 18px">Una visione del museo che integra accessibilita, welfare culturale, partecipazione della comunita e tecnologie inclusive.</p>
-          <a href="#" onclick="OC.openMuseiSensibili(event)" style="display:inline-block;background:#3F7A5E;color:#fff;border:none;padding:12px 26px;border-radius:8px;font-family:var(--font-ui);font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.02em;text-decoration:none">Scopri il modello &rarr;</a>
+          <a href="#" onclick="OC.openMuseiSensibili(event)" style="display:inline-block;background:var(--ink,#101010);color:#fff;border:none;padding:13px 26px;border-radius:999px;font-family:var(--font-ui);font-size:14px;font-weight:500;cursor:pointer;letter-spacing:-0.005em;text-decoration:none">Scopri il modello &rarr;</a>
         </div>
         <div style="display:flex;align-items:center;justify-content:center" aria-hidden="true">
           <svg viewBox="0 0 240 240" width="100%" style="max-width:220px;height:auto" xmlns="http://www.w3.org/2000/svg">
-            <defs><radialGradient id="msg1" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#3F7A5E" stop-opacity=".25"/><stop offset="100%" stop-color="#3F7A5E" stop-opacity="0"/></radialGradient></defs>
+            <defs><radialGradient id="msg1" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#10916D" stop-opacity=".25"/><stop offset="100%" stop-color="#10916D" stop-opacity="0"/></radialGradient></defs>
             <circle cx="120" cy="120" r="110" fill="url(#msg1)"/>
-            <circle cx="120" cy="120" r="80" fill="none" stroke="#3F7A5E" stroke-width="1.5" stroke-opacity=".4"/>
-            <circle cx="120" cy="120" r="55" fill="none" stroke="#3F7A5E" stroke-width="1.5" stroke-opacity=".55"/>
-            <circle cx="120" cy="120" r="30" fill="none" stroke="#3F7A5E" stroke-width="1.5" stroke-opacity=".7"/>
+            <circle cx="120" cy="120" r="80" fill="none" stroke="#10916D" stroke-width="1.5" stroke-opacity=".4"/>
+            <circle cx="120" cy="120" r="55" fill="none" stroke="#10916D" stroke-width="1.5" stroke-opacity=".55"/>
+            <circle cx="120" cy="120" r="30" fill="none" stroke="#10916D" stroke-width="1.5" stroke-opacity=".7"/>
           </svg>
         </div>
       </article>
 
       <!-- Slide 3: CONSULENZA PRE-BANDO -->
-      <article class="hc-slide" data-hc-idx="2" style="flex:0 0 100%;background:linear-gradient(135deg,#E8EDF3 0%,#FFFFFF 100%);padding:36px 44px;display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:center;min-height:300px">
+      <article class="hc-slide" data-hc-idx="2" style="flex:0 0 100%;background:var(--surface,#F7F7F8);padding:40px 48px;display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:center;min-height:300px">
         <div>
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:#3C6A95;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Servizio Duemilamusei &middot; Gratuito</div>
-          <h2 style="font-family:var(--font-display);font-size:1.75rem;line-height:1.15;margin:0 0 12px;color:var(--ink);font-weight:500;letter-spacing:-0.01em">Pre-progettazione <em style="color:#3C6A95;font-weight:400">gratuita</em> su bando.</h2>
+          <div style="font-family:var(--font-ui);font-size:11px;color:var(--amb-3,#2563EB);letter-spacing:.18em;text-transform:uppercase;font-weight:600;margin-bottom:14px">Servizio Duemilamusei &middot; Gratuito</div>
+          <h2 style="font-family:var(--font-display);font-size:1.875rem;line-height:1.1;margin:0 0 14px;color:var(--ink);font-weight:600;letter-spacing:-0.025em">Pre-progettazione <em style="color:var(--amb-3,#2563EB);font-weight:500;font-style:normal">gratuita</em> su bando.</h2>
           <p style="font-family:var(--font-display);font-size:14px;line-height:1.6;color:var(--ink-3);max-width:540px;margin:0 0 18px">Identifichiamo i bandi piu adatti al tuo museo e offriamo una pre-progettazione gratuita: concept, stima, ipotesi di intervento.</p>
-          <a href="#" onclick="return OC.prenotaConsulenza(event,'preBando')" style="display:inline-block;background:#3C6A95;color:#fff;border:none;padding:12px 26px;border-radius:8px;font-family:var(--font-ui);font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.02em;text-decoration:none">Richiedi pre-progettazione &rarr;</a>
+          <a href="#" onclick="return OC.prenotaConsulenza(event,'preBando')" style="display:inline-block;background:var(--ink,#101010);color:#fff;border:none;padding:13px 26px;border-radius:999px;font-family:var(--font-ui);font-size:14px;font-weight:500;cursor:pointer;letter-spacing:-0.005em;text-decoration:none">Richiedi pre-progettazione &rarr;</a>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #3C6A95;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3C6A95" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h9l5 5v11H6z"/><path d="M15 4v5h5"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Analisi del bando</div><div style="font-size:11.5px;color:var(--ink-3)">Requisiti, premialita, scadenze</div></div></div>
-          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #3C6A95;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3C6A95" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Concept 2-3 pagine</div><div style="font-size:11.5px;color:var(--ink-3)">Ipotesi intervento + stima</div></div></div>
-          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #3C6A95;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3C6A95" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Zero impegno</div><div style="font-size:11.5px;color:var(--ink-3)">Nessun obbligo contrattuale</div></div></div>
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1px solid var(--amb-3,#2563EB);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--amb-3,#2563EB)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h9l5 5v11H6z"/><path d="M15 4v5h5"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Analisi del bando</div><div style="font-size:11.5px;color:var(--ink-3)">Requisiti, premialita, scadenze</div></div></div>
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1px solid var(--amb-3,#2563EB);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--amb-3,#2563EB)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Concept 2-3 pagine</div><div style="font-size:11.5px;color:var(--ink-3)">Ipotesi intervento + stima</div></div></div>
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1px solid var(--amb-3,#2563EB);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--amb-3,#2563EB)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Zero impegno</div><div style="font-size:11.5px;color:var(--ink-3)">Nessun obbligo contrattuale</div></div></div>
         </div>
       </article>
 
       <!-- Slide 4: CONSULENZA GENERICA -->
-      <article class="hc-slide" data-hc-idx="3" style="flex:0 0 100%;background:linear-gradient(135deg,#F3EFE6 0%,#FFFFFF 100%);padding:36px 44px;display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:center;min-height:300px">
+      <article class="hc-slide" data-hc-idx="3" style="flex:0 0 100%;background:var(--surface,#F7F7F8);padding:40px 48px;display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:center;min-height:300px">
         <div>
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:#8B4513;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Consulenza &middot; Gratuita</div>
-          <h2 style="font-family:var(--font-display);font-size:1.75rem;line-height:1.15;margin:0 0 12px;color:var(--ink);font-weight:500;letter-spacing:-0.01em">Prenota una <em style="color:#8B4513;font-weight:400">consulenza</em> gratuita.</h2>
+          <div style="font-family:var(--font-ui);font-size:11px;color:var(--amb-4,#92400E);letter-spacing:.18em;text-transform:uppercase;font-weight:600;margin-bottom:14px">Consulenza &middot; Gratuita</div>
+          <h2 style="font-family:var(--font-display);font-size:1.875rem;line-height:1.1;margin:0 0 14px;color:var(--ink);font-weight:600;letter-spacing:-0.025em">Prenota una <em style="color:var(--amb-4,#92400E);font-weight:500;font-style:normal">consulenza</em> gratuita.</h2>
           <p style="font-family:var(--font-display);font-size:14px;line-height:1.6;color:var(--ink-3);max-width:540px;margin:0 0 18px">Per musei pubblici, privati, fondazioni. 9 aree tematiche. 30-45 minuti di confronto operativo con un esperto.</p>
-          <a href="#" onclick="return OC.prenotaConsulenza(event,'generica')" style="display:inline-block;background:#8B4513;color:#fff;border:none;padding:12px 26px;border-radius:8px;font-family:var(--font-ui);font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.02em;text-decoration:none">Prenota una consulenza &rarr;</a>
+          <a href="#" onclick="return OC.prenotaConsulenza(event,'generica')" style="display:inline-block;background:var(--ink,#101010);color:#fff;border:none;padding:13px 26px;border-radius:999px;font-family:var(--font-ui);font-size:14px;font-weight:500;cursor:pointer;letter-spacing:-0.005em;text-decoration:none">Prenota una consulenza &rarr;</a>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #8B4513;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Scegli la tematica</div><div style="font-size:11.5px;color:var(--ink-3)">9 ambiti specialistici + libera</div></div></div>
-          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #8B4513;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3.09 5.18 2 2 0 0 1 5.08 3h3a2 2 0 0 1 2 1.72c.13.81.36 1.6.68 2.34a2 2 0 0 1-.45 2.11L8.91 10.6a16 16 0 0 0 6.49 6.49l1.43-1.43a2 2 0 0 1 2.11-.45c.74.32 1.53.55 2.34.68a2 2 0 0 1 1.72 2z"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">30-45 minuti di call</div><div style="font-size:11.5px;color:var(--ink-3)">Confronto operativo con un esperto</div></div></div>
-          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1.5px solid #8B4513;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Nessun obbligo</div><div style="font-size:11.5px;color:var(--ink-3)">Solo supporto, niente contratti vincolanti</div></div></div>
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1px solid var(--ink,#101010);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink,#101010)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Scegli la tematica</div><div style="font-size:11.5px;color:var(--ink-3)">9 ambiti specialistici + libera</div></div></div>
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1px solid var(--ink,#101010);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink,#101010)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3.09 5.18 2 2 0 0 1 5.08 3h3a2 2 0 0 1 2 1.72c.13.81.36 1.6.68 2.34a2 2 0 0 1-.45 2.11L8.91 10.6a16 16 0 0 0 6.49 6.49l1.43-1.43a2 2 0 0 1 2.11-.45c.74.32 1.53.55 2.34.68a2 2 0 0 1 1.72 2z"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">30-45 minuti di call</div><div style="font-size:11.5px;color:var(--ink-3)">Confronto operativo con un esperto</div></div></div>
+          <div style="padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border:1px solid var(--ink,#101010);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink,#101010)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Nessun obbligo</div><div style="font-size:11.5px;color:var(--ink-3)">Solo supporto, niente contratti vincolanti</div></div></div>
         </div>
       </article>
 
@@ -177,19 +171,19 @@
   </div>
 
   <!-- ===== CANDIDATURE SPECIALI ===== -->
-  <div id="homeCapitaliSection" style="margin-top:36px;background:linear-gradient(135deg,#FBF7EE 0%,#F4ECD8 100%);border:1px solid #D9C896;border-left:4px solid #8B4513;border-radius:14px;padding:28px 32px;position:relative;overflow:hidden">
+  <div id="homeCapitaliSection" style="margin-top:36px;background:var(--ink,#101010);color:#fff;border-radius:16px;padding:40px 44px;position:relative;overflow:hidden">
     <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
       <div>
-        <span style="font-family:var(--font-ui);font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#8B4513">Remember &middot; Candidature speciali</span>
-        <h2 style="font-family:var(--font-display);font-size:1.5rem;margin:4px 0 0;color:#5C3D17;font-weight:500;line-height:1.2">Capitali della <em style="font-family:var(--font-italic);font-weight:400;color:#8B4513">Cultura</em></h2>
+        <span style="font-family:var(--font-ui);font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;color:var(--accent,#E84B1C)">Remember &middot; Candidature speciali</span>
+        <h2 style="font-family:var(--font-display);font-size:1.625rem;margin:6px 0 0;color:#fff;font-weight:600;line-height:1.1;letter-spacing:-0.025em">Capitali della <em style="font-weight:500;color:rgba(255,255,255,0.7);font-style:normal">Cultura</em></h2>
       </div>
-      <button class="section-action" type="button" data-goto="capitali" style="color:#8B4513">Tutte le candidature &rarr; &rarr;</button>
+      <button class="section-action" type="button" data-goto="capitali" style="color:var(--accent,#E84B1C);background:transparent;border:none;font-size:13px;font-weight:500;cursor:pointer;letter-spacing:-0.005em">Tutte le candidature &rarr;</button>
     </div>
-    <p style="font-family:var(--font-display);font-size:13px;color:#5C3D17;line-height:1.5;margin:0 0 16px;max-width:700px">Le scadenze ufficiali delle principali candidature riservate ai Comuni e ai territori. Click sulla candidatura per aprire la scheda con tutti i dettagli e una checklist operativa.</p>
+    <p style="font-family:var(--font-ui);font-size:14px;color:rgba(255,255,255,0.7);line-height:1.55;margin:0 0 20px;max-width:700px">Le scadenze ufficiali delle principali candidature riservate ai Comuni e ai territori. Click sulla candidatura per aprire la scheda con tutti i dettagli e una checklist operativa.</p>
     <div id="homeCapitaliList"></div>
-    <div style="margin-top:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border-top:1px solid rgba(217,200,150,.5);padding-top:14px">
-      <div><div style="font-family:var(--font-display);font-size:14px;font-weight:600;color:#5C3D17">Stai pensando a una candidatura?</div><div style="font-size:12px;color:#8B5E2B">Una call gratuita per valutare insieme tempi, requisiti e strategia.</div></div>
-      <button type="button" onclick="OC.prenotaConsulenza(event,'generica')" style="background:#8B4513;color:#fff;border:none;padding:11px 24px;border-radius:8px;font-family:var(--font-ui);font-size:13.5px;font-weight:600;cursor:pointer;letter-spacing:.02em;flex-shrink:0">Prenota una consulenza &rarr;</button>
+    <div style="margin-top:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border-top:1px solid rgba(255,255,255,0.12);padding-top:20px">
+      <div><div style="font-family:var(--font-display);font-size:15px;font-weight:500;color:#fff;letter-spacing:-0.015em">Stai pensando a una candidatura?</div><div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px">Una call gratuita per valutare insieme tempi, requisiti e strategia.</div></div>
+      <button type="button" onclick="OC.prenotaConsulenza(event,'generica')" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:13px 24px;border-radius:999px;font-family:var(--font-ui);font-size:14px;font-weight:500;cursor:pointer;letter-spacing:-0.005em;flex-shrink:0">Prenota una consulenza &rarr;</button>
     </div>
   </div>
 
