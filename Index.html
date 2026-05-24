@@ -6137,21 +6137,43 @@
     if (!res.items || !res.items.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna newsletter ancora creata.</div>'; return; }
     var html = '';
     res.items.forEach(function(it){
-      var act = (it.stato === 'bozza')
-        ? ('<button class="btn btn-secondary" data-action="openPreview" data-id="'+esc(it.id)+'" style="padding:4px 10px;font-size:11px">Anteprima</button>')
-        : (it.stato === 'in_attesa_approvazione'
-            ? '<span class="muted">in attesa autorizzazione…</span>'
-            : '<span class="muted">inviato: '+(it.destinatari||0)+'</span>');
+      var stato = it.stato || '';
+      var isInviato = (stato === 'inviato' || stato === 'inviata');
+      // Pulsante azione principale: Anteprima se bozza/in_attesa, riepilogo invio se inviato
+      var actPrimary = (stato === 'bozza' || stato === 'in_attesa_approvazione')
+        ? ('<button class="btn btn-secondary btn-sm" data-action="openPreview" data-id="'+esc(it.id)+'" title="Apri l\'anteprima di questa newsletter">Anteprima</button>')
+        : (isInviato ? '<span class="muted">Destinatari: '+(it.destinatari||0)+'</span>' : '');
+      // Pulsante elimina: solo se NON inviato (sicurezza: bozze inviate non si toccano)
+      var actDelete = isInviato ? ''
+        : '<button class="btn btn-danger btn-sm" data-action="deleteDigest" data-id="'+esc(it.id)+'" title="Elimina definitivamente questa bozza" aria-label="Elimina bozza">&#10005;&nbsp;Elimina</button>';
       html += ''
         + '<div class="digest-row">'
         +   '<div style="flex:1;min-width:0"><b>'+esc(it.soggetto||'(senza soggetto)')+'</b><br>'
-        +     '<small class="muted">'+esc(it.id)+' · '+esc(it.data||'')+' · '+esc(it.autore||'')+'</small>'
+        +     '<small class="muted">'+esc(it.id)+' &middot; '+esc(it.data||'')+' &middot; '+esc(it.autore||'')+'</small>'
         +   '</div>'
-        +   '<span class="status '+esc(it.stato||'')+'">'+esc((it.stato||'').replace(/_/g,' '))+'</span>'
-        +   act
+        +   '<span class="status '+esc(stato)+'">'+esc(stato.replace(/_/g,' '))+'</span>'
+        +   '<div class="digest-row-actions">'+actPrimary+actDelete+'</div>'
         + '</div>';
     });
     wrap.innerHTML = html;
+  }
+
+  function deleteDigest(id){
+    if (!hasGAS()) return;
+    if (!id) return;
+    if (!confirm('Eliminare definitivamente la bozza ' + id + '?\n\nL\'azione non è reversibile.')) return;
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || !r.ok) { alert('Errore eliminazione: '+(r && r.error || 'sconosciuto')); return; }
+        showToast && showToast('Bozza ' + id + ' eliminata', 'ok');
+        // Refresh elenco
+        google.script.run
+          .withSuccessHandler(renderDigestList)
+          .withFailureHandler(function(err){ console.error('reload digestList:', err); })
+          .adminGetDigestList();
+      })
+      .withFailureHandler(function(e){ alert('Errore di rete: '+e); })
+      .adminDeleteDigestDraft(id);
   }
 
   function checkTelegram(){
@@ -7649,6 +7671,7 @@
     testTelegram: testTelegram,
     checkTelegram: checkTelegram,
     openPreview: openPreview,
+    deleteDigest: deleteDigest,
     richiediAutorizzazione: richiediAutorizzazione,
     chiudiAnteprima: chiudiAnteprima,
     // Sprint 1.3 - Fonti dati admin

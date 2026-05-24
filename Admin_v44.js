@@ -19,6 +19,7 @@
  * Funzioni pubbliche (google.script.run):
  *   adminGetDigestList()
  *   adminGenerateDigestDraft(opts)
+ *   adminDeleteDigestDraft(draftId)   v5.0.2 — elimina bozza non inviata
  *   adminPreviewNewsletterHtml(draftId)
  *   adminRequestSendAuthorization(draftId)
  *   adminConfirmSendWithToken(draftId, authToken)
@@ -56,6 +57,60 @@ function adminGetDigestList() {
     });
   }
   return { ok:true, items: out, count: out.length };
+}
+
+/**
+ * Elimina definitivamente una bozza digest (riga NewsletterLog + draft in ScriptProperties).
+ * Solo bozze in stato 'bozza' o 'in_attesa_approvazione' possono essere eliminate.
+ * Bozze già inviate sono protette per audit trail.
+ *
+ * @param {string} draftId ID della bozza (es: 'DR20260524150300')
+ * @return {{ok:boolean, id?:string, stato?:string, error?:string}}
+ */
+function adminDeleteDigestDraft(draftId) {
+  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+  if (!draftId) return { ok:false, error:'missing_id' };
+
+  var sh = _getOrCreateSheet_(OC_NL_SHEET_, ['ID','Data','Soggetto','Destinatari','Stato','Autore','Token']);
+  var vals = sh.getDataRange().getValues();
+  if (vals.length < 2) return { ok:false, error:'empty_log' };
+
+  var header = vals[0];
+  var col = {};
+  header.forEach(function(h, idx){ col[h] = idx; });
+
+  // Cerca la riga (parto dal fondo perche' i piu' recenti sono in coda)
+  var rowIndex = -1;
+  var rowData = null;
+  for (var i = vals.length - 1; i >= 1; i--) {
+    if (String(vals[i][0]) === String(draftId)) {
+      rowIndex = i;
+      rowData = vals[i];
+      break;
+    }
+  }
+  if (rowIndex < 0) return { ok:false, error:'draft_not_found' };
+
+  var stato = String(rowData[col['Stato']] || '').toLowerCase();
+  if (stato === 'inviato' || stato === 'inviata') {
+    return { ok:false, error:'cannot_delete_sent', stato: stato };
+  }
+
+  // 1) Cancella riga dal foglio (rowIndex + 1 perche' i fogli sono 1-based)
+  sh.deleteRow(rowIndex + 1);
+
+  // 2) Cancella la ScriptProperty con il JSON della bozza
+  try {
+    PropertiesService.getScriptProperties().deleteProperty(OC_DRAFT_PROP_PFX_ + draftId);
+  } catch(e) {
+    // Non bloccante: la riga e' gia' stata cancellata, la property potrebbe non esistere
+    Logger.log('adminDeleteDigestDraft: deleteProperty non riuscita per ' + draftId + ': ' + e.message);
+  }
+
+  // 3) Audit log
+  Logger.log('Bozza digest eliminata: id=' + draftId + ' stato=' + stato + ' admin=' + _safeEmail_());
+
+  return { ok:true, id: draftId, stato: stato };
 }
 
 /**
