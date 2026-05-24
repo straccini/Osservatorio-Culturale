@@ -350,15 +350,16 @@ function fasSetupTrigger() {
     return { ok: false, error: 'forbidden' };
   }
   try {
-    // Rimuovi trigger esistente
+    // Rimuovi trigger esistenti (Fase 1 o completo)
     ScriptApp.getProjectTriggers().forEach(function(t) {
-      if (t.getHandlerFunction() === 'fasRunFase1') ScriptApp.deleteTrigger(t);
+      var fn = t.getHandlerFunction();
+      if (fn === 'fasRunFase1' || fn === 'fasRunCompleto') ScriptApp.deleteTrigger(t);
     });
-    // Installa nuovo
-    ScriptApp.newTrigger('fasRunFase1')
+    // Installa trigger completo (Fase 1 + 2)
+    ScriptApp.newTrigger('fasRunCompleto')
       .timeBased().everyDays(1).atHour(6).nearMinute(0).create();
-    Logger.log('[FAS] Trigger installato: fasRunFase1 ogni giorno alle 06:00');
-    return { ok: true, trigger: 'fasRunFase1', ora: '06:00' };
+    Logger.log('[FAS] Trigger installato: fasRunCompleto ogni giorno alle 06:00');
+    return { ok: true, trigger: 'fasRunCompleto', ora: '06:00' };
   } catch(e) {
     return { ok: false, error: e.message };
   }
