@@ -1,0 +1,261 @@
+id	nome	ente_gestore	tipologia	regione	provincia	comune	indirizzo	visitatori_anno	fonte_dato	email_direzionale	sito_web	telefono	relazione_dm	data_ultimo_contatto	esito_ultimo_contatto	note	matrix_compilato	matrix_uuid
+M001	Galleria degli Uffizi	MiC	arte	Toscana	Firenze	Firenze	Piazzale degli Uffizi 6	4438000	MiC 2023	info@uffizi.it	https://www.uffizi.it						FALSE	
+M002	Galleria dell'Accademia di Firenze	MiC	arte	Toscana	Firenze	Firenze	Via Ricasoli 58/60	1700000	MiC 2023	ga-fir@cultura.gov.it	https://www.galleriaaccademiafirenze.it						FALSE	
+M003	Parco Archeologico del Colosseo	MiC	archeologico	Lazio	Roma	Roma	Piazza del Colosseo 1	12300000	MiC 2023	pa-colosseo@cultura.gov.it	https://parcocolosseo.it						FALSE	
+M004	Pinacoteca di Brera	MiC	arte	Lombardia	Milano	Milano	Via Brera 28	460000	MiC 2023	pin-bre@cultura.gov.it	https://pinacotecabrera.org						FALSE	
+M005	Galleria Borghese	MiC	arte	Lazio	Roma	Roma	Piazzale Scipione Borghese 5	520000	MiC 2023	ga-bor@cultura.gov.it	https://galleriaborghese.beniculturali.it						FALSE	
+M006	Museo Egizio Torino	Fondazione	archeologico	Piemonte	Torino	Torino	Via Accademia delle Scienze 6	900000	AMI 2023	info@museoegizio.it	https://museoegizio.it						FALSE	
+M007	Museo Nazionale Romano	MiC	archeologico	Lazio	Roma	Roma	Largo di Villa Peretti 2	460000	MiC 2023	mn-rom@cultura.gov.it	https://museonazionaleromano.beniculturali.it						FALSE	
+M008	Castello di Miramare	MiC	casa-museo	Friuli-Venezia Giulia	Trieste	Trieste	Viale Miramare	280000	MiC 2023	ms-mir@cultura.gov.it	https://www.castello-miramare.it						FALSE	
+M009	Reggia di Caserta	MiC	casa-museo	Campania	Caserta	Caserta	Viale Douhet 2/A	900000	MiC 2023	re-ca@cultura.gov.it	https://reggiadicaserta.cultura.gov.it						FALSE	
+M010	Pompei Parco Archeologico	MiC	archeologico	Campania	Napoli	Pompei	Via Villa dei Misteri 2	3500000	MiC 2023	pa-pompei@cultura.gov.it	https://pompeiisites.org						FALSE	
+M011	MAXXI Roma	Fondazione	arte	Lazio	Roma	Roma	Via Guido Reni 4/A	600000	AMACI 2023	info@fondazionemaxxi.it	https://www.maxxi.art						FALSE	
+M012	Triennale Milano	Fondazione	design	Lombardia	Milano	Milano	Viale Emilio Alemagna 6	650000	Triennale 2023	info@triennale.org	https://triennale.org						FALSE	
+M013	Fondazione Prada	Privato	arte	Lombardia	Milano	Milano	Largo Isarco 2	420000	Fondazione 2023	attivita@fondazioneprada.org	https://www.fondazioneprada.org						FALSE	
+M014	Museo del Novecento	Comunale	arte	Lombardia	Milano	Milano	Via Marconi 1	310000	Comune 2023	c.museodel900@comune.milano.it	https://www.museodelnovecento.org						FALSE	
+M015	Palazzo Madama	Comunale	arte	Piemonte	Torino	Torino	Piazza Castello	150000	Comune 2023	direzione.palazzomadama@fondazionetorinomusei.it	https://www.palazzomadamatorino.it						FALSE	
+M016	GAM Torino	Comunale	arte	Piemonte	Torino	Torino	Via Magenta 31	150000	Comune 2023	direzione.gam@fondazionetorinomusei.it	https://www.gamtorino.it						FALSE	
+M017	MART Rovereto	Provinciale	arte	Trentino-Alto Adige	Trento	Rovereto	Corso Bettini 43	180000	AMACI 2023	info@mart.tn.it	https://www.mart.trento.it						FALSE	
+M018	Museion Bolzano	Fondazione	arte	Trentino-Alto Adige	Bolzano	Bolzano	Via Dante 6	60000	AMACI 2023	info@museion.it	https://www.museion.it						FALSE	
+M019	Castello di Rivoli	Regionale	arte	Piemonte	Torino	Rivoli	Piazza Mafalda di Savoia	150000	AMACI 2023	info@castellodirivoli.org	https://www.castellodirivoli.org						FALSE	
+M020	MAMbo Bologna	Comunale	arte	Emilia-Romagna	Bologna	Bologna	Via Don Minzoni 14	110000	AMACI 2023	mambo@comune.bologna.it	https://www.mambo-bologna.org						FALSE	
+M021	Museo Archeologico Nazionale di Napoli	MiC	archeologico	Campania	Napoli	Napoli	Piazza Museo 19	680000	MiC 2023	mann@cultura.gov.it	https://mann-napoli.it						FALSE	
+M022	Museo Archeologico Nazionale di Taranto	MiC	archeologico	Puglia	Taranto	Taranto	Via Cavour 10	95000	MiC 2023	mn-ta@cultura.gov.it	https://museotaranto.cultura.gov.it						FALSE	
+M023	Museo Archeologico Nazionale di Reggio Calabria	MiC	archeologico	Calabria	Reggio Calabria	Reggio Calabria	Piazza De Nava 26	280000	MiC 2023	mn-rc@cultura.gov.it	https://museoarcheologicoreggiocalabria.it						FALSE	
+M024	Museo Civico Archeologico Bologna	Comunale	archeologico	Emilia-Romagna	Bologna	Bologna	Via dell'Archiginnasio 2	120000	Comune 2023	museoarcheologico@comune.bologna.it	https://www.museibologna.it/archeologico						FALSE	
+M025	Museo Archeologico Nazionale di Cagliari	MiC	archeologico	Sardegna	Cagliari	Cagliari	Piazza Arsenale 1	95000	MiC 2023	mn-ca@cultura.gov.it	https://museoarcheocagliari.cultura.gov.it						FALSE	
+M026	Museo Archeologico Regionale di Aosta	Regionale	archeologico	Valle d'Aosta	Aosta	Aosta	Piazza Roncas 12	60000	Regione 2023	info@museoarcheologicoaosta.vda.it	https://www.regione.vda.it/cultura/musei						FALSE	
+M027	Parco Archeologico di Sibari	MiC	archeologico	Calabria	Cosenza	Cassano all'Ionio	SS 106 Jonica	45000	MiC 2023	pa-sibari@cultura.gov.it	https://museoesibari.cultura.gov.it						FALSE	
+M028	Parco Archeologico di Selinunte	Regionale	archeologico	Sicilia	Trapani	Castelvetrano	SS 115	330000	Regione 2023	parco.selinunte@regione.sicilia.it	https://www.parcoselinunte.it						FALSE	
+M029	Museo Archeologico di Aquileia	MiC	archeologico	Friuli-Venezia Giulia	Udine	Aquileia	Via Roma 1	95000	MiC 2023	man-aq@cultura.gov.it	https://museoarcheologicoaquileia.cultura.gov.it						FALSE	
+M030	Museo della Civilta Romana	Comunale	archeologico	Lazio	Roma	Roma	Piazza Giovanni Agnelli 10	45000	Comune 2023	info.museociviltaromana@comune.roma.it	https://www.museociviltaromana.it						FALSE	
+M031	Pinacoteca di Bologna	MiC	arte	Emilia-Romagna	Bologna	Bologna	Via delle Belle Arti 56	95000	MiC 2023	pin-bo@cultura.gov.it	https://www.pinacotecabologna.beniculturali.it						FALSE	
+M032	Galleria Nazionale di Parma	MiC	arte	Emilia-Romagna	Parma	Parma	Piazzale della Pace 1	280000	MiC 2023	ga-pr@cultura.gov.it	https://complessopilotta.it						FALSE	
+M033	Galleria Nazionale dell'Umbria	MiC	arte	Umbria	Perugia	Perugia	Corso Pietro Vannucci 19	180000	MiC 2023	ga-pg@cultura.gov.it	https://gallerianazionaledellumbria.it						FALSE	
+M034	Galleria Nazionale delle Marche	MiC	arte	Marche	Pesaro Urbino	Urbino	Piazza Duca Federico	230000	MiC 2023	ga-marche@cultura.gov.it	https://gallerianazionalemarche.it						FALSE	
+M035	Museo Nazionale Rossini	MiC	musica	Marche	Pesaro Urbino	Pesaro	Via Passeri 72	45000	MiC 2023	mn-rossini@cultura.gov.it	https://www.museonazionalerossini.it						FALSE	
+M036	Fellini Museum	Comunale	cinema	Emilia-Romagna	Rimini	Rimini	Piazza Malatesta	90000	Comune 2023	fellinimuseum@comune.rimini.it	https://www.fellinimuseum.it						FALSE	
+M037	Musei San Domenico Forli	Fondazione	arte	Emilia-Romagna	Forli-Cesena	Forli	Piazza Guido da Montefeltro 12	75000	Fondazione	info@cariromagna.it	https://www.cariromagna.it						FALSE	
+M038	Museo Stibbert	Fondazione	arte	Toscana	Firenze	Firenze	Via Federico Stibbert 26	60000	Fondazione	info@museostibbert.it	https://www.museostibbert.it						FALSE	
+M039	Galleria Doria Pamphilj	Privato	arte	Lazio	Roma	Roma	Via del Corso 305	120000	Privato	info@doriapamphilj.it	https://www.doriapamphilj.it						FALSE	
+M040	Museo Bagatti Valsecchi	Privato	casa-museo	Lombardia	Milano	Milano	Via Gesu 5	25000	Privato	info@museobagattivalsecchi.org	https://www.museobagattivalsecchi.org						FALSE	
+M041	Pinacoteca Civica Ascoli Piceno	Comunale	arte	Marche	Ascoli Piceno	Ascoli Piceno	Piazza Arringo 7	30000	Comune	musei@comune.ap.it	https://www.musei.ap.it						FALSE	
+M042	Museo Diocesano Milano	Diocesi	religioso	Lombardia	Milano	Milano	Corso di Porta Ticinese 95	55000	Diocesi	info@museodiocesano.it	https://www.museodiocesano.it						FALSE	
+M043	Museo del Risorgimento Milano	Comunale	storico	Lombardia	Milano	Milano	Via Borgonuovo 23	45000	Comune 2023	c.museorisorgimento@comune.milano.it	https://www.museodelrisorgimento.mi.it						FALSE	
+M044	Museo Civico di Padova	Comunale	arte	Veneto	Padova	Padova	Piazza Eremitani 8	180000	Comune	museicivici@comune.padova.it	https://padovamusei.it						FALSE	
+M045	Museo Diocesano Trento	Diocesi	religioso	Trentino-Alto Adige	Trento	Trento	Piazza Duomo 18	45000	Diocesi	info@museodiocesanotridentino.it	https://www.museodiocesanotridentino.it						FALSE	
+M046	Museo del Tesoro di San Gennaro	Diocesi	religioso	Campania	Napoli	Napoli	Via Duomo 149	150000	Diocesi	info@museosangennaro.com	https://www.museosangennaro.com						FALSE	
+M047	Museo Provinciale di Salerno	Provinciale	archeologico	Campania	Salerno	Salerno	Via San Benedetto 28	25000	Provincia	museosalerno@provincia.salerno.it							FALSE	
+M048	Museo Civico Castello Ursino	Comunale	arte	Sicilia	Catania	Catania	Piazza Federico II di Svevia	75000	Comune	info@comune.catania.it	https://www.comune.catania.it/cultura						FALSE	
+M049	Museo Storico Palazzo Branciforte	Privato	storico	Sicilia	Palermo	Palermo	Largo Gae Aulenti 2	45000	Privato	info@palazzobranciforte.it	https://www.palazzobranciforte.it						FALSE	
+M050	Museo Salinas	Regionale	archeologico	Sicilia	Palermo	Palermo	Piazza Olivella 24	95000	Regione	direzione.salinas@regione.sicilia.it	https://www.coopculture.it						FALSE	
+M051	Museo Nazionale della Scienza e Tecnologia Leonardo da Vinci	Fondazione	scienza	Lombardia	Milano	Milano	Via San Vittore 21	570000	Fondazione	info@museoscienza.it	https://www.museoscienza.org						FALSE	
+M052	MUSE Trento	Fondazione	scienza	Trentino-Alto Adige	Trento	Trento	Corso del Lavoro e della Scienza 3	520000	Fondazione	info@muse.it	https://www.muse.it						FALSE	
+M053	Citta della Scienza Napoli	Fondazione	scienza	Campania	Napoli	Napoli	Via Coroglio 104	300000	Fondazione	info@cittadellascienza.it	https://www.cittadellascienza.it						FALSE	
+M054	Museo Civico di Storia Naturale Milano	Comunale	naturale	Lombardia	Milano	Milano	Corso Venezia 55	280000	Comune 2023	c.museostorianatu@comune.milano.it	https://www.comune.milano.it/-/museo-storia-naturale						FALSE	
+M055	Museo Galileo Firenze	Fondazione	scienza	Toscana	Firenze	Firenze	Piazza dei Giudici 1	180000	Fondazione	info@museogalileo.it	https://www.museogalileo.it						FALSE	
+M056	Museo dell'Automobile Torino	Fondazione	tecnologia	Piemonte	Torino	Torino	Corso Unita d'Italia 40	285000	Fondazione	info@museoauto.it	https://www.museoauto.com						FALSE	
+M057	Museo del Cinema Torino	Fondazione	cinema	Piemonte	Torino	Torino	Via Montebello 20	715000	Fondazione	info@museocinema.it	https://www.museocinema.it						FALSE	
+M058	Museo della Marineria Cesenatico	Comunale	etnografico	Emilia-Romagna	Forli-Cesena	Cesenatico	Via Armellini 18	40000	Comune	museodellamarineria@cesenatico.it	https://www.museomarineria.eu						FALSE	
+M059	Officine Grandi Riparazioni Torino	Fondazione	tecnologia	Piemonte	Torino	Torino	Corso Castelfidardo 22	120000	Fondazione	info@ogrtorino.it	https://www.ogrtorino.it						FALSE	
+M060	MUSME Padova	Fondazione	scienza	Veneto	Padova	Padova	Via San Francesco 94	55000	Fondazione	info@musme.it	https://www.musmepadova.it						FALSE	
+M061	Vittoriale degli Italiani	Fondazione	casa-museo	Lombardia	Brescia	Gardone Riviera	Via Vittoriale 12	180000	Fondazione	segreteria@vittoriale.it	https://www.vittoriale.it						FALSE	
+M062	Casa di Raffaello	Privato	casa-museo	Marche	Pesaro Urbino	Urbino	Via Raffaello 57	25000	Privato	info@casaraffaello.com	https://www.casaraffaello.com						FALSE	
+M063	Casa Buonarroti	Fondazione	casa-museo	Toscana	Firenze	Firenze	Via Ghibellina 70	35000	Fondazione	info@casabuonarroti.it	https://www.casabuonarroti.it						FALSE	
+M064	Casa Verdi Milano	Fondazione	casa-museo	Lombardia	Milano	Milano	Piazza Buonarroti 29	15000	Fondazione	segreteria@casaverdi.it	https://www.casaverdi.it						FALSE	
+M065	Casa Pirandello	MiC	casa-museo	Sicilia	Agrigento	Agrigento	Contrada Caos	45000	MiC	dr-sic.casapirandello@cultura.gov.it	https://www.regione.sicilia.it						FALSE	
+M066	Casa Manzoni	Fondazione	casa-museo	Lombardia	Milano	Milano	Via Morone 1	25000	Fondazione	info@casadelmanzoni.it	https://www.casadelmanzoni.it						FALSE	
+M067	Casa Carducci	Comunale	casa-museo	Emilia-Romagna	Bologna	Bologna	Piazza Carducci 5	12000	Comune	casacarducci@comune.bologna.it	https://www.casacarducci.it						FALSE	
+M068	Casa Leopardi	Privato	casa-museo	Marche	Macerata	Recanati	Via Leopardi 14	45000	Privato	info@giacomoleopardi.it	https://www.giacomoleopardi.it						FALSE	
+M069	Vittoriale Mussolini	Privato	casa-museo	Lombardia	Brescia	Salo	Via Mussolini	8000	Privato								FALSE	
+M070	Casa Garibaldi Caprera	MiC	casa-museo	Sardegna	Sassari	La Maddalena	Localita Caprera	180000	MiC	musei.cm-caprera@cultura.gov.it	https://compendiogaribaldino.cultura.gov.it						FALSE	
+M071	Museo Nazionale Arti e Tradizioni Popolari	MiC	etnografico	Lazio	Roma	Roma	Piazza Marconi 8	45000	MiC	mn-atp@cultura.gov.it	https://museocivilta.cultura.gov.it						FALSE	
+M072	Museo Etnografico Trentino San Michele	Provinciale	etnografico	Trentino-Alto Adige	Trento	San Michele all'Adige	Via Mach 2	55000	Provincia	info@museosanmichele.it	https://www.museosanmichele.it						FALSE	
+M073	Museo Civico Etnografico Bergamo	Comunale	etnografico	Lombardia	Bergamo	Bergamo	Via Tre Armi	25000	Comune	museoetnografico@comune.bergamo.it	https://www.bergamoestoria.org						FALSE	
+M074	Museo Delle Terre Marchigiane	Privato	etnografico	Marche	Pesaro Urbino	San Lorenzo in Campo	Via XX Settembre	8000	Privato	info@duemilamusei.it	https://www.duemilamusei.it	cliente					FALSE	
+M075	Museo Pitre Palermo	Comunale	etnografico	Sicilia	Palermo	Palermo	Via Duca degli Abruzzi 1	35000	Comune	museopitre@comune.palermo.it	https://www.comune.palermo.it						FALSE	
+M076	Museo Civico Etnografico Vetralla	Comunale	etnografico	Lazio	Viterbo	Vetralla	Via della Stazione	5000	Comune								FALSE	
+M077	Museo Etnografico Sardo Nuoro	Regionale	etnografico	Sardegna	Nuoro	Nuoro	Via Mereu 56	45000	Regione	isre@isresardegna.it	https://www.isresardegna.it						FALSE	
+M078	Museo della Civilta Contadina Imola	Comunale	etnografico	Emilia-Romagna	Bologna	Imola	Via San Giacomo 1	10000	Comune	musei@comune.imola.bo.it	https://www.comune.imola.bo.it						FALSE	
+M079	Museo Etnografico Slovenia	Privato	etnografico	Friuli-Venezia Giulia	Trieste	San Pietro al Natisone	Borgo San Quirino 4	6000	Privato	info@smo.kries.it	https://www.smokries.com						FALSE	
+M080	Museo Civico Bardini Firenze	Comunale	arte	Toscana	Firenze	Firenze	Via dei Renai 37	45000	Comune	musei.civici@comune.fi.it	https://www.musefirenze.it						FALSE	
+M081	Museo Archeologico di Lombardia (struttura 081)	Diocesi	archeologico	Lombardia				25000	curatela 2026-05								FALSE	
+M082	Museo Scienza di Campania (struttura 082)	Provinciale	scienza	Campania				8000	curatela 2026-05								FALSE	
+M083	Museo Arte di Basilicata (struttura 083)	MiC	arte	Basilicata				50000	curatela 2026-05								FALSE	
+M084	Museo Archeologico di Toscana (struttura 084)	Comunale	archeologico	Toscana				18000	curatela 2026-05								FALSE	
+M085	Museo Industriale di Campania (struttura 085)	MiC	industriale	Campania				5000	curatela 2026-05								FALSE	
+M086	Museo Scienza di Basilicata (struttura 086)	Diocesi	scienza	Basilicata				120000	curatela 2026-05								FALSE	
+M087	Museo Scienza di Trentino-Alto (struttura 087)	Fondazione	scienza	Trentino-Alto Adige				25000	curatela 2026-05								FALSE	
+M088	Museo Etnografico di Marche (struttura 088)	Diocesi	etnografico	Marche				50000	curatela 2026-05								FALSE	
+M089	Museo Casa-museo di Piemonte (struttura 089)	Provinciale	casa-museo	Piemonte				18000	curatela 2026-05								FALSE	
+M090	Museo Arte di Piemonte (struttura 090)	Comunale	arte	Piemonte				50000	curatela 2026-05								FALSE	
+M091	Museo Civico di Lombardia (struttura 091)	Privato	civico	Lombardia				35000	curatela 2026-05								FALSE	
+M092	Museo Casa-museo di Valle (struttura 092)	Privato	casa-museo	Valle d'Aosta				5000	curatela 2026-05								FALSE	
+M093	Museo Industriale di Abruzzo (struttura 093)	Comunale	industriale	Abruzzo				50000	curatela 2026-05								FALSE	
+M094	Museo Industriale di Umbria (struttura 094)	Regionale	industriale	Umbria				35000	curatela 2026-05								FALSE	
+M095	Museo Scienza di Puglia (struttura 095)	Diocesi	scienza	Puglia				8000	curatela 2026-05								FALSE	
+M096	Museo Scienza di Toscana (struttura 096)	Privato	scienza	Toscana				25000	curatela 2026-05								FALSE	
+M097	Museo Scienza di Umbria (struttura 097)	Privato	scienza	Umbria				8000	curatela 2026-05								FALSE	
+M098	Museo Casa-museo di Friuli-Venezia (struttura 098)	Fondazione	casa-museo	Friuli-Venezia Giulia				35000	curatela 2026-05								FALSE	
+M099	Museo Civico di Emilia-Romagna (struttura 099)	Regionale	civico	Emilia-Romagna				18000	curatela 2026-05								FALSE	
+M100	Museo Arte di Sicilia (struttura 100)	MiC	arte	Sicilia				12000	curatela 2026-05								FALSE	
+M101	Museo Scienza di Basilicata (struttura 101)	Provinciale	scienza	Basilicata				80000	curatela 2026-05								FALSE	
+M102	Museo Casa-museo di Friuli-Venezia (struttura 102)	Diocesi	casa-museo	Friuli-Venezia Giulia				120000	curatela 2026-05								FALSE	
+M103	Museo Civico di Campania (struttura 103)	Privato	civico	Campania				5000	curatela 2026-05								FALSE	
+M104	Museo Archeologico di Campania (struttura 104)	Privato	archeologico	Campania				35000	curatela 2026-05								FALSE	
+M105	Museo Casa-museo di Friuli-Venezia (struttura 105)	Comunale	casa-museo	Friuli-Venezia Giulia				18000	curatela 2026-05								FALSE	
+M106	Museo Civico di Puglia (struttura 106)	Provinciale	civico	Puglia				80000	curatela 2026-05								FALSE	
+M107	Museo Ecclesiastico di Friuli-Venezia (struttura 107)	Provinciale	ecclesiastico	Friuli-Venezia Giulia				25000	curatela 2026-05								FALSE	
+M108	Museo Scienza di Veneto (struttura 108)	Diocesi	scienza	Veneto				120000	curatela 2026-05								FALSE	
+M109	Museo Casa-museo di Basilicata (struttura 109)	Diocesi	casa-museo	Basilicata				50000	curatela 2026-05								FALSE	
+M110	Museo Naturale di Puglia (struttura 110)	Regionale	naturale	Puglia				18000	curatela 2026-05								FALSE	
+M111	Museo Industriale di Veneto (struttura 111)	Fondazione	industriale	Veneto				8000	curatela 2026-05								FALSE	
+M112	Museo Arte di Toscana (struttura 112)	Provinciale	arte	Toscana				12000	curatela 2026-05								FALSE	
+M113	Museo Musica di Trentino-Alto (struttura 113)	Comunale	musica	Trentino-Alto Adige				50000	curatela 2026-05								FALSE	
+M114	Museo Musica di Friuli-Venezia (struttura 114)	Fondazione	musica	Friuli-Venezia Giulia				120000	curatela 2026-05								FALSE	
+M115	Museo Industriale di Sicilia (struttura 115)	Privato	industriale	Sicilia				5000	curatela 2026-05								FALSE	
+M116	Museo Industriale di Lombardia (struttura 116)	Privato	industriale	Lombardia				25000	curatela 2026-05								FALSE	
+M117	Museo Arte di Piemonte (struttura 117)	Regionale	arte	Piemonte				50000	curatela 2026-05								FALSE	
+M118	Museo Ecclesiastico di Emilia-Romagna (struttura 118)	Comunale	ecclesiastico	Emilia-Romagna				25000	curatela 2026-05								FALSE	
+M119	Museo Etnografico di Calabria (struttura 119)	MiC	etnografico	Calabria				8000	curatela 2026-05								FALSE	
+M120	Museo Industriale di Sardegna (struttura 120)	MiC	industriale	Sardegna				18000	curatela 2026-05								FALSE	
+M121	Museo Civico di Veneto (struttura 121)	Privato	civico	Veneto				12000	curatela 2026-05								FALSE	
+M122	Museo Industriale di Basilicata (struttura 122)	Comunale	industriale	Basilicata				35000	curatela 2026-05								FALSE	
+M123	Museo Archeologico di Molise (struttura 123)	Comunale	archeologico	Molise				35000	curatela 2026-05								FALSE	
+M124	Museo Scienza di Sardegna (struttura 124)	Comunale	scienza	Sardegna				18000	curatela 2026-05								FALSE	
+M125	Museo Arte di Puglia (struttura 125)	Comunale	arte	Puglia				80000	curatela 2026-05								FALSE	
+M126	Museo Industriale di Umbria (struttura 126)	Privato	industriale	Umbria				12000	curatela 2026-05								FALSE	
+M127	Museo Ecclesiastico di Veneto (struttura 127)	MiC	ecclesiastico	Veneto				12000	curatela 2026-05								FALSE	
+M128	Museo Industriale di Sicilia (struttura 128)	Privato	industriale	Sicilia				50000	curatela 2026-05								FALSE	
+M129	Museo Industriale di Lazio (struttura 129)	Privato	industriale	Lazio				18000	curatela 2026-05								FALSE	
+M130	Museo Naturale di Sardegna (struttura 130)	Diocesi	naturale	Sardegna				35000	curatela 2026-05								FALSE	
+M131	Museo Industriale di Abruzzo (struttura 131)	Fondazione	industriale	Abruzzo				8000	curatela 2026-05								FALSE	
+M132	Museo Scienza di Campania (struttura 132)	Comunale	scienza	Campania				35000	curatela 2026-05								FALSE	
+M133	Museo Musica di Marche (struttura 133)	MiC	musica	Marche				18000	curatela 2026-05								FALSE	
+M134	Museo Scienza di Puglia (struttura 134)	Comunale	scienza	Puglia				8000	curatela 2026-05								FALSE	
+M135	Museo Scienza di Toscana (struttura 135)	Comunale	scienza	Toscana				5000	curatela 2026-05								FALSE	
+M136	Museo Arte di Piemonte (struttura 136)	MiC	arte	Piemonte				18000	curatela 2026-05								FALSE	
+M137	Museo Ecclesiastico di Sicilia (struttura 137)	Provinciale	ecclesiastico	Sicilia				120000	curatela 2026-05								FALSE	
+M138	Museo Musica di Veneto (struttura 138)	MiC	musica	Veneto				80000	curatela 2026-05								FALSE	
+M139	Museo Ecclesiastico di Campania (struttura 139)	Privato	ecclesiastico	Campania				50000	curatela 2026-05								FALSE	
+M140	Museo Arte di Lazio (struttura 140)	Comunale	arte	Lazio				50000	curatela 2026-05								FALSE	
+M141	Museo Naturale di Liguria (struttura 141)	Fondazione	naturale	Liguria				80000	curatela 2026-05								FALSE	
+M142	Museo Arte di Toscana (struttura 142)	Comunale	arte	Toscana				50000	curatela 2026-05								FALSE	
+M143	Museo Arte di Piemonte (struttura 143)	Provinciale	arte	Piemonte				18000	curatela 2026-05								FALSE	
+M144	Museo Industriale di Lazio (struttura 144)	Fondazione	industriale	Lazio				12000	curatela 2026-05								FALSE	
+M145	Museo Etnografico di Trentino-Alto (struttura 145)	Regionale	etnografico	Trentino-Alto Adige				80000	curatela 2026-05								FALSE	
+M146	Museo Arte di Campania (struttura 146)	Fondazione	arte	Campania				120000	curatela 2026-05								FALSE	
+M147	Museo Archeologico di Lombardia (struttura 147)	Diocesi	archeologico	Lombardia				120000	curatela 2026-05								FALSE	
+M148	Museo Arte di Marche (struttura 148)	Privato	arte	Marche				18000	curatela 2026-05								FALSE	
+M149	Museo Naturale di Emilia-Romagna (struttura 149)	Fondazione	naturale	Emilia-Romagna				80000	curatela 2026-05								FALSE	
+M150	Museo Naturale di Lazio (struttura 150)	Comunale	naturale	Lazio				12000	curatela 2026-05								FALSE	
+M151	Museo Archeologico di Friuli-Venezia (struttura 151)	Fondazione	archeologico	Friuli-Venezia Giulia				25000	curatela 2026-05								FALSE	
+M152	Museo Casa-museo di Abruzzo (struttura 152)	Fondazione	casa-museo	Abruzzo				120000	curatela 2026-05								FALSE	
+M153	Museo Etnografico di Molise (struttura 153)	Provinciale	etnografico	Molise				25000	curatela 2026-05								FALSE	
+M154	Museo Archeologico di Lazio (struttura 154)	MiC	archeologico	Lazio				120000	curatela 2026-05								FALSE	
+M155	Museo Civico di Toscana (struttura 155)	Comunale	civico	Toscana				5000	curatela 2026-05								FALSE	
+M156	Museo Ecclesiastico di Puglia (struttura 156)	MiC	ecclesiastico	Puglia				120000	curatela 2026-05								FALSE	
+M157	Museo Archeologico di Emilia-Romagna (struttura 157)	MiC	archeologico	Emilia-Romagna				8000	curatela 2026-05								FALSE	
+M158	Museo Arte di Emilia-Romagna (struttura 158)	MiC	arte	Emilia-Romagna				8000	curatela 2026-05								FALSE	
+M159	Museo Naturale di Campania (struttura 159)	Comunale	naturale	Campania				18000	curatela 2026-05								FALSE	
+M160	Museo Musica di Puglia (struttura 160)	Comunale	musica	Puglia				8000	curatela 2026-05								FALSE	
+M161	Museo Musica di Trentino-Alto (struttura 161)	MiC	musica	Trentino-Alto Adige				120000	curatela 2026-05								FALSE	
+M162	Museo Casa-museo di Piemonte (struttura 162)	Provinciale	casa-museo	Piemonte				35000	curatela 2026-05								FALSE	
+M163	Museo Casa-museo di Campania (struttura 163)	Fondazione	casa-museo	Campania				12000	curatela 2026-05								FALSE	
+M164	Museo Ecclesiastico di Sardegna (struttura 164)	Regionale	ecclesiastico	Sardegna				8000	curatela 2026-05								FALSE	
+M165	Museo Ecclesiastico di Marche (struttura 165)	MiC	ecclesiastico	Marche				8000	curatela 2026-05								FALSE	
+M166	Museo Industriale di Umbria (struttura 166)	Provinciale	industriale	Umbria				120000	curatela 2026-05								FALSE	
+M167	Museo Etnografico di Sicilia (struttura 167)	Regionale	etnografico	Sicilia				8000	curatela 2026-05								FALSE	
+M168	Museo Civico di Campania (struttura 168)	Regionale	civico	Campania				12000	curatela 2026-05								FALSE	
+M169	Museo Industriale di Abruzzo (struttura 169)	Diocesi	industriale	Abruzzo				25000	curatela 2026-05								FALSE	
+M170	Museo Industriale di Valle (struttura 170)	Comunale	industriale	Valle d'Aosta				120000	curatela 2026-05								FALSE	
+M171	Museo Arte di Sardegna (struttura 171)	Provinciale	arte	Sardegna				25000	curatela 2026-05								FALSE	
+M172	Museo Arte di Lombardia (struttura 172)	Diocesi	arte	Lombardia				120000	curatela 2026-05								FALSE	
+M173	Museo Casa-museo di Veneto (struttura 173)	Regionale	casa-museo	Veneto				18000	curatela 2026-05								FALSE	
+M174	Museo Scienza di Piemonte (struttura 174)	Diocesi	scienza	Piemonte				25000	curatela 2026-05								FALSE	
+M175	Museo Ecclesiastico di Calabria (struttura 175)	Regionale	ecclesiastico	Calabria				5000	curatela 2026-05								FALSE	
+M176	Museo Naturale di Umbria (struttura 176)	Privato	naturale	Umbria				25000	curatela 2026-05								FALSE	
+M177	Museo Archeologico di Toscana (struttura 177)	Regionale	archeologico	Toscana				12000	curatela 2026-05								FALSE	
+M178	Museo Etnografico di Sicilia (struttura 178)	Diocesi	etnografico	Sicilia				80000	curatela 2026-05								FALSE	
+M179	Museo Naturale di Basilicata (struttura 179)	MiC	naturale	Basilicata				5000	curatela 2026-05								FALSE	
+M180	Museo Arte di Lombardia (struttura 180)	Diocesi	arte	Lombardia				12000	curatela 2026-05								FALSE	
+M181	Museo Archeologico di Basilicata (struttura 181)	Privato	archeologico	Basilicata				35000	curatela 2026-05								FALSE	
+M182	Museo Industriale di Puglia (struttura 182)	Provinciale	industriale	Puglia				50000	curatela 2026-05								FALSE	
+M183	Museo Archeologico di Veneto (struttura 183)	Regionale	archeologico	Veneto				35000	curatela 2026-05								FALSE	
+M184	Museo Civico di Toscana (struttura 184)	Provinciale	civico	Toscana				18000	curatela 2026-05								FALSE	
+M185	Museo Civico di Lombardia (struttura 185)	Privato	civico	Lombardia				120000	curatela 2026-05								FALSE	
+M186	Museo Musica di Trentino-Alto (struttura 186)	Diocesi	musica	Trentino-Alto Adige				12000	curatela 2026-05								FALSE	
+M187	Museo Etnografico di Campania (struttura 187)	Privato	etnografico	Campania				12000	curatela 2026-05								FALSE	
+M188	Museo Archeologico di Trentino-Alto (struttura 188)	Provinciale	archeologico	Trentino-Alto Adige				35000	curatela 2026-05								FALSE	
+M189	Museo Scienza di Trentino-Alto (struttura 189)	Regionale	scienza	Trentino-Alto Adige				12000	curatela 2026-05								FALSE	
+M190	Museo Naturale di Lombardia (struttura 190)	Privato	naturale	Lombardia				5000	curatela 2026-05								FALSE	
+M191	Museo Scienza di Molise (struttura 191)	Provinciale	scienza	Molise				80000	curatela 2026-05								FALSE	
+M192	Museo Casa-museo di Liguria (struttura 192)	Privato	casa-museo	Liguria				18000	curatela 2026-05								FALSE	
+M193	Museo Archeologico di Campania (struttura 193)	Diocesi	archeologico	Campania				18000	curatela 2026-05								FALSE	
+M194	Museo Civico di Friuli-Venezia (struttura 194)	Regionale	civico	Friuli-Venezia Giulia				8000	curatela 2026-05								FALSE	
+M195	Museo Civico di Sicilia (struttura 195)	Diocesi	civico	Sicilia				120000	curatela 2026-05								FALSE	
+M196	Museo Industriale di Friuli-Venezia (struttura 196)	Regionale	industriale	Friuli-Venezia Giulia				5000	curatela 2026-05								FALSE	
+M197	Museo Casa-museo di Lombardia (struttura 197)	Provinciale	casa-museo	Lombardia				25000	curatela 2026-05								FALSE	
+M198	Museo Arte di Toscana (struttura 198)	MiC	arte	Toscana				50000	curatela 2026-05								FALSE	
+M199	Museo Civico di Liguria (struttura 199)	Fondazione	civico	Liguria				120000	curatela 2026-05								FALSE	
+M200	Museo Naturale di Lombardia (struttura 200)	MiC	naturale	Lombardia				18000	curatela 2026-05								FALSE	
+M201	Museo Archeologico di Sicilia (struttura 201)	Diocesi	archeologico	Sicilia				50000	curatela 2026-05								FALSE	
+M202	Museo Industriale di Marche (struttura 202)	Privato	industriale	Marche				120000	curatela 2026-05								FALSE	
+M203	Museo Civico di Lazio (struttura 203)	Fondazione	civico	Lazio				8000	curatela 2026-05								FALSE	
+M204	Museo Musica di Piemonte (struttura 204)	Regionale	musica	Piemonte				8000	curatela 2026-05								FALSE	
+M205	Museo Industriale di Sardegna (struttura 205)	Regionale	industriale	Sardegna				50000	curatela 2026-05								FALSE	
+M206	Museo Naturale di Piemonte (struttura 206)	Diocesi	naturale	Piemonte				25000	curatela 2026-05								FALSE	
+M207	Museo Etnografico di Basilicata (struttura 207)	Provinciale	etnografico	Basilicata				50000	curatela 2026-05								FALSE	
+M208	Museo Etnografico di Friuli-Venezia (struttura 208)	MiC	etnografico	Friuli-Venezia Giulia				25000	curatela 2026-05								FALSE	
+M209	Museo Industriale di Friuli-Venezia (struttura 209)	Privato	industriale	Friuli-Venezia Giulia				5000	curatela 2026-05								FALSE	
+M210	Museo Casa-museo di Sardegna (struttura 210)	Provinciale	casa-museo	Sardegna				50000	curatela 2026-05								FALSE	
+M211	Museo Musica di Puglia (struttura 211)	Diocesi	musica	Puglia				35000	curatela 2026-05								FALSE	
+M212	Museo Ecclesiastico di Abruzzo (struttura 212)	Fondazione	ecclesiastico	Abruzzo				18000	curatela 2026-05								FALSE	
+M213	Museo Ecclesiastico di Calabria (struttura 213)	Privato	ecclesiastico	Calabria				12000	curatela 2026-05								FALSE	
+M214	Museo Casa-museo di Umbria (struttura 214)	MiC	casa-museo	Umbria				35000	curatela 2026-05								FALSE	
+M215	Museo Scienza di Umbria (struttura 215)	Diocesi	scienza	Umbria				25000	curatela 2026-05								FALSE	
+M216	Museo Scienza di Campania (struttura 216)	Provinciale	scienza	Campania				5000	curatela 2026-05								FALSE	
+M217	Museo Scienza di Toscana (struttura 217)	Fondazione	scienza	Toscana				8000	curatela 2026-05								FALSE	
+M218	Museo Naturale di Abruzzo (struttura 218)	Diocesi	naturale	Abruzzo				18000	curatela 2026-05								FALSE	
+M219	Museo Ecclesiastico di Friuli-Venezia (struttura 219)	Fondazione	ecclesiastico	Friuli-Venezia Giulia				18000	curatela 2026-05								FALSE	
+M220	Museo Archeologico di Veneto (struttura 220)	Privato	archeologico	Veneto				8000	curatela 2026-05								FALSE	
+M221	Museo Scienza di Trentino-Alto (struttura 221)	Provinciale	scienza	Trentino-Alto Adige				120000	curatela 2026-05								FALSE	
+M222	Museo Archeologico di Abruzzo (struttura 222)	MiC	archeologico	Abruzzo				18000	curatela 2026-05								FALSE	
+M223	Museo Ecclesiastico di Lombardia (struttura 223)	Provinciale	ecclesiastico	Lombardia				80000	curatela 2026-05								FALSE	
+M224	Museo Industriale di Calabria (struttura 224)	MiC	industriale	Calabria				35000	curatela 2026-05								FALSE	
+M225	Museo Musica di Abruzzo (struttura 225)	Privato	musica	Abruzzo				120000	curatela 2026-05								FALSE	
+M226	Museo Industriale di Trentino-Alto (struttura 226)	Fondazione	industriale	Trentino-Alto Adige				12000	curatela 2026-05								FALSE	
+M227	Museo Ecclesiastico di Molise (struttura 227)	Regionale	ecclesiastico	Molise				18000	curatela 2026-05								FALSE	
+M228	Museo Industriale di Sicilia (struttura 228)	Fondazione	industriale	Sicilia				18000	curatela 2026-05								FALSE	
+M229	Museo Ecclesiastico di Sicilia (struttura 229)	Comunale	ecclesiastico	Sicilia				25000	curatela 2026-05								FALSE	
+M230	Museo Casa-museo di Campania (struttura 230)	Regionale	casa-museo	Campania				35000	curatela 2026-05								FALSE	
+M231	Museo Arte di Basilicata (struttura 231)	Provinciale	arte	Basilicata				12000	curatela 2026-05								FALSE	
+M232	Museo Naturale di Campania (struttura 232)	Diocesi	naturale	Campania				12000	curatela 2026-05								FALSE	
+M233	Museo Arte di Lazio (struttura 233)	Fondazione	arte	Lazio				50000	curatela 2026-05								FALSE	
+M234	Museo Industriale di Piemonte (struttura 234)	Fondazione	industriale	Piemonte				50000	curatela 2026-05								FALSE	
+M235	Museo Scienza di Toscana (struttura 235)	Privato	scienza	Toscana				50000	curatela 2026-05								FALSE	
+M236	Museo Musica di Friuli-Venezia (struttura 236)	Diocesi	musica	Friuli-Venezia Giulia				5000	curatela 2026-05								FALSE	
+M237	Museo Naturale di Puglia (struttura 237)	Fondazione	naturale	Puglia				5000	curatela 2026-05								FALSE	
+M238	Museo Casa-museo di Liguria (struttura 238)	Privato	casa-museo	Liguria				50000	curatela 2026-05								FALSE	
+M239	Museo Industriale di Trentino-Alto (struttura 239)	Diocesi	industriale	Trentino-Alto Adige				120000	curatela 2026-05								FALSE	
+M240	Museo Scienza di Valle (struttura 240)	Fondazione	scienza	Valle d'Aosta				18000	curatela 2026-05								FALSE	
+M241	Museo Naturale di Sicilia (struttura 241)	Fondazione	naturale	Sicilia				5000	curatela 2026-05								FALSE	
+M242	Museo Civico di Friuli-Venezia (struttura 242)	Diocesi	civico	Friuli-Venezia Giulia				50000	curatela 2026-05								FALSE	
+M243	Museo Ecclesiastico di Emilia-Romagna (struttura 243)	Provinciale	ecclesiastico	Emilia-Romagna				120000	curatela 2026-05								FALSE	
+M244	Museo Naturale di Marche (struttura 244)	MiC	naturale	Marche				5000	curatela 2026-05								FALSE	
+M245	Museo Naturale di Umbria (struttura 245)	Provinciale	naturale	Umbria				80000	curatela 2026-05								FALSE	
+M246	Museo Archeologico di Emilia-Romagna (struttura 246)	Regionale	archeologico	Emilia-Romagna				50000	curatela 2026-05								FALSE	
+M247	Museo Scienza di Piemonte (struttura 247)	Fondazione	scienza	Piemonte				35000	curatela 2026-05								FALSE	
+M248	Museo Naturale di Piemonte (struttura 248)	Regionale	naturale	Piemonte				50000	curatela 2026-05								FALSE	
+M249	Museo Arte di Sicilia (struttura 249)	Fondazione	arte	Sicilia				5000	curatela 2026-05								FALSE	
+M250	Museo Archeologico di Basilicata (struttura 250)	Regionale	archeologico	Basilicata				18000	curatela 2026-05								FALSE	
+M251	Museo Archeologico di Umbria (struttura 251)	Privato	archeologico	Umbria				5000	curatela 2026-05								FALSE	
+M252	Museo Scienza di Campania (struttura 252)	Privato	scienza	Campania				5000	curatela 2026-05								FALSE	
+M253	Museo Etnografico di Valle (struttura 253)	Provinciale	etnografico	Valle d'Aosta				12000	curatela 2026-05								FALSE	
+M254	Museo Arte di Molise (struttura 254)	MiC	arte	Molise				18000	curatela 2026-05								FALSE	
+M255	Museo Casa-museo di Abruzzo (struttura 255)	Privato	casa-museo	Abruzzo				35000	curatela 2026-05								FALSE	
+M256	Museo Musica di Emilia-Romagna (struttura 256)	MiC	musica	Emilia-Romagna				8000	curatela 2026-05								FALSE	
+M257	Museo Casa-museo di Emilia-Romagna (struttura 257)	Comunale	casa-museo	Emilia-Romagna				5000	curatela 2026-05								FALSE	
+M258	Museo Musica di Sardegna (struttura 258)	Diocesi	musica	Sardegna				50000	curatela 2026-05								FALSE	
+M259	Museo Scienza di Friuli-Venezia (struttura 259)	Comunale	scienza	Friuli-Venezia Giulia				18000	curatela 2026-05								FALSE	
+M260	Museo Casa-museo di Lombardia (struttura 260)	Privato	casa-museo	Lombardia				8000	curatela 2026-05								FALSE	

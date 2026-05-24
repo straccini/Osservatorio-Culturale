@@ -1,25 +1,18 @@
 /**
  * ================================================================
- * OSSERVATORIO CULTURALE — Server_v44_doGet_patch.gs  (v4.4)
+ * SINOPIA · Newsletter Approve — handler approvazione newsletter via link Telegram
  * ----------------------------------------------------------------
- * Handler aggiuntivo per il flow di approvazione newsletter via link.
+ * v4.18.39 (audit 2026-05-14): rinominato da Server_v44_doGet_patch.gs.
+ * La "patch di innesto" descritta storicamente è GIÀ stata applicata
+ * nel doGet di Codice.js (ramo `params.approveNl && params.t`).
  *
- * Non sostituisce doGet() esistente: aggiunge una funzione
- * _renderApproveNewsletter_(e) che deve essere invocata da doGet()
- * all'inizio, prima del rendering Home.
+ * Funzioni esportate (chiamate da Codice.js doGet):
+ *   _renderApproveNewsletterPage_(draftId, token)  → HTML pagina conferma
+ *   _executeApproveNewsletter_(draftId, token)     → esegue invio dopo conferma admin
  *
- * ISTRUZIONI DI INNESTO (da applicare al doGet esistente in Server_v42_ALL.gs):
- * ----------------------------------------------------------------
- * All'inizio della funzione doGet(e), subito dopo var params = e && e.parameter || {};
- * aggiungere questo blocco:
- *
- *    if (params.approveNl && params.t) {
- *      var html = _renderApproveNewsletterPage_(params.approveNl, params.t);
- *      return HtmlService.createHtmlOutput(html)
- *        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
- *        .setTitle('Approvazione invio — Osservatorio Culturale');
- *    }
- *
+ * Helper privati:
+ *   _approvePage_(css, inner)                       → wrapper HTML
+ *   _hEsc_(s)                                       → escape HTML
  * ================================================================
  */
 
