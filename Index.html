@@ -3005,6 +3005,15 @@
 
   function renderHome(d){
     var t=$('homeDataOggi'); if (t && d.dataOggi) t.textContent = d.dataOggi;
+    // v5.0.5 — Saluto personalizzato basato sull'ora
+    var greetEl = $('homeGreeting');
+    if (greetEl) {
+      var h = new Date().getHours();
+      var greet = h < 12 ? 'Buongiorno' : h < 18 ? 'Buon pomeriggio' : 'Buonasera';
+      var nome = (OC_SESSION && OC_SESSION.email) ? OC_SESSION.email.split('@')[0].split('.')[0] : '';
+      if (nome) nome = nome.charAt(0).toUpperCase() + nome.slice(1);
+      greetEl.textContent = greet + (nome ? ', ' + nome : '');
+    }
     renderUpdateInfo(d);
 
     // Stats bar

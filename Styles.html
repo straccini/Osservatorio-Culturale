@@ -2663,6 +2663,109 @@ body.is-home-page .topbar-search{display:none}
 }
 
 /* ==========================================================
+   DELIGHT — micro-interazioni raffinate (v5.0.5)
+   ========================================================== */
+
+/* Nav item: sottile lift al hover */
+.nav-item:hover svg {
+  transform:translateY(-1px);
+  transition:transform .2s cubic-bezier(.25,1,.5,1);
+}
+
+/* Bottone primario: press tattile */
+.btn.btn-primary:active,
+button[style*="background:#8B4513"]:active {
+  transform:translateY(1px);
+  transition:transform .08s;
+}
+
+/* Stella salvataggio: pulse al click */
+@keyframes star-pulse {
+  0% { transform:scale(1); }
+  50% { transform:scale(1.3); }
+  100% { transform:scale(1); }
+}
+.br-act-save-on {
+  animation:star-pulse .3s cubic-bezier(.25,1,.5,1);
+}
+
+/* Card hover: sottile elevazione */
+.br-row:hover {
+  transform:translateY(-1px);
+  transition:transform .2s cubic-bezier(.25,1,.5,1), box-shadow .2s;
+}
+
+/* Toast: icona check animata per .ok */
+.oc-toast.ok::before {
+  content:'';
+  width:18px; height:18px;
+  border-radius:50%;
+  background:rgba(255,255,255,.2);
+  flex-shrink:0;
+  animation:toast-check .3s ease-out;
+}
+@keyframes toast-check {
+  from { transform:scale(0); opacity:0; }
+  to { transform:scale(1); opacity:1; }
+}
+
+/* Filter chip: transizione fluida */
+.filter-chip {
+  transition:background .15s, color .15s, border-color .15s, transform .15s;
+}
+.filter-chip:active {
+  transform:scale(0.97);
+}
+
+/* Focus ring elegante su input */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline:2px solid var(--accent,#8B4513);
+  outline-offset:2px;
+  transition:outline-offset .15s;
+}
+
+/* Scroll indicator sottile nella topbar */
+.topbar::after {
+  content:'';
+  position:absolute;
+  bottom:0;
+  left:0;
+  height:2px;
+  background:var(--accent,#8B4513);
+  opacity:.15;
+  width:0;
+  transition:width .1s;
+}
+
+/* KPI card hover nel workspace/stats */
+.st-kpi-card {
+  transition:transform .2s cubic-bezier(.25,1,.5,1), box-shadow .2s;
+}
+.st-kpi-card:hover {
+  transform:translateY(-2px);
+  box-shadow:var(--shadow-soft);
+}
+
+/* Ambito dot pulse sottile al hover nella sidebar */
+.nav-item.amb:hover .amb-dot {
+  box-shadow:0 0 0 3px var(--amb-soft, rgba(0,0,0,.05));
+  transition:box-shadow .2s;
+}
+
+/* Prefers reduced motion: disabilita tutte le animazioni di delight */
+@media (prefers-reduced-motion: reduce) {
+  .nav-item:hover svg,
+  .br-row:hover,
+  .st-kpi-card:hover,
+  .filter-chip:active,
+  .btn.btn-primary:active { transform:none !important; }
+  .br-act-save-on { animation:none !important; }
+  .oc-toast.ok::before { animation:none !important; }
+}
+
+/* ==========================================================
    DETAIL OVERLAY (scheda completa bando / news / podcast)
    ========================================================== */
 #oc-detail-overlay {
