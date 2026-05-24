@@ -343,3 +343,34 @@ function debugAuth() {
 // ============================================================================
 // FINE MODULO Setup_v418.gs
 // ============================================================================
+
+// ============================================================================
+// v4.18.69 — Conteggio righe fogli per dashboard Gestione Dati
+// ============================================================================
+
+/**
+ * Ritorna il conteggio righe per ogni foglio di dati rilevante.
+ * Chiamato dalla tab "Gestione dati" in Impostazioni.
+ * @return {Object} { 'Bandi_v5': N, 'Items': N, ... }
+ */
+function getSheetRowCounts() {
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sheets = [
+      'Bandi_v5', 'Items', 'Podcast', 'Pubblicazioni', 'Sessioni_v1',
+      'ResponsesMatrix', 'ContactsMatrix', 'SondaggiMirati', 'MailingList',
+      'FontiBandi_v5', 'FontiNews', 'FontiPodcast', 'FontiVideo',
+      'ProfiloAgenti', 'SupervisoreLog', 'AgentExplorationState',
+      'AgentScanResults', 'DigestLog', 'ScanLog'
+    ];
+    var result = {};
+    sheets.forEach(function(name) {
+      var sh = ss.getSheetByName(name);
+      result[name] = sh ? Math.max(0, sh.getLastRow() - 1) : 0;
+    });
+    return result;
+  } catch(e) {
+    Logger.log('getSheetRowCounts errore: ' + e.message);
+    return {};
+  }
+}

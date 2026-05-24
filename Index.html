@@ -1560,6 +1560,7 @@
         <button class="settings-tab" data-tab="altre" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Fonti altre</button>
         <button class="settings-tab" data-tab="utenti" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer"> Utenti & Accessi</button>
         <button class="settings-tab" data-tab="config" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Configurazione</button>
+        <button class="settings-tab" data-tab="gestione" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Gestione dati</button>
         <button class="settings-tab" data-tab="sistema" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Stato sistema</button>
       </div>
 
@@ -1917,6 +1918,105 @@
           </div>
           <div id="settingsResult" style="margin-top:10px;font-size:12px;color:#666"></div>
         </div>
+      </div>
+
+      <!-- TAB GESTIONE DATI -->
+      <div class="settings-tab-content" data-tab-content="gestione" hidden>
+
+        <!-- 1. Release log -->
+        <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin-bottom:16px">
+          <div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin-bottom:14px">Versioni release</div>
+          <div id="gestioneRelease" style="display:grid;gap:6px">
+            <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface-2,#F7F5F0);border-radius:6px"><span style="font-size:0.875rem;font-weight:600">v5.0.2</span><span style="font-size:0.75rem;color:var(--ink-3)">24/05/2026</span><span style="font-size:0.75rem;color:var(--ink-2)">Digest Reader + elimina bozze</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface-2,#F7F5F0);border-radius:6px"><span style="font-size:0.875rem;font-weight:600">v5.0.1</span><span style="font-size:0.75rem;color:var(--ink-3)">24/05/2026</span><span style="font-size:0.75rem;color:var(--ink-2)">br-acts ridisegnati + mobile</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface-2,#F7F5F0);border-radius:6px"><span style="font-size:0.875rem;font-weight:600">v5.0</span><span style="font-size:0.75rem;color:var(--ink-3)">24/05/2026</span><span style="font-size:0.75rem;color:var(--ink-2)">Design Curatoriale Sans</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface-2,#F7F5F0);border-radius:6px"><span style="font-size:0.875rem;font-weight:600">v4.18.69</span><span style="font-size:0.75rem;color:var(--ink-3)">24/05/2026</span><span style="font-size:0.75rem;color:var(--ink-2)">SAS supervisore + SEAS + fonti API</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface-2,#F7F5F0);border-radius:6px"><span style="font-size:0.875rem;font-weight:600">v4.18.68</span><span style="font-size:0.75rem;color:var(--ink-3)">23/05/2026</span><span style="font-size:0.75rem;color:var(--ink-2)">Workspace completo + tipografia + security</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface-2,#F7F5F0);border-radius:6px"><span style="font-size:0.875rem;font-weight:600">v4.18.67</span><span style="font-size:0.75rem;color:var(--ink-3)">22/05/2026</span><span style="font-size:0.75rem;color:var(--ink-2)">Auth localStorage + LS2 + FU17 + AG3</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface-2,#F7F5F0);border-radius:6px"><span style="font-size:0.875rem;font-weight:600">v4.18.0</span><span style="font-size:0.75rem;color:var(--ink-3)">15/05/2026</span><span style="font-size:0.75rem;color:var(--ink-2)">Freemium model + sessioni permanenti</span></div>
+          </div>
+        </div>
+
+        <!-- 2. Email inviate -->
+        <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink)">Email inviate</div>
+            <button class="btn btn-secondary" data-action="loadEmailLog" style="font-size:0.75rem;padding:6px 14px">Aggiorna</button>
+          </div>
+          <div id="gestioneEmailLog">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px">
+              <div style="padding:12px;background:var(--surface-2,#F7F5F0);border-radius:8px;text-align:center">
+                <div style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Digest inviati</div>
+                <div style="font-size:1.25rem;font-weight:700;color:var(--ink);margin-top:4px" id="gdDigestCount">--</div>
+              </div>
+              <div style="padding:12px;background:var(--surface-2,#F7F5F0);border-radius:8px;text-align:center">
+                <div style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Magic-link inviati</div>
+                <div style="font-size:1.25rem;font-weight:700;color:var(--ink);margin-top:4px" id="gdMagicCount">--</div>
+              </div>
+              <div style="padding:12px;background:var(--surface-2,#F7F5F0);border-radius:8px;text-align:center">
+                <div style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Notifiche admin</div>
+                <div style="font-size:1.25rem;font-weight:700;color:var(--ink);margin-top:4px" id="gdNotifCount">--</div>
+              </div>
+              <div style="padding:12px;background:var(--surface-2,#F7F5F0);border-radius:8px;text-align:center">
+                <div style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Quota residua oggi</div>
+                <div style="font-size:1.25rem;font-weight:700;color:var(--ink);margin-top:4px" id="gdQuotaRes">--</div>
+              </div>
+            </div>
+            <div id="gdEmailTable" style="font-size:0.875rem;color:var(--ink-3)">Premi Aggiorna per caricare il log email.</div>
+          </div>
+        </div>
+
+        <!-- 3. Aggiornamento fonti -->
+        <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink)">Aggiornamento fonti</div>
+            <button class="btn btn-secondary" data-action="loadFontiStatus" style="font-size:0.75rem;padding:6px 14px">Aggiorna</button>
+          </div>
+          <div id="gestioneFontiStatus">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px">
+              <div style="padding:12px;background:#EAF3EC;border-radius:8px;text-align:center">
+                <div style="font-size:0.75rem;color:#2D5F3A;text-transform:uppercase;letter-spacing:.04em">Attive</div>
+                <div style="font-size:1.25rem;font-weight:700;color:#3F7A5E;margin-top:4px" id="gdFontiAttive">--</div>
+              </div>
+              <div style="padding:12px;background:#FFF8E1;border-radius:8px;text-align:center">
+                <div style="font-size:0.75rem;color:#8B6914;text-transform:uppercase;letter-spacing:.04em">Silenti</div>
+                <div style="font-size:1.25rem;font-weight:700;color:#9C6A36;margin-top:4px" id="gdFontiSilenti">--</div>
+              </div>
+              <div style="padding:12px;background:#FEF2F2;border-radius:8px;text-align:center">
+                <div style="font-size:0.75rem;color:#8C2626;text-transform:uppercase;letter-spacing:.04em">Deprecate</div>
+                <div style="font-size:1.25rem;font-weight:700;color:#8C2626;margin-top:4px" id="gdFontiDeprecate">--</div>
+              </div>
+              <div style="padding:12px;background:var(--surface-2,#F7F5F0);border-radius:8px;text-align:center">
+                <div style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">SEAS scoperte</div>
+                <div style="font-size:1.25rem;font-weight:700;color:var(--ink);margin-top:4px" id="gdSeasScoperte">--</div>
+              </div>
+            </div>
+            <div id="gdFontiDettaglio" style="font-size:0.875rem;color:var(--ink-3)">Premi Aggiorna per caricare lo stato fonti.</div>
+          </div>
+        </div>
+
+        <!-- 4. Dati Google Sheets -->
+        <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink)">Dati Google Sheets</div>
+            <button class="btn btn-secondary" data-action="loadSheetsStatus" style="font-size:0.75rem;padding:6px 14px">Aggiorna</button>
+          </div>
+          <div id="gestioneSheetsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
+            <div style="padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px"><div style="font-size:0.75rem;color:var(--ink-3)">Bandi_v5</div><div style="font-size:1rem;font-weight:700" id="gdShBandi">-- righe</div></div>
+            <div style="padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px"><div style="font-size:0.75rem;color:var(--ink-3)">Items (news)</div><div style="font-size:1rem;font-weight:700" id="gdShItems">-- righe</div></div>
+            <div style="padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px"><div style="font-size:0.75rem;color:var(--ink-3)">Podcast</div><div style="font-size:1rem;font-weight:700" id="gdShPodcast">-- righe</div></div>
+            <div style="padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px"><div style="font-size:0.75rem;color:var(--ink-3)">Pubblicazioni</div><div style="font-size:1rem;font-weight:700" id="gdShLibri">-- righe</div></div>
+            <div style="padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px"><div style="font-size:0.75rem;color:var(--ink-3)">Sessioni_v1</div><div style="font-size:1rem;font-weight:700" id="gdShSessioni">-- righe</div></div>
+            <div style="padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px"><div style="font-size:0.75rem;color:var(--ink-3)">ResponsesMatrix</div><div style="font-size:1rem;font-weight:700" id="gdShMatrix">-- righe</div></div>
+            <div style="padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px"><div style="font-size:0.75rem;color:var(--ink-3)">SondaggiMirati</div><div style="font-size:1rem;font-weight:700" id="gdShSondaggi">-- righe</div></div>
+            <div style="padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px"><div style="font-size:0.75rem;color:var(--ink-3)">MailingList</div><div style="font-size:1rem;font-weight:700" id="gdShMailing">-- righe</div></div>
+            <div style="padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px"><div style="font-size:0.75rem;color:var(--ink-3)">FontiBandi_v5</div><div style="font-size:1rem;font-weight:700" id="gdShFontiBandi">-- righe</div></div>
+            <div style="padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px"><div style="font-size:0.75rem;color:var(--ink-3)">FontiNews</div><div style="font-size:1rem;font-weight:700" id="gdShFontiNews">-- righe</div></div>
+            <div style="padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px"><div style="font-size:0.75rem;color:var(--ink-3)">ProfiloAgenti</div><div style="font-size:1rem;font-weight:700" id="gdShProfili">-- righe</div></div>
+            <div style="padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px"><div style="font-size:0.75rem;color:var(--ink-3)">SupervisoreLog</div><div style="font-size:1rem;font-weight:700" id="gdShSAS">-- righe</div></div>
+          </div>
+        </div>
+
       </div>
 
       <!-- TAB STATO SISTEMA -->
@@ -5196,7 +5296,55 @@
     if (tabName === 'altre') { /* nessun auto-load richiesto */ }
     if (tabName === 'utenti') reloadUtentiTable();
     if (tabName === 'config') loadSettingsConfig();
+    if (tabName === 'gestione') _loadGestioneDatiTab_();
     if (tabName === 'sistema') _loadSistemaTab_();
+  }
+
+  function _loadGestioneDatiTab_() {
+    if (!hasGAS()) return;
+    // Fonti status
+    google.script.run.withSuccessHandler(function(r){
+      if (!r || !r.ok) return;
+      var el = function(id){ return document.getElementById(id); };
+      if (el('gdFontiAttive')) el('gdFontiAttive').textContent = r.totaleAttive || 0;
+      if (el('gdFontiSilenti')) el('gdFontiSilenti').textContent = r.totaleSilenti || 0;
+      if (el('gdFontiDeprecate')) el('gdFontiDeprecate').textContent = r.totaleDeprecate || 0;
+    }).withFailureHandler(function(){}).fasReportFontiCompleto();
+
+    // SEAS scoperte
+    google.script.run.withSuccessHandler(function(r){
+      if (!r || !r.ok) return;
+      var el = document.getElementById('gdSeasScoperte');
+      if (el) el.textContent = r.totale || 0;
+    }).withFailureHandler(function(){}).seasDiagnostica();
+
+    // Sheets row counts
+    google.script.run.withSuccessHandler(function(r){
+      if (!r) return;
+      var el = function(id){ return document.getElementById(id); };
+      var sheets = {
+        'gdShBandi': 'Bandi_v5', 'gdShItems': 'Items', 'gdShPodcast': 'Podcast',
+        'gdShLibri': 'Pubblicazioni', 'gdShSessioni': 'Sessioni_v1', 'gdShMatrix': 'ResponsesMatrix',
+        'gdShSondaggi': 'SondaggiMirati', 'gdShMailing': 'MailingList', 'gdShFontiBandi': 'FontiBandi_v5',
+        'gdShFontiNews': 'FontiNews', 'gdShProfili': 'ProfiloAgenti', 'gdShSAS': 'SupervisoreLog'
+      };
+      Object.keys(sheets).forEach(function(elId){
+        var count = r[sheets[elId]];
+        if (el(elId) && count !== undefined) el(elId).textContent = count + ' righe';
+      });
+    }).withFailureHandler(function(){}).getSheetRowCounts();
+
+    // Digest log count
+    google.script.run.withSuccessHandler(function(list){
+      var el = document.getElementById('gdDigestCount');
+      if (el) el.textContent = (list && list.length) || 0;
+    }).withFailureHandler(function(){}).adminGetDigestList();
+
+    // Sessioni count per magic-link
+    google.script.run.withSuccessHandler(function(r){
+      var el = document.getElementById('gdMagicCount');
+      if (el && r && r.kpi) el('gdMagicCount').textContent = r.kpi.sessioniTotali || 0;
+    }).withFailureHandler(function(){}).sasDiagnostica();
   }
 
   function _loadSistemaTab_() {
