@@ -549,6 +549,114 @@ function seasRejectCandidate(candidateId, motivo) {
 }
 
 // ============================================================================
+// RICLASSIFICAZIONE + APPROVAZIONE BATCH
+// ============================================================================
+
+/**
+ * Riclassifica tutte le candidature con score 0 (API fallita in precedenza).
+ * @return {Object} {ok, totali, riclassificati, errori, dettagli[]}
+ */
+function seasReclassify() {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) {
+    return { ok: false, error: 'forbidden' };
+  }
+  try {
+    var apiKey = '';
+    try { apiKey = PropertiesService.getScriptProperties().getProperty('CLAUDE_API_KEY') || ''; } catch(_){}
+    if (!apiKey) return { ok: false, error: 'CLAUDE_API_KEY non configurata' };
+
+    var sh = _seasGetOrCreateSheet_();
+    if (sh.getLastRow() < 2) return { ok: true, totali: 0, riclassificati: 0, errori: 0 };
+
+    var vals = sh.getDataRange().getValues();
+    var head = vals[0];
+    var iId = head.indexOf('ID'), iUrl = head.indexOf('URL'),
+        iTit = head.indexOf('Titolo'), iTipo = head.indexOf('TipoRisorsa'),
+        iAmb = head.indexOf('Ambito'), iScore = head.indexOf('RilevanzaScore'),
+        iStato = head.indexOf('Stato'), iSeed = head.indexOf('FonteSeed'),
+        iDesc = head.indexOf('Descrizione'), iClass = head.indexOf('ClassificaJSON'),
+        iDataC = head.indexOf('DataClassifica');
+
+    var totali = 0, riclassificati = 0, errori = 0;
+    var dettagli = [];
+    var startTime = Date.now();
+
+    for (var r = 1; r < vals.length; r++) {
+      // Solo candidature con score 0 e stato candidata
+      if (String(vals[r][iStato]) !== SEAS_STATI.CANDIDATA) continue;
+      if (Number(vals[r][iScore] || 0) > 0) continue;
+      totali++;
+
+      // Wall-clock guard (4 min)
+      if (Date.now() - startTime > 240000) {
+        dettagli.push({ azione: 'timeout', rimanenti: 'da contare' });
+        break;
+      }
+
+      var link = { url: String(vals[r][iUrl] || ''), titolo: String(vals[r][iTit] || ''), tipo: String(vals[r][iTipo] || 'Unknown') };
+      var seedUrl = String(vals[r][iSeed] || '');
+      var seed = { nome: seedUrl, ambito: 'cultura', url: seedUrl };
+
+      try {
+        var classifica = _seasClassifyWithClaude_(apiKey, link, seed);
+        if (classifica && classifica.score > 0) {
+          sh.getRange(r + 1, iScore + 1).setValue(classifica.score);
+          sh.getRange(r + 1, iAmb + 1).setValue(classifica.ambito);
+          sh.getRange(r + 1, iDesc + 1).setValue(classifica.motivo);
+          sh.getRange(r + 1, iClass + 1).setValue(JSON.stringify(classifica));
+          sh.getRange(r + 1, iDataC + 1).setValue(new Date());
+          riclassificati++;
+          dettagli.push({ id: vals[r][iId], url: link.url, score: classifica.score, ambito: classifica.ambito });
+        } else {
+          errori++;
+        }
+      } catch(e) {
+        errori++;
+        Logger.log('[SEAS] Reclassifica errore per ' + link.url + ': ' + e.message);
+      }
+    }
+
+    Logger.log('[SEAS] Riclassificazione: ' + riclassificati + '/' + totali + ' riclassificati, ' + errori + ' errori');
+    return { ok: true, totali: totali, riclassificati: riclassificati, errori: errori, dettagli: dettagli };
+  } catch(e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+/**
+ * Approva tutte le candidature con score >= soglia.
+ * @param {number} [soglia] — score minimo per approvazione (default: 70)
+ * @return {Object} {ok, approvate, dettagli[]}
+ */
+function seasApproveBatch(soglia) {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) {
+    return { ok: false, error: 'forbidden' };
+  }
+  soglia = Number(soglia) || 70;
+  try {
+    var candidates = seasGetCandidates({ stato: SEAS_STATI.CANDIDATA, minScore: soglia, limit: 100 });
+    if (!candidates.ok) return candidates;
+
+    var approvate = 0;
+    var dettagli = [];
+    candidates.candidati.forEach(function(c) {
+      var result = seasApproveCandidate(c.id);
+      if (result && result.ok) {
+        approvate++;
+        dettagli.push({ id: c.id, url: c.url, score: c.score, fonteId: result.fonteId });
+      } else {
+        dettagli.push({ id: c.id, url: c.url, errore: (result && result.error) || '?' });
+      }
+    });
+
+    Logger.log('[SEAS] Approvazione batch: ' + approvate + ' approvate (soglia ' + soglia + ')');
+    return { ok: true, approvate: approvate, soglia: soglia, dettagli: dettagli };
+  } catch(e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+// ============================================================================
 // DIAGNOSTICA
 // ============================================================================
 
