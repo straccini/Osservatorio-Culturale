@@ -727,8 +727,8 @@ function _getMatrixScores_(matrixResponseId) {
     var data = sh.getDataRange().getValues();
     if (data.length < 2) return null;
     var header = data[0];
-    var idxId = header.indexOf('responseId');
-    var idxScores = header.indexOf('punteggi_dimensioni');
+    var idxId = header.indexOf('response_id');
+    var idxScores = header.indexOf('scoring_dimensions_json');
     if (idxId < 0) return null;
     for (var r = 1; r < data.length; r++) {
       if (String(data[r][idxId]) === String(matrixResponseId)) {
