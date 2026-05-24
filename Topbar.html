@@ -102,14 +102,11 @@
       </div>
     </div>
 
-    <!-- Profilo utente -->
-    <button class="topbar-user" data-action="openUserMenu" aria-label="Profilo utente">
-      <span class="user-avatar sm" id="topbarUserInitials">&middot;</span>
-      <span class="user-info sm">
-        <b id="topbarUserName">Ospite</b>
-        <span id="topbarUserRole">lettore</span>
-      </span>
-    </button>
+    <!-- v5.0.5 — Profilo rimosso dalla topbar (resta nella sidebar footer) -->
+    <!-- Elementi nascosti per compatibilita JS (setUser li aggiorna) -->
+    <span id="topbarUserInitials" hidden></span>
+    <span id="topbarUserName" hidden></span>
+    <span id="topbarUserRole" hidden></span>
 
     <!-- Logout (visibile solo se loggato) -->
     <button class="topbar-icon" id="logoutBtn" data-action="doLogout"
