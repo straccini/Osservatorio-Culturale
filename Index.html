@@ -1560,6 +1560,7 @@
         <button class="settings-tab" data-tab="altre" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Fonti altre</button>
         <button class="settings-tab" data-tab="utenti" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer"> Utenti & Accessi</button>
         <button class="settings-tab" data-tab="config" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Configurazione</button>
+        <button class="settings-tab" data-tab="sistema" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Stato sistema</button>
       </div>
 
       <!-- TAB TUTTE LE FONTI (Sprint 2 B3 — 2026-05-11) -->
@@ -1915,6 +1916,75 @@
             </div>
           </div>
           <div id="settingsResult" style="margin-top:10px;font-size:12px;color:#666"></div>
+        </div>
+      </div>
+
+      <!-- TAB STATO SISTEMA -->
+      <div class="settings-tab-content" data-tab-content="sistema" hidden>
+        <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin-bottom:16px">
+          <div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin-bottom:16px">Configurazione sistema</div>
+          <div id="sistemaConfigGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="padding:12px;background:var(--surface-2,#F7F5F0);border-radius:8px">
+              <div style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Trigger attivi</div>
+              <div id="sysTriggersCount" style="font-size:1.125rem;font-weight:700;color:var(--ink)">--</div>
+              <div id="sysTriggersList" style="font-size:0.75rem;color:var(--ink-3);margin-top:4px"></div>
+            </div>
+            <div style="padding:12px;background:var(--surface-2,#F7F5F0);border-radius:8px">
+              <div style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Claude API</div>
+              <div id="sysClaudeKey" style="font-size:1.125rem;font-weight:700;color:var(--ink)">--</div>
+            </div>
+            <div style="padding:12px;background:var(--surface-2,#F7F5F0);border-radius:8px">
+              <div style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Fogli dati</div>
+              <div id="sysSheetsCount" style="font-size:1.125rem;font-weight:700;color:var(--ink)">--</div>
+              <div id="sysSheetsList" style="font-size:0.75rem;color:var(--ink-3);margin-top:4px"></div>
+            </div>
+            <div style="padding:12px;background:var(--surface-2,#F7F5F0);border-radius:8px">
+              <div style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Versione</div>
+              <div id="sysVersion" style="font-size:1.125rem;font-weight:700;color:var(--ink)">v5.0.2</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin-bottom:16px">
+          <div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin-bottom:16px">Attivita automatiche</div>
+          <div id="sistemaAttivitaGrid" style="display:grid;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px">
+              <div><div style="font-size:0.875rem;font-weight:600;color:var(--ink)">SAS Supervisore</div><div style="font-size:0.75rem;color:var(--ink-3)">Igiene, qualita, monitoraggio</div></div>
+              <div style="font-size:0.75rem;color:var(--ink-3)">Giornaliero 04:30</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px">
+              <div><div style="font-size:0.875rem;font-weight:600;color:var(--ink)">SAS Settimanale</div><div style="font-size:0.75rem;color:var(--ink-3)">Audit, SEAS, KPI, strategia</div></div>
+              <div style="font-size:0.75rem;color:var(--ink-3)">Lunedi 05:30</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px">
+              <div><div style="font-size:0.875rem;font-weight:600;color:var(--ink)">Fonti strutturate</div><div style="font-size:0.75rem;color:var(--ink-3)">RSS, OpenCoesione, CKAN, retry</div></div>
+              <div style="font-size:0.75rem;color:var(--ink-3)">Giornaliero 06:00</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px">
+              <div><div style="font-size:0.875rem;font-weight:600;color:var(--ink)">5 Agenti AI scan</div><div style="font-size:0.75rem;color:var(--ink-3)">AG1:6h, AG2-3-5:12h, AG4:24h</div></div>
+              <div style="font-size:0.75rem;color:var(--ink-3)">Automatico</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px">
+              <div><div style="font-size:0.875rem;font-weight:600;color:var(--ink)">Digest agenti</div><div style="font-size:0.75rem;color:var(--ink-3)">Email tematiche per museo</div></div>
+              <div style="font-size:0.75rem;color:var(--ink-3)">Giornaliero 07:30</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px">
+          <div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin-bottom:16px">Moduli installati</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px" id="sistemaModuli">
+            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">SAS</span> Supervisore autonomo</div>
+            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">SEAS</span> Scoperta fonti</div>
+            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">FAS</span> Fonti strutturate</div>
+            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">Matrix</span> Questionario 43 domande</div>
+            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">LS2</span> 6 micro-survey</div>
+            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">CRM</span> Lead scoring</div>
+            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">Auth</span> Sessioni permanenti</div>
+            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">PNRR</span> Triage automatico</div>
+            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">ROC</span> Outreach commerciale</div>
+            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">Tagger</span> MatrixDim auto</div>
+          </div>
         </div>
       </div>
     </section>
@@ -5126,6 +5196,24 @@
     if (tabName === 'altre') { /* nessun auto-load richiesto */ }
     if (tabName === 'utenti') reloadUtentiTable();
     if (tabName === 'config') loadSettingsConfig();
+    if (tabName === 'sistema') _loadSistemaTab_();
+  }
+
+  function _loadSistemaTab_() {
+    if (!hasGAS()) return;
+    google.script.run.withSuccessHandler(function(r){
+      if (!r || !r.ok) return;
+      var el = function(id){ return document.getElementById(id); };
+      if (el('sysTriggersCount')) el('sysTriggersCount').textContent = (r.triggerSAS ? r.triggerSAS.length : 0) + ' SAS + trigger sistema';
+      if (el('sysTriggersList') && r.triggerSAS) {
+        el('sysTriggersList').textContent = r.triggerSAS.map(function(t){ return t.fn; }).join(', ');
+      }
+      if (el('sysClaudeKey')) {
+        var kpi = r.kpi || {};
+        el('sysClaudeKey').textContent = r.claudeApiKey ? 'Configurata' : 'Non configurata';
+        el('sysClaudeKey').style.color = r.claudeApiKey ? '#3F7A5E' : '#8C2626';
+      }
+    }).sasDiagnostica();
   }
 
   function reloadFontiBandiTable() {
@@ -6498,68 +6586,138 @@
     var wrap = $('statsContent');
     if (!wrap) return;
     s = s || {};
-    var AMBITI_NOMI = ['', 'Identità e narrazione', 'Inclusione e accessibilità', 'Programma e collezioni', 'Comunità e welfare', 'Digital, AI e governance'];
+    var AMBITI_NOMI = ['', 'Identita e narrazione', 'Inclusione e accessibilita', 'Programma e collezioni', 'Comunita e welfare', 'Digital, AI e governance'];
     var AMB_COLORS  = ['', 'var(--amb-1)', 'var(--amb-2)', 'var(--amb-3)', 'var(--amb-4)', 'var(--amb-5)'];
 
-    // KPI principali
+    var html = '';
+
+    // === SEZIONE 1: KPI contenuti ===
     var podTot = s.podTotale || 0;
     var vidTot = video.length;
     var libTot = libri.length;
     var newsTot = s.total || 0;
     var bandiTot = s.bandiAttivi || 0;
-    var kpiHtml = '<div class="st-kpi-grid">'
+    html += '<div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin-bottom:12px">Contenuti monitorati</div>';
+    html += '<div class="st-kpi-grid">'
       + _stKpi_('News', newsTot, s.unread ? s.unread+' non lette' : '', 'var(--ink)')
-      + _stKpi_('Bandi attivi', bandiTot, s.bandiUrgenti ? s.bandiUrgenti+' urgenti' : '', '#B91C1C')
-      + _stKpi_('Podcast', podTot, s.podNuovi ? s.podNuovi+' non ascoltati' : '', '#D97706')
-      + _stKpi_('Video', vidTot, '', '#C8102E')
-      + _stKpi_('Libri', libTot, '', '#4A3F7A')
+      + _stKpi_('Bandi attivi', bandiTot, s.bandiUrgenti ? s.bandiUrgenti+' urgenti' : '', '#8C2626')
+      + _stKpi_('Podcast', podTot, s.podNuovi ? s.podNuovi+' non ascoltati' : '', '#9C6A36')
+      + _stKpi_('Video', vidTot, '', '#3C6A95')
+      + _stKpi_('Libri', libTot, '', '#6B5C9A')
       + '</div>';
 
-    // Barra per ambito (news)
+    // === SEZIONE 2: Supervisore + Utenti (async, placeholder) ===
+    html += '<div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin:24px 0 12px">Attivita piattaforma</div>';
+    html += '<div class="st-kpi-grid" id="statsAttivita">'
+      + '<div class="st-kpi-card"><b class="st-kpi-val" id="statHealthScore">--</b><span class="st-kpi-label">Health score</span></div>'
+      + '<div class="st-kpi-card"><b class="st-kpi-val" id="statSessioni">--</b><span class="st-kpi-label">Utenti registrati</span></div>'
+      + '<div class="st-kpi-card"><b class="st-kpi-val" id="statMatrix">--</b><span class="st-kpi-label">Compilazioni Matrix</span></div>'
+      + '<div class="st-kpi-card"><b class="st-kpi-val" id="statSondaggi">--</b><span class="st-kpi-label">Sondaggi LS2</span></div>'
+      + '<div class="st-kpi-card"><b class="st-kpi-val" id="statFontiAttive">--</b><span class="st-kpi-label">Fonti attive</span></div>'
+      + '</div>';
+
+    // === SEZIONE 3: Distribuzione per ambito ===
     var perAmb = s.perAmbito || {};
     var maxAmb = Math.max.apply(null, [1].concat(Object.values ? Object.values(perAmb) : [perAmb[1]||0,perAmb[2]||0,perAmb[3]||0,perAmb[4]||0,perAmb[5]||0]));
-    var ambHtml = '<div class="st-section-title">Distribuzione news per ambito</div><div class="st-ambiti">';
+    html += '<div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin:24px 0 12px">Distribuzione news per ambito</div>';
+    html += '<div class="st-ambiti">';
     for (var a=1; a<=5; a++) {
       var cnt = perAmb[a] || 0;
       var pct = maxAmb > 0 ? Math.round(cnt / maxAmb * 100) : 0;
-      ambHtml += '<div class="st-amb-row">'
+      html += '<div class="st-amb-row">'
         + '<span class="st-amb-label">0'+a+' '+esc(AMBITI_NOMI[a])+'</span>'
         + '<div class="st-bar-wrap"><div class="st-bar" style="width:'+pct+'%;background:'+AMB_COLORS[a]+'"></div></div>'
         + '<span class="st-amb-cnt">'+cnt+'</span>'
         + '</div>';
     }
-    ambHtml += '</div>';
+    html += '</div>';
 
-    // Podcast per tematica (top 5)
+    // === SEZIONE 4: Top tematiche podcast ===
     var podTema = s.podPerTematica || {};
     var temaSorted = Object.keys(podTema).sort(function(a,b){ return podTema[b]-podTema[a]; }).slice(0,5);
     var maxTema = temaSorted.length ? podTema[temaSorted[0]] : 1;
-    var temaHtml = '';
     if (temaSorted.length) {
-      temaHtml = '<div class="st-section-title" style="margin-top:24px">Top tematiche podcast</div><div class="st-ambiti">';
+      html += '<div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin:24px 0 12px">Top tematiche podcast</div>';
+      html += '<div class="st-ambiti">';
       temaSorted.forEach(function(t){
         var cnt2 = podTema[t];
         var pct2 = Math.round(cnt2 / maxTema * 100);
-        temaHtml += '<div class="st-amb-row">'
+        html += '<div class="st-amb-row">'
           + '<span class="st-amb-label">'+esc(t)+'</span>'
-          + '<div class="st-bar-wrap"><div class="st-bar" style="width:'+pct2+'%;background:#D97706"></div></div>'
+          + '<div class="st-bar-wrap"><div class="st-bar" style="width:'+pct2+'%;background:#9C6A36"></div></div>'
           + '<span class="st-amb-cnt">'+cnt2+'</span>'
           + '</div>';
       });
-      temaHtml += '</div>';
+      html += '</div>';
     }
 
-    // Scanner info
-    var scannerHtml = '<div class="st-section-title" style="margin-top:24px">Scanner &amp; manutenzione</div>'
-      + '<div class="st-info-grid">'
-      + '<div class="st-info-card"><span>Fonti attive</span><b>'+(s.fonti !== undefined ? s.fonti : '—')+'</b></div>'
-      + '<div class="st-info-card"><span>Articoli ultimo mese</span><b>'+(s.articoliMese !== undefined ? s.articoliMese : '—')+'</b></div>'
-      + '<div class="st-info-card"><span>Salvati</span><b>'+(s.saved||0)+'</b></div>'
-      + '<div class="st-info-card"><span>Bandi urgenti (&le;20gg)</span><b>'+(s.bandiUrgenti||0)+'</b></div>'
-      + '<div class="st-info-card"><span>Prossimo digest</span><b style="font-size:12px">'+(s.prossimoScan||'—')+'</b></div>'
+    // === SEZIONE 5: Agenti AI ===
+    html += '<div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin:24px 0 12px">Agenti AI</div>';
+    html += '<div class="st-kpi-grid" id="statsAgenti">'
+      + '<div class="st-kpi-card"><b class="st-kpi-val" id="statAG1">--</b><span class="st-kpi-label">AG1 Bandi</span></div>'
+      + '<div class="st-kpi-card"><b class="st-kpi-val" id="statAG2">--</b><span class="st-kpi-label">AG2 Normativa</span></div>'
+      + '<div class="st-kpi-card"><b class="st-kpi-val" id="statAG3">--</b><span class="st-kpi-label">AG3 Innovazione</span></div>'
+      + '<div class="st-kpi-card"><b class="st-kpi-val" id="statAG4">--</b><span class="st-kpi-label">AG4 Comunita</span></div>'
+      + '<div class="st-kpi-card"><b class="st-kpi-val" id="statAG5">--</b><span class="st-kpi-label">AG5 Digital</span></div>'
       + '</div>';
 
-    wrap.innerHTML = kpiHtml + ambHtml + temaHtml + scannerHtml;
+    // === SEZIONE 6: Scanner e manutenzione ===
+    html += '<div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin:24px 0 12px">Scanner e manutenzione</div>'
+      + '<div class="st-info-grid">'
+      + '<div class="st-info-card"><span>Fonti totali</span><b>'+(s.fonti !== undefined ? s.fonti : '--')+'</b></div>'
+      + '<div class="st-info-card"><span>Articoli ultimo mese</span><b>'+(s.articoliMese !== undefined ? s.articoliMese : '--')+'</b></div>'
+      + '<div class="st-info-card"><span>Salvati</span><b>'+(s.saved||0)+'</b></div>'
+      + '<div class="st-info-card"><span>Bandi urgenti (20gg)</span><b>'+(s.bandiUrgenti||0)+'</b></div>'
+      + '<div class="st-info-card"><span>Prossimo digest</span><b style="font-size:12px">'+(s.prossimoScan||'--')+'</b></div>'
+      + '</div>';
+
+    // === FOOTER: timestamp ===
+    html += '<div style="margin-top:24px;font-size:0.75rem;color:var(--ink-4);text-align:right">Ultimo aggiornamento: ' + new Date().toLocaleString('it-IT') + '</div>';
+
+    wrap.innerHTML = html;
+
+    // === Caricamento asincrono dati SAS + utenti + agenti ===
+    if (hasGAS()) {
+      // SAS diagnostica
+      google.script.run.withSuccessHandler(function(r){
+        if (!r || !r.ok) return;
+        var kpi = r.kpi || {};
+        var el = function(id){ return document.getElementById(id); };
+        if (el('statHealthScore')) {
+          var sc = kpi.piattaformaHealthScore || 0;
+          el('statHealthScore').textContent = sc + '/100';
+          el('statHealthScore').style.color = sc >= 80 ? '#3F7A5E' : sc >= 60 ? '#9C6A36' : '#8C2626';
+        }
+        if (el('statSessioni')) el('statSessioni').textContent = (kpi.sessioniTotali || 0) + ' (+' + (kpi.sessioniNuove7gg || 0) + ')';
+        if (el('statFontiAttive')) el('statFontiAttive').textContent = (kpi.fontiAttive || 0) + ' (' + (kpi.fontiSilenti || 0) + ' silenti)';
+      }).sasDiagnostica();
+
+      // Agenti
+      google.script.run.withSuccessHandler(function(r){
+        if (!r || !r.ok) return;
+        var fp = r.fonti_per_agente || {};
+        var el = function(id){ return document.getElementById(id); };
+        if (el('statAG1')) el('statAG1').textContent = (fp[1]||0) + ' fonti';
+        if (el('statAG2')) el('statAG2').textContent = (fp[2]||0) + ' fonti';
+        if (el('statAG3')) el('statAG3').textContent = (fp[3]||0) + ' fonti';
+        if (el('statAG4')) el('statAG4').textContent = (fp[4]||0) + ' fonti';
+        if (el('statAG5')) el('statAG5').textContent = (fp[5]||0) + ' fonti';
+      }).diagnosticaAgenti();
+
+      // Matrix compilazioni
+      google.script.run.withSuccessHandler(function(r){
+        var el = document.getElementById('statMatrix');
+        if (el) el.textContent = (r && r.length) || 0;
+      }).withFailureHandler(function(){}).getHomepageDataV42();
+
+      // Sondaggi
+      try {
+        google.script.run.withSuccessHandler(function(count){
+          var el = document.getElementById('statSondaggi');
+          if (el) el.textContent = count || 0;
+        }).withFailureHandler(function(){});
+      } catch(_){}
+    }
   }
 
   function _stKpi_(label, val, sub, color) {
