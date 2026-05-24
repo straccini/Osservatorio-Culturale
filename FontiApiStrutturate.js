@@ -27,16 +27,16 @@
 // TED RSS — bandi EU cultura/musei/patrimonio
 var FAS_TED_FEEDS = [
   {
-    nome: 'TED EU — Musei e patrimonio culturale',
-    url: 'https://ted.europa.eu/api/v3.0/notices/search?q=museum%20OR%20cultural%20heritage%20OR%20patrimonio%20culturale&fields=title-or-short-title,publication-date,deadline-receipt-tenders&sortField=publication-date&sortOrder=desc&limit=20',
-    tipo: 'API',
+    nome: 'TED EU RSS — Cultura e patrimonio',
+    url: 'https://ted.europa.eu/rss/search?q=CPV%3D92000000+OR+CPV%3D92500000+OR+CPV%3D92521000&sortField=PD&sortOrder=desc',
+    tipo: 'RSS',
     ambito: 3,
     livello: 'EU',
     ente: 'TED — Tenders Electronic Daily'
   },
   {
-    nome: 'TED EU RSS — Servizi culturali',
-    url: 'https://ted.europa.eu/udl?uri=TED:NOTICE:search:TEXT="museum"+OR+"cultural+heritage"&type=rss',
+    nome: 'TED EU RSS — Restauro e conservazione',
+    url: 'https://ted.europa.eu/rss/search?q=CPV%3D45454100+OR+CPV%3D92522000&sortField=PD&sortOrder=desc',
     tipo: 'RSS',
     ambito: 3,
     livello: 'EU',
@@ -47,20 +47,36 @@ var FAS_TED_FEEDS = [
 // Italia Domani RSS — PNRR
 var FAS_PNRR_FEEDS = [
   {
-    nome: 'Italia Domani — PNRR Avvisi',
-    url: 'https://www.italiadomani.gov.it/content/sogei-ng/it/it/news.rss.xml',
+    nome: 'Italia Domani — PNRR News',
+    url: 'https://www.italiadomani.gov.it/it/news.rss.xml',
     tipo: 'RSS',
     ambito: 5,
     livello: 'Nazionale',
     ente: 'Italia Domani — PNRR'
   },
   {
-    nome: 'MiC — Comunicati e Avvisi RSS',
-    url: 'https://cultura.gov.it/feed',
+    nome: 'Agenzia Coesione — Bandi RSS',
+    url: 'https://www.agenziacoesione.gov.it/feed/',
+    tipo: 'RSS',
+    ambito: 5,
+    livello: 'Nazionale',
+    ente: 'Agenzia per la Coesione Territoriale'
+  },
+  {
+    nome: 'Artribune RSS',
+    url: 'https://www.artribune.com/feed/',
     tipo: 'RSS',
     ambito: 1,
     livello: 'Nazionale',
-    ente: 'Ministero della Cultura'
+    ente: 'Artribune'
+  },
+  {
+    nome: 'FASI — Finanziamenti Agevolati RSS',
+    url: 'https://www.fasi.eu/it/rss.html',
+    tipo: 'RSS',
+    ambito: 5,
+    livello: 'Nazionale',
+    ente: 'FASI.eu'
   }
 ];
 
