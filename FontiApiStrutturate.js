@@ -924,3 +924,149 @@ function fasRunCompleto() {
 // ============================================================================
 // FINE FontiApiStrutturate.js
 // ============================================================================
+
+// ============================================================================
+// FASE 3: Deprecazione fonti HTML irrecuperabili
+// ============================================================================
+
+/**
+ * Identifica e disattiva definitivamente le fonti che restano silenti
+ * dopo i retry (JS-rendered, 403 permanenti, DNS irraggiungibili).
+ * Aggiunge nota esplicativa nel campo UltimoErrore.
+ *
+ * @param {Object} [opts] {dryRun, minFail: soglia minima fail (default 3)}
+ * @return {Object} {ok, analizzate, deprecate, mantenute, dettagli[]}
+ */
+function fasDeprecaFontiIrrecuperabili(opts) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var minFail = opts.minFail || 3;
+  var report = { ok: true, analizzate: 0, deprecate: 0, mantenute: 0, dettagli: [] };
+
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sheetNames = ['FontiBandi_v5', 'FontiNews', 'FontiPodcast', 'FontiVideo'];
+
+    sheetNames.forEach(function(shName) {
+      var sh = ss.getSheetByName(shName);
+      if (!sh || sh.getLastRow() < 2) return;
+
+      var vals = sh.getDataRange().getValues();
+      var head = vals[0];
+      var iUrl = head.indexOf('URL'), iAtt = head.indexOf('Attiva'),
+          iFail = head.indexOf('FailConsecutivi'), iNome = head.indexOf('Nome'),
+          iEsito = head.indexOf('UltimoEsito'), iErr = head.indexOf('UltimoErrore'),
+          iTipo = head.indexOf('Tipo');
+
+      for (var r = 1; r < vals.length; r++) {
+        var fail = Number(vals[r][iFail] || 0);
+        if (fail < minFail) continue;
+
+        var url = String(vals[r][iUrl] || '').trim();
+        var nome = String(vals[r][iNome] || '').trim();
+        var tipo = String(vals[r][iTipo] || '').trim();
+        var esito = String(vals[r][iEsito] || '');
+        var attiva = vals[r][iAtt];
+        report.analizzate++;
+
+        // Test finale: un ultimo tentativo
+        var raggiungibile = false;
+        var motivo = 'irrecuperabile';
+        try {
+          var resp = UrlFetchApp.fetch(url, {
+            muteHttpExceptions: true,
+            followRedirects: true,
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0)' }
+          });
+          var code = resp.getResponseCode();
+          var len = resp.getContentText().length;
+          if (code === 200 && len > 500) {
+            raggiungibile = true;
+          } else if (code === 403) {
+            motivo = 'HTTP 403 permanente (server blocca bot)';
+          } else if (code === 404) {
+            motivo = 'HTTP 404 (pagina rimossa)';
+          } else if (code === 200 && len <= 500) {
+            motivo = 'JS-rendered (HTTP 200 ma contenuto vuoto, ' + len + ' chars)';
+          } else {
+            motivo = 'HTTP ' + code;
+          }
+        } catch(eNet) {
+          motivo = 'Network: ' + eNet.message.substring(0, 100);
+        }
+
+        if (raggiungibile) {
+          // Fonte recuperata all'ultimo tentativo
+          if (!dryRun) {
+            sh.getRange(r + 1, iFail + 1).setValue(0);
+            sh.getRange(r + 1, iAtt + 1).setValue(true);
+            sh.getRange(r + 1, iEsito + 1).setValue('RECOVERED_FASE3');
+            if (iErr >= 0) sh.getRange(r + 1, iErr + 1).setValue('');
+          }
+          report.mantenute++;
+          report.dettagli.push({ nome: nome, sheet: shName, azione: 'recuperata' });
+          Logger.log('[FAS] F3 RECUPERATA: ' + nome);
+        } else {
+          // Depreca definitivamente
+          if (!dryRun) {
+            sh.getRange(r + 1, iAtt + 1).setValue(false);
+            sh.getRange(r + 1, iFail + 1).setValue(fail);
+            sh.getRange(r + 1, iEsito + 1).setValue('DEPRECATED');
+            if (iErr >= 0) sh.getRange(r + 1, iErr + 1).setValue('[FASE3 ' + new Date().toISOString().substring(0, 10) + '] ' + motivo);
+          }
+          report.deprecate++;
+          report.dettagli.push({ nome: nome, sheet: shName, azione: 'deprecata', motivo: motivo });
+          Logger.log('[FAS] F3 DEPRECATA: ' + nome + ' — ' + motivo);
+        }
+      }
+    });
+
+    Logger.log('[FAS] Fase 3: ' + report.analizzate + ' analizzate, ' +
+      report.deprecate + ' deprecate, ' + report.mantenute + ' mantenute');
+    return report;
+  } catch(e) {
+    report.ok = false;
+    report.error = e.message;
+    return report;
+  }
+}
+
+/**
+ * Report completo fonti: attive, silenti, deprecate, per tipo.
+ */
+function fasReportFontiCompleto() {
+  var out = { ok: true, timestamp: new Date().toISOString(), fogli: {} };
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    ['FontiBandi_v5', 'FontiNews', 'FontiPodcast', 'FontiVideo'].forEach(function(shName) {
+      var sh = ss.getSheetByName(shName);
+      if (!sh || sh.getLastRow() < 2) { out.fogli[shName] = { totale: 0 }; return; }
+      var vals = sh.getDataRange().getValues();
+      var head = vals[0];
+      var iAtt = head.indexOf('Attiva'), iFail = head.indexOf('FailConsecutivi'),
+          iEsito = head.indexOf('UltimoEsito');
+      var stats = { totale: 0, attive: 0, silenti: 0, deprecate: 0, ok: 0 };
+      for (var r = 1; r < vals.length; r++) {
+        if (!vals[r][0]) continue;
+        stats.totale++;
+        var att = vals[r][iAtt] === true || String(vals[r][iAtt]).toUpperCase() === 'TRUE';
+        var fail = Number(vals[r][iFail] || 0);
+        var esito = String(vals[r][iEsito] || '');
+        if (esito === 'DEPRECATED') stats.deprecate++;
+        else if (!att || fail >= 3) stats.silenti++;
+        else if (esito === 'OK' || esito === 'RECOVERED' || esito === 'RECOVERED_FASE3') stats.ok++;
+        if (att) stats.attive++;
+      }
+      out.fogli[shName] = stats;
+    });
+    // Totali
+    out.totaleAttive = 0; out.totaleSilenti = 0; out.totaleDeprecate = 0;
+    Object.keys(out.fogli).forEach(function(k) {
+      out.totaleAttive += out.fogli[k].attive || 0;
+      out.totaleSilenti += out.fogli[k].silenti || 0;
+      out.totaleDeprecate += out.fogli[k].deprecate || 0;
+    });
+    Logger.log('[FAS] Report fonti: attive=' + out.totaleAttive + ' silenti=' + out.totaleSilenti + ' deprecate=' + out.totaleDeprecate);
+  } catch(e) { out.ok = false; out.error = e.message; }
+  return out;
+}
