@@ -25,43 +25,14 @@
 // ============================================================================
 
 // TED RSS — bandi EU cultura/musei/patrimonio
-var FAS_TED_FEEDS = [
-  {
-    nome: 'TED EU RSS — Cultura e patrimonio',
-    url: 'https://ted.europa.eu/rss/search?q=CPV%3D92000000+OR+CPV%3D92500000+OR+CPV%3D92521000&sortField=PD&sortOrder=desc',
-    tipo: 'RSS',
-    ambito: 3,
-    livello: 'EU',
-    ente: 'TED — Tenders Electronic Daily'
-  },
-  {
-    nome: 'TED EU RSS — Restauro e conservazione',
-    url: 'https://ted.europa.eu/rss/search?q=CPV%3D45454100+OR+CPV%3D92522000&sortField=PD&sortOrder=desc',
-    tipo: 'RSS',
-    ambito: 3,
-    livello: 'EU',
-    ente: 'TED — Tenders Electronic Daily'
-  }
-];
+// TED e Italia Domani bloccano richieste server-to-server (403/400).
+// Fase 2: integrazione via Gmail scan o proxy.
+var FAS_TED_FEEDS = [];
 
 // Italia Domani RSS — PNRR
 var FAS_PNRR_FEEDS = [
-  {
-    nome: 'Italia Domani — PNRR News',
-    url: 'https://www.italiadomani.gov.it/it/news.rss.xml',
-    tipo: 'RSS',
-    ambito: 5,
-    livello: 'Nazionale',
-    ente: 'Italia Domani — PNRR'
-  },
-  {
-    nome: 'Agenzia Coesione — Bandi RSS',
-    url: 'https://www.agenziacoesione.gov.it/feed/',
-    tipo: 'RSS',
-    ambito: 5,
-    livello: 'Nazionale',
-    ente: 'Agenzia per la Coesione Territoriale'
-  },
+  // Italia Domani (403) e Agenzia Coesione (SSL error) bloccano GAS.
+  // Fase 2: integrazione via Gmail scan.
   {
     nome: 'Artribune RSS',
     url: 'https://www.artribune.com/feed/',
@@ -70,13 +41,14 @@ var FAS_PNRR_FEEDS = [
     livello: 'Nazionale',
     ente: 'Artribune'
   },
+  // FASI.eu (403) blocca GAS. Fase 2: proxy o Gmail scan.
   {
-    nome: 'FASI — Finanziamenti Agevolati RSS',
-    url: 'https://www.fasi.eu/it/rss.html',
+    nome: 'Doppiozero — Cultura RSS',
+    url: 'https://www.doppiozero.com/rss.xml',
     tipo: 'RSS',
-    ambito: 5,
+    ambito: 1,
     livello: 'Nazionale',
-    ente: 'FASI.eu'
+    ente: 'Doppiozero'
   }
 ];
 
