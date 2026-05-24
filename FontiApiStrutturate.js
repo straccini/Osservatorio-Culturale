@@ -5,14 +5,18 @@
  *  v4.18.69 (2026-05-24)
  *  Autore: Claude (Cowork) per Silvano Straccini / Duemilamusei
  *
- *  Fase 1: TED RSS + Italia Domani RSS + auto-retry fonti silenti
- *  Fase 2 (futuro): ANAC API + OpenCoesione API + CKAN regionale
+ *  Fase 1: RSS feeds + auto-retry fonti silenti
+ *  Fase 2: OpenCoesione API + CKAN regionale (dati.gov.it, dati.puglia.it)
  *
  *  Funzioni pubbliche:
  *    fasParserTedRss()              — scarica bandi EU da TED RSS (cultura/musei)
  *    fasParserItaliaDomaniRss()     — scarica bandi PNRR da Italia Domani
  *    fasRetryFontiSilenti()         — riprova fonti con 3+ fail, riattiva se OK
- *    fasRunFase1()                  — orchestratore: TED + PNRR + retry
+ *    fasRunFase1()                  — orchestratore: RSS + retry
+ *    fasParserOpenCoesione()        — Fase 2: progetti coesione cultura/turismo
+ *    fasParserCkanRegionale()       — Fase 2: bandi da portali open data regionali
+ *    fasRunFase2()                  — orchestratore Fase 2
+ *    fasRunCompleto()               — Fase 1 + Fase 2
  *    fasSetupTrigger()              — installa trigger giornaliero
  *    fasDiagnostica()               — report stato
  *
@@ -578,6 +582,342 @@ function _fasNormalizzaData_(dateStr) {
     }
   } catch(_){}
   return '';
+}
+
+// ============================================================================
+// FASE 2: OpenCoesione API + CKAN regionale
+// ============================================================================
+
+/**
+ * Endpoint OpenCoesione e CKAN.
+ */
+var FAS_OPENCOESIONE = {
+  base: 'https://opencoesione.gov.it/api',
+  // Temi rilevanti: 06=Cultura e turismo, 07=Ambiente, 09=Inclusione sociale
+  temiCultura: ['06'],
+  maxPagine: 3,
+  perPagina: 20
+};
+
+var FAS_CKAN_PORTALS = [
+  {
+    nome: 'dati.gov.it — Open Data PA',
+    base: 'https://www.dati.gov.it/opendata/api/3/action',
+    query: 'bandi cultura musei patrimonio',
+    ambito: 1,
+    livello: 'Nazionale'
+  },
+  {
+    nome: 'Puglia Open Data',
+    base: 'https://dati.puglia.it/ckan/api/3/action',
+    query: 'bandi cultura',
+    ambito: 1,
+    livello: 'Regionale'
+  }
+];
+
+// ============================================================================
+// PARSER OPENCOESIONE
+// ============================================================================
+
+/**
+ * Scarica progetti/opportunita da OpenCoesione API filtrati per tema cultura.
+ * API: https://opencoesione.gov.it/api/progetti/?tema_sintetico=06&formato=json
+ *
+ * @param {Object} [opts] {dryRun, maxPagine}
+ * @return {Object} {ok, nuovi, duplicati, errori, dettagli[]}
+ */
+function fasParserOpenCoesione(opts) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var maxPag = opts.maxPagine || FAS_OPENCOESIONE.maxPagine;
+  var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, pagine: 0, dettagli: [] };
+
+  var existingUrls = _fasLoadExistingUrls_();
+
+  for (var tema = 0; tema < FAS_OPENCOESIONE.temiCultura.length; tema++) {
+    var temaCode = FAS_OPENCOESIONE.temiCultura[tema];
+
+    for (var pag = 1; pag <= maxPag; pag++) {
+      try {
+        var url = FAS_OPENCOESIONE.base + '/progetti/?tema_sintetico=' + temaCode +
+          '&formato=json&ordinamento=-data_inizio_prevista&page=' + pag;
+
+        var resp = UrlFetchApp.fetch(url, {
+          muteHttpExceptions: true,
+          headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
+        });
+
+        if (resp.getResponseCode() !== 200) {
+          report.dettagli.push({ fonte: 'OpenCoesione', pagina: pag, errore: 'HTTP ' + resp.getResponseCode() });
+          if (resp.getResponseCode() === 403 || resp.getResponseCode() === 429) break;
+          continue;
+        }
+
+        var data;
+        try { data = JSON.parse(resp.getContentText()); } catch(eJ) {
+          report.errori++;
+          report.dettagli.push({ fonte: 'OpenCoesione', pagina: pag, errore: 'JSON parse: ' + eJ.message });
+          continue;
+        }
+
+        var risultati = data.risultati || data.results || data.objects || [];
+        if (!risultati.length) break; // nessun risultato, stop paginazione
+
+        report.pagine++;
+        for (var i = 0; i < risultati.length; i++) {
+          var prog = risultati[i];
+          var titolo = String(prog.titolo_progetto || prog.oc_titolo_progetto || prog.titolo || '').trim();
+          var linkProg = prog.url || (FAS_OPENCOESIONE.base.replace('/api', '') + '/progetti/' + (prog.codice_locale || prog.cod_locale || ''));
+          var ente = String(prog.denominazione_soggetto || prog.soggetto_programmatore || '');
+
+          if (!titolo || !linkProg) continue;
+          if (existingUrls[linkProg.toLowerCase()]) { report.duplicati++; continue; }
+
+          if (!dryRun) {
+            _fasSaveBando_({
+              titolo: titolo.substring(0, 300),
+              ente: ente || 'OpenCoesione',
+              livello: 'Nazionale',
+              regione: String(prog.den_regione || ''),
+              settore: 'Coesione — Cultura e turismo',
+              urlBando: linkProg,
+              sommario: String(prog.oc_descrizione_sintetica || prog.descrizione || '').substring(0, 500),
+              scadenza: _fasNormalizzaData_(prog.data_fine_prevista || prog.data_fine_effettiva || ''),
+              ambito: 1,
+              fonteNome: 'OpenCoesione API (tema ' + temaCode + ')'
+            });
+            existingUrls[linkProg.toLowerCase()] = true;
+          }
+          report.nuovi++;
+        }
+
+        Logger.log('[FAS] OpenCoesione tema=' + temaCode + ' pag=' + pag + ': ' + risultati.length + ' risultati');
+        Utilities.sleep(500); // rate limit cortesia
+      } catch(e) {
+        report.errori++;
+        report.dettagli.push({ fonte: 'OpenCoesione', pagina: pag, errore: e.message });
+        Logger.log('[FAS] OpenCoesione errore pag ' + pag + ': ' + e.message);
+      }
+    }
+  }
+
+  Logger.log('[FAS] OpenCoesione totale: ' + report.nuovi + ' nuovi, ' + report.duplicati + ' dup, ' + report.pagine + ' pagine');
+  return report;
+}
+
+// ============================================================================
+// PARSER CKAN REGIONALE
+// ============================================================================
+
+/**
+ * Cerca dataset bandi/cultura sui portali CKAN regionali e nazionali.
+ * CKAN API: package_search?q=bandi+cultura&rows=20
+ *
+ * @param {Object} [opts] {dryRun, maxPerPortale}
+ * @return {Object} {ok, nuovi, duplicati, errori, dettagli[]}
+ */
+function fasParserCkanRegionale(opts) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var maxPerPortale = opts.maxPerPortale || 20;
+  var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+
+  var existingUrls = _fasLoadExistingUrls_();
+
+  for (var p = 0; p < FAS_CKAN_PORTALS.length; p++) {
+    var portal = FAS_CKAN_PORTALS[p];
+    try {
+      var url = portal.base + '/package_search?q=' + encodeURIComponent(portal.query) +
+        '&rows=' + maxPerPortale + '&sort=metadata_modified+desc';
+
+      var resp = UrlFetchApp.fetch(url, {
+        muteHttpExceptions: true,
+        headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
+      });
+
+      if (resp.getResponseCode() !== 200) {
+        report.errori++;
+        report.dettagli.push({ portale: portal.nome, errore: 'HTTP ' + resp.getResponseCode() });
+        Logger.log('[FAS] CKAN ' + portal.nome + ' HTTP ' + resp.getResponseCode());
+        continue;
+      }
+
+      var data;
+      try { data = JSON.parse(resp.getContentText()); } catch(eJ) {
+        report.errori++;
+        report.dettagli.push({ portale: portal.nome, errore: 'JSON parse' });
+        continue;
+      }
+
+      var results = (data.result && data.result.results) || [];
+      Logger.log('[FAS] CKAN ' + portal.nome + ': ' + results.length + ' dataset trovati');
+
+      for (var i = 0; i < results.length; i++) {
+        var ds = results[i];
+        var titolo = String(ds.title || ds.name || '').trim();
+        var dsUrl = '';
+
+        // Cerca URL utile nelle risorse del dataset
+        if (ds.resources && ds.resources.length > 0) {
+          // Preferisci risorse con formato HTML o PDF
+          var bestRes = ds.resources.find(function(r) {
+            var fmt = String(r.format || '').toLowerCase();
+            return fmt === 'html' || fmt === 'pdf' || fmt === 'csv';
+          }) || ds.resources[0];
+          dsUrl = bestRes.url || '';
+        }
+        if (!dsUrl) dsUrl = ds.url || (portal.base.replace('/api/3/action', '') + '/dataset/' + ds.name);
+
+        if (!titolo || !dsUrl) continue;
+        if (existingUrls[dsUrl.toLowerCase()]) { report.duplicati++; continue; }
+
+        // Filtra solo dataset rilevanti (contengono keyword cultura/bandi/musei)
+        var allText = (titolo + ' ' + (ds.notes || '') + ' ' + (ds.tags || []).map(function(t) { return t.name || t; }).join(' ')).toLowerCase();
+        var isRelevant = /bando|bandi|cultura|museo|musei|patrimonio|finanziamento|contributo|turismo/.test(allText);
+        if (!isRelevant) continue;
+
+        if (!dryRun) {
+          _fasSaveBando_({
+            titolo: titolo.substring(0, 300),
+            ente: String(ds.organization && ds.organization.title || portal.nome),
+            livello: portal.livello,
+            regione: portal.livello === 'Regionale' ? portal.nome.split(' ')[0] : '',
+            settore: 'Open Data — Cultura',
+            urlBando: dsUrl,
+            sommario: String(ds.notes || '').substring(0, 500),
+            scadenza: '',
+            ambito: portal.ambito,
+            fonteNome: portal.nome
+          });
+          existingUrls[dsUrl.toLowerCase()] = true;
+        }
+        report.nuovi++;
+      }
+
+      report.dettagli.push({ portale: portal.nome, dataset: results.length, nuovi: report.nuovi });
+      Utilities.sleep(300);
+    } catch(e) {
+      report.errori++;
+      report.dettagli.push({ portale: portal.nome, errore: e.message });
+      Logger.log('[FAS] CKAN ' + portal.nome + ' errore: ' + e.message);
+    }
+  }
+
+  Logger.log('[FAS] CKAN totale: ' + report.nuovi + ' nuovi, ' + report.duplicati + ' dup');
+  return report;
+}
+
+// ============================================================================
+// ORCHESTRATORE FASE 2
+// ============================================================================
+
+/**
+ * Esegue tutti i parser Fase 2: OpenCoesione + CKAN.
+ */
+function fasRunFase2() {
+  var t0 = Date.now();
+  var report = {
+    ok: true,
+    timestamp: new Date().toISOString(),
+    openCoesione: null,
+    ckan: null,
+    totaleNuovi: 0,
+    durataMs: 0
+  };
+
+  Logger.log('================================================================');
+  Logger.log('[FAS] FASE 2 — OpenCoesione + CKAN — ' + new Date().toISOString());
+  Logger.log('================================================================');
+
+  // 1. OpenCoesione API
+  try {
+    report.openCoesione = fasParserOpenCoesione();
+    report.totaleNuovi += report.openCoesione.nuovi;
+  } catch(e) {
+    report.openCoesione = { ok: false, error: e.message };
+    Logger.log('[FAS] OpenCoesione ERRORE: ' + e.message);
+  }
+
+  // 2. CKAN Regionali
+  try {
+    report.ckan = fasParserCkanRegionale();
+    report.totaleNuovi += report.ckan.nuovi;
+  } catch(e) {
+    report.ckan = { ok: false, error: e.message };
+    Logger.log('[FAS] CKAN ERRORE: ' + e.message);
+  }
+
+  report.durataMs = Date.now() - t0;
+  Logger.log('[FAS] Fase 2 completata: ' + report.totaleNuovi + ' nuovi (' + report.durataMs + 'ms)');
+  Logger.log('================================================================');
+
+  // Telegram alert
+  if (report.totaleNuovi > 0) {
+    try {
+      if (typeof _tgSend_ === 'function') {
+        _tgSend_('📡 *Fonti Strutturate Fase 2*\n\n' +
+          'OpenCoesione: ' + (report.openCoesione ? report.openCoesione.nuovi : 0) + ' nuovi\n' +
+          'CKAN regionali: ' + (report.ckan ? report.ckan.nuovi : 0) + ' nuovi');
+      }
+    } catch(_){}
+  }
+
+  return report;
+}
+
+// ============================================================================
+// ORCHESTRATORE COMPLETO (Fase 1 + Fase 2)
+// ============================================================================
+
+/**
+ * Esegue tutto: RSS + retry + OpenCoesione + CKAN.
+ * Usare come trigger giornaliero al posto di fasRunFase1.
+ */
+function fasRunCompleto() {
+  var t0 = Date.now();
+  var report = {
+    ok: true,
+    timestamp: new Date().toISOString(),
+    fase1: null,
+    fase2: null,
+    totaleNuovi: 0,
+    durataMs: 0
+  };
+
+  Logger.log('================================================================');
+  Logger.log('[FAS] RUN COMPLETO — Fase 1 + Fase 2 — ' + new Date().toISOString());
+  Logger.log('================================================================');
+
+  // Wall-clock guard: 5 minuti totali
+  var startTime = Date.now();
+
+  // Fase 1
+  try {
+    report.fase1 = fasRunFase1();
+    report.totaleNuovi += (report.fase1.totaleNuovi || 0);
+  } catch(e) {
+    report.fase1 = { ok: false, error: e.message };
+  }
+
+  // Fase 2 (solo se c'e tempo)
+  if (Date.now() - startTime < 240000) {
+    try {
+      report.fase2 = fasRunFase2();
+      report.totaleNuovi += (report.fase2.totaleNuovi || 0);
+    } catch(e) {
+      report.fase2 = { ok: false, error: e.message };
+    }
+  } else {
+    report.fase2 = { ok: true, skipped: true, motivo: 'timeout 4min' };
+    Logger.log('[FAS] Fase 2 saltata per timeout');
+  }
+
+  report.durataMs = Date.now() - t0;
+  Logger.log('[FAS] Run completo: ' + report.totaleNuovi + ' nuovi totali (' + report.durataMs + 'ms)');
+  Logger.log('================================================================');
+
+  return report;
 }
 
 // ============================================================================
