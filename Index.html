@@ -5343,7 +5343,7 @@
     // Sessioni count per magic-link
     google.script.run.withSuccessHandler(function(r){
       var el = document.getElementById('gdMagicCount');
-      if (el && r && r.kpi) el('gdMagicCount').textContent = r.kpi.sessioniTotali || 0;
+      if (el && r && r.kpi) el.textContent = r.kpi.sessioniTotali || 0;
     }).withFailureHandler(function(){}).sasDiagnostica();
   }
 
