@@ -450,3 +450,69 @@ function seedFontiDaRicerca() {
     return { ok: false, error: e.message };
   }
 }
+
+// ============================================================================
+// v5.0.6 — Seed fonti da seconda ricerca + TED API + LOD (25/05/2026)
+// ============================================================================
+
+function seedFontiRicerca2() {
+  var FONTI = [
+    // === API e portali bandi ===
+    { nome: 'TED API — Appalti EU Cultura (Swagger)', url: 'https://api.ted.europa.eu/v3/notices/search', tag: 'ue', cat: 'Appalti EU', liv: 'EU', ente: 'TED — Ufficio Pubblicazioni UE', tipo: 'bandi', pr: 1 },
+    { nome: 'TED Developer Portal', url: 'https://developer.ted.europa.eu/', tag: 'ue', cat: 'Appalti EU', liv: 'EU', ente: 'TED', tipo: 'bandi', pr: 2 },
+    { nome: 'ANAC Pubblicita Legale BDNCP', url: 'https://pubblicitalegale.anticorruzione.it/bdncp', tag: 'ministero', cat: 'Contratti pubblici', liv: 'Nazionale', ente: 'ANAC', tipo: 'bandi', pr: 1 },
+    { nome: 'Portale Operatori Turismo — Italia.it', url: 'https://portaleoperatori.italia.it', tag: 'ministero', cat: 'Turismo', liv: 'Nazionale', ente: 'Ministero del Turismo', tipo: 'bandi', pr: 2 },
+    { nome: 'PDND — Catalogo API PA', url: 'https://api.gov.it/en', tag: 'ministero', cat: 'Interoperabilita PA', liv: 'Nazionale', ente: 'AgID / DTD', tipo: 'news', pr: 2 },
+    { nome: 'Developers Italia', url: 'https://developers.italia.it', tag: 'istituzionale', cat: 'Open source PA', liv: 'Nazionale', ente: 'DTD', tipo: 'news', pr: 2 },
+    // === Linked Open Data Cultura ===
+    { nome: 'MiC SPARQL — Beni Culturali LOD', url: 'http://dati.beniculturali.it/sparql', tag: 'ministero', cat: 'LOD Cultura', liv: 'Nazionale', ente: 'MiC — ArCo', tipo: 'news', pr: 2 },
+    { nome: 'MiC Open Data e Linked Data', url: 'https://dati.cultura.gov.it', tag: 'ministero', cat: 'Open Data Cultura', liv: 'Nazionale', ente: 'Ministero della Cultura', tipo: 'news', pr: 1 },
+    { nome: 'MiC Open Data pagina ufficiale', url: 'https://cultura.gov.it/open-data-e-linked-data', tag: 'ministero', cat: 'Open Data Cultura', liv: 'Nazionale', ente: 'Ministero della Cultura', tipo: 'news', pr: 2 },
+    { nome: 'CulturaItalia — Linked Open Data', url: 'https://www.culturaitalia.it/linked-open-data/', tag: 'istituzionale', cat: 'LOD Federato', liv: 'Nazionale', ente: 'ICCU — CulturaItalia', tipo: 'news', pr: 2 },
+    { nome: 'SAN — Sistema Archivistico Nazionale LOD', url: 'http://www.san.beniculturali.it/web/san/dati-san-lod', tag: 'istituzionale', cat: 'Archivi LOD', liv: 'Nazionale', ente: 'SAN', tipo: 'news', pr: 2 }
+  ];
+
+  try {
+    // Carica URL esistenti da tutti i fogli fonti per dedup
+    var existingUrls = {};
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    ['FontiBandi_v5', 'FontiNews', 'FontiPodcast', 'FontiVideo'].forEach(function(shName) {
+      var sh = ss.getSheetByName(shName);
+      if (!sh || sh.getLastRow() < 2) return;
+      var vals = sh.getDataRange().getValues();
+      var head = vals[0];
+      var iUrl = head.indexOf('URL');
+      if (iUrl < 0) return;
+      for (var r = 1; r < vals.length; r++) {
+        var u = String(vals[r][iUrl] || '').trim().toLowerCase();
+        if (u) existingUrls[u] = true;
+      }
+    });
+
+    var aggiunte = 0, duplicate = 0, dettagli = [];
+    FONTI.forEach(function(f) {
+      var urlLow = f.url.toLowerCase().trim();
+      if (existingUrls[urlLow]) { duplicate++; dettagli.push({ nome: f.nome, azione: 'gia_presente' }); return; }
+      try {
+        if (typeof addFonteUnificataV2 === 'function') {
+          var result = addFonteUnificataV2({
+            tipo: f.tipo || 'bandi',
+            nome: f.nome,
+            url: f.url,
+            tipoFonte: 'HTML',
+            tag: f.tag,
+            categoria: f.cat,
+            priorita: f.pr || 2,
+            enteDefault: f.ente || '',
+            livello: f.liv || 'Nazionale'
+          });
+          if (result && result.ok) { aggiunte++; dettagli.push({ nome: f.nome, azione: 'aggiunta', id: result.id }); }
+          else { dettagli.push({ nome: f.nome, azione: 'errore', error: (result && result.error) || '?' }); }
+        }
+      } catch(e) { dettagli.push({ nome: f.nome, azione: 'errore', error: e.message }); }
+    });
+
+    Logger.log('seedFontiRicerca2: ' + aggiunte + ' aggiunte, ' + duplicate + ' gia presenti');
+    return { ok: true, aggiunte: aggiunte, duplicate: duplicate, dettagli: dettagli };
+  } catch(e) { return { ok: false, error: e.message }; }
+}
