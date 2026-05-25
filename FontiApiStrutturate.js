@@ -902,7 +902,7 @@ function fasRunCompleto() {
   }
 
   // Fase 2 (solo se c'e tempo)
-  if (Date.now() - startTime < 240000) {
+  if (Date.now() - startTime < 180000) {
     try {
       report.fase2 = fasRunFase2();
       report.totaleNuovi += (report.fase2.totaleNuovi || 0);
@@ -910,8 +910,19 @@ function fasRunCompleto() {
       report.fase2 = { ok: false, error: e.message };
     }
   } else {
-    report.fase2 = { ok: true, skipped: true, motivo: 'timeout 4min' };
-    Logger.log('[FAS] Fase 2 saltata per timeout');
+    report.fase2 = { ok: true, skipped: true, motivo: 'timeout 3min' };
+  }
+
+  // Fase 2b: ANAC + OpenCUP + SEDIA + Lombardia (solo se c'e tempo)
+  if (Date.now() - startTime < 270000) {
+    try {
+      report.fase2b = fasRunFase2b();
+      report.totaleNuovi += (report.fase2b.totaleNuovi || 0);
+    } catch(e) {
+      report.fase2b = { ok: false, error: e.message };
+    }
+  } else {
+    report.fase2b = { ok: true, skipped: true, motivo: 'timeout' };
   }
 
   report.durataMs = Date.now() - t0;
@@ -922,7 +933,341 @@ function fasRunCompleto() {
 }
 
 // ============================================================================
-// FINE FontiApiStrutturate.js
+// FASE 2b: ANAC OCDS + OpenCUP + SEDIA EU + Lombardia OData
+// ============================================================================
+
+/**
+ * Parser ANAC OCDS — Contratti pubblici cultura/musei.
+ * API: https://dati.anticorruzione.it/opendata/ocds_it
+ */
+function fasParserAnac(opts) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+  var existingUrls = _fasLoadExistingUrls_();
+
+  // Endpoint: gare attive con keyword cultura/musei
+  var endpoints = [
+    { url: 'https://dati.anticorruzione.it/opendata/dataset/contrattipubblicistipula.json', nome: 'ANAC Contratti' },
+    { url: 'https://dati.anticorruzione.it/opendata/api/3/action/package_search?q=cultura+museo+patrimonio&rows=30', nome: 'ANAC CKAN cultura' }
+  ];
+
+  endpoints.forEach(function(ep) {
+    try {
+      var resp = UrlFetchApp.fetch(ep.url, {
+        muteHttpExceptions: true,
+        headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
+      });
+      if (resp.getResponseCode() !== 200) {
+        report.dettagli.push({ fonte: ep.nome, errore: 'HTTP ' + resp.getResponseCode() });
+        return;
+      }
+      var data;
+      try { data = JSON.parse(resp.getContentText()); } catch(_) {
+        report.errori++;
+        report.dettagli.push({ fonte: ep.nome, errore: 'JSON parse' });
+        return;
+      }
+
+      // CKAN format
+      var results = (data.result && data.result.results) || [];
+      // OCDS format
+      if (!results.length && data.releases) results = data.releases;
+      if (!results.length && Array.isArray(data)) results = data;
+
+      results.forEach(function(item) {
+        var titolo = item.title || (item.tender && item.tender.title) || item.name || '';
+        var link = item.url || (item.tender && item.tender.url) || '';
+        if (!link && item.id) link = 'https://dati.anticorruzione.it/opendata/dataset/' + item.id;
+        if (!titolo || !link) return;
+
+        // Filtra solo cultura/musei
+        var allText = (titolo + ' ' + (item.notes || item.description || '')).toLowerCase();
+        if (!/cultur|museo|musei|patrimoni|restaur|archeolog|monument|turis/.test(allText)) return;
+
+        if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
+        if (!dryRun) {
+          _fasSaveBando_({
+            titolo: titolo.substring(0, 300),
+            ente: (item.organization && item.organization.title) || 'ANAC',
+            livello: 'Nazionale',
+            settore: 'Contratti pubblici cultura',
+            urlBando: link,
+            sommario: String(item.notes || item.description || '').substring(0, 500),
+            ambito: 3,
+            fonteNome: ep.nome
+          });
+          existingUrls[link.toLowerCase()] = true;
+        }
+        report.nuovi++;
+      });
+      report.dettagli.push({ fonte: ep.nome, risultati: results.length });
+      Logger.log('[FAS] ' + ep.nome + ': ' + results.length + ' risultati');
+    } catch(e) {
+      report.errori++;
+      report.dettagli.push({ fonte: ep.nome, errore: e.message });
+      Logger.log('[FAS] ' + ep.nome + ' errore: ' + e.message);
+    }
+  });
+
+  Logger.log('[FAS] ANAC totale: ' + report.nuovi + ' nuovi, ' + report.duplicati + ' dup');
+  return report;
+}
+
+/**
+ * Parser OpenCUP — Investimenti pubblici cultura.
+ * API: https://opencup.gov.it/portale/progetto/-/cup/
+ */
+function fasParserOpenCup(opts) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+  var existingUrls = _fasLoadExistingUrls_();
+
+  // OpenCUP non ha API REST aperta, usiamo il portale CKAN di dati.gov.it
+  var url = 'https://www.dati.gov.it/opendata/api/3/action/package_search?q=CUP+cultura+museo+patrimonio&rows=30&sort=metadata_modified+desc';
+  try {
+    var resp = UrlFetchApp.fetch(url, {
+      muteHttpExceptions: true,
+      headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
+    });
+    if (resp.getResponseCode() !== 200) {
+      report.dettagli.push({ fonte: 'OpenCUP via dati.gov.it', errore: 'HTTP ' + resp.getResponseCode() });
+      return report;
+    }
+    var data = JSON.parse(resp.getContentText());
+    var results = (data.result && data.result.results) || [];
+
+    results.forEach(function(ds) {
+      var titolo = String(ds.title || ds.name || '').trim();
+      var dsUrl = '';
+      if (ds.resources && ds.resources.length > 0) {
+        var best = ds.resources.find(function(r) {
+          return /html|pdf|csv|json/.test(String(r.format || '').toLowerCase());
+        }) || ds.resources[0];
+        dsUrl = best.url || '';
+      }
+      if (!dsUrl) dsUrl = 'https://www.dati.gov.it/opendata/dataset/' + ds.name;
+      if (!titolo || !dsUrl) return;
+      if (existingUrls[dsUrl.toLowerCase()]) { report.duplicati++; return; }
+
+      if (!dryRun) {
+        _fasSaveBando_({
+          titolo: titolo.substring(0, 300),
+          ente: (ds.organization && ds.organization.title) || 'OpenCUP / dati.gov.it',
+          livello: 'Nazionale',
+          settore: 'Investimenti pubblici cultura',
+          urlBando: dsUrl,
+          sommario: String(ds.notes || '').substring(0, 500),
+          ambito: 5,
+          fonteNome: 'OpenCUP via dati.gov.it'
+        });
+        existingUrls[dsUrl.toLowerCase()] = true;
+      }
+      report.nuovi++;
+    });
+    report.dettagli.push({ fonte: 'OpenCUP', risultati: results.length });
+    Logger.log('[FAS] OpenCUP: ' + results.length + ' dataset, ' + report.nuovi + ' nuovi');
+  } catch(e) {
+    report.errori++;
+    report.dettagli.push({ fonte: 'OpenCUP', errore: e.message });
+  }
+  return report;
+}
+
+/**
+ * Parser SEDIA — EU Funding & Tenders Portal (bandi europei cultura).
+ * API: https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA
+ */
+function fasParserSediaEU(opts) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+  var existingUrls = _fasLoadExistingUrls_();
+
+  var searchUrl = 'https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=museum+OR+cultural+heritage+OR+patrimonio+culturale&pageSize=20&pageNumber=1';
+
+  try {
+    var resp = UrlFetchApp.fetch(searchUrl, {
+      method: 'get',
+      muteHttpExceptions: true,
+      headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
+    });
+    if (resp.getResponseCode() !== 200) {
+      // Prova POST con payload
+      resp = UrlFetchApp.fetch('https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=cultural+heritage', {
+        method: 'post',
+        contentType: 'application/json',
+        muteHttpExceptions: true,
+        payload: JSON.stringify({ query: 'museum OR cultural heritage', languages: ['en','it'], sortField: 'sortDate', sortOrder: 'DESC' }),
+        headers: { 'User-Agent': 'SinopiaBot/1.0' }
+      });
+    }
+    if (resp.getResponseCode() !== 200) {
+      report.dettagli.push({ fonte: 'SEDIA EU', errore: 'HTTP ' + resp.getResponseCode() });
+      Logger.log('[FAS] SEDIA EU HTTP ' + resp.getResponseCode());
+      return report;
+    }
+
+    var data;
+    try { data = JSON.parse(resp.getContentText()); } catch(_) {
+      report.errori++;
+      report.dettagli.push({ fonte: 'SEDIA EU', errore: 'JSON parse' });
+      return report;
+    }
+
+    var results = data.results || data.content || [];
+    results.forEach(function(item) {
+      var titolo = item.title || item.name || '';
+      if (typeof titolo === 'object') titolo = titolo.en || titolo.it || Object.values(titolo)[0] || '';
+      var link = item.url || item.uri || '';
+      if (!link && item.identifier) link = 'https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/opportunities/topic-details/' + item.identifier;
+      if (!titolo || !link) return;
+      if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
+
+      if (!dryRun) {
+        _fasSaveBando_({
+          titolo: String(titolo).substring(0, 300),
+          ente: 'Commissione Europea',
+          livello: 'EU',
+          settore: 'EU Funding cultura',
+          urlBando: link,
+          sommario: String(item.description || item.summary || '').substring(0, 500),
+          scadenza: _fasNormalizzaData_(item.deadlineDate || item.deadline || ''),
+          ambito: 3,
+          fonteNome: 'SEDIA EU Funding & Tenders'
+        });
+        existingUrls[link.toLowerCase()] = true;
+      }
+      report.nuovi++;
+    });
+    report.dettagli.push({ fonte: 'SEDIA EU', risultati: results.length });
+    Logger.log('[FAS] SEDIA EU: ' + results.length + ' risultati, ' + report.nuovi + ' nuovi');
+  } catch(e) {
+    report.errori++;
+    report.dettagli.push({ fonte: 'SEDIA EU', errore: e.message });
+    Logger.log('[FAS] SEDIA EU errore: ' + e.message);
+  }
+  return report;
+}
+
+/**
+ * Parser Lombardia OData — Open data bandi regionali.
+ * API: https://dati.lombardia.it basato su Socrata/SODA.
+ */
+function fasParserLombardia(opts) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+  var existingUrls = _fasLoadExistingUrls_();
+
+  // SODA API query per bandi cultura
+  var url = 'https://www.dati.lombardia.it/resource/ks5g-bke7.json?$where=contains(upper(titolo_bando),\'CULTUR\')+OR+contains(upper(titolo_bando),\'MUSEO\')&$limit=30&$order=data_pubblicazione+DESC';
+
+  try {
+    var resp = UrlFetchApp.fetch(url, {
+      muteHttpExceptions: true,
+      headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
+    });
+    if (resp.getResponseCode() !== 200) {
+      // Fallback: CKAN API
+      url = 'https://www.dati.lombardia.it/api/views.json?category=Bandi&limit=20';
+      resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'Accept': 'application/json' } });
+    }
+    if (resp.getResponseCode() !== 200) {
+      report.dettagli.push({ fonte: 'Lombardia OData', errore: 'HTTP ' + resp.getResponseCode() });
+      return report;
+    }
+
+    var data;
+    try { data = JSON.parse(resp.getContentText()); } catch(_) {
+      report.errori++;
+      return report;
+    }
+    if (!Array.isArray(data)) data = data.results || data.result || [];
+
+    data.forEach(function(item) {
+      var titolo = item.titolo_bando || item.title || item.name || '';
+      var link = item.link_bando || item.url || '';
+      if (!link && item.id) link = 'https://www.dati.lombardia.it/resource/' + item.id;
+      if (!titolo || !link) return;
+
+      var allText = (titolo + ' ' + (item.descrizione || item.description || '')).toLowerCase();
+      if (!/cultur|museo|musei|patrimoni|turis|restaur/.test(allText)) return;
+
+      if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
+      if (!dryRun) {
+        _fasSaveBando_({
+          titolo: String(titolo).substring(0, 300),
+          ente: 'Regione Lombardia',
+          livello: 'Regionale',
+          regione: 'Lombardia',
+          settore: 'Bandi regionali cultura',
+          urlBando: link,
+          sommario: String(item.descrizione || item.description || '').substring(0, 500),
+          scadenza: _fasNormalizzaData_(item.data_scadenza || item.scadenza || ''),
+          ambito: 1,
+          fonteNome: 'Lombardia OData'
+        });
+        existingUrls[link.toLowerCase()] = true;
+      }
+      report.nuovi++;
+    });
+    report.dettagli.push({ fonte: 'Lombardia', risultati: data.length });
+    Logger.log('[FAS] Lombardia: ' + data.length + ' risultati, ' + report.nuovi + ' nuovi');
+  } catch(e) {
+    report.errori++;
+    report.dettagli.push({ fonte: 'Lombardia', errore: e.message });
+  }
+  return report;
+}
+
+/**
+ * Orchestratore Fase 2b: ANAC + OpenCUP + SEDIA + Lombardia.
+ */
+function fasRunFase2b() {
+  var t0 = Date.now();
+  var report = {
+    ok: true, timestamp: new Date().toISOString(),
+    anac: null, opencup: null, sedia: null, lombardia: null,
+    totaleNuovi: 0, durataMs: 0
+  };
+
+  Logger.log('================================================================');
+  Logger.log('[FAS] FASE 2b — ANAC + OpenCUP + SEDIA + Lombardia — ' + new Date().toISOString());
+  Logger.log('================================================================');
+
+  try { report.anac = fasParserAnac(); report.totaleNuovi += report.anac.nuovi; } catch(e) { report.anac = { ok:false, error:e.message }; }
+  try { report.opencup = fasParserOpenCup(); report.totaleNuovi += report.opencup.nuovi; } catch(e) { report.opencup = { ok:false, error:e.message }; }
+
+  if (Date.now() - t0 < 240000) {
+    try { report.sedia = fasParserSediaEU(); report.totaleNuovi += report.sedia.nuovi; } catch(e) { report.sedia = { ok:false, error:e.message }; }
+  } else { report.sedia = { skipped: true }; }
+
+  if (Date.now() - t0 < 280000) {
+    try { report.lombardia = fasParserLombardia(); report.totaleNuovi += report.lombardia.nuovi; } catch(e) { report.lombardia = { ok:false, error:e.message }; }
+  } else { report.lombardia = { skipped: true }; }
+
+  report.durataMs = Date.now() - t0;
+  Logger.log('[FAS] Fase 2b completata: ' + report.totaleNuovi + ' nuovi (' + report.durataMs + 'ms)');
+  Logger.log('================================================================');
+
+  if (report.totaleNuovi > 0 && typeof _tgSend_ === 'function') {
+    try {
+      _tgSend_('*Fonti Fase 2b*\nANAC: ' + (report.anac ? report.anac.nuovi : 0) +
+        '\nOpenCUP: ' + (report.opencup ? report.opencup.nuovi : 0) +
+        '\nSEDIA EU: ' + (report.sedia ? report.sedia.nuovi : 0) +
+        '\nLombardia: ' + (report.lombardia ? report.lombardia.nuovi : 0));
+    } catch(_){}
+  }
+  return report;
+}
+
+// Aggiorna fasRunCompleto per includere Fase 2b
+var _originalFasRunCompleto = typeof fasRunCompleto === 'function' ? fasRunCompleto : null;
+
+// ============================================================================
+// FINE FontiApiStrutturate.js (principale)
 // ============================================================================
 
 // ============================================================================
