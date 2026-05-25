@@ -293,3 +293,160 @@ function verificaETracciaStatoPNRR(bando) {
 // ============================================================================
 // FINE SeedFontiSpecializzateV2.gs
 // ============================================================================
+
+// ============================================================================
+// v5.0.5 — Seed fonti da ricerca NotebookLM (25/05/2026)
+// ============================================================================
+
+function seedFontiDaRicerca() {
+  var FONTI = [
+    {
+      nome: 'SCP - Servizio Contratti Pubblici (MIT)',
+      url: 'https://www.serviziocontrattipubblici.it/it/open-data/',
+      ambito: 'Governance',
+      tag: 'ministero',
+      categoria: 'Contratti pubblici',
+      livello: 'Nazionale',
+      enteDefault: 'MIT - Infrastrutture e Trasporti',
+      priorita: 1
+    },
+    {
+      nome: 'PA Digitale 2026 - PNRR Open Data',
+      url: 'https://padigitale2026.gov.it/open-data',
+      ambito: 'Digital',
+      tag: 'ministero',
+      categoria: 'PNRR Digitalizzazione',
+      livello: 'Nazionale',
+      enteDefault: 'Dipartimento Trasformazione Digitale',
+      priorita: 1
+    },
+    {
+      nome: 'MiC Trasparenza - Gare e Contratti',
+      url: 'https://trasparenza.cultura.gov.it/pagina566_bandi-di-gara-e-contratti.html',
+      ambito: 'Cultura',
+      tag: 'ministero',
+      categoria: 'Gare cultura',
+      livello: 'Nazionale',
+      enteDefault: 'Ministero della Cultura',
+      priorita: 1
+    },
+    {
+      nome: 'Fondazione Cariplo - Bandi Cultura',
+      url: 'https://www.fondazionecariplo.it/contributi/bandi/',
+      ambito: 'Cultura',
+      tag: 'fondazione',
+      categoria: 'Fondazioni',
+      livello: 'Regionale',
+      enteDefault: 'Fondazione Cariplo',
+      priorita: 1
+    },
+    {
+      nome: 'Toscana - Contributi Enti Locali Open Data',
+      url: 'https://www.regione.toscana.it/-/contributi-agli-enti-locali-per-l-elaborazione-dati-e-la-fornitura-di-open-data',
+      ambito: 'Digital',
+      tag: 'regione',
+      categoria: 'Open Data regionale',
+      livello: 'Regionale',
+      enteDefault: 'Regione Toscana',
+      priorita: 2
+    },
+    {
+      nome: 'OpenCUP - Investimenti Pubblici Open Data',
+      url: 'https://www.programmazioneeconomica.gov.it/it/mip-cup-mgo/open-cup/opendata/',
+      ambito: 'Governance',
+      tag: 'ministero',
+      categoria: 'Investimenti pubblici',
+      livello: 'Nazionale',
+      enteDefault: 'DIPE - MEF',
+      priorita: 1
+    },
+    {
+      nome: 'ANAC - Dataset Contratti Pubblici',
+      url: 'https://dati.anticorruzione.it/opendata/dataset',
+      ambito: 'Governance',
+      tag: 'ministero',
+      categoria: 'Contratti pubblici',
+      livello: 'Nazionale',
+      enteDefault: 'ANAC',
+      priorita: 1
+    },
+    {
+      nome: 'EU Funding & Tenders Portal API',
+      url: 'https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/support/apis',
+      ambito: 'Governance',
+      tag: 'ue',
+      categoria: 'Bandi EU',
+      livello: 'EU',
+      enteDefault: 'Commissione Europea',
+      priorita: 1
+    }
+  ];
+
+  try {
+    var sh = _getOrCreateFontiBandiSheet_();
+    if (!sh) return { ok: false, error: 'Foglio fonti non disponibile' };
+
+    var existingUrls = {};
+    if (sh.getLastRow() > 1) {
+      var vals = sh.getDataRange().getValues();
+      var head = vals[0];
+      var iUrl = head.indexOf('URL');
+      if (iUrl < 0) iUrl = 2;
+      for (var r = 1; r < vals.length; r++) {
+        var u = String(vals[r][iUrl] || '').trim().toLowerCase();
+        if (u) existingUrls[u] = true;
+      }
+    }
+
+    // Controlla anche FontiNews
+    try {
+      var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+      var shN = ss.getSheetByName('FontiNews');
+      if (shN && shN.getLastRow() > 1) {
+        var nVals = shN.getDataRange().getValues();
+        var nHead = nVals[0];
+        var iNUrl = nHead.indexOf('URL');
+        for (var rn = 1; rn < nVals.length; rn++) {
+          var nu = String(nVals[rn][iNUrl] || '').trim().toLowerCase();
+          if (nu) existingUrls[nu] = true;
+        }
+      }
+    } catch(_){}
+
+    var aggiunte = 0, duplicate = 0, dettagli = [];
+    FONTI.forEach(function(f) {
+      var urlLow = f.url.toLowerCase().trim();
+      if (existingUrls[urlLow]) {
+        duplicate++;
+        dettagli.push({ nome: f.nome, azione: 'gia_presente' });
+        return;
+      }
+      try {
+        if (typeof addFonteUnificataV2 === 'function') {
+          var result = addFonteUnificataV2({
+            tipo: 'bandi',
+            nome: f.nome,
+            url: f.url,
+            tipoFonte: 'HTML',
+            tag: f.tag,
+            categoria: f.categoria,
+            priorita: f.priorita,
+            enteDefault: f.enteDefault,
+            livello: f.livello
+          });
+          if (result && result.ok) {
+            aggiunte++;
+            dettagli.push({ nome: f.nome, azione: 'aggiunta', id: result.id });
+          }
+        }
+      } catch(e) {
+        dettagli.push({ nome: f.nome, azione: 'errore', error: e.message });
+      }
+    });
+
+    Logger.log('seedFontiDaRicerca: ' + aggiunte + ' aggiunte, ' + duplicate + ' gia presenti');
+    return { ok: true, aggiunte: aggiunte, duplicate: duplicate, dettagli: dettagli };
+  } catch(e) {
+    return { ok: false, error: e.message };
+  }
+}
