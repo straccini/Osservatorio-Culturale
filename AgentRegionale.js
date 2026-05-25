@@ -436,3 +436,68 @@ function _agrXV_(el, tag) { try { var c = el.getChild(tag) || el.getChild(tag, X
 // ============================================================================
 // FINE AgentRegionale.js
 // ============================================================================
+
+// ============================================================================
+// VERIFICA URL — testa tutti gli endpoint e produce report
+// ============================================================================
+
+/**
+ * Testa tutti gli URL Open Data e BUR per verificare quali funzionano.
+ * Lancia dall'editor GAS per ottenere la mappa reale.
+ * @return {Object} {ok, funzionanti[], falliti[], report[]}
+ */
+function agrVerificaUrl() {
+  var report = [];
+  var funzionanti = 0, falliti = 0;
+
+  AGR_REGIONI.forEach(function(reg) {
+    var entry = { regione: reg.regione, gruppo: reg.gruppo };
+
+    // Test OpenData
+    if (reg.tipo === 'CKAN') {
+      try {
+        var odUrl = reg.opendata + '/site_read';
+        var resp = UrlFetchApp.fetch(odUrl, { muteHttpExceptions: true, followRedirects: true, validateHttpsCertificates: false, headers: { 'User-Agent': 'SinopiaBot/1.0' } });
+        entry.opendata_code = resp.getResponseCode();
+        entry.opendata_ok = (resp.getResponseCode() === 200);
+        if (entry.opendata_ok) funzionanti++; else falliti++;
+      } catch(e) {
+        entry.opendata_code = 0;
+        entry.opendata_ok = false;
+        entry.opendata_err = e.message.substring(0, 60);
+        falliti++;
+      }
+    } else {
+      entry.opendata_ok = null;
+      entry.opendata_note = 'Socrata (skip CKAN test)';
+    }
+
+    // Test BUR
+    if (reg.burTipo !== 'JS') {
+      try {
+        var resp2 = UrlFetchApp.fetch(reg.bur, { muteHttpExceptions: true, followRedirects: true, validateHttpsCertificates: false, headers: { 'User-Agent': 'SinopiaBot/1.0' } });
+        entry.bur_code = resp2.getResponseCode();
+        entry.bur_ok = (resp2.getResponseCode() === 200);
+        entry.bur_size = resp2.getContentText().length;
+        if (entry.bur_ok) funzionanti++; else falliti++;
+      } catch(e) {
+        entry.bur_code = 0;
+        entry.bur_ok = false;
+        entry.bur_err = e.message.substring(0, 60);
+        falliti++;
+      }
+    } else {
+      entry.bur_ok = null;
+      entry.bur_note = 'JS-rendered (skip)';
+    }
+
+    report.push(entry);
+    Logger.log('[AGR-CHECK] ' + reg.regione + ': OD=' + (entry.opendata_ok === null ? 'Socrata' : entry.opendata_ok ? 'OK(' + entry.opendata_code + ')' : 'FAIL(' + (entry.opendata_code || entry.opendata_err) + ')') + ' BUR=' + (entry.bur_ok === null ? 'JS' : entry.bur_ok ? 'OK(' + entry.bur_size + 'b)' : 'FAIL(' + (entry.bur_code || entry.bur_err) + ')'));
+  });
+
+  Logger.log('================================================================');
+  Logger.log('[AGR-CHECK] TOTALE: ' + funzionanti + ' OK, ' + falliti + ' FAIL su ' + (funzionanti + falliti) + ' test');
+  Logger.log('================================================================');
+
+  return { ok: true, funzionanti: funzionanti, falliti: falliti, report: report };
+}
