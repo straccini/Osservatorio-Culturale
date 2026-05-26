@@ -2991,7 +2991,7 @@
           if(out) out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Libro aggiunto.</span>';
           ['stLbTitolo','stLbAutore','stLbAnno','stLbEditore','stLbLink','stLbDesc'].forEach(function(id){ var el=$(id); if(el) el.value=''; });
           $('stLbAmbito').value = '0';
-          _cacheLibri = null;
+          _invalidateCache('libro');
         } else { if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">'+(r&&r.error||'Errore')+'</span>'; }
       })
       .withFailureHandler(function(e){ if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(String(e))+'</span>'; })
@@ -3696,19 +3696,8 @@
     wrap.innerHTML = html;
   }
 
-  // Sprint 1.4 D2.5+ (2026-05-01): helper bottoni archiviazione/cancellazione card (legacy)
-  // Visibili solo a editor/admin (controllato via _canEditCards globale)
-  // Rinominata _cardActionsLegacy_ per evitare conflitto con factory DRY (Sprint DRY 2026-05-26)
+  // Sprint 1.4 D2.5+ — _canEditCards: abilita azioni card per editor/admin
   var _canEditCards = false;
-  function _cardActionsLegacy_(tipo, id) {
-    if (!_canEditCards) return '';
-    if (!id) return '';
-    return '<div class="c-actions" onclick="event.stopPropagation()" style="display:flex;gap:6px;margin-top:6px;border-top:1px solid #ECECEE;padding-top:6px">'
-      + '<button title="Salva nei preferiti" onclick="OC.saveCard(\''+esc(tipo)+'\',\''+esc(id)+'\');event.stopPropagation()" style="background:none;border:1px solid #ECECEE;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;color:#666">⭐</button>'
-      + '<button title="Archivia" onclick="OC.archiveCard(\''+esc(tipo)+'\',\''+esc(id)+'\');event.stopPropagation()" style="background:none;border:1px solid #ECECEE;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;color:#666"></button>'
-      + '<button title="Elimina" onclick="OC.deleteCard(\''+esc(tipo)+'\',\''+esc(id)+'\');event.stopPropagation()" style="background:none;border:1px solid #ECECEE;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;color:var(--danger,#C2410C)"></button>'
-      + '</div>';
-  }
 
   // Nomi brevi ambiti per tag tematica
   var _TEMA_BREVI = {1:'Identità',2:'Inclusione',3:'Programma',4:'Comunità',5:'Digital & Gov'};
@@ -6841,11 +6830,7 @@
           var card = (el && el.closest) ? (el.closest('.br-row') || el.closest('.bando-row') || el.closest('.news-row') || el.closest('.pod-item')) : null;
           if (card) card.remove();
           // Invalida cache per tipo — evita che la card ricompaia al prossimo render
-          if (tipo === 'bando' || tipo === 'bandi') _cacheBandi = null;
-          else if (tipo === 'item' || tipo === 'news') _cacheNews = null;
-          else if (tipo === 'podcast') _cachePodcast = null;
-          else if (tipo === 'video') _cacheVideo = null;
-          else if (tipo === 'libro') _cacheLibri = null;
+          _invalidateCache(tipo);
           _cacheArchivio = null; // forza reload archivio al prossimo accesso
           // Se chiamato da detail overlay (el=null), rimuovi la card dalla lista corrente
           if (!card) _refreshCurrentList_();
@@ -6855,11 +6840,7 @@
               google.script.run
                 .withSuccessHandler(function(res){
                   if (res && res.ok) {
-                    if (tipo === 'bando' || tipo === 'bandi') _cacheBandi = null;
-                    else if (tipo === 'item' || tipo === 'news') _cacheNews = null;
-                    else if (tipo === 'podcast') _cachePodcast = null;
-                    else if (tipo === 'video') _cacheVideo = null;
-                    else if (tipo === 'libro') _cacheLibri = null;
+                    _invalidateCache(tipo);
                     _cacheArchivio = null;
                     _refreshCurrentList_();
                     showToast('Ripristinata', 'ok');
@@ -6893,11 +6874,7 @@
       .withSuccessHandler(function(r){
         if (r && r.ok) {
           if (card) card.remove();
-          if (tipo === 'bando' || tipo === 'bandi') _cacheBandi = null;
-          else if (tipo === 'item' || tipo === 'news') _cacheNews = null;
-          else if (tipo === 'podcast') _cachePodcast = null;
-          else if (tipo === 'video') _cacheVideo = null;
-          else if (tipo === 'libro') _cacheLibri = null;
+          _invalidateCache(tipo);
           _cacheArchivio = null;
           if (!card) _refreshCurrentList_();
           _updateCestinoBadge();
@@ -7884,11 +7861,7 @@
             if (!_cacheArchivio.length) renderArchivio([]);
           }
           // Invalida cache tipo per far ricomparire l'elemento nella lista
-          if (tipo === 'bando')                        _cacheBandi   = null;
-          else if (tipo === 'item' || tipo === 'news') _cacheNews    = null;
-          else if (tipo === 'podcast')                 _cachePodcast = null;
-          else if (tipo === 'video')                   _cacheVideo   = null;
-          else if (tipo === 'libro')                   _cacheLibri   = null;
+          _invalidateCache(tipo);
           showToast('Elemento ripristinato', 'ok');
         } else { showToast('Errore ripristino', 'err'); }
       })
@@ -8602,7 +8575,7 @@
       var btn = document.querySelector('.lb-setup-btn');
       if (btn) btn.disabled = true;
       google.script.run
-        .withSuccessHandler(function(r){ _cacheLibri = null; loadLibriList(true); })
+        .withSuccessHandler(function(r){ _invalidateCache('libro'); loadLibriList(true); })
         .withFailureHandler(function(e){ alert('Errore setup: ' + e); })
         .setupPubblicazioniSheet();
     },
@@ -8626,7 +8599,7 @@
           if (r && r.ok) {
             if(fb) fb.textContent = 'Salvato!';
             ['lbTitolo','lbAutore','lbEditore','lbAnno','lbLink','lbDesc'].forEach(function(id){ var el=$( id); if(el) el.value=''; });
-            _cacheLibri = null; loadLibriList(true);
+            _invalidateCache('libro'); loadLibriList(true);
           } else { if(fb) fb.textContent = (r&&r.error)||'Errore'; }
         })
         .withFailureHandler(function(e){ if(fb) fb.textContent = 'Errore: '+e; })
@@ -9488,7 +9461,7 @@
           if (!r || !r.ok) { showToast('Errore: '+(r&&r.error?r.error:'?'), 'err'); return; }
           showToast('Approvata: bozza creata in Bandi_v5 con stato candidato', 'ok');
           OC.crossrefReload();
-          _cacheBandi = null;
+          _invalidateCache('bando');
         })
         .withFailureHandler(function(err){ showToast('Errore: '+(err&&err.message?err.message:err), 'err'); })
         .approveCrossrefCandidate(id);
@@ -10012,7 +9985,7 @@
           if (!r || !r.ok) { showToast('Errore cleanup: '+(r&&r.error?r.error:'?'), 'err'); return; }
           showToast('Cleanup: ' + r.archiviati + ' bandi archiviati (su ' + r.scansionati + ' scansionati, soglia ' + r.soglia_gg + 'gg)', 'ok');
           loadF2State(); // ricarica contatori
-          _cacheBandi = null; // invalida cache così al prossimo accesso Radar Bandi ricarica fresco
+          _invalidateCache('bando'); // invalida cache così al prossimo accesso Radar Bandi ricarica fresco
         })
         .withFailureHandler(function(err){ showToast('Errore: '+(err&&err.message?err.message:err), 'err'); })
         .cleanupBandiV5Scaduti(30);
@@ -10043,7 +10016,7 @@
         .withSuccessHandler(function(r){
           if (!r || !r.ok) { showToast('Errore: '+(r&&r.error?r.error:'?'), 'err'); return; }
           showToast('Items: ' + r.archiviati + ' duplicati archiviati (su ' + r.scansionati + ' news scansionate)', 'ok');
-          _cacheNews = null; // invalida cache così al prossimo accesso News ricarica fresco
+          _invalidateCache('news'); // invalida cache così al prossimo accesso News ricarica fresco
         })
         .withFailureHandler(function(err){ showToast('Errore: '+(err&&err.message?err.message:err), 'err'); })
         .dedupItemsByFingerprint({ dryRun: false });

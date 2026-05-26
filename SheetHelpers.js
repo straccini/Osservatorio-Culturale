@@ -39,22 +39,3 @@ function _sheetToObjects(sheetName, filterFn) {
   return result;
 }
 
-/**
- * Trova una riga per ID.
- * @param {string} sheetName
- * @param {string} id
- * @returns {{ sh: Sheet, rowIndex: number, row: Array, headers: string[] } | null}
- */
-function _findRowById(sheetName, id) {
-  var d = _loadSheet(sheetName);
-  if (!d) return null;
-  var idCol = d.headers.indexOf('ID');
-  if (idCol < 0) return null;
-  var idStr = String(id);
-  for (var i = 1; i < d.rows.length; i++) {
-    if (String(d.rows[i][idCol]) === idStr) {
-      return { sh: d.sh, rowIndex: i + 1, row: d.rows[i], headers: d.headers };
-    }
-  }
-  return null;
-}
