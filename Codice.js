@@ -59,6 +59,36 @@ function escTok_(s) {
 }
 
 
+// ============================================================================
+// doGet sub-handlers — estratti per ridurre CC (Sprint DRY 2026-05-26)
+// ============================================================================
+
+function _doGetLanding() {
+  return HtmlService.createHtmlOutputFromFile('LandingPublic')
+    .setTitle('Sinopia \xb7 Osservatorio Culturale \xb7 Duemilamusei')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag('viewport', 'width=device-width,initial-scale=1');
+}
+
+function _doGetSurvey(params) {
+  var surveyTemplate = HtmlService.createTemplateFromFile('SurveyPublic');
+  surveyTemplate.surveyCode = String(params.survey).trim();
+  return surveyTemplate.evaluate()
+    .setTitle('Sondaggio MuseMu Matrix')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag('viewport', 'width=device-width,initial-scale=1');
+}
+
+function _doGetReader(params) {
+  if (typeof renderDigestReaderPage === 'function') {
+    return renderDigestReaderPage(params.t);
+  }
+  return HtmlService
+    .createHtmlOutput('<h1>Digest Reader</h1><p>Token: ' + escTok_(params.t) + '</p>')
+    .setTitle('Osservatorio \xb7 Digest')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
 function doGet(e) {
   var params = (e && e.parameter) || {};
 
@@ -80,23 +110,12 @@ function doGet(e) {
   // v4.18.66 — Gate landing rimosso: utenti anonimi accedono all'app completa (L0 freemium).
   // Il frontend gestisce le restrizioni L0 (azioni protette richiedono registrazione).
   // LandingPublic.html resta disponibile via ?landing=1 se serve.
-  if (params.landing === '1') {
-    return HtmlService.createHtmlOutputFromFile('LandingPublic')
-      .setTitle('Sinopia · Osservatorio Culturale · Duemilamusei')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-      .addMetaTag('viewport', 'width=device-width,initial-scale=1');
-  }
+  if (params.landing === '1') return _doGetLanding();
 
   // ---------- 0b) Sondaggio pubblico (?survey=accessibilita) — NO AUTH ----------
   if (params.survey) {
-    try {
-      var surveyTemplate = HtmlService.createTemplateFromFile('SurveyPublic');
-      surveyTemplate.surveyCode = String(params.survey).trim();
-      return surveyTemplate.evaluate()
-        .setTitle('Sondaggio MuseMu Matrix')
-        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-        .addMetaTag('viewport', 'width=device-width,initial-scale=1');
-    } catch(eSurvey) {
+    try { return _doGetSurvey(params); }
+    catch(eSurvey) {
       return HtmlService.createHtmlOutput('<h1>Errore</h1><p>' + String(eSurvey.message) + '</p>')
         .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
     }
@@ -116,15 +135,8 @@ function doGet(e) {
 
   // ---------- 1) Flusso Digest Reader (token) ----------
   if (params.reader === '1' && params.t) {
-    try {
-      if (typeof renderDigestReaderPage === 'function') {
-        return renderDigestReaderPage(params.t);
-      }
-      return HtmlService
-        .createHtmlOutput('<h1>Digest Reader</h1><p>Token: ' + escTok_(params.t) + '</p>')
-        .setTitle('Osservatorio · Digest')
-        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-    } catch(err) {
+    try { return _doGetReader(params); }
+    catch(err) {
       return HtmlService
         .createHtmlOutput('<h1>Errore</h1><pre>' + escTok_(String(err)) + '</pre>')
         .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
