@@ -3589,4 +3589,27 @@ textarea:focus-visible {
   .oc-toast.ok::before { animation: none !important; }
 }
 
+/* ===========================================================
+   DIAGNOSTICA FONTI — Sprint 1 (2026-05-26)
+   =========================================================== */
+.fd-sem { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; vertical-align:middle; }
+.fd-sem.attiva  { background:#3F7A5E; }
+.fd-sem.silente { background:#9C6A36; }
+.fd-meta { font-size:.85rem; color:var(--text-muted, #888); margin-top:2px; }
+.fd-nota { font-style:italic; color:var(--text-muted, #888); font-size:.8rem; }
+.fd-subtitle { font-size:.9rem; color:var(--text-muted, #888); margin-top:4px; }
+.fd-reco { padding:12px 16px; margin-bottom:8px; border-left:4px solid; border-radius:4px; background:var(--surface-raised, #f7f5f0); }
+.fd-reco.critico { border-color:#A0432E; }
+.fd-reco.warning { border-color:#9C6A36; }
+.fd-reco.info    { border-color:#3C6A95; }
+.fd-reco-text { font-size:.9rem; line-height:1.5; }
+.fd-fonte-row { display:flex; align-items:center; padding:10px 0; border-bottom:1px solid var(--border, #e0ddd6); }
+.fd-fonte-row:last-child { border-bottom:none; }
+.fd-fonte-name { font-weight:600; font-size:.95rem; }
+.fd-fonte-right { margin-left:auto; text-align:right; font-size:.85rem; color:var(--text-muted, #888); }
+.fd-fonte-count { font-weight:700; font-size:1rem; color:var(--ink, #1a1a1a); }
+/* Dark mode */
+[data-theme="dark"] .fd-reco { background:var(--surface-raised, #2a2520); }
+[data-theme="dark"] .fd-fonte-row { border-color:var(--border, #3a352e); }
+
 </style>

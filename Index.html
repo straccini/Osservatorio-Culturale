@@ -1543,6 +1543,19 @@
       </div>
     </section>
 
+    <!-- ===== PAGE FONTI DIAGNOSTICA (Sprint 1 — 2026-05-26) ===== -->
+    <section class="page" id="page-fonti-diagnostica">
+      <div class="page-head">
+        <div class="page-eyebrow">Osservatorio Culturale &middot; Strumenti</div>
+        <h1 class="page-title"><em>Diagnostica Fonti</em></h1>
+        <p class="page-sub">Stato delle fonti monitoraggio bandi: attive, silenti, raccomandazioni.</p>
+      </div>
+      <div id="fontiDiagContent" aria-live="polite">
+        <div class="skeleton home-list-skeleton"></div>
+        <div class="skeleton home-list-skeleton"></div>
+      </div>
+    </section>
+
     <!-- ===== PAGE DIGEST (v4.18.11 — tutto digest qui, spostato da admin) ===== -->
     <section class="page" id="page-digest">
       <div class="page-head">
@@ -2188,7 +2201,8 @@
     kb:'Tassonomia KB', compilatori:'Compilatori Matrix', sondaggio:'Sondaggio mirato',
     'sondaggi-catalogo': 'Autovalutazione rapida',
     capitali:'Capitali & candidature',
-    workspace:'La tua area'
+    workspace:'La tua area',
+    'fonti-diagnostica':'Diagnostica Fonti'
   };
   // Sprint 1.3 (2026-05-01): rinomina ambiti per allineamento Matrix v1.0.2
   var AMBITI = {
@@ -2280,6 +2294,7 @@
     if (page==='settings') loadSettingsPage();  // Sprint 1.3 D2.5
     if (page==='search')   { /* loadSearch called with query via OC.search */ }
     if (page==='stats')    loadStatsPage();
+    if (page==='fonti-diagnostica') loadFontiDiagnostica();
     if (page==='archivio') loadArchivio();
     if (page==='cestino')  loadCestino();
     // v4.5.1 — A1 Ambiti navigabili
