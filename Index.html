@@ -4149,12 +4149,13 @@
     var recenti = [], altri = [], shown = 0;
     sortedList.forEach(function(n) {
       var ambN = _ambNum_(n.ambito) || _ambNum_(n.settore) || 0;
-      if (!_identFilterItem_(ambN, '')) return; // filtro globale identita
+      var _nHay = String(n.titolo||'') + ' ' + String(n.fonte||'') + ' ' + String(n.settore||'') + ' ' + String(n.sommario||'');
+      if (!_identFilterItem_(ambN, '', _nHay)) return; // filtro globale identita (keyword match regione)
       if (fAmb > 0 && ambN !== fAmb) return;
       if (preset === 'recenti' && !n.isRecente) return;
       if (preset === 'salvati' && !n.salvato) return;
       if (q) {
-        var hay = (String(n.titolo||'') + ' ' + String(n.fonte||'') + ' ' + String(n.settore||'') + ' ' + String(n.sommario||'')).toLowerCase();
+        var hay = _nHay.toLowerCase();
         if (hay.indexOf(q) < 0) return;
       }
       shown++;
@@ -4224,12 +4225,13 @@
     var recenti = [], altri = [], shown = 0;
     sortedList.forEach(function(p) {
       var ambN = _ambNum_(p.ambito) || _ambNum_(p.tematica) || 0;
-      if (!_identFilterItem_(ambN, '')) return; // filtro globale identita
+      var _pHay = String(p.titolo||'') + ' ' + String(p.show||p.serie||p.fonte||'') + ' ' + String(p.autore||'') + ' ' + String(p.tematica||'') + ' ' + String(p.sommarioAI||'');
+      if (!_identFilterItem_(ambN, '', _pHay)) return; // filtro globale identita (keyword match regione)
       if (fAmb > 0 && ambN !== fAmb) return;
       if (preset === 'recenti'  && !p.isRecente) return;
       if (preset === 'salvati'  && !p.salvato)   return;
       if (q) {
-        var hay = (String(p.titolo||'') + ' ' + String(p.show||p.serie||p.fonte||'') + ' ' + String(p.autore||'') + ' ' + String(p.tematica||'') + ' ' + String(p.sommarioAI||'')).toLowerCase();
+        var hay = _pHay.toLowerCase();
         if (hay.indexOf(q) < 0) return;
       }
       shown++;
@@ -4333,12 +4335,13 @@
     var recenti = [], altri = [], shown = 0;
     sortedList.forEach(function(v) {
       var ambN = _ambNum_(v.ambito) || _ambNum_(v.tematica) || 0;
-      if (!_identFilterItem_(ambN, '')) return; // filtro globale identita
+      var _vHay = String(v.titolo||'') + ' ' + String(v.canale||v.fonte||'') + ' ' + String(v.tematica||'') + ' ' + String(v.sommarioAI||'');
+      if (!_identFilterItem_(ambN, '', _vHay)) return; // filtro globale identita (keyword match regione)
       if (fAmb > 0 && ambN !== fAmb) return;
       if (preset === 'recenti'  && !v.isRecente) return;
       if (preset === 'salvati'  && !v.salvato)   return;
       if (q) {
-        var hay = (String(v.titolo||'') + ' ' + String(v.canale||v.fonte||'') + ' ' + String(v.tematica||'') + ' ' + String(v.sommarioAI||'')).toLowerCase();
+        var hay = _vHay.toLowerCase();
         if (hay.indexOf(q) < 0) return;
       }
       shown++;
@@ -4448,12 +4451,13 @@
     var recenti = [], altri = [], shown = 0;
     sortedList.forEach(function(b) {
       var ambN = _ambNum_(b.ambito) || _ambNum_(b.tematica) || 0;
-      if (!_identFilterItem_(ambN, '')) return; // filtro globale identita
+      var _bHay = String(b.titolo||'') + ' ' + String(b.autore||'') + ' ' + String(b.editore||'') + ' ' + String(b.tematica||'') + ' ' + String(b.descrizione||'');
+      if (!_identFilterItem_(ambN, '', _bHay)) return; // filtro globale identita (keyword match regione)
       if (fAmb > 0 && ambN !== fAmb) return;
       if (preset === 'recenti' && !b.isRecente) return;
       if (preset === 'salvati' && !b.salvato) return;
       if (q) {
-        var hay = (String(b.titolo||'') + ' ' + String(b.autore||'') + ' ' + String(b.editore||'') + ' ' + String(b.tematica||'') + ' ' + String(b.descrizione||'')).toLowerCase();
+        var hay = _bHay.toLowerCase();
         if (hay.indexOf(q) < 0) return;
       }
       shown++;
@@ -6962,7 +6966,7 @@
    * ambito: numero ambito (1-5) dell'item
    * regione: stringa regione dell'item (opzionale)
    */
-  function _identFilterItem_(ambito, regione) {
+  function _identFilterItem_(ambito, regione, searchText) {
     if (!_identFilterActive || !_identData || !_identData._hasIdentity) return true;
     // Filtro ambiti: se l'item ha ambito 0 (non classificato), passa sempre
     var amb = parseInt(ambito) || 0;
@@ -6970,10 +6974,19 @@
       if (_identData._activeAmbiti.indexOf(amb) < 0) return false;
     }
     // Filtro regione
-    if (_identData.ambito === 'locale' && _identData.regione && regione) {
-      var r = String(regione).toLowerCase();
+    if (_identData.ambito === 'locale' && _identData.regione) {
       var ir = _identData.regione.toLowerCase();
-      if (r && r.indexOf(ir) < 0 && ir.indexOf(r) < 0) return false;
+      // Se l'item ha regione esplicita, usa quella (bandi)
+      if (regione) {
+        var r = String(regione).toLowerCase();
+        if (r.indexOf(ir) < 0 && ir.indexOf(r) < 0) return false;
+      }
+      // Altrimenti keyword match su testo (news, podcast, video, libri)
+      else if (searchText) {
+        var hay = String(searchText).toLowerCase();
+        if (hay.indexOf(ir) < 0) return false;
+      }
+      // Se ne regione ne testo: l'item passa (non penalizzare contenuti senza localizzazione)
     }
     return true;
   }
