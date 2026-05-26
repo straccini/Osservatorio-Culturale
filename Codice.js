@@ -2185,20 +2185,93 @@ function getMailingList() {
 }
 
 function saveMailing(body) {
-  const sh=getMainSS().getSheetByName(SH.MAILING);
-  const rows=sh.getDataRange().getValues(), h=rows[0];
-  if(body.id) {
-    const idCol=h.indexOf('ID');
-    for(let i=1;i<rows.length;i++) {
-      if(rows[i][idCol]===body.id) {
-        sh.getRange(i+1,1,1,h.length).setValues([[body.id,body.nome||'',body.email||'',body.ruolo||'lettore',body.attivo!==false,rows[i][h.indexOf('DataIscrizione')]]]);
+  var email = String(body.email || body.Email || '').trim().toLowerCase();
+  if (!email || email.indexOf('@') < 0) return {error: 'Email non valida'};
+  // GDPR: consenso obbligatorio per nuove iscrizioni
+  if (!body.id && !body.ConsensoGDPR) return {error: 'Consenso GDPR obbligatorio'};
+
+  var sh = getMainSS().getSheetByName(SH.MAILING);
+  var rows = sh.getDataRange().getValues(), h = rows[0];
+
+  // Ensure GDPR columns exist
+  var gdprCols = ['ConsensoGDPR','TimestampConsenso','Sorgente','Stato'];
+  var lastCol = h.length;
+  gdprCols.forEach(function(col) {
+    if (h.indexOf(col) < 0) {
+      lastCol++;
+      sh.getRange(1, lastCol).setValue(col);
+      h.push(col);
+    }
+  });
+
+  // Update existing
+  if (body.id) {
+    var idCol = h.indexOf('ID');
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i][idCol] === body.id) {
+        sh.getRange(i+1, 1, 1, h.length).setValues([[body.id, body.nome||'', email, body.ruolo||'lettore', body.attivo!==false, rows[i][h.indexOf('DataIscrizione')],
+          rows[i][h.indexOf('Token')]||'', rows[i][h.indexOf('TokenExpiry')]||'', rows[i][h.indexOf('DigestIds')]||'',
+          body.ConsensoGDPR||rows[i][h.indexOf('ConsensoGDPR')]||false,
+          body.TimestampConsenso||rows[i][h.indexOf('TimestampConsenso')]||'',
+          body.Sorgente||rows[i][h.indexOf('Sorgente')]||'',
+          body.Stato||rows[i][h.indexOf('Stato')]||'confermato'
+        ]]);
         return {ok:true};
       }
     }
   }
-  const id='M'+Date.now();
-  sh.appendRow([id,body.nome||'',body.email||'',body.ruolo||'lettore',true,new Date()]);
-  return {ok:true,id};
+
+  // Check duplicate email
+  var emailCol = h.indexOf('Email');
+  for (var j = 1; j < rows.length; j++) {
+    if (String(rows[j][emailCol]||'').toLowerCase().trim() === email) {
+      return {ok:true, id: rows[j][h.indexOf('ID')], existing: true};
+    }
+  }
+
+  // New subscriber
+  var id = 'M' + Date.now();
+  var newRow = [id, body.nome||'', email, body.ruolo||'lettore', true, new Date()];
+  // Pad for Token, TokenExpiry, DigestIds (may already exist)
+  while (newRow.length < h.indexOf('ConsensoGDPR')) newRow.push('');
+  // GDPR fields
+  var iGdpr = h.indexOf('ConsensoGDPR');
+  while (newRow.length < iGdpr) newRow.push('');
+  newRow[iGdpr] = true;
+  newRow[h.indexOf('TimestampConsenso')] = new Date().toISOString();
+  newRow[h.indexOf('Sorgente')] = body.Sorgente || 'modal';
+  newRow[h.indexOf('Stato')] = 'pending'; // double opt-in: starts as pending
+
+  sh.appendRow(newRow);
+
+  // Send confirmation email (double opt-in)
+  try { _sendConfirmationEmail(email, id); } catch(e) { Logger.log('Confirm email err: ' + e.message); }
+
+  return {ok:true, id:id, pendingConfirmation:true};
+}
+
+function _sendConfirmationEmail(email, mailingId) {
+  var baseUrl = ScriptApp.getService().getUrl();
+  var secret = PropertiesService.getScriptProperties().getProperty('OC_UNSUB_SECRET') || 'sinopia2026';
+  var raw = email + ':confirmNl:' + secret;
+  var sig = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, raw)
+    .map(function(b) { return ('0' + (b & 0xFF).toString(16)).slice(-2); }).join('');
+  var confirmUrl = baseUrl + '?action=confirmNl&e=' + encodeURIComponent(email) + '&s=' + sig;
+
+  var html = '<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:520px;margin:40px auto;padding:20px">'
+    + '<div style="font-size:22px;font-weight:600;margin-bottom:12px">Conferma la tua iscrizione</div>'
+    + '<p style="color:#555;line-height:1.6">Hai richiesto di ricevere la newsletter settimanale di <b>Sinopia - Osservatorio Culturale</b>.</p>'
+    + '<p style="color:#555;line-height:1.6">Clicca il bottone per confermare:</p>'
+    + '<a href="' + confirmUrl + '" style="display:inline-block;background:#E84B1C;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">Confermo la mia iscrizione</a>'
+    + '<p style="font-size:12px;color:#999;margin-top:24px">Se non hai richiesto questa iscrizione, ignora questa email.</p>'
+    + '</body></html>';
+
+  MailApp.sendEmail({
+    to: email,
+    subject: 'Conferma iscrizione newsletter · Sinopia',
+    htmlBody: html,
+    name: 'Sinopia · Osservatorio Culturale'
+  });
 }
 
 function deleteMailing(id) {

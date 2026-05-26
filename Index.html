@@ -142,11 +142,17 @@
 
     <div style="border-top:1px solid var(--rule,var(--rule,#E5E5E7));padding-top:16px">
       <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;text-align:center">oppure iscriviti alla newsletter settimanale</div>
-      <div id="nlOptInForm" style="display:flex;gap:8px">
-        <input type="email" id="nlOptInEmail" placeholder="email@museo.it" style="flex:1;padding:10px 14px;border:1px solid var(--rule,var(--rule,#E5E5E7));border-radius:7px;font-size:13px;font-family:inherit" />
-        <button type="button" onclick="OC.submitNewsletterOptIn()" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:10px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Iscrivimi</button>
+      <div id="nlOptInForm">
+        <div style="display:flex;gap:8px">
+          <input type="email" id="nlOptInEmail" placeholder="email@museo.it" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />
+          <button type="button" onclick="OC.submitNewsletterOptIn()" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:10px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Iscrivimi</button>
+        </div>
+        <label id="nlOptInGdprLabel" style="display:flex;align-items:start;gap:6px;margin-top:8px;cursor:pointer">
+          <input type="checkbox" id="nlOptInGdpr" style="margin-top:3px" />
+          <span style="font-size:11px;color:var(--ink-3);line-height:1.4">Acconsento al trattamento dei dati per ricevere la newsletter. <a href="https://www.duemilamusei.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#E84B1C)">Privacy policy</a></span>
+        </label>
       </div>
-      <div id="nlOptInSuccess" hidden style="text-align:center;padding:10px 0"><span style="color:var(--amb-2,#10916D);font-weight:600">Iscrizione confermata</span></div>
+      <div id="nlOptInSuccess" hidden style="text-align:center;padding:10px 0"><span style="color:var(--amb-2,#10916D);font-weight:600">Controlla la tua email per confermare.</span></div>
       <p style="font-size:10px;color:var(--ink-4);margin-top:8px;text-align:center">GDPR · Nessuno spam · Cancellabile in qualsiasi momento</p>
     </div>
 
@@ -6718,23 +6724,33 @@
   function _submitNewsletterOptIn_() {
     var email = (document.getElementById('nlOptInEmail') || {}).value || '';
     if (!email || email.indexOf('@') < 0) { alert('Inserisci un indirizzo email valido'); return; }
+    var gdpr = document.getElementById('nlOptInGdpr');
+    if (!gdpr || !gdpr.checked) {
+      var lbl = document.getElementById('nlOptInGdprLabel');
+      if (lbl) lbl.style.color = 'var(--danger,#C2410C)';
+      alert('Per iscriverti devi acconsentire al trattamento dei dati.');
+      return;
+    }
     var form = document.getElementById('nlOptInForm');
     var ok = document.getElementById('nlOptInSuccess');
     if (form) form.hidden = true;
-    if (ok) ok.hidden = false;
-    // Salva in mailing list
+    if (ok) { ok.hidden = false; ok.innerHTML = '<span style="color:var(--amb-2,#10916D);font-weight:600">Controlla la tua email per confermare l\'iscrizione.</span>'; }
     if (hasGAS()) {
       google.script.run
-        .withSuccessHandler(function(r){
-          // Upgrade sessione se disponibile
-          if (typeof createSessione === 'function') {
-            google.script.run.createSessione({ email: email, source: 'newsletter' });
+        .withSuccessHandler(function(r) {
+          if (r && r.existing) {
+            if (ok) ok.innerHTML = '<span style="color:var(--amb-2,#10916D);font-weight:600">Sei gia iscritto!</span>';
           }
+          localStorage.setItem('oc-nl-subscribed', '1');
           localStorage.setItem('oc-nl-prompted', '1');
-          setTimeout(function(){ _closeNewsletterOptIn_(); location.reload(); }, 2000);
+          setTimeout(function(){ _closeNewsletterOptIn_(); }, 3000);
         })
-        .withFailureHandler(function(){ localStorage.setItem('oc-nl-prompted', '1'); })
-        .saveMailing({ Email: email, Nome: '', Attivo: true });
+        .withFailureHandler(function(e) {
+          if (form) form.hidden = false;
+          if (ok) ok.hidden = true;
+          alert('Errore: ' + (e.message || e));
+        })
+        .saveMailing({ Email: email, Nome: '', Attivo: true, ConsensoGDPR: true, Sorgente: 'modal' });
     }
   }
   // v4.18.67 — Timer registrazione progressivo: 5min → 10min → ogni 15min
