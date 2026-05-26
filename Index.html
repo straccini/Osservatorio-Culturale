@@ -735,6 +735,7 @@
         <div class="page-eyebrow">Osservatorio Culturale &middot; Monitor istituzionale</div>
         <h1 class="page-title">Social <em>Wall</em></h1>
         <p class="page-sub" id="socialUpdatedAt">Caricamento&hellip;</p>
+        <button id="socialRefreshBtn" class="btn btn-secondary" onclick="OC.loadSocialWall(true)" style="font-size:12px;padding:6px 14px;margin-top:8px" hidden>&#8635; Aggiorna ora</button>
       </div>
       <!-- Filtri uniformati: search + tipo + tema + sort + export -->
       <div class="filters filters-tools">
@@ -2785,6 +2786,7 @@
       var ts = data && data.updatedAt ? new Date(data.updatedAt) : null;
       var timeStr = ts ? ts.toLocaleString('it-IT',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
       upEl.textContent = posts.length + ' post' + (timeStr ? ' · aggiornato ' + timeStr : '');
+      var refBtn = $('socialRefreshBtn'); if (refBtn) refBtn.hidden = false;
     }
     var tipo = _filterSocial.tipo;
     var filtered = (tipo === 'tutti') ? posts : posts.filter(function(p){ return p.tipo === tipo; });

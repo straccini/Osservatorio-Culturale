@@ -2617,6 +2617,18 @@ function seedSocialFontiIstituzionali() {
     { id:'SW22', nome:'Artribune',                url:'https://www.artribune.com/feed/',                              tipo:'rivista',       cat:'Arte & Mostre',          av:'A' },
     { id:'SW23', nome:'Giornale delle Fondazioni',url:'https://www.ilgiornaledellefondazioni.com/feed/',               tipo:'rivista',       cat:'Politiche Culturali',    av:'G' },
     { id:'SW24', nome:'MuseumNext',               url:'https://www.museumnext.com/feed/',                             tipo:'rivista',       cat:'Innovazione Museale',    av:'N' },
+    // v5.1.0 — Riviste specializzate arte e cultura
+    { id:'SW25', nome:'Exibart',                   url:'https://www.exibart.com/feed/',                                tipo:'rivista',       cat:'Arte & Mostre',          av:'E' },
+    { id:'SW26', nome:'Finestre sull\'Arte',       url:'https://www.finestresullarte.info/feed',                       tipo:'rivista',       cat:'Arte & Mostre',          av:'F' },
+    { id:'SW27', nome:'Flash Art Italia',          url:'https://flash---art.it/feed/',                                 tipo:'rivista',       cat:'Arte Contemporanea',     av:'F' },
+    { id:'SW28', nome:'Doppiozero',                url:'https://www.doppiozero.com/feed',                              tipo:'rivista',       cat:'Cultura & Societa',      av:'D' },
+    { id:'SW29', nome:'Secondo Welfare',           url:'https://www.secondowelfare.it/feed/',                          tipo:'rivista',       cat:'Welfare Culturale',      av:'S' },
+    { id:'SW30', nome:'Agenda Digitale',           url:'https://www.agendadigitale.eu/feed/',                          tipo:'rivista',       cat:'AI & Cultura',           av:'A' },
+    // Istituzioni aggiuntive
+    { id:'SW31', nome:'Compagnia di San Paolo',    url:'https://www.compagniadisanpaolo.it/feed/',                     tipo:'fondazione',    cat:'Governance & Cultura',   av:'C' },
+    { id:'SW32', nome:'Touring Club Italiano',     url:'https://www.touringclub.it/feed/',                             tipo:'istituzione',   cat:'Turismo Culturale',      av:'T' },
+    { id:'SW33', nome:'AIB — Biblioteche',         url:'https://www.aib.it/feed/',                                     tipo:'associazione',  cat:'Gestione Culturale',     av:'A' },
+    { id:'SW34', nome:'Treccani Magazine',         url:'https://www.treccani.it/magazine/feed/',                       tipo:'rivista',       cat:'Cultura & Societa',      av:'T' },
   ];
   let aggiunti = 0, skip = 0;
   seed.forEach(function(f) {
