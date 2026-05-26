@@ -3697,10 +3697,11 @@
     wrap.innerHTML = html;
   }
 
-  // Sprint 1.4 D2.5+ (2026-05-01): helper bottoni archiviazione/cancellazione card
+  // Sprint 1.4 D2.5+ (2026-05-01): helper bottoni archiviazione/cancellazione card (legacy)
   // Visibili solo a editor/admin (controllato via _canEditCards globale)
+  // Rinominata _cardActionsLegacy_ per evitare conflitto con factory DRY (Sprint DRY 2026-05-26)
   var _canEditCards = false;
-  function _cardActionsHtml_(tipo, id) {
+  function _cardActionsLegacy_(tipo, id) {
     if (!_canEditCards) return '';
     if (!id) return '';
     return '<div class="c-actions" onclick="event.stopPropagation()" style="display:flex;gap:6px;margin-top:6px;border-top:1px solid #ECECEE;padding-top:6px">'
@@ -3712,6 +3713,28 @@
 
   // Nomi brevi ambiti per tag tematica
   var _TEMA_BREVI = {1:'Identità',2:'Inclusione',3:'Programma',4:'Comunità',5:'Digital & Gov'};
+
+  // ==========================================================
+  // CARD ACTIONS — factory DRY (Sprint DRY Frontend 2026-05-26)
+  // ==========================================================
+  var _CARD_CFG = {
+    bando:   { wfTipo:'bando',   readLabel:'Letto',     hasTrash:true  },
+    item:    { wfTipo:'item',    readLabel:'Letto',     hasTrash:true  },
+    podcast: { wfTipo:'podcast', readLabel:'Ascoltato', hasTrash:true  },
+    video:   { wfTipo:'video',   readLabel:'Visto',     hasTrash:true  },
+    libro:   { wfTipo:'libro',   readLabel:'Letto',     hasTrash:false }
+  };
+
+  function _cardActionsHtml_(tipo, id, salvato) {
+    var cfg = _CARD_CFG[tipo] || _CARD_CFG.item;
+    var wt = cfg.wfTipo, eid = esc(String(id));
+    return '<div class="br-acts">'
+      + '<button class="br-act br-act-read" onclick="event.stopPropagation();OC.markItemRead(\'' + wt + '\',\'' + eid + '\',this)">&#10003;&nbsp;' + cfg.readLabel + '</button>'
+      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai salvati' : 'Salva') + '" onclick="event.stopPropagation();OC.saveCard(\'' + wt + '\',\'' + eid + '\',this)">' + (salvato ? '&#9733; Salvato' : '&#9734; Salva') + '</button>'
+      + '<button class="br-act br-act-arch" onclick="event.stopPropagation();OC.archiveItem(\'' + wt + '\',\'' + eid + '\',this)">&#8659;&nbsp;Arch.</button>'
+      + (cfg.hasTrash ? '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'' + wt + '\',\'' + eid + '\',this)">&#128465;&nbsp;Cestina</button>' : '')
+      + '</div>';
+  }
 
   function _brRowHtml_(b) {
     var ambN     = _ambNum_(b.ambito) || _ambNum_(b.settore) || 0;
@@ -3745,12 +3768,7 @@
     // Bottoni azione
     var id = String(b.id || '');
     var salvato = !!b.salvato;
-    var acts = '<div class="br-acts">'
-      + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'bando\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Letto</button>'
-      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'bando\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;&nbsp;Salvato' : '&#9734;&nbsp;Salva') + '</button>'
-      + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'bando\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Archiv.</button>'
-      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'bando\',\'' + esc(id) + '\',this)">&#128465;&nbsp;Cestina</button>'
-      + '</div>';
+    var acts = _cardActionsHtml_('bando', id, salvato);
 
     return '<div class="br-row' + (isUrgent ? ' br-urgent' : '') + '" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
       // — SINISTRA —
@@ -3922,12 +3940,7 @@
 
     var id = String(p.id || '');
     var salvato = !!p.salvato;
-    var acts = '<div class="br-acts">'
-      + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'podcast\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Ascoltato</button>'
-      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'podcast\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;&nbsp;Salvato' : '&#9734;&nbsp;Salva') + '</button>'
-      + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'podcast\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Arch.</button>'
-      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'podcast\',\'' + esc(id) + '\',this)">&#128465;&nbsp;Cestina</button>'
-      + '</div>';
+    var acts = _cardActionsHtml_('podcast', id, salvato);
 
     var linkHtml = url
       ? '<a class="br-link" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Ascolta episodio">&#127911;&nbsp;Ascolta</a>'
@@ -4074,12 +4087,7 @@
     // Bottoni azione
     var id = String(n.id || '');
     var salvato = !!n.salvato;
-    var acts = '<div class="br-acts">'
-      + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'item\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Letto</button>'
-      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'item\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;&nbsp;Salvato' : '&#9734;&nbsp;Salva') + '</button>'
-      + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'item\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Arch.</button>'
-      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'item\',\'' + esc(id) + '\',this)">&#128465;&nbsp;Cestina</button>'
-      + '</div>';
+    var acts = _cardActionsHtml_('item', id, salvato);
 
     // Link leggi articolo
     var linkHtml = url
@@ -4269,12 +4277,7 @@
 
     var id = String(v.id || '');
     var salvato = !!v.salvato;
-    var acts = '<div class="br-acts">'
-      + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'podcast\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Visto</button>'
-      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'video\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;&nbsp;Salvato' : '&#9734;&nbsp;Salva') + '</button>'
-      + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'podcast\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Arch.</button>'
-      + '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'podcast\',\'' + esc(id) + '\',this)">&#128465;&nbsp;Cestina</button>'
-      + '</div>';
+    var acts = _cardActionsHtml_('video', id, salvato);
 
     var linkHtml = url
       ? '<a class="br-link" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Guarda su YouTube">&#9654;&nbsp;Guarda</a>'
@@ -4381,11 +4384,7 @@
     var id = String(b.id || '');
 
     var salvato = !!b.salvato;
-    var acts = '<div class="br-acts">'
-      + '<button class="br-act br-act-read"  onclick="event.stopPropagation();OC.markItemRead(\'libro\',\'' + esc(id) + '\',this)">&#10003;&nbsp;Letto</button>'
-      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai preferiti' : 'Salva nei preferiti') + '" onclick="event.stopPropagation();OC.saveCard(\'libro\',\'' + esc(id) + '\',this)">' + (salvato ? '&#9733;&nbsp;Salvato' : '&#9734;&nbsp;Salva') + '</button>'
-      + '<button class="br-act br-act-arch"  onclick="event.stopPropagation();OC.archiveItem(\'libro\',\'' + esc(id) + '\',this)">&#8659;&nbsp;Arch.</button>'
-      + '</div>';
+    var acts = _cardActionsHtml_('libro', id, salvato);
 
     var linkHtml = url
       ? '<a class="br-link" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Vai alla scheda del libro">&#8599;&nbsp;Scheda</a>'
