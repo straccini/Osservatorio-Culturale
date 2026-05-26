@@ -394,7 +394,12 @@
       <div id="bandiList" aria-live="polite">
         <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
-      <div class="empty-state" id="bandiEmpty" hidden>Nessun bando trovato.</div>
+      <div class="empty-state" id="bandiEmpty" hidden>
+        <svg class="empty-ill" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Nessun bando corrisponde ai filtri.
+        <span class="empty-hint">Prova a rimuovere un filtro o torna alla vista completa.</span>
+        <button class="empty-cta" onclick="OC.go('bandi')">Mostra tutti i bandi</button>
+      </div>
     </section>
 
     <!-- ===== PAGE NEWS ===== -->
@@ -445,7 +450,11 @@
       <div class="news-list" id="newsListFull" aria-live="polite">
         <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
-      <div class="empty-state" id="newsEmpty" hidden>Nessuna news trovata.</div>
+      <div class="empty-state" id="newsEmpty" hidden>
+        <svg class="empty-ill" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg>
+        Nessuna news corrisponde ai filtri.
+        <span class="empty-hint">Le fonti vengono scansionate ogni 6 ore. Nuovi articoli arriveranno presto.</span>
+      </div>
     </section>
 
     <!-- ===== PAGE PODCAST ===== -->
@@ -497,7 +506,11 @@
       <div class="news-list" id="podcastListFull" aria-live="polite">
         <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
-      <div class="empty-state" id="podcastEmpty" hidden>Nessun podcast trovato.</div>
+      <div class="empty-state" id="podcastEmpty" hidden>
+        <svg class="empty-ill" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+        Nessun podcast corrisponde ai filtri.
+        <span class="empty-hint">I podcast vengono rilevati quotidianamente dalle fonti monitorate.</span>
+      </div>
     </section>
 
     <!-- ===== PAGE VIDEO ===== -->
@@ -571,7 +584,11 @@
       <div class="news-list" id="videoListFull" aria-live="polite">
         <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
-      <div class="empty-state" id="videoEmpty" hidden>Nessun video trovato.</div>
+      <div class="empty-state" id="videoEmpty" hidden>
+        <svg class="empty-ill" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        Nessun video corrisponde ai filtri.
+        <span class="empty-hint">I canali YouTube dei musei vengono scansionati quotidianamente.</span>
+      </div>
     </section>
 
     <!-- ===== PAGE LIBRI ===== -->
@@ -869,7 +886,11 @@
       <div id="archivioList" aria-live="polite">
         <div class="skeleton home-list-skeleton"></div><div class="skeleton home-list-skeleton"></div><div class="skeleton home-list-skeleton"></div>
       </div>
-      <div class="empty-state" id="archivioEmpty" hidden>Nessun contenuto archiviato.</div>
+      <div class="empty-state" id="archivioEmpty" hidden>
+        <svg class="empty-ill" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+        L'archivio e vuoto.
+        <span class="empty-hint">I contenuti archiviati dalle liste compariranno qui, sempre recuperabili.</span>
+      </div>
     </section>
 
     <!-- ===== PAGE CESTINO ===== -->
@@ -1129,6 +1150,65 @@
         <h1 class="page-title">Benvenuto/a, <em id="wsUserHello">Lead</em></h1>
         <p class="page-sub" id="wsUserSub">Qui trovi i tuoi bandi salvati, il report MuseMu Matrix e lo storico delle tue consulenze.</p>
       </div>
+
+      <!-- ═══ MAPPA DI IDENTITA ═══ -->
+      <div id="wsIdentitySection" style="margin-top:24px;padding:24px 28px;background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-radius:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <div>
+            <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#E84B1C);letter-spacing:.14em;text-transform:uppercase;font-weight:700">Mappa di identita</div>
+            <h3 style="font-family:var(--font-display);font-size:1.15rem;font-weight:500;margin:4px 0 0;color:var(--ink)">I tuoi interessi tematici e territoriali</h3>
+          </div>
+          <span id="identBadgeSummary" style="font-family:var(--font-ui);font-size:11px;color:var(--ink-3);background:var(--paper,#fff);border:1px solid var(--rule);border-radius:20px;padding:4px 12px;white-space:nowrap">Caricamento...</span>
+        </div>
+        <p style="font-family:var(--font-ui);font-size:13px;color:var(--ink-3);line-height:1.5;margin:6px 0 16px">Attiva le dimensioni che ti interessano. Bandi, news e digest si adatteranno automaticamente al tuo profilo.</p>
+
+        <!-- Dimensioni D1-D10 -->
+        <div id="identDimsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:20px">
+          <!-- Popolato da JS -->
+        </div>
+
+        <!-- Ambito territoriale -->
+        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;padding:14px 0;border-top:1px solid var(--rule,#E5E5E7)">
+          <div style="font-family:var(--font-ui);font-size:12px;font-weight:600;color:var(--ink-2);min-width:130px">Ambito territoriale</div>
+          <label style="display:flex;align-items:center;gap:6px;font-family:var(--font-ui);font-size:13px;color:var(--ink);cursor:pointer">
+            <input type="radio" name="identAmbito" value="nazionale" checked style="accent-color:var(--accent,#E84B1C)"> Tutta Italia
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-family:var(--font-ui);font-size:13px;color:var(--ink);cursor:pointer">
+            <input type="radio" name="identAmbito" value="locale" style="accent-color:var(--accent,#E84B1C)"> Regione specifica
+          </label>
+          <select id="identRegione" style="font-family:var(--font-ui);font-size:13px;padding:6px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--paper,#fff);color:var(--ink);display:none">
+            <option value="">Seleziona regione...</option>
+          </select>
+        </div>
+
+        <!-- Notifica solo match + azioni -->
+        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;padding:14px 0;border-top:1px solid var(--rule,#E5E5E7)">
+          <label style="display:flex;align-items:center;gap:6px;font-family:var(--font-ui);font-size:13px;color:var(--ink);cursor:pointer;flex:1">
+            <input type="checkbox" id="identNotifyOnly" style="accent-color:var(--accent,#E84B1C)">
+            Ricevi nel digest <b>solo</b> contenuti che corrispondono al tuo profilo
+          </label>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary" onclick="OC.identReset()" style="font-size:12px;padding:6px 14px">Resetta</button>
+            <button class="btn btn-primary" onclick="OC.identSave()" style="font-size:12px;padding:6px 14px;background:var(--accent,#E84B1C);color:#fff;border:none;border-radius:6px;cursor:pointer">Salva profilo</button>
+          </div>
+        </div>
+
+        <!-- Toggle filtro globale -->
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--rule,#E5E5E7)">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1">
+            <input type="checkbox" id="identFilterToggle" onchange="OC.identToggleFilter(this.checked)" style="accent-color:var(--accent,#E84B1C);width:18px;height:18px">
+            <span style="font-family:var(--font-ui);font-size:13px;font-weight:500;color:var(--ink)">Applica filtro profilo a tutta la webapp</span>
+          </label>
+          <span id="identFilterStatus" style="font-family:var(--font-ui);font-size:11px;color:var(--ink-4)">Disattivato</span>
+        </div>
+
+        <!-- Auto-genera da Matrix -->
+        <div id="identAutoGenWrap" style="padding:12px 0 0;border-top:1px solid var(--rule,#E5E5E7);display:none">
+          <button class="btn btn-secondary" onclick="OC.identFromMatrix()" style="font-size:12px;padding:6px 14px">Genera automaticamente dai risultati MuseMu Matrix</button>
+          <span style="font-family:var(--font-ui);font-size:11px;color:var(--ink-4);margin-left:8px">Attiva le dimensioni dove il tuo punteggio Matrix e alto</span>
+        </div>
+      </div>
+
       <div id="wsContent" style="margin-top:18px">
         <div class="skeleton home-list-skeleton"></div>
         <div class="skeleton home-list-skeleton"></div>
@@ -2488,11 +2568,7 @@
     }
     // v4.18.47 — Mostra/nasconde CTA bar anonimo subito (no flash)
     try { _updateAnonCtaBar_(); } catch(_){}
-    // v4.18.48 — Mostra/nasconde voce sidebar "La tua area"
-    try {
-      var navWs = document.getElementById('navItemWorkspace');
-      if (navWs) navWs.hidden = !((typeof window._ocLivello === 'function') && window._ocLivello() >= 1);
-    } catch(_){}
+    // "La tua area" sempre visibile in sidebar; gate di accesso in loadWorkspacePage
     console.log('[OC-DEBUG] hydrate() called. hasGAS=', hasGAS());
     // Identità utente (v4.4) — passa token admin se presente nell'URL/session
     if (hasGAS()) {
@@ -2525,15 +2601,20 @@
       };
     }
 
+    _topbarLoading();
     google.script.run
       .withSuccessHandler(_safeRender_('renderHome', function(data){
         console.log('[OC-DEBUG] getHomepageDataV42 OK. has data:', !!data, 'keys:', data ? Object.keys(data).join(',') : '-');
+        _topbarDone();
         if (!data) return;
         renderHome(data);
         renderSidebarBadges(data.badges || {});
       }))
-      .withFailureHandler(function(err){ console.error('[OC-DEBUG] getHomepageDataV42 FAIL:', err && err.message ? err.message : err); })
+      .withFailureHandler(function(err){ _topbarDone(); console.error('[OC-DEBUG] getHomepageDataV42 FAIL:', err && err.message ? err.message : err); })
       .getHomepageDataV42();
+
+    // Carica mappa identita per filtro globale (badge topbar)
+    _identLoadUI_();
 
     google.script.run
       .withSuccessHandler(_safeRender_('renderUltimiBandi', function(list){ console.log('[OC-DEBUG] getUltimiBandiMonitorati OK:', (list||[]).length); renderUltimiBandi(list || []); }))
@@ -2603,33 +2684,34 @@
   function loadBandiList(force){
     if (!hasGAS()) return;
     if (_cacheBandi && !force) { renderBandiList(_cacheBandi); return; }
-    skeletonIn('bandiList');
+    skeletonIn('bandiList'); _topbarLoading();
     console.log('[OC-DEBUG] loadBandiList() chiama getBandiListV42(500)');
     google.script.run
       .withSuccessHandler(function(list){
+        _topbarDone();
         console.log('[OC-DEBUG] getBandiListV42 -> ' + (list ? list.length : 0) + ' bandi', list && list[0] ? '(sample:' + JSON.stringify(list[0]).substring(0,200) + ')' : '(vuoto)');
         _cacheBandi = list || [];
         renderBandiList(_cacheBandi);
       })
-      .withFailureHandler(function(err){ console.error('[OC-DEBUG] getBandiListV42 FAIL:', err); renderBandiList([]); })
+      .withFailureHandler(function(err){ _topbarDone(); console.error('[OC-DEBUG] getBandiListV42 FAIL:', err); renderBandiList([]); })
       .getBandiListV42(500);
   }
   function loadNewsList(force){
     if (!hasGAS()) return;
     if (_cacheNews && !force) { renderNewsList2(_cacheNews); return; }
-    skeletonIn('newsListFull');
+    skeletonIn('newsListFull'); _topbarLoading();
     google.script.run
-      .withSuccessHandler(function(list){ _cacheNews = list || []; renderNewsList2(_cacheNews); })
-      .withFailureHandler(function(err){ console.error(err); renderNewsList2([]); })
+      .withSuccessHandler(function(list){ _topbarDone(); _cacheNews = list || []; renderNewsList2(_cacheNews); })
+      .withFailureHandler(function(err){ _topbarDone(); console.error(err); renderNewsList2([]); })
       .getNewsListV42(500);
   }
   function loadPodcastList(force){
     if (!hasGAS()) return;
     if (_cachePodcast && !force) { renderPodcastList2(_cachePodcast); return; }
-    skeletonIn('podcastListFull');
+    skeletonIn('podcastListFull'); _topbarLoading();
     google.script.run
-      .withSuccessHandler(function(list){ _cachePodcast = list || []; renderPodcastList2(_cachePodcast); })
-      .withFailureHandler(function(err){ console.error(err); renderPodcastList2([]); })
+      .withSuccessHandler(function(list){ _topbarDone(); _cachePodcast = list || []; renderPodcastList2(_cachePodcast); })
+      .withFailureHandler(function(err){ _topbarDone(); console.error(err); renderPodcastList2([]); })
       .getPodcastListV42(300);
   }
 
@@ -2961,7 +3043,22 @@
       .getAmbitoDataV42(id);
   }
 
-  function skeletonIn(id){ var el=$(id); if(!el)return; el.innerHTML='<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>'; }
+  // Delight v5.1: loading messages contestuali
+  var _LOAD_MSGS = {
+    bandiList:   'Verifica bandi e scadenze\u2026',
+    newsList:    'Raccolta ultime notizie\u2026',
+    podcastList: 'Caricamento episodi\u2026',
+    videoList:   'Ricerca nuovi video\u2026',
+    libriList:   'Consultazione catalogo\u2026',
+    archivioList:'Apertura archivio\u2026',
+    statsContent:'Elaborazione statistiche\u2026'
+  };
+  function skeletonIn(id){
+    var el=$(id); if(!el)return;
+    var hint = _LOAD_MSGS[id] || '';
+    el.innerHTML = (hint ? '<div style="text-align:center;padding:12px 0;font-size:.8125rem;color:var(--ink-4);font-family:var(--font-ui)">' + hint + '</div>' : '')
+      + '<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>';
+  }
 
   // ==========================================================
   // C) RENDERING HOME
@@ -3013,6 +3110,13 @@
       var nome = (OC_SESSION && OC_SESSION.email) ? OC_SESSION.email.split('@')[0].split('.')[0] : '';
       if (nome) nome = nome.charAt(0).toUpperCase() + nome.slice(1);
       greetEl.textContent = greet + (nome ? ', ' + nome : '');
+      // Delight v5.1: sub-greeting contestuale
+      var sub = $('homeSubGreeting');
+      if (sub) {
+        var nuovi = (d.badges && d.badges.nuoviOggi) || 0;
+        if (nuovi > 0) sub.textContent = nuovi + ' nuov' + (nuovi === 1 ? 'o contenuto' : 'i contenuti') + ' da esplorare oggi.';
+        else sub.textContent = 'Il tuo osservatorio culturale.';
+      }
     }
     renderUpdateInfo(d);
 
@@ -3180,34 +3284,51 @@
   function loadWorkspacePage() {
     var wrap = $('wsContent');
     if (!wrap) return;
-    // Se l'utente non è Lead, blocca con modal e fallback a home
-    if (typeof window._ocLivello === 'function' && window._ocLivello() < 1) {
-      _openRegistrationModal_('workspace');
-      go('home');
-      return;
-    }
-    wrap.innerHTML = '<div class="skeleton home-list-skeleton"></div><div class="skeleton home-list-skeleton"></div>';
+    wrap.innerHTML = '<div class="skeleton home-list-skeleton"></div>';
     if (!hasGAS()) {
       wrap.innerHTML = '<div class="empty-state">Backend non disponibile.</div>';
       return;
     }
-    var token = (OC_SESSION && OC_SESSION.token) || '';
-    if (!token) {
-      wrap.innerHTML = '<div class="empty-state">Sessione non valida. Riapri il magic-link ricevuto via email.</div>';
-      return;
-    }
+
+    // Chiedi al backend chi siamo: admin, lead, o anonimo
     google.script.run
-      .withSuccessHandler(function(r){
-        if (!r || !r.ok) {
-          wrap.innerHTML = '<div class="empty-state" style="color:var(--danger,#C2410C)">Errore: ' + esc(r && r.error || 'sconosciuto') + '</div>';
+      .withSuccessHandler(function(u) {
+        var ruolo = (u && u.ruolo) || 'guest';
+        var email = (u && u.email) || '';
+
+        // Anonimo: rimanda alla registrazione
+        if (ruolo === 'guest' || ruolo === 'anonimo' || !email) {
+          _openRegistrationModal_('workspace');
+          go('home');
           return;
         }
-        renderWorkspacePage(r);
+
+        // Aggiorna sessione con dati dal backend
+        if (!OC_SESSION) OC_SESSION = {};
+        if (!OC_SESSION.email) OC_SESSION.email = email;
+        if (u.isAdmin) OC_SESSION.livello = 3;
+
+        var hello = $('wsUserHello');
+        if (hello) hello.textContent = (u.nome || email.split('@')[0]);
+        var sub = $('wsUserSub');
+
+        // Carica workspace: token sessione oppure email admin
+        var wsKey = (OC_SESSION && OC_SESSION.token) || email;
+        google.script.run
+          .withSuccessHandler(function(r) {
+            if (r && r.ok) renderWorkspacePage(r);
+            else { if (sub) sub.textContent = 'Configura il tuo profilo tematico e territoriale.'; wrap.innerHTML = ''; }
+          })
+          .withFailureHandler(function() { wrap.innerHTML = ''; })
+          .getUserWorkspaceData(wsKey);
+
+        // Carica mappa identita (per tutti gli utenti riconosciuti)
+        _identLoadUI_();
       })
-      .withFailureHandler(function(err){
-        wrap.innerHTML = '<div class="empty-state" style="color:var(--danger,#C2410C)">Errore di rete: ' + esc(err && err.message || err) + '</div>';
+      .withFailureHandler(function() {
+        wrap.innerHTML = '<div class="empty-state">Errore di connessione.</div>';
       })
-      .getUserWorkspaceData(token);
+      .getCurrentUser_v44(_admTok_());
   }
 
   function renderWorkspacePage(data) {
@@ -3240,7 +3361,16 @@
       html += '<div style="font-size:11px;color:var(--ink-3)">score sintetico</div>';
       html += '</div></div>';
       html += '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">';
-      html += '<button class="btn btn-primary" onclick="OC.openMatrixReport(\'' + esc(m.responseId) + '\')" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer">📄 Apri report completo</button>';
+      html += '<button class="btn btn-primary" onclick="OC.openMatrixReport(\'' + esc(m.responseId) + '\')" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer">Apri report completo</button>';
+      if (m.pdfUrl) {
+        html += '<a href="' + esc(m.pdfUrl) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;background:transparent;border:1px solid var(--rule);padding:8px 16px;border-radius:6px;font-size:12.5px;color:var(--ink-2);text-decoration:none;font-weight:600;cursor:pointer">PDF report</a>';
+      }
+      if (m.pdfDownload) {
+        html += '<a href="' + esc(m.pdfDownload) + '" style="display:inline-flex;align-items:center;gap:4px;background:transparent;border:1px solid var(--rule);padding:8px 16px;border-radius:6px;font-size:12.5px;color:var(--ink-2);text-decoration:none;font-weight:600;cursor:pointer">Scarica PDF</a>';
+      }
+      if (!m.pdfUrl) {
+        html += '<button onclick="OC.generateMatrixPdf(\'' + esc(m.responseId) + '\')" style="background:transparent;border:1px solid var(--rule);padding:8px 16px;border-radius:6px;font-size:12.5px;color:var(--ink-2);cursor:pointer;font-family:inherit">Genera PDF</button>';
+      }
       html += '</div>';
       html += '</div>';
     } else {
@@ -3860,6 +3990,8 @@
       var giorni   = b.giorni != null ? parseInt(b.giorni, 10) : null;
       var isUrgent = giorni !== null && giorni >= 0 && giorni <= 7;
 
+      // Filtro globale identita
+      if (!_identFilterItem_(ambN, b.regione)) return;
       // L2 tematica
       if (fAmb > 0 && ambN !== fAmb) return;
       // L1 preset
@@ -3992,6 +4124,7 @@
     var recenti = [], altri = [], shown = 0;
     sortedList.forEach(function(n) {
       var ambN = _ambNum_(n.ambito) || _ambNum_(n.settore) || 0;
+      if (!_identFilterItem_(ambN, '')) return; // filtro globale identita
       if (fAmb > 0 && ambN !== fAmb) return;
       if (preset === 'recenti' && !n.isRecente) return;
       if (preset === 'salvati' && !n.salvato) return;
@@ -4066,6 +4199,7 @@
     var recenti = [], altri = [], shown = 0;
     sortedList.forEach(function(p) {
       var ambN = _ambNum_(p.ambito) || _ambNum_(p.tematica) || 0;
+      if (!_identFilterItem_(ambN, '')) return; // filtro globale identita
       if (fAmb > 0 && ambN !== fAmb) return;
       if (preset === 'recenti'  && !p.isRecente) return;
       if (preset === 'salvati'  && !p.salvato)   return;
@@ -4179,6 +4313,7 @@
     var recenti = [], altri = [], shown = 0;
     sortedList.forEach(function(v) {
       var ambN = _ambNum_(v.ambito) || _ambNum_(v.tematica) || 0;
+      if (!_identFilterItem_(ambN, '')) return; // filtro globale identita
       if (fAmb > 0 && ambN !== fAmb) return;
       if (preset === 'recenti'  && !v.isRecente) return;
       if (preset === 'salvati'  && !v.salvato)   return;
@@ -4297,6 +4432,7 @@
     var recenti = [], altri = [], shown = 0;
     sortedList.forEach(function(b) {
       var ambN = _ambNum_(b.ambito) || _ambNum_(b.tematica) || 0;
+      if (!_identFilterItem_(ambN, '')) return; // filtro globale identita
       if (fAmb > 0 && ambN !== fAmb) return;
       if (preset === 'recenti' && !b.isRecente) return;
       if (preset === 'salvati' && !b.salvato) return;
@@ -6622,7 +6758,8 @@
   // ----------------------------------------------------------
   // TOAST — feedback utente su azioni async
   // ----------------------------------------------------------
-  function showToast(msg, type, dur) {
+  // ── Delight v5.1: toast con undo opzionale + loading bar ──
+  function showToast(msg, type, dur, onUndo) {
     var icons = {
       ok:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
       warn: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
@@ -6633,13 +6770,46 @@
     type = type || 'ok';
     var t = document.createElement('div');
     t.className = 'oc-toast ' + type;
-    t.innerHTML = (icons[type] || '') + '<span>' + esc(msg) + '</span>';
+    var html = (icons[type] || '') + '<span>' + esc(msg) + '</span>';
+    if (onUndo) html += '<button class="toast-undo" onclick="event.stopPropagation()">Annulla</button>';
+    t.innerHTML = html;
+    if (onUndo) {
+      var undoBtn = t.querySelector('.toast-undo');
+      undoBtn.addEventListener('click', function() {
+        onUndo();
+        if (t.parentNode) t.parentNode.removeChild(t);
+      });
+    }
     container.appendChild(t);
+    var timeout = dur || (onUndo ? 5000 : 3200);
     setTimeout(function(){
       t.classList.add('out');
       setTimeout(function(){ if (t.parentNode) t.parentNode.removeChild(t); }, 350);
-    }, dur || 3200);
+    }, timeout);
   }
+
+  // ── Delight v5.1: topbar loading progress ──
+  function _topbarLoading() {
+    var tb = document.querySelector('.topbar');
+    if (tb) { tb.classList.remove('loaded'); tb.classList.add('loading'); }
+  }
+  function _topbarDone() {
+    var tb = document.querySelector('.topbar');
+    if (tb) { tb.classList.remove('loading'); tb.classList.add('loaded'); setTimeout(function(){ tb.classList.remove('loaded'); }, 500); }
+  }
+
+  // ── Delight v5.1: scroll progress ──
+  (function(){
+    var mc = document.querySelector('.main-content');
+    if (!mc) return;
+    mc.addEventListener('scroll', function(){
+      var tb = document.querySelector('.topbar');
+      if (!tb) return;
+      var pct = mc.scrollTop / (mc.scrollHeight - mc.clientHeight + 1);
+      tb.classList.toggle('scroll-active', pct > 0.01);
+      tb.style.setProperty('--scroll-pct', Math.min(pct * 100, 100) + '%');
+    }, { passive: true });
+  })();
 
   function archiveItem(tipo, id, el) {
     // v4.18.47 — Gate Lead
@@ -6659,7 +6829,26 @@
           _cacheArchivio = null; // forza reload archivio al prossimo accesso
           // Se chiamato da detail overlay (el=null), rimuovi la card dalla lista corrente
           if (!card) _refreshCurrentList_();
-          showToast('Scheda archiviata', 'ok');
+          showToast('Archiviata', 'ok', 5000, function(){
+            // Undo: ripristina dall'archivio
+            if (hasGAS()) {
+              google.script.run
+                .withSuccessHandler(function(res){
+                  if (res && res.ok) {
+                    if (tipo === 'bando' || tipo === 'bandi') _cacheBandi = null;
+                    else if (tipo === 'item' || tipo === 'news') _cacheNews = null;
+                    else if (tipo === 'podcast') _cachePodcast = null;
+                    else if (tipo === 'video') _cacheVideo = null;
+                    else if (tipo === 'libro') _cacheLibri = null;
+                    _cacheArchivio = null;
+                    _refreshCurrentList_();
+                    showToast('Ripristinata', 'ok');
+                  }
+                })
+                .withFailureHandler(function(){})
+                .restore(tipo, id);
+            }
+          });
         } else {
           showToast('Archiviazione non riuscita', 'err');
         }
@@ -6709,6 +6898,336 @@
       .markRead(tipo, id);
     var card = (el && el.closest) ? (el.closest('.br-row') || el.closest('.bando-row') || el.closest('.news-row') || el.closest('.pod-item')) : null;
     if (card) card.classList.add('item-letto');
+  }
+
+  // ==========================================================
+  // MAPPA DI IDENTITA — UI + logica frontend
+  // ==========================================================
+
+  var _identData = null; // cache mappa corrente
+  var _identFilterActive = false; // true quando il filtro globale e applicato
+
+  /**
+   * Filtro globale identita: ritorna true se l'item passa.
+   * Se il filtro non e attivo, passa sempre.
+   * ambito: numero ambito (1-5) dell'item
+   * regione: stringa regione dell'item (opzionale)
+   */
+  function _identFilterItem_(ambito, regione) {
+    if (!_identFilterActive || !_identData || !_identData._hasIdentity) return true;
+    // Filtro ambiti: se l'item ha ambito 0 (non classificato), passa sempre
+    var amb = parseInt(ambito) || 0;
+    if (amb > 0 && _identData._activeAmbiti && _identData._activeAmbiti.length > 0) {
+      if (_identData._activeAmbiti.indexOf(amb) < 0) return false;
+    }
+    // Filtro regione
+    if (_identData.ambito === 'locale' && _identData.regione && regione) {
+      var r = String(regione).toLowerCase();
+      var ir = _identData.regione.toLowerCase();
+      if (r && r.indexOf(ir) < 0 && ir.indexOf(r) < 0) return false;
+    }
+    return true;
+  }
+
+  function _identToggleFilter_(forceState) {
+    // forceState: true/false per set esplicito, undefined per toggle
+    if (typeof forceState === 'boolean') {
+      _identFilterActive = forceState;
+    } else {
+      _identFilterActive = !_identFilterActive;
+    }
+    console.log('[IDENT] Filtro globale:', _identFilterActive, 'dims:', _identData ? _identData._activeDims : 'no data');
+    _identSyncFilterUI_();
+    // Ricarica tutte le liste dalla cache
+    try { if (_cacheBandi) renderBandiList(_cacheBandi); } catch(e){ console.error('[IDENT] render bandi:', e); }
+    try { if (_cacheNews) renderNewsList2(_cacheNews); } catch(e){ console.error('[IDENT] render news:', e); }
+    try { if (_cachePodcast) renderPodcastList2(_cachePodcast); } catch(e){ console.error('[IDENT] render podcast:', e); }
+    try { if (_cacheVideo) renderVideoList(_cacheVideo); } catch(e){ console.error('[IDENT] render video:', e); }
+    try { if (_cacheLibri) renderLibriList(_cacheLibri); } catch(e){ console.error('[IDENT] render libri:', e); }
+    showToast(_identFilterActive ? 'Filtro profilo attivato' : 'Filtro profilo disattivato', 'ok');
+  }
+
+  function _identSyncFilterUI_() {
+    var on = _identFilterActive && _identData && _identData._hasIdentity;
+    var n = (_identData && _identData._activeDims) ? _identData._activeDims.length : 0;
+    var reg = (_identData && _identData.ambito === 'locale' && _identData.regione) ? _identData.regione : '';
+
+    // Badge topbar: arancio pieno quando attivo, grigio quando spento
+    var badge = $('identFilterBadge');
+    if (badge) {
+      if (_identData && _identData._hasIdentity) {
+        badge.style.display = '';
+        if (on) {
+          badge.textContent = 'FILTRO ATTIVO' + (reg ? ' · ' + reg : '');
+          badge.style.background = 'var(--accent,#E84B1C)';
+          badge.style.color = '#fff';
+        } else {
+          badge.textContent = 'Filtro profilo';
+          badge.style.background = 'var(--surface,#F7F7F8)';
+          badge.style.color = 'var(--ink-3)';
+        }
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    // Checkbox + label nel workspace
+    var wsToggle = $('identFilterToggle');
+    if (wsToggle) wsToggle.checked = !!on;
+    var wsStatus = $('identFilterStatus');
+    if (wsStatus) {
+      wsStatus.textContent = on ? 'Attivo: ' + n + ' dimensioni' + (reg ? ', ' + reg : ', tutta Italia') : 'Disattivato';
+      wsStatus.style.color = on ? 'var(--accent,#E84B1C)' : 'var(--ink-4)';
+    }
+  }
+
+  function _identUpdateFilterBadge_() { _identSyncFilterUI_(); }
+
+  var _IDENT_DIM_NAMES = {
+    D1:  'Brand & Identity',
+    D2:  'Collection & Heritage',
+    D3:  'Facility & Spatial Experience',
+    D4:  'Program & Cultural Offer',
+    D5:  'Service & Third Place',
+    D6:  'Digital Maturity & Tech',
+    D7:  'Accessibilita Radicale',
+    D8:  'Audience & Edutainment',
+    D9:  'Governance & Sustainability',
+    D10: 'Welfare Culturale & Impatto'
+  };
+
+  var _IDENT_DIM_AMBITI = {
+    D1: 'Identita', D2: 'Programma', D3: 'Programma', D4: 'Programma', D5: 'Programma',
+    D6: 'Digital & Gov', D7: 'Inclusione', D8: 'Identita / Comunita', D9: 'Digital & Gov', D10: 'Comunita'
+  };
+
+  var _IDENT_REGIONI = [
+    'Abruzzo','Basilicata','Calabria','Campania','Emilia-Romagna',
+    'Friuli-Venezia Giulia','Lazio','Liguria','Lombardia','Marche',
+    'Molise','Piemonte','Puglia','Sardegna','Sicilia',
+    'Toscana','Trentino-Alto Adige','Umbria',"Valle d'Aosta",'Veneto'
+  ];
+
+  function _identLoadUI_() {
+    var email = (OC_SESSION && OC_SESSION.email) || '';
+    // Fallback: per admin senza sessione, prova a recuperare email da user corrente
+    if (!email && hasGAS()) {
+      try {
+        google.script.run.withSuccessHandler(function(u) {
+          if (u && u.email) {
+            if (!OC_SESSION) OC_SESSION = {};
+            OC_SESSION.email = u.email;
+            _identLoadUI_(); // richiama con email
+          }
+        }).withFailureHandler(function(){}).getCurrentUser_v44('');
+      } catch(_){}
+      return;
+    }
+    if (!email || !hasGAS()) return;
+
+    // Popola select regioni
+    var sel = $('identRegione');
+    if (sel && sel.options.length <= 1) {
+      _IDENT_REGIONI.forEach(function(r) {
+        var opt = document.createElement('option');
+        opt.value = r; opt.textContent = r;
+        sel.appendChild(opt);
+      });
+    }
+
+    // Radio ambito: mostra/nascondi select regione
+    var radios = document.querySelectorAll('input[name="identAmbito"]');
+    radios.forEach(function(r) {
+      r.addEventListener('change', function() {
+        var sel = $('identRegione');
+        if (sel) sel.style.display = (this.value === 'locale') ? '' : 'none';
+      });
+    });
+
+    // Carica dati dal backend
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          _identData = r.identity;
+          _identRenderUI_(r.identity);
+          // Mostra badge filtro nella topbar se ha dimensioni attive
+          if (r.identity._hasIdentity) {
+            _identUpdateFilterBadge_();
+            var fb = $('identFilterBadge');
+            if (fb) fb.style.display = '';
+          }
+        } else {
+          _identRenderEmpty_();
+        }
+      })
+      .withFailureHandler(function() { _identRenderEmpty_(); })
+      .getUserIdentity(email);
+
+    // Mostra pulsante auto-genera se ha completato Matrix
+    if (OC_SESSION && OC_SESSION.matrixCompletato) {
+      var agw = $('identAutoGenWrap');
+      if (agw) agw.style.display = '';
+    }
+  }
+
+  function _identRenderUI_(map) {
+    var grid = $('identDimsGrid');
+    if (!grid) return;
+
+    var html = '';
+    for (var i = 1; i <= 10; i++) {
+      var key = 'D' + i;
+      var active = map.dims && map.dims[key];
+      var name = _IDENT_DIM_NAMES[key] || key;
+      var amb = _IDENT_DIM_AMBITI[key] || '';
+      html += '<label class="ident-dim-toggle' + (active ? ' active' : '') + '" data-dim="' + key + '" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid ' + (active ? 'var(--accent,#E84B1C)' : 'var(--rule,#E5E5E7)') + ';border-radius:8px;background:' + (active ? 'var(--accent-soft,#FEF0EB)' : 'var(--paper,#fff)') + ';cursor:pointer;transition:all .15s">'
+        + '<input type="checkbox" data-dim="' + key + '"' + (active ? ' checked' : '') + ' style="accent-color:var(--accent,#E84B1C);width:16px;height:16px">'
+        + '<div style="min-width:0">'
+        + '<div style="font-family:var(--font-ui);font-size:13px;font-weight:500;color:var(--ink)">' + key + ' ' + esc(name) + '</div>'
+        + '<div style="font-family:var(--font-ui);font-size:11px;color:var(--ink-4)">' + esc(amb) + '</div>'
+        + '</div></label>';
+    }
+    grid.innerHTML = html;
+
+    // Click handler: toggle stile
+    grid.querySelectorAll('.ident-dim-toggle').forEach(function(label) {
+      label.addEventListener('click', function(e) {
+        if (e.target.tagName === 'INPUT') return; // checkbox handles itself
+        var cb = label.querySelector('input[type="checkbox"]');
+        cb.checked = !cb.checked;
+        label.classList.toggle('active', cb.checked);
+        label.style.borderColor = cb.checked ? 'var(--accent,#E84B1C)' : 'var(--rule,#E5E5E7)';
+        label.style.background = cb.checked ? 'var(--accent-soft,#FEF0EB)' : 'var(--paper,#fff)';
+      });
+      var cb = label.querySelector('input[type="checkbox"]');
+      cb.addEventListener('change', function() {
+        label.classList.toggle('active', cb.checked);
+        label.style.borderColor = cb.checked ? 'var(--accent,#E84B1C)' : 'var(--rule,#E5E5E7)';
+        label.style.background = cb.checked ? 'var(--accent-soft,#FEF0EB)' : 'var(--paper,#fff)';
+      });
+    });
+
+    // Ambito territoriale
+    if (map.ambito === 'locale') {
+      var radio = document.querySelector('input[name="identAmbito"][value="locale"]');
+      if (radio) radio.checked = true;
+      var sel = $('identRegione');
+      if (sel) { sel.style.display = ''; sel.value = map.regione || ''; }
+    }
+
+    // Notify only matches
+    var notifCb = $('identNotifyOnly');
+    if (notifCb) notifCb.checked = !!(map.notifyOnlyMatches);
+
+    // Aggiorna badge riassuntivo
+    _identUpdateBadge_(map);
+  }
+
+  function _identRenderEmpty_() {
+    var grid = $('identDimsGrid');
+    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;font-family:var(--font-ui);font-size:13px;color:var(--ink-4);padding:8px 0">Configura le tue dimensioni di interesse per personalizzare i contenuti.</div>';
+    // Render con default
+    var def = { dims:{D1:false,D2:false,D3:false,D4:false,D5:false,D6:false,D7:false,D8:false,D9:false,D10:false}, ambito:'nazionale', regione:'', notifyOnlyMatches:false };
+    _identRenderUI_(def);
+  }
+
+  function _identUpdateBadge_(map) {
+    var badge = $('identBadgeSummary');
+    if (!badge) return;
+    var active = [];
+    for (var d in (map.dims || {})) { if (map.dims[d]) active.push(d); }
+    var reg = (map.ambito === 'locale' && map.regione) ? map.regione : 'Tutta Italia';
+    if (active.length === 0) {
+      badge.textContent = 'Nessun filtro attivo';
+      badge.style.borderColor = 'var(--rule)';
+    } else {
+      badge.textContent = active.length + ' dim. attive · ' + reg;
+      badge.style.borderColor = 'var(--accent,#E84B1C)';
+    }
+
+    // Aggiorna badge nel header (topbar) se esiste
+    _identUpdateHeaderBadge_(active.length);
+  }
+
+  function _identUpdateHeaderBadge_(count) {
+    var hb = $('identHeaderBadge');
+    if (!hb) return;
+    if (count > 0) {
+      hb.textContent = count;
+      hb.hidden = false;
+    } else {
+      hb.hidden = true;
+    }
+  }
+
+  function _identSave_() {
+    var email = (OC_SESSION && OC_SESSION.email) || '';
+    if (!email || !hasGAS()) { showToast('Sessione non valida', 'err'); return; }
+
+    var dims = {};
+    for (var i = 1; i <= 10; i++) {
+      var cb = document.querySelector('#identDimsGrid input[data-dim="D' + i + '"]');
+      dims['D' + i] = cb ? cb.checked : false;
+    }
+
+    var ambito = 'nazionale';
+    var radioLocale = document.querySelector('input[name="identAmbito"][value="locale"]');
+    if (radioLocale && radioLocale.checked) ambito = 'locale';
+
+    var regione = '';
+    var sel = $('identRegione');
+    if (ambito === 'locale' && sel) regione = sel.value;
+
+    var notif = false;
+    var notifCb = $('identNotifyOnly');
+    if (notifCb) notif = notifCb.checked;
+
+    var mapJson = { dims: dims, ambito: ambito, regione: regione, notifyOnlyMatches: notif };
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          _identData = r.identity || mapJson;
+          _identUpdateBadge_(mapJson);
+          showToast('Profilo salvato', 'ok');
+        } else {
+          showToast('Errore: ' + (r && r.error || 'sconosciuto'), 'err');
+        }
+      })
+      .withFailureHandler(function(e) { showToast('Errore: ' + (e.message || e), 'err'); })
+      .updateUserIdentity(email, mapJson);
+  }
+
+  function _identReset_() {
+    for (var i = 1; i <= 10; i++) {
+      var cb = document.querySelector('#identDimsGrid input[data-dim="D' + i + '"]');
+      if (cb) { cb.checked = false; cb.dispatchEvent(new Event('change')); }
+    }
+    var radioNaz = document.querySelector('input[name="identAmbito"][value="nazionale"]');
+    if (radioNaz) radioNaz.checked = true;
+    var sel = $('identRegione');
+    if (sel) { sel.style.display = 'none'; sel.value = ''; }
+    var notifCb = $('identNotifyOnly');
+    if (notifCb) notifCb.checked = false;
+    _identUpdateBadge_({ dims:{}, ambito:'nazionale', regione:'' });
+  }
+
+  function _identFromMatrix_() {
+    var email = (OC_SESSION && OC_SESSION.email) || '';
+    if (!email || !hasGAS()) { showToast('Sessione non valida', 'err'); return; }
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          _identData = r.identity;
+          _identRenderUI_(r.identity);
+          showToast('Profilo generato da Matrix: ' + (r.activeDims || []).length + ' dimensioni attive', 'ok');
+        } else {
+          showToast(r && r.error || 'Errore generazione', 'err');
+        }
+      })
+      .withFailureHandler(function(e) { showToast('Errore: ' + (e.message || e), 'err'); })
+      .generateIdentityFromMatrix(email);
   }
 
   // ==========================================================
@@ -9472,6 +9991,26 @@
     restoreFromArchivio: restoreFromArchivio,
     emptyTrash: emptyTrash,
     exportArchivio: exportArchivio,
+    // Identity Map — Mappa di identita utente
+    identSave: _identSave_,
+    identReset: _identReset_,
+    identFromMatrix: _identFromMatrix_,
+    identToggleFilter: _identToggleFilter_,
+    generateMatrixPdf: function(rid) {
+      if (!hasGAS()) return;
+      showToast('Generazione PDF in corso...', 'ok', 5000);
+      google.script.run
+        .withSuccessHandler(function(r) {
+          if (r && r.ok && r.fileUrl) {
+            showToast('PDF generato', 'ok');
+            window.open(r.fileUrl, '_blank');
+          } else {
+            showToast('Errore: ' + (r && r.error || 'sconosciuto'), 'err');
+          }
+        })
+        .withFailureHandler(function(e) { showToast('Errore: ' + (e.message || e), 'err'); })
+        .generateMatrixReportPDF(rid);
+    },
     // Sprint SW — Social Wall home + settings
     loadSocialWall: function(force){ loadSocialWall(!!force); },
     reloadSocialFonti: function(){

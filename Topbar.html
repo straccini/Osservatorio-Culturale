@@ -108,6 +108,17 @@
     <span id="topbarUserName" hidden></span>
     <span id="topbarUserRole" hidden></span>
 
+    <!-- Filtro profilo identita (toggle globale) -->
+    <button id="identFilterBadge" onclick="OC.identToggleFilter()"
+            style="display:none;font-family:var(--font-ui);font-size:11px;font-weight:600;border-radius:20px;padding:5px 14px;cursor:pointer;white-space:nowrap;transition:all .15s;border:none"
+            title="Clicca per attivare/disattivare il filtro profilo">Filtro profilo</button>
+
+    <!-- Identity badge (visibile se profilo attivo) -->
+    <span id="identHeaderBadge" hidden
+          onclick="OC.go('workspace')"
+          title="Profilo identita attivo: clicca per modificare"
+          style="font-family:var(--font-ui);font-size:10px;font-weight:700;color:#fff;background:var(--accent,#E84B1C);border-radius:10px;padding:2px 7px;cursor:pointer;min-width:14px;text-align:center"></span>
+
     <!-- Logout (visibile solo se loggato) -->
     <button class="topbar-icon" id="logoutBtn" data-action="doLogout"
             aria-label="Esci" title="Esci dall'osservatorio"

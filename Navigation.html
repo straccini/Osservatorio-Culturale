@@ -57,7 +57,16 @@
     var pages = $$('.page');
     for (var i=0;i<pages.length;i++) pages[i].classList.remove('active');
     var target = $('page-'+page);
-    if (target) target.classList.add('active');
+    if (target) {
+      // Delight v5.1: re-trigger page-enter animation
+      target.style.animation = 'none';
+      target.offsetHeight; // force reflow
+      target.style.animation = '';
+      target.classList.add('active');
+    }
+    // Scroll to top on page change
+    var mc = document.querySelector('.main-content');
+    if (mc) mc.scrollTop = 0;
 
     // 2. Aggiorna nav-item attivo
     var navs = $$('.nav-item');
@@ -957,6 +966,20 @@
     el = $('topbarUserRole');      if (el) el.textContent = user.ruolo || 'lettore';
 
     var ruolo = (user.ruolo||'lettore').toLowerCase();
+
+    // Mostra "La tua area" per admin, editor, e qualsiasi utente con email
+    if (ruolo === 'admin' || ruolo === 'editor' || (user.email && ruolo !== 'guest')) {
+      var navWs = $('navItemWorkspace');
+      if (navWs) navWs.hidden = false;
+    }
+    // Imposta sessione per admin/editor anche senza magic-link
+    if (ruolo === 'admin' || ruolo === 'editor') {
+      if (!window.OC_SESSION) window.OC_SESSION = {};
+      if (!window.OC_SESSION.email) window.OC_SESSION.email = user.email || '';
+      if (ruolo === 'admin') window.OC_SESSION.livello = 3;
+      if (ruolo === 'editor') window.OC_SESSION.livello = 2;
+    }
+
     var str = $('nav-strumenti');
     var anyStrumento = false;
 

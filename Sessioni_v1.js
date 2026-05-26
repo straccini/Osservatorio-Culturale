@@ -134,10 +134,19 @@ function validaSessione(token) {
     var now = new Date();
     sh.getRange(sess._row, 9).setValue(now); // last_seen
 
+    // Determina livello: 3 se admin, 1 altrimenti
+    var livello = 1;
+    try {
+      var adminCsv = PropertiesService.getScriptProperties().getProperty('OC_ADMIN_EMAILS') || '';
+      if (!adminCsv && typeof OC_ADMIN_EMAILS !== 'undefined') adminCsv = OC_ADMIN_EMAILS.join(',');
+      var adminSet = adminCsv.toLowerCase().split(',').map(function(e){ return e.trim(); });
+      if (adminSet.indexOf(sess.email.toLowerCase().trim()) >= 0) livello = 3;
+    } catch(_){}
+
     return {
       ok: true,
       valid: true,
-      livello: 1,
+      livello: livello,
       email: sess.email,
       permanente: true,
       giorniResidui: null,
@@ -207,12 +216,31 @@ function upgradeAPermanente(email) {
  * @return {Object} { ok, profilo, bandiSalvati, matrixResponse, prenotazioni, micCompliance }
  */
 function getUserWorkspaceData(token) {
-  if (!token) return { ok:false, error:'token mancante' };
+  // Supporta token sessione O email diretta (per admin senza magic-link)
+  var email = '';
   try {
-    var sh = _getOrCreateSessioniSheet_();
-    var sess = _findSessioneByToken_(sh, token);
-    if (!sess || sess.revoked) return { ok:false, error:'sessione non valida' };
-    var email = sess.email;
+    if (token && token.indexOf('@') >= 0) {
+      // E' un'email, non un token: verifica che sia admin
+      var admins = {};
+      try {
+        var csv = PropertiesService.getScriptProperties().getProperty('OC_ADMIN_EMAILS') || '';
+        csv.toLowerCase().split(',').forEach(function(e){ var t = e.trim(); if (t) admins[t] = true; });
+      } catch(_){}
+      if (admins[token.toLowerCase().trim()]) {
+        email = token.toLowerCase().trim();
+      } else {
+        return { ok:false, error:'accesso non autorizzato' };
+      }
+    } else if (token) {
+      var sh = _getOrCreateSessioniSheet_();
+      var sess = _findSessioneByToken_(sh, token);
+      if (!sess || sess.revoked) return { ok:false, error:'sessione non valida' };
+      email = sess.email;
+    } else {
+      return { ok:false, error:'token mancante' };
+    }
+  } catch(e) { return { ok:false, error:e.message }; }
+  try {
 
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
     var out = {
@@ -292,6 +320,22 @@ function getUserWorkspaceData(token) {
                 out.matrixResponse.syntheticScore = rep.syntheticScore;
                 out.matrixResponse.museumName = rep.museumName;
                 out.matrixResponse.compilationDate = rep.compilationDate;
+                // Cerca PDF gia generato nella cartella Drive
+                try {
+                  var pdfFolder = DriveApp.getFoldersByName('MuseMu_Matrix_Reports');
+                  if (pdfFolder.hasNext()) {
+                    var folder = pdfFolder.next();
+                    var files = folder.getFilesByType('application/pdf');
+                    while (files.hasNext()) {
+                      var f = files.next();
+                      if (f.getName().indexOf(responseId.substring(0,8)) >= 0) {
+                        out.matrixResponse.pdfUrl = 'https://drive.google.com/file/d/' + f.getId() + '/view';
+                        out.matrixResponse.pdfDownload = 'https://drive.google.com/uc?export=download&id=' + f.getId();
+                        break;
+                      }
+                    }
+                  }
+                } catch(_pdfErr) {}
               }
             } catch(eMR) {}
           }

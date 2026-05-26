@@ -329,30 +329,37 @@ function salvaNewBandi(sheet, bandi, fonte, titoliEsistenti) {
     var prioritaColore = b.priorita_regionale ? 'arancio' : 'blu';
     var urlBando = b.url_bando || b.link || '';
     var urlEnte  = b.url_ente  || fonte.url_ente || '';
+    // v5.1: scrivi in formato Bandi_v5 (26 colonne)
+    var id = 'SB' + Date.now() + Math.random().toString(36).substring(2, 4);
     var riga = [
-      new Date(), b.titolo,
-      b.ente      || fonte.ente_default,
-      b.livello   || fonte.livello || 'Nazionale',
-      b.regione   || 'Tutte',
-      b.settore   || 'Valorizzazione',
-      b.soggetti  || '',
-      b.importo   || '', b.cofin || '',
-      b.scadenza  ? new Date(b.scadenza) : '',
-      'Nuovo', '',
-      urlBando,
-      (b.note || '') + ' [auto:' + fonte.nome + ']',
-      fonte.nome,
-      prioritaColore,
-      false,
-      'attivo',
-      urlEnte,
+      id,                          // 1: ID
+      '',                          // 2: Fingerprint
+      new Date(),                  // 3: DataRilevamento
+      b.titolo,                    // 4: Titolo
+      b.ente || fonte.ente_default, // 5: Ente
+      b.livello || fonte.livello || 'Nazionale', // 6: Livello
+      b.regione || 'Tutte',       // 7: Regione
+      b.settore || 'Valorizzazione', // 8: Settore
+      b.soggetti || '',            // 9: Soggetti
+      b.importo || '',             // 10: Importo
+      b.cofin || '',               // 11: Cofin
+      b.scadenza ? new Date(b.scadenza) : '', // 12: Scadenza
+      'ScannerBandi',              // 13: FonteID
+      fonte.nome,                  // 14: FonteNome
+      urlBando,                    // 15: UrlBando
+      urlEnte,                     // 16: UrlEnte
+      '',                          // 17: UrlValidato
+      '',                          // 18: DataValidazione
+      (b.note || ''),              // 19: Sommario
+      '',                          // 20: Ambito
+      b.priorita_regionale ? 'si' : '', // 21: PrioritaRegionale
+      'Nuovo',                     // 22: Status
+      'attivo',                    // 23: StatoRecord
+      false,                       // 24: Letto
+      false,                       // 25: Salvato
+      '[auto:' + fonte.nome + ']'  // 26: Note
     ];
     sheet.appendRow(riga);
-    var nr = sheet.getLastRow();
-    sheet.getRange(nr, COL.DATA_RILEVAMENTO).setNumberFormat('dd/mm/yyyy');
-    if (b.scadenza) sheet.getRange(nr, COL.SCADENZA).setNumberFormat('dd/mm/yyyy');
-    if (b.importo)  sheet.getRange(nr, COL.IMPORTO).setNumberFormat('#,##0 "EUR"');
-    applyPriorityColor(sheet, nr, prioritaColore);
     titoliEsistenti.push(titoloNorm);
     count++;
 

@@ -1753,7 +1753,13 @@ function getUltimaScansione() {
  * Sprint 1.3 D2.5h (2026-05-01) — getSheetRadar consolidato (file principale).
  */
 function getSheetRadar() {
-  return getMainSS().getSheetByName(SHEET_RADAR);
+  // v5.1: dopo unificazione, punta a Bandi_v5 (fallback a RADAR BANDI legacy)
+  var ss = getMainSS();
+  var sh = ss.getSheetByName('Bandi_v5');
+  if (sh) return sh;
+  sh = ss.getSheetByName(SHEET_RADAR);
+  if (sh) return sh;
+  return ss.getSheetByName('_RADAR_BANDI_LEGACY_');
 }
 
 // v4.18.38 (audit 2026-05-14) — Rimosse 3 funzioni morte:
