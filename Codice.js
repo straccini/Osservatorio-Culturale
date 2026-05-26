@@ -2151,18 +2151,11 @@ function getBandi() {
 
 // -- FONTI ---------------------------------------------------------
 function getFonti() {
-  const sh=getMainSS().getSheetByName(SH.FONTI);
-  if(!sh) return {fonti:[]};
-  const rows=sh.getDataRange().getValues(), h=rows[0];
-  if(!h||h.length===0) return {fonti:[]};
-  const fonti=[];
-  for(let i=1;i<rows.length;i++) {
-    if(!rows[i][0]) continue;
-    const item={}; h.forEach((col,idx)=>{item[col]=rows[i][idx];});
-    if(item.UltimaScansione instanceof Date) item.UltimaScansione=formatDate(item.UltimaScansione);
-    fonti.push(item);
-  }
-  return {fonti};
+  var fonti = _sheetToObjects(SH.FONTI);
+  fonti.forEach(function(f) {
+    if (f.UltimaScansione instanceof Date) f.UltimaScansione = formatDate(f.UltimaScansione);
+  });
+  return {fonti: fonti};
 }
 
 function toggleFonteField(id,field) {
@@ -2172,18 +2165,11 @@ function toggleFonteField(id,field) {
 
 // -- MAILING -------------------------------------------------------
 function getMailingList() {
-  const sh=getMainSS().getSheetByName(SH.MAILING);
-  if(!sh) return {list:[]};
-  const rows=sh.getDataRange().getValues(), h=rows[0];
-  if(!h||h.length===0) return {list:[]};
-  const list=[];
-  for(let i=1;i<rows.length;i++) {
-    if(!rows[i][0]) continue;
-    const item={}; h.forEach((col,idx)=>{item[col]=rows[i][idx];});
-    if(item.DataIscrizione instanceof Date) item.DataIscrizione=formatDate(item.DataIscrizione);
-    list.push(item);
-  }
-  return {list};
+  var list = _sheetToObjects(SH.MAILING);
+  list.forEach(function(m) {
+    if (m.DataIscrizione instanceof Date) m.DataIscrizione = formatDate(m.DataIscrizione);
+  });
+  return {list: list};
 }
 
 function saveMailing(body) {
@@ -2204,12 +2190,7 @@ function saveMailing(body) {
 }
 
 function deleteMailing(id) {
-  const sh=getMainSS().getSheetByName(SH.MAILING);
-  const rows=sh.getDataRange().getValues(), idCol=rows[0].indexOf('ID');
-  for(let i=1;i<rows.length;i++) {
-    if(rows[i][idCol]===id){ sh.deleteRow(i+1); return {ok:true}; }
-  }
-  return {error:'Destinatario non trovato'};
+  return _deleteRowById(getMainSS().getSheetByName(SH.MAILING), id);
 }
 
 function toggleMailingField(id,field) {
@@ -2217,19 +2198,12 @@ function toggleMailingField(id,field) {
 }
 
 function getDigestLog() {
-  const sh=getMainSS().getSheetByName(SH.LOG);
-  if(!sh) return {log:[]};
-  const rows=sh.getDataRange().getValues(), h=rows[0];
-  if(!h||h.length===0) return {log:[]};
-  const log=[];
-  for(let i=1;i<rows.length;i++) {
-    if(!rows[i][0]) continue;
-    const item={}; h.forEach((col,idx)=>{item[col]=rows[i][idx];});
-    if(item.DataInvio instanceof Date) item.DataInvio=formatDate(item.DataInvio);
-    log.push(item);
-  }
+  var log = _sheetToObjects(SH.LOG);
+  log.forEach(function(entry) {
+    if (entry.DataInvio instanceof Date) entry.DataInvio = formatDate(entry.DataInvio);
+  });
   log.reverse();
-  return {log};
+  return {log: log};
 }
 
 // --- Digest send/build functions extracted to DigestService.js (Sprint 2, 2026-05-26) ---
@@ -2451,11 +2425,9 @@ function fetchAndCacheSocialWall() {
 }
 
 function getSocialFontiList() {
-  const SS=getMainSS();
-  let sh=SS.getSheetByName('SocialFonti'); if(!sh) sh=_createSocialFontiSheet(SS);
-  const rows=sh.getDataRange().getValues(), h=rows[0], fonti=[];
-  for(let i=1;i<rows.length;i++){if(!rows[i][0])continue;const f={};h.forEach((col,idx)=>{f[col]=rows[i][idx];});fonti.push(f);}
-  return {fonti};
+  var SS = getMainSS();
+  if (!SS.getSheetByName('SocialFonti')) _createSocialFontiSheet(SS);
+  return {fonti: _sheetToObjects('SocialFonti')};
 }
 
 function _createSocialFontiSheet(SS) {
