@@ -7420,6 +7420,142 @@
   }
 
   // ==========================================================
+  // SPRINT 1 — DIAGNOSTICA FONTI BANDI (2026-05-26)
+  // ==========================================================
+
+  var _fdStato = 'tutte';
+  var _fdPrio  = 0;
+  var _fdData  = null;
+
+  function loadFontiDiagnostica() {
+    var wrap = $('fontiDiagContent');
+    if (!wrap) return;
+    wrap.innerHTML = '<div class="skeleton home-list-skeleton"></div><div class="skeleton home-list-skeleton"></div>';
+    if (!hasGAS()) { wrap.innerHTML = '<div class="sr-hint">Diagnostica disponibile solo online.</div>'; return; }
+
+    google.script.run
+      .withSuccessHandler(function(d) {
+        _fdData = d;
+        if (!d || !d.ok) {
+          wrap.innerHTML = '<div class="sr-hint">' + esc(d && d.error ? d.error : 'Errore caricamento diagnostica.') + '</div>';
+          return;
+        }
+        renderFontiDiagnostica(d);
+      })
+      .withFailureHandler(function(e) {
+        wrap.innerHTML = '<div class="sr-hint">Errore: ' + esc(String(e)) + '</div>';
+      })
+      .getFontiDiagnostics();
+  }
+
+  function renderFontiDiagnostica(d) {
+    var wrap = $('fontiDiagContent');
+    if (!wrap || !d) return;
+    var k = d.kpi || {};
+    var html = '';
+
+    // --- KPI ---
+    html += '<div class="st-kpi-grid">'
+      + _stKpi_('Fonti totali', k.totali || 0, '', 'var(--ink)')
+      + _stKpi_('Attive', k.attive || 0, k.percAttive ? k.percAttive + '%' : '', '#3F7A5E')
+      + _stKpi_('Silenti', k.silenti || 0, '', '#9C6A36')
+      + _stKpi_('Link diretti', (k.percLinkDiretti || 0) + '%', k.bandiTotali ? 'su ' + k.bandiTotali + ' bandi' : '', '#3C6A95')
+      + '</div>';
+
+    // Subtitle: ultimo scan
+    if (k.ultimoScan) {
+      var dtScan = new Date(k.ultimoScan);
+      html += '<p class="fd-subtitle">Ultimo bando rilevato: ' + _fdFormatDate(dtScan) + ' &middot; Ultimi 30gg: ' + (k.bandiUltimi30gg || 0) + ' bandi</p>';
+    }
+
+    // --- Filtri ---
+    html += '<div class="filters" id="fdFilters" style="margin:16px 0">'
+      + _fdChip('tutte', 'Tutte', 'stato') + _fdChip('attiva', 'Attive', 'stato') + _fdChip('silente', 'Silenti', 'stato')
+      + '<span style="margin:0 8px;border-left:1px solid var(--border,#ccc);height:20px;display:inline-block"></span>'
+      + _fdChip(0, 'Tutte P', 'prio') + _fdChip(1, 'P1', 'prio') + _fdChip(2, 'P2', 'prio') + _fdChip(3, 'P3', 'prio')
+      + '</div>';
+
+    // --- Lista fonti ---
+    html += '<div id="fdFontiList"></div>';
+
+    // --- Raccomandazioni ---
+    if (d.raccomandazioni && d.raccomandazioni.length) {
+      html += '<div style="font-family:var(--font-display);font-size:1.05rem;font-weight:600;color:var(--ink);margin:24px 0 10px">Raccomandazioni</div>';
+      d.raccomandazioni.forEach(function(r) {
+        html += '<div class="fd-reco ' + esc(r.livello) + '"><span class="fd-reco-text">' + esc(r.testo) + '</span></div>';
+      });
+    }
+
+    wrap.innerHTML = html;
+
+    // Render lista fonti filtrata
+    _fdRenderList(d.fonti);
+
+    // Wire chip clicks
+    $$('#fdFilters .filter-chip').forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        var tipo = this.dataset.fdTipo;
+        if (tipo === 'stato') {
+          _fdStato = this.dataset.fdVal;
+        } else if (tipo === 'prio') {
+          _fdPrio = parseInt(this.dataset.fdVal) || 0;
+        }
+        $$('#fdFilters .filter-chip[data-fd-tipo="' + tipo + '"]').forEach(function(c) { c.classList.remove('active'); });
+        this.classList.add('active');
+        _fdRenderList(d.fonti);
+      });
+    });
+  }
+
+  function _fdRenderList(fonti) {
+    var el = $('fdFontiList');
+    if (!el || !fonti) return;
+
+    var filtered = fonti.filter(function(f) {
+      if (_fdStato !== 'tutte' && f.stato !== _fdStato) return false;
+      if (_fdPrio > 0 && f.priorita !== _fdPrio) return false;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      el.innerHTML = '<div class="sr-hint">Nessuna fonte corrisponde ai filtri.</div>';
+      return;
+    }
+
+    var html = '<div style="font-size:.85rem;color:var(--text-muted);margin-bottom:8px">' + filtered.length + ' fonti</div>';
+    filtered.forEach(function(f) {
+      var tempoLabel = '';
+      if (f.ultimoBando) {
+        var gg = Math.floor((new Date() - new Date(f.ultimoBando)) / 86400000);
+        tempoLabel = gg <= 1 ? 'oggi' : gg + 'gg fa';
+      }
+      html += '<div class="fd-fonte-row">'
+        + '<div>'
+        + '<span class="fd-sem ' + esc(f.stato) + '"></span>'
+        + '<span class="fd-fonte-name">' + esc(f.nome) + '</span>'
+        + '<div class="fd-meta">' + esc(f.categoria) + ' &middot; P' + f.priorita
+        + (f.nBandi > 0 ? ' &middot; <span class="fd-fonte-count">' + f.nBandi + '</span> bandi' : ' &middot; 0 bandi')
+        + (tempoLabel ? ' &middot; ultimo: ' + tempoLabel : '')
+        + '</div>'
+        + '</div>'
+        + '</div>';
+    });
+    el.innerHTML = html;
+  }
+
+  function _fdChip(val, label, tipo) {
+    var isActive = (tipo === 'stato' && String(val) === _fdStato) || (tipo === 'prio' && parseInt(val) === _fdPrio);
+    return '<span class="filter-chip' + (isActive ? ' active' : '') + '" data-fd-tipo="' + tipo + '" data-fd-val="' + val + '">' + label + '</span>';
+  }
+
+  function _fdFormatDate(d) {
+    if (!d || !(d instanceof Date)) return '';
+    var dd = String(d.getDate()).padStart(2, '0');
+    var mm = String(d.getMonth() + 1).padStart(2, '0');
+    return dd + '/' + mm + '/' + d.getFullYear();
+  }
+
+  // ==========================================================
   // SPRINT N6 — RICERCA GLOBALE
   // ==========================================================
   var _lastSearch = '';
@@ -10101,7 +10237,8 @@
         .seedSocialFontiIstituzionali();
     },
     // Detail panel + cache
-    _detailCache: _detailCache
+    _detailCache: _detailCache,
+    loadFontiDiagnostica: loadFontiDiagnostica
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hydrate);
