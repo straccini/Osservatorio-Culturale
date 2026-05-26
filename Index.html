@@ -2629,6 +2629,7 @@
         _topbarDone();
         if (!data) return;
         renderHome(data);
+        _updateNlCtaVisibility_();
         renderSidebarBadges(data.badges || {});
       }))
       .withFailureHandler(function(err){ _topbarDone(); console.error('[OC-DEBUG] getHomepageDataV42 FAIL:', err && err.message ? err.message : err); })
@@ -6720,6 +6721,30 @@
   function _closeNewsletterOptIn_() {
     var ov = document.getElementById('oc-newsletter-overlay');
     if (ov) { ov.hidden = true; ov.style.display = 'none'; }
+    try { localStorage.setItem('oc-nl-dismissed', String(Date.now())); } catch(_){}
+  }
+  function _submitFooterNl_() {
+    var email = (document.getElementById('homeNlEmail') || {}).value || '';
+    if (!email || email.indexOf('@') < 0) { alert('Inserisci un indirizzo email valido'); return; }
+    var gdpr = document.getElementById('homeNlGdpr');
+    if (!gdpr || !gdpr.checked) { alert('Per iscriverti devi acconsentire al trattamento dei dati.'); return; }
+    var form = document.getElementById('homeNlForm');
+    var ok = document.getElementById('homeNlSuccess');
+    if (form) form.hidden = true;
+    if (ok) ok.hidden = false;
+    if (hasGAS()) {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          localStorage.setItem('oc-nl-subscribed', '1');
+          _updateNlCtaVisibility_();
+        })
+        .withFailureHandler(function(e) {
+          if (form) form.hidden = false;
+          if (ok) ok.hidden = true;
+          alert('Errore: ' + (e.message || e));
+        })
+        .saveMailing({ Email: email, Nome: '', Attivo: true, ConsensoGDPR: true, Sorgente: 'footer' });
+    }
   }
   function _submitNewsletterOptIn_() {
     var email = (document.getElementById('nlOptInEmail') || {}).value || '';
@@ -6764,6 +6789,7 @@
       setTimeout(function(){
         if (typeof _ocLivello === 'function' && _ocLivello() > 0) return;
         try { if (localStorage.getItem('oc_token')) return; } catch(_){}
+        try { var dismissed = localStorage.getItem('oc-nl-dismissed'); if (dismissed && (Date.now() - parseInt(dismissed)) < 30*24*60*60*1000) return; } catch(_){}
         _openNewsletterOptIn_();
         step++;
         _schedNext_();
@@ -6778,6 +6804,16 @@
     if (!bar) return;
     var liv = (typeof window._ocLivello === 'function') ? window._ocLivello() : 0;
     bar.hidden = liv >= 1;
+  }
+
+  // v5.1.0 — Show/hide newsletter CTA in topbar + footer based on subscription status
+  function _updateNlCtaVisibility_() {
+    var subscribed = localStorage.getItem('oc-nl-subscribed');
+    var isAnon = typeof _ocLivello === 'function' && _ocLivello() === 0;
+    var topCta = document.getElementById('topbarNlCta');
+    var footCta = document.getElementById('homeNlFooter');
+    if (topCta) { topCta.hidden = !!subscribed || !isAnon; topCta.style.display = (!subscribed && isAnon) ? '' : 'none'; }
+    if (footCta) { footCta.hidden = !!subscribed; footCta.style.display = subscribed ? 'none' : ''; }
   }
 
   // ----------------------------------------------------------
@@ -8540,6 +8576,7 @@
     openNewsletterOptIn:    function(){ _openNewsletterOptIn_(); },
     closeNewsletterOptIn:   function(){ _closeNewsletterOptIn_(); },
     submitNewsletterOptIn:  function(){ _submitNewsletterOptIn_(); },
+    submitFooterNl: function(){ _submitFooterNl_(); },
     // v4.18.48 — Workspace personale
     loadWorkspacePage: loadWorkspacePage,
     openMatrixReport: function(responseId){
