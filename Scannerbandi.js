@@ -33,25 +33,24 @@ const SETTORI_INTERESSE = [
 // ====================================================================
 
 const FONTI_MINISTERI = [
-  // SILENTE ma raggiungibile (126KB HTML, 162 link) — contenuto JS-rendered, link presenti in HTML statico
-  { nome:'MiC - Bandi e Concorsi',       url:'https://cultura.gov.it/comunicati/bandi-e-concorsi',                                 livello:'Nazionale', ente_default:'MiC - Ministero della Cultura',  url_ente:'https://cultura.gov.it', priorita:1 },
-  // SILENTE ma raggiungibile (126KB, 162 link) — stessa struttura di sopra
-  { nome:'MiC - Avvisi',                  url:'https://cultura.gov.it/comunicati/avvisi',                                           livello:'Nazionale', ente_default:'MiC - Ministero della Cultura',  url_ente:'https://cultura.gov.it', priorita:1 },
-  // SILENTE ma raggiungibile (367KB, 329 link) — contenuto ricco, potenzialmente estraibile con prompt migliorato
-  { nome:'Ministero del Turismo - Bandi', url:'https://www.ministeroturismo.gov.it/bandi/',                                         livello:'Nazionale', ente_default:'Ministero del Turismo',          url_ente:'https://www.ministeroturismo.gov.it', priorita:1 },
-  // SILENTE — probabilmente JS-rendered (WordPress con caricamento dinamico)
-  { nome:'ANCI - Bandi e Opportunita',    url:'https://www.anci.it/categorie/bandi-e-concorsi/',                                    livello:'Nazionale', ente_default:'ANCI',                           url_ente:'https://www.anci.it', priorita:2 },
-  // SILENTE — JS-rendered (React SPA)
-  { nome:'Italia Domani - PNRR',          url:'https://www.italiadomani.gov.it/it/opportunita/bandi-amministrazioni-titolari.html', livello:'Nazionale', ente_default:'PNRR - Italia Domani',           url_ente:'https://www.italiadomani.gov.it', priorita:2 },
-  // SILENTE — URL generico (non pagina bandi dedicata)
-  { nome:'Invitalia - Bandi Cultura',     url:'https://www.invitalia.it/cosa-facciamo/rafforziamo-le-imprese',                      livello:'Nazionale', ente_default:'Invitalia',                      url_ente:'https://www.invitalia.it', priorita:2 },
+  // SILENTE — JS-rendered, no RSS disponibile (verificato 2026-05-26)
+  { nome:'MiC - Bandi e Concorsi',       url:'https://cultura.gov.it/comunicati/bandi-e-concorsi',                                 livello:'Nazionale', ente_default:'MiC - Ministero della Cultura',  url_ente:'https://cultura.gov.it', priorita:1, nota:'JS-rendered, no RSS' },
+  { nome:'MiC - Avvisi',                  url:'https://cultura.gov.it/comunicati/avvisi',                                           livello:'Nazionale', ente_default:'MiC - Ministero della Cultura',  url_ente:'https://cultura.gov.it', priorita:1, nota:'JS-rendered, no RSS' },
+  // SILENTE — WordPress dinamico, no RSS dedicato bandi (verificato 2026-05-26)
+  { nome:'Ministero del Turismo - Bandi', url:'https://www.ministeroturismo.gov.it/bandi/',                                         livello:'Nazionale', ente_default:'Ministero del Turismo',          url_ente:'https://www.ministeroturismo.gov.it', priorita:1, nota:'JS-rendered, no RSS' },
+  // v5.0.6 — Cambiato da pagina HTML (404) a feed RSS generico (verificato 2026-05-26: 11 items, include bandi PA)
+  { nome:'ANCI - Bandi e Opportunita',    url:'https://www.anci.it/feed/',                                                          livello:'Nazionale', ente_default:'ANCI',                           url_ente:'https://www.anci.it', priorita:2 },
+  // SILENTE — React SPA, no RSS (verificato 2026-05-26)
+  { nome:'Italia Domani - PNRR',          url:'https://www.italiadomani.gov.it/it/opportunita/bandi-amministrazioni-titolari.html', livello:'Nazionale', ente_default:'PNRR - Italia Domani',           url_ente:'https://www.italiadomani.gov.it', priorita:2, nota:'React SPA, no RSS' },
+  // SILENTE — no RSS, URL generico (verificato 2026-05-26)
+  { nome:'Invitalia - Bandi Cultura',     url:'https://www.invitalia.it/cosa-facciamo/rafforziamo-le-imprese',                      livello:'Nazionale', ente_default:'Invitalia',                      url_ente:'https://www.invitalia.it', priorita:2, nota:'No RSS, URL generico' },
 ];
 
 const FONTI_REGIONI = [
-  { nome:'Regione Marche - Bandi',      url:'https://www.regione.marche.it/Entra-in-Regione/Bandi',                                 livello:'Regionale', ente_default:'Regione Marche',                 url_ente:'https://www.regione.marche.it', priorita:1 },
-  { nome:'Regione Marche - Turismo',    url:'https://www.regione.marche.it/Regione-Utile/Turismo/Bandi-e-finanziamenti',           livello:'Regionale', ente_default:'Regione Marche - Turismo',       url_ente:'https://www.regione.marche.it', priorita:1 },
-  { nome:'Regione Marche - Cultura',    url:'https://www.regione.marche.it/Regione-Utile/Cultura/Bandi-di-finanziamento',           livello:'Regionale', ente_default:'Regione Marche - Cultura',       url_ente:'https://www.regione.marche.it', priorita:1 },
-  { nome:'Regione Umbria - Bandi',      url:'https://www.regione.umbria.it/avvisi',                                                  livello:'Regionale', ente_default:'Regione Umbria',                 url_ente:'https://www.regione.umbria.it', priorita:1 },
+  { nome:'Regione Marche - Bandi',      url:'https://www.regione.marche.it/Entra-in-Regione/Bandi',                                 livello:'Regionale', ente_default:'Regione Marche',                 url_ente:'https://www.regione.marche.it', priorita:1, nota:'No RSS, HTML statico' },
+  { nome:'Regione Marche - Turismo',    url:'https://www.regione.marche.it/Regione-Utile/Turismo/Bandi-e-finanziamenti',           livello:'Regionale', ente_default:'Regione Marche - Turismo',       url_ente:'https://www.regione.marche.it', priorita:1, nota:'No RSS, HTML statico' },
+  { nome:'Regione Marche - Cultura',    url:'https://www.regione.marche.it/Regione-Utile/Cultura/Bandi-di-finanziamento',           livello:'Regionale', ente_default:'Regione Marche - Cultura',       url_ente:'https://www.regione.marche.it', priorita:1, nota:'No RSS, HTML statico' },
+  { nome:'Regione Umbria - Bandi',      url:'https://www.regione.umbria.it/avvisi',                                                  livello:'Regionale', ente_default:'Regione Umbria',                 url_ente:'https://www.regione.umbria.it', priorita:1, nota:'No RSS, feed vuoto' },
   // NB v4.13.1 - rimosso "Regione Puglia - Turismo" perche' URL precedente 404 e categoria specifica non esiste piu' in portale.
   // I bandi turismo Puglia sono comunque indicizzati dalla voce "Regione Puglia - Bandi" piu sotto e da PUGLIAPROMOZIONE.
   { nome:'PugliaPromozione - Bandi',    url:'https://www.agenziapugliapromozione.it/portal/bandi-e-avvisi',                          livello:'Regionale', ente_default:'PugliaPromozione',               url_ente:'https://www.agenziapugliapromozione.it', priorita:2 },
@@ -60,8 +59,9 @@ const FONTI_REGIONI = [
   { nome:'Regione Puglia - Bandi',      url:'https://www.regione.puglia.it/web/portale-bandi/home',                                 livello:'Regionale', ente_default:'Regione Puglia',                 url_ente:'https://www.regione.puglia.it', priorita:1 },
   { nome:'PUGLIAPROMOZIONE',            url:'https://www.pugliapromozione.it/bandi-e-avvisi/',                                      livello:'Regionale', ente_default:'PUGLIAPROMOZIONE',               url_ente:'https://www.pugliapromozione.it', priorita:1 },
   { nome:'Puglia Capitale Sociale',     url:'https://www.sistema.puglia.it/portal/page/portal/SistemaPuglia/BandiAvvisi',           livello:'Regionale', ente_default:'Regione Puglia - Politiche Sociali', url_ente:'https://www.sistema.puglia.it', priorita:2 },
-  { nome:'Regione Sardegna - Cultura',  url:'https://www.regione.sardegna.it/j/v/2552?s=1&v=9&c=25&na=1&n=10',                     livello:'Regionale', ente_default:'Regione Sardegna',               url_ente:'https://www.regione.sardegna.it', priorita:1 },
-  { nome:'Emilia-Romagna - Patrimonio', url:'https://patrimonioculturale.regione.emilia-romagna.it/leggi-atti-bandi/avvisi-e-bandi',livello:'Regionale', ente_default:'Regione Emilia-Romagna',         url_ente:'https://www.regione.emilia-romagna.it', priorita:1 },
+  { nome:'Regione Sardegna - Cultura',  url:'https://www.regione.sardegna.it/j/v/2552?s=1&v=9&c=25&na=1&n=10',                     livello:'Regionale', ente_default:'Regione Sardegna',               url_ente:'https://www.regione.sardegna.it', priorita:1, nota:'No RSS (404)' },
+  // v5.0.6 — Cambiato a feed RSS (verificato 2026-05-26: 15 items RDF validi, bandi cultura ER)
+  { nome:'Emilia-Romagna - Patrimonio', url:'https://patrimonioculturale.regione.emilia-romagna.it/leggi-atti-bandi/avvisi-e-bandi/RSS',livello:'Regionale', ente_default:'Regione Emilia-Romagna',    url_ente:'https://www.regione.emilia-romagna.it', priorita:1 },
   { nome:'ART-ER Emilia-Romagna',       url:'https://first.art-er.it/news',                                                         livello:'Regionale', ente_default:'ART-ER',                         url_ente:'https://art-er.it', priorita:2 },
 ];
 
@@ -1139,7 +1139,8 @@ function getFontiDiagnostics() {
       stato: stato,
       nBandi: count,
       ultimoBando: ultimoBando ? ultimoBando.toISOString() : null,
-      url: f.url
+      url: f.url,
+      nota: f.nota || null
     });
   });
 
