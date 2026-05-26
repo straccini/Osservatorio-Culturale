@@ -2682,73 +2682,72 @@
   // v4.18.24 — Cache candidature speciali (riusata sia da home che da pagina dedicata)
   var _cacheCapitali = null;
 
+  // ==========================================================
+  // UNIFIED DATA CONFIG — cache + filter + loader (DRY Sprint 2026-05-26)
+  // ==========================================================
+  var _OC_DATA = {
+    bandi:   { cache:null, filter:{preset:'tutti',amb:0,q:'',sort:'scadenza-asc'}, skeleton:'bandiList',      gas:'getBandiListV42',   gasLimit:500, render:null },
+    news:    { cache:null, filter:{preset:'tutte',amb:0,q:'',sort:'data-desc'},    skeleton:'newsListFull',    gas:'getNewsListV42',    gasLimit:500, render:null },
+    podcast: { cache:null, filter:{preset:'tutti',amb:0,q:'',sort:'data-desc'},    skeleton:'podcastListFull', gas:'getPodcastListV42', gasLimit:300, render:null },
+    video:   { cache:null, filter:{preset:'tutti',amb:0,q:'',sort:'data-desc'},    skeleton:'videoListFull',   gas:'getVideoListV42',  gasLimit:300, render:null },
+    libri:   { cache:null, filter:{preset:'tutti',amb:0,q:'',sort:'anno-desc'},    skeleton:'libriListFull',   gas:'getLibriListV42',  gasLimit:500, render:null }
+  };
+
+  // Backward-compat aliases (referenced 60+ times across codebase)
   var _cacheBandi = null, _cacheNews = null, _cachePodcast = null;
-  // v4.18.8 (2026-05-12) — esteso con q (ricerca testuale) e sort (ordinamento)
-  var _filterBandi = { preset: 'tutti', amb: 0, q: '', sort: 'scadenza-asc' };
-  // v4.18.15 E1 — esteso con q + sort (allineato Bandi)
-  var _filterNews  = { preset: 'tutte', amb: 0, q: '', sort: 'data-desc' };
-  var _filterPodcast = { preset: 'tutti', amb: 0, q: '', sort: 'data-desc' }; // v4.18.15 E2
-  var _cacheVideo    = null;
-  var _filterVideo   = { preset: 'tutti', amb: 0, q: '', sort: 'data-desc' }; // v4.18.15 E3
-  var _cacheLibri    = null;
-  var _filterLibri   = { preset: 'tutti', amb: 0, q: '', sort: 'anno-desc' }; // v4.18.15 E4
+  var _cacheVideo = null;
+  var _cacheLibri = null;
+  var _filterBandi   = _OC_DATA.bandi.filter;
+  var _filterNews    = _OC_DATA.news.filter;
+  var _filterPodcast = _OC_DATA.podcast.filter;
+  var _filterVideo   = _OC_DATA.video.filter;
+  var _filterLibri   = _OC_DATA.libri.filter;
   var _cacheNorme    = null;
   var _filterNorme   = { preset: 'tutti', amb: 0 };
   var _trash = {};
 
-  function loadBandiList(force){
+  /** Invalidate cache for a tipo — replaces 4 identical if/else chains */
+  function _invalidateCache(tipo) {
+    var map = {bando:'bandi', bandi:'bandi', item:'news', news:'news', podcast:'podcast', video:'video', libro:'libri', libri:'libri'};
+    var key = map[tipo];
+    if (key && _OC_DATA[key]) _OC_DATA[key].cache = null;
+    // Sync backward-compat aliases
+    if (key === 'bandi')   _cacheBandi   = null;
+    if (key === 'news')    _cacheNews    = null;
+    if (key === 'podcast') _cachePodcast = null;
+    if (key === 'video')   _cacheVideo   = null;
+    if (key === 'libri')   _cacheLibri   = null;
+  }
+
+  /** Generic loader — replaces 5 identical load functions */
+  function _loadList(tipo, force) {
     if (!hasGAS()) return;
-    if (_cacheBandi && !force) { renderBandiList(_cacheBandi); return; }
-    skeletonIn('bandiList'); _topbarLoading();
-    console.log('[OC-DEBUG] loadBandiList() chiama getBandiListV42(500)');
+    var d = _OC_DATA[tipo]; if (!d || !d.render) return;
+    if (d.cache && !force) { d.render(d.cache); return; }
+    skeletonIn(d.skeleton);
+    _topbarLoading();
     google.script.run
-      .withSuccessHandler(function(list){
+      .withSuccessHandler(function(list) {
         _topbarDone();
-        console.log('[OC-DEBUG] getBandiListV42 -> ' + (list ? list.length : 0) + ' bandi', list && list[0] ? '(sample:' + JSON.stringify(list[0]).substring(0,200) + ')' : '(vuoto)');
-        _cacheBandi = list || [];
-        renderBandiList(_cacheBandi);
+        d.cache = list || [];
+        // Sync backward-compat alias
+        if (tipo === 'bandi')   _cacheBandi   = d.cache;
+        if (tipo === 'news')    _cacheNews    = d.cache;
+        if (tipo === 'podcast') _cachePodcast = d.cache;
+        if (tipo === 'video')   _cacheVideo   = d.cache;
+        if (tipo === 'libri')   _cacheLibri   = d.cache;
+        d.render(d.cache);
       })
-      .withFailureHandler(function(err){ _topbarDone(); console.error('[OC-DEBUG] getBandiListV42 FAIL:', err); renderBandiList([]); })
-      .getBandiListV42(500);
-  }
-  function loadNewsList(force){
-    if (!hasGAS()) return;
-    if (_cacheNews && !force) { renderNewsList2(_cacheNews); return; }
-    skeletonIn('newsListFull'); _topbarLoading();
-    google.script.run
-      .withSuccessHandler(function(list){ _topbarDone(); _cacheNews = list || []; renderNewsList2(_cacheNews); })
-      .withFailureHandler(function(err){ _topbarDone(); console.error(err); renderNewsList2([]); })
-      .getNewsListV42(500);
-  }
-  function loadPodcastList(force){
-    if (!hasGAS()) return;
-    if (_cachePodcast && !force) { renderPodcastList2(_cachePodcast); return; }
-    skeletonIn('podcastListFull'); _topbarLoading();
-    google.script.run
-      .withSuccessHandler(function(list){ _topbarDone(); _cachePodcast = list || []; renderPodcastList2(_cachePodcast); })
-      .withFailureHandler(function(err){ _topbarDone(); console.error(err); renderPodcastList2([]); })
-      .getPodcastListV42(300);
+      .withFailureHandler(function(err) { _topbarDone(); console.error('[OC] ' + d.gas + ' FAIL:', err); d.render([]); })
+      [d.gas](d.gasLimit);
   }
 
-  function loadVideoList(force){
-    if (!hasGAS()) return;
-    if (_cacheVideo && !force) { renderVideoList(_cacheVideo); return; }
-    skeletonIn('videoListFull');
-    google.script.run
-      .withSuccessHandler(function(list){ _cacheVideo = list || []; renderVideoList(_cacheVideo); })
-      .withFailureHandler(function(err){ console.error(err); renderVideoList([]); })
-      .getVideoListV42(300);
-  }
-
-  function loadLibriList(force){
-    if (!hasGAS()) return;
-    if (_cacheLibri && !force) { renderLibriList(_cacheLibri); return; }
-    skeletonIn('libriListFull');
-    google.script.run
-      .withSuccessHandler(function(list){ _cacheLibri = list || []; renderLibriList(_cacheLibri); })
-      .withFailureHandler(function(err){ console.error(err); renderLibriList([]); })
-      .getLibriListV42(500);
-  }
+  // Backward-compat load aliases (called from dispatcher, _wfSuccessRefresh, etc.)
+  function loadBandiList(f)   { _loadList('bandi', f); }
+  function loadNewsList(f)    { _loadList('news', f); }
+  function loadPodcastList(f) { _loadList('podcast', f); }
+  function loadVideoList(f)   { _loadList('video', f); }
+  function loadLibriList(f)   { _loadList('libri', f); }
 
   // ============================================================
   // SOCIAL WALL (Sprint SW — 2026-05-07)
@@ -3978,6 +3977,13 @@
       c.classList.toggle('active', (c.dataset[dataAttr] || '') === String(activeVal));
     });
   }
+
+  // Wire render functions into _OC_DATA (defined after declarations)
+  _OC_DATA.bandi.render   = function(d) { renderBandiList(d); };
+  _OC_DATA.news.render    = function(d) { renderNewsList2(d); };
+  _OC_DATA.podcast.render = function(d) { renderPodcastList2(d); };
+  _OC_DATA.video.render   = function(d) { renderVideoList(d); };
+  _OC_DATA.libri.render   = function(d) { renderLibriList(d); };
 
   // ---- Page Bandi — renderer con filtri 2 livelli (L1=preset, L2=tematica) + q + sort ----
   function renderBandiList(list){
