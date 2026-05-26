@@ -160,6 +160,19 @@ function doGet(e) {
     }
   }
 
+  // ---------- 1-bis-NL) v5.1.0 — Conferma newsletter double opt-in (?action=confirmNl&e=...&s=...) ----------
+  if (params.action === 'confirmNl' && params.e && params.s) {
+    try {
+      var confirmResult = _handleConfirmNewsletter(params);
+      return HtmlService.createHtmlOutput(confirmResult)
+        .setTitle('Conferma iscrizione · Sinopia')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    } catch(errC) {
+      return HtmlService.createHtmlOutput('<h1>Errore</h1><pre>' + escTok_(String(errC)) + '</pre>')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    }
+  }
+
   // ---------- 1-bis-UTM) v4.18.55 — UTM redirect tracker (?utm_target=URL&utm_source=...) ----------
   if (params.utm_target && typeof utm_handleRedirect === 'function') {
     return utm_handleRedirect(e.queryString || '');
@@ -2276,6 +2289,40 @@ function _sendConfirmationEmail(email, mailingId) {
 
 function deleteMailing(id) {
   return _deleteRowById(getMainSS().getSheetByName(SH.MAILING), id);
+}
+
+// v5.1.0 — Conferma newsletter double opt-in
+function _handleConfirmNewsletter(params) {
+  var email = decodeURIComponent(params.e || '').trim().toLowerCase();
+  var sig = params.s || '';
+  if (!email || !sig) return '<h1>Link non valido</h1>';
+
+  // Verify HMAC
+  var secret = PropertiesService.getScriptProperties().getProperty('OC_UNSUB_SECRET') || 'sinopia2026';
+  var raw = email + ':confirmNl:' + secret;
+  var expected = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, raw)
+    .map(function(b) { return ('0' + (b & 0xFF).toString(16)).slice(-2); }).join('');
+  if (sig !== expected) return '<h1>Link non valido</h1><p>La firma non corrisponde. Richiedi una nuova iscrizione.</p>';
+
+  // Find subscriber and update Stato
+  var sh = getMainSS().getSheetByName(SH.MAILING);
+  if (!sh) return '<h1>Errore</h1><p>Foglio mailing non trovato.</p>';
+  var rows = sh.getDataRange().getValues(), h = rows[0];
+  var emailCol = h.indexOf('Email'), statoCol = h.indexOf('Stato');
+  if (emailCol < 0 || statoCol < 0) return '<h1>Errore</h1><p>Colonne mancanti.</p>';
+
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][emailCol] || '').toLowerCase().trim() === email) {
+      sh.getRange(i + 1, statoCol + 1).setValue('confermato');
+      return '<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:520px;margin:60px auto;padding:20px;text-align:center">'
+        + '<div style="font-size:48px;margin-bottom:16px">&#10003;</div>'
+        + '<h1 style="font-size:24px;color:#1a1a1a">Iscrizione confermata!</h1>'
+        + '<p style="color:#555;line-height:1.6">Riceverai la newsletter settimanale di <b>Sinopia</b> con bandi, news e opportunita selezionate per il settore culturale.</p>'
+        + '<a href="' + ScriptApp.getService().getUrl() + '" style="display:inline-block;margin-top:20px;background:#E84B1C;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">Vai all\'Osservatorio</a>'
+        + '</body></html>';
+    }
+  }
+  return '<h1>Email non trovata</h1><p>Nessuna iscrizione in attesa per questo indirizzo.</p>';
 }
 
 function toggleMailingField(id,field) {

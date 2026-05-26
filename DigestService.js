@@ -182,7 +182,7 @@ function sendDigestAuto() {
 
 function sendDigest(itemIds, bandiIds, podcastIds) {
   const items = itemIds ? getItemsByIds(itemIds) : [];
-  const mailingList = getMailingList().list.filter(m => m.Attivo);
+  const mailingList = getMailingList().list.filter(m => m.Attivo && m.Stato !== 'pending');
   if (!mailingList.length) return {error:'Nessun destinatario'};
   const baseUrl = ScriptApp.getService().getUrl();
   const subject = 'Osservatorio Culturale - Digest ' + formatDate(new Date());
