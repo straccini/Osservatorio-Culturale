@@ -1031,3 +1031,180 @@ function resetBandiPerNuovoScanV13(skipScan, skipAmbiti) {
 
   return report;
 }
+
+// ==================================================================
+// DIAGNOSTICA FONTI — Sprint 1 (2026-05-26)
+// Endpoint leggero per dashboard frontend (admin + editor)
+// ==================================================================
+
+function getFontiDiagnostics() {
+  // Gate: solo editor o admin
+  try {
+    var user = getCurrentUser_v44();
+    var ruolo = (user && user.ruolo) || 'guest';
+    if (ruolo !== 'admin' && ruolo !== 'editor') {
+      return { ok: false, error: 'unauthorized' };
+    }
+  } catch(e) {
+    return { ok: false, error: 'auth_error: ' + e.message };
+  }
+
+  var report = {
+    ok: true,
+    timestamp: new Date().toISOString(),
+    kpi: {},
+    fonti: [],
+    raccomandazioni: []
+  };
+
+  // --- Fase 1: conta bandi per fonte dal foglio RADAR ---
+  var bandiPerFonte = {};
+  var ultimoPerFonte = {};
+  var statsLink = { totali: 0, diretti: 0, generici: 0, vuoti: 0 };
+  var bandiUltimi30 = 0;
+  var bandiTotali = 0;
+  var ultimoScanGlobale = null;
+  var oggi = new Date();
+
+  try {
+    var sheet = getSheetRadar();
+    if (sheet && sheet.getLastRow() > 1) {
+      var lastRow = sheet.getLastRow();
+      var lastCol = sheet.getLastColumn();
+      var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+      var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+
+      var iFonte = headers.indexOf('FONTE');       if (iFonte < 0) iFonte = 13;
+      var iLink  = headers.indexOf('LINK');        if (iLink < 0) iLink = 14;
+      var iStato = headers.indexOf('STATO_RECORD'); if (iStato < 0) iStato = 22;
+      var iDataRil = headers.indexOf('DATA_RILEVAMENTO'); if (iDataRil < 0) iDataRil = 2;
+
+      var fontiUrlSet = {};
+      TUTTE_LE_FONTI_BANDI.forEach(function(f) {
+        fontiUrlSet[f.url.toLowerCase().replace(/\/$/, '')] = true;
+      });
+
+      data.forEach(function(row) {
+        var stato = String(row[iStato] || 'attivo');
+        if (stato === 'archiviato') return;
+
+        bandiTotali++;
+        var fonte = String(row[iFonte] || '(senza fonte)');
+        var link  = String(row[iLink] || '').trim();
+        var dataRil = row[iDataRil];
+
+        bandiPerFonte[fonte] = (bandiPerFonte[fonte] || 0) + 1;
+
+        if (dataRil instanceof Date) {
+          if (!ultimoPerFonte[fonte] || dataRil > ultimoPerFonte[fonte]) {
+            ultimoPerFonte[fonte] = dataRil;
+          }
+          if (!ultimoScanGlobale || dataRil > ultimoScanGlobale) {
+            ultimoScanGlobale = dataRil;
+          }
+          var giorni = Math.floor((oggi - dataRil) / 86400000);
+          if (giorni <= 30) bandiUltimi30++;
+        }
+
+        statsLink.totali++;
+        if (!link) {
+          statsLink.vuoti++;
+        } else {
+          var linkClean = link.toLowerCase().replace(/\/$/, '').replace(/\?.*/, '');
+          if (fontiUrlSet[linkClean]) statsLink.generici++;
+          else statsLink.diretti++;
+        }
+      });
+    }
+  } catch(e) {
+    report.ok = false;
+    report.kpi.error = 'Errore lettura foglio: ' + e.message;
+  }
+
+  // --- Fase 2: classifica ogni fonte ---
+  var nAttive = 0;
+  var nSilenti = 0;
+
+  TUTTE_LE_FONTI_BANDI.forEach(function(f) {
+    var count = bandiPerFonte[f.nome] || 0;
+    var stato = count > 0 ? 'attiva' : 'silente';
+    if (stato === 'attiva') nAttive++;
+    else nSilenti++;
+
+    var ultimoBando = ultimoPerFonte[f.nome];
+    report.fonti.push({
+      nome: f.nome,
+      categoria: f.livello || 'Altro',
+      priorita: f.priorita || 3,
+      stato: stato,
+      nBandi: count,
+      ultimoBando: ultimoBando ? ultimoBando.toISOString() : null,
+      url: f.url
+    });
+  });
+
+  report.fonti.sort(function(a, b) {
+    if (a.stato !== b.stato) return a.stato === 'silente' ? -1 : 1;
+    if (a.priorita !== b.priorita) return a.priorita - b.priorita;
+    return a.nome.localeCompare(b.nome);
+  });
+
+  // --- Fase 3: KPI ---
+  var totFonti = TUTTE_LE_FONTI_BANDI.length;
+  var percAttive = totFonti > 0 ? Math.round(nAttive / totFonti * 100) : 0;
+  var percLinkDiretti = statsLink.totali > 0 ? Math.round(statsLink.diretti / statsLink.totali * 100) : 0;
+
+  report.kpi = {
+    totali: totFonti,
+    attive: nAttive,
+    silenti: nSilenti,
+    percAttive: percAttive,
+    percLinkDiretti: percLinkDiretti,
+    ultimoScan: ultimoScanGlobale ? ultimoScanGlobale.toISOString() : null,
+    bandiTotali: bandiTotali,
+    bandiUltimi30gg: bandiUltimi30
+  };
+
+  // --- Fase 4: Raccomandazioni ---
+  var pctSilenti = totFonti > 0 ? Math.round(nSilenti / totFonti * 100) : 0;
+
+  if (pctSilenti > 50) {
+    report.raccomandazioni.push({
+      livello: 'critico',
+      testo: nSilenti + ' fonti silenti su ' + totFonti + ' (' + pctSilenti + '%). La maggioranza delle fonti non produce risultati. Causa probabile: siti JS-rendered.'
+    });
+  } else if (pctSilenti > 20) {
+    report.raccomandazioni.push({
+      livello: 'warning',
+      testo: nSilenti + ' fonti silenti su ' + totFonti + '. Considerare RSS alternativi o scan via agente.'
+    });
+  }
+
+  if (percLinkDiretti < 40) {
+    report.raccomandazioni.push({
+      livello: 'critico',
+      testo: 'Solo ' + percLinkDiretti + '% dei link punta al bando. La maggioranza punta alla pagina lista fonte.'
+    });
+  } else if (percLinkDiretti < 70) {
+    report.raccomandazioni.push({
+      livello: 'warning',
+      testo: percLinkDiretti + '% link diretti. Margine di miglioramento.'
+    });
+  }
+
+  if (bandiUltimi30 === 0) {
+    report.raccomandazioni.push({
+      livello: 'critico',
+      testo: 'Nessun bando rilevato negli ultimi 30 giorni. Verificare scanner e trigger.'
+    });
+  }
+
+  if (report.raccomandazioni.length === 0) {
+    report.raccomandazioni.push({
+      livello: 'info',
+      testo: 'Sistema nella norma. Nessun problema critico rilevato.'
+    });
+  }
+
+  return report;
+}
