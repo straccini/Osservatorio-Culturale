@@ -4623,6 +4623,13 @@
     });
     if (str) str.hidden = !anyStrumento;
 
+    // Gate data-min-level: mostra nav-item solo se livello utente >= min-level
+    var userLevel = typeof _ocLivello === 'function' ? _ocLivello() : 0;
+    $$('[data-min-level]').forEach(function(item) {
+      var minLvl = parseInt(item.dataset.minLevel) || 1;
+      item.hidden = userLevel < minLvl;
+    });
+
     // Login/Logout: mostra uno, nascondi l'altro
     var lb = $('logoutBtn');
     var li = $('loginBtn');
