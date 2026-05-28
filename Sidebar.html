@@ -73,22 +73,22 @@
     </div>
   </div>
 
-  <!-- ===== Gruppo: Strumenti museo (MuseMu Matrix) ===== -->
-  <div class="nav-group">
-    <div class="nav-label">Strumenti museo</div>
-    <a href="#" class="nav-item nav-item-matrix" data-page="matrix">
+  <!-- ===== Gruppo: Strumenti museo — sfondo arancio (v5.1.7) ===== -->
+  <div class="nav-group nav-group-strumenti-museo">
+    <div class="nav-label" style="color:rgba(255,255,255,.7)">Strumenti museo</div>
+    <a href="#" class="nav-item nav-item-matrix nav-strumenti-museo-btn" data-page="matrix">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 10h16M10 20V10"/>
       </svg>
       <span class="lbl" style="font-family:var(--font-display);font-style:normal;font-weight:500;letter-spacing:-0.015em"><em style="font-style:normal">Valuta il tuo museo</em></span>
-      <span class="matrix-tag">10 min</span>
+      <span class="matrix-tag" style="background:rgba(255,255,255,.25);color:#fff">10 min</span>
     </a>
-    <a href="#" class="nav-item" data-page="sondaggi-catalogo">
+    <a href="#" class="nav-item nav-strumenti-museo-btn" data-page="sondaggi-catalogo">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
       </svg>
       <span class="lbl">Autovalutazione rapida</span>
-      <span class="matrix-tag">3 min</span>
+      <span class="matrix-tag" style="background:rgba(255,255,255,.25);color:#fff">3 min</span>
     </a>
   </div>
 
@@ -277,7 +277,7 @@
     </a>
   </div>
 
-  <!-- ===== Footer utente ===== -->
+  <!-- ===== Footer sidebar — solo Guida (user card rimossa v5.1.7, spostata in topbar) ===== -->
   <div class="sidebar-footer">
     <a href="#" class="nav-item" data-action="openGuida">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -285,13 +285,10 @@
       </svg>
       <span class="lbl">Guida &amp; Supporto</span>
     </a>
-    <div class="user-card" id="userCard">
-      <div class="user-avatar" id="userInitials">&middot;</div>
-      <div class="user-info">
-        <b id="userName">Ospite</b>
-        <span id="userRole">lettore</span>
-      </div>
-    </div>
   </div>
+  <!-- Elementi nascosti per compatibilita JS (setUser li aggiorna) -->
+  <span id="userName" hidden>Ospite</span>
+  <span id="userRole" hidden>lettore</span>
+  <span id="userInitials" hidden>&middot;</span>
 
 </aside>

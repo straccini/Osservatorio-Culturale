@@ -4640,6 +4640,13 @@
     var si = $('userStatusIcon'); if (si) { si.innerHTML = _roleIcons[ruolo] || '&#128100;'; si.title = _roleLabels[ruolo] || ruolo; }
     var sn = $('userStatusName'); if (sn) sn.textContent = nome;
     var sr = $('userStatusRole'); if (sr) sr.textContent = _roleLabels[ruolo] || ruolo;
+    // v5.1.7 — Pulsante utente topbar
+    var _isG = (ruolo === 'guest' || ruolo === 'anonimo' || ruolo === 'ospite');
+    var ubi = $('topbarUserBtnIcon'); if (ubi) ubi.innerHTML = _roleIcons[ruolo] || '&#128100;';
+    var ubl = $('topbarUserBtnLabel'); if (ubl) ubl.textContent = _isG ? 'Ospite' : nome;
+    var umr = $('topbarMenuRole'); if (umr) umr.textContent = _roleLabels[ruolo] || ruolo;
+    var uml = $('topbarMenuLogin'); if (uml) uml.hidden = !_isG;
+    var umlo = $('topbarMenuLogout'); if (umlo) umlo.hidden = _isG;
 
     var str = $('nav-strumenti');
     var anyStrumento = false;
@@ -8734,6 +8741,21 @@
     },
     doLogout: doLogout,
     doLogin: function(){ _openRegistrationModal_('login'); },
+    toggleUserMenu: function() {
+      var m = document.getElementById('topbarUserMenu');
+      if (!m) return;
+      m.hidden = !m.hidden;
+      if (!m.hidden) {
+        setTimeout(function() {
+          document.addEventListener('click', function _cl(e) {
+            if (!e.target.closest('.topbar-user-btn-wrap')) {
+              m.hidden = true;
+              document.removeEventListener('click', _cl);
+            }
+          });
+        }, 50);
+      }
+    },
     loadAmbito: loadAmbito,
     search: function(q){
       q = (q || '').trim();
