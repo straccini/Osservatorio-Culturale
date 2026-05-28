@@ -265,6 +265,52 @@ function requireAuth(rolesAllowed) {
 }
 
 // ============================================================================
+// AUTO-REGISTRAZIONE — ospite → lettore (self-service, v5.1.2)
+// Chiamata da saveMailing (newsletter) e saveMatrixContact (Matrix)
+// ============================================================================
+
+/**
+ * Registra automaticamente un utente come lettore attivo.
+ * Se l'utente esiste gia nel foglio Utenti, non fa nulla.
+ * @param {string} email
+ * @param {string} [nome]
+ * @param {string} [source] - 'newsletter'|'matrix'|'prenotazione'
+ * @returns {{ ok:boolean, created?:boolean, existing?:boolean }}
+ */
+function _autoRegisterUser_(email, nome, source) {
+  email = String(email || '').toLowerCase().trim();
+  if (!email || email.indexOf('@') < 0) return { ok: false, error: 'email non valida' };
+
+  try {
+    var sh = _getOrCreateUtentiSheet_();
+    var rows = sh.getDataRange().getValues();
+    var headers = rows[0];
+    var iEmail = headers.indexOf('Email');
+
+    // Se gia esiste, non fare nulla
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][iEmail] || '').toLowerCase().trim() === email) {
+        return { ok: true, existing: true };
+      }
+    }
+
+    // Nuovo utente: lettore attivo
+    var id = 'U' + Date.now() + Math.floor(Math.random() * 1000);
+    var nowIso = new Date().toISOString();
+    sh.appendRow([
+      id, email, nome || '', 'lettore', 'attivo',
+      true, true, false,
+      nowIso, nowIso, source || 'auto', 'Registrazione automatica via ' + (source || 'auto')
+    ]);
+    Logger.log('[AUTH] Auto-registrato: ' + email + ' via ' + (source || 'auto'));
+    return { ok: true, created: true };
+  } catch(e) {
+    Logger.log('[AUTH] _autoRegisterUser_ err: ' + e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+// ============================================================================
 // RICHIESTA ACCESSO (utenti non autorizzati)
 // ============================================================================
 

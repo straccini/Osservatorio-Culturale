@@ -125,6 +125,13 @@ function _wfConfig_(tipo) {
 // ============================================================================
 
 function markRead(tipo, id) {
+  // Role guard: richiede almeno lettore (livello >= 1)
+  try {
+    var _u = getCurrentUser_v44();
+    if (!_u || _u.ruolo === 'guest' || _u.ruolo === 'anonimo' || _u.ruolo === 'ospite') {
+      return { error: 'Azione riservata agli utenti registrati' };
+    }
+  } catch(e) {}
   try {
     var c = _wfConfig_(tipo);
 
@@ -152,6 +159,13 @@ function markRead(tipo, id) {
 // ============================================================================
 
 function toggleSaved(tipo, id) {
+  // Role guard: richiede almeno lettore (livello >= 1)
+  try {
+    var _u = getCurrentUser_v44();
+    if (!_u || _u.ruolo === 'guest' || _u.ruolo === 'anonimo' || _u.ruolo === 'ospite') {
+      return { error: 'Azione riservata agli utenti registrati' };
+    }
+  } catch(e) {}
   try {
     var c = _wfConfig_(tipo);
 
@@ -177,6 +191,13 @@ function toggleSaved(tipo, id) {
 // ============================================================================
 
 function archive(tipo, id) {
+  // Role guard: richiede almeno lettore (livello >= 1)
+  try {
+    var _u = getCurrentUser_v44();
+    if (!_u || _u.ruolo === 'guest' || _u.ruolo === 'anonimo' || _u.ruolo === 'ospite') {
+      return { error: 'Azione riservata agli utenti registrati' };
+    }
+  } catch(e) {}
   try {
     var c = _wfConfig_(tipo);
 
@@ -208,6 +229,13 @@ function archive(tipo, id) {
 // ============================================================================
 
 function restore(tipo, id) {
+  // Role guard: richiede almeno lettore (livello >= 1)
+  try {
+    var _u = getCurrentUser_v44();
+    if (!_u || _u.ruolo === 'guest' || _u.ruolo === 'anonimo' || _u.ruolo === 'ospite') {
+      return { error: 'Azione riservata agli utenti registrati' };
+    }
+  } catch(e) {}
   try {
     var c = _wfConfig_(tipo);
 

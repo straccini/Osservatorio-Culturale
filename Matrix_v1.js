@@ -366,6 +366,9 @@ function saveMatrixContact(data) {
       }
     } catch(eCrm) { Logger.log('crm_onMatrixOptIn fallito (non bloccante): ' + eCrm.message); }
 
+    // Auto-register as lettore
+    try { if (typeof _autoRegisterUser_ === 'function') _autoRegisterUser_(emailLower, data.nome || data.museo || '', 'matrix'); } catch(e) {}
+
     return {
       ok: true,
       sessionUpgraded: sessionResult && sessionResult.ok,

@@ -2260,6 +2260,9 @@ function saveMailing(body) {
   // Send confirmation email (double opt-in)
   try { _sendConfirmationEmail(email, id); } catch(e) { Logger.log('Confirm email err: ' + e.message); }
 
+  // Auto-register as lettore (self-service upgrade from ospite)
+  try { _autoRegisterUser_(email, body.nome || body.Nome || '', 'newsletter'); } catch(e) { Logger.log('Auto-register err: ' + e.message); }
+
   return {ok:true, id:id, pendingConfirmation:true};
 }
 
@@ -2575,6 +2578,7 @@ function _createSocialFontiSheet(SS) {
 }
 
 function addSocialFonte(body) {
+  var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
   const SS=getMainSS();
   let sh=SS.getSheetByName('SocialFonti'); if(!sh) sh=_createSocialFontiSheet(SS);
   const id='SW'+Date.now();
@@ -2583,8 +2587,14 @@ function addSocialFonte(body) {
   return {ok:true,id};
 }
 
-function deleteSocialFonteById(id){return _deleteRowById(getMainSS().getSheetByName('SocialFonti'),id);}
-function toggleSocialFonteField(id,field){return _toggleField(getMainSS().getSheetByName('SocialFonti'),id,field);}
+function deleteSocialFonteById(id) {
+  var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
+  return _deleteRowById(getMainSS().getSheetByName('SocialFonti'), id);
+}
+function toggleSocialFonteField(id, field) {
+  var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
+  return _toggleField(getMainSS().getSheetByName('SocialFonti'), id, field);
+}
 
 /**
  * Seed Social Wall — 15 istituzioni fondamentali del settore cultura italiano/europeo.
@@ -2859,7 +2869,10 @@ function addFonteArticoli(body) {
   sh.appendRow([id,body.nome,body.url,body.rssurl||body.url,amb,AMBITO_LABEL[amb]||'',true,'',0]);
   return {ok:true,id};
 }
-function deleteFonteArticoli(id){return _deleteRowById(getMainSS().getSheetByName(SH.FONTI),id);}
+function deleteFonteArticoli(id) {
+  var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
+  return _deleteRowById(getMainSS().getSheetByName(SH.FONTI), id);
+}
 
 // -- FONTI BANDI ---------------------------------------------------
 function getFontiBandi() {
@@ -2937,8 +2950,14 @@ function addFonteBandi(body) {
     return { ok: false, error: e.message };
   }
 }
-function deleteFonteBandiById(id){return _deleteRowById(getMainSS().getSheetByName('FontiBandi'),id);}
-function toggleFonteBandiField(id,field){return _toggleField(getMainSS().getSheetByName('FontiBandi'),id,field);}
+function deleteFonteBandiById(id) {
+  var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
+  return _deleteRowById(getMainSS().getSheetByName('FontiBandi'), id);
+}
+function toggleFonteBandiField(id, field) {
+  var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
+  return _toggleField(getMainSS().getSheetByName('FontiBandi'), id, field);
+}
 
 /**
  * Sprint 1.3 D2.5 (2026-05-01) — URL del foglio Drive principale (per pulsanti "Apri foglio").
