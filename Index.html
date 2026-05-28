@@ -6756,26 +6756,106 @@
     return false;
   }
   function _openRegistrationModal_(context) {
-    // v5.1.4 — Rimuovi flag force_guest quando utente tenta di registrarsi/loggarsi
+    // v5.1.9 — Rimuovi flag force_guest
     try { localStorage.removeItem('oc_force_guest'); } catch(_){}
-    var ov = document.getElementById('oc-reg-overlay');
-    if (!ov) return;
-    // Personalizza subtitle se passato context
-    var sub = document.getElementById('ocRegSubtitle');
-    if (sub && context) {
-      var msg = '';
-      if (context === 'save')      msg = 'Per salvare nei tuoi preferiti serve un account gratuito.';
-      else if (context === 'pdf')  msg = 'Per scaricare il PDF serve un account gratuito.';
-      else if (context === 'workspace') msg = 'La tua area workspace è disponibile dopo la registrazione gratuita.';
-      else if (context === 'archive')   msg = 'Per archiviare contenuti serve un account gratuito.';
-      if (msg) sub.textContent = msg + ' Bastano 10 minuti del MuseMu Matrix oppure una richiesta di consulenza.';
+
+    // Se c'e un token in localStorage, tenta ri-autenticazione diretta
+    var savedToken = '';
+    try { savedToken = localStorage.getItem('oc_token') || ''; } catch(_){}
+    if (savedToken && hasGAS()) {
+      showToast('Accesso in corso...', 'ok');
+      google.script.run
+        .withSuccessHandler(function(sess) {
+          if (sess && sess.ok && sess.livello >= 1) {
+            window.OC_SESSION = sess;
+            setUser({ ruolo: sess.livello >= 3 ? 'admin' : sess.livello >= 2 ? 'editor' : 'lettore', nome: sess.nome || sess.email.split('@')[0], initials: (sess.nome || sess.email).substring(0,2).toUpperCase() });
+            showToast('Bentornato!', 'ok');
+            location.reload();
+          } else {
+            // Token non valido, mostra form registrazione
+            _showRegForm_(context);
+          }
+        })
+        .withFailureHandler(function() { _showRegForm_(context); })
+        .validaSessione(savedToken);
+      return;
     }
-    ov.hidden = false;
-    ov.style.display = 'flex';
+
+    // Nessun token: mostra form registrazione
+    _showRegForm_(context);
   }
+
+  function _showRegForm_(context) {
+    // Rimuovi form precedente
+    var old = document.getElementById('oc-regform-overlay');
+    if (old) old.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = 'oc-regform-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.6);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
+    overlay.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:460px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);padding:36px 32px;font-family:var(--font-ui,sans-serif)">'
+      + '<div style="font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:6px">Registrati gratuitamente</div>'
+      + '<p style="font-size:13px;color:var(--ink-2);line-height:1.6;margin:0 0 20px">Accedi a tutti i contenuti dell\'Osservatorio Culturale: bandi, news, podcast, report personalizzati e molto altro. <b>Tutti i servizi sono completamente gratuiti</b>, inclusa la consulenza.</p>'
+      + '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">'
+      + '<input type="email" id="regFormEmail" placeholder="Email" style="padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />'
+      + '<div style="display:flex;gap:8px">'
+      + '<input type="text" id="regFormNome" placeholder="Nome" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />'
+      + '<input type="text" id="regFormCognome" placeholder="Cognome" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />'
+      + '</div></div>'
+      + '<label style="display:flex;align-items:start;gap:6px;margin-bottom:16px;cursor:pointer">'
+      + '<input type="checkbox" id="regFormGdpr" style="margin-top:3px" />'
+      + '<span style="font-size:11px;color:var(--ink-3);line-height:1.4">Acconsento al trattamento dei dati personali. <a href="https://www.duemilamusei.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#E84B1C)">Privacy policy</a></span>'
+      + '</label>'
+      + '<button type="button" onclick="OC._submitRegForm()" style="width:100%;background:var(--accent,#E84B1C);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Registrati gratis</button>'
+      + '<div id="regFormMsg" style="text-align:center;margin-top:10px;font-size:13px" hidden></div>'
+      + '<p style="font-size:10px;color:var(--ink-4);text-align:center;margin:14px 0 0;line-height:1.5">Nessun costo nascosto. Tutti i servizi consulenziali sono gratuiti.</p>'
+      + '<button type="button" onclick="document.getElementById(\'oc-regform-overlay\').remove()" style="display:block;width:100%;margin-top:10px;background:transparent;border:none;color:var(--ink-3);font-size:12px;cursor:pointer;font-family:inherit;padding:6px">Annulla</button>'
+      + '</div>';
+    document.body.appendChild(overlay);
+  }
+
+  function _submitRegForm_() {
+    var email = (document.getElementById('regFormEmail') || {}).value || '';
+    var nome = (document.getElementById('regFormNome') || {}).value || '';
+    var cognome = (document.getElementById('regFormCognome') || {}).value || '';
+    var gdpr = document.getElementById('regFormGdpr');
+    var msg = document.getElementById('regFormMsg');
+
+    if (!email || email.indexOf('@') < 0) { alert('Inserisci un indirizzo email valido'); return; }
+    if (!nome.trim()) { alert('Inserisci il tuo nome'); return; }
+    if (!gdpr || !gdpr.checked) { alert('Devi accettare la privacy policy per registrarti'); return; }
+
+    var nomeCompleto = nome.trim() + (cognome.trim() ? ' ' + cognome.trim() : '');
+    if (msg) { msg.hidden = false; msg.textContent = 'Registrazione in corso...'; msg.style.color = 'var(--ink-2)'; }
+
+    if (hasGAS()) {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          if (r && (r.ok || r.existing)) {
+            if (msg) { msg.textContent = 'Registrazione completata! Accesso in corso...'; msg.style.color = 'var(--amb-2,#10916D)'; }
+            // Salva anche nella mailing list per newsletter
+            google.script.run.saveMailing({ Email: email, Nome: nomeCompleto, Attivo: true, ConsensoGDPR: true, Sorgente: 'registrazione' });
+            setTimeout(function() {
+              var ov = document.getElementById('oc-regform-overlay');
+              if (ov) ov.remove();
+              location.reload();
+            }, 1500);
+          } else {
+            if (msg) { msg.textContent = (r && r.error) || 'Errore nella registrazione'; msg.style.color = 'var(--danger,#C2410C)'; }
+          }
+        })
+        .withFailureHandler(function(e) {
+          if (msg) { msg.textContent = 'Errore: ' + (e.message || e); msg.style.color = 'var(--danger,#C2410C)'; }
+        })
+        ._autoRegisterUser_(email, nomeCompleto, 'registrazione');
+    }
+  }
+
   function _closeRegistrationModal_() {
     var ov = document.getElementById('oc-reg-overlay');
     if (ov) { ov.hidden = true; ov.style.display = 'none'; }
+    var ov2 = document.getElementById('oc-regform-overlay');
+    if (ov2) ov2.remove();
   }
 
   // v5.1.3 — Gate ospite: card CTA registrazione quando tenta di accedere a sezione protetta
@@ -8734,6 +8814,7 @@
     submitNewsletterOptIn:  function(){ _submitNewsletterOptIn_(); },
     submitFooterNl: function(){ _submitFooterNl_(); },
     _gateSubmitNl: function(){ _gateSubmitNl_(); },
+    _submitRegForm: function(){ _submitRegForm_(); },
     // v4.18.48 — Workspace personale
     loadWorkspacePage: loadWorkspacePage,
     openMatrixReport: function(responseId){
