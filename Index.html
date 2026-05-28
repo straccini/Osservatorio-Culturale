@@ -2262,7 +2262,7 @@
   // A) NAVIGAZIONE SPA
   // ==========================================================
   // Pagine accessibili a ospiti (livello 0) — tutto il resto richiede registrazione
-  var _GUEST_PAGES = { home:1, bandi:1, matrix:1, 'matrix-landing':1, 'sondaggi-catalogo':1 };
+  var _GUEST_PAGES = { home:1, bandi:1, matrix:1, 'matrix-landing':1, 'sondaggi-catalogo':1, chisiamo:1 };
 
   function go(page, ambito){
     // Gate ospite: se pagina protetta, mostra card registrazione
@@ -4634,6 +4634,12 @@
     el=$('topbarUserInitials'); if(el) el.textContent = ini;
     el=$('topbarUserName');     if(el) el.textContent = nome;
     el=$('topbarUserRole');     if(el) el.textContent = ruolo;
+    // v5.1.6 — Update sidebar user status badge
+    var _roleIcons = { admin:'&#128272;', editor:'&#9998;', lettore:'&#128100;', lead:'&#128100;', guest:'&#128100;', anonimo:'&#128100;', ospite:'&#128100;' };
+    var _roleLabels = { admin:'amministratore', editor:'redattore', lettore:'utente registrato', lead:'utente registrato', guest:'visitatore', anonimo:'visitatore', ospite:'visitatore' };
+    var si = $('userStatusIcon'); if (si) { si.innerHTML = _roleIcons[ruolo] || '&#128100;'; si.title = _roleLabels[ruolo] || ruolo; }
+    var sn = $('userStatusName'); if (sn) sn.textContent = nome;
+    var sr = $('userStatusRole'); if (sr) sr.textContent = _roleLabels[ruolo] || ruolo;
 
     var str = $('nav-strumenti');
     var anyStrumento = false;
