@@ -4644,8 +4644,25 @@
     });
     if (str) str.hidden = !anyStrumento;
 
-    // Gate data-min-level: mostra nav-item solo se livello utente >= min-level
+    // Gate ospite: voci nav-guest-locked visibili ma sbiadite + click → gate CTA
     var userLevel = typeof _ocLivello === 'function' ? _ocLivello() : 0;
+    var isGuest = (ruolo === 'guest' || ruolo === 'anonimo' || ruolo === 'ospite');
+    $$('.nav-guest-locked').forEach(function(item) {
+      if (isGuest) {
+        item.classList.add('nav-locked');
+        item.hidden = false;
+      } else {
+        item.classList.remove('nav-locked');
+        item.hidden = false;
+      }
+    });
+    // Gruppo ambiti
+    var ambGroup = $('nav-group-ambiti');
+    if (ambGroup) {
+      if (isGuest) ambGroup.classList.add('nav-locked-group');
+      else ambGroup.classList.remove('nav-locked-group');
+    }
+    // data-min-level legacy (strumenti admin)
     $$('[data-min-level]').forEach(function(item) {
       var minLvl = parseInt(item.dataset.minLevel) || 1;
       item.hidden = userLevel < minLvl;

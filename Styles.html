@@ -3615,6 +3615,11 @@ textarea:focus-visible {
 /* Newsletter CTA */
 .topbar-nl-cta { background:var(--accent,#E84B1C); color:#fff; border:none; padding:6px 14px; border-radius:999px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font-ui); white-space:nowrap; margin-right:8px; }
 .topbar-nl-cta:hover { opacity:.85; }
+/* Sidebar: voci bloccate per ospiti (visibili ma sbiadite, click → gate CTA) */
+.nav-item.nav-locked { opacity:.35; }
+.nav-item.nav-locked .lbl { color:var(--ink-4,#aaa); }
+.nav-item.nav-locked svg { opacity:.5; }
+.nav-guest-locked-group.nav-locked-group { opacity:.35; }
 .home-nl-footer { background:var(--surface-2,#F5F3EE); border-radius:14px; padding:32px; margin-top:36px; }
 [data-theme="dark"] .home-nl-footer { background:var(--surface-raised,#2a2520); }
 
