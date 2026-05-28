@@ -2603,7 +2603,10 @@
     // "La tua area" sempre visibile in sidebar; gate di accesso in loadWorkspacePage
     console.log('[OC-DEBUG] hydrate() called. hasGAS=', hasGAS());
     // Identità utente (v4.4) — passa token admin se presente nell'URL/session
-    if (hasGAS()) {
+    // v5.1.4 — Se l'utente ha fatto logout volontario, resta ospite (non ri-autenticare)
+    var _forceGuest = false;
+    try { _forceGuest = !!localStorage.getItem('oc_force_guest'); } catch(_){}
+    if (hasGAS() && !_forceGuest) {
       var __tok = _admTok_();
       console.log('[OC-DEBUG] calling getCurrentUser_v44 with token of len:', __tok.length);
       google.script.run
@@ -2618,6 +2621,9 @@
         })
         .withFailureHandler(function(err){ console.error('[OC-DEBUG] getCurrentUser_v44 FAIL:', err); })
         .getCurrentUser_v44(__tok);
+    } else if (_forceGuest) {
+      console.log('[OC] Modalita ospite forzata (post-logout)');
+      setUser({ ruolo:'guest', nome:'Ospite', initials:'·' });
     }
 
     if (!hasGAS()) return;
@@ -4605,6 +4611,11 @@
   function setUser(user){
     if (!user) return;
     _currentUser = user;
+    // v5.1.4 — Se utente autenticato, rimuovi flag force_guest (login riuscito)
+    var ruoloCheck = user.ruolo || 'guest';
+    if (ruoloCheck !== 'guest' && ruoloCheck !== 'anonimo' && ruoloCheck !== 'ospite') {
+      try { localStorage.removeItem('oc_force_guest'); } catch(_){}
+    }
     var ini = user.initials || user.iniziali || '·';
     var nome = user.nome || 'Ospite';
     var ruolo = user.ruolo || 'guest';
@@ -4652,6 +4663,7 @@
       var token = '';
       try { token = localStorage.getItem('oc_token') || ''; } catch(_){}
       try { localStorage.removeItem('oc_token'); } catch(_){}
+      try { localStorage.setItem('oc_force_guest', '1'); } catch(_){} // forza modalita ospite al reload
       // Invalida token server-side (best-effort, non blocca il logout)
       if (token && hasGAS()) {
         try { google.script.run.invalidaSessione(token); } catch(_){}
@@ -6714,6 +6726,8 @@
     return false;
   }
   function _openRegistrationModal_(context) {
+    // v5.1.4 — Rimuovi flag force_guest quando utente tenta di registrarsi/loggarsi
+    try { localStorage.removeItem('oc_force_guest'); } catch(_){}
     var ov = document.getElementById('oc-reg-overlay');
     if (!ov) return;
     // Personalizza subtitle se passato context
