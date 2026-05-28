@@ -7152,22 +7152,27 @@
     var n = (_identData && _identData._activeDims) ? _identData._activeDims.length : 0;
     var reg = (_identData && _identData.ambito === 'locale' && _identData.regione) ? _identData.regione : '';
 
-    // Badge topbar: arancio pieno quando attivo, grigio quando spento
+    // Badge topbar (legacy, nascosto)
     var badge = $('identFilterBadge');
-    if (badge) {
-      if (_identData && _identData._hasIdentity) {
-        badge.style.display = '';
-        if (on) {
-          badge.textContent = 'FILTRO ATTIVO' + (reg ? ' · ' + reg : '');
-          badge.style.background = 'var(--accent,#E84B1C)';
-          badge.style.color = '#fff';
-        } else {
-          badge.textContent = 'Filtro profilo';
-          badge.style.background = 'var(--surface,#F7F7F8)';
-          badge.style.color = 'var(--ink-3)';
-        }
+    if (badge) badge.style.display = 'none';
+
+    // v5.1.8 — Sidebar "La tua area": sfondo arancio quando filtro attivo
+    var wsNav = $('navItemWorkspace');
+    if (wsNav) {
+      if (on) {
+        wsNav.style.background = 'var(--accent,#E84B1C)';
+        wsNav.style.color = '#fff';
+        wsNav.style.borderRadius = '8px';
+        wsNav.querySelector('.lbl').textContent = 'La tua area · attivo';
+        wsNav.querySelector('.lbl').style.color = '#fff';
+        wsNav.querySelector('svg').style.stroke = '#fff';
       } else {
-        badge.style.display = 'none';
+        wsNav.style.background = '';
+        wsNav.style.color = '';
+        wsNav.style.borderRadius = '';
+        wsNav.querySelector('.lbl').textContent = 'La tua area';
+        wsNav.querySelector('.lbl').style.color = '';
+        wsNav.querySelector('svg').style.stroke = '';
       }
     }
 

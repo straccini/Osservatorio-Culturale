@@ -61,34 +61,22 @@
       </svg>
       <span class="lbl">La tua area</span>
     </a>
-    <!-- Badge stato utente -->
-    <div id="userStatusBadge" class="user-status-badge" style="padding:6px 12px 6px 16px;margin:2px 0 4px">
-      <div style="display:flex;align-items:center;gap:8px">
-        <span id="userStatusIcon" class="user-status-icon" title="Ospite">&#128100;</span>
-        <div>
-          <div id="userStatusName" style="font-size:12px;font-weight:600;color:var(--ink)">Ospite</div>
-          <div id="userStatusRole" style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em">visitatore</div>
-        </div>
-      </div>
-    </div>
+    <!-- Badge stato utente rimosso v5.1.8 — funzione in topbar dx -->
+    <span id="userStatusIcon" hidden></span><span id="userStatusName" hidden></span><span id="userStatusRole" hidden></span>
   </div>
 
-  <!-- ===== Gruppo: Strumenti museo — sfondo arancio (v5.1.7) ===== -->
+  <!-- ===== Gruppo: Strumenti di analisi — sfondo arancio (v5.1.8) ===== -->
   <div class="nav-group nav-group-strumenti-museo">
-    <div class="nav-label" style="color:rgba(255,255,255,.7)">Strumenti museo</div>
-    <a href="#" class="nav-item nav-item-matrix nav-strumenti-museo-btn" data-page="matrix">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 10h16M10 20V10"/>
-      </svg>
-      <span class="lbl" style="font-family:var(--font-display);font-style:normal;font-weight:500;letter-spacing:-0.015em"><em style="font-style:normal">Valuta il tuo museo</em></span>
-      <span class="matrix-tag" style="background:rgba(255,255,255,.25);color:#fff">10 min</span>
+    <div class="nav-label" style="color:rgba(255,255,255,.7)">Strumenti di analisi</div>
+    <a href="#" class="nav-item nav-strumenti-museo-btn" data-page="matrix">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 10h16M10 20V10"/></svg>
+      <span class="lbl">Valuta il tuo museo</span>
+      <span class="matrix-tag">10 min</span>
     </a>
     <a href="#" class="nav-item nav-strumenti-museo-btn" data-page="sondaggi-catalogo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-      </svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
       <span class="lbl">Autovalutazione rapida</span>
-      <span class="matrix-tag" style="background:rgba(255,255,255,.25);color:#fff">3 min</span>
+      <span class="matrix-tag">3 min</span>
     </a>
   </div>
 

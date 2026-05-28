@@ -252,19 +252,19 @@
     </a>
   </div>
 
-  <!-- ===== NEWSLETTER FOOTER CTA ===== -->
-  <div id="homeNlFooter" class="home-nl-footer" hidden>
-    <div style="font-family:var(--font-display);font-size:1.25rem;font-weight:600;color:var(--ink)">Resta aggiornato</div>
-    <p style="font-size:14px;color:var(--ink-2);margin:6px 0 16px;line-height:1.55">Ricevi ogni settimana bandi, news e opportunita selezionate per il settore culturale. Gratuita, cancellabile in qualsiasi momento.</p>
+  <!-- ===== NEWSLETTER FOOTER CTA — sfondo arancio (v5.1.8) ===== -->
+  <div id="homeNlFooter" class="home-nl-footer" style="background:var(--accent,#E84B1C);color:#fff" hidden>
+    <div style="font-family:var(--font-display);font-size:1.25rem;font-weight:600;color:#fff">Non perdere nessuna opportunita</div>
+    <p style="font-size:14px;color:rgba(255,255,255,.85);margin:6px 0 16px;line-height:1.55">Ogni settimana nella tua inbox: i bandi aperti, le notizie dal mondo della cultura e le risorse selezionate per te. Gratis, per sempre.</p>
     <div id="homeNlForm" style="display:flex;gap:8px;flex-wrap:wrap">
-      <input type="email" id="homeNlEmail" placeholder="email@museo.it" style="flex:1;min-width:200px;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />
-      <button type="button" onclick="OC.submitFooterNl()" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:10px 20px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Iscriviti</button>
+      <input type="email" id="homeNlEmail" placeholder="email@museo.it" style="flex:1;min-width:200px;padding:10px 14px;border:1px solid rgba(255,255,255,.3);border-radius:7px;font-size:13px;font-family:inherit;background:rgba(255,255,255,.15);color:#fff" />
+      <button type="button" onclick="OC.submitFooterNl()" style="background:#fff;color:var(--accent,#E84B1C);border:none;padding:10px 20px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Iscriviti ora</button>
     </div>
     <label style="display:flex;align-items:start;gap:6px;margin-top:10px;cursor:pointer">
       <input type="checkbox" id="homeNlGdpr" style="margin-top:3px" />
-      <span style="font-size:11px;color:var(--ink-3);line-height:1.4">Acconsento al trattamento dei dati per la newsletter. <a href="https://www.duemilamusei.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#E84B1C)">Privacy policy</a></span>
+      <span style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.4">Acconsento al trattamento dei dati. <a href="https://www.duemilamusei.it/privacy" target="_blank" rel="noopener" style="color:#fff;text-decoration:underline">Privacy policy</a></span>
     </label>
-    <div id="homeNlSuccess" hidden style="color:var(--amb-2,#10916D);font-weight:600;padding:8px 0">Controlla la tua email per confermare.</div>
+    <div id="homeNlSuccess" hidden style="color:#fff;font-weight:600;padding:8px 0">Controlla la tua email per confermare.</div>
   </div>
 
 </section>
