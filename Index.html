@@ -2261,7 +2261,17 @@
   // ==========================================================
   // A) NAVIGAZIONE SPA
   // ==========================================================
+  // Pagine accessibili a ospiti (livello 0) — tutto il resto richiede registrazione
+  var _GUEST_PAGES = { home:1, bandi:1, matrix:1, 'matrix-landing':1, 'sondaggi-catalogo':1 };
+
   function go(page, ambito){
+    // Gate ospite: se pagina protetta, mostra card registrazione
+    var lvl = typeof _ocLivello === 'function' ? _ocLivello() : 0;
+    if (lvl === 0 && !_GUEST_PAGES[page]) {
+      _showGuestGate_(page);
+      return;
+    }
+
     var pages = $$('.page');
     for (var i=0;i<pages.length;i++) pages[i].classList.remove('active');
     var target = $('page-'+page);
@@ -6724,6 +6734,81 @@
     if (ov) { ov.hidden = true; ov.style.display = 'none'; }
   }
 
+  // v5.1.3 — Gate ospite: card CTA registrazione quando tenta di accedere a sezione protetta
+  function _showGuestGate_(requestedPage) {
+    var pageNames = {
+      news:'News & RSS', podcast:'Podcast', video:'Video', libri:'Libri & Pubblicazioni',
+      norme:'Norme', capitali:'Capitali & Candidature', social:'Social Wall',
+      chisiamo:'Chi siamo', workspace:'La tua area', ambito:'Ambiti tematici',
+      archivio:'Archivio', cestino:'Cestino', stats:'Statistiche', search:'Ricerca'
+    };
+    var label = pageNames[requestedPage] || requestedPage;
+
+    // Mostra pagina home con card gate sovrapposta
+    var pages = $$('.page');
+    for (var i = 0; i < pages.length; i++) pages[i].classList.remove('active');
+    var home = $('page-home');
+    if (home) home.classList.add('active');
+
+    // Rimuovi card gate precedente se esiste
+    var old = $('oc-guest-gate');
+    if (old) old.remove();
+
+    var gate = document.createElement('div');
+    gate.id = 'oc-guest-gate';
+    gate.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.6);z-index:9997;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
+    gate.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:520px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);padding:36px 32px;font-family:var(--font-ui,sans-serif)">'
+      + '<div style="font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:6px">Accedi a ' + esc(label) + '</div>'
+      + '<p style="font-size:13.5px;color:var(--ink-2);line-height:1.6;margin:0 0 20px">Per accedere a <b>' + esc(label) + '</b> e a tutti i contenuti dell\'Osservatorio, registrati gratuitamente. Scegli come:</p>'
+      + '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">'
+      + '<button type="button" onclick="document.getElementById(\'oc-guest-gate\').remove();OC.go(\'matrix\');" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:14px 18px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left">'
+      + '<div style="font-weight:700">Compila MuseMu Matrix</div><div style="font-size:11px;opacity:.8;margin-top:2px">10 min &middot; report personalizzato + accesso completo</div></button>'
+      + '<button type="button" onclick="document.getElementById(\'oc-guest-gate\').remove();OC.go(\'sondaggi-catalogo\');" style="background:var(--amb-2,#10916D);color:#fff;border:none;padding:14px 18px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left">'
+      + '<div style="font-weight:700">Autovalutazione rapida</div><div style="font-size:11px;opacity:.8;margin-top:2px">3 min &middot; diagnosi + accesso completo</div></button>'
+      + '</div>'
+      + '<div style="border-top:1px solid var(--rule,#E5E5E7);padding-top:16px">'
+      + '<div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;text-align:center">oppure iscriviti alla newsletter settimanale</div>'
+      + '<div style="display:flex;gap:8px">'
+      + '<input type="email" id="gateNlEmail" placeholder="email@museo.it" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />'
+      + '<button type="button" onclick="OC._gateSubmitNl()" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:10px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Iscrivimi</button>'
+      + '</div>'
+      + '<label style="display:flex;align-items:start;gap:6px;margin-top:8px;cursor:pointer">'
+      + '<input type="checkbox" id="gateNlGdpr" style="margin-top:3px" />'
+      + '<span style="font-size:11px;color:var(--ink-3);line-height:1.4">Acconsento al trattamento dei dati. <a href="https://www.duemilamusei.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#E84B1C)">Privacy policy</a></span>'
+      + '</label>'
+      + '<div id="gateNlSuccess" hidden style="text-align:center;padding:10px 0;color:var(--amb-2,#10916D);font-weight:600">Controlla la tua email per confermare.</div>'
+      + '</div>'
+      + '<div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--rule,#E5E5E7)">'
+      + '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:8px">Vantaggi dell\'accesso gratuito:</div>'
+      + '<ul style="font-size:12.5px;color:var(--ink-2);line-height:1.7;margin:0;padding:0 0 0 18px">'
+      + '<li>News, podcast, video e libri curati per il settore culturale</li>'
+      + '<li>Area personale con preferiti e report salvati</li>'
+      + '<li>Digest settimanale con bandi e opportunita</li>'
+      + '<li>Filtri avanzati per regione e ambito tematico</li>'
+      + '</ul></div>'
+      + '<button type="button" onclick="document.getElementById(\'oc-guest-gate\').remove()" style="display:block;width:100%;margin-top:14px;background:transparent;border:none;color:var(--ink-3);font-size:12px;cursor:pointer;font-family:inherit;padding:6px">Torna alla home</button>'
+      + '</div>';
+    document.body.appendChild(gate);
+  }
+
+  function _gateSubmitNl_() {
+    var email = (document.getElementById('gateNlEmail') || {}).value || '';
+    if (!email || email.indexOf('@') < 0) { alert('Inserisci un indirizzo email valido'); return; }
+    var gdpr = document.getElementById('gateNlGdpr');
+    if (!gdpr || !gdpr.checked) { alert('Per iscriverti devi acconsentire al trattamento dei dati.'); return; }
+    var ok = document.getElementById('gateNlSuccess');
+    if (ok) ok.hidden = false;
+    if (hasGAS()) {
+      google.script.run
+        .withSuccessHandler(function() {
+          localStorage.setItem('oc-nl-subscribed', '1');
+          setTimeout(function() { var g = document.getElementById('oc-guest-gate'); if (g) g.remove(); location.reload(); }, 2500);
+        })
+        .withFailureHandler(function(e) { alert('Errore: ' + (e.message || e)); })
+        .saveMailing({ Email: email, Nome: '', Attivo: true, ConsensoGDPR: true, Sorgente: 'gate' });
+    }
+  }
+
   // v4.18.63 — Newsletter opt-in modal + timer 5 minuti
   function _openNewsletterOptIn_() {
     var ov = document.getElementById('oc-newsletter-overlay');
@@ -8599,6 +8684,7 @@
     closeNewsletterOptIn:   function(){ _closeNewsletterOptIn_(); },
     submitNewsletterOptIn:  function(){ _submitNewsletterOptIn_(); },
     submitFooterNl: function(){ _submitFooterNl_(); },
+    _gateSubmitNl: function(){ _gateSubmitNl_(); },
     // v4.18.48 — Workspace personale
     loadWorkspacePage: loadWorkspacePage,
     openMatrixReport: function(responseId){
