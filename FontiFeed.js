@@ -467,6 +467,29 @@ function _test_getFontiFeedAdmin_() {
 }
 
 // ============================================================================
+// CONTROLLI A UN CLICK (per la tendina "Esegui" dell'editor — niente argomenti)
+// ----------------------------------------------------------------------------
+// Accendono/spengono i flag per-tipo. Dopo aver attivato un tipo, esegui lo
+// scanner relativo: News -> scanSources() | Podcast -> scanPodcastDiretto() |
+// Video -> scanVideoYoutube(). Rollback istantaneo con spegni*().
+// ============================================================================
+
+function attivaNews()    { enableFontiFeed('rss');     Logger.log('NEWS: FontiFeed ATTIVO. Ora esegui scanSources() per provare. Rollback: spegniNews().'); }
+function attivaPodcast() { enableFontiFeed('podcast');  Logger.log('PODCAST: FontiFeed ATTIVO. Ora esegui scanPodcastDiretto(). Rollback: spegniPodcast().'); }
+function attivaVideo()   { enableFontiFeed('video');    Logger.log('VIDEO: FontiFeed ATTIVO. Ora esegui scanVideoYoutube(). Rollback: spegniVideo().'); }
+
+function spegniNews()    { disableFontiFeed('rss');     Logger.log('NEWS: tornato alle fonti legacy (foglio Fonti).'); }
+function spegniPodcast() { disableFontiFeed('podcast'); Logger.log('PODCAST: tornato alle fonti legacy.'); }
+function spegniVideo()   { disableFontiFeed('video');   Logger.log('VIDEO: tornato alle fonti legacy.'); }
+function spegniTutto()   { disableAllFontiFeed();        Logger.log('TUTTO OFF: app al comportamento originale.'); }
+
+function statoFlagFonti() {
+  ['rss','podcast','video'].forEach(function(t){
+    Logger.log(t.toUpperCase() + ': ' + (isFontiFeedEnabled_(t) ? 'FontiFeed (ON)' : 'legacy (OFF)'));
+  });
+}
+
+// ============================================================================
 // RUNNER PUBBLICO — selezionabile dalla tendina "Esegui" dell'editor GAS.
 // (Le funzioni _test_*_ iniziano con "_" e GAS le nasconde dal menu: questo
 //  wrapper le richiama tutte in fila e logga PASS/FAIL.)
