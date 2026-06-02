@@ -227,26 +227,11 @@ function doGet(e) {
     }
   }
 
-  // ---------- 1-ter) Sprint 1.4 (2026-05-01) — Gate AUTH ----------
-  var skipAuth = false;
-
-  if (!skipAuth) {
-    var auth = null;
-    try { auth = (typeof getCurrentUserAuth === 'function') ? getCurrentUserAuth() : null; } catch(eA) {}
-    if (!auth || !auth.autorizzato) {
-      try {
-        var loginHtml = (typeof renderLoginPage === 'function')
-          ? renderLoginPage(auth)
-          : '<h1>Accesso richiesto</h1><p>Effettua login con un account Google autorizzato.</p>';
-        return HtmlService.createHtmlOutput(loginHtml)
-          .setTitle('Accesso · Osservatorio Culturale')
-          .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-      } catch(eL) {
-        return HtmlService.createHtmlOutput('<h1>Errore login</h1><pre>' + escTok_(String(eL)) + '</pre>')
-          .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-      }
-    }
-  }
+  // ---------- 1-ter) Gate AUTH RIMOSSO (v5.1.10, 2026-05-29) ----------
+  // Il gate server-side e stato rimosso per il modello freemium L0.
+  // L'accesso alle funzioni protette e gestito dal frontend (go() gate + _requireLead_)
+  // e dai singoli endpoint backend (requireAuth per operazioni sensibili).
+  // La pagina renderLoginPage() resta disponibile per usi futuri.
 
   // ---------- 2) App principale (template con scriptlet) ----------
   var t = HtmlService.createTemplateFromFile('Index');
@@ -1047,33 +1032,10 @@ function scanVideoYoutube() {
     });
   }
 
-  // Leggi fonti video da FontiPodcast
-  var shFonti = _getFontiPodSheet();
-  if (!shFonti || shFonti.getLastRow() < 2) {
-    Logger.log('scanVideoYoutube: FontiPodcast vuoto — esegui prima populaSeedVideoYoutubeMusei()');
-    return 0;
-  }
-  var fVals = shFonti.getDataRange().getValues();
-  var fHead = fVals[0].map(function(h){ return String(h||'').trim(); });
-  var fNome   = fHead.indexOf('Nome');      if (fNome  < 0) fNome  = 1;
-  var fUrl    = fHead.indexOf('URL_RSS');   if (fUrl   < 0) fUrl   = 2;
-  var fTema   = fHead.indexOf('Tematica'); if (fTema  < 0) fTema  = 3;
-  var fAtt    = fHead.indexOf('Attiva');   if (fAtt   < 0) fAtt   = 4;
-  var fTipo   = fHead.indexOf('TipoContenuto');
-
-  var fontiVideo = [];
-  for (var i = 1; i < fVals.length; i++) {
-    var row = fVals[i];
-    if (!row[fUrl]) continue;
-    var attiva = row[fAtt];
-    if (attiva === false || String(attiva).toLowerCase() === 'false') continue;
-    var tipo = fTipo >= 0 ? String(row[fTipo]||'').toLowerCase() : '';
-    if (tipo !== 'video') continue;
-    fontiVideo.push({ nome: row[fNome]||'', url: row[fUrl]||'', tematica: row[fTema]||'Musei & Patrimonio' });
-  }
-
+  // Fonti video via adattatore (OFF=foglio FontiPodcast TipoContenuto=video; ON=FontiFeed)
+  var fontiVideo = getFeedSources('video');
   if (!fontiVideo.length) {
-    Logger.log('scanVideoYoutube: nessuna fonte video trovata in FontiPodcast');
+    Logger.log('scanVideoYoutube: nessuna fonte video');
     return 0;
   }
   Logger.log('scanVideoYoutube: ' + fontiVideo.length + ' canali da scansionare');
@@ -1191,29 +1153,9 @@ function scanPodcastDiretto() {
   var settimanaAnno = getWeekNumberBandi(oggi);
   var totalNuovi = 0;
 
-  // Costruisce lista fonti: FONTI_PODCAST (array) + FontiPodcast sheet (TipoContenuto='audio')
-  var tutteLeFonti = FONTI_PODCAST.filter(function(f){ return f.priorita !== 2 || settimanaAnno % 2 === 0; });
-  try {
-    var shFP = _getFontiPodSheet();
-    if (shFP && shFP.getLastRow() > 1) {
-      var fpVals = shFP.getDataRange().getValues();
-      var fpHead = fpVals[0].map(function(h){ return String(h||'').trim(); });
-      var fpNome = fpHead.indexOf('Nome'), fpUrl = fpHead.indexOf('URL_RSS');
-      var fpTema = fpHead.indexOf('Tematica'), fpAtt = fpHead.indexOf('Attiva');
-      var fpTipo = fpHead.indexOf('TipoContenuto');
-      for (var fi = 1; fi < fpVals.length; fi++) {
-        var fr = fpVals[fi];
-        if (!fr[fpUrl]) continue;
-        var fatt = fr[fpAtt]; if (fatt === false || String(fatt).toLowerCase() === 'false') continue;
-        var ftipo = fpTipo >= 0 ? String(fr[fpTipo]||'').toLowerCase() : 'audio';
-        if (ftipo !== 'audio' && ftipo !== '') continue;
-        var furl = String(fr[fpUrl]||'').trim();
-        // evita duplicati con FONTI_PODCAST
-        if (tutteLeFonti.some(function(x){ return x.url === furl; })) continue;
-        tutteLeFonti.push({ nome: String(fr[fpNome]||''), url: furl, tematica: String(fr[fpTema]||'Musei & Patrimonio'), priorita:1 });
-      }
-    }
-  } catch(efp) { Logger.log('WARN FontiPodcast sheet: ' + efp.message); }
+  // Fonti podcast via adattatore (OFF=array FONTI_PODCAST + foglio FontiPodcast audio; ON=FontiFeed).
+  // Il filtro settimanale su priorita resta identico: le righe-foglio hanno priorita=1 -> passano sempre.
+  var tutteLeFonti = getFeedSources('podcast').filter(function(f){ return f.priorita !== 2 || settimanaAnno % 2 === 0; });
 
   Logger.log('scanPodcastDiretto: ' + tutteLeFonti.length + ' fonti totali');
 
@@ -2344,9 +2286,38 @@ function getDigestLog() {
 // --- Digest send/build functions extracted to DigestService.js (Sprint 2, 2026-05-26) ---
 
 // -- SCANNER RSS ---------------------------------------------------
+
+// v4.19.1 — Fonti generaliste: pubblicano molto off-topic, gate semantico obbligatorio
+var FONTI_GENERALISTE = [
+  'Il Sole 24 Ore — Cultura',
+  'Repubblica — Cultura'
+];
+
+/**
+ * v4.19.1 — Gate semantico per fonti generaliste.
+ * Restituisce true se titolo+testo contiene almeno una keyword core-business
+ * (musei, patrimonio, luoghi della cultura…). Case-insensitive.
+ * Per le fonti istituzionali (Symbola, ICOM ecc.) questo gate NON viene chiamato.
+ */
+function passaFiltroCulturaMusei_(titolo, testo) {
+  var kw = [
+    'museo','musei','mostra','mostre','patrimonio','beni culturali',
+    'archeolog','biblioteca','archivio','restauro','collezione','collezioni',
+    'esposizione','pinacoteca','fondazione cultural','luoghi della cultura',
+    'MiC','soprintendenza','UNESCO','audience','welfare cultural',
+    'galleria d','allestiment','curatore','curatrice','museale','museali',
+    'conservazione','catalogazione','digitalizzazione patrimonio'
+  ];
+  var blob = ((titolo || '') + ' ' + (testo || '')).toLowerCase();
+  for (var i = 0; i < kw.length; i++) {
+    if (blob.indexOf(kw[i].toLowerCase()) !== -1) return true;
+  }
+  return false;
+}
+
 function scanSources() {
   const SS=getMainSS();
-  const fonti=getFonti().fonti.filter(f=>f.Attiva);
+  const fonti=getFeedSources('rss');  // FontiFeed: OFF=foglio Fonti (getFonti), ON=FontiFeed
   const sh=SS.getSheetByName(SH.ITEMS);
   const existing=getExistingURLs(sh);
   let added=0;
@@ -2357,11 +2328,18 @@ function scanSources() {
       if (!rssUrl) { Logger.log('  ! URL mancante, saltata'); continue; }
       const items = fetchRSS(rssUrl, fonte);
       if (!items.length) { Logger.log('  -> 0 item (feed vuoto o non valido)'); continue; }
-      let nuovi = 0;
+      // v4.19.1 — Flag generalista: gate semantico per Sole/Repubblica
+      const isGeneralista = FONTI_GENERALISTE.indexOf(fonte.Nome) !== -1;
+      let nuovi = 0, scartati = 0;
       for(const item of items) {
         // v4.18.41 — Dedup at-source con URL canonicalizzato (rimuove utm_*, trailing slash, ecc.)
         const itemKey = (typeof _canonicalUrl_ === 'function') ? _canonicalUrl_(item.url) : item.url;
         if(existing.has(itemKey)) continue;
+        // v4.19.1 — Gate semantico: fonti generaliste → solo articoli cultura/musei
+        if (isGeneralista && !passaFiltroCulturaMusei_(item.titolo, item.estratto)) {
+          scartati++;
+          continue;
+        }
         Utilities.sleep(600);
         const ai = processWithAI(item.titolo, item.estratto, fonte.Ambito);
         saveItem(sh, item, fonte, ai);
@@ -2369,8 +2347,8 @@ function scanSources() {
         added++;
         nuovi++;
       }
-      Logger.log('  OK ' + nuovi + ' nuovi / ' + items.length + ' trovati');
-      updateFonteLastScan(SS, fonte.ID, items.length);
+      Logger.log('  OK ' + nuovi + ' nuovi / ' + items.length + ' trovati' + (scartati ? ' (' + scartati + ' off-topic scartati)' : ''));
+      updateFeedSourceStats('rss', fonte, items.length>0?'OK':'EMPTY', items.length, '');
     } catch(err) {
       Logger.log('  ERR fonte "' + fonte.Nome + '": ' + err.message.substring(0,80));
     }
@@ -2639,6 +2617,9 @@ function seedSocialFontiIstituzionali() {
     { id:'SW32', nome:'Touring Club Italiano',     url:'https://www.touringclub.it/feed/',                             tipo:'istituzione',   cat:'Turismo Culturale',      av:'T' },
     { id:'SW33', nome:'AIB — Biblioteche',         url:'https://www.aib.it/feed/',                                     tipo:'associazione',  cat:'Gestione Culturale',     av:'A' },
     { id:'SW34', nome:'Treccani Magazine',         url:'https://www.treccani.it/magazine/feed/',                       tipo:'rivista',       cat:'Cultura & Societa',      av:'T' },
+    // v4.19.1 — Testate generaliste cultura (filtro semantico in scanSources)
+    { id:'SW35', nome:'Il Sole 24 Ore — Cultura', url:'https://www.ilsole24ore.com/rss/cultura.xml',                  tipo:'rivista',       cat:'Cultura & Societa',      av:'S' },
+    { id:'SW36', nome:'Repubblica — Cultura',      url:'https://www.repubblica.it/rss/cultura/rss2.0.xml',             tipo:'rivista',       cat:'Cultura & Societa',      av:'R' },
   ];
   let aggiunti = 0, skip = 0;
   seed.forEach(function(f) {
