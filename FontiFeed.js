@@ -483,6 +483,12 @@ function spegniPodcast() { disableFontiFeed('podcast'); Logger.log('PODCAST: tor
 function spegniVideo()   { disableFontiFeed('video');   Logger.log('VIDEO: tornato alle fonti legacy.'); }
 function spegniTutto()   { disableAllFontiFeed();        Logger.log('TUTTO OFF: app al comportamento originale.'); }
 
+// Scorciatoie di scansione (chiamano gli scanner in Codice.gs, ma stanno qui
+// così fai tutto da FontiFeed.gs senza cambiare file).
+function scansionaNews()    { var n = scanSources();        Logger.log('scansionaNews: ' + n + ' news nuove raccolte'); return n; }
+function scansionaPodcast() { var n = scanPodcastDiretto(); Logger.log('scansionaPodcast: ' + n + ' episodi nuovi'); return n; }
+function scansionaVideo()   { var n = scanVideoYoutube();   Logger.log('scansionaVideo: ' + n + ' video nuovi'); return n; }
+
 function statoFlagFonti() {
   ['rss','podcast','video'].forEach(function(t){
     Logger.log(t.toUpperCase() + ': ' + (isFontiFeedEnabled_(t) ? 'FontiFeed (ON)' : 'legacy (OFF)'));
