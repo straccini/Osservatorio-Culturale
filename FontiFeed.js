@@ -467,5 +467,29 @@ function _test_getFontiFeedAdmin_() {
 }
 
 // ============================================================================
+// RUNNER PUBBLICO — selezionabile dalla tendina "Esegui" dell'editor GAS.
+// (Le funzioni _test_*_ iniziano con "_" e GAS le nasconde dal menu: questo
+//  wrapper le richiama tutte in fila e logga PASS/FAIL.)
+// NB: esegue anche migraFontiFeed() → CREA e POPOLA il foglio FontiFeed.
+//     È innocuo: i flag restano OFF, quindi l'app non cambia comportamento.
+// ============================================================================
+
+function runFontiFeedTests() {
+  Logger.log('===== runFontiFeedTests — INIZIO =====');
+  disableAllFontiFeed();
+  _test_ffFlags_();
+  _test_normalizeFeedUrl_();
+  _test_ensureFontiFeedSheet_();
+  _test_migraFontiFeed_();        // crea+popola FontiFeed (idempotente, non distruttivo)
+  _test_getFeedSources_off_();
+  _test_scanSources_off_();
+  _test_updateFeedSourceStats_(); // usa flag podcast ON temporaneo, poi rimette OFF
+  _test_verificaFontiFeed_();
+  _test_getFontiFeedAdmin_();
+  disableAllFontiFeed();
+  Logger.log('===== runFontiFeedTests — FINE (flag tutti OFF) =====');
+}
+
+// ============================================================================
 // FINE FontiFeed.js
 // ============================================================================
