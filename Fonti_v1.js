@@ -68,6 +68,9 @@ var FU_SHEETS = {
   podcast: 'FontiPodcast',
   video:   'FontiVideo'
 };
+// NB: 'FontiFeed' NON va qui: ha schema a 20 colonne diverso da FU17, quindi
+// getFontiUnified/_fuRowToObj_ (indici FU17 fissi) lo leggerebbe corrotto.
+// Per l'admin del nuovo archivio usare getFontiFeedAdmin() (FontiFeed.js, lettura per nome colonna).
 
 // Tag validi per ogni tipo (per validazione + filtri UI)
 var FU_TAGS_PER_TIPO = {

@@ -546,22 +546,17 @@ function _test_video_off_() {
 
 ---
 
-## Task 11: Pannello admin legge `FontiFeed`
+## Task 11: Lettura admin di `FontiFeed` (schema-safe)
 
-**Files:** Modify `Fonti_v1.js`
+**Files:** Modify `FontiFeed.js`, `Fonti_v1.js`
 
-- [ ] **Step 1:** In `var FU_SHEETS = {...}` aggiungi `feed: 'FontiFeed'`.
-- [ ] **Step 2:** Verifica che `getFontiUnified({tipo:'feed'})` ritorni righe; se il mapper cerca `URL` aggiungi fallback a `URL_Feed`.
-- [ ] **Step 3: Test**
-```javascript
-function _test_adminVedeFeed_() {
-  var res=getFontiUnified({tipo:'feed'});
-  _ffAssert_(res&&res.ok===true,'getFontiUnified(feed) ok');
-  _ffAssert_(res.totale>0,'admin vede '+res.totale+' fonti feed');
-}
-```
-- [ ] **Step 4: `clasp push`, esegui → 2 PASS.**
-- [ ] **Step 5: Commit** `git commit -am "feat(admin): pannello Fonti legge FontiFeed (tipo=feed)"`
+> **Correzione post-review**: NON aggiungere `feed` a `FU_SHEETS`. `getFontiUnified`/`_fuRowToObj_` usano indici FU17 (18 col) fissi e leggerebbero FontiFeed (20 col, layout diverso) in modo CORROTTO (`url`←Gruppo, `attiva`←AmbitoLabel) — corrompendo anche la vista admin senza filtro. Si usa invece un lettore dedicato per nome colonna.
+
+- [ ] **Step 1:** In `Fonti_v1.js` lasciare `FU_SHEETS` con i 4 tipi FU17 (commento esplicativo sul perché `FontiFeed` non va lì).
+- [ ] **Step 2:** In `FontiFeed.js` la funzione `getFontiFeedAdmin(filtro)` legge `FontiFeed` per nome colonna e ritorna `{ok, fonti:[{id,nome,gruppo,tipo,url,attiva,...}], totale}`. Il futuro wiring del pannello admin chiamerà questa (non `getFontiUnified`).
+- [ ] **Step 3: Test** `_test_getFontiFeedAdmin_` (in FontiFeed.js): verifica `ok`, `totale>0`, e che TUTTE le fonti abbiano `url` valorizzato (prova che la lettura per nome è corretta, non disallineata).
+- [ ] **Step 4: `clasp push`, esegui → 3 PASS.**
+- [ ] **Step 5: Commit** `git commit -am "feat(admin): getFontiFeedAdmin lettura FontiFeed per nome colonna (schema-safe)"`
 
 ---
 
