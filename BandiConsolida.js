@@ -379,13 +379,20 @@ function setupFontiApiTed() {
   var endpoint = 'https://api.ted.europa.eu/v3/notices/search';
   // Expert query: CPV famiglia cultura/musei + luogo di esecuzione Italia, attivi.
   var qCultura = 'classification-cpv IN (92500000 92520000 92521000 92521100 92522000 92522100 45212313) AND place-of-performance=ITA';
+  // CPV lavori/allestimenti museali (restauro, costruzione musei, architettura,
+  // allestimento espositivo). Esempi dati: 45212313 (costruzione musei),
+  // 71250000 (architettura/ingegneria) + restauro e esposizioni.
+  var qLavori = 'classification-cpv IN (45212313 45212350 45454100 71250000 92521100 92522000) AND place-of-performance=ITA';
   var fonti = [
     { id: 'ted_cultura_it', nome: 'TED — Appalti cultura/musei Italia (API)',
       url: endpoint + '?query=' + encodeURIComponent(qCultura) + '&limit=20',
-      note: 'TED UE, POST JSON. CPV cultura/musei, luogo Italia, attivi. Verificare con testTedApi().' },
+      note: 'TED UE, POST JSON. CPV cultura/musei, luogo Italia, ultimi 365gg. Confermato HTTP 200.' },
     { id: 'ted_cultura_eu', nome: 'TED — Appalti cultura/musei UE (API)',
       url: endpoint + '?query=' + encodeURIComponent('classification-cpv IN (92520000 92521000 92522000)') + '&limit=20',
-      note: 'TED UE, POST JSON. CPV cultura/musei, tutta UE, attivi. Verificare con testTedApi().' }
+      note: 'TED UE, POST JSON. CPV cultura/musei, tutta UE, ultimi 365gg. Confermato HTTP 200.' },
+    { id: 'ted_lavori_it', nome: 'TED — Lavori/allestimenti musei Italia (API)',
+      url: endpoint + '?query=' + encodeURIComponent(qLavori) + '&limit=20',
+      note: 'TED UE, POST JSON. CPV lavori/restauro/architettura/allestimento museale, luogo Italia, ultimi 365gg.' }
   ];
   var out = [];
   fonti.forEach(function(f) {
