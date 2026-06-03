@@ -6,6 +6,18 @@
 
 ---
 
+## MODALITÀ DI ESECUZIONE — FLUSSO UNICO E CONTINUO
+
+Esegui **tutte le fasi (0→7) in un'unica sessione, in sequenza, SENZA fermarti per approvazione tra una fase e l'altra**. Non chiedere conferma a fine fase: prosegui automaticamente alla successiva. Fai un **commit separato per ciascuna fase** (per tracciabilità), poi continua subito.
+
+**Riporta all'utente SOLO:**
+- alla **fine** di tutto (riepilogo di cosa è stato fatto, fase per fase, con i commit), **oppure**
+- se incontri un **blocco reale** che impedisce di proseguire in sicurezza (es. `_isCurrentUserAdmin_` risulta basato su `Session.getEffectiveUser`, oppure una modifica romperebbe certamente il flusso pubblico anonimo). In quel caso fermati, spiega, e attendi.
+
+Mantieni comunque, per ogni fase, la verifica dei **criteri di accettazione** prima di committare quella fase — ma senza interrompere il flusso complessivo.
+
+---
+
 ## Vincoli operativi (LEGGERE PRIMA)
 
 1. **Non rompere il flusso pubblico anonimo** (lettura contenuti, landing, sondaggi pubblici).
@@ -15,7 +27,7 @@
 5. **GAS = scope globale unico** tra i file: attenzione a doppie `var` e a funzioni con lo stesso nome.
 6. **Deploy**: dopo le modifiche, `clasp push` + deploy manuale dal web editor mantenendo lo **stesso URL** (mai "+ Nuova distribuzione"). Le modifiche al backend sono attive dopo il push; quelle al frontend (Index.html/HomeView/ecc.) solo dopo il deploy.
 7. **Test**: ogni fase ha "criteri di accettazione". Dove possibile, aggiungere/usare una funzione `diagnostica*()` o `_test_*()` (prefisso `_`, non esposta al frontend) e verificare dall'editor GAS.
-8. **Commit atomici** per fase, messaggi chiari. Non accorpare fasi diverse in un unico commit.
+8. **Commit atomici** per fase, messaggi chiari (un commit per fase). Ma **non interrompere** il flusso: dopo il commit di una fase, prosegui subito con la successiva (vedi "Modalità di esecuzione").
 
 ---
 
@@ -182,4 +194,4 @@ function statoLoginPubblico() {            // callable dal frontend per mostrare
 
 ---
 
-*Procedere una FASE alla volta, con commit separati e verifica dei criteri di accettazione prima di passare alla successiva. In caso di dubbio sull'effetto di una modifica sul flusso utente pubblico, fermarsi e chiedere.*
+*Esecuzione in **flusso unico e continuo**: percorri le fasi 0→7 in sequenza senza fermarti per approvazione, un commit per fase, verificando i criteri di accettazione di ciascuna. Fermati e chiedi SOLO se incontri un blocco reale (gating admin non token-based, o rischio certo di rompere il flusso pubblico anonimo). Al termine, presenta un unico riepilogo con l'elenco dei commit e lo stato della Definition of Done.*
