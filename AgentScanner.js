@@ -416,6 +416,10 @@ function _agentFetchUrl_(url) {
     if (url.indexOf('api.tech.ec.europa.eu') >= 0 && url.indexOf('search-api') >= 0) {
       return _euftFetch_(url);
     }
+    // --- CORDIS (progetti UE finanziati, ANALISI su AG5): GET JSON, compattato ---
+    if (url.indexOf('cordis.europa.eu/search') >= 0 && url.indexOf('format=json') >= 0) {
+      return _cordisFetch_(url);
+    }
     var resp = UrlFetchApp.fetch(url, {
       muteHttpExceptions: true,
       followRedirects: true,
@@ -494,6 +498,41 @@ function testEuFtFetch() {
   Logger.log('--- TESTO PASSATO A CLAUDE (primi 2800 char) ---');
   Logger.log(out.substring(0, 2800));
   return out.length;
+}
+
+/**
+ * Fetch CORDIS (progetti UE finanziati). GET JSON pubblico, niente chiave. La
+ * risposta e' verbosa: qui estraggo i campi utili (acronimo, titolo, stato, date,
+ * link al progetto) in formato compatto. NB: sono progetti GIA' finanziati (analisi
+ * di chi ha vinto bandi cultura/turismo), AG5 — non call aperte.
+ */
+function _cordisFetch_(url) {
+  try {
+    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'Accept': 'application/json' } });
+    if (resp.getResponseCode() !== 200) return null;
+    var data;
+    try { data = JSON.parse(resp.getContentText()); } catch(e0) { return null; }
+    var hits = data && data.result && data.result.hits && data.result.hits.hit;
+    if (!hits) return null;
+    if (!Array.isArray(hits)) hits = [hits];          // CORDIS: 1 risultato = oggetto singolo
+    if (!hits.length) return null;
+    function _noTag_(s) { return String(s == null ? '' : s).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); }
+    var righe = [];
+    for (var i = 0; i < hits.length && righe.length < 30; i++) {
+      var p = hits[i].project || hits[i] || {};
+      var id = p.id || p.rcn || '';
+      var titolo = _noTag_(p.title || p.acronym || '');
+      var acr = _noTag_(p.acronym || '');
+      var stato = _noTag_(p.status || '');
+      var dal = _noTag_(p.startDate || ''), al = _noTag_(p.endDate || '');
+      var obj = _noTag_(p.objective || p.teaser || '').substring(0, 180);
+      var link = id ? ('https://cordis.europa.eu/project/id/' + id) : '';
+      righe.push('• ' + (acr ? '[' + acr + '] ' : '') + titolo.substring(0, 160) +
+                 ' | stato:' + stato + ' | ' + dal + '→' + al + ' | ' + link + '\n  ' + obj);
+    }
+    if (!righe.length) return null;
+    return 'CORDIS — progetti UE finanziati (' + righe.length + '):\n' + righe.join('\n');
+  } catch(e) { return null; }
 }
 
 /** Estrae query+limit dall'URL-convenzione TED e costruisce il body POST. */
@@ -582,158 +621,6 @@ function testTedApi() {
     }
   });
   Logger.log('RIEPILOGO testTedApi: ' + JSON.stringify(report, null, 2));
-  return report;
-}
-
-/**
- * TEST one-click EU Funding & Tenders (sistema SEDIA). Prova piu' modi di chiamare
- * il search-api per scoprire quale GAS riesce a inviare e cosa accetta il server.
- * Lanciare dall'editor (Esegui -> testEuFtApi) e leggere il Log/Esecuzioni.
- * Query: grant+tender (type 1,2) con stato Forthcoming/Open (31094501/31094502).
- */
-function testEuFtApi() {
-  var base = 'https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=';
-  var queryJson = '{"bool":{"must":[{"terms":{"type":["1","2"]}},{"terms":{"status":["31094501","31094502"]}}]}}';
-  var report = [];
-
-  function prova(nome, url, options) {
-    try {
-      var resp = UrlFetchApp.fetch(url, options);
-      var code = resp.getResponseCode();
-      var txt = resp.getContentText() || '';
-      Logger.log('=== EUFT ' + nome + ' -> HTTP ' + code + ' ===');
-      Logger.log('RISPOSTA (primi 1800 char): ' + txt.substring(0, 1800));
-      report.push({ variante: nome, http: code, lung: txt.length });
-    } catch(e) {
-      Logger.log('=== EUFT ' + nome + ' -> ERRORE: ' + e + ' ===');
-      report.push({ variante: nome, errore: String(e) });
-    }
-  }
-
-  // A) GET semplice con parola chiave
-  prova('A_GET_text', base + 'culture&pageSize=5',
-    { method: 'get', muteHttpExceptions: true, headers: { 'Accept': 'application/json' } });
-
-  // B) POST form-urlencoded (query come campo)
-  prova('B_POST_form', base + '***',
-    { method: 'post', muteHttpExceptions: true,
-      payload: { query: queryJson, languages: 'en', pageNumber: '1', pageSize: '5' } });
-
-  // C) POST multipart (query come blob -> forza multipart/form-data)
-  prova('C_POST_multipart', base + '***',
-    { method: 'post', muteHttpExceptions: true,
-      payload: { query: Utilities.newBlob(queryJson, 'application/json', 'query'),
-                 languages: 'en', pageNumber: '1', pageSize: '5' } });
-
-  Logger.log('RIEPILOGO testEuFtApi: ' + JSON.stringify(report, null, 2));
-  return report;
-}
-
-/**
- * TEST 2 EU F&T: capire quale filtro RIDUCE davvero i risultati (solo call aperte
- * cultura). Confronta totalResults tra: form con/ senza query, e multipart con
- * content-type corretto. Vince la variante con totalResults piccolo e sensato.
- */
-function testEuFtApi2() {
-  var base = 'https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=';
-  var qOpen = '{"bool":{"must":[{"terms":{"type":["1","2"]}},{"terms":{"status":["31094501","31094502"]}}]}}';
-  var report = [];
-
-  function prova(nome, url, options) {
-    try {
-      var resp = UrlFetchApp.fetch(url, options);
-      var code = resp.getResponseCode();
-      var txt = resp.getContentText() || '';
-      var tot = null;
-      try { tot = JSON.parse(txt).totalResults; } catch(e0) { var m = txt.match(/"totalResults":(\d+)/); if (m) tot = Number(m[1]); }
-      Logger.log('=== EUFT2 ' + nome + ' -> HTTP ' + code + ' | totalResults: ' + tot + ' ===');
-      Logger.log('  (primi 400 char) ' + txt.substring(0, 400));
-      report.push({ variante: nome, http: code, totalResults: tot });
-    } catch(e) {
-      Logger.log('=== EUFT2 ' + nome + ' -> ERRORE: ' + e + ' ===');
-      report.push({ variante: nome, errore: String(e) });
-    }
-  }
-
-  // 1) form, text=*** SENZA query (baseline: dovrebbe essere ~tutto)
-  prova('1_form_all_noquery', base + '***',
-    { method: 'post', muteHttpExceptions: true, payload: { languages: 'en', pageSize: '5' } });
-
-  // 2) form, text=*** CON query open/forthcoming (filtra lo stato?)
-  prova('2_form_query_open', base + '***',
-    { method: 'post', muteHttpExceptions: true, payload: { query: qOpen, languages: 'en', pageSize: '5' } });
-
-  // 3) form, text=culture (la sola keyword riduce?)
-  prova('3_form_text_culture', base + 'culture',
-    { method: 'post', muteHttpExceptions: true, payload: { languages: 'en', pageSize: '5' } });
-
-  // 4) multipart con blob text/plain SENZA filename (content-type corretto?)
-  prova('4_multipart_textplain', base + '***',
-    { method: 'post', muteHttpExceptions: true,
-      payload: { query: Utilities.newBlob(qOpen, 'text/plain'), languages: 'en', pageSize: '5' } });
-
-  Logger.log('RIEPILOGO testEuFtApi2: ' + JSON.stringify(report, null, 2));
-  return report;
-}
-
-/** Costruisce un body multipart/form-data a mano, con Content-Type per parte. */
-function _euftMultipart_(fields, boundary) {
-  var body = '';
-  fields.forEach(function(f) {
-    body += '--' + boundary + '\r\n';
-    body += 'Content-Disposition: form-data; name="' + f.name + '"\r\n';
-    if (f.contentType) body += 'Content-Type: ' + f.contentType + '\r\n';
-    body += '\r\n' + f.value + '\r\n';
-  });
-  body += '--' + boundary + '--\r\n';
-  return body;
-}
-
-/**
- * TEST 3 EU F&T: multipart COSTRUITO A MANO con Content-Type corretto sulla parte
- * 'query' (application/json), per far finalmente mordere il filtro stato "aperto".
- * Se totalResults crolla (vs 648450 / 15634), il filtro funziona e abbiamo vinto.
- */
-function testEuFtApi3() {
-  var base = 'https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=';
-  var qOpen = '{"bool":{"must":[{"terms":{"type":["1","2"]}},{"terms":{"status":["31094501","31094502"]}}]}}';
-  var boundary = 'EUFTBOUNDARY1234567890';
-  var report = [];
-
-  function prova(nome, url, qText, qContentType) {
-    try {
-      var body = _euftMultipart_([
-        { name: 'query', value: qOpen, contentType: qContentType },
-        { name: 'languages', value: 'en' },
-        { name: 'pageNumber', value: '1' },
-        { name: 'pageSize', value: '5' }
-      ], boundary);
-      var resp = UrlFetchApp.fetch(url + qText, {
-        method: 'post', muteHttpExceptions: true,
-        contentType: 'multipart/form-data; boundary=' + boundary,
-        payload: body
-      });
-      var code = resp.getResponseCode();
-      var txt = resp.getContentText() || '';
-      var tot = null;
-      try { tot = JSON.parse(txt).totalResults; } catch(e0) { var m = txt.match(/"totalResults":(\d+)/); if (m) tot = Number(m[1]); }
-      Logger.log('=== EUFT3 ' + nome + ' -> HTTP ' + code + ' | totalResults: ' + tot + ' ===');
-      Logger.log('  (primi 500 char) ' + txt.substring(0, 500));
-      report.push({ variante: nome, http: code, totalResults: tot });
-    } catch(e) {
-      Logger.log('=== EUFT3 ' + nome + ' -> ERRORE: ' + e + ' ===');
-      report.push({ variante: nome, errore: String(e) });
-    }
-  }
-
-  // A) text=*** + query aperti (application/json): se filtra, totalResults << 648450
-  prova('A_manual_json_all', base, '***', 'application/json');
-  // B) text=culture + query aperti: il target (call aperte cultura)
-  prova('B_manual_json_culture', base, 'culture', 'application/json');
-  // C) text=culture + query aperti, parte query come text/plain (fallback)
-  prova('C_manual_textplain_culture', base, 'culture', 'text/plain');
-
-  Logger.log('RIEPILOGO testEuFtApi3: ' + JSON.stringify(report, null, 2));
   return report;
 }
 

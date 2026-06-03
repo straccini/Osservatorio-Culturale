@@ -811,3 +811,22 @@ function aggiungiOpenCoesione() {
     note: 'CKAN dati.gov.it (federa OpenCoesione). Dataset progetti finanziati coesione cultura/turismo. AG5 open data, non bandi.'
   });
 }
+
+/**
+ * Pronta: CORDIS — progetti UE finanziati in cultura/turismo — AGENTE 5 (analisi).
+ * Verificato: endpoint pubblico GET JSON senza chiave. Utile per mappare CHI ha
+ * vinto i bandi UE cultura (partner, competitor, reti), NON sono call aperte.
+ * Lo scanner usa _cordisFetch_ (compatta la risposta verbosa).
+ */
+function aggiungiCordisCultura() {
+  var q = "contenttype='project' AND ('cultural heritage' OR 'museum' OR 'cultural tourism')";
+  return aggiungiFonteApiAgente({
+    id: 'cordis_cultura',
+    nome: 'CORDIS — Progetti UE cultura/turismo (API)',
+    url: 'https://cordis.europa.eu/search?q=' + encodeURIComponent(q) + '&p=1&num=20&format=json',
+    agente: 5,
+    categoria: 'Aggregatore',
+    priorita: 2,
+    note: 'CORDIS GET JSON pubblico. Progetti UE finanziati cultura/musei/turismo. AG5 analisi, non bandi aperti.'
+  });
+}
