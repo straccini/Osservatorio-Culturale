@@ -167,6 +167,59 @@ function promuoviBandiAgenti(opts) {
 }
 
 /**
+ * AUDIT FOGLI (sola lettura): elenca i fogli REALMENTE presenti nello spreadsheet e
+ * li classifica incrociandoli con l'elenco dei fogli usati dal codice (allowlist).
+ * Lanciare dall'editor (Esegui -> auditFogli) e leggere il Log.
+ *  🟢 VIVI            = usati dal codice -> NON cancellare
+ *  🔴 CANCELLABILI    = legacy noti o prefisso _OLD_ -> sicuri da cancellare
+ *  🟠 BACKUP          = backup pre-migrazione -> tieni per rollback o cancella se sicuro
+ *  🟡 DA VERIFICARE   = non riferiti dal codice ma non chiaramente morti -> decidiamo insieme
+ */
+function auditFogli() {
+  var VIVI = {
+    'Items':1,'Fonti':1,'Podcast':1,'Pubblicazioni':1,'MailingList':1,'DigestLog':1,'ScanLog':1,'Utenti':1,'FontiPodcast':1,
+    'Bandi_v5':1,'FontiBandi_v5':1,'FontiBandiLog_v5':1,'BackupInfo_v5':1,'QualityCheckLog_v5':1,
+    '_RADAR_BANDI_LEGACY_':1,
+    'FontiFeed':1,'SocialFonti':1,'FontiAgenti':1,
+    'ResponsesMatrix':1,'ContactsMatrix':1,'ResponsesMatrixMiC':1,'DigestQueue':1,'CRM_Leads':1,
+    'ProfiloAgenti':1,'AgentScanResults':1,'AgentDeliveryLog':1,'SupervisoreLog':1,'AgentRegionaleLog':1,'AgentExplorationState':1,
+    'Sessioni_v1':1,'RichiestePrenotazione':1,
+    'NewsletterLog':1,'UnsubscribeLog':1,'SondaggiMirati':1,
+    'MuseiDB_v1':1,'CalendarioLS3':1,'ROC_TriageLog':1,'ROC_BatchLog':1,'ROC_Outreach':1,'ROC_ExcludePermanent':1,
+    'BandiCandidatiL2':1,'AI_Tuning':1,'UtmLog':1,'ForgetAudit':1,'ProfiliPro':1
+  };
+  var MORTI_NOTI = {
+    'Podcast_Episodes':1,'Podcast_Feed':1,'Webinar_Feed':1,'EventiMusei':1,'Favoritismo_Bandi':1,
+    'Bandi_Completo':1,'Admin':1,'RADAR BANDI':1,'FontiBandi':1
+  };
+  function isOld(n){ return /^_OLD_/i.test(n); }
+  function isBackup(n){ return /_pre_FU17$/i.test(n) || /_backup/i.test(n) || /pre[_-]?migr/i.test(n); }
+
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+  var vivi = [], cancella = [], backup = [], verifica = [];
+  sheets.forEach(function(sh) {
+    var nome = sh.getName();
+    var rec = '"' + nome + '"  (' + Math.max(0, sh.getLastRow() - 1) + ' righe)';
+    if (VIVI[nome]) vivi.push(rec);
+    else if (MORTI_NOTI[nome]) cancella.push(rec + '  [legacy noto]');
+    else if (isOld(nome)) cancella.push(rec + '  [prefisso _OLD_]');
+    else if (isBackup(nome)) backup.push(rec);
+    else verifica.push(rec);
+  });
+  Logger.log('=== AUDIT FOGLI — ' + sheets.length + ' fogli totali nello spreadsheet ===');
+  Logger.log('\n🟢 VIVI (usati dal codice — NON cancellare) — ' + vivi.length + ':');
+  vivi.sort().forEach(function(x){ Logger.log('   ' + x); });
+  Logger.log('\n🔴 CANCELLABILI (legacy/_OLD_ — sicuri) — ' + cancella.length + ':');
+  cancella.sort().forEach(function(x){ Logger.log('   ' + x); });
+  Logger.log('\n🟠 BACKUP pre-migrazione (tieni per rollback o cancella se sicuro) — ' + backup.length + ':');
+  backup.sort().forEach(function(x){ Logger.log('   ' + x); });
+  Logger.log('\n🟡 DA VERIFICARE INSIEME (non riferiti dal codice) — ' + verifica.length + ':');
+  verifica.sort().forEach(function(x){ Logger.log('   ' + x); });
+  return { totali: sheets.length, cancellabili: cancella, backup: backup, daVerificare: verifica };
+}
+
+/**
  * DIAGNOSTICA (sola lettura): conta le righe nei contenitori di BANDI (i record,
  * non le fonti) per capire dove vivono davvero i dati prima di consolidare.
  * Lanciare dall'editor (Esegui -> contaBandiContenitori) e leggere il Log.
