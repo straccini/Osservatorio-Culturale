@@ -24,6 +24,84 @@
 var BANDI_V5_SHEET = 'FontiBandi_v5';
 
 /**
+ * ESITI: importa gli AVVISI DI AGGIUDICAZIONE (esiti) TED per appalti cultura in
+ * Italia e li scrive nel foglio bandi con Status='Esito', cosi' la pagina Radar
+ * Bandi puo' mostrarli in una sezione filtrabile separata dai bandi aperti.
+ *
+ * Verificato (testTedEsiti): form-type='result' = avviso di aggiudicazione.
+ * Per sicurezza filtro lato nostro su form-type (no query-syntax a rischio).
+ * NON distruttivo, dedup per titolo. Scrive su getSheetRadar() (come lo scanner).
+ * NB: lanciare contaBandiContenitori PRIMA per confermare che il foglio sia quello
+ * letto dal frontend (flag USE_BANDI_V5).
+ *
+ * @param {Object} opts { giorni?: number (default 365) }
+ */
+function importaEsitiTed(opts) {
+  opts = opts || {};
+  var giorni = opts.giorni || 365;
+  if (typeof getSheetRadar !== 'function') return { ok: false, error: 'getSheetRadar assente' };
+  var sheet = getSheetRadar();
+  if (!sheet) return { ok: false, error: 'foglio bandi assente' };
+
+  var d = new Date(); d.setDate(d.getDate() - giorni);
+  var ymd = '' + d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2);
+  var body = {
+    query: 'classification-cpv IN (92500000 92520000 92521000 92521100 92522000 92522100 45212313) AND place-of-performance=ITA AND publication-date>=' + ymd,
+    fields: ['publication-number', 'notice-title', 'form-type', 'buyer-name', 'publication-date', 'links'],
+    page: 1, limit: 100, scope: 'ALL', paginationMode: 'PAGE_NUMBER', checkQuerySyntax: false
+  };
+  var resp = UrlFetchApp.fetch('https://api.ted.europa.eu/v3/notices/search', {
+    method: 'post', contentType: 'application/json', payload: JSON.stringify(body),
+    muteHttpExceptions: true, headers: { 'Accept': 'application/json' }
+  });
+  if (resp.getResponseCode() !== 200) {
+    Logger.log('TED esiti HTTP ' + resp.getResponseCode() + ': ' + resp.getContentText().substring(0, 500));
+    return { ok: false, http: resp.getResponseCode() };
+  }
+  var notices = (JSON.parse(resp.getContentText()).notices) || [];
+
+  // Titoli gia' presenti (dedup)
+  var titoli = [];
+  var bh = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var iTitB = bh.indexOf('Titolo'); if (iTitB < 0) iTitB = 3;
+  if (sheet.getLastRow() > 1) {
+    sheet.getRange(2, iTitB + 1, sheet.getLastRow() - 1, 1).getValues().forEach(function(r) {
+      if (r[0]) titoli.push((typeof normalizzaBandi === 'function') ? normalizzaBandi(String(r[0])) : String(r[0]).toLowerCase());
+    });
+  }
+  function arr0(v) { return Array.isArray(v) ? v[0] : v; }
+  function lang(o) { if (!o) return ''; if (typeof o === 'string') return o; return o.ita || o.eng || o.en || o.it || (Object.keys(o).length ? o[Object.keys(o)[0]] : ''); }
+
+  var nuovi = 0, esaminatiEsiti = 0;
+  notices.forEach(function(n) {
+    if (String(arr0(n['form-type'])) !== 'result') return;   // solo esiti/aggiudicazioni
+    esaminatiEsiti++;
+    var titolo = String(arr0(lang(n['notice-title'])) || '').replace(/<[^>]+>/g, '').trim();
+    if (!titolo || titolo.length < 8) return;
+    var norm = (typeof normalizzaBandi === 'function') ? normalizzaBandi(titolo) : titolo.toLowerCase();
+    var dup = (typeof somiglianzaBandi === 'function')
+      ? titoli.some(function(t) { return somiglianzaBandi(t, norm) > 0.72; })
+      : titoli.indexOf(norm) >= 0;
+    if (dup) return;
+    var pubnum = arr0(n['publication-number']) || '';
+    var ente = String(arr0(lang(n['buyer-name'])) || '');
+    var dataPub = arr0(n['publication-date']) || '';
+    var link = pubnum ? ('https://ted.europa.eu/it/notice/' + pubnum + '/html') : '';
+    var id = 'SB' + Date.now() + Math.random().toString(36).substring(2, 4);
+    sheet.appendRow([
+      id, '', new Date(), titolo, ente, 'UE', 'Tutte', 'Cultura', '', '', '',
+      (dataPub ? new Date(dataPub) : ''), 'TED-Esiti', 'TED — Esiti/Aggiudicazioni',
+      link, '', '', '', 'Avviso di aggiudicazione (esito) — appalto cultura', '', '',
+      'Esito', 'attivo', false, false, '[auto:TED Esiti]'
+    ]);
+    titoli.push(norm);
+    nuovi++;
+  });
+  Logger.log('=== IMPORTA ESITI TED: ' + nuovi + ' nuovi (su ' + esaminatiEsiti + ' esiti, ' + notices.length + ' avvisi totali) -> ' + sheet.getName() + ' ===');
+  return { ok: true, nuovi: nuovi, esitiTrovati: esaminatiEsiti, avvisiTotali: notices.length, foglio: sheet.getName() };
+}
+
+/**
  * PONTE: promuove i bandi trovati dagli AGENTI (AgentScanResults, es. BandiUp/TED/
  * EU F&T) nel foglio bandi che l'APP legge, cosi' compaiono nella pagina "Radar
  * Bandi" e non solo nelle email digest.
