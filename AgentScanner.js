@@ -449,18 +449,23 @@ function _euftFetch_(url) {
     var results = (data && data.results) || [];
     if (!results.length) return null;
     var STATO = { '31094501': 'Imminente', '31094502': 'Aperto', '31094503': 'Chiuso' };
-    var aperti = [], tutti = [];
+    function _noTag_(s) { return String(s == null ? '' : s).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); }
+    var aperti = [], tutti = [], seen = {};
     for (var i = 0; i < results.length; i++) {
       var r = results[i], m = r.metadata || {};
       function g1(k) { return (m[k] && m[k][0] != null) ? String(m[k][0]) : ''; }
-      var st = g1('status');
-      var titolo = r.title || g1('callTitle') || r.content || r.summary || '';
       var id = g1('callIdentifier') || r.reference || '';
+      var titolo = _noTag_(r.title || g1('callTitle') || r.content || r.summary || '');
+      // Dedup: SEDIA ripete lo stesso bando una volta per lingua -> tieni 1 per id.
+      var dedupKey = id || titolo.toLowerCase();
+      if (seen[dedupKey]) continue;
+      seen[dedupKey] = true;
+      var st = g1('status');
       var dl = g1('deadlineDate') || g1('startDate') || g1('es_SortDate') || '';
       var stLabel = STATO[st] || st || 'n/d';
       var link = r.url || '';
-      var summ = String(r.summary || r.content || '').replace(/\s+/g, ' ').substring(0, 180);
-      var riga = '• ' + String(titolo).substring(0, 180) + ' | id:' + id +
+      var summ = _noTag_(r.summary || r.content || '').substring(0, 180);
+      var riga = '• ' + titolo.substring(0, 180) + ' | id:' + id +
                  ' | stato:' + stLabel + ' | data:' + dl + ' | ' + link + '\n  ' + summ;
       tutti.push(riga);
       if (st === '31094501' || st === '31094502') aperti.push(riga);
