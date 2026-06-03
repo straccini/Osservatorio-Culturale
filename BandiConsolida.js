@@ -295,6 +295,115 @@ function verificaFontiBandi(opts) {
 }
 
 /**
+ * BONIFICA MORTE: disattiva le fonti con VerificaHTTP = ERR o NO_URL (link rotti
+ * certi, rilevati da verificaFontiBandi). REVERSIBILE: marca UltimoErrore=
+ * 'BONIFICATO_MORTA' e mette Attiva=false. Ripristino: annullaBonificaFontiBandiMorte().
+ * Lanciare DOPO verificaFontiBandi (serve la colonna VerificaHTTP).
+ */
+function bonificaFontiBandiMorte() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(BANDI_V5_SHEET);
+  if (!sh || sh.getLastRow() < 2) { Logger.log('FontiBandi_v5 vuoto'); return { ok: false }; }
+  var data = sh.getDataRange().getValues();
+  var h = data[0].map(function(x) { return String(x || '').trim(); });
+  var iAtt = h.indexOf('Attiva'), iNome = h.indexOf('Nome'), iErr = h.indexOf('UltimoErrore'), iVer = h.indexOf('VerificaHTTP');
+  if (iVer < 0) { Logger.log('Colonna VerificaHTTP assente: lancia prima verificaFontiBandi'); return { ok: false }; }
+  var disattivate = [];
+  for (var r = 1; r < data.length; r++) {
+    var attiva = !(data[r][iAtt] === false || String(data[r][iAtt]).toLowerCase() === 'false');
+    if (!attiva) continue;
+    var ver = String(data[r][iVer] || '').trim();
+    if (ver === 'ERR' || ver === 'NO_URL') {
+      sh.getRange(r + 1, iAtt + 1).setValue(false);
+      if (iErr >= 0) sh.getRange(r + 1, iErr + 1).setValue('BONIFICATO_MORTA');
+      disattivate.push(data[r][iNome] + ' (' + ver + ')');
+    }
+  }
+  Logger.log('=== BONIFICA MORTE: disattivate ' + disattivate.length + ' fonti (ERR/NO_URL) ===');
+  disattivate.forEach(function(n) { Logger.log('  - ' + n); });
+  Logger.log('Per annullare: annullaBonificaFontiBandiMorte()');
+  return { ok: true, disattivate: disattivate.length, nomi: disattivate };
+}
+
+/** Annulla bonificaFontiBandiMorte: riattiva le fonti marcate 'BONIFICATO_MORTA'. */
+function annullaBonificaFontiBandiMorte() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(BANDI_V5_SHEET);
+  if (!sh || sh.getLastRow() < 2) return { ok: false };
+  var data = sh.getDataRange().getValues();
+  var h = data[0].map(function(x) { return String(x || '').trim(); });
+  var iAtt = h.indexOf('Attiva'), iNome = h.indexOf('Nome'), iErr = h.indexOf('UltimoErrore');
+  if (iErr < 0) { Logger.log('Colonna UltimoErrore assente'); return { ok: false }; }
+  var riattivate = [];
+  for (var r = 1; r < data.length; r++) {
+    if (String(data[r][iErr] || '') === 'BONIFICATO_MORTA') {
+      sh.getRange(r + 1, iAtt + 1).setValue(true);
+      sh.getRange(r + 1, iErr + 1).setValue('');
+      riattivate.push(data[r][iNome]);
+    }
+  }
+  Logger.log('=== ANNULLA BONIFICA MORTE: riattivate ' + riattivate.length + ' fonti ===');
+  riattivate.forEach(function(n) { Logger.log('  - ' + n); });
+  return { ok: true, riattivate: riattivate.length };
+}
+
+/**
+ * Corregge i valori 'Agente' malformati: un punto tra cifre (es. "2.3") deve essere
+ * una virgola ("2,3" = multi-agente AG2+AG3). Senza fix, quella fonte non viene
+ * scansionata da nessun agente. Logga le correzioni.
+ */
+function correggiAgentiMalformati() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(BANDI_V5_SHEET);
+  if (!sh || sh.getLastRow() < 2) { Logger.log('FontiBandi_v5 vuoto'); return { ok: false }; }
+  var data = sh.getDataRange().getValues();
+  var h = data[0].map(function(x) { return String(x || '').trim(); });
+  var iAg = h.indexOf('Agente'), iNome = h.indexOf('Nome');
+  if (iAg < 0) { Logger.log('Colonna Agente assente'); return { ok: false }; }
+  var corrette = [];
+  for (var r = 1; r < data.length; r++) {
+    var val = String(data[r][iAg] == null ? '' : data[r][iAg]).trim();
+    if (/\d\.\d/.test(val)) {
+      var nuovo = val.replace(/\./g, ',');
+      sh.getRange(r + 1, iAg + 1).setValue(nuovo);
+      corrette.push(data[r][iNome] + ': "' + val + '" -> "' + nuovo + '"');
+    }
+  }
+  Logger.log('=== CORREGGI AGENTI: ' + corrette.length + ' corrette ===');
+  corrette.forEach(function(c) { Logger.log('  - ' + c); });
+  return { ok: true, corrette: corrette.length, dettaglio: corrette };
+}
+
+/**
+ * ELENCO ORFANE (sola lettura): le fonti SENZA agente assegnato. Probabilmente non
+ * lette da nessuno (agenti leggono solo le taggate; lo scanner classico usa altra
+ * lista). Serve a decidere se assegnarle a un agente o disattivarle.
+ */
+function elencaFontiOrfane() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(BANDI_V5_SHEET);
+  if (!sh || sh.getLastRow() < 2) { Logger.log('FontiBandi_v5 vuoto'); return []; }
+  var data = sh.getDataRange().getValues();
+  var h = data[0].map(function(x) { return String(x || '').trim(); });
+  var iAg = h.indexOf('Agente'), iNome = h.indexOf('Nome'), iAtt = h.indexOf('Attiva'),
+      iVer = h.indexOf('VerificaHTTP'), iCat = h.indexOf('Categoria');
+  var out = [];
+  Logger.log('=== FONTI ORFANE (senza agente) ===');
+  for (var r = 1; r < data.length; r++) {
+    var ag = String(data[r][iAg] == null ? '' : data[r][iAg]).trim();
+    if (ag) continue;
+    var attiva = !(data[r][iAtt] === false || String(data[r][iAtt]).toLowerCase() === 'false');
+    var rec = { nome: data[r][iNome], attiva: attiva,
+                verifica: iVer >= 0 ? String(data[r][iVer] || '') : '(n/d)',
+                categoria: iCat >= 0 ? String(data[r][iCat] || '') : '' };
+    out.push(rec);
+    Logger.log((attiva ? '✓ ' : '✗ ') + rec.nome + ' | verifica: ' + rec.verifica + ' | cat: ' + rec.categoria);
+  }
+  Logger.log('--- Totale orfane: ' + out.length + ' ---');
+  return out;
+}
+
+/**
  * Marca con prefisso _OLD_ i fogli bandi non piu' usati. DA LANCIARE SOLO DOPO
  * consolidaBandiFonti() e verifica del pannello. NON cancella: rinomina, cosi' li
  * riconosci nel foglio Google e li elimini tu a mano.
