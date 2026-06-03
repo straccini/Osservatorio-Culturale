@@ -326,6 +326,15 @@ function _tedBuildBody_(url) {
   var lim = 20;
   var ml = url.match(/[?&]limit=(\d+)/);
   if (ml) lim = Number(ml[1]);
+  // Filtro freschezza: se la query non ha gia' un filtro data, aggiungi
+  // "pubblicati negli ultimi 365 giorni". TED vuole il formato YYYYMMDD
+  // (confermato dal test: i trattini danno 400). Calcolato a ogni fetch
+  // => i risultati restano sempre aggiornati senza intervento manuale.
+  if (q.indexOf('publication-date') < 0) {
+    var dLim = new Date(); dLim.setDate(dLim.getDate() - 365);
+    var ymd = '' + dLim.getFullYear() + ('0' + (dLim.getMonth() + 1)).slice(-2) + ('0' + dLim.getDate()).slice(-2);
+    q = q + ' AND publication-date>=' + ymd;
+  }
   return {
     query: q,
     fields: ['publication-number', 'notice-title', 'links', 'deadline-receipt-request',
