@@ -751,6 +751,33 @@ function setupFontiApiTed() {
 }
 
 /**
+ * EU Funding & Tenders Portal (SEDIA) — call/bandi UE. AGENTE 1.
+ * Metodo verificato: POST form-urlencoded (HTTP 200). Il filtro stato "aperto" via
+ * API non e' raggiungibile da GAS, quindi: keyword cultura nell'URL (text=...) +
+ * filtro stato lato fetch (_euftFetch_ tiene solo Aperto/Imminente) + filtro Claude AG1.
+ * Una riga per parola chiave (come per le altre scansioni). Idempotente (dedup URL).
+ */
+function setupFontiApiEuFt() {
+  var base = 'https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=';
+  var kw = [
+    { id: 'euft_culture',  kw: 'culture',           nome: 'EU F&T — Culture (API)' },
+    { id: 'euft_heritage', kw: 'cultural heritage',  nome: 'EU F&T — Cultural heritage (API)' },
+    { id: 'euft_museum',   kw: 'museum',             nome: 'EU F&T — Museum (API)' },
+    { id: 'euft_creative', kw: 'creative europe',    nome: 'EU F&T — Creative Europe (API)' }
+  ];
+  var out = kw.map(function(k) {
+    return aggiungiFonteApiAgente({
+      id: k.id, nome: k.nome,
+      url: base + encodeURIComponent(k.kw),
+      agente: 1, categoria: 'Aggregatore', priorita: 1,
+      note: 'EU F&T SEDIA, POST form. Keyword="' + k.kw + '". Solo call aperte (filtro stato lato fetch) + filtro Claude AG1.'
+    });
+  });
+  Logger.log('setupFontiApiEuFt: ' + JSON.stringify(out, null, 2));
+  return out;
+}
+
+/**
  * Pronta: dataset/cataloghi open-data culturali da dati.gov.it (CKAN) — AGENTE 5.
  * NB: sono DATASET (es. "Luoghi della cultura", inventari beni culturali), NON bandi.
  * Adatti ad AG5 (Digital/open data), non ad AG1 (bandi).

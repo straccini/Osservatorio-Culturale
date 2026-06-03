@@ -411,6 +411,11 @@ function _agentFetchUrl_(url) {
     if (url.indexOf('api.ted.europa.eu') >= 0 && url.indexOf('/notices/search') >= 0) {
       return _tedFetch_(url);
     }
+    // --- EU Funding & Tenders (SEDIA): POST form, risposta enorme -> compattata ---
+    // Convenzione: URL = search-api ...?apiKey=SEDIA&text=<keyword>. Vedi _euftFetch_.
+    if (url.indexOf('api.tech.ec.europa.eu') >= 0 && url.indexOf('search-api') >= 0) {
+      return _euftFetch_(url);
+    }
     var resp = UrlFetchApp.fetch(url, {
       muteHttpExceptions: true,
       followRedirects: true,
@@ -419,6 +424,52 @@ function _agentFetchUrl_(url) {
     });
     if (resp.getResponseCode() !== 200) return null;
     return resp.getContentText();
+  } catch(e) { return null; }
+}
+
+/**
+ * Fetch EU Funding & Tenders (SEDIA). POST form-urlencoded (l'unico che GAS riesce
+ * a inviare: il filtro 'query' multipart non e' raggiungibile da GAS). Il keyword
+ * cultura sta nell'URL (text=...). Qui:
+ *  1) scarico il JSON (enorme),
+ *  2) tengo SOLO le call con stato Aperto/Imminente (filtro lato nostro),
+ *  3) estraggo i campi utili in formato COMPATTO (titolo/id/stato/data/link),
+ * cosi' rientra nel buffer di Claude. Ritorna testo compatto o null.
+ */
+function _euftFetch_(url) {
+  try {
+    var resp = UrlFetchApp.fetch(url, {
+      method: 'post', muteHttpExceptions: true,
+      payload: { languages: 'en', pageNumber: '1', pageSize: '50' },
+      headers: { 'Accept': 'application/json' }
+    });
+    if (resp.getResponseCode() !== 200) return null;
+    var data;
+    try { data = JSON.parse(resp.getContentText()); } catch(e0) { return null; }
+    var results = (data && data.results) || [];
+    if (!results.length) return null;
+    var STATO = { '31094501': 'Imminente', '31094502': 'Aperto', '31094503': 'Chiuso' };
+    var aperti = [], tutti = [];
+    for (var i = 0; i < results.length; i++) {
+      var r = results[i], m = r.metadata || {};
+      function g1(k) { return (m[k] && m[k][0] != null) ? String(m[k][0]) : ''; }
+      var st = g1('status');
+      var titolo = r.title || g1('callTitle') || r.content || r.summary || '';
+      var id = g1('callIdentifier') || r.reference || '';
+      var dl = g1('deadlineDate') || g1('startDate') || g1('es_SortDate') || '';
+      var stLabel = STATO[st] || st || 'n/d';
+      var link = r.url || '';
+      var summ = String(r.summary || r.content || '').replace(/\s+/g, ' ').substring(0, 180);
+      var riga = '• ' + String(titolo).substring(0, 180) + ' | id:' + id +
+                 ' | stato:' + stLabel + ' | data:' + dl + ' | ' + link + '\n  ' + summ;
+      tutti.push(riga);
+      if (st === '31094501' || st === '31094502') aperti.push(riga);
+      if (aperti.length >= 40) break;
+    }
+    // Preferisci le aperte; se lo stato non e' leggibile, passa le prime 40 a Claude.
+    var righe = aperti.length ? aperti : tutti.slice(0, 40);
+    if (!righe.length) return null;
+    return 'EU Funding & Tenders — call (' + righe.length + ', keyword nell\'URL):\n' + righe.join('\n');
   } catch(e) { return null; }
 }
 
