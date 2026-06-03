@@ -375,9 +375,9 @@ function getFontiFeedAdmin(filtro) {
     out.push({
       id: String(g(row, 'ID')), nome: String(g(row, 'Nome') || ''), gruppo: String(g(row, 'Gruppo') || ''),
       tipo: tipo, url: String(g(row, 'URL_Feed') || ''), urlSito: String(g(row, 'URL_Sito') || ''),
-      ambito: g(row, 'Ambito'), categoria: String(g(row, 'Categoria') || ''), dimensioni: String(g(row, 'Dimensioni') || ''),
+      ambito: String(g(row, 'Ambito') || ''), categoria: String(g(row, 'Categoria') || ''), dimensioni: String(g(row, 'Dimensioni') || ''),
       priorita: Number(g(row, 'Priorita')) || 2, attiva: attiva,
-      ultimaScan: g(row, 'UltimaScan'), ultimoEsito: String(g(row, 'UltimoEsito') || ''),
+      ultimaScan: g(row, 'UltimaScan') ? String(g(row, 'UltimaScan')) : '', ultimoEsito: String(g(row, 'UltimoEsito') || ''),
       nRecTotali: Number(g(row, 'NRecordTotali')) || 0, failConsec: Number(g(row, 'FailConsecutivi')) || 0,
       note: String(g(row, 'Note') || '')
     });
