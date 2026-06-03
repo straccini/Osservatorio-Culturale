@@ -362,6 +362,41 @@ function setupFontiApiBandiUpEsteso() {
 }
 
 /**
+ * TED — Tenders Electronic Daily (appalti pubblici UE). AGENTE 1.
+ *
+ * Fonte UFFICIALE UE: bandi/appalti veri, pertinenti a cultura e musei (codici CPV
+ * famiglia 925x = servizi bibliotecari/archivi/musei + conservazione beni culturali).
+ * Nessuna API key. ATTENZIONE: TED usa POST con body JSON; lo scanner lo gestisce
+ * via _tedFetch_/_tedBuildBody_ (AgentScanner.js) riconoscendo l'endpoint.
+ *
+ * Convenzione URL fonte: endpoint /v3/notices/search + ?query=<expert query>&limit=N.
+ * La query viene tradotta in POST. PRIMA di attivare, lanciare testTedApi() per
+ * confermare la sintassi della expert query e i nomi dei campi.
+ *
+ * Idempotente (dedup per URL). Lanciare DOPO la verifica con testTedApi().
+ */
+function setupFontiApiTed() {
+  var endpoint = 'https://api.ted.europa.eu/v3/notices/search';
+  // Expert query: CPV famiglia cultura/musei + luogo di esecuzione Italia, attivi.
+  var qCultura = 'classification-cpv IN (92500000 92520000 92521000 92521100 92522000 92522100 45212313) AND place-of-performance=ITA';
+  var fonti = [
+    { id: 'ted_cultura_it', nome: 'TED — Appalti cultura/musei Italia (API)',
+      url: endpoint + '?query=' + encodeURIComponent(qCultura) + '&limit=20',
+      note: 'TED UE, POST JSON. CPV cultura/musei, luogo Italia, attivi. Verificare con testTedApi().' },
+    { id: 'ted_cultura_eu', nome: 'TED — Appalti cultura/musei UE (API)',
+      url: endpoint + '?query=' + encodeURIComponent('classification-cpv IN (92520000 92521000 92522000)') + '&limit=20',
+      note: 'TED UE, POST JSON. CPV cultura/musei, tutta UE, attivi. Verificare con testTedApi().' }
+  ];
+  var out = [];
+  fonti.forEach(function(f) {
+    f.agente = 1; f.categoria = 'Aggregatore'; f.priorita = 1;
+    out.push(aggiungiFonteApiAgente(f));
+  });
+  Logger.log('setupFontiApiTed: ' + JSON.stringify(out, null, 2));
+  return out;
+}
+
+/**
  * Pronta: dataset/cataloghi open-data culturali da dati.gov.it (CKAN) — AGENTE 5.
  * NB: sono DATASET (es. "Luoghi della cultura", inventari beni culturali), NON bandi.
  * Adatti ad AG5 (Digital/open data), non ad AG1 (bandi).

@@ -299,6 +299,13 @@ function _agentGetExistingTitles_(sheet, agenteId) {
 
 function _agentFetchUrl_(url) {
   try {
+    // --- TED (Tenders Electronic Daily, appalti UE) richiede POST con body JSON ---
+    // Convenzione: la fonte e' l'endpoint /v3/notices/search con la expert query
+    // codificata nel parametro ?query=... (e opzionale &limit=N). Qui la traduciamo
+    // in una vera richiesta POST. Vedi _tedBuildBody_ per il body.
+    if (url.indexOf('api.ted.europa.eu') >= 0 && url.indexOf('/notices/search') >= 0) {
+      return _tedFetch_(url);
+    }
     var resp = UrlFetchApp.fetch(url, {
       muteHttpExceptions: true,
       followRedirects: true,
@@ -308,6 +315,78 @@ function _agentFetchUrl_(url) {
     if (resp.getResponseCode() !== 200) return null;
     return resp.getContentText();
   } catch(e) { return null; }
+}
+
+/** Estrae query+limit dall'URL-convenzione TED e costruisce il body POST. */
+function _tedBuildBody_(url) {
+  var q = '*';
+  var mq = url.match(/[?&]query=([^&]+)/);
+  if (mq) { try { q = decodeURIComponent(mq[1].replace(/\+/g, ' ')); } catch(e0) { q = mq[1]; } }
+  var lim = 20;
+  var ml = url.match(/[?&]limit=(\d+)/);
+  if (ml) lim = Number(ml[1]);
+  return {
+    query: q,
+    fields: ['publication-number', 'notice-title', 'links', 'deadline-receipt-request',
+             'buyer-name', 'classification-cpv', 'publication-date', 'place-of-performance'],
+    page: 1,
+    limit: lim,
+    scope: 'ACTIVE',
+    paginationMode: 'PAGE_NUMBER',
+    checkQuerySyntax: false
+  };
+}
+
+/** Esegue la POST verso TED. Ritorna il testo JSON o null. */
+function _tedFetch_(url) {
+  try {
+    var endpoint = url.split('?')[0];
+    var resp = UrlFetchApp.fetch(endpoint, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(_tedBuildBody_(url)),
+      muteHttpExceptions: true,
+      followRedirects: true,
+      headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0)' }
+    });
+    if (resp.getResponseCode() !== 200) return null;
+    return resp.getContentText();
+  } catch(e) { return null; }
+}
+
+/**
+ * TEST one-click: verifica l'API TED con piu' varianti di body e logga gli esiti.
+ * Da lanciare dall'editor (Esegui -> testTedApi), poi guardare il Log/Esecuzioni.
+ * Serve a confermare i nomi esatti dei campi PRIMA di attivare la fonte.
+ */
+function testTedApi() {
+  var endpoint = 'https://api.ted.europa.eu/v3/notices/search';
+  var varianti = [
+    { nome: 'A_minimale_no_fields', body: { query: '*', page: 1, limit: 3, scope: 'ACTIVE', paginationMode: 'PAGE_NUMBER' } },
+    { nome: 'B_con_fields',         body: _tedBuildBody_(endpoint + '?query=*&limit=3') },
+    { nome: 'C_cultura_CPV_Italia', body: _tedBuildBody_(endpoint + '?query=' + encodeURIComponent('classification-cpv IN (92500000 92520000 92521000 92522000) AND place-of-performance=ITA') + '&limit=3') }
+  ];
+  var report = [];
+  varianti.forEach(function(v) {
+    try {
+      var resp = UrlFetchApp.fetch(endpoint, {
+        method: 'post', contentType: 'application/json',
+        payload: JSON.stringify(v.body), muteHttpExceptions: true,
+        headers: { 'Accept': 'application/json' }
+      });
+      var code = resp.getResponseCode();
+      var txt = resp.getContentText() || '';
+      Logger.log('=== TED ' + v.nome + ' -> HTTP ' + code + ' ===');
+      Logger.log('BODY inviato: ' + JSON.stringify(v.body));
+      Logger.log('RISPOSTA (primi 1800 char): ' + txt.substring(0, 1800));
+      report.push({ variante: v.nome, http: code, lung: txt.length });
+    } catch(e) {
+      Logger.log('=== TED ' + v.nome + ' -> ERRORE: ' + e + ' ===');
+      report.push({ variante: v.nome, errore: String(e) });
+    }
+  });
+  Logger.log('RIEPILOGO testTedApi: ' + JSON.stringify(report, null, 2));
+  return report;
 }
 
 function _agentCleanHtml_(html) {
