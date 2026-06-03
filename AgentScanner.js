@@ -63,37 +63,44 @@ function scanAgente(agenteId, opts) {
   var stats = { scansionate: 0, nuovi: 0, skip_hash: 0, errori: 0 };
   var fontiSheet = _agentGetFontiSheet_();
 
-  fonti.forEach(function(fonte) {
+  // v4.20 — Anti-timeout: budget di tempo + cursore di ripresa.
+  // Ogni esecuzione lavora max MAX_MS, poi salva l'indice e riprende al lancio dopo.
+  var MAX_MS = 270000; // ~4.5 min (limite GAS ~6 min)
+  var cursorKey = 'AGENT_CURSOR_' + agenteId;
+  var startIdx = 0;
+  try { startIdx = parseInt(PropertiesService.getScriptProperties().getProperty(cursorKey) || '0', 10) || 0; } catch(eC) {}
+  if (startIdx >= fonti.length || startIdx < 0) startIdx = 0;
+  if (startIdx > 0) Logger.log('  [ripresa] riparto da fonte ' + startIdx + '/' + fonti.length);
+
+  var i = startIdx, interrotto = false;
+  for (; i < fonti.length; i++) {
+    if (Date.now() - t0 > MAX_MS) { interrotto = true; break; }
+    var fonte = fonti[i];
     try {
       stats.scansionate++;
 
       // 1. Fetch contenuto
       var html = _agentFetchUrl_(fonte.url);
-      if (!html || html.length < 200) {
-        _agentUpdateFonteEsito_(fontiSheet, fonte.row, 'EMPTY', 0);
-        return;
-      }
+      if (!html || html.length < 200) { _agentUpdateFonteEsito_(fontiSheet, fonte.row, 'EMPTY', 0); continue; }
 
       // 2. Hash-first: confronta con hash precedente
       var hash = _agentMd5_(html.substring(0, 5000));
       if (hash === fonte.ultimoHash && !opts.forceRescan) {
         stats.skip_hash++;
         if (opts.verbose) Logger.log('  SKIP (hash invariato): ' + fonte.nome);
-        return;
+        continue;
       }
 
-      // 3. Pulisci HTML e estrai con Claude
-      var cleanText = _agentCleanHtml_(html);
-      if (cleanText.length < 100) {
-        _agentUpdateFonteEsito_(fontiSheet, fonte.row, 'EMPTY_CLEAN', 0);
-        return;
-      }
+      // 3. Prepara testo: API/JSON -> grezzo a Claude; HTML -> pulizia
+      var isApi = (String(fonte.tipo).toUpperCase() === 'API' || String(fonte.tipo).toUpperCase() === 'JSON');
+      var cleanText = isApi ? html.substring(0, 12000) : _agentCleanHtml_(html);
+      if (cleanText.length < 100) { _agentUpdateFonteEsito_(fontiSheet, fonte.row, 'EMPTY_CLEAN', 0); continue; }
 
       var items = _agentExtractWithClaude_(cleanText, fonte, agent);
       if (!items || items.length === 0) {
         _agentUpdateFonteEsito_(fontiSheet, fonte.row, 'NO_MATCH', 0);
         _agentUpdateFonteHash_(fontiSheet, fonte.row, hash);
-        return;
+        continue;
       }
 
       // 4. Deduplica e salva
@@ -127,11 +134,19 @@ function scanAgente(agenteId, opts) {
       Logger.log('  ERRORE ' + fonte.nome + ': ' + e.message);
       _agentUpdateFonteEsito_(fontiSheet, fonte.row, 'ERROR', 0);
     }
-  });
+  }
+
+  // Cursore: completato -> pulisci; interrotto -> salva il punto di ripresa
+  try {
+    if (i >= fonti.length) PropertiesService.getScriptProperties().deleteProperty(cursorKey);
+    else PropertiesService.getScriptProperties().setProperty(cursorKey, String(i));
+  } catch(eC2) {}
+  if (interrotto) Logger.log('  [budget tempo] fermato a ' + i + '/' + fonti.length + ' — riprende al prossimo trigger');
 
   var elapsed = Date.now() - t0;
-  Logger.log('=== ' + agent.codice + ' completato: ' + stats.nuovi + ' nuovi, ' + stats.skip_hash + ' skip hash, ' + stats.errori + ' errori (' + Math.round(elapsed / 1000) + 's) ===');
-  return { ok: true, agenteId: agenteId, fontiScansionate: stats.scansionate, nuoviContenuti: stats.nuovi, skipHash: stats.skip_hash, errori: stats.errori, tempoMs: elapsed };
+  var statoFine = interrotto ? ('PARZIALE (ripresa da ' + i + '/' + fonti.length + ')') : 'COMPLETATO';
+  Logger.log('=== ' + agent.codice + ' ' + statoFine + ': ' + stats.nuovi + ' nuovi, ' + stats.skip_hash + ' skip hash, ' + stats.errori + ' errori (' + Math.round(elapsed / 1000) + 's) ===');
+  return { ok: true, agenteId: agenteId, fontiScansionate: stats.scansionate, nuoviContenuti: stats.nuovi, skipHash: stats.skip_hash, errori: stats.errori, tempoMs: elapsed, completato: !interrotto, prossimoIndice: (interrotto ? i : 0), totaleFonti: fonti.length };
 }
 
 // ============================================================================
@@ -144,11 +159,18 @@ function scanAgente3() { return scanAgente(3); }
 function scanAgente4() { return scanAgente(4); }
 function scanAgente5() { return scanAgente(5); }
 
+// NB: in produzione usare i trigger per-agente (setupAgentTriggers), NON questo.
+// Qui c'e' un budget globale per non andare in hard-timeout nei test manuali:
+// gli agenti non raggiunti partono al lancio successivo (grazie al cursore).
 function scanAllAgenti() {
+  var t0 = Date.now();
+  var GLOBAL_MAX_MS = 270000; // ~4.5 min
   var results = [];
-  [1, 2, 3, 4, 5].forEach(function(id) {
-    results.push(scanAgente(id));
-  });
+  var ids = [1, 2, 3, 4, 5];
+  for (var k = 0; k < ids.length; k++) {
+    if (Date.now() - t0 > GLOBAL_MAX_MS) { Logger.log('scanAllAgenti: budget globale raggiunto, ' + (ids.length - k) + ' agenti rimandati al prossimo lancio'); break; }
+    results.push(scanAgente(ids[k]));
+  }
   return results;
 }
 
