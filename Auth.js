@@ -184,14 +184,14 @@ function getUtenteByEmail_(emailIn) {
 }
 
 
-function getCurrentUserAuth() {
+function getCurrentUserAuth(token) {
   // v4.18.5 (2026-05-11) — Riunificato con CurrentUser_v44.
   // Identita' presa da una sola fonte (Session + fallback token admin URL).
   // Stato/optIn arricchito dal foglio Utenti se l'utente e' identificato.
   // Nessuna modalita' "apri tutto a Silvano" indipendente dalla sessione.
 
   var base = (typeof getCurrentUser_v44 === 'function')
-    ? getCurrentUser_v44()
+    ? getCurrentUser_v44(token)
     : { email:'', nome:'Ospite', ruolo:'guest', isAdmin:false, isEditor:false, authMethod:'fallback' };
 
   // 1) Admin (via Session admin email o via token URL): bypass lookup foglio
@@ -270,13 +270,22 @@ function requireAuth(rolesAllowed) {
 // ============================================================================
 
 /**
- * Registra automaticamente un utente come lettore attivo.
- * Se l'utente esiste gia nel foglio Utenti, non fa nulla.
+ * v5.1.10 — Registra un nuovo utente come lettore attivo.
+ * Gestisce tutti i casi:
+ *   - email già registrata e attiva → errore 'gia_registrato'
+ *   - email sospesa/rifiutata → riattiva come lettore
+ *   - email non presente → crea come lettore/attivo
+ *
  * @param {string} email
  * @param {string} [nome]
- * @param {string} [source] - 'newsletter'|'matrix'|'prenotazione'
- * @returns {{ ok:boolean, created?:boolean, existing?:boolean }}
+ * @param {string} [source] - 'registrazione'|'newsletter'|'matrix'|'prenotazione'
+ * @returns {{ ok, action:'created'|'reactivated', error?, stato? }}
  */
+/** Wrapper pubblico per il frontend (google.script.run non vede funzioni con _) */
+function registraUtente(email, nome, source) {
+  return _autoRegisterUser_(email, nome, source);
+}
+
 function _autoRegisterUser_(email, nome, source) {
   email = String(email || '').toLowerCase().trim();
   if (!email || email.indexOf('@') < 0) return { ok: false, error: 'email non valida' };
@@ -286,11 +295,26 @@ function _autoRegisterUser_(email, nome, source) {
     var rows = sh.getDataRange().getValues();
     var headers = rows[0];
     var iEmail = headers.indexOf('Email');
+    var iNome  = headers.indexOf('Nome');
+    var iRuolo = headers.indexOf('Ruolo');
+    var iStato = headers.indexOf('Stato');
 
-    // Se gia esiste, non fare nulla
     for (var i = 1; i < rows.length; i++) {
       if (String(rows[i][iEmail] || '').toLowerCase().trim() === email) {
-        return { ok: true, existing: true };
+        var stato = String(rows[i][iStato] || '').toLowerCase();
+        var ruolo = String(rows[i][iRuolo] || '');
+
+        // Gia attivo: segnala che deve usare Accedi
+        if (stato === 'attivo') {
+          return { ok: false, error: 'gia_registrato', ruolo: ruolo };
+        }
+
+        // Sospeso, rifiutato, pending: riattiva come lettore
+        sh.getRange(i + 1, iStato + 1).setValue('attivo');
+        if (ruolo === 'ospite' || !ruolo) sh.getRange(i + 1, iRuolo + 1).setValue('lettore');
+        if (nome && !rows[i][iNome]) sh.getRange(i + 1, iNome + 1).setValue(nome);
+        Logger.log('[AUTH] Riattivato: ' + email + ' (era ' + stato + ')');
+        return { ok: true, action: 'reactivated' };
       }
     }
 
@@ -300,10 +324,10 @@ function _autoRegisterUser_(email, nome, source) {
     sh.appendRow([
       id, email, nome || '', 'lettore', 'attivo',
       true, true, false,
-      nowIso, nowIso, source || 'auto', 'Registrazione automatica via ' + (source || 'auto')
+      nowIso, nowIso, source || 'auto', 'Registrazione via ' + (source || 'auto')
     ]);
-    Logger.log('[AUTH] Auto-registrato: ' + email + ' via ' + (source || 'auto'));
-    return { ok: true, created: true };
+    Logger.log('[AUTH] Registrato: ' + email + ' via ' + (source || 'auto'));
+    return { ok: true, action: 'created' };
   } catch(e) {
     Logger.log('[AUTH] _autoRegisterUser_ err: ' + e.message);
     return { ok: false, error: e.message };
@@ -415,9 +439,10 @@ function _notifyAdminNewAccessRequest_(email, nome, motivo) {
 // ============================================================================
 
 function getAllUtenti(opts) {
+  opts = opts || {};
   var _dbg = { ssId:'?', fogli:'?', utentiRows:-1, readErr:'' };
   try {
-    var auth = getCurrentUserAuth();
+    var auth = getCurrentUserAuth(opts.token || null);
     if (!auth || !auth.isAdmin) {
       return { ok:false, error:'Accesso negato. Email: ' + (auth ? auth.email || 'vuota' : 'errore'), items:[] };
     }
@@ -743,6 +768,39 @@ function updateUserRuolo(email, ruolo) {
   requireAuth(['admin']);
   if (OC_UTENTI_RUOLI.indexOf(ruolo) < 0) return { error:'ruolo invalido' };
   return _updateUserField_(email, 'Ruolo', ruolo);
+}
+
+/**
+ * v4.20 — Salvataggio combinato Stato + Ruolo dal pannello admin (un click).
+ * Scelta confermata: NESSUNA email e nessun cambio opt-in (salvataggio silenzioso/prevedibile).
+ * Registra DataApprovazione solo alla prima attivazione (audit, nessun effetto collaterale).
+ */
+function saveUserStatoRuolo(email, stato, ruolo, oldStato) {
+  requireAuth(['admin']);
+  email = String(email || '').toLowerCase().trim();
+  if (!email) return { error:'email mancante' };
+  var STATI = ['pending','attivo','sospeso','rifiutato'];
+  if (STATI.indexOf(stato) < 0) return { error:'stato invalido: ' + stato };
+  if (OC_UTENTI_RUOLI.indexOf(ruolo) < 0) return { error:'ruolo invalido: ' + ruolo };
+  var sh = _getOrCreateUtentiSheet_();
+  var headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+  var iEmail = headers.indexOf('Email');
+  var iStato = headers.indexOf('Stato');
+  var iRuolo = headers.indexOf('Ruolo');
+  var iAppr  = headers.indexOf('DataApprovazione');
+  var rows = sh.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][iEmail] || '').toLowerCase().trim() === email) {
+      if (iStato >= 0) sh.getRange(i+1, iStato+1).setValue(stato);
+      if (iRuolo >= 0) sh.getRange(i+1, iRuolo+1).setValue(ruolo);
+      var primaAttivazione = (stato === 'attivo' && String(oldStato || rows[i][iStato] || '').toLowerCase() !== 'attivo');
+      if (primaAttivazione && iAppr >= 0 && !rows[i][iAppr]) {
+        sh.getRange(i+1, iAppr+1).setValue(new Date().toISOString());
+      }
+      return { ok:true, email: email, stato: stato, ruolo: ruolo };
+    }
+  }
+  return { error:'utente non trovato' };
 }
 
 function updateUserOptIn(email, key, value) {

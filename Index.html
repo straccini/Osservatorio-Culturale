@@ -144,7 +144,7 @@
       <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;text-align:center">oppure iscriviti alla newsletter settimanale</div>
       <div id="nlOptInForm">
         <div style="display:flex;gap:8px">
-          <input type="email" id="nlOptInEmail" placeholder="email@museo.it" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />
+          <input type="email" id="nlOptInEmail" placeholder="email@museo.it" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit;color:var(--ink,#1a1a1a);background:var(--surface,#fff)" />
           <button type="button" onclick="OC.submitNewsletterOptIn()" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:10px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Iscrivimi</button>
         </div>
         <label id="nlOptInGdprLabel" style="display:flex;align-items:start;gap:6px;margin-top:8px;cursor:pointer">
@@ -1158,14 +1158,35 @@
         <p class="page-sub" id="wsUserSub">Qui trovi i tuoi bandi salvati, il report MuseMu Matrix e lo storico delle tue consulenze.</p>
       </div>
 
-      <!-- ═══ MAPPA DI IDENTITA ═══ -->
-      <div id="wsIdentitySection" style="margin-top:24px;padding:24px 28px;background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-radius:14px">
+      <!-- ═══ 1. FILTRO GLOBALE — BANNER PROMINENTE ═══ -->
+      <div id="wsFilterBanner" style="margin-top:20px;padding:16px 24px;background:linear-gradient(135deg,#FFF3E0 0%,#FFE0B2 100%);border:2px solid var(--accent,#E84B1C);border-radius:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:14px;flex:1">
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--accent,#E84B1C);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" width="20" height="20"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+          </div>
+          <div>
+            <div style="font-family:var(--font-display);font-size:1rem;font-weight:600;color:var(--ink)">Filtro profilo</div>
+            <div style="font-family:var(--font-ui);font-size:12px;color:var(--ink-2);margin-top:2px">Filtra bandi, news, podcast e video in base al tuo profilo di interessi</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span id="identFilterStatus" style="font-family:var(--font-ui);font-size:12px;font-weight:600;color:var(--ink-3)">Disattivato</span>
+          <label style="position:relative;display:inline-block;width:52px;height:28px;cursor:pointer">
+            <input type="checkbox" id="identFilterToggle" onchange="OC.identToggleFilter(this.checked)" style="opacity:0;width:0;height:0">
+            <span id="identFilterSlider" style="position:absolute;inset:0;background:#ccc;border-radius:28px;transition:.3s"></span>
+            <span id="identFilterKnob" style="position:absolute;top:3px;left:3px;width:22px;height:22px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ═══ 2. MAPPA DI IDENTITA ═══ -->
+      <div id="wsIdentitySection" style="margin-top:16px;padding:24px 28px;background:linear-gradient(135deg,#F3E8FF 0%,#EDE9FE 50%,#F5F3FF 100%);border:1px solid #D8B4FE;border-radius:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
           <div>
-            <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#E84B1C);letter-spacing:.14em;text-transform:uppercase;font-weight:700">Mappa di identita</div>
+            <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--amb-1,#6B5C9A);letter-spacing:.14em;text-transform:uppercase;font-weight:700">Mappa di identita</div>
             <h3 style="font-family:var(--font-display);font-size:1.15rem;font-weight:500;margin:4px 0 0;color:var(--ink)">I tuoi interessi tematici e territoriali</h3>
           </div>
-          <span id="identBadgeSummary" style="font-family:var(--font-ui);font-size:11px;color:var(--ink-3);background:var(--paper,#fff);border:1px solid var(--rule);border-radius:20px;padding:4px 12px;white-space:nowrap">Caricamento...</span>
+          <span id="identBadgeSummary" style="font-family:var(--font-ui);font-size:11px;color:var(--amb-1,#6B5C9A);background:#fff;border:1px solid #D8B4FE;border-radius:20px;padding:4px 12px;white-space:nowrap">Caricamento...</span>
         </div>
         <p style="font-family:var(--font-ui);font-size:13px;color:var(--ink-3);line-height:1.5;margin:6px 0 16px">Attiva le dimensioni che ti interessano. Bandi, news e digest si adatteranno automaticamente al tuo profilo.</p>
 
@@ -1175,51 +1196,60 @@
         </div>
 
         <!-- Ambito territoriale -->
-        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;padding:14px 0;border-top:1px solid var(--rule,#E5E5E7)">
+        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;padding:14px 0;border-top:1px solid rgba(139,92,246,.2)">
           <div style="font-family:var(--font-ui);font-size:12px;font-weight:600;color:var(--ink-2);min-width:130px">Ambito territoriale</div>
           <label style="display:flex;align-items:center;gap:6px;font-family:var(--font-ui);font-size:13px;color:var(--ink);cursor:pointer">
-            <input type="radio" name="identAmbito" value="nazionale" checked style="accent-color:var(--accent,#E84B1C)"> Tutta Italia
+            <input type="radio" name="identAmbito" value="nazionale" checked style="accent-color:var(--amb-1,#6B5C9A)"> Tutta Italia
           </label>
           <label style="display:flex;align-items:center;gap:6px;font-family:var(--font-ui);font-size:13px;color:var(--ink);cursor:pointer">
-            <input type="radio" name="identAmbito" value="locale" style="accent-color:var(--accent,#E84B1C)"> Regione specifica
+            <input type="radio" name="identAmbito" value="locale" style="accent-color:var(--amb-1,#6B5C9A)"> Regione specifica
           </label>
-          <select id="identRegione" style="font-family:var(--font-ui);font-size:13px;padding:6px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--paper,#fff);color:var(--ink);display:none">
+          <select id="identRegione" style="font-family:var(--font-ui);font-size:13px;padding:6px 12px;border:1px solid #D8B4FE;border-radius:6px;background:#fff;color:var(--ink);display:none">
             <option value="">Seleziona regione...</option>
           </select>
         </div>
 
         <!-- Notifica solo match + azioni -->
-        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;padding:14px 0;border-top:1px solid var(--rule,#E5E5E7)">
+        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;padding:14px 0;border-top:1px solid rgba(139,92,246,.2)">
           <label style="display:flex;align-items:center;gap:6px;font-family:var(--font-ui);font-size:13px;color:var(--ink);cursor:pointer;flex:1">
-            <input type="checkbox" id="identNotifyOnly" style="accent-color:var(--accent,#E84B1C)">
+            <input type="checkbox" id="identNotifyOnly" style="accent-color:var(--amb-1,#6B5C9A)">
             Ricevi nel digest <b>solo</b> contenuti che corrispondono al tuo profilo
           </label>
           <div style="display:flex;gap:8px">
             <button class="btn btn-secondary" onclick="OC.identReset()" style="font-size:12px;padding:6px 14px">Resetta</button>
-            <button class="btn btn-primary" onclick="OC.identSave()" style="font-size:12px;padding:6px 14px;background:var(--accent,#E84B1C);color:#fff;border:none;border-radius:6px;cursor:pointer">Salva profilo</button>
+            <button class="btn btn-primary" onclick="OC.identSave()" style="font-size:12px;padding:6px 14px;background:var(--amb-1,#6B5C9A);color:#fff;border:none;border-radius:6px;cursor:pointer">Salva profilo</button>
           </div>
         </div>
 
-        <!-- Toggle filtro globale -->
-        <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--rule,#E5E5E7)">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1">
-            <input type="checkbox" id="identFilterToggle" onchange="OC.identToggleFilter(this.checked)" style="accent-color:var(--accent,#E84B1C);width:18px;height:18px">
-            <span style="font-family:var(--font-ui);font-size:13px;font-weight:500;color:var(--ink)">Applica filtro profilo a tutta la webapp</span>
-          </label>
-          <span id="identFilterStatus" style="font-family:var(--font-ui);font-size:11px;color:var(--ink-4)">Disattivato</span>
-        </div>
-
         <!-- Auto-genera da Matrix -->
-        <div id="identAutoGenWrap" style="padding:12px 0 0;border-top:1px solid var(--rule,#E5E5E7);display:none">
+        <div id="identAutoGenWrap" style="padding:12px 0 0;border-top:1px solid rgba(139,92,246,.2);display:none">
           <button class="btn btn-secondary" onclick="OC.identFromMatrix()" style="font-size:12px;padding:6px 14px">Genera automaticamente dai risultati MuseMu Matrix</button>
           <span style="font-family:var(--font-ui);font-size:11px;color:var(--ink-4);margin-left:8px">Attiva le dimensioni dove il tuo punteggio Matrix e alto</span>
         </div>
       </div>
 
-      <div id="wsContent" style="margin-top:18px">
-        <div class="skeleton home-list-skeleton"></div>
-        <div class="skeleton home-list-skeleton"></div>
-        <div class="skeleton home-list-skeleton"></div>
+      <!-- ═══ 3. SEGNALAZIONI COMMUNITY ═══ -->
+      <div style="margin-top:16px;padding:20px 24px;background:linear-gradient(135deg,#E8F5E9 0%,#F1F8E9 100%);border:1px solid #A5D6A7;border-radius:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--amb-2,#3F7A5E);letter-spacing:.14em;text-transform:uppercase;font-weight:700">Community</div>
+            <h3 style="font-family:var(--font-display);font-size:1.1rem;font-weight:500;margin:4px 0 0;color:var(--ink)">Segnala un'iniziativa alla community</h3>
+          </div>
+          <button type="button" data-action="apriFormSegnalazione" style="background:var(--amb-2,#3F7A5E);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Segnala iniziativa</button>
+        </div>
+        <p style="font-family:var(--font-ui);font-size:13px;color:var(--ink-3);margin:8px 0 0;line-height:1.5">Condividi un progetto, evento o buona pratica. Dopo la revisione redazionale sara visibile a tutta la community.</p>
+        <div id="wsMieSegnalazioni" style="margin-top:14px"></div>
+      </div>
+
+      <!-- ═══ 4. I TUOI CONTENUTI SALVATI ═══ -->
+      <div style="margin-top:16px;padding:20px 24px;background:linear-gradient(135deg,#E3F2FD 0%,#F3F8FE 100%);border:1px solid #90CAF9;border-radius:14px">
+        <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--amb-3,#3C6A95);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:4px">Salvati e attivita</div>
+        <h3 style="font-family:var(--font-display);font-size:1.1rem;font-weight:500;margin:0 0 12px;color:var(--ink)">I tuoi contenuti</h3>
+        <div id="wsContent">
+          <div class="skeleton home-list-skeleton"></div>
+          <div class="skeleton home-list-skeleton"></div>
+          <div class="skeleton home-list-skeleton"></div>
+        </div>
       </div>
     </section>
 
@@ -1646,6 +1676,8 @@
     </section>
 
     <!-- ===== PAGE SETTINGS (Sprint 1.3 - 2026-05-01): gestione fonti dati completa ===== -->
+    <section class="page" id="page-profilo-pro"></section>
+
     <section class="page" id="page-settings">
       <div class="section-head" style="margin-top:0">
         <h2 class="section-title">Impostazioni</h2>
@@ -1660,8 +1692,12 @@
         <button class="settings-tab" data-tab="altre" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Fonti altre</button>
         <button class="settings-tab" data-tab="utenti" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer"> Utenti & Accessi</button>
         <button class="settings-tab" data-tab="config" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Configurazione</button>
-        <button class="settings-tab" data-tab="gestione" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Gestione dati</button>
-        <button class="settings-tab" data-tab="sistema" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Stato sistema</button>
+        <button class="settings-tab" data-tab="gestione" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Gestione & Stats</button>
+        <button class="settings-tab" data-tab="diagnostica" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Diagnostica</button>
+        <button class="settings-tab" data-tab="sistema" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Automazioni</button>
+        <button class="settings-tab" data-tab="segnalazioni" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Segnalazioni</button>
+        <button class="settings-tab" data-tab="digest" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Digest</button>
+        <button class="settings-tab" data-tab="backup" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Archivio & Backup</button>
       </div>
 
       <!-- TAB TUTTE LE FONTI (Sprint 2 B3 — 2026-05-11) -->
@@ -2002,8 +2038,8 @@
             </div>
             <div style="padding:12px;background:#FAFAFA;border:1px solid #E5E5E5;border-radius:6px">
               <div style="font-size:13px;font-weight:600;color:var(--ink-2,#3A3A3C);margin-bottom:6px">Re-tag Matrix incrementale</div>
-              <p style="font-size:12px;color:#666;margin:0 0 10px">Esegui da Pannello admin → card "Tagging MuseMu Matrix" per applicare il tagger ai contenuti non ancora taggati.</p>
-              <button class="btn btn-secondary" data-page="admin" style="font-size:12px;padding:6px 14px">→ Vai al Pannello admin</button>
+              <p style="font-size:12px;color:#666;margin:0 0 10px">Esegui da Impostazioni → Configurazione per applicare il tagger ai contenuti non ancora taggati.</p>
+              <button class="btn btn-secondary" data-page="settings" style="font-size:12px;padding:6px 14px">→ Vai a Impostazioni</button>
             </div>
             <div style="padding:12px;background:#FFF8E7;border:1px solid #F0D78C;border-radius:6px">
               <div style="font-size:13px;font-weight:600;color:#7A5A00;margin-bottom:6px">🗂 Archivio massivo</div>
@@ -2022,6 +2058,14 @@
 
       <!-- TAB GESTIONE DATI -->
       <div class="settings-tab-content" data-tab-content="gestione" hidden>
+
+        <!-- 0. Statistiche contenuti (ex page-stats) -->
+        <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin-bottom:16px">
+          <div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin-bottom:14px">Statistiche contenuti</div>
+          <div id="statsContent" aria-live="polite">
+            <div class="skeleton home-list-skeleton"></div>
+          </div>
+        </div>
 
         <!-- 1. Release log -->
         <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin-bottom:16px">
@@ -2119,6 +2163,17 @@
 
       </div>
 
+      <!-- TAB DIAGNOSTICA FONTI (v4.19.1 — ex page-fonti-diagnostica) -->
+      <div class="settings-tab-content" data-tab-content="diagnostica" hidden>
+        <div class="admin-card" style="margin-bottom:14px">
+          <h3>Diagnostica Fonti</h3>
+          <p class="hint">Stato delle fonti monitoraggio bandi: attive, silenti, raccomandazioni.</p>
+          <div id="fontiDiagContent" aria-live="polite">
+            <div class="skeleton home-list-skeleton"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- TAB STATO SISTEMA -->
       <div class="settings-tab-content" data-tab-content="sistema" hidden>
         <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin-bottom:16px">
@@ -2187,6 +2242,76 @@
           </div>
         </div>
       </div>
+      <!-- TAB SEGNALAZIONI (v4.19.1) -->
+      <div class="settings-tab-content" data-tab-content="segnalazioni" hidden>
+        <div class="admin-card" style="margin-bottom:14px;border-left:4px solid var(--amb-2,#3F7A5E)">
+          <h3>Moderazione segnalazioni</h3>
+          <p class="hint">Coda segnalazioni inviate dalla community. Approva, rifiuta o pubblica. Le segnalazioni pubblicate vengono promosse nel feed Items e notificate su Telegram.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+            <select id="segFiltroStato" onchange="OC._loadSegCoda()" style="padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px">
+              <option value="pending">In attesa</option>
+              <option value="approved">Approvate</option>
+              <option value="published">Pubblicate</option>
+              <option value="unpublished">Non pubblicate</option>
+              <option value="rejected">Rifiutate</option>
+              <option value="all">Tutte</option>
+            </select>
+            <button class="btn btn-secondary" onclick="OC._loadSegCoda()">Ricarica</button>
+          </div>
+          <div id="segStats" style="display:flex;gap:12px;margin-bottom:14px;font-size:13px">
+            <span id="segStatCount" class="muted">—</span>
+          </div>
+          <div id="segCodaTable" style="overflow-x:auto"><div class="empty-state sm">Seleziona un filtro e premi Ricarica.</div></div>
+          <div id="segResult" style="margin-top:10px;font-size:12px;min-height:18px"></div>
+        </div>
+      </div>
+
+      <!-- TAB DIGEST & NEWSLETTER (v4.19.1 — ex page-digest) -->
+      <div class="settings-tab-content" data-tab-content="digest" hidden>
+        <div class="admin-card" style="margin-bottom:14px">
+          <h3>Digest & Newsletter</h3>
+          <p class="hint">Gestione digest generalista e segmentato per compilatori MuseMu Matrix. Per le funzioni complete, vai alla pagina Digest dedicata.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+            <button class="btn btn-primary" data-action="generaDigest">Prepara bozza newsletter</button>
+            <button class="btn btn-secondary" data-action="generaQueueAll">Genera bozze Matrix</button>
+            <button class="btn btn-secondary" data-action="testTelegram">Test Telegram</button>
+            <button class="btn btn-secondary" data-action="checkTelegram">Verifica Telegram</button>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+            <button class="btn btn-secondary" data-action="setupCronDigest" style="font-size:12px">Attiva cron mart. 06:00</button>
+            <button class="btn btn-secondary" data-action="removeCronDigest" style="font-size:12px">Disattiva cron</button>
+            <button class="btn btn-secondary" data-action="testCronManual" style="font-size:12px">Esegui cron ora (test)</button>
+            <button class="btn btn-secondary" data-action="inviaTuttiPending" style="font-size:12px;color:var(--danger,#C2410C)">Invia tutti i pending</button>
+            <button class="btn btn-secondary" data-action="reloadQueue" style="font-size:12px">Ricarica queue</button>
+          </div>
+          <div id="digestTabResult" style="font-size:12px;min-height:18px;color:#666"></div>
+          <p style="margin-top:14px;font-size:12px"><a href="#" onclick="OC.go('digest');return false" style="color:var(--accent,#E84B1C)">Apri pagina Digest completa →</a></p>
+        </div>
+      </div>
+
+      <!-- TAB ARCHIVIO & BACKUP (v4.19.1 — OBJ3) -->
+      <div class="settings-tab-content" data-tab-content="backup" hidden>
+        <div class="admin-card" style="margin-bottom:14px">
+          <h3>Backup dati</h3>
+          <p class="hint">Crea una copia di sicurezza del foglio principale su Google Drive. Il backup settimanale automatico gira la domenica alle 02:00.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+            <button class="btn btn-primary" onclick="OC._backupNow()">Crea backup ora</button>
+          </div>
+          <div id="backupResult" style="font-size:12px;min-height:18px;color:#666;margin-bottom:14px"></div>
+          <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px">Backup recenti</div>
+          <div id="backupList"><div class="empty-state sm">Caricamento...</div></div>
+        </div>
+        <div class="admin-card">
+          <h3>Archivio dati</h3>
+          <p class="hint">Consultazione e gestione record archiviati. L'archiviazione automatica (>30gg) gira ogni mattina alle 04:30.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+            <button class="btn btn-secondary" data-action="runAutoArchive">Archivia record vecchi ora</button>
+            <button class="btn btn-secondary" data-action="runAutoDelete" style="color:var(--danger,#C2410C)">Elimina archiviati >12 mesi</button>
+          </div>
+          <div id="archivioAdminResult" style="font-size:12px;min-height:18px;color:#666"></div>
+        </div>
+      </div>
+
     </section>
 
     </div><!-- /.main-content -->
@@ -2202,7 +2327,7 @@
   var PAGE_TITLES = {
     home:'Home', chisiamo:'Chi siamo', bandi:'Radar Bandi', news:'News & RSS', podcast:'Podcast', video:'Video & YouTube', libri:'Libri & Pubblicazioni',
     norme:'Norme & Riferimenti', social:'Social Wall',
-    search:'Ricerca', stats:'Statistiche', ambito:'Ambito', digest:'Digest Reader', admin:'Pannello admin',
+    search:'Ricerca', stats:'Statistiche', ambito:'Ambito', digest:'Digest Reader',
     matrix:'Valuta il tuo museo', 'matrix-landing':'MuseMu Matrix',
     settings:'Impostazioni', archivio:'Archivio', cestino:'Cestino',
     kb:'Tassonomia KB', compilatori:'Compilatori Matrix', sondaggio:'Sondaggio mirato',
@@ -2300,7 +2425,8 @@
     if (page==='libri')    loadLibriList(false);
     if (page==='norme')    loadNormeList(false);
     if (page==='social')   loadSocialWall(false);
-    if (page==='admin')        loadAdminPanel();
+    // v4.19.1 — Pannello admin fuso in Impostazioni
+    if (page==='admin') { go('settings'); return; }
     if (page==='digest')       loadDigestPage();   // v4.18.11 — card digest spostate qui
     if (page==='kb')           loadKBPage();       // v4.18.16 F3 — tassonomia Duemilamusei
     if (page==='compilatori')  loadCompilatori();  // v4.18.16 J — CRM compilatori Matrix
@@ -2308,10 +2434,12 @@
     if (page==='sondaggio')    loadSondaggio(window._sondaggioCodice || 'gestione'); // v4.18.17 L
     if (page==='capitali')     loadCapitaliPage(); // v4.18.24 — candidature speciali (CIC, ECoC, UNESCO…)
     if (page==='workspace')    loadWorkspacePage(); // v4.18.48 — area personale Lead
+    if (page==='profilo-pro')  { try{OC.loadProfiloPro();}catch(e){} } // v4.19.0
     if (page==='settings') loadSettingsPage();  // Sprint 1.3 D2.5
     if (page==='search')   { /* loadSearch called with query via OC.search */ }
-    if (page==='stats')    loadStatsPage();
-    if (page==='fonti-diagnostica') loadFontiDiagnostica();
+    // v4.19.1 — stats e fonti-diagnostica compattate in Impostazioni
+    if (page==='stats')    { go('settings'); setTimeout(function(){ switchSettingsTab('gestione'); },200); return; }
+    if (page==='fonti-diagnostica') { go('settings'); setTimeout(function(){ switchSettingsTab('diagnostica'); },200); return; }
     if (page==='archivio') loadArchivio();
     if (page==='cestino')  loadCestino();
     // v4.5.1 — A1 Ambiti navigabili
@@ -2606,8 +2734,15 @@
     // v5.1.4 — Se l'utente ha fatto logout volontario, resta ospite (non ri-autenticare)
     var _forceGuest = false;
     try { _forceGuest = !!localStorage.getItem('oc_force_guest'); } catch(_){}
+    // v4.19.1 — Se c'è un token salvato, l'utente si è loggato: ignora force_guest
+    if (_forceGuest) {
+      try { if (localStorage.getItem('oc_token')) { _forceGuest = false; localStorage.removeItem('oc_force_guest'); } } catch(_){}
+    }
     if (hasGAS() && !_forceGuest) {
-      var __tok = _admTok_();
+      // v4.19.1 — Usa session token (localStorage) se disponibile, altrimenti admin token da URL
+      var __tok = (window.OC_SESSION && window.OC_SESSION.token) || '';
+      if (!__tok) { try { __tok = localStorage.getItem('oc_token') || ''; } catch(_){} }
+      if (!__tok) __tok = _admTok_();
       console.log('[OC-DEBUG] calling getCurrentUser_v44 with token of len:', __tok.length);
       google.script.run
         .withSuccessHandler(function(u){
@@ -3320,12 +3455,37 @@
   }
 
   // v4.18.48 (2026-05-15) — Workspace personale del Lead
+  // v4.19.0 — Helper per caricare workspace con utente noto
+  function _renderWsForUser_(u, wrap) {
+    if (!OC_SESSION) OC_SESSION = {};
+    if (!OC_SESSION.email) OC_SESSION.email = u.email;
+    var hello = $('wsUserHello');
+    if (hello) hello.textContent = (u.nome || u.email.split('@')[0]);
+    var wsKey = (OC_SESSION && OC_SESSION.token) || u.email;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) renderWorkspacePage(r);
+        else { wrap.innerHTML = ''; }
+      })
+      .withFailureHandler(function() { wrap.innerHTML = ''; })
+      .getUserWorkspaceData(wsKey);
+    try { _identLoadUI_(); } catch(_){}
+  }
+
   function loadWorkspacePage() {
     var wrap = $('wsContent');
     if (!wrap) return;
     wrap.innerHTML = '<div class="skeleton home-list-skeleton"></div>';
     if (!hasGAS()) {
       wrap.innerHTML = '<div class="empty-state">Backend non disponibile.</div>';
+      return;
+    }
+
+    // v4.19.0 fix: se sessione attiva (login via email), usa quella senza richiedere getCurrentUser_v44
+    var _wsSession = window.OC_SESSION || {};
+    if (_wsSession.token && (_wsSession.livello || 0) >= 1 && _wsSession.email) {
+      var _wsU = { ruolo: _wsSession.livello >= 3 ? 'admin' : (_wsSession.livello >= 2 ? 'editor' : 'lettore'), email: _wsSession.email, nome: _wsSession.email.split('@')[0], isAdmin: _wsSession.livello >= 3 };
+      _renderWsForUser_(_wsU, wrap);
       return;
     }
 
@@ -4648,6 +4808,19 @@
     var uml = $('topbarMenuLogin'); if (uml) uml.hidden = !_isG;
     var umlo = $('topbarMenuLogout'); if (umlo) umlo.hidden = _isG;
 
+    // v5.1.10 — Fix: aggiorna OC_SESSION.livello per admin/editor/lettore
+    // (era in Navigation.html:976-980 ma quel file non e incluso in Index.html)
+    if (ruolo === 'admin' || ruolo === 'editor') {
+      if (!window.OC_SESSION) window.OC_SESSION = {};
+      if (!window.OC_SESSION.email) window.OC_SESSION.email = user.email || '';
+      if (ruolo === 'admin') window.OC_SESSION.livello = 3;
+      else window.OC_SESSION.livello = 2;
+    } else if (ruolo === 'lettore' || ruolo === 'lead') {
+      if (!window.OC_SESSION) window.OC_SESSION = {};
+      if (!window.OC_SESSION.email) window.OC_SESSION.email = user.email || '';
+      if (!window.OC_SESSION.livello) window.OC_SESSION.livello = 1;
+    }
+
     var str = $('nav-strumenti');
     var anyStrumento = false;
     $$('#nav-strumenti [data-role]').forEach(function(item){
@@ -5522,8 +5695,12 @@
     if (tabName === 'altre') { /* nessun auto-load richiesto */ }
     if (tabName === 'utenti') reloadUtentiTable();
     if (tabName === 'config') loadSettingsConfig();
-    if (tabName === 'gestione') _loadGestioneDatiTab_();
+    if (tabName === 'gestione') { _loadGestioneDatiTab_(); loadStatsPage(); }
+    if (tabName === 'diagnostica') loadFontiDiagnostica();
     if (tabName === 'sistema') _loadSistemaTab_();
+    if (tabName === 'backup') _loadBackupTab_();
+    if (tabName === 'digest') { /* azioni via data-action, nessun autoload */ }
+    if (tabName === 'segnalazioni') _loadSegCoda();
   }
 
   function _loadGestioneDatiTab_() {
@@ -6048,7 +6225,7 @@
       .withFailureHandler(function(e) {
         if (wrap) wrap.innerHTML = '<div style="color:var(--danger,#C2410C);padding:12px;background:#FFF5F5;border:1px solid #FFCCCC;border-radius:6px">⚠️ <b>Errore GAS:</b> ' + esc(String(e)) + '</div>';
       })
-      .getAllUtenti({ statoFilter: stato || null, ruoloFilter: ruolo || null });
+      .getAllUtenti({ statoFilter: stato || null, ruoloFilter: ruolo || null, token: (window.OC_SESSION && window.OC_SESSION.token) || null });
   }
 
   function updateUtentiStats(items) {
@@ -6079,30 +6256,170 @@
       html += '<tr>'
         + '<td style="padding:5px;border-bottom:1px solid #eee;font-family:monospace;font-size:11px">'+esc(u.Email||'')+'</td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee">'+esc(u.Nome||'')+'</td>'
-        + '<td style="padding:5px;border-bottom:1px solid #eee;color:'+ruoloCol+';font-weight:600">'+esc(u.Ruolo||'')+'</td>'
-        + '<td style="padding:5px;border-bottom:1px solid #eee;color:'+statoCol+';font-weight:600">'+esc(u.Stato||'')+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee">'
+          + '<select class="u-ruolo" data-email="'+esc(u.Email)+'" data-orig="'+esc(u.Ruolo||'')+'" onchange="OC.userRowChanged(\''+esc(u.Email)+'\')" style="font-size:11px;padding:2px 4px;font-weight:600;color:'+ruoloCol+'">'
+            + ['admin','editor','lettore','ospite'].map(function(r){ return '<option value="'+r+'"'+(u.Ruolo===r?' selected':'')+'>'+r+'</option>'; }).join('')
+          + '</select></td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee">'
+          + '<select class="u-stato" data-email="'+esc(u.Email)+'" data-orig="'+esc(u.Stato||'')+'" onchange="OC.userRowChanged(\''+esc(u.Email)+'\')" style="font-size:11px;padding:2px 4px;font-weight:600;color:'+statoCol+'">'
+            + ['pending','attivo','sospeso','rifiutato'].map(function(s){ return '<option value="'+s+'"'+(u.Stato===s?' selected':'')+'>'+s+'</option>'; }).join('')
+          + '</select></td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInDigest)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'digest\')" title="Clicca per toggle">'+chk(u.OptInDigest)+'</td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInBandi)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'bandi\')" title="Clicca per toggle">'+chk(u.OptInBandi)+'</td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInMatrix)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'matrix\')" title="Clicca per toggle">'+chk(u.OptInMatrix)+'</td>'
-        + '<td style="padding:5px;border-bottom:1px solid #eee">';
-      if (u.Stato === 'pending') {
-        html += '<button class="btn btn-secondary" onclick="OC.approvaUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:var(--amb-2,#10916D)">✓ Approva</button>';
-        html += '<button class="btn btn-secondary" onclick="OC.rifiutaUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:var(--danger,#C2410C)">✗ Rifiuta</button>';
-      } else if (u.Stato === 'attivo') {
-        html += '<select onchange="OC.cambiaRuolo(\''+esc(u.Email)+'\', this.value)" style="font-size:11px;padding:2px 4px;margin-right:4px">';
-        ['admin','editor','lettore','ospite'].forEach(function(r){
-          html += '<option value="'+r+'"'+(u.Ruolo===r?' selected':'')+'>'+r+'</option>';
-        });
-        html += '</select>';
-        html += '<button class="btn btn-secondary" onclick="OC.sospendiUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#999">⏸ Sospendi</button>';
-      } else if (u.Stato === 'sospeso') {
-        html += '<button class="btn btn-secondary" onclick="OC.approvaUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:var(--amb-2,#10916D)">↻ Riattiva</button>';
-      }
-      html += '<button class="btn btn-secondary" onclick="OC.eliminaUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;color:var(--danger,#C2410C)"></button>';
-      html += '</td></tr>';
+        + '<td style="padding:5px;border-bottom:1px solid #eee">'
+          + '<button class="btn btn-secondary u-save" data-email="'+esc(u.Email)+'" onclick="OC.salvaUtente(\''+esc(u.Email)+'\')" style="display:none;font-size:10px;padding:3px 8px;margin-right:4px;background:var(--amb-2,#10916D);color:#fff;font-weight:600">💾 Salva</button>'
+          + '<button class="btn btn-secondary" onclick="OC.eliminaUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;color:var(--danger,#C2410C)">🗑 Elimina</button>'
+        + '</td></tr>';
     });
     html += '</tbody></table>';
     wrap.innerHTML = html;
+  }
+
+  // ── v4.19.1 — Pannello moderazione segnalazioni ──
+  function _loadSegCoda() {
+    if (!hasGAS()) return;
+    var stato = ($('segFiltroStato')||{}).value || 'pending';
+    var wrap = $('segCodaTable');
+    if (wrap) wrap.innerHTML = '<div class="empty-state sm">Caricamento…</div>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r || !r.ok) {
+          if (wrap) wrap.innerHTML = '<div style="color:var(--danger);padding:12px;background:#FFF5F5;border:1px solid #FFCCCC;border-radius:6px">' + esc(r && r.error || 'Errore sconosciuto') + '</div>';
+          return;
+        }
+        var items = r.segnalazioni || [];
+        if ($('segStatCount')) $('segStatCount').textContent = items.length + ' segnalazion' + (items.length===1?'e':'i');
+        if (!items.length) { if (wrap) wrap.innerHTML = '<div class="empty-state sm">Nessuna segnalazione con stato "' + esc(stato) + '".</div>'; return; }
+        var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#E8F5E9">'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid #4CAF50">Data</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid #4CAF50">Titolo</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid #4CAF50">Tipo</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid #4CAF50">Autore</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid #4CAF50">Stato</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid #4CAF50;width:280px">Azioni</th>'
+          + '</tr></thead><tbody>';
+        items.forEach(function(s) {
+          var _statoColors = {pending:'#E65100',approved:'#2E7D32',published:'#1565C0',unpublished:'#795548',rejected:'#999'};
+          var _statoLabels = {pending:'in attesa',approved:'approvata',published:'pubblicata',unpublished:'non pubblicata',rejected:'rifiutata'};
+          var statoCol = _statoColors[s.stato] || '#999';
+          var statoLabel = _statoLabels[s.stato] || s.stato;
+          var dataStr = s.dataInvio ? String(s.dataInvio).substring(0,10) : '—';
+          var sid = esc(s.segnalazioneId);
+          html += '<tr>'
+            + '<td style="padding:5px;border-bottom:1px solid #eee;font-size:11px">' + esc(dataStr) + '</td>'
+            + '<td style="padding:5px;border-bottom:1px solid #eee;font-weight:600">' + esc(s.titolo||'') + (s.url ? ' <a href="'+esc(s.url)+'" target="_blank" style="font-weight:400;font-size:10px">link</a>' : '') + '</td>'
+            + '<td style="padding:5px;border-bottom:1px solid #eee">' + esc(s.tipo||'') + '</td>'
+            + '<td style="padding:5px;border-bottom:1px solid #eee">' + esc(s.nome_autore||s.email_autore||'') + '</td>'
+            + '<td style="padding:5px;border-bottom:1px solid #eee;color:'+statoCol+';font-weight:600">' + esc(statoLabel) + '</td>'
+            + '<td style="padding:5px;border-bottom:1px solid #eee">';
+          if (s.stato === 'pending') {
+            html += '<button class="btn btn-secondary" onclick="OC._segApprova(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#2E7D32">Approva</button>';
+            html += '<button class="btn btn-secondary" onclick="OC._segRifiuta(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#C2410C">Rifiuta</button>';
+          } else if (s.stato === 'approved') {
+            html += '<button class="btn btn-secondary" onclick="OC._segPubblica(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#1565C0;font-weight:600">Pubblica</button>';
+            html += '<button class="btn btn-secondary" onclick="OC._segUnpublish(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#795548">Non pubblicare</button>';
+          } else if (s.stato === 'published') {
+            html += '<button class="btn btn-secondary" onclick="OC._segUnpublish(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#795548">Ritira</button>';
+          } else if (s.stato === 'unpublished') {
+            html += '<button class="btn btn-secondary" onclick="OC._segPubblica(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#1565C0">Ripubblica</button>';
+          }
+          html += '<button class="btn btn-secondary" onclick="OC._segCancella(\''+sid+'\')" style="font-size:10px;padding:3px 6px;color:#C2410C" title="Cancella definitivamente">Cancella</button>';
+          html += '</td></tr>';
+        });
+        html += '</tbody></table>';
+        if (wrap) wrap.innerHTML = html;
+      })
+      .withFailureHandler(function(e) {
+        if (wrap) wrap.innerHTML = '<div style="color:var(--danger);padding:12px;background:#FFF5F5;border:1px solid #FFCCCC;border-radius:6px">Errore GAS: ' + esc(String(e)) + '</div>';
+      })
+      .getSegnalazioniCoda(stato, (window.OC_SESSION && window.OC_SESSION.token) || null);
+  }
+
+  function _segApprova(id) {
+    if (!confirm('Approvare questa segnalazione?')) return;
+    google.script.run.withSuccessHandler(function(r) {
+      if (r && r.ok) { if (typeof showToast==='function') showToast('Segnalazione approvata','ok'); _loadSegCoda(); }
+      else { if (typeof showToast==='function') showToast(r&&r.error||'Errore','err'); }
+    }).approvaSegnalazione(id, '', (window.OC_SESSION && window.OC_SESSION.token) || null);
+  }
+
+  function _segRifiuta(id) {
+    var note = prompt('Motivo del rifiuto (obbligatorio):');
+    if (!note || note.trim().length < 3) { if (typeof showToast==='function') showToast('Nota obbligatoria (min 3 car.)','err'); return; }
+    google.script.run.withSuccessHandler(function(r) {
+      if (r && r.ok) { if (typeof showToast==='function') showToast('Segnalazione rifiutata','ok'); _loadSegCoda(); }
+      else { if (typeof showToast==='function') showToast(r&&r.error||'Errore','err'); }
+    }).rifiutaSegnalazione(id, note, (window.OC_SESSION && window.OC_SESSION.token) || null);
+  }
+
+  function _segPubblica(id) {
+    if (!confirm('Pubblicare? Verra promossa nel feed Items e notificata su Telegram.')) return;
+    google.script.run.withSuccessHandler(function(r) {
+      if (r && r.ok) { if (typeof showToast==='function') showToast('Segnalazione pubblicata!','ok'); _loadSegCoda(); }
+      else { if (typeof showToast==='function') showToast(r&&r.error||'Errore','err'); }
+    }).pubblicaSegnalazione(id, (window.OC_SESSION && window.OC_SESSION.token) || null);
+  }
+
+  function _segUnpublish(id) {
+    if (!confirm('Segnare come non pubblicata?')) return;
+    var tk = (window.OC_SESSION && window.OC_SESSION.token) || null;
+    google.script.run.withSuccessHandler(function(r) {
+      if (r && r.ok) { if (typeof showToast==='function') showToast('Segnalazione ritirata','ok'); _loadSegCoda(); }
+      else { if (typeof showToast==='function') showToast(r&&r.error||'Errore','err'); }
+    }).unpublishSegnalazione(id, tk);
+  }
+
+  function _segCancella(id) {
+    if (!confirm('Cancellare definitivamente questa segnalazione? L\'azione e irreversibile.')) return;
+    var tk = (window.OC_SESSION && window.OC_SESSION.token) || null;
+    google.script.run.withSuccessHandler(function(r) {
+      if (r && r.ok) { if (typeof showToast==='function') showToast('Segnalazione cancellata','ok'); _loadSegCoda(); }
+      else { if (typeof showToast==='function') showToast(r&&r.error||'Errore','err'); }
+    }).cancellaSegnalazione(id, tk);
+  }
+
+  // ── v4.19.1 — Tab Archivio & Backup ──
+  function _loadBackupTab_() {
+    if (!hasGAS()) return;
+    var wrap = $('backupList');
+    if (wrap) wrap.innerHTML = '<div class="empty-state sm">Caricamento...</div>';
+    google.script.run.withSuccessHandler(function(r) {
+      if (!r || !r.ok || !r.backups || !r.backups.length) {
+        if (wrap) wrap.innerHTML = '<div class="empty-state sm">Nessun backup registrato.</div>';
+        return;
+      }
+      var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#F7F5F0">'
+        + '<th style="text-align:left;padding:6px">Data</th>'
+        + '<th style="text-align:left;padding:6px">Nome</th>'
+        + '<th style="text-align:left;padding:6px">Link</th>'
+        + '</tr></thead><tbody>';
+      r.backups.forEach(function(b) {
+        html += '<tr><td style="padding:5px;border-bottom:1px solid #eee;font-size:11px">'+ esc(b.data||'') +'</td>'
+          + '<td style="padding:5px;border-bottom:1px solid #eee">'+ esc(b.nome||'') +'</td>'
+          + '<td style="padding:5px;border-bottom:1px solid #eee"><a href="'+ esc(b.url||'') +'" target="_blank" style="color:var(--accent)">Apri</a></td></tr>';
+      });
+      html += '</tbody></table>';
+      if (wrap) wrap.innerHTML = html;
+    }).withFailureHandler(function(e) {
+      if (wrap) wrap.innerHTML = '<div style="color:var(--danger)">Errore: ' + esc(String(e)) + '</div>';
+    }).getBackupList();
+  }
+
+  function _backupNow() {
+    if (!confirm('Creare un backup completo del foglio su Drive?')) return;
+    var out = $('backupResult');
+    if (out) out.innerHTML = '<span style="color:#666">Backup in corso...</span>';
+    google.script.run.withSuccessHandler(function(r) {
+      if (r && r.ok) {
+        if (out) out.innerHTML = '<span style="color:var(--amb-2,#3F7A5E)">Backup creato: <a href="'+ esc(r.url||'') +'" target="_blank">'+ esc(r.nome||'backup') +'</a></span>';
+        _loadBackupTab_();
+      } else {
+        if (out) out.innerHTML = '<span style="color:var(--danger)">'+ esc(r&&r.error||'Errore') +'</span>';
+      }
+    }).withFailureHandler(function(e) {
+      if (out) out.innerHTML = '<span style="color:var(--danger)">Errore: '+ esc(String(e)) +'</span>';
+    }).backupSpreadsheet();
   }
 
   function showInvitaUtenteForm() {
@@ -6166,6 +6483,34 @@
   function cambiaRuolo(email, ruolo) {
     if (!hasGAS()) return;
     google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).updateUserRuolo(email, ruolo);
+  }
+
+  // v4.20 — Modello "menu Stato+Ruolo + Salva per riga"
+  function userRowChanged(email) {
+    var st = document.querySelector('.u-stato[data-email="'+email+'"]');
+    var ru = document.querySelector('.u-ruolo[data-email="'+email+'"]');
+    var sv = document.querySelector('.u-save[data-email="'+email+'"]');
+    if (!st || !ru || !sv) return;
+    var changed = (st.value !== st.getAttribute('data-orig')) || (ru.value !== ru.getAttribute('data-orig'));
+    sv.style.display = changed ? '' : 'none';
+  }
+
+  function salvaUtente(email) {
+    if (!hasGAS()) return;
+    var st = document.querySelector('.u-stato[data-email="'+email+'"]');
+    var ru = document.querySelector('.u-ruolo[data-email="'+email+'"]');
+    if (!st || !ru) return;
+    var stato = st.value, ruolo = ru.value, oldStato = st.getAttribute('data-orig');
+    if (!confirm('Salvare le modifiche per ' + email + ' ?\nStato: ' + stato + '\nRuolo: ' + ruolo)) return;
+    var sv = document.querySelector('.u-save[data-email="'+email+'"]');
+    if (sv) { sv.disabled = true; sv.textContent = '…'; }
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) { if (typeof showToast==='function') showToast('Salvato','ok'); reloadUtentiTable(); }
+        else { if (typeof showToast==='function') showToast((r&&r.error)||'Errore','err'); if (sv){ sv.disabled=false; sv.textContent='💾 Salva'; } }
+      })
+      .withFailureHandler(function(e){ if (typeof showToast==='function') showToast('Errore: '+e,'err'); if (sv){ sv.disabled=false; sv.textContent='💾 Salva'; } })
+      .saveUserStatoRuolo(email, stato, ruolo, oldStato);
   }
 
   function toggleOptIn(email, key) {
@@ -6756,62 +7101,115 @@
     return false;
   }
   function _openRegistrationModal_(context) {
-    // v5.1.9 — Rimuovi flag force_guest
+    // v4.19.1 — Unificato: usa sempre _gateOspite (box Sinopia con tab Accedi/Registrati)
     try { localStorage.removeItem('oc_force_guest'); } catch(_){}
-
-    // Se c'e un token in localStorage, tenta ri-autenticazione diretta
-    var savedToken = '';
-    try { savedToken = localStorage.getItem('oc_token') || ''; } catch(_){}
-    if (savedToken && hasGAS()) {
-      showToast('Accesso in corso...', 'ok');
-      google.script.run
-        .withSuccessHandler(function(sess) {
-          if (sess && sess.ok && sess.livello >= 1) {
-            window.OC_SESSION = sess;
-            setUser({ ruolo: sess.livello >= 3 ? 'admin' : sess.livello >= 2 ? 'editor' : 'lettore', nome: sess.nome || sess.email.split('@')[0], initials: (sess.nome || sess.email).substring(0,2).toUpperCase() });
-            showToast('Bentornato!', 'ok');
-            location.reload();
-          } else {
-            // Token non valido, mostra form registrazione
-            _showRegForm_(context);
-          }
-        })
-        .withFailureHandler(function() { _showRegForm_(context); })
-        .validaSessione(savedToken);
-      return;
+    if (typeof window._gateOspite === 'function') {
+      window._gateOspite();
     }
-
-    // Nessun token: mostra form registrazione
-    _showRegForm_(context);
   }
 
   function _showRegForm_(context) {
-    // Rimuovi form precedente
+    // v5.1.10 — Modal a due sezioni: Login (gia registrato) + Registrazione (nuovo utente)
     var old = document.getElementById('oc-regform-overlay');
     if (old) old.remove();
 
     var overlay = document.createElement('div');
     overlay.id = 'oc-regform-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.6);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
-    overlay.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:460px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);padding:36px 32px;font-family:var(--font-ui,sans-serif)">'
-      + '<div style="font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:6px">Registrati gratuitamente</div>'
-      + '<p style="font-size:13px;color:var(--ink-2);line-height:1.6;margin:0 0 20px">Accedi a tutti i contenuti dell\'Osservatorio Culturale: bandi, news, podcast, report personalizzati e molto altro. <b>Tutti i servizi sono completamente gratuiti</b>, inclusa la consulenza.</p>'
-      + '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">'
+    overlay.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:460px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);padding:36px 32px;font-family:var(--font-ui,sans-serif);max-height:calc(100vh - 40px);overflow-y:auto">'
+      // --- Sezione 1: Sono gia registrato ---
+      + '<div style="font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:4px">Sono gia registrato</div>'
+      + '<p style="font-size:13px;color:var(--ink-2);line-height:1.5;margin:0 0 14px">Inserisci la tua email per accedere.</p>'
+      + '<div style="display:flex;gap:8px;margin-bottom:6px">'
+      + '<input type="email" id="loginFormEmail" placeholder="La tua email" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />'
+      + '<button type="button" onclick="OC._submitLoginForm()" style="background:var(--ink,#1A1815);color:#fff;border:none;padding:10px 20px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Accedi</button>'
+      + '</div>'
+      + '<div id="loginFormMsg" style="text-align:center;margin-bottom:4px;font-size:12.5px;min-height:18px" hidden></div>'
+      // --- Separatore ---
+      + '<div style="display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--ink-4,#aaa);font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:600">'
+      + '<div style="flex:1;height:1px;background:var(--rule,#E5E5E7)"></div>'
+      + '<span>oppure</span>'
+      + '<div style="flex:1;height:1px;background:var(--rule,#E5E5E7)"></div>'
+      + '</div>'
+      // --- Sezione 2: Registrati ---
+      + '<div style="font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--ink);margin-bottom:4px">Registrati gratuitamente</div>'
+      + '<p style="font-size:12.5px;color:var(--ink-2);line-height:1.5;margin:0 0 14px">Accedi a tutti i contenuti: bandi, news, podcast, report e molto altro. <b>Tutti i servizi sono gratuiti.</b></p>'
+      + '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">'
       + '<input type="email" id="regFormEmail" placeholder="Email" style="padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />'
       + '<div style="display:flex;gap:8px">'
       + '<input type="text" id="regFormNome" placeholder="Nome" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />'
       + '<input type="text" id="regFormCognome" placeholder="Cognome" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />'
       + '</div></div>'
-      + '<label style="display:flex;align-items:start;gap:6px;margin-bottom:16px;cursor:pointer">'
+      + '<label style="display:flex;align-items:start;gap:6px;margin-bottom:14px;cursor:pointer">'
       + '<input type="checkbox" id="regFormGdpr" style="margin-top:3px" />'
       + '<span style="font-size:11px;color:var(--ink-3);line-height:1.4">Acconsento al trattamento dei dati personali. <a href="https://www.duemilamusei.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#E84B1C)">Privacy policy</a></span>'
       + '</label>'
       + '<button type="button" onclick="OC._submitRegForm()" style="width:100%;background:var(--accent,#E84B1C);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Registrati gratis</button>'
-      + '<div id="regFormMsg" style="text-align:center;margin-top:10px;font-size:13px" hidden></div>'
-      + '<p style="font-size:10px;color:var(--ink-4);text-align:center;margin:14px 0 0;line-height:1.5">Nessun costo nascosto. Tutti i servizi consulenziali sono gratuiti.</p>'
-      + '<button type="button" onclick="document.getElementById(\'oc-regform-overlay\').remove()" style="display:block;width:100%;margin-top:10px;background:transparent;border:none;color:var(--ink-3);font-size:12px;cursor:pointer;font-family:inherit;padding:6px">Annulla</button>'
+      + '<div id="regFormMsg" style="text-align:center;margin-top:8px;font-size:13px" hidden></div>'
+      // --- Chiudi ---
+      + '<button type="button" onclick="document.getElementById(\'oc-regform-overlay\').remove()" style="display:block;width:100%;margin-top:14px;background:transparent;border:none;color:var(--ink-3);font-size:12px;cursor:pointer;font-family:inherit;padding:6px">Annulla</button>'
       + '</div>';
     document.body.appendChild(overlay);
+    // Focus sul campo email login
+    var loginInput = document.getElementById('loginFormEmail');
+    if (loginInput) setTimeout(function(){ loginInput.focus(); }, 100);
+  }
+
+  // v5.1.10 — Login con email (utente gia registrato)
+  function _submitLoginForm_() {
+    var email = (document.getElementById('loginFormEmail') || {}).value || '';
+    var msg = document.getElementById('loginFormMsg');
+    if (!email || email.indexOf('@') < 0) { alert('Inserisci un indirizzo email valido'); return; }
+    if (msg) { msg.hidden = false; msg.textContent = 'Accesso in corso...'; msg.style.color = 'var(--ink-2)'; }
+    if (hasGAS()) {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          if (r && r.ok && r.token) {
+            if (msg) { msg.textContent = 'Accesso riuscito!'; msg.style.color = 'var(--amb-2,#10916D)'; }
+            try { localStorage.setItem('oc_token', r.token); } catch(_){}
+            try { localStorage.removeItem('oc_force_guest'); } catch(_){}
+            window.OC_SESSION = {
+              token: r.token, email: r.email, livello: r.livello,
+              permanente: !!r.permanente, matrixCompletato: !!r.matrixCompletato
+            };
+            // Aggiorna UI senza reload: setUser + chiudi modal + vai a home
+            var ruoloMap = { 3:'admin', 2:'editor' };
+            setUser({
+              ruolo: ruoloMap[r.livello] || r.ruolo || 'lettore',
+              nome: r.nome || r.email.split('@')[0],
+              email: r.email,
+              initials: (r.nome || r.email).substring(0,2).toUpperCase(),
+              isAdmin: r.livello >= 3,
+              isEditor: r.livello >= 2
+            });
+            setTimeout(function() {
+              var ov = document.getElementById('oc-regform-overlay');
+              if (ov) ov.remove();
+              var gg = document.getElementById('oc-guest-gate');
+              if (gg) gg.remove();
+              // Chiudi anche eventuali overlay newsletter/registrazione rimasti aperti
+              var nlOv = document.getElementById('oc-newsletter-overlay');
+              if (nlOv) { nlOv.hidden=true; nlOv.style.display='none'; }
+              var regOv = document.getElementById('oc-reg-overlay');
+              if (regOv) { regOv.hidden=true; regOv.style.display='none'; }
+              // Invalida tutte le cache dati (erano caricate come ospite)
+              try { _cacheBandi=null;_cacheNews=null;_cachePodcast=null;_cacheVideo=null;_cacheLibri=null;_cacheArchivio=null; } catch(_){}
+              go('home');
+              // Ri-hydrata: ricarica dati home + badge + utente col nuovo livello
+              hydrate();
+              showToast('Bentornato, ' + (r.nome || r.email.split('@')[0]) + '!', 'ok');
+            }, 400);
+          } else {
+            var errMsg = 'Email non trovata. Sei sicuro di essere registrato?';
+            if (r && r.error === 'account_non_attivo') errMsg = 'Il tuo account non e ancora attivo. Contatta l\'amministratore.';
+            if (msg) { msg.textContent = errMsg; msg.style.color = 'var(--danger,#C2410C)'; }
+          }
+        })
+        .withFailureHandler(function(e) {
+          if (msg) { msg.textContent = 'Errore di connessione: ' + (e.message || e); msg.style.color = 'var(--danger,#C2410C)'; }
+        })
+        .loginConEmail(email);
+    }
   }
 
   function _submitRegForm_() {
@@ -6831,15 +7229,36 @@
     if (hasGAS()) {
       google.script.run
         .withSuccessHandler(function(r) {
-          if (r && (r.ok || r.existing)) {
-            if (msg) { msg.textContent = 'Registrazione completata! Accesso in corso...'; msg.style.color = 'var(--amb-2,#10916D)'; }
+          if (r && r.ok) {
+            var msgText = r.action === 'reactivated'
+              ? 'Account riattivato! Accesso in corso...'
+              : 'Registrazione completata! Accesso in corso...';
+            if (msg) { msg.textContent = msgText; msg.style.color = 'var(--amb-2,#10916D)'; }
             // Salva anche nella mailing list per newsletter
             google.script.run.saveMailing({ Email: email, Nome: nomeCompleto, Attivo: true, ConsensoGDPR: true, Sorgente: 'registrazione' });
-            setTimeout(function() {
-              var ov = document.getElementById('oc-regform-overlay');
-              if (ov) ov.remove();
-              location.reload();
-            }, 1500);
+            // Login automatico dopo registrazione
+            google.script.run
+              .withSuccessHandler(function(lr) {
+                if (lr && lr.ok && lr.token) {
+                  try { localStorage.setItem('oc_token', lr.token); } catch(_){}
+                  try { localStorage.removeItem('oc_force_guest'); } catch(_){}
+                  window.OC_SESSION = { token:lr.token, email:lr.email, livello:lr.livello, permanente:true };
+                  var ruoloMap = { 3:'admin', 2:'editor' };
+                  setUser({ ruolo:ruoloMap[lr.livello]||lr.ruolo||'lettore', nome:lr.nome||lr.email.split('@')[0], email:lr.email, initials:(lr.nome||lr.email).substring(0,2).toUpperCase() });
+                  var ov = document.getElementById('oc-regform-overlay'); if (ov) ov.remove();
+                  var gg = document.getElementById('oc-guest-gate'); if (gg) gg.remove();
+                  try { _cacheBandi=null;_cacheNews=null;_cachePodcast=null;_cacheVideo=null;_cacheLibri=null;_cacheArchivio=null; } catch(_){}
+                  go('home'); hydrate();
+                  showToast(r.action==='reactivated' ? 'Bentornato!' : 'Benvenuto!', 'ok');
+                } else {
+                  var ov2 = document.getElementById('oc-regform-overlay'); if (ov2) ov2.remove();
+                  go('home'); hydrate();
+                }
+              })
+              .withFailureHandler(function() { location.reload(); })
+              .loginConEmail(email);
+          } else if (r && r.error === 'gia_registrato') {
+            if (msg) { msg.textContent = 'Questa email e gia registrata. Usa "Accedi" qui sopra.'; msg.style.color = 'var(--accent,#E84B1C)'; }
           } else {
             if (msg) { msg.textContent = (r && r.error) || 'Errore nella registrazione'; msg.style.color = 'var(--danger,#C2410C)'; }
           }
@@ -6847,7 +7266,7 @@
         .withFailureHandler(function(e) {
           if (msg) { msg.textContent = 'Errore: ' + (e.message || e); msg.style.color = 'var(--danger,#C2410C)'; }
         })
-        ._autoRegisterUser_(email, nomeCompleto, 'registrazione');
+        .registraUtente(email, nomeCompleto, 'registrazione');
     }
   }
 
@@ -6858,79 +7277,9 @@
     if (ov2) ov2.remove();
   }
 
-  // v5.1.3 — Gate ospite: card CTA registrazione quando tenta di accedere a sezione protetta
+  // v5.1.10 — Gate ospite unificato: apre il box "Accedi / Registrati"
   function _showGuestGate_(requestedPage) {
-    var pageNames = {
-      news:'News & RSS', podcast:'Podcast', video:'Video', libri:'Libri & Pubblicazioni',
-      norme:'Norme', capitali:'Capitali & Candidature', social:'Social Wall',
-      chisiamo:'Chi siamo', workspace:'La tua area', ambito:'Ambiti tematici',
-      archivio:'Archivio', cestino:'Cestino', stats:'Statistiche', search:'Ricerca'
-    };
-    var label = pageNames[requestedPage] || requestedPage;
-
-    // Mostra pagina home con card gate sovrapposta
-    var pages = $$('.page');
-    for (var i = 0; i < pages.length; i++) pages[i].classList.remove('active');
-    var home = $('page-home');
-    if (home) home.classList.add('active');
-
-    // Rimuovi card gate precedente se esiste
-    var old = $('oc-guest-gate');
-    if (old) old.remove();
-
-    var gate = document.createElement('div');
-    gate.id = 'oc-guest-gate';
-    gate.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.6);z-index:9997;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
-    gate.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:520px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);padding:36px 32px;font-family:var(--font-ui,sans-serif)">'
-      + '<div style="font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:6px">Accedi a ' + esc(label) + '</div>'
-      + '<p style="font-size:13.5px;color:var(--ink-2);line-height:1.6;margin:0 0 20px">Per accedere a <b>' + esc(label) + '</b> e a tutti i contenuti dell\'Osservatorio, registrati gratuitamente. Scegli come:</p>'
-      + '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">'
-      + '<button type="button" onclick="document.getElementById(\'oc-guest-gate\').remove();OC.go(\'matrix\');" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:14px 18px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left">'
-      + '<div style="font-weight:700">Compila MuseMu Matrix</div><div style="font-size:11px;opacity:.8;margin-top:2px">10 min &middot; report personalizzato + accesso completo</div></button>'
-      + '<button type="button" onclick="document.getElementById(\'oc-guest-gate\').remove();OC.go(\'sondaggi-catalogo\');" style="background:var(--amb-2,#10916D);color:#fff;border:none;padding:14px 18px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left">'
-      + '<div style="font-weight:700">Autovalutazione rapida</div><div style="font-size:11px;opacity:.8;margin-top:2px">3 min &middot; diagnosi + accesso completo</div></button>'
-      + '</div>'
-      + '<div style="border-top:1px solid var(--rule,#E5E5E7);padding-top:16px">'
-      + '<div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;text-align:center">oppure iscriviti alla newsletter settimanale</div>'
-      + '<div style="display:flex;gap:8px">'
-      + '<input type="email" id="gateNlEmail" placeholder="email@museo.it" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />'
-      + '<button type="button" onclick="OC._gateSubmitNl()" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:10px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Iscrivimi</button>'
-      + '</div>'
-      + '<label style="display:flex;align-items:start;gap:6px;margin-top:8px;cursor:pointer">'
-      + '<input type="checkbox" id="gateNlGdpr" style="margin-top:3px" />'
-      + '<span style="font-size:11px;color:var(--ink-3);line-height:1.4">Acconsento al trattamento dei dati. <a href="https://www.duemilamusei.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#E84B1C)">Privacy policy</a></span>'
-      + '</label>'
-      + '<div id="gateNlSuccess" hidden style="text-align:center;padding:10px 0;color:var(--amb-2,#10916D);font-weight:600">Controlla la tua email per confermare.</div>'
-      + '</div>'
-      + '<div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--rule,#E5E5E7)">'
-      + '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:8px">Vantaggi dell\'accesso gratuito:</div>'
-      + '<ul style="font-size:12.5px;color:var(--ink-2);line-height:1.7;margin:0;padding:0 0 0 18px">'
-      + '<li>News, podcast, video e libri curati per il settore culturale</li>'
-      + '<li>Area personale con preferiti e report salvati</li>'
-      + '<li>Digest settimanale con bandi e opportunita</li>'
-      + '<li>Filtri avanzati per regione e ambito tematico</li>'
-      + '</ul></div>'
-      + '<button type="button" onclick="document.getElementById(\'oc-guest-gate\').remove()" style="display:block;width:100%;margin-top:14px;background:transparent;border:none;color:var(--ink-3);font-size:12px;cursor:pointer;font-family:inherit;padding:6px">Torna alla home</button>'
-      + '</div>';
-    document.body.appendChild(gate);
-  }
-
-  function _gateSubmitNl_() {
-    var email = (document.getElementById('gateNlEmail') || {}).value || '';
-    if (!email || email.indexOf('@') < 0) { alert('Inserisci un indirizzo email valido'); return; }
-    var gdpr = document.getElementById('gateNlGdpr');
-    if (!gdpr || !gdpr.checked) { alert('Per iscriverti devi acconsentire al trattamento dei dati.'); return; }
-    var ok = document.getElementById('gateNlSuccess');
-    if (ok) ok.hidden = false;
-    if (hasGAS()) {
-      google.script.run
-        .withSuccessHandler(function() {
-          localStorage.setItem('oc-nl-subscribed', '1');
-          setTimeout(function() { var g = document.getElementById('oc-guest-gate'); if (g) g.remove(); location.reload(); }, 2500);
-        })
-        .withFailureHandler(function(e) { alert('Errore: ' + (e.message || e)); })
-        .saveMailing({ Email: email, Nome: '', Attivo: true, ConsensoGDPR: true, Sorgente: 'gate' });
-    }
+    _showRegForm_(requestedPage);
   }
 
   // v4.18.63 — Newsletter opt-in modal + timer 5 minuti
@@ -7236,33 +7585,57 @@
     var badge = $('identFilterBadge');
     if (badge) badge.style.display = 'none';
 
-    // v5.1.8 — Sidebar "La tua area": sfondo arancio quando filtro attivo
-    var wsNav = $('navItemWorkspace');
-    if (wsNav) {
+    // v4.19.1 — Sidebar "Il mio profilo": sfondo arancio quando filtro attivo
+    var profiloNav = document.querySelector('[data-action="goProfiloTab"]');
+    if (profiloNav) {
       if (on) {
-        wsNav.style.background = 'var(--accent,#E84B1C)';
-        wsNav.style.color = '#fff';
-        wsNav.style.borderRadius = '8px';
-        wsNav.querySelector('.lbl').textContent = 'La tua area · attivo';
-        wsNav.querySelector('.lbl').style.color = '#fff';
-        wsNav.querySelector('svg').style.stroke = '#fff';
+        profiloNav.style.background = 'var(--accent,#E84B1C)';
+        profiloNav.style.color = '#fff';
+        profiloNav.style.borderRadius = '8px';
+        profiloNav.querySelector('.lbl').textContent = 'Il mio profilo · attivo';
+        profiloNav.querySelector('.lbl').style.color = '#fff';
+        try { profiloNav.querySelector('svg').style.stroke = '#fff'; } catch(e){}
       } else {
-        wsNav.style.background = '';
-        wsNav.style.color = '';
-        wsNav.style.borderRadius = '';
-        wsNav.querySelector('.lbl').textContent = 'La tua area';
-        wsNav.querySelector('.lbl').style.color = '';
-        wsNav.querySelector('svg').style.stroke = '';
+        profiloNav.style.background = '';
+        profiloNav.style.color = '';
+        profiloNav.style.borderRadius = '';
+        profiloNav.querySelector('.lbl').textContent = 'Il mio profilo';
+        profiloNav.querySelector('.lbl').style.color = '';
+        try { profiloNav.querySelector('svg').style.stroke = ''; } catch(e){}
       }
     }
 
-    // Checkbox + label nel workspace
+    // Sidebar "La tua area": indicatore leggero
+    var wsNav = $('navItemWorkspace');
+    if (wsNav) {
+      if (on) {
+        wsNav.style.background = '#FFF3E0';
+        wsNav.style.borderRadius = '8px';
+        wsNav.querySelector('.lbl').textContent = 'La tua area · filtro attivo';
+      } else {
+        wsNav.style.background = '';
+        wsNav.style.borderRadius = '';
+        wsNav.querySelector('.lbl').textContent = 'La tua area';
+      }
+    }
+
+    // Toggle switch + label nel banner filtro workspace
     var wsToggle = $('identFilterToggle');
     if (wsToggle) wsToggle.checked = !!on;
+    var wsSlider = $('identFilterSlider');
+    var wsKnob = $('identFilterKnob');
+    if (wsSlider) wsSlider.style.background = on ? 'var(--accent,#E84B1C)' : '#ccc';
+    if (wsKnob) wsKnob.style.left = on ? '27px' : '3px';
+    var wsBanner = $('wsFilterBanner');
+    if (wsBanner) {
+      wsBanner.style.background = on ? 'linear-gradient(135deg,#FFF3E0 0%,#FFCC80 100%)' : 'linear-gradient(135deg,#FFF3E0 0%,#FFE0B2 100%)';
+      wsBanner.style.borderColor = on ? 'var(--accent,#E84B1C)' : '#FFB74D';
+    }
     var wsStatus = $('identFilterStatus');
     if (wsStatus) {
-      wsStatus.textContent = on ? 'Attivo: ' + n + ' dimensioni' + (reg ? ', ' + reg : ', tutta Italia') : 'Disattivato';
+      wsStatus.textContent = on ? 'Attivo: ' + n + ' dim.' + (reg ? ', ' + reg : '') : 'Disattivato';
       wsStatus.style.color = on ? 'var(--accent,#E84B1C)' : 'var(--ink-4)';
+      wsStatus.style.fontWeight = on ? '700' : '600';
     }
   }
 
@@ -8805,6 +9178,14 @@
   window.OC = {
     go: go,
     hydrate: hydrate,
+    _loadSegCoda: _loadSegCoda,
+    _segApprova: _segApprova,
+    _segRifiuta: _segRifiuta,
+    _segPubblica: _segPubblica,
+    _segUnpublish: _segUnpublish,
+    _segCancella: _segCancella,
+    _backupNow: _backupNow,
+    _loadBackupTab: _loadBackupTab_,
     setUser: setUser,
     // v4.18.47 — Modal registrazione anonimo
     openRegistrationModal:  function(context){ _openRegistrationModal_(context); },
@@ -8813,8 +9194,9 @@
     closeNewsletterOptIn:   function(){ _closeNewsletterOptIn_(); },
     submitNewsletterOptIn:  function(){ _submitNewsletterOptIn_(); },
     submitFooterNl: function(){ _submitFooterNl_(); },
-    _gateSubmitNl: function(){ _gateSubmitNl_(); },
+    _gateSubmitNl: function(){ /* rimosso v5.1.10 */ },
     _submitRegForm: function(){ _submitRegForm_(); },
+    _submitLoginForm: function(){ _submitLoginForm_(); },
     // v4.18.48 — Workspace personale
     loadWorkspacePage: loadWorkspacePage,
     openMatrixReport: function(responseId){
@@ -9179,7 +9561,7 @@
       if (ev && ev.preventDefault) ev.preventDefault();
       var url = (window._OC_CONST && window._OC_CONST.calendarUrl) || '';
       if (!url) {
-        showToast('Calendario non ancora configurato. Da Pannello admin → Setup commerciale.', 'warn');
+        showToast('Calendario non ancora configurato. Da Impostazioni → Configurazione.', 'warn');
         return false;
       }
       var ov = $('oc-prenota-overlay'); if (!ov) return false;
@@ -10410,6 +10792,8 @@
     sospendiUtente: sospendiUtente,
     eliminaUtente: eliminaUtente,
     cambiaRuolo: cambiaRuolo,
+    salvaUtente: salvaUtente,
+    userRowChanged: userRowChanged,
     toggleOptIn: toggleOptIn,
     // Sprint 1.4 D2.5+ - Archiviazione/cancellazione card
     saveCard: saveCard,
@@ -10534,6 +10918,486 @@
 
 <!-- Sprint 2 (2026-04-30): include modulo MuseMu Matrix (questionario + report) -->
 <?!= include('MatrixApp'); ?>
+
+<!-- v4.19.0 — contenuto profilo iniettato dinamicamente via JS in OC.loadProfiloPro -->
+<div id="page-profilo-pro-tpl" hidden>
+  <div class="section-head" style="margin-top:0">
+    <h2 class="section-title">Il mio profilo <em>professionale</em></h2>
+  </div>
+  <div id="profiloProContent" style="max-width:680px">
+    <p style="font-size:14px;color:var(--ink-2);line-height:1.6;margin:0 0 24px">Raccontaci chi sei e cosa ti interessa. Riceverai contenuti mirati sulle tematiche che scegli. Tutto e modificabile in qualsiasi momento. I dati sono anonimi e aggregati.</p>
+
+    <!-- Anagrafica professionale -->
+    <div style="background:#fff;border:1px solid var(--rule,#E5E5E7);border-radius:12px;padding:24px;margin-bottom:20px">
+      <h3 style="font-size:15px;font-weight:600;color:var(--ink);margin:0 0 16px">Chi sei</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Area professionale</label><select id="pro-categoria" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Seleziona area...</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Ruolo specifico</label><select id="pro-ruolo" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;color:#999" disabled><option value="">Prima seleziona l area...</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Tipo di organizzazione</label><select id="pro-cat-ente" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Seleziona tipo...</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Organizzazione specifica</label><select id="pro-ente" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;color:#999" disabled><option value="">Prima seleziona il tipo...</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Area geografica</label><input id="pro-area" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" placeholder="Es. Puglia, Bari"></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Dimensione struttura</label><select id="pro-dimensione" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Seleziona...</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Esperienza nel settore</label><select id="pro-seniority" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Seleziona...</option></select></div>
+      </div>
+    </div>
+
+    <!-- Temi di interesse con descrizioni -->
+    <div style="background:#fff;border:1px solid var(--rule,#E5E5E7);border-radius:12px;padding:24px;margin-bottom:20px">
+      <h3 style="font-size:15px;font-weight:600;color:var(--ink);margin:0 0 6px">I tuoi temi di interesse</h3>
+      <p style="font-size:13px;color:var(--ink-2);margin:0 0 16px;line-height:1.5">Seleziona le aree su cui vuoi ricevere contenuti, bandi e segnalazioni. Ogni tema e descritto per aiutarti nella scelta.</p>
+      <div id="pro-dims-container" style="display:grid;grid-template-columns:1fr;gap:8px"></div>
+    </div>
+
+    <!-- Domande quantitative anonime -->
+    <div style="background:#fff;border:1px solid var(--rule,#E5E5E7);border-radius:12px;padding:24px;margin-bottom:20px">
+      <h3 style="font-size:15px;font-weight:600;color:var(--ink);margin:0 0 6px">La tua esperienza (anonimo)</h3>
+      <p style="font-size:13px;color:var(--ink-2);margin:0 0 16px;line-height:1.5">Queste informazioni ci aiutano a capire il livello della community. Risposte facoltative e aggregate in forma anonima.</p>
+      <div style="display:grid;gap:14px">
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Quanti visitatori annui gestisce la tua struttura?</label><select id="pro-q-visitatori" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Preferisco non rispondere</option><option>Meno di 10.000</option><option>10.000 - 50.000</option><option>50.000 - 100.000</option><option>100.000 - 500.000</option><option>Oltre 500.000</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Quante persone lavorano nella tua struttura?</label><select id="pro-q-staff" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Preferisco non rispondere</option><option>1-3</option><option>4-10</option><option>11-30</option><option>31-100</option><option>Oltre 100</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Hai gia utilizzato strumenti AI nel tuo lavoro?</label><select id="pro-q-ai" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Preferisco non rispondere</option><option>No, mai</option><option>Si, in modo esplorativo</option><option>Si, regolarmente</option><option>Si, in modo strutturato</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Quanto e prioritaria l accessibilita nella tua struttura?</label><select id="pro-q-access" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Preferisco non rispondere</option><option>Non ancora affrontata</option><option>In fase di valutazione</option><option>In corso interventi</option><option>Ben strutturata</option></select></div>
+      </div>
+    </div>
+
+    <!-- Campo libero -->
+    <div style="background:#fff;border:1px solid var(--rule,#E5E5E7);border-radius:12px;padding:24px;margin-bottom:20px">
+      <h3 style="font-size:15px;font-weight:600;color:var(--ink);margin:0 0 6px">Raccontaci di te</h3>
+      <p style="font-size:13px;color:var(--ink-2);margin:0 0 12px;line-height:1.5">Hai esigenze particolari, progetti in corso o semplicemente vuoi presentarti? Scrivi liberamente.</p>
+      <textarea id="pro-note-libere" maxlength="2000" rows="5" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:vertical;font-family:inherit" placeholder="Es. Sto lavorando a un progetto di accessibilita per il mio museo..."></textarea>
+      <div style="font-size:11px;color:var(--ink-3);margin-top:4px;text-align:right"><span id="pro-note-count">0</span>/2000</div>
+    </div>
+
+    <!-- I tuoi dati di contatto -->
+    <div style="background:#fff;border:1px solid var(--rule,#E5E5E7);border-radius:12px;padding:24px;margin-bottom:20px">
+      <h3 style="font-size:15px;font-weight:600;color:var(--ink);margin:0 0 6px">I tuoi dati</h3>
+      <p style="font-size:13px;color:var(--ink-2);margin:0 0 14px;line-height:1.5">Per salvare il profilo e ricevere contenuti personalizzati.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Nome *</label><input id="pro-reg-nome" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" placeholder="Nome"></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Cognome</label><input id="pro-reg-cognome" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" placeholder="Cognome"></div>
+      </div>
+      <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Email *</label><input type="email" id="pro-reg-email" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" placeholder="email@museo.it"></div>
+    </div>
+
+    <!-- Consenso + Salva -->
+    <div style="background:#fff;border:1px solid var(--rule,#E5E5E7);border-radius:12px;padding:24px;margin-bottom:20px">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:18px">
+        <input type="checkbox" id="pro-consenso" checked style="margin-top:2px;width:16px;height:16px;accent-color:var(--accent,#E84B1C)">
+        <span style="font-size:12.5px;color:var(--ink-2);line-height:1.5">Acconsento alla profilazione dei miei interessi professionali per ricevere contenuti personalizzati. Posso modificare o cancellare i dati in qualsiasi momento.</span>
+      </label>
+      <div style="display:flex;gap:12px;align-items:center">
+        <button type="button" onclick="OC.saveProfiloSettings()" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Salva profilo</button>
+        <span id="proSaveMsg" style="font-size:13px;color:var(--ink-3)"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== v4.19.0 — PROFILO + SEGNALAZIONI (modali + JS) ===== -->
+<div id="oc-segnalazione-overlay" hidden style="position:fixed;inset:0;background:rgba(26,24,21,.5);z-index:9997;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px);overflow-y:auto">
+  <div role="dialog" aria-modal="true" style="background:#fff;border-radius:14px;max-width:540px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.22);position:relative;font-family:var(--font-ui,sans-serif);overflow:hidden;margin:auto">
+    <button onclick="OC.chiudiFormSegnalazione()" aria-label="Chiudi" style="position:absolute;top:12px;right:12px;background:transparent;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;color:var(--ink-3);font-size:22px;line-height:1">&times;</button>
+    <div style="background:linear-gradient(135deg,#E8F5E9 0%,#fff 100%);padding:22px 26px;border-bottom:1px solid var(--rule,#E5E5E7)">
+      <h2 style="font-family:var(--font-display,Georgia,serif);font-size:1.2rem;font-weight:500;color:var(--ink);margin:0">Segnala un'iniziativa</h2>
+      <p style="font-size:12.5px;color:var(--ink-2);margin:6px 0 0">Condividi un progetto o buona pratica con la community.</p>
+    </div>
+    <div style="padding:22px 26px">
+      <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Titolo *</label><input id="seg-titolo" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" maxlength="200"></div>
+      <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Descrizione *</label><textarea id="seg-descrizione" rows="4" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:vertical" maxlength="2000"></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">URL (opz.)</label><input id="seg-url" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" type="url"></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Tipo</label><select id="seg-tipo" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Seleziona...</option><option>Mostra</option><option>Evento</option><option>Progetto</option><option>Pubblicazione</option><option>Buona pratica</option><option>Altro</option></select></div>
+      </div>
+      <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Area geografica</label><input id="seg-area" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" placeholder="Es. Puglia, Bari"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+        <button type="button" onclick="OC.chiudiFormSegnalazione()" style="background:none;border:1px solid #ddd;padding:10px 18px;border-radius:8px;font-size:13px;cursor:pointer">Annulla</button>
+        <button type="button" id="seg-btn-invia" onclick="OC.inviaSegnalazione()" style="background:#3F7A5E;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Invia</button>
+      </div>
+      <p id="seg-errore" style="font-size:12px;color:#C2410C;margin:10px 0 0;display:none"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // --- Segnalazioni: form ---
+  OC.apriFormSegnalazione = function() {
+    var liv = (window.OC_SESSION && window.OC_SESSION.livello) || 0;
+    if (liv < 1) { _gateOspite(); return; }
+    var ov = document.getElementById('oc-segnalazione-overlay');
+    if (ov) { ov.hidden=false; ov.style.display='flex'; }
+  };
+  OC.chiudiFormSegnalazione = function() {
+    var ov = document.getElementById('oc-segnalazione-overlay');
+    if (ov) { ov.hidden=true; ov.style.display='none'; }
+  };
+  OC.inviaSegnalazione = function() {
+    var payload = {
+      titolo: (document.getElementById('seg-titolo')||{}).value||'',
+      descrizione: (document.getElementById('seg-descrizione')||{}).value||'',
+      url: (document.getElementById('seg-url')||{}).value||'',
+      tipo: (document.getElementById('seg-tipo')||{}).value||'',
+      area_geografica: (document.getElementById('seg-area')||{}).value||'',
+      token: (window.OC_SESSION && window.OC_SESSION.token) || null
+    };
+    var errEl = document.getElementById('seg-errore');
+    if(errEl) errEl.style.display='none';
+    var btn = document.getElementById('seg-btn-invia');
+    if(btn){btn.disabled=true;btn.textContent='Invio...';}
+    google.script.run.withSuccessHandler(function(r){
+      if(btn){btn.disabled=false;btn.textContent='Invia';}
+      if(r&&r.ok){ OC.chiudiFormSegnalazione(); if(typeof showToast==='function')showToast('Segnalazione inviata!','ok'); }
+      else { if(errEl){errEl.textContent=(r&&r.error)||'Errore';errEl.style.display='block';} }
+    }).withFailureHandler(function(e){
+      if(btn){btn.disabled=false;btn.textContent='Invia';}
+      if(errEl){errEl.textContent='Errore: '+e;errEl.style.display='block';}
+    }).inviaSegnalazione(payload);
+  };
+
+  // --- Segnalazioni: sezione home ---
+  function _loadHomeSegnalazioni() {
+    var wrap = document.getElementById('homeSegnalazioniList');
+    var empty = document.getElementById('homeSegnalazioniEmpty');
+    if (!wrap) return;
+    if (typeof google === 'undefined' || !google.script) return;
+    google.script.run.withSuccessHandler(function(r) {
+      if (!r || !r.ok || !r.segnalazioni || r.segnalazioni.length === 0) {
+        wrap.innerHTML = '';
+        if (empty) empty.hidden = false;
+        return;
+      }
+      if (empty) empty.hidden = true;
+      var html = '';
+      r.segnalazioni.forEach(function(s) {
+        html += '<div style="padding:12px 0;border-bottom:1px solid var(--rule,#E5E5E7)">'
+          + '<div style="font-size:14px;font-weight:600;color:var(--ink);line-height:1.35">' + (s.titolo||'').replace(/</g,'&lt;') + '</div>'
+          + '<div style="font-size:12px;color:var(--ink-3);margin-top:4px">'
+          + '<span style="font-weight:600;color:#3F7A5E">' + (s.tipo||'').replace(/</g,'&lt;') + '</span>'
+          + (s.area_geografica ? ' &middot; '+(s.area_geografica||'').replace(/</g,'&lt;') : '')
+          + ' &middot; ' + (s.nome_autore||'Community').replace(/</g,'&lt;')
+          + '</div></div>';
+      });
+      wrap.innerHTML = html;
+    }).withFailureHandler(function() {
+      wrap.innerHTML = '';
+      if (empty) empty.hidden = false;
+    }).getSegnalazioniPubblicate(5);
+  }
+
+  // Carica segnalazioni home dopo 1.5s (non bloccante, dopo il render principale)
+  setTimeout(function() { try { _loadHomeSegnalazioni(); } catch(e){} }, 1500);
+
+  // Counter note libere
+  var _noteTa = document.getElementById('pro-note-libere');
+  if (_noteTa) _noteTa.addEventListener('input', function() {
+    var cnt = document.getElementById('pro-note-count');
+    if (cnt) cnt.textContent = _noteTa.value.length;
+  });
+
+  // Carica "Le mie segnalazioni" nel workspace (dopo 2s)
+  setTimeout(function() {
+    try {
+      var wrap = document.getElementById('wsMieSegnalazioni');
+      if (!wrap) return;
+      var liv = (window.OC_SESSION && window.OC_SESSION.livello) || 0;
+      if (liv < 1 || typeof google === 'undefined' || !google.script) return;
+      google.script.run.withSuccessHandler(function(r) {
+        if (!r || !r.ok || !r.segnalazioni || r.segnalazioni.length === 0) return;
+        var html = '<div style="font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:8px">Le tue segnalazioni</div>';
+        r.segnalazioni.forEach(function(s) {
+          var stCol = s.stato==='published'?'#3F7A5E':s.stato==='rejected'?'#C2410C':'var(--ink-3)';
+          var stLbl = {pending:'In attesa',in_review:'In revisione',approved:'Approvata',rejected:'Non pubblicata',published:'Pubblicata'};
+          html += '<div style="padding:8px 0;border-top:1px solid var(--rule,#eee);display:flex;justify-content:space-between;align-items:center">'
+            + '<span style="font-size:13px;color:var(--ink)">'+(s.titolo||'').replace(/</g,'&lt;')+'</span>'
+            + '<span style="font-size:11px;font-weight:600;color:'+stCol+'">'+(stLbl[s.stato]||s.stato)+'</span>'
+            + '</div>';
+        });
+        wrap.innerHTML = html;
+      }).withFailureHandler(function(){}).getMieSegnalazioni();
+    } catch(e){}
+  }, 2000);
+
+  // --- Gate ospite: mostra box login/registrazione diretto ---
+  // v4.19.1 — Esposto globalmente per unificare tutti i punti di login
+  window._gateOspite = _gateOspite;
+  function _gateOspite() {
+    // Usa il form registrazione completo se esiste, altrimenti newsletter
+    var existing = document.getElementById('oc-regform-overlay');
+    if (existing) { /* gia aperto */ return; }
+    // Crea overlay login+registrazione
+    var ov = document.createElement('div');
+    ov.id = 'oc-regform-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)';
+    ov.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:440px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);position:relative;font-family:var(--font-ui,sans-serif);padding:32px 28px">'
+      + '<button onclick="document.getElementById(\'oc-regform-overlay\').remove()" style="position:absolute;top:12px;right:12px;background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--ink-3)">&times;</button>'
+      + '<div style="font-family:var(--font-display,Georgia,serif);font-style:italic;font-size:22px;color:var(--accent,#E84B1C)">Sinopia</div>'
+      + '<div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#5C4332;margin:4px 0 16px">Osservatorio Culturale</div>'
+      + '<h2 style="font-size:1.15rem;font-weight:500;color:var(--ink);margin:0 0 6px">Accedi o registrati</h2>'
+      + '<p style="font-size:13px;color:var(--ink-2);margin:0 0 18px;line-height:1.5">Per accedere al profilo, segnalare iniziative e ricevere contenuti personalizzati.</p>'
+      // Tab login / registrazione
+      + '<div id="_gateTabBar" style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid #E5E5E7">'
+      + '<button type="button" onclick="OC._gateTab(\'login\')" id="_gateTabLogin" style="flex:1;padding:8px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid var(--accent,#E84B1C);color:var(--accent,#E84B1C);margin-bottom:-2px">Accedi</button>'
+      + '<button type="button" onclick="OC._gateTab(\'reg\')" id="_gateTabReg" style="flex:1;padding:8px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:#888;margin-bottom:-2px">Registrati</button>'
+      + '</div>'
+      // Form login
+      + '<div id="_gateLogin">'
+      + '<input type="email" id="_gateEmail" placeholder="La tua email" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px">'
+      + '<button type="button" onclick="OC._gateDoLogin()" style="width:100%;background:var(--accent,#E84B1C);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Accedi</button>'
+      + '</div>'
+      // Form registrazione (nascosto)
+      + '<div id="_gateReg" hidden>'
+      + '<input type="text" id="_gateNome" placeholder="Nome" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px">'
+      + '<input type="text" id="_gateCognome" placeholder="Cognome" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px">'
+      + '<input type="email" id="_gateRegEmail" placeholder="Email" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px">'
+      + '<label style="display:flex;align-items:start;gap:6px;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="_gateGdpr" style="margin-top:3px"><span style="font-size:11px;color:var(--ink-3)">Acconsento al trattamento dei dati personali</span></label>'
+      + '<button type="button" onclick="OC._gateDoReg()" style="width:100%;background:var(--accent,#E84B1C);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Registrati</button>'
+      + '</div>'
+      + '<div id="_gateMsg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>'
+      + '<button type="button" onclick="document.getElementById(\'oc-regform-overlay\').remove()" style="display:block;width:100%;margin-top:14px;background:transparent;border:none;color:var(--ink-3);font-size:12px;cursor:pointer">Continua senza accesso</button>'
+      + '</div>';
+    document.body.appendChild(ov);
+    setTimeout(function(){ var inp=document.getElementById('_gateEmail'); if(inp)inp.focus(); },100);
+  }
+
+  OC._gateTab = function(tab) {
+    var loginDiv = document.getElementById('_gateLogin');
+    var regDiv = document.getElementById('_gateReg');
+    var tabL = document.getElementById('_gateTabLogin');
+    var tabR = document.getElementById('_gateTabReg');
+    if (tab==='login') {
+      if(loginDiv)loginDiv.hidden=false; if(regDiv)regDiv.hidden=true;
+      if(tabL){tabL.style.borderBottomColor='var(--accent,#E84B1C)';tabL.style.color='var(--accent,#E84B1C)';}
+      if(tabR){tabR.style.borderBottomColor='transparent';tabR.style.color='#888';}
+    } else {
+      if(loginDiv)loginDiv.hidden=true; if(regDiv)regDiv.hidden=false;
+      if(tabR){tabR.style.borderBottomColor='var(--accent,#E84B1C)';tabR.style.color='var(--accent,#E84B1C)';}
+      if(tabL){tabL.style.borderBottomColor='transparent';tabL.style.color='#888';}
+    }
+  };
+
+  OC._gateDoLogin = function() {
+    var email = (document.getElementById('_gateEmail')||{}).value||'';
+    var msg = document.getElementById('_gateMsg');
+    if(!email||email.indexOf('@')<0){if(msg)msg.textContent='Inserisci un email valida';return;}
+    if(msg){msg.textContent='Accesso in corso...';msg.style.color='var(--ink-2)';}
+    google.script.run.withSuccessHandler(function(r){
+      if(r&&r.ok&&r.token){
+        if(msg){msg.textContent='Accesso riuscito!';msg.style.color='#3F7A5E';}
+        try{localStorage.setItem('oc_token',r.token);}catch(_){}
+        try{localStorage.removeItem('oc_force_guest');}catch(_){}
+        window.OC_SESSION={token:r.token,email:r.email,livello:r.livello,permanente:!!r.permanente};
+        setTimeout(function(){
+          var ov=document.getElementById('oc-regform-overlay');if(ov)ov.remove();
+          location.reload();
+        },500);
+      } else {
+        if(msg){msg.textContent=(r&&r.error==='email_non_registrata')?'Email non trovata. Prova a registrarti.':'Errore: '+((r&&r.error)||'sconosciuto');msg.style.color='#C2410C';}
+      }
+    }).withFailureHandler(function(e){
+      if(msg){msg.textContent='Errore di connessione';msg.style.color='#C2410C';}
+    }).loginConEmail(email);
+  };
+
+  OC._gateDoReg = function() {
+    var nome = (document.getElementById('_gateNome')||{}).value||'';
+    var cognome = (document.getElementById('_gateCognome')||{}).value||'';
+    var email = (document.getElementById('_gateRegEmail')||{}).value||'';
+    var gdpr = !!(document.getElementById('_gateGdpr')||{}).checked;
+    var msg = document.getElementById('_gateMsg');
+    if(!nome){if(msg)msg.textContent='Inserisci il nome';return;}
+    if(!email||email.indexOf('@')<0){if(msg)msg.textContent='Inserisci un email valida';return;}
+    if(!gdpr){if(msg)msg.textContent='Il consenso privacy e obbligatorio';return;}
+    if(msg){msg.textContent='Registrazione in corso...';msg.style.color='var(--ink-2)';}
+    var nomeCompleto = nome + (cognome?' '+cognome:'');
+    google.script.run.withSuccessHandler(function(r){
+      if(r&&r.ok){
+        if(msg){msg.textContent='Registrato! Accesso in corso...';msg.style.color='#3F7A5E';}
+        // Dopo registrazione, prova login
+        setTimeout(function(){ OC._gateDoLoginWith(email); },500);
+      } else {
+        if(msg){msg.textContent=(r&&r.error)||'Errore registrazione';msg.style.color='#C2410C';}
+      }
+    }).withFailureHandler(function(e){
+      if(msg){msg.textContent='Errore: '+e;msg.style.color='#C2410C';}
+    }).registraUtente(email, nomeCompleto, 'profilo');
+  };
+
+  OC._gateDoLoginWith = function(email) {
+    google.script.run.withSuccessHandler(function(r){
+      if(r&&r.ok&&r.token){
+        try{localStorage.setItem('oc_token',r.token);}catch(_){}
+        try{localStorage.removeItem('oc_force_guest');}catch(_){}
+        window.OC_SESSION={token:r.token,email:r.email,livello:r.livello,permanente:!!r.permanente};
+        setTimeout(function(){
+          var ov=document.getElementById('oc-regform-overlay');if(ov)ov.remove();
+          location.reload();
+        },500);
+      }
+    }).withFailureHandler(function(){}).loginConEmail(email);
+  };
+
+  // --- Profilo: pagina autonoma ---
+  OC.goProfiloTab = function() {
+    var liv = (window.OC_SESSION && window.OC_SESSION.livello) || 0;
+    if (liv < 1) { _gateOspite(); return; }
+    OC.go('profilo-pro');
+  };
+
+  // --- Render pagina profilo (chiamato dal dispatcher navigazione) ---
+  var _proEnumsCache = null;
+
+  OC.loadProfiloPro = function() {
+    var page = document.getElementById('page-profilo-pro');
+    if (page && !page.innerHTML.trim()) {
+      var tpl = document.getElementById('page-profilo-pro-tpl');
+      if (tpl) page.innerHTML = tpl.innerHTML;
+    }
+    var wrap = document.getElementById('profiloProContent');
+    if (!wrap || wrap.dataset.loaded === '1') return;
+    wrap.dataset.loaded = '1';
+    if (typeof google==='undefined' || !google.script) return;
+    google.script.run.withSuccessHandler(function(enums) {
+      if (!enums) return;
+      _proEnumsCache = enums;
+      // Popola categorie professionali
+      _fillCatSelect('pro-categoria', enums.categorie);
+      _fillCatSelect('pro-cat-ente', enums.enti);
+      _fillSelect('pro-dimensione', enums.dimensioneStruttura);
+      _fillSelect('pro-seniority', enums.seniority);
+      _renderDimChips(enums.dimHelp);
+      // Listener sblocco sottocategorie
+      _setupCatListener('pro-categoria', 'pro-ruolo', enums.categorie);
+      _setupCatListener('pro-cat-ente', 'pro-ente', enums.enti);
+      // Carica profilo esistente
+      google.script.run.withSuccessHandler(function(p) {
+        if (!p) return;
+        var s=function(id,v){var e=document.getElementById(id);if(e)e.value=v||'';};
+        // Imposta categorie prima, poi sblocca e imposta sottocategorie
+        s('pro-categoria',p.categoria_pro);
+        if(p.categoria_pro && enums.categorie[p.categoria_pro]) {
+          _unlockSub('pro-ruolo', enums.categorie[p.categoria_pro]);
+          s('pro-ruolo',p.ruolo_funzione);
+        }
+        s('pro-cat-ente',p.categoria_ente);
+        if(p.categoria_ente && enums.enti[p.categoria_ente]) {
+          _unlockSub('pro-ente', enums.enti[p.categoria_ente]);
+          s('pro-ente',p.tipo_ente);
+        }
+        s('pro-area',p.area_geografica); s('pro-dimensione',p.dimensione_struttura);
+        s('pro-seniority',p.seniority);
+        var ta=document.getElementById('pro-note-libere');if(ta&&p.note_libere)ta.value=p.note_libere;
+        // Domande quantitative
+        s('pro-q-visitatori',p.q_visitatori); s('pro-q-staff',p.q_staff);
+        s('pro-q-ai',p.q_ai); s('pro-q-access',p.q_accessibilita);
+        if(p.interessi_dimensioni) {
+          String(p.interessi_dimensioni).split(',').forEach(function(d){
+            var chip=document.querySelector('#pro-dims-container [data-dim="'+d.trim()+'"]');
+            if(chip){chip.classList.add('selected');chip.style.borderColor='var(--accent,#E84B1C)';chip.style.background='rgba(232,75,28,.06)';}
+          });
+        }
+      }).withFailureHandler(function(){}).getProfilo();
+    }).withFailureHandler(function(){}).getEnumProfilo();
+  };
+
+  function _fillSelect(id, values) {
+    var sel = document.getElementById(id);
+    if (!sel || !values || sel.options.length > 1) return;
+    if (Array.isArray(values)) values.forEach(function(v) { sel.add(new Option(v, v)); });
+  }
+
+  function _fillCatSelect(id, catObj) {
+    var sel = document.getElementById(id);
+    if (!sel || !catObj || sel.options.length > 1) return;
+    Object.keys(catObj).forEach(function(cat) { sel.add(new Option(cat, cat)); });
+  }
+
+  function _setupCatListener(catId, subId, catObj) {
+    var catSel = document.getElementById(catId);
+    if (!catSel) return;
+    catSel.addEventListener('change', function() {
+      var cat = catSel.value;
+      var subs = (cat && catObj[cat]) ? catObj[cat] : [];
+      _unlockSub(subId, subs);
+    });
+  }
+
+  function _unlockSub(subId, subs) {
+    var subSel = document.getElementById(subId);
+    if (!subSel) return;
+    subSel.innerHTML = '';
+    if (!subs || !subs.length) {
+      subSel.add(new Option('Prima seleziona la categoria...', ''));
+      subSel.disabled = true;
+      subSel.style.color = '#999';
+      return;
+    }
+    subSel.disabled = false;
+    subSel.style.color = 'var(--ink,#101010)';
+    subSel.add(new Option('Seleziona...', ''));
+    subs.forEach(function(s) { subSel.add(new Option(s, s)); });
+  }
+
+  function _renderDimChips(dimHelp) {
+    var c = document.getElementById('pro-dims-container');
+    if (!c || !dimHelp) return;
+    c.innerHTML = '';
+    var keys = Object.keys(dimHelp).sort();
+    keys.forEach(function(d) {
+      var h = dimHelp[d];
+      var temiHtml = '';
+      if (h.temi && h.temi.length) {
+        temiHtml = '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">';
+        h.temi.forEach(function(t) {
+          temiHtml += '<span style="font-size:10px;background:rgba(0,0,0,.04);padding:2px 7px;border-radius:4px;color:var(--ink-3)">'+t+'</span>';
+        });
+        temiHtml += '</div>';
+      }
+      var card = document.createElement('div');
+      card.setAttribute('data-dim', d);
+      card.style.cssText = 'padding:14px 16px;border:1.5px solid #E5E5E7;border-radius:10px;cursor:pointer;transition:all .15s;background:#fff';
+      card.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:11px;font-weight:700;color:var(--accent,#E84B1C);background:rgba(232,75,28,.08);padding:2px 6px;border-radius:4px">'+d+'</span><span style="font-size:13px;font-weight:600;color:var(--ink)">'+h.titolo+'</span></div>'
+        + '<div style="font-size:12px;color:var(--ink-2);line-height:1.5">'+h.desc+'</div>'
+        + temiHtml;
+      card.onclick = function() {
+        card.classList.toggle('selected');
+        card.style.borderColor = card.classList.contains('selected') ? 'var(--accent,#E84B1C)' : '#E5E5E7';
+        card.style.background = card.classList.contains('selected') ? 'rgba(232,75,28,.06)' : '#fff';
+      };
+      c.appendChild(card);
+    });
+  }
+
+  OC.saveProfiloSettings = function() {
+    var dims = [];
+    document.querySelectorAll('#pro-dims-container [data-dim].selected').forEach(function(b){ dims.push(b.getAttribute('data-dim')); });
+    var payload = {
+      categoria_pro: (document.getElementById('pro-categoria')||{}).value||'',
+      ruolo_funzione: (document.getElementById('pro-ruolo')||{}).value||'',
+      categoria_ente: (document.getElementById('pro-cat-ente')||{}).value||'',
+      tipo_ente: (document.getElementById('pro-ente')||{}).value||'',
+      area_geografica: (document.getElementById('pro-area')||{}).value||'',
+      dimensione_struttura: (document.getElementById('pro-dimensione')||{}).value||'',
+      seniority: (document.getElementById('pro-seniority')||{}).value||'',
+      interessi_dimensioni: dims,
+      consenso_profilazione: !!(document.getElementById('pro-consenso')||{}).checked,
+      note_libere: (document.getElementById('pro-note-libere')||{}).value||'',
+      q_visitatori: (document.getElementById('pro-q-visitatori')||{}).value||'',
+      q_staff: (document.getElementById('pro-q-staff')||{}).value||'',
+      q_ai: (document.getElementById('pro-q-ai')||{}).value||'',
+      q_accessibilita: (document.getElementById('pro-q-access')||{}).value||''
+    };
+    var msg = document.getElementById('proSaveMsg');
+    if(msg){msg.textContent='Salvataggio...';msg.style.color='var(--ink-3)';}
+    google.script.run.withSuccessHandler(function(r) {
+      if(r&&r.ok) { if(msg){msg.textContent='Profilo salvato!';msg.style.color='#3F7A5E';} }
+      else { if(msg){msg.textContent=(r&&r.error)||'Errore';msg.style.color='#C2410C';} }
+      setTimeout(function(){if(msg)msg.textContent='';},4000);
+    }).withFailureHandler(function(e) {
+      if(msg){msg.textContent='Errore: '+e;msg.style.color='#C2410C';}
+    }).saveProfilo(payload);
+  };
+})();
+</script>
 
 </body>
 </html>
