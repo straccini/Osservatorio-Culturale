@@ -636,6 +636,48 @@ function testTedApi() {
   return report;
 }
 
+/**
+ * TEST esiti/aggiudicazioni TED: invece di indovinare il filtro, MOSTRA il campo
+ * "tipo avviso" (notice-type / form-type) dei risultati cultura, cosi' vediamo i
+ * valori reali che distinguono un BANDO da un ESITO/AGGIUDICAZIONE. scope ALL per
+ * includere anche gli avvisi di aggiudicazione (relativi ad appalti passati).
+ */
+function testTedEsiti() {
+  var endpoint = 'https://api.ted.europa.eu/v3/notices/search';
+  var body = {
+    query: 'classification-cpv IN (92500000 92520000 92521000 92522000) AND place-of-performance=ITA',
+    fields: ['publication-number', 'notice-title', 'notice-type', 'form-type', 'deadline-receipt-request', 'publication-date', 'links'],
+    page: 1, limit: 15, scope: 'ALL', paginationMode: 'PAGE_NUMBER', checkQuerySyntax: false
+  };
+  try {
+    var resp = UrlFetchApp.fetch(endpoint, {
+      method: 'post', contentType: 'application/json',
+      payload: JSON.stringify(body), muteHttpExceptions: true,
+      headers: { 'Accept': 'application/json' }
+    });
+    var code = resp.getResponseCode();
+    Logger.log('=== TED ESITI -> HTTP ' + code + ' ===');
+    if (code !== 200) { Logger.log('RISPOSTA: ' + resp.getContentText().substring(0, 1200)); return { http: code }; }
+    var data = JSON.parse(resp.getContentText());
+    var notices = data.notices || [];
+    Logger.log('Avvisi totali tornati: ' + notices.length + ' (su totalNoticeCount: ' + (data.totalNoticeCount || '?') + ')');
+    var conteggio = {};
+    notices.forEach(function(n, i) {
+      var nt = JSON.stringify(n['notice-type']);
+      var ft = JSON.stringify(n['form-type']);
+      var tit = n['notice-title'] ? JSON.stringify(n['notice-title']).substring(0, 70) : '';
+      conteggio[nt] = (conteggio[nt] || 0) + 1;
+      Logger.log('  #' + (i + 1) + ' notice-type:' + nt + ' | form-type:' + ft + ' | ' + tit);
+    });
+    Logger.log('RIEPILOGO notice-type: ' + JSON.stringify(conteggio, null, 2));
+    Logger.log('>>> I valori di notice-type/form-type che indicano AGGIUDICAZIONE sono quelli da usare nel filtro esiti.');
+    return { http: 200, conteggio: conteggio };
+  } catch(e) {
+    Logger.log('ERRORE testTedEsiti: ' + e);
+    return { errore: String(e) };
+  }
+}
+
 function _agentCleanHtml_(html) {
   // Preserva link come [URL: href] prima di stripare tag (fix v4.12.3)
   var cleaned = html.replace(/<a\s+[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi, function(m, href, text) {
