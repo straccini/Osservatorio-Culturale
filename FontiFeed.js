@@ -576,6 +576,26 @@ function seedVideoEMigra() {
   return { seed: seeded, migrazione: rep };
 }
 
+/**
+ * Diagnostica: quale spreadsheet vede getMainSS e se FontiFeed e' li'.
+ * Eseguire dall'editor GAS e leggere il Log.
+ */
+function diagFontiFeed() {
+  var sid = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(FONTIFEED_SHEET);
+  var out = {
+    SHEET_ID_property: sid || '(vuoto)',
+    getMainSS_id: ss.getId(),
+    getMainSS_nome: ss.getName(),
+    fontiFeed_esiste: !!sh,
+    fontiFeed_righe: sh ? sh.getLastRow() : -1,
+    fogli: ss.getSheets().map(function(s){ return s.getName(); }).join(', ')
+  };
+  Logger.log('diagFontiFeed: ' + JSON.stringify(out, null, 2));
+  return out;
+}
+
 /** Anteprima (NON modifica): elenca le fonti rss a 0 record raccolti. */
 function anteprimaFontiMorte() { return _potaFontiMorte_(true); }
 
