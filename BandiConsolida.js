@@ -199,6 +199,102 @@ function dedupFontiBandiV5() {
 }
 
 /**
+ * INVENTARIO (sola lettura): fotografia completa di FontiBandi_v5 per "fare ordine".
+ * Lanciare dall'editor (Esegui -> inventarioFontiBandi) e leggere il Log.
+ * Mostra: totale, attive/inattive, doppioni per URL, mai scansionate, produttive,
+ * distribuzione per Agente e per UltimoEsito (e per VerificaHTTP se presente).
+ */
+function inventarioFontiBandi() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(BANDI_V5_SHEET);
+  if (!sh || sh.getLastRow() < 2) { Logger.log('FontiBandi_v5 vuoto'); return { ok: false }; }
+  var v = sh.getDataRange().getValues();
+  var h = v[0].map(function(x) { return String(x || '').trim(); });
+  var iUrl = h.indexOf('URL'), iAtt = h.indexOf('Attiva'), iAg = h.indexOf('Agente'),
+      iScan = h.indexOf('UltimaScan'), iEsito = h.indexOf('UltimoEsito'),
+      iTot = h.indexOf('NRecordTotali'), iVer = h.indexOf('VerificaHTTP');
+  var tot = v.length - 1, attive = 0, inattive = 0, mai = 0, produttive = 0;
+  var perAgente = {}, perEsito = {}, perVerifica = {}, urlSeen = {}, dupRighe = 0;
+  for (var r = 1; r < v.length; r++) {
+    var row = v[r];
+    var attiva = !(row[iAtt] === false || String(row[iAtt]).toLowerCase() === 'false');
+    if (attiva) attive++; else inattive++;
+    var ag = (String(row[iAg] == null ? '' : row[iAg]).trim()) || '(nessuno)';
+    perAgente[ag] = (perAgente[ag] || 0) + 1;
+    var es = (String(row[iEsito] || '').trim()) || '(mai)';
+    perEsito[es] = (perEsito[es] || 0) + 1;
+    if (!row[iScan]) mai++;
+    if (Number(row[iTot]) > 0) produttive++;
+    if (iVer >= 0) { var vv = (String(row[iVer] || '').trim()) || '(non verif.)'; perVerifica[vv] = (perVerifica[vv] || 0) + 1; }
+    var k = _bcUrlKey_(row[iUrl]);
+    if (k) { if (urlSeen[k]) dupRighe++; else urlSeen[k] = true; }
+  }
+  Logger.log('=== INVENTARIO FontiBandi_v5 ===');
+  Logger.log('Totale righe: ' + tot + '  |  attive: ' + attive + '  |  inattive: ' + inattive);
+  Logger.log('Doppioni per URL (righe ridondanti): ' + dupRighe + '  -> rimuovili con dedupFontiBandiV5');
+  Logger.log('Mai scansionate (UltimaScan vuota): ' + mai);
+  Logger.log('Produttive (NRecordTotali>0): ' + produttive);
+  Logger.log('Per Agente: ' + JSON.stringify(perAgente));
+  Logger.log('Per UltimoEsito: ' + JSON.stringify(perEsito));
+  Logger.log(iVer >= 0 ? ('Per VerificaHTTP: ' + JSON.stringify(perVerifica))
+                       : 'VerificaHTTP: colonna assente (lancia verificaFontiBandi per crearla)');
+  return { ok: true, tot: tot, attive: attive, inattive: inattive, dupRighe: dupRighe,
+           mai: mai, produttive: produttive, perAgente: perAgente, perEsito: perEsito, perVerifica: perVerifica };
+}
+
+/**
+ * VERIFICA: testa ogni fonte di FontiBandi_v5 facendo una richiesta reale e segna
+ * l'esito nella colonna VerificaHTTP (OK / EMPTY / ERR / NO_URL) + VerificaData.
+ * Usa _agentFetchUrl_ (gestisce anche TED POST). Anti-timeout: budget 4.5min +
+ * cursore; se si ferma, RILANCIA la funzione e riprende da dove era.
+ * Di default verifica solo le fonti ATTIVE (opts.soloAttive=false per tutte).
+ * NON tocca UltimoEsito (dati degli agenti): scrive in colonne dedicate.
+ */
+function verificaFontiBandi(opts) {
+  opts = opts || {};
+  var soloAttive = opts.soloAttive !== false;
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(BANDI_V5_SHEET);
+  if (!sh || sh.getLastRow() < 2) { Logger.log('FontiBandi_v5 vuoto'); return { ok: false }; }
+  var h = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(function(x) { return String(x || '').trim(); });
+  var iVer = h.indexOf('VerificaHTTP');
+  if (iVer < 0) { sh.getRange(1, sh.getLastColumn() + 1).setValue('VerificaHTTP'); h.push('VerificaHTTP'); iVer = h.length - 1; }
+  var iVerD = h.indexOf('VerificaData');
+  if (iVerD < 0) { sh.getRange(1, sh.getLastColumn() + 1).setValue('VerificaData'); h.push('VerificaData'); iVerD = h.length - 1; }
+  var iUrl = h.indexOf('URL'), iAtt = h.indexOf('Attiva');
+  var data = sh.getDataRange().getValues();
+  var t0 = Date.now(), MAX_MS = 270000, cursorKey = 'VERIFICA_FONTI_CURSOR';
+  var startIdx = 1;
+  try { startIdx = parseInt(PropertiesService.getScriptProperties().getProperty(cursorKey) || '1', 10) || 1; } catch(e) {}
+  if (startIdx >= data.length || startIdx < 1) startIdx = 1;
+  if (startIdx > 1) Logger.log('  [ripresa] riparto da riga ' + startIdx + '/' + (data.length - 1));
+  var i = startIdx, interrotto = false, stats = { ok: 0, empty: 0, err: 0, skip: 0 };
+  for (; i < data.length; i++) {
+    if (Date.now() - t0 > MAX_MS) { interrotto = true; break; }
+    var row = data[i];
+    var attiva = !(row[iAtt] === false || String(row[iAtt]).toLowerCase() === 'false');
+    if (soloAttive && !attiva) { stats.skip++; continue; }
+    var url = String(row[iUrl] || '').trim();
+    var esito;
+    if (!url) esito = 'NO_URL';
+    else {
+      var txt = (typeof _agentFetchUrl_ === 'function') ? _agentFetchUrl_(url) : null;
+      esito = (txt === null) ? 'ERR' : (txt.length < 200 ? 'EMPTY' : 'OK');
+    }
+    if (esito === 'OK') stats.ok++; else if (esito === 'EMPTY') stats.empty++; else stats.err++;
+    sh.getRange(i + 1, iVer + 1).setValue(esito);
+    sh.getRange(i + 1, iVerD + 1).setValue(new Date());
+  }
+  try {
+    if (i >= data.length) PropertiesService.getScriptProperties().deleteProperty(cursorKey);
+    else PropertiesService.getScriptProperties().setProperty(cursorKey, String(i));
+  } catch(e2) {}
+  var fine = interrotto ? ('PARZIALE — riparte da riga ' + i + '/' + (data.length - 1) + ' al prossimo lancio (RILANCIA)') : 'COMPLETATO';
+  Logger.log('=== VERIFICA FontiBandi ' + fine + ' === OK:' + stats.ok + ' EMPTY:' + stats.empty + ' ERR:' + stats.err + ' skip:' + stats.skip + ' (' + Math.round((Date.now() - t0) / 1000) + 's)');
+  return { ok: true, completato: !interrotto, prossimaRiga: (interrotto ? i : 1), stats: stats };
+}
+
+/**
  * Marca con prefisso _OLD_ i fogli bandi non piu' usati. DA LANCIARE SOLO DOPO
  * consolidaBandiFonti() e verifica del pannello. NON cancella: rinomina, cosi' li
  * riconosci nel foglio Google e li elimini tu a mano.
