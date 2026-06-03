@@ -653,9 +653,11 @@ function testEuFtApi3() {
   }
 
   // A) text=*** + query aperti (application/json): se filtra, totalResults << 648450
-  prova('A_manual_json_all', '***', 'application/json');
+  prova('A_manual_json_all', base, '***', 'application/json');
   // B) text=culture + query aperti: il target (call aperte cultura)
-  prova('B_manual_json_culture', 'culture', 'application/json');
+  prova('B_manual_json_culture', base, 'culture', 'application/json');
+  // C) text=culture + query aperti, parte query come text/plain (fallback)
+  prova('C_manual_textplain_culture', base, 'culture', 'text/plain');
 
   Logger.log('RIEPILOGO testEuFtApi3: ' + JSON.stringify(report, null, 2));
   return report;
