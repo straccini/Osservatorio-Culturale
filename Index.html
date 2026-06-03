@@ -6477,7 +6477,13 @@
   function eliminaUtente(email) {
     if (!hasGAS()) return;
     if (!confirm('Eliminare DEFINITIVAMENTE ' + email + '?')) return;
-    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).deleteUser(email);
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) { if (typeof showToast==='function') showToast('Utente eliminato','ok'); reloadUtentiTable(); }
+        else { if (typeof showToast==='function') showToast((r&&r.error)||'Errore','err'); }
+      })
+      .withFailureHandler(function(e){ if (typeof showToast==='function') showToast('Errore: '+e,'err'); })
+      .deleteUser(email, (window.OC_SESSION && window.OC_SESSION.token) || null);
   }
 
   function cambiaRuolo(email, ruolo) {
@@ -6510,7 +6516,7 @@
         else { if (typeof showToast==='function') showToast((r&&r.error)||'Errore','err'); if (sv){ sv.disabled=false; sv.textContent='💾 Salva'; } }
       })
       .withFailureHandler(function(e){ if (typeof showToast==='function') showToast('Errore: '+e,'err'); if (sv){ sv.disabled=false; sv.textContent='💾 Salva'; } })
-      .saveUserStatoRuolo(email, stato, ruolo, oldStato);
+      .saveUserStatoRuolo(email, stato, ruolo, oldStato, (window.OC_SESSION && window.OC_SESSION.token) || null);
   }
 
   function toggleOptIn(email, key) {

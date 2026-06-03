@@ -748,8 +748,10 @@ function suspendUser(email) {
   return _setUserStato_(email, 'sospeso');
 }
 
-function deleteUser(email) {
-  requireAuth(['admin']);
+function deleteUser(email, token) {
+  // Auth via token di sessione (vedi nota in saveUserStatoRuolo).
+  var auth = getCurrentUserAuth(token || null);
+  if (!auth || !auth.isAdmin) return { error: 'Accesso negato (non admin)' };
   if (!email) return { error:'email mancante' };
   var sh = _getOrCreateUtentiSheet_();
   var rows = sh.getDataRange().getValues();
@@ -775,8 +777,13 @@ function updateUserRuolo(email, ruolo) {
  * Scelta confermata: NESSUNA email e nessun cambio opt-in (salvataggio silenzioso/prevedibile).
  * Registra DataApprovazione solo alla prima attivazione (audit, nessun effetto collaterale).
  */
-function saveUserStatoRuolo(email, stato, ruolo, oldStato) {
-  requireAuth(['admin']);
+function saveUserStatoRuolo(email, stato, ruolo, oldStato, token) {
+  // Auth via token di sessione (la web app e' ad accesso "Chiunque": la sessione
+  // Google e' vuota, quindi NON usare requireAuth che fallirebbe). Stesso schema di getAllUtenti.
+  var auth = getCurrentUserAuth(token || null);
+  if (!auth || !auth.isAdmin) {
+    return { error: 'Accesso negato (non admin). Email rilevata: ' + (auth ? (auth.email || 'vuota') : 'errore') };
+  }
   email = String(email || '').toLowerCase().trim();
   if (!email) return { error:'email mancante' };
   var STATI = ['pending','attivo','sospeso','rifiutato'];
