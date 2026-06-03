@@ -39,8 +39,13 @@ function _bcSheetObjs_(name) {
   return out;
 }
 
+// Per i bandi (e soprattutto le API) la QUERY STRING e' significativa
+// (es. ?categoria=cultura vs ?q=musei): la teniamo. Togliamo solo protocollo/www/anchor/slash.
 function _bcUrlKey_(u) {
-  return (typeof _normalizeFeedUrl_ === 'function') ? _normalizeFeedUrl_(u) : String(u || '').trim().toLowerCase().replace(/\/+$/, '');
+  var s = String(u || '').trim().toLowerCase();
+  if (!s) return '';
+  s = s.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/#.*$/, '');
+  return s.replace(/\/+$/, '');
 }
 
 function _bcTipoFromUrl_(url) {
