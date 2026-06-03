@@ -489,6 +489,56 @@ function scansionaNews()    { var n = scanSources();        Logger.log('scansion
 function scansionaPodcast() { var n = scanPodcastDiretto(); Logger.log('scansionaPodcast: ' + n + ' episodi nuovi'); return n; }
 function scansionaVideo()   { var n = scanVideoYoutube();   Logger.log('scansionaVideo: ' + n + ' video nuovi'); return n; }
 
+// ============================================================================
+// FASE 1 — strumenti rollout (Video seed + potatura fonti morte)
+// ============================================================================
+
+/**
+ * Seed dei canali YouTube musei (in FontiPodcast) + migrazione in FontiFeed.
+ * Da lanciare UNA volta prima di accendere i Video (oggi 0 fonti video).
+ */
+function seedVideoEMigra() {
+  var seeded;
+  if (typeof populaSeedVideoYoutubeMusei === 'function') {
+    try { populaSeedVideoYoutubeMusei(); seeded = 'ok'; } catch(e) { seeded = 'ERR: ' + e.message; }
+  } else {
+    seeded = 'populaSeedVideoYoutubeMusei assente';
+  }
+  Logger.log('seedVideoEMigra: seed canali video -> ' + seeded);
+  var rep = migraFontiFeed();
+  Logger.log('seedVideoEMigra: migrazione -> ' + JSON.stringify(rep));
+  return { seed: seeded, migrazione: rep };
+}
+
+/** Anteprima (NON modifica): elenca le fonti rss a 0 record raccolti. */
+function anteprimaFontiMorte() { return _potaFontiMorte_(true); }
+
+/** Disattiva (Attiva=FALSE, NON cancella) le fonti rss a 0 record. Reversibile. */
+function potaFontiMorte() { return _potaFontiMorte_(false); }
+
+function _potaFontiMorte_(soloAnteprima) {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(FONTIFEED_SHEET);
+  if (!sh || sh.getLastRow() < 2) return { ok: false, error: 'FontiFeed vuoto' };
+  var v = sh.getDataRange().getValues(); var h = v[0];
+  function c(n){ return h.indexOf(n); }
+  var iId = c('ID'), iNome = c('Nome'), iTipo = c('Tipo'), iAtt = c('Attiva'), iTot = c('NRecordTotali');
+  var morte = [], disattivate = 0;
+  for (var r = 1; r < v.length; r++) {
+    if (!v[r][iId]) continue;
+    if (String(v[r][iTipo]).toLowerCase() !== 'rss') continue;
+    var attiva = (v[r][iAtt] === true || String(v[r][iAtt]).toUpperCase() === 'TRUE');
+    var tot = Number(v[r][iTot] || 0);
+    if (attiva && tot === 0) {
+      morte.push(String(v[r][iNome] || ''));
+      if (!soloAnteprima) { sh.getRange(r + 1, iAtt + 1).setValue(false); disattivate++; }
+    }
+  }
+  var rep = { ok: true, soloAnteprima: !!soloAnteprima, candidate: morte.length, disattivate: disattivate, fonti: morte };
+  Logger.log((soloAnteprima ? 'anteprimaFontiMorte' : 'potaFontiMorte') + ': ' + JSON.stringify(rep));
+  return rep;
+}
+
 function statoFlagFonti() {
   ['rss','podcast','video'].forEach(function(t){
     Logger.log(t.toUpperCase() + ': ' + (isFontiFeedEnabled_(t) ? 'FontiFeed (ON)' : 'legacy (OFF)'));
