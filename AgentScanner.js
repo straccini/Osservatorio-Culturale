@@ -189,19 +189,21 @@ function setupAgentTriggers() {
     }
   });
 
-  // AG1 Bandi: ogni 6h
-  ScriptApp.newTrigger('scanAgente1').timeBased().everyHours(6).create();
-  // AG2 Normativa: ogni 12h
-  ScriptApp.newTrigger('scanAgente2').timeBased().everyHours(12).create();
-  // AG3 Innovazione: ogni 12h
-  ScriptApp.newTrigger('scanAgente3').timeBased().everyHours(12).create();
-  // AG4 Comunita: ogni 24h (03:00)
-  ScriptApp.newTrigger('scanAgente4').timeBased().atHour(3).nearMinute(0).everyDays(1).create();
-  // AG5 Digital: ogni 12h
-  ScriptApp.newTrigger('scanAgente5').timeBased().everyHours(12).create();
+  // v4.20 — Scacchiera per giorni: un agente al giorno (AG1 bandi 2x: lun+gio).
+  // Riduce carico/costo Claude; col budget+cursore ogni firing e' sicuro.
+  var WD = ScriptApp.WeekDay;
+  function trig(fn, weekday, hour) {
+    ScriptApp.newTrigger(fn).timeBased().onWeekDay(weekday).atHour(hour).create();
+  }
+  trig('scanAgente1', WD.MONDAY, 7);     // AG1 Bandi — lunedì
+  trig('scanAgente1', WD.THURSDAY, 7);   // AG1 Bandi — giovedì (2°/settimana)
+  trig('scanAgente2', WD.TUESDAY, 7);    // AG2 Normativa — martedì
+  trig('scanAgente3', WD.WEDNESDAY, 7);  // AG3 Innovazione — mercoledì
+  trig('scanAgente4', WD.FRIDAY, 7);     // AG4 Comunità — venerdì
+  trig('scanAgente5', WD.SATURDAY, 7);   // AG5 Digital — sabato
 
-  Logger.log('Agent triggers installati (rimossi ' + removed + ' precedenti). AG1:6h, AG2:12h, AG3:12h, AG4:24h, AG5:12h');
-  return { ok: true, removed: removed };
+  Logger.log('Agent triggers SCACCHIERA installati (rimossi ' + removed + ' precedenti). AG1: lun+gio · AG2: mar · AG3: mer · AG4: ven · AG5: sab — ore 07:00.');
+  return { ok: true, removed: removed, schema: 'AG1 lun+gio, AG2 mar, AG3 mer, AG4 ven, AG5 sab @07:00' };
 }
 
 // ============================================================================
