@@ -329,3 +329,20 @@ function setupFontiApiBandiUp() {
   Logger.log('setupFontiApiBandiUp: ' + JSON.stringify(out, null, 2));
   return out;
 }
+
+/**
+ * Pronta: dataset/cataloghi open-data culturali da dati.gov.it (CKAN) — AGENTE 5.
+ * NB: sono DATASET (es. "Luoghi della cultura", inventari beni culturali), NON bandi.
+ * Adatti ad AG5 (Digital/open data), non ad AG1 (bandi).
+ */
+function aggiungiDatiGovCultura() {
+  return aggiungiFonteApiAgente({
+    id: 'datigov_cultura',
+    nome: 'dati.gov.it — Cultura / Open Data (API)',
+    url: 'https://dati.gov.it/opendata/api/3/action/package_search?q=cultura&rows=10',
+    agente: 5,
+    categoria: 'Aggregatore',
+    priorita: 2,
+    note: 'CKAN open data nazionale. Dataset/cataloghi culturali (musei, beni culturali), NON bandi. Agente AG5.'
+  });
+}
