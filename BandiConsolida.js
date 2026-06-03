@@ -305,3 +305,22 @@ function aggiungiBandiUpCultura() {
     note: 'API pubblica JSON. Filtro: categoria=cultura, stato=aperto. Estrazione via Claude (prompt AG1).'
   });
 }
+
+/**
+ * Set curato di fonti API BandiUp (agente 1) che copre i temi cultura/musei.
+ * Idempotente (dedup per URL): rilanciabile, aggiunge solo le mancanti.
+ */
+function setupFontiApiBandiUp() {
+  var fonti = [
+    { id: 'bandiup_cultura',  nome: 'BandiUp — Cultura aperti (API)',     url: 'https://bandiup.it/api/bandi?categoria=cultura&stato=aperto&limit=25',     note: 'cultura, aperti' },
+    { id: 'bandiup_musei',    nome: 'BandiUp — Musei (API)',              url: 'https://bandiup.it/api/bandi?q=musei&stato=aperto&limit=20',               note: 'ricerca testuale musei' },
+    { id: 'bandiup_scadenza', nome: 'BandiUp — Cultura in scadenza (API)', url: 'https://bandiup.it/api/bandi?categoria=cultura&stato=in_scadenza&limit=15', note: 'cultura, urgenti in scadenza' }
+  ];
+  var out = [];
+  fonti.forEach(function(f) {
+    f.agente = 1; f.categoria = 'Aggregatore'; f.priorita = 1;
+    out.push(aggiungiFonteApiAgente(f));
+  });
+  Logger.log('setupFontiApiBandiUp: ' + JSON.stringify(out, null, 2));
+  return out;
+}
