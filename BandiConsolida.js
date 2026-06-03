@@ -174,6 +174,58 @@ function deprecaFontiBandiOld() {
 }
 
 /**
+ * Aggiunge a FontiBandi_v5 le colonne 'Agente' (quale agente gestisce la fonte)
+ * e 'UltimoHash' (per la dedup hash-first dello scanner agenti), popolandole da
+ * FontiAgenti per URL. Multi-agente -> lista "1,3". Da lanciare DOPO consolidaBandiFonti.
+ * Cosi' nel foglio unico si VEDE quali fonti sono gestite da agenti specifici.
+ */
+function assegnaAgentiFontiBandi() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var shV5 = ss.getSheetByName(BANDI_V5_SHEET);
+  if (!shV5) return { ok: false, error: 'FontiBandi_v5 assente' };
+
+  // 1. assicura colonne Agente + UltimoHash (in coda, non sposta le 18 esistenti)
+  var hdr = shV5.getRange(1, 1, 1, shV5.getLastColumn()).getValues()[0];
+  function ensureCol(name) {
+    var i = hdr.indexOf(name);
+    if (i >= 0) return i;
+    shV5.getRange(1, shV5.getLastColumn() + 1).setValue(name);
+    hdr = shV5.getRange(1, 1, 1, shV5.getLastColumn()).getValues()[0];
+    return hdr.indexOf(name);
+  }
+  var iAgente = ensureCol('Agente');
+  var iHash = ensureCol('UltimoHash');
+  var iUrl = hdr.indexOf('URL');
+
+  // 2. mappa da FontiAgenti: URL normalizzato -> {agenti:{}, hash}
+  var ag = _bcSheetObjs_('FontiAgenti');
+  var mapUrl = {};
+  ag.forEach(function(o) {
+    var k = _bcUrlKey_(o.URL || o.RSS_URL || '');
+    if (!k) return;
+    if (!mapUrl[k]) mapUrl[k] = { agenti: {}, hash: '' };
+    var a = String(o.Agente == null ? '' : o.Agente).trim();
+    if (a) mapUrl[k].agenti[a] = true;
+    if (o.UltimoHash) mapUrl[k].hash = String(o.UltimoHash);
+  });
+
+  // 3. scrivi Agente + UltimoHash sulle righe FontiBandi_v5 corrispondenti per URL
+  var v = shV5.getDataRange().getValues();
+  var assegnati = 0;
+  for (var r = 1; r < v.length; r++) {
+    var k = _bcUrlKey_(v[r][iUrl]);
+    var m = mapUrl[k];
+    if (!m) continue;
+    var lista = Object.keys(m.agenti).join(',');
+    if (lista) { shV5.getRange(r + 1, iAgente + 1).setValue(lista); assegnati++; }
+    if (m.hash) shV5.getRange(r + 1, iHash + 1).setValue(m.hash);
+  }
+  var rep = { ok: true, colonna_Agente: iAgente + 1, colonna_UltimoHash: iHash + 1, righe_con_agente: assegnati };
+  Logger.log('assegnaAgentiFontiBandi: ' + JSON.stringify(rep));
+  return rep;
+}
+
+/**
  * Anteprima (NON modifica): quante fonti porterebbe dentro la consolidazione.
  */
 function anteprimaConsolidaBandi() {

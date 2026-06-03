@@ -194,8 +194,20 @@ function testAgentScan(agenteId, maxFonti) {
 // HELPER PRIVATE
 // ============================================================================
 
+// v4.20 — Archivio unico: con flag ON gli agenti leggono/scrivono FontiBandi_v5
+// (colonna Agente), non piu' FontiAgenti. OFF = comportamento legacy (FontiAgenti).
+function _agentiDaFontiBandiV5_() {
+  try { return String(PropertiesService.getScriptProperties().getProperty('USE_AGENTI_DA_FONTIBANDIV5')) === 'true'; }
+  catch(e) { return false; }
+}
+function attivaAgentiDaFontiBandi()  { PropertiesService.getScriptProperties().setProperty('USE_AGENTI_DA_FONTIBANDIV5', 'true');  Logger.log('Agenti -> FontiBandi_v5 (archivio unico) ON'); }
+function spegniAgentiDaFontiBandi()  { PropertiesService.getScriptProperties().setProperty('USE_AGENTI_DA_FONTIBANDIV5', 'false'); Logger.log('Agenti -> FontiAgenti (legacy) OFF'); }
+
 function _agentGetFontiSheet_() {
   var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  if (_agentiDaFontiBandiV5_()) {
+    return ss.getSheetByName('FontiBandi_v5') || ss.getSheetByName(FONTI_AGENTI_SHEET) || null;
+  }
   return ss.getSheetByName(FONTI_AGENTI_SHEET) || null;
 }
 
@@ -217,7 +229,9 @@ function _agentGetFonti_(agenteId) {
   var fonti = [];
   for (var r = 1; r < data.length; r++) {
     var row = data[r];
-    if (Number(row[iAg]) !== agenteId) continue;
+    // Match agente: supporta singolo ("1") e multi-agente ("1,3") in FontiBandi_v5
+    var _ags = String(row[iAg] == null ? '' : row[iAg]).split(/[,;]/).map(function(s){ return Number(s.trim()); });
+    if (_ags.indexOf(agenteId) < 0) continue;
     if (row[iAttiva] === false || String(row[iAttiva]).toLowerCase() === 'false') continue;
     fonti.push({
       row: r + 1,  // riga nel foglio (1-based, header incluso)
