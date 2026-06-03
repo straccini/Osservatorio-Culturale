@@ -159,6 +159,48 @@ function scanAgente3() { return scanAgente(3); }
 function scanAgente4() { return scanAgente(4); }
 function scanAgente5() { return scanAgente(5); }
 
+/**
+ * DIAGNOSTICA: elenca tutte le fonti di un agente con stato dell'ultimo scan.
+ * Mostra che ogni fonte (es. BandiUp) e' monitorata anche se nel log dello scan
+ * non compare (il log stampa solo le fonti con bandi NUOVI).
+ * Lanciare dall'editor (Esegui -> diagnosiFontiAg1) e leggere il Log.
+ *  - UltimoEsito: OK=trovati nuovi, EMPTY/NO_MATCH=nessun nuovo, ERROR=problema
+ *  - UltimaScan: quando e' stata scansionata l'ultima volta
+ *  - nUltimo: bandi nuovi all'ultimo scan; nTotali: totale storico
+ */
+function diagnosiFontiAg1() { return diagnosiFontiAgente(1); }
+
+function diagnosiFontiAgente(agenteId) {
+  var sh = _agentGetFontiSheet_();
+  if (!sh || sh.getLastRow() < 2) { Logger.log('Nessuna fonte trovata'); return []; }
+  var data = sh.getDataRange().getValues();
+  var h = data[0];
+  var iNome = h.indexOf('Nome'), iTipo = h.indexOf('Tipo'), iAg = h.indexOf('Agente'),
+      iAtt = h.indexOf('Attiva'), iScan = h.indexOf('UltimaScan'), iEsito = h.indexOf('UltimoEsito'),
+      iTot = h.indexOf('NRecordTotali'), iUlt = h.indexOf('NRecordUltimo');
+  var out = [];
+  Logger.log('=== DIAGNOSI FONTI AG' + agenteId + ' ===');
+  for (var r = 1; r < data.length; r++) {
+    var row = data[r];
+    var ags = String(row[iAg] == null ? '' : row[iAg]).split(/[,;]/).map(function(s) { return Number(s.trim()); });
+    if (ags.indexOf(agenteId) < 0) continue;
+    var attiva = !(row[iAtt] === false || String(row[iAtt]).toLowerCase() === 'false');
+    var rec = {
+      nome: row[iNome], tipo: row[iTipo], attiva: attiva,
+      ultimaScan: row[iScan] ? String(row[iScan]) : '(mai)',
+      ultimoEsito: row[iEsito] || '(nessuno)',
+      nUltimo: row[iUlt] || 0, nTotali: row[iTot] || 0
+    };
+    out.push(rec);
+    Logger.log((attiva ? '✓ ' : '✗ ') + rec.nome +
+      ' | scan: ' + rec.ultimaScan + ' | esito: ' + rec.ultimoEsito +
+      ' | ultimo: ' + rec.nUltimo + ' | tot: ' + rec.nTotali);
+  }
+  var attive = out.filter(function(x) { return x.attiva; }).length;
+  Logger.log('--- AG' + agenteId + ': ' + out.length + ' fonti (' + attive + ' attive) ---');
+  return out;
+}
+
 // NB: in produzione usare i trigger per-agente (setupAgentTriggers), NON questo.
 // Qui c'e' un budget globale per non andare in hard-timeout nei test manuali:
 // gli agenti non raggiunti partono al lancio successivo (grazie al cursore).
