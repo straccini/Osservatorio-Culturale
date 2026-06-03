@@ -555,6 +555,53 @@ function testEuFtApi() {
   return report;
 }
 
+/**
+ * TEST 2 EU F&T: capire quale filtro RIDUCE davvero i risultati (solo call aperte
+ * cultura). Confronta totalResults tra: form con/ senza query, e multipart con
+ * content-type corretto. Vince la variante con totalResults piccolo e sensato.
+ */
+function testEuFtApi2() {
+  var base = 'https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=';
+  var qOpen = '{"bool":{"must":[{"terms":{"type":["1","2"]}},{"terms":{"status":["31094501","31094502"]}}]}}';
+  var report = [];
+
+  function prova(nome, url, options) {
+    try {
+      var resp = UrlFetchApp.fetch(url, options);
+      var code = resp.getResponseCode();
+      var txt = resp.getContentText() || '';
+      var tot = null;
+      try { tot = JSON.parse(txt).totalResults; } catch(e0) { var m = txt.match(/"totalResults":(\d+)/); if (m) tot = Number(m[1]); }
+      Logger.log('=== EUFT2 ' + nome + ' -> HTTP ' + code + ' | totalResults: ' + tot + ' ===');
+      Logger.log('  (primi 400 char) ' + txt.substring(0, 400));
+      report.push({ variante: nome, http: code, totalResults: tot });
+    } catch(e) {
+      Logger.log('=== EUFT2 ' + nome + ' -> ERRORE: ' + e + ' ===');
+      report.push({ variante: nome, errore: String(e) });
+    }
+  }
+
+  // 1) form, text=*** SENZA query (baseline: dovrebbe essere ~tutto)
+  prova('1_form_all_noquery', base + '***',
+    { method: 'post', muteHttpExceptions: true, payload: { languages: 'en', pageSize: '5' } });
+
+  // 2) form, text=*** CON query open/forthcoming (filtra lo stato?)
+  prova('2_form_query_open', base + '***',
+    { method: 'post', muteHttpExceptions: true, payload: { query: qOpen, languages: 'en', pageSize: '5' } });
+
+  // 3) form, text=culture (la sola keyword riduce?)
+  prova('3_form_text_culture', base + 'culture',
+    { method: 'post', muteHttpExceptions: true, payload: { languages: 'en', pageSize: '5' } });
+
+  // 4) multipart con blob text/plain SENZA filename (content-type corretto?)
+  prova('4_multipart_textplain', base + '***',
+    { method: 'post', muteHttpExceptions: true,
+      payload: { query: Utilities.newBlob(qOpen, 'text/plain'), languages: 'en', pageSize: '5' } });
+
+  Logger.log('RIEPILOGO testEuFtApi2: ' + JSON.stringify(report, null, 2));
+  return report;
+}
+
 function _agentCleanHtml_(html) {
   // Preserva link come [URL: href] prima di stripare tag (fix v4.12.3)
   var cleaned = html.replace(/<a\s+[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi, function(m, href, text) {
