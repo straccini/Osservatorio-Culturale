@@ -404,6 +404,90 @@ function elencaFontiOrfane() {
 }
 
 /**
+ * Assegna un agente a una fonte di FontiBandi_v5 cercandola per Nome (trim,
+ * case-insensitive). Riattiva la fonte se era spenta. Riutilizzabile (es. domani
+ * per l'API EU Funding & Tenders). Multi-agente: passa "1,3" come 'agente'.
+ */
+function assegnaAgenteAFonte(nome, agente) {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(BANDI_V5_SHEET);
+  if (!sh || sh.getLastRow() < 2) return { ok: false, error: 'FontiBandi_v5 vuoto' };
+  var data = sh.getDataRange().getValues();
+  var h = data[0].map(function(x) { return String(x || '').trim(); });
+  var iNome = h.indexOf('Nome'), iAg = h.indexOf('Agente'), iAtt = h.indexOf('Attiva');
+  if (iNome < 0 || iAg < 0) return { ok: false, error: 'colonne Nome/Agente assenti' };
+  var target = String(nome || '').trim().toLowerCase();
+  var fatte = [];
+  for (var r = 1; r < data.length; r++) {
+    if (String(data[r][iNome] || '').trim().toLowerCase() === target) {
+      sh.getRange(r + 1, iAg + 1).setValue(String(agente));
+      if (iAtt >= 0) sh.getRange(r + 1, iAtt + 1).setValue(true);
+      fatte.push(data[r][iNome] + ' -> AG' + agente);
+    }
+  }
+  Logger.log('assegnaAgenteAFonte("' + nome + '", ' + agente + '): ' + JSON.stringify(fatte));
+  return { ok: true, assegnate: fatte.length, dettaglio: fatte };
+}
+
+/** Assegna ad AG1 le 2 orfane "buone" (gare cultura/appalti italiane, vive). */
+function assegnaFontiOrfaneBuone() {
+  var nomi = ['MiC Trasparenza - Gare e Contratti', 'SCP - Servizio Contratti Pubblici (MIT)'];
+  var out = nomi.map(function(n) { return assegnaAgenteAFonte(n, 1); });
+  var tot = out.reduce(function(s, o) { return s + (o.assegnate || 0); }, 0);
+  Logger.log('=== ASSEGNA ORFANE BUONE -> AG1: ' + tot + ' assegnate ===');
+  return out;
+}
+
+/**
+ * Disattiva (REVERSIBILE) tutte le fonti SENZA agente. Marker UltimoErrore='ORFANA_OFF'.
+ * Lanciare DOPO assegnaFontiOrfaneBuone (cosi' le 2 buone, ora con agente, restano attive).
+ * Ripristino: annullaDisattivaFontiOrfane().
+ */
+function disattivaFontiOrfane() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(BANDI_V5_SHEET);
+  if (!sh || sh.getLastRow() < 2) return { ok: false };
+  var data = sh.getDataRange().getValues();
+  var h = data[0].map(function(x) { return String(x || '').trim(); });
+  var iAg = h.indexOf('Agente'), iAtt = h.indexOf('Attiva'), iNome = h.indexOf('Nome'), iErr = h.indexOf('UltimoErrore');
+  var spente = [];
+  for (var r = 1; r < data.length; r++) {
+    var ag = String(data[r][iAg] == null ? '' : data[r][iAg]).trim();
+    if (ag) continue;
+    var attiva = !(data[r][iAtt] === false || String(data[r][iAtt]).toLowerCase() === 'false');
+    if (!attiva) continue;
+    sh.getRange(r + 1, iAtt + 1).setValue(false);
+    if (iErr >= 0) sh.getRange(r + 1, iErr + 1).setValue('ORFANA_OFF');
+    spente.push(data[r][iNome]);
+  }
+  Logger.log('=== DISATTIVA ORFANE: spente ' + spente.length + ' fonti senza agente ===');
+  spente.forEach(function(n) { Logger.log('  - ' + n); });
+  Logger.log('Per annullare: annullaDisattivaFontiOrfane()');
+  return { ok: true, spente: spente.length, nomi: spente };
+}
+
+/** Annulla disattivaFontiOrfane: riattiva le fonti marcate 'ORFANA_OFF'. */
+function annullaDisattivaFontiOrfane() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(BANDI_V5_SHEET);
+  if (!sh || sh.getLastRow() < 2) return { ok: false };
+  var data = sh.getDataRange().getValues();
+  var h = data[0].map(function(x) { return String(x || '').trim(); });
+  var iAtt = h.indexOf('Attiva'), iNome = h.indexOf('Nome'), iErr = h.indexOf('UltimoErrore');
+  if (iErr < 0) return { ok: false };
+  var on = [];
+  for (var r = 1; r < data.length; r++) {
+    if (String(data[r][iErr] || '') === 'ORFANA_OFF') {
+      sh.getRange(r + 1, iAtt + 1).setValue(true);
+      sh.getRange(r + 1, iErr + 1).setValue('');
+      on.push(data[r][iNome]);
+    }
+  }
+  Logger.log('=== ANNULLA DISATTIVA ORFANE: riattivate ' + on.length + ' ===');
+  return { ok: true, riattivate: on.length };
+}
+
+/**
  * Marca con prefisso _OLD_ i fogli bandi non piu' usati. DA LANCIARE SOLO DOPO
  * consolidaBandiFonti() e verifica del pannello. NON cancella: rinomina, cosi' li
  * riconosci nel foglio Google e li elimini tu a mano.
