@@ -331,6 +331,37 @@ function setupFontiApiBandiUp() {
 }
 
 /**
+ * Set ESTESO di fonti API BandiUp (agente 1) per coprire PIU' BANDI.
+ *
+ * Perche': la ricerca "cultura" ha ~33 bandi su 7 pagine, ma una singola query
+ * mostra solo la prima pagina (e il buffer Claude da 20KB tronca oltre ~15 record).
+ * Qui registriamo le PAGINE SUCCESSIVE (page=2, page=3) come fonti a se', cosi'
+ * l'agente AG1 le scansiona e raccoglie anche i bandi oltre la prima pagina.
+ * limit=15 = ogni pagina rientra intera nel buffer senza troncamenti.
+ *
+ * Aggiunge anche una ricerca testuale "patrimonio" (cattura bandi non taggati
+ * come categoria=cultura ma pertinenti al patrimonio culturale).
+ *
+ * Idempotente (dedup per URL normalizzato, query-string inclusa): rilanciabile.
+ * Lanciare DOPO setupFontiApiBandiUp(). I duplicati di titolo tra pagine vengono
+ * gestiti a valle dal dedup dell'archivio bandi.
+ */
+function setupFontiApiBandiUpEsteso() {
+  var fonti = [
+    { id: 'bandiup_cultura_p2', nome: 'BandiUp — Cultura aperti pag.2 (API)', url: 'https://bandiup.it/api/bandi?categoria=cultura&stato=aperto&limit=15&page=2', note: 'cultura aperti, pagina 2 (bandi successivi)' },
+    { id: 'bandiup_cultura_p3', nome: 'BandiUp — Cultura aperti pag.3 (API)', url: 'https://bandiup.it/api/bandi?categoria=cultura&stato=aperto&limit=15&page=3', note: 'cultura aperti, pagina 3 (bandi successivi)' },
+    { id: 'bandiup_patrimonio', nome: 'BandiUp — Patrimonio (API)',           url: 'https://bandiup.it/api/bandi?q=patrimonio&stato=aperto&limit=15',         note: 'ricerca testuale patrimonio culturale' }
+  ];
+  var out = [];
+  fonti.forEach(function(f) {
+    f.agente = 1; f.categoria = 'Aggregatore'; f.priorita = 1;
+    out.push(aggiungiFonteApiAgente(f));
+  });
+  Logger.log('setupFontiApiBandiUpEsteso: ' + JSON.stringify(out, null, 2));
+  return out;
+}
+
+/**
  * Pronta: dataset/cataloghi open-data culturali da dati.gov.it (CKAN) — AGENTE 5.
  * NB: sono DATASET (es. "Luoghi della cultura", inventari beni culturali), NON bandi.
  * Adatti ad AG5 (Digital/open data), non ad AG1 (bandi).
