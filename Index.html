@@ -5825,7 +5825,6 @@
     google.script.run
       .withSuccessHandler(function(r) {
         var arr = (r && r.fonti) || [];
-        try { console.log('[FontiFeed] ricevute dal backend:', arr.length, 'ok=', r && r.ok, 'diag=', r && r._diag); } catch(_){}
         if (r && r._diag) collected.feedErr = r._diag;
         collected.feed = arr.map(function(f) {
           return { _src:'feed', id:f.id, nome:f.nome, tipo:(f.tipo === 'rss' ? 'news' : f.tipo), url:f.url,
@@ -5981,9 +5980,9 @@
     var hint = $('fpHint');
     var inp = $('fpUrlU');
     if (type === 'video') {
-      if (lbl) lbl.textContent = 'URL canale YouTube';
-      if (inp) inp.placeholder = 'https://www.youtube.com/@nomeCanale o /channel/UCxxx';
-      if (hint) hint.textContent = 'YouTube: accetta @handle, /channel/UCxxx o URL feed diretto. La risoluzione è automatica.';
+      if (lbl) lbl.textContent = 'URL feed YouTube (Atom)';
+      if (inp) inp.placeholder = 'https://www.youtube.com/feeds/videos.xml?channel_id=UCxxx';
+      if (hint) hint.textContent = 'Incolla l\'URL feed Atom del canale (youtube.com/feeds/videos.xml?channel_id=UC…). Per i 10 canali musei in blocco usa seedVideoEMigra dall\'editor.';
     } else if (type === 'feed') {
       if (lbl) lbl.textContent = 'URL feed RSS';
       if (inp) inp.placeholder = 'https://...feed.xml';
@@ -5995,38 +5994,28 @@
     }
   }
 
+  // v4.20 — Aggiunta fonte ora scrive su FontiFeed (feed=rss, audio=podcast, video=video).
   function addFonteUnificata() {
     if (!hasGAS()) return;
     var nome = ($('fpNomeU')||{}).value || '';
     var url  = ($('fpUrlU')||{}).value || '';
-    var tem  = ($('fpTematicaU')||{}).value || 'Musei & Patrimonio';
+    var tem  = ($('fpTematicaU')||{}).value || '';
     var out  = $('addFonteResult');
     if (!nome.trim() || !url.trim()) { if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Compila nome e URL.</span>'; return; }
-    if(out) out.innerHTML = '<span style="color:#666">' + (_podAddType==='video'?'Risoluzione canale…':'Aggiunta in corso…') + '</span>';
-    if (_podAddType === 'video') {
-      google.script.run
-        .withSuccessHandler(function(r) {
-          if (r && r.ok) {
-            out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ YouTube aggiunto. Feed: <code style="font-size:11px">'+esc(r.feedUrl||'')+'</code></span>';
-            $('fpNomeU').value = ''; $('fpUrlU').value = '';
-            reloadFontiPodTable();
-          } else { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; }
-        })
-        .withFailureHandler(function(e) { if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
-        .addFonteVideoYoutube({ nome: nome.trim(), channelUrl: url.trim(), tematica: tem });
-    } else {
-      // audio o feed → addFontePodcast con tipo
-      google.script.run
-        .withSuccessHandler(function(r) {
-          if (r && r.ok) {
-            out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Fonte aggiunta (ID: '+esc(r.id||'')+')</span>';
-            $('fpNomeU').value = ''; $('fpUrlU').value = '';
-            reloadFontiPodTable();
-          } else { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; }
-        })
-        .withFailureHandler(function(e) { if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
-        .addFontePodcast({ nome: nome.trim(), url: url.trim(), tematica: tem, tipo: _podAddType });
-    }
+    var tipoMap = { feed:'rss', audio:'podcast', video:'video' };
+    var tipo = tipoMap[_podAddType] || 'rss';
+    if(out) out.innerHTML = '<span style="color:#666">Aggiunta in corso…</span>';
+    var tk = (window.OC_SESSION && window.OC_SESSION.token) || null;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Fonte aggiunta a FontiFeed (ID: '+esc(r.id||'')+')</span>';
+          $('fpNomeU').value = ''; $('fpUrlU').value = '';
+          reloadFontiUnified();
+        } else { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; }
+      })
+      .withFailureHandler(function(e) { if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .addFontiFeed({ tipo: tipo, nome: nome.trim(), urlFeed: url.trim(), categoria: tem.trim(), gruppo: nome.trim() }, tk);
   }
 
   function filterFontiPod(tipo) {
