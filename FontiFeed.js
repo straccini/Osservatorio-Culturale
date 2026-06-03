@@ -382,6 +382,9 @@ function getFontiFeedAdmin(filtro) {
       note: String(g(row, 'Note') || '')
     });
   }
+  var _ctx = '';
+  try { _ctx = ' active=' + Session.getActiveUser().getEmail() + ' effective=' + Session.getEffectiveUser().getEmail(); } catch(e) { _ctx = ' (no session)'; }
+  Logger.log('getFontiFeedAdmin CTX: ssId=' + ss.getId() + ' nome=' + ss.getName() + ' ffRighe=' + sh.getLastRow() + ' out=' + out.length + ' idxID=' + idx.ID + _ctx);
   return { ok: true, fonti: out, totale: out.length,
     _diag: (out.length ? '' : 'ssId=' + ss.getId() + ' righe=' + (v.length - 1) + ' idxID=' + idx.ID + ' campioneID=' + String(v[1] ? v[1][idx.ID] : '?')) };
 }
