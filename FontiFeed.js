@@ -315,6 +315,54 @@ function updateFeedSourceStats(tipo, fonte, esito, nRecord, errore) {
 // ============================================================================
 
 /**
+ * DEPRECA il foglio legacy 'Fonti' (news RSS) rinominandolo '_OLD_Fonti', SOLO dopo
+ * aver verificato che ogni fonte news attiva sia gia presente in FontiFeed (niente
+ * perdite). REVERSIBILE (ripristinaFontiLegacy). NON tocca FontiPodcast (video
+ * parcheggiati) ne SocialFonti (Social Wall). Le news girano gia su FontiFeed.
+ */
+function deprecaFontiNewsLegacy() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  // 1) Sicurezza: tutte le fonti RSS attive di 'Fonti' devono essere gia in FontiFeed
+  var legacy = (typeof _ffReadFonti_ === 'function') ? _ffReadFonti_().filter(function(f){ return f.attiva; }) : [];
+  var shFF = ss.getSheetByName(FONTIFEED_SHEET);
+  var ffKeys = {};
+  if (shFF) {
+    var v = shFF.getDataRange().getValues(), h = v[0];
+    var iFeed = h.indexOf('URL_Feed'), iTipo = h.indexOf('Tipo');
+    for (var r = 1; r < v.length; r++) {
+      if (String(v[r][iTipo]).toLowerCase() === 'rss') ffKeys[_normalizeFeedUrl_(v[r][iFeed])] = true;
+    }
+  }
+  var mancanti = legacy.filter(function(f){ return !ffKeys[_normalizeFeedUrl_(f.urlFeed)]; }).map(function(f){ return f.nome; });
+  if (mancanti.length) {
+    Logger.log('STOP: ' + mancanti.length + ' fonti news sono SOLO in "Fonti", NON in FontiFeed. Lancia prima migraFontiFeed(). Mancanti:');
+    mancanti.forEach(function(n){ Logger.log('   - ' + n); });
+    return { ok: false, mancanti: mancanti };
+  }
+  // 2) Rinomina 'Fonti' -> '_OLD_Fonti' (reversibile)
+  var sh = ss.getSheetByName('Fonti');
+  if (!sh) { Logger.log('Foglio "Fonti" gia assente/rinominato.'); return { ok: true, giaFatto: true }; }
+  var target = '_OLD_Fonti';
+  if (ss.getSheetByName(target)) target = '_OLD_Fonti_' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd');
+  sh.setName(target);
+  Logger.log('OK: "Fonti" -> "' + target + '" (verificate ' + legacy.length + ' fonti news, tutte presenti in FontiFeed).');
+  Logger.log('Le news girano su FontiFeed. NON toccati: FontiPodcast (video), SocialFonti (Social Wall).');
+  Logger.log('Reversibile: ripristinaFontiLegacy(). Quando sei sicuro, cancella "_OLD_Fonti" a mano.');
+  return { ok: true, rinominato: target, fontiVerificate: legacy.length };
+}
+
+/** Annulla la deprecazione: '_OLD_Fonti' -> 'Fonti'. */
+function ripristinaFontiLegacy() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('_OLD_Fonti');
+  if (!sh) { Logger.log('_OLD_Fonti non trovato'); return { ok: false }; }
+  if (ss.getSheetByName('Fonti')) { Logger.log('Esiste gia un foglio "Fonti": rinomina manuale necessaria.'); return { ok: false }; }
+  sh.setName('Fonti');
+  Logger.log('Ripristinato "_OLD_Fonti" -> "Fonti".');
+  return { ok: true };
+}
+
+/**
  * STATO ARCHIVIO UNICO FONTIFEED (sola lettura): mostra se news/podcast/video
  * leggono GIA' da FontiFeed (flag ON) o ancora dalle sorgenti legacy (flag OFF),
  * e quante fonti per Tipo vivono nell'archivio unico. Base per capire il grado di

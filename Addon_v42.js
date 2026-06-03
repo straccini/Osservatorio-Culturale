@@ -218,12 +218,9 @@ function getHomepageDataV42() {
     // Fonti attive: RSS dal foglio Fonti + sorgenti bandi statiche
     var fontiFoglio = 0;
     try {
-      var shFonti = getMainSS().getSheetByName('Fonti');
-      if (shFonti && shFonti.getLastRow() > 1) {
-        var fVals = shFonti.getRange(2, 1, shFonti.getLastRow()-1, shFonti.getLastColumn()).getValues();
-        var fHead = shFonti.getRange(1,1,1,shFonti.getLastColumn()).getValues()[0];
-        var iAtt = fHead.indexOf('Attiva');
-        fontiFoglio = fVals.filter(function(r){ return iAtt<0 || r[iAtt]===true || r[iAtt]==='TRUE'; }).length;
+      // Conta le fonti news/podcast/video dall'archivio unico FontiFeed (non piu' dal legacy 'Fonti')
+      if (typeof getFeedSources === 'function') {
+        fontiFoglio = getFeedSources('rss').length + getFeedSources('podcast').length + getFeedSources('video').length;
       }
     } catch(eF){}
     var fontiBandi = (typeof TUTTE_LE_FONTI_BANDI !== 'undefined') ? TUTTE_LE_FONTI_BANDI.length : 0;
