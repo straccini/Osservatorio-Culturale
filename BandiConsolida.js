@@ -240,3 +240,68 @@ function anteprimaConsolidaBandi() {
   Logger.log('anteprimaConsolidaBandi: ' + JSON.stringify(rep, null, 2));
   return rep;
 }
+
+// ============================================================================
+// FONTI API — aggiunta in FontiBandi_v5 con tutti i campi (Tipo=API, Agente)
+// ============================================================================
+
+/**
+ * Aggiunge UNA fonte API a FontiBandi_v5, riutilizzabile per ogni API futura.
+ * Scrive per nome colonna (compatibile con lo schema 18+Agente+UltimoHash),
+ * dedup per URL. Assegna Tipo=API e l'agente indicato.
+ *
+ * @param {Object} opts { nome, url, agente=1, categoria='Aggregatore',
+ *                        priorita=1, id?, enteDefault?, livello?, note? }
+ */
+function aggiungiFonteApiAgente(opts) {
+  opts = opts || {};
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(BANDI_V5_SHEET);
+  if (!sh) return { ok: false, error: 'FontiBandi_v5 assente' };
+  if (!opts.nome || !opts.url) return { ok: false, error: 'nome e url obbligatori' };
+
+  var h = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  // assicura la colonna Agente (in coda)
+  if (h.indexOf('Agente') < 0) {
+    sh.getRange(1, sh.getLastColumn() + 1).setValue('Agente');
+    h = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  }
+  var iUrl = h.indexOf('URL');
+
+  // dedup per URL normalizzato
+  var cur = sh.getDataRange().getValues();
+  var key = _bcUrlKey_(opts.url);
+  for (var r = 1; r < cur.length; r++) {
+    if (_bcUrlKey_(cur[r][iUrl]) === key) return { ok: false, error: 'fonte gia presente (stesso URL) alla riga ' + (r + 1) };
+  }
+
+  var rowObj = {
+    ID: opts.id || ('api_' + Date.now()),
+    Nome: String(opts.nome), URL: String(opts.url), Tipo: 'API',
+    Tag: 'settoriale', Categoria: opts.categoria || 'Aggregatore',
+    Priorita: Number(opts.priorita) || 1, Attiva: true,
+    DataAggiunta: new Date(), UltimaScan: '', UltimoEsito: '',
+    NRecordTotali: 0, NRecordUltimo: 0, FailConsecutivi: 0, UltimoErrore: '',
+    EnteDefault: String(opts.enteDefault || ''), Livello: String(opts.livello || ''),
+    extras_json: JSON.stringify({ tipoFonte: 'API', note: String(opts.note || '') }),
+    Agente: String(opts.agente || 1),
+    UltimoHash: ''
+  };
+  sh.appendRow(h.map(function(name) { return rowObj[name] !== undefined ? rowObj[name] : ''; }));
+  var rep = { ok: true, nome: opts.nome, tipo: 'API', agente: opts.agente || 1, riga: sh.getLastRow() };
+  Logger.log('aggiungiFonteApiAgente: ' + JSON.stringify(rep));
+  return rep;
+}
+
+/** Pronta: aggiunge la fonte API BandiUp — Cultura (agente 1, bandi cultura aperti). */
+function aggiungiBandiUpCultura() {
+  return aggiungiFonteApiAgente({
+    id: 'bandiup_cultura',
+    nome: 'BandiUp — Cultura (API)',
+    url: 'https://bandiup.it/api/bandi?categoria=cultura&stato=aperto&limit=25',
+    agente: 1,
+    categoria: 'Aggregatore',
+    priorita: 1,
+    note: 'API pubblica JSON. Filtro: categoria=cultura, stato=aperto. Estrazione via Claude (prompt AG1).'
+  });
+}
