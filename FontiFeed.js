@@ -314,6 +314,50 @@ function updateFeedSourceStats(tipo, fonte, esito, nRecord, errore) {
 // VERIFICA (confronto non distruttivo legacy vs FontiFeed, per tipo)
 // ============================================================================
 
+/**
+ * VERIFICA CONNETTIVITA' FONTI NEWS (sola lettura): testa ogni feed RSS news
+ * realmente usato (getFeedSources('rss')) facendo una richiesta e classificando
+ * OK / EMPTY / ERR / NO_URL. Logga il riepilogo e l'elenco delle fonti MORTE.
+ * Budget di tempo (~4.5min): se non finisce, rilancia (riparte da capo: i feed
+ * RSS sono veloci, di norma basta un giro). Non modifica i fogli.
+ */
+function verificaFontiNews() {
+  var sources = (typeof getFeedSources === 'function') ? getFeedSources('rss') : [];
+  if (!sources.length) { Logger.log('Nessuna fonte news trovata da getFeedSources("rss")'); return { ok: false }; }
+  var t0 = Date.now(), MAX_MS = 280000;
+  var stats = { ok: 0, empty: 0, err: 0 }, morte = [], fatte = 0, interrotto = false;
+  for (var i = 0; i < sources.length; i++) {
+    if (Date.now() - t0 > MAX_MS) { interrotto = true; break; }
+    var f = sources[i] || {};
+    var url = String(f.urlFeed || f.RSSURL || f.rssUrl || f.url || f.URL || '').trim();
+    var nome = f.nome || f.Nome || f.id || f.ID || '?';
+    var esito;
+    if (!url) esito = 'NO_URL';
+    else {
+      try {
+        var resp = UrlFetchApp.fetch(url, {
+          muteHttpExceptions: true, followRedirects: true, validateHttpsCertificates: false,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0)' }
+        });
+        var code = resp.getResponseCode();
+        var body = resp.getContentText() || '';
+        esito = (code !== 200) ? ('ERR(' + code + ')') : (body.length < 200 ? 'EMPTY' : 'OK');
+      } catch(e) { esito = 'ERR'; }
+    }
+    fatte++;
+    if (esito === 'OK') stats.ok++;
+    else if (esito === 'EMPTY') stats.empty++;
+    else { stats.err++; morte.push(nome + '  [' + esito + ']  ' + url.substring(0, 70)); }
+  }
+  Logger.log('=== VERIFICA FONTI NEWS ' + (interrotto ? '(PARZIALE — rilancia)' : 'COMPLETATA') +
+    ' === OK:' + stats.ok + '  EMPTY:' + stats.empty + '  ERR:' + stats.err +
+    '  (verificate ' + fatte + '/' + sources.length + ', ' + Math.round((Date.now() - t0) / 1000) + 's)');
+  Logger.log('\n🔴 FONTI NEWS MORTE/IRRAGGIUNGIBILI (' + morte.length + '):');
+  morte.forEach(function(m) { Logger.log('   ' + m); });
+  Logger.log('\n🟡 EMPTY = rispondono ma senza contenuto leggibile (' + stats.empty + ').');
+  return { ok: true, totale: sources.length, verificate: fatte, completata: !interrotto, stats: stats, morte: morte };
+}
+
 function verificaFontiFeed() {
   var legacyRss = _ffReadFonti_().filter(function(f){ return f.attiva; });
   var legacyPod = _ffReadPodcastArray_().concat(_ffReadFontiPodcast_('audio')).filter(function(f){ return f.attiva; });
