@@ -5825,6 +5825,7 @@
     google.script.run
       .withSuccessHandler(function(r) {
         var arr = (r && r.fonti) || [];
+        if (r && r._diag) collected.feedErr = r._diag;
         collected.feed = arr.map(function(f) {
           return { _src:'feed', id:f.id, nome:f.nome, tipo:(f.tipo === 'rss' ? 'news' : f.tipo), url:f.url,
                    tag:f.categoria || '', attiva:f.attiva, ultimaScan:f.ultimaScan, ultimoEsito:f.ultimoEsito, failConsec:f.failConsec };

@@ -358,7 +358,8 @@ function getFontiFeedAdmin(filtro) {
   filtro = filtro || {};
   var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(FONTIFEED_SHEET);
-  if (!sh || sh.getLastRow() < 2) return { ok: true, fonti: [], totale: 0 };
+  if (!sh) return { ok: true, fonti: [], totale: 0, _diag: 'FontiFeed assente in ssId=' + ss.getId() + ' | fogli: ' + ss.getSheets().map(function(s){ return s.getName(); }).join(',').substring(0, 180) };
+  if (sh.getLastRow() < 2) return { ok: true, fonti: [], totale: 0, _diag: 'FontiFeed vuoto (<2 righe) in ssId=' + ss.getId() };
   var v = sh.getDataRange().getValues();
   var h = v[0]; function c(n){ return h.indexOf(n); }
   var idx = {}; FONTIFEED_HEADERS.forEach(function(name){ idx[name] = c(name); });
