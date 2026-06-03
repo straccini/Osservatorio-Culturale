@@ -23,6 +23,56 @@
 
 var BANDI_V5_SHEET = 'FontiBandi_v5';
 
+/**
+ * DIAGNOSTICA (sola lettura): conta le righe nei contenitori di BANDI (i record,
+ * non le fonti) per capire dove vivono davvero i dati prima di consolidare.
+ * Lanciare dall'editor (Esegui -> contaBandiContenitori) e leggere il Log.
+ *  - 'Bandi_v5'            = contenitore nuovo (lo scanner ci scrive se il foglio esiste)
+ *  - 'RADAR BANDI'         = contenitore vecchio (frontend lo legge se flag OFF)
+ *  - '_RADAR_BANDI_LEGACY_'= archivio storico
+ *  - 'AgentScanResults'    = bandi trovati dagli agenti (BandiUp/TED), oggi isolati
+ * Riporta anche lo stato del flag USE_BANDI_V5 e quale foglio getSheetRadar() usa.
+ */
+function contaBandiContenitori() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var nomi = ['Bandi_v5', 'RADAR BANDI', '_RADAR_BANDI_LEGACY_', 'AgentScanResults'];
+  var out = {};
+  Logger.log('=== CONTEGGIO CONTENITORI BANDI ===');
+  nomi.forEach(function(n) {
+    var sh = ss.getSheetByName(n);
+    var righe = (sh && sh.getLastRow() > 1) ? (sh.getLastRow() - 1) : 0;
+    out[n] = sh ? righe : '(foglio assente)';
+    Logger.log('  ' + n + ': ' + out[n] + (sh ? ' righe' : ''));
+  });
+
+  // Dettaglio AgentScanResults per agente (quanti bandi di AG1 = BandiUp/TED).
+  var shA = ss.getSheetByName('AgentScanResults');
+  if (shA && shA.getLastRow() > 1) {
+    var data = shA.getDataRange().getValues();
+    var iAg = data[0].indexOf('AgenteID');
+    var perAgente = {};
+    if (iAg >= 0) {
+      for (var r = 1; r < data.length; r++) {
+        var a = String(data[r][iAg] || '?');
+        perAgente[a] = (perAgente[a] || 0) + 1;
+      }
+    }
+    Logger.log('  -> AgentScanResults per agente: ' + JSON.stringify(perAgente));
+    out._agentScanPerAgente = perAgente;
+  }
+
+  // Stato flag e foglio realmente usato da getSheetRadar().
+  var flag = false;
+  try { flag = (typeof isBandiV5Active === 'function') ? isBandiV5Active() : null; } catch(e) {}
+  var foglioRadar = '(n/d)';
+  try { var sr = (typeof getSheetRadar === 'function') ? getSheetRadar() : null; if (sr) foglioRadar = sr.getName(); } catch(e2) {}
+  out._flag_USE_BANDI_V5 = flag;
+  out._getSheetRadar_usa = foglioRadar;
+  Logger.log('  FLAG USE_BANDI_V5: ' + flag + '  |  getSheetRadar() usa il foglio: ' + foglioRadar);
+  Logger.log('  (Se lo scanner scrive su "' + foglioRadar + '" ma il flag e\' OFF, il frontend potrebbe leggere un foglio diverso => sfasamento.)');
+  return out;
+}
+
 // Legge un foglio e restituisce le righe come oggetti {Header: valore}.
 function _bcSheetObjs_(name) {
   var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
