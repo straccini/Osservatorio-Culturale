@@ -385,6 +385,70 @@ function getFontiFeedAdmin(filtro) {
 }
 
 // ============================================================================
+// AZIONI ADMIN su FontiFeed (toggle / delete / add) — auth via token sessione
+// (la web app e' "Chiunque": usare getCurrentUserAuth(token), non requireAuth)
+// ============================================================================
+
+function toggleFontiFeed(id, attiva, token) {
+  var auth = getCurrentUserAuth(token || null);
+  if (!auth || !auth.isAdmin) return { error: 'Accesso negato (non admin)' };
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(FONTIFEED_SHEET);
+  if (!sh) return { error: 'FontiFeed assente' };
+  var v = sh.getDataRange().getValues(); var h = v[0];
+  var iId = h.indexOf('ID'), iAtt = h.indexOf('Attiva'), iFail = h.indexOf('FailConsecutivi');
+  for (var r = 1; r < v.length; r++) {
+    if (String(v[r][iId]) === String(id)) {
+      sh.getRange(r + 1, iAtt + 1).setValue(!!attiva);
+      if (attiva && iFail >= 0) sh.getRange(r + 1, iFail + 1).setValue(0);
+      return { ok: true, id: id, attiva: !!attiva };
+    }
+  }
+  return { error: 'fonte non trovata: ' + id };
+}
+
+function deleteFontiFeed(id, token) {
+  var auth = getCurrentUserAuth(token || null);
+  if (!auth || !auth.isAdmin) return { error: 'Accesso negato (non admin)' };
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(FONTIFEED_SHEET);
+  if (!sh) return { error: 'FontiFeed assente' };
+  var v = sh.getDataRange().getValues(); var iId = v[0].indexOf('ID');
+  for (var r = v.length - 1; r >= 1; r--) {
+    if (String(v[r][iId]) === String(id)) { sh.deleteRow(r + 1); return { ok: true, id: id }; }
+  }
+  return { error: 'fonte non trovata: ' + id };
+}
+
+function addFontiFeed(body, token) {
+  var auth = getCurrentUserAuth(token || null);
+  if (!auth || !auth.isAdmin) return { error: 'Accesso negato (non admin)' };
+  body = body || {};
+  var tipo = String(body.tipo || 'rss').toLowerCase();
+  if (['rss','podcast','video','html'].indexOf(tipo) < 0) return { error: 'tipo non valido: ' + tipo };
+  if (!body.nome || !body.urlFeed) return { error: 'Nome e URL feed obbligatori' };
+  var sh = ensureFontiFeedSheet_();
+  var h = sh.getRange(1, 1, 1, FONTIFEED_HEADERS.length).getValues()[0];
+  var iFeed = h.indexOf('URL_Feed');
+  var cur = sh.getDataRange().getValues();
+  var key = _normalizeFeedUrl_(body.urlFeed);
+  for (var r = 1; r < cur.length; r++) {
+    if (_normalizeFeedUrl_(cur[r][iFeed]) === key) return { error: 'fonte gia presente (stesso URL feed)' };
+  }
+  var o = {
+    ID: 'FF' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    Nome: String(body.nome).trim(), Gruppo: String(body.gruppo || body.nome).trim(), Tipo: tipo,
+    URL_Feed: String(body.urlFeed).trim(), URL_Sito: String(body.urlSito || '').trim(),
+    Ambito: body.ambito || '', AmbitoLabel: '', Dimensioni: String(body.dimensioni || ''),
+    Categoria: String(body.categoria || ''), Priorita: Number(body.priorita) || 2, Attiva: true,
+    DataAggiunta: new Date(), UltimaScan: '', UltimoEsito: '', NRecordTotali: 0, NRecordUltimo: 0,
+    FailConsecutivi: 0, UltimoErrore: '', Note: String(body.note || '')
+  };
+  sh.appendRow(FONTIFEED_HEADERS.map(function(c){ return o[c] !== undefined ? o[c] : ''; }));
+  return { ok: true, id: o.ID, tipo: tipo };
+}
+
+// ============================================================================
 // TEST (eseguire dall'editor GAS dopo clasp push; loggano PASS/FAIL)
 // ============================================================================
 

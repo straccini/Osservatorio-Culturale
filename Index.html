@@ -5781,49 +5781,64 @@
   // SPRINT 2 B3 (2026-05-11) — Vista unificata fonti
   // ============================================================================
 
+  // v4.20 — Pannello unificato: BANDI dai vecchi fogli FU17 + News/Podcast/Video dal nuovo archivio FontiFeed.
   function reloadFontiUnified() {
     if (!hasGAS()) return;
     var wrap = $('fontiUnifiedTable');
     if (wrap) wrap.innerHTML = '<div class="empty-state sm">Caricamento…</div>';
     var filtro = {
       tipo:   ($('fuFiltroTipo')   || {}).value || '',
-      stato:  ($('fuFiltroStato')  || {}).value || '',
       attiva: ($('fuFiltroAttiva') || {}).value || '',
-      q:      ($('fuRicerca')      || {}).value || '',
-      sortBy: 'stato'
+      q:      ($('fuRicerca')      || {}).value || ''
     };
-    if (filtro.attiva === 'true')  filtro.attiva = true;
-    else if (filtro.attiva === 'false') filtro.attiva = false;
-    else delete filtro.attiva;
-
+    var collected = { bandi: null, feed: null };
+    function tryRender() {
+      if (collected.bandi === null || collected.feed === null) return;
+      var merged = collected.bandi.concat(collected.feed);
+      var fq = String(filtro.q || '').toLowerCase();
+      merged = merged.filter(function(f) {
+        if (filtro.tipo && f.tipo !== filtro.tipo) return false;
+        if (filtro.attiva === 'true'  && !f.attiva) return false;
+        if (filtro.attiva === 'false' &&  f.attiva) return false;
+        if (fq && String(f.nome||'').toLowerCase().indexOf(fq) < 0 && String(f.url||'').toLowerCase().indexOf(fq) < 0) return false;
+        return true;
+      });
+      renderFontiUnifiedTable(wrap, merged, null);
+    }
+    // BANDI (FU17, sistema invariato)
     google.script.run
       .withSuccessHandler(function(r) {
-        if (!r || !r.ok) { if (wrap) wrap.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; return; }
-        renderFontiUnifiedTable(wrap, r.fonti || [], r.perTipo || {});
+        var arr = (r && r.fonti) || [];
+        collected.bandi = arr.filter(function(f){ return f.tipo === 'bandi'; }).map(function(f){ f._src = 'fu'; return f; });
+        tryRender();
       })
-      .withFailureHandler(function(e) { if (wrap) wrap.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(String(e))+'</span>'; })
-      .getFontiUnified(filtro);
-
-    // Carica counters in parallelo
+      .withFailureHandler(function(e) { collected.bandi = []; tryRender(); })
+      .getFontiUnified({ tipo: 'bandi', sortBy: 'stato' });
+    // News/Podcast/Video dal nuovo archivio FontiFeed
     google.script.run
       .withSuccessHandler(function(r) {
-        var cWrap = $('fuCounters'); if (!cWrap) return;
-        if (!r || !r.ok) { cWrap.innerHTML = '<span class="muted">Counter non disponibile</span>'; return; }
-        var c = r.counters || {};
-        var html = '';
-        ['bandi','news','podcast','video'].forEach(function(t){
-          var tt = c[t] || { totale:0, attive:0, silenti:0 };
-          var emoji = { bandi:'B', news:'N', podcast:'P', video:'V' }[t];
-          html += '<span><b>'+emoji+' '+t.charAt(0).toUpperCase()+t.slice(1)+':</b> '+tt.totale+' tot · '+tt.attive+' attive'+(tt.silenti?' · <span style="color:var(--danger,#C2410C)">'+tt.silenti+' silenti</span>':'')+'</span>';
+        var arr = (r && r.fonti) || [];
+        collected.feed = arr.map(function(f) {
+          return { _src:'feed', id:f.id, nome:f.nome, tipo:(f.tipo === 'rss' ? 'news' : f.tipo), url:f.url,
+                   tag:f.categoria || '', attiva:f.attiva, ultimaScan:f.ultimaScan, ultimoEsito:f.ultimoEsito, failConsec:f.failConsec };
         });
-        html += '<span style="margin-left:auto"><b>Totale:</b> '+(c.totaleGenerale||0)+(c.silentiGenerale?' · <span style="color:var(--danger,#C2410C)">'+c.silentiGenerale+' silenti</span>':'')+'</span>';
-        cWrap.innerHTML = html;
+        tryRender();
       })
-      .getFontiCounters();
+      .withFailureHandler(function(e) { collected.feed = []; tryRender(); })
+      .getFontiFeedAdmin({});
   }
 
   function renderFontiUnifiedTable(wrap, fonti, perTipo) {
     if (!wrap) return;
+    // Counter client-side (bandi FU17 + feed FontiFeed, sul set mostrato)
+    var cWrap = $('fuCounters');
+    if (cWrap) {
+      var byT = {};
+      (fonti || []).forEach(function(f){ var t = f.tipo; byT[t] = byT[t] || { tot:0, att:0 }; byT[t].tot++; if (f.attiva) byT[t].att++; });
+      var ch = '';
+      ['bandi','news','podcast','video'].forEach(function(t){ var x = byT[t] || { tot:0, att:0 }; ch += '<span style="margin-right:14px"><b>'+t.charAt(0).toUpperCase()+t.slice(1)+':</b> '+x.tot+' · '+x.att+' attive</span>'; });
+      cWrap.innerHTML = ch;
+    }
     if (!fonti.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna fonte corrisponde ai filtri.</div>'; return; }
     var statoLabels = { silente:'🔴 Silente', fail:'🟠 Fail', stantia:'🟡 Stantia', ok:'🟢 OK', mai:'⚪ Mai' };
     var statoColors = { silente:'var(--danger,#C2410C)', fail:'var(--warning,#B45309)', stantia:'var(--warning,#B45309)', ok:'var(--success,#0F7B5A)', mai:'#BDB7AB' };
@@ -5866,32 +5881,34 @@
       html += '<td style="padding:6px;border-bottom:1px solid #eee;color:#666;font-size:11px">'+esc(ultima)+'</td>';
       html += '<td style="padding:6px;border-bottom:1px solid #eee;text-align:center"><span style="color:'+(f.attiva?'var(--amb-2,#10916D)':'#999')+';font-weight:700">'+(f.attiva?'✓':'✗')+'</span></td>';
       html += '<td style="padding:6px;border-bottom:1px solid #eee">';
-      html += '<button class="btn btn-secondary" onclick="OC.toggleFonteU(\''+f.tipo+'\',\''+esc(f.id)+'\','+(!f.attiva)+')" style="font-size:11px;padding:3px 8px;margin-right:4px">'+(f.attiva?'Disattiva':'Attiva')+'</button>';
+      html += '<button class="btn btn-secondary" onclick="OC.toggleFonteU(\''+(f._src||'fu')+'\',\''+f.tipo+'\',\''+esc(f.id)+'\','+(!f.attiva)+')" style="font-size:11px;padding:3px 8px;margin-right:4px">'+(f.attiva?'Disattiva':'Attiva')+'</button>';
       if (f.tipo === 'bandi' && Number(f.failConsec||0) >= 1) {
         html += '<button class="btn btn-secondary" onclick="OC.resetFailBandi(\''+esc(f.url||'')+'\')" style="font-size:11px;padding:3px 8px;margin-right:4px;color:var(--warning,#B45309)">Reset</button>';
       }
-      html += '<button class="btn btn-secondary" onclick="OC.deleteFonteU(\''+f.tipo+'\',\''+esc(f.id)+'\',\''+esc(f.nome||'')+'\')" style="font-size:11px;padding:3px 8px;color:var(--danger,#C2410C)">Elimina</button>';
+      html += '<button class="btn btn-secondary" onclick="OC.deleteFonteU(\''+(f._src||'fu')+'\',\''+f.tipo+'\',\''+esc(f.id)+'\',\''+esc(f.nome||'')+'\')" style="font-size:11px;padding:3px 8px;color:var(--danger,#C2410C)">Elimina</button>';
       html += '</td></tr>';
     });
     html += '</tbody></table>';
     wrap.innerHTML = html;
   }
 
-  function toggleFonteU(tipo, id, attiva) {
+  function toggleFonteU(src, tipo, id, attiva) {
     if (!hasGAS()) return;
-    google.script.run
-      .withSuccessHandler(function(r) { if (r && r.ok) reloadFontiUnified(); else alert('Errore: '+(r && r.error || 'sconosciuto')); })
-      .withFailureHandler(function(e) { alert('Errore: '+e); })
-      .toggleFonteUnified(tipo, id, attiva);
+    var tk = (window.OC_SESSION && window.OC_SESSION.token) || null;
+    var ok = function(r) { if (r && r.ok) reloadFontiUnified(); else alert('Errore: '+(r && r.error || 'sconosciuto')); };
+    var fail = function(e) { alert('Errore: '+e); };
+    if (src === 'feed') google.script.run.withSuccessHandler(ok).withFailureHandler(fail).toggleFontiFeed(id, attiva, tk);
+    else google.script.run.withSuccessHandler(ok).withFailureHandler(fail).toggleFonteUnified(tipo, id, attiva);
   }
 
-  function deleteFonteU(tipo, id, nome) {
+  function deleteFonteU(src, tipo, id, nome) {
     if (!hasGAS()) return;
     if (!confirm('Eliminare definitivamente la fonte "'+nome+'"?')) return;
-    google.script.run
-      .withSuccessHandler(function(r) { if (r && r.ok) reloadFontiUnified(); else alert('Errore: '+(r && r.error || 'sconosciuto')); })
-      .withFailureHandler(function(e) { alert('Errore: '+e); })
-      .deleteFonteUnified(tipo, id);
+    var tk = (window.OC_SESSION && window.OC_SESSION.token) || null;
+    var ok = function(r) { if (r && r.ok) reloadFontiUnified(); else alert('Errore: '+(r && r.error || 'sconosciuto')); };
+    var fail = function(e) { alert('Errore: '+e); };
+    if (src === 'feed') google.script.run.withSuccessHandler(ok).withFailureHandler(fail).deleteFontiFeed(id, tk);
+    else google.script.run.withSuccessHandler(ok).withFailureHandler(fail).deleteFonteUnified(tipo, id);
   }
 
 
