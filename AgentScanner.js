@@ -602,6 +602,65 @@ function testEuFtApi2() {
   return report;
 }
 
+/** Costruisce un body multipart/form-data a mano, con Content-Type per parte. */
+function _euftMultipart_(fields, boundary) {
+  var body = '';
+  fields.forEach(function(f) {
+    body += '--' + boundary + '\r\n';
+    body += 'Content-Disposition: form-data; name="' + f.name + '"\r\n';
+    if (f.contentType) body += 'Content-Type: ' + f.contentType + '\r\n';
+    body += '\r\n' + f.value + '\r\n';
+  });
+  body += '--' + boundary + '--\r\n';
+  return body;
+}
+
+/**
+ * TEST 3 EU F&T: multipart COSTRUITO A MANO con Content-Type corretto sulla parte
+ * 'query' (application/json), per far finalmente mordere il filtro stato "aperto".
+ * Se totalResults crolla (vs 648450 / 15634), il filtro funziona e abbiamo vinto.
+ */
+function testEuFtApi3() {
+  var base = 'https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=';
+  var qOpen = '{"bool":{"must":[{"terms":{"type":["1","2"]}},{"terms":{"status":["31094501","31094502"]}}]}}';
+  var boundary = 'EUFTBOUNDARY1234567890';
+  var report = [];
+
+  function prova(nome, url, qText, qContentType) {
+    try {
+      var body = _euftMultipart_([
+        { name: 'query', value: qOpen, contentType: qContentType },
+        { name: 'languages', value: 'en' },
+        { name: 'pageNumber', value: '1' },
+        { name: 'pageSize', value: '5' }
+      ], boundary);
+      var resp = UrlFetchApp.fetch(url + qText, {
+        method: 'post', muteHttpExceptions: true,
+        contentType: 'multipart/form-data; boundary=' + boundary,
+        payload: body
+      });
+      var code = resp.getResponseCode();
+      var txt = resp.getContentText() || '';
+      var tot = null;
+      try { tot = JSON.parse(txt).totalResults; } catch(e0) { var m = txt.match(/"totalResults":(\d+)/); if (m) tot = Number(m[1]); }
+      Logger.log('=== EUFT3 ' + nome + ' -> HTTP ' + code + ' | totalResults: ' + tot + ' ===');
+      Logger.log('  (primi 500 char) ' + txt.substring(0, 500));
+      report.push({ variante: nome, http: code, totalResults: tot });
+    } catch(e) {
+      Logger.log('=== EUFT3 ' + nome + ' -> ERRORE: ' + e + ' ===');
+      report.push({ variante: nome, errore: String(e) });
+    }
+  }
+
+  // A) text=*** + query aperti (application/json): se filtra, totalResults << 648450
+  prova('A_manual_json_all', '***', 'application/json');
+  // B) text=culture + query aperti: il target (call aperte cultura)
+  prova('B_manual_json_culture', 'culture', 'application/json');
+
+  Logger.log('RIEPILOGO testEuFtApi3: ' + JSON.stringify(report, null, 2));
+  return report;
+}
+
 function _agentCleanHtml_(html) {
   // Preserva link come [URL: href] prima di stripare tag (fix v4.12.3)
   var cleaned = html.replace(/<a\s+[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi, function(m, href, text) {
