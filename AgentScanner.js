@@ -196,14 +196,13 @@ function setupAgentTriggers() {
     ScriptApp.newTrigger(fn).timeBased().onWeekDay(weekday).atHour(hour).create();
   }
   trig('scanAgente1', WD.MONDAY, 7);     // AG1 Bandi — lunedì
-  trig('scanAgente1', WD.THURSDAY, 7);   // AG1 Bandi — giovedì (2°/settimana)
   trig('scanAgente2', WD.TUESDAY, 7);    // AG2 Normativa — martedì
   trig('scanAgente3', WD.WEDNESDAY, 7);  // AG3 Innovazione — mercoledì
-  trig('scanAgente4', WD.FRIDAY, 7);     // AG4 Comunità — venerdì
-  trig('scanAgente5', WD.SATURDAY, 7);   // AG5 Digital — sabato
+  trig('scanAgente4', WD.THURSDAY, 7);   // AG4 Comunità — giovedì
+  trig('scanAgente5', WD.FRIDAY, 7);     // AG5 Digital — venerdì
 
-  Logger.log('Agent triggers SCACCHIERA installati (rimossi ' + removed + ' precedenti). AG1: lun+gio · AG2: mar · AG3: mer · AG4: ven · AG5: sab — ore 07:00.');
-  return { ok: true, removed: removed, schema: 'AG1 lun+gio, AG2 mar, AG3 mer, AG4 ven, AG5 sab @07:00' };
+  Logger.log('Agent triggers SCACCHIERA SETTIMANALE installati (rimossi ' + removed + ' precedenti). AG1: lun · AG2: mar · AG3: mer · AG4: gio · AG5: ven — ore 07:00.');
+  return { ok: true, removed: removed, schema: 'AG1 lun, AG2 mar, AG3 mer, AG4 gio, AG5 ven @07:00' };
 }
 
 // ============================================================================
