@@ -130,11 +130,19 @@ function _tgEsc_(s) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
+/**
+ * Setup Telegram — i valori vanno impostati via ScriptProperties nell'editor GAS:
+ *   TELEGRAM_TOKEN e TELEGRAM_CHAT_ID
+ * Questa funzione verifica solo che siano presenti.
+ */
 function setupTelegram() {
-  setTelegramConfig(
-    '8033930905:AAHRSwFlg1xHCNVD4y5i6viOrDLP8P_c0KY',
-    '5830184824'
-  );
-  Logger.log('Configurazione Telegram salvata.');
+  var tok = PropertiesService.getScriptProperties().getProperty('TELEGRAM_TOKEN') || '';
+  var chat = PropertiesService.getScriptProperties().getProperty('TELEGRAM_CHAT_ID') || '';
+  if (!tok || !chat) {
+    Logger.log('ATTENZIONE: TELEGRAM_TOKEN e/o TELEGRAM_CHAT_ID non impostati nelle ScriptProperties.');
+    return { ok: false, error: 'Imposta TELEGRAM_TOKEN e TELEGRAM_CHAT_ID nelle ScriptProperties.' };
+  }
+  Logger.log('Configurazione Telegram OK.');
   Logger.log('Status: ' + JSON.stringify(getTelegramConfigStatus()));
+  return { ok: true };
 }
