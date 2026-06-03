@@ -93,7 +93,7 @@ function scanAgente(agenteId, opts) {
 
       // 3. Prepara testo: API/JSON -> grezzo a Claude; HTML -> pulizia
       var isApi = (String(fonte.tipo).toUpperCase() === 'API' || String(fonte.tipo).toUpperCase() === 'JSON');
-      var cleanText = isApi ? html.substring(0, 12000) : _agentCleanHtml_(html);
+      var cleanText = isApi ? html.substring(0, 20000) : _agentCleanHtml_(html);
       if (cleanText.length < 100) { _agentUpdateFonteEsito_(fontiSheet, fonte.row, 'EMPTY_CLEAN', 0); continue; }
 
       var items = _agentExtractWithClaude_(cleanText, fonte, agent);

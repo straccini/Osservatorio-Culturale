@@ -18,7 +18,7 @@ var OC_AGENTI = [
   {
     id: 1,
     codice: 'AG1',
-    nome: 'Radar Bandi & Finanziamenti',
+    nome: 'Bandi & Finanziamenti',
     nomeBreve: 'Bandi',
     descrizione: 'Monitora bandi, finanziamenti e opportunita per musei e luoghi della cultura',
     ambiti: [1, 2, 3, 4, 5],  // trasversale
@@ -27,13 +27,13 @@ var OC_AGENTI = [
     color: '#C8102E',
     icon: '🎯',
     fontiCategorie: ['ministero', 'regione', 'ue', 'aggregatore', 'fondazione', 'associazione', 'rivista'],
-    fontiTipo: ['HTML', 'RSS'],
+    fontiTipo: ['HTML', 'RSS', 'API'],
     scanFrequenza: 'ogni_6h',
     emailFrequenza: 'settimanale',  // lunedi
     emailGiorni: [1],  // 1=lunedi
     emailOra: 7,
     maxContenuti: 10,
-    promptSpecializzato: 'Sei esperto di finanziamenti pubblici per la cultura. Estrai SOLO bandi/avvisi/call pertinenti a: musei, patrimonio culturale, turismo culturale, digitalizzazione beni culturali, accessibilita, valorizzazione territoriale. Regioni prioritarie: Marche, Umbria, Puglia, Sardegna, Emilia-Romagna.',
+    promptSpecializzato: 'Sei esperto di finanziamenti pubblici per la cultura e i musei. Estrai SOLO bandi/avvisi/call pertinenti a: musei, cultura, beni culturali, progettazione culturale, progettazione museale, patrimonio culturale, allestimenti e musealizzazione, valorizzazione e accessibilita dei luoghi della cultura, digitalizzazione dei beni culturali, turismo culturale. SCARTA tutto il resto (agricoltura, industria, startup generiche, edilizia non culturale, ecc.). Per ogni bando rilevante riporta: titolo, ente, scadenza, importo, regione, url. Regioni prioritarie: Marche, Umbria, Puglia, Sardegna, Emilia-Romagna.',
     ctaText: 'Vuoi una pre-progettazione gratuita su questo bando?',
     ctaUrl: 'mailto:s.straccini@gmail.com?subject=Pre-progettazione bando'
   },
