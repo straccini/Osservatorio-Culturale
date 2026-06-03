@@ -333,6 +333,7 @@ function _galFetch_(url) {
       muteHttpExceptions: true,
       followRedirects: true,
       validateHttpsCertificates: false,
+      deadline: 10,
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; SinopiaGALBot/1.0)',
         'Accept': 'text/html,*/*'
@@ -519,7 +520,7 @@ function galVerificaUrl() {
     try {
       var resp = UrlFetchApp.fetch(url, {
         muteHttpExceptions: true, followRedirects: true,
-        validateHttpsCertificates: false,
+        validateHttpsCertificates: false, deadline: 10,
         headers: { 'User-Agent': 'SinopiaGALBot/1.0' }
       });
       var code = resp.getResponseCode();

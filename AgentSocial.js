@@ -411,6 +411,7 @@ function _composeSocialDraft_(news) {
       method: 'post',
       contentType: 'application/json',
       muteHttpExceptions: true,
+      deadline: 30,
       headers: {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01'
@@ -466,6 +467,7 @@ function _extractOgImage_(url) {
     var res = UrlFetchApp.fetch(url, {
       muteHttpExceptions: true,
       followRedirects: true,
+      deadline: 10,
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0)' }
     });
     if (res.getResponseCode() !== 200) return { imageUrl: '', imageSource: 'http_err' };

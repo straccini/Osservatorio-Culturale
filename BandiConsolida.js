@@ -52,7 +52,7 @@ function importaEsitiTed(opts) {
   };
   var resp = UrlFetchApp.fetch('https://api.ted.europa.eu/v3/notices/search', {
     method: 'post', contentType: 'application/json', payload: JSON.stringify(body),
-    muteHttpExceptions: true, headers: { 'Accept': 'application/json' }
+    muteHttpExceptions: true, deadline: 10, headers: { 'Accept': 'application/json' }
   });
   if (resp.getResponseCode() !== 200) {
     Logger.log('TED esiti HTTP ' + resp.getResponseCode() + ': ' + resp.getContentText().substring(0, 500));

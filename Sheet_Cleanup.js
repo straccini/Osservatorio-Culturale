@@ -207,7 +207,7 @@ function runSheetCleanup() {
   log.push('Fogli archiviati: ' + SS.getSheets().filter(s => s.isSheetHidden()).map(s => s.getName()).join(', '));
 
   Logger.log(log.join('\n'));
-  console.log('=== SHEET CLEANUP COMPLETATO ===');
+  Logger.log('=== SHEET CLEANUP COMPLETATO ===');
 }
 
 // ─── HELPER: crea MailingList da Utenti ──────────────────────────────────
@@ -364,3 +364,187 @@ function diagnosticaFogli() {
     }
   }
 }
+
+// ============================================================================
+// v4.19.1 — ARCHIVIA FOGLI OBSOLETI: rinomina con prefisso _OLD_
+// ============================================================================
+
+/**
+ * Rinomina i fogli obsoleti con prefisso _OLD_ per renderli inutilizzabili
+ * dal codice attivo senza eliminarli (i dati restano consultabili).
+ * Idempotente: salta fogli già rinominati o non presenti.
+ *
+ * Fogli archiviati:
+ *  - SocialFonti     → migrato a FontiNews
+ *  - FontiBandi      → sostituito da FontiBandi_v5
+ *  - Podcast_Episodes → fuso in Podcast
+ *  - RADAR BANDI     → sostituito da Bandi_v5 (se presente nel foglio principale)
+ *  NOTA: 'Fonti' NON archiviato — ancora usato attivamente da scanSources.
+ *
+ * Eseguire una volta dall'editor GAS dopo il deploy.
+ * @return {Object} { ok, rinominati, saltati, dettaglio }
+ */
+function archiviaFogliObsoleti() {
+  var ss = getMainSS();
+  // NOTA: 'Fonti' NON incluso — ancora usato attivamente da scanSources/getFonti in Codice.js
+  var obsoleti = ['SocialFonti', 'FontiBandi', 'Podcast_Episodes', 'RADAR BANDI'];
+  var rinominati = 0, saltati = 0;
+  var dettaglio = [];
+
+  obsoleti.forEach(function(nome) {
+    var sh = ss.getSheetByName(nome);
+    if (!sh) {
+      // Potrebbe essere già rinominato
+      var old = ss.getSheetByName('_OLD_' + nome);
+      if (old) {
+        dettaglio.push(nome + ': già _OLD_');
+      } else {
+        dettaglio.push(nome + ': non trovato');
+      }
+      saltati++;
+      return;
+    }
+    try {
+      sh.setName('_OLD_' + nome);
+      // Colora tab in grigio per distinguerlo
+      sh.setTabColor('#999999');
+      dettaglio.push(nome + ' → _OLD_' + nome);
+      rinominati++;
+    } catch(e) {
+      dettaglio.push(nome + ': errore ' + e.message);
+      saltati++;
+    }
+  });
+
+  Logger.log('[archiviaFogliObsoleti] Rinominati: ' + rinominati + ', Saltati: ' + saltati);
+  dettaglio.forEach(function(d) { Logger.log('  ' + d); });
+  return { ok: true, rinominati: rinominati, saltati: saltati, dettaglio: dettaglio };
+}
+
+// ============================================================================
+// v4.19.1 — DEDUP GIORNALIERO: rimuove duplicati da Items, Podcast, Pubblicazioni
+// ============================================================================
+
+/**
+ * Check e rimozione duplicati su tutti i fogli principali.
+ * Logica: per ogni foglio, confronta URL canonicalizzato + titolo normalizzato.
+ * Tiene il record più vecchio (primo inserito), rimuove i successivi.
+ * Trigger consigliato: giornaliero 05:00.
+ *
+ * @return {Object} { ok, report: { items, podcast, libri, bandi } }
+ */
+function dailyDedupCheck() {
+  var ss = getMainSS();
+  var report = {};
+
+  // 1. Items (news) — dedup per URL canonicalizzato + titolo normalizzato
+  report.items = _dedupSheet_(ss, 'Items', 'FonteURL', 'Titolo', 'DataAcquisizione');
+
+  // 2. Podcast (include video VID*) — dedup per Link + Titolo
+  report.podcast = _dedupSheet_(ss, 'Podcast', 'Link', 'Titolo', 'DataRilevamento');
+
+  // 3. Pubblicazioni (libri) — dedup per Link + Titolo
+  report.libri = _dedupSheet_(ss, 'Pubblicazioni', 'Link', 'Titolo', 'DataAggiunta');
+
+  // 4. Bandi_v5 — dedup per Fingerprint (già robusto, ma verifica)
+  report.bandi = _dedupSheet_(ss, 'Bandi_v5', 'UrlBando', 'Titolo', 'DataRilevamento');
+
+  var totale = (report.items.rimossi||0) + (report.podcast.rimossi||0) + (report.libri.rimossi||0) + (report.bandi.rimossi||0);
+  Logger.log('[dailyDedupCheck] Completato. Rimossi: ' + totale + ' duplicati. ' + JSON.stringify(report));
+
+  // Notifica Telegram se trovati duplicati
+  if (totale > 0 && typeof _tgSend_ === 'function') {
+    try {
+      var msg = '<b>Dedup giornaliero</b>\n'
+        + 'Items: ' + report.items.rimossi + ' rimossi (su ' + report.items.totale + ')\n'
+        + 'Podcast: ' + report.podcast.rimossi + ' rimossi (su ' + report.podcast.totale + ')\n'
+        + 'Libri: ' + report.libri.rimossi + ' rimossi (su ' + report.libri.totale + ')\n'
+        + 'Bandi: ' + report.bandi.rimossi + ' rimossi (su ' + report.bandi.totale + ')';
+      _tgSend_(msg);
+    } catch(e) {}
+  }
+
+  return { ok:true, report:report, totaleRimossi:totale };
+}
+
+/**
+ * Helper generico: dedup un foglio per URL + titolo.
+ * Tiene la riga più vecchia (prima nell'ordine del foglio), rimuove le successive.
+ */
+function _dedupSheet_(ss, sheetName, urlCol, titleCol, dateCol) {
+  var result = { foglio:sheetName, totale:0, duplicatiUrl:0, duplicatiTitolo:0, rimossi:0 };
+  var sh = ss.getSheetByName(sheetName);
+  if (!sh || sh.getLastRow() < 2) return result;
+
+  var data = sh.getDataRange().getValues();
+  var headers = data[0];
+  var iUrl = headers.indexOf(urlCol);
+  var iTit = headers.indexOf(titleCol);
+  var iDate = headers.indexOf(dateCol);
+  if (iUrl === -1 && iTit === -1) return result;
+
+  result.totale = data.length - 1;
+  var seenUrls = {};
+  var seenTitles = {};
+  var rowsToDelete = []; // indici (1-based) da eliminare
+
+  for (var r = 1; r < data.length; r++) {
+    var url = (iUrl !== -1) ? _canonDedupUrl_(String(data[r][iUrl]||'')) : '';
+    var title = _normTitle_(String(data[r][iTit]||''));
+    var dominated = false;
+
+    // Check URL duplicato
+    if (url && seenUrls[url]) {
+      result.duplicatiUrl++;
+      dominated = true;
+    }
+    // Check titolo duplicato (solo se titolo lungo abbastanza per essere significativo)
+    if (!dominated && title.length > 15 && seenTitles[title]) {
+      result.duplicatiTitolo++;
+      dominated = true;
+    }
+
+    if (dominated) {
+      rowsToDelete.push(r + 1); // riga 1-based nel foglio
+    } else {
+      if (url) seenUrls[url] = true;
+      if (title.length > 15) seenTitles[title] = true;
+    }
+  }
+
+  // Elimina righe dal basso verso l'alto (per non spostare gli indici)
+  if (rowsToDelete.length > 0) {
+    rowsToDelete.sort(function(a,b){ return b - a; });
+    for (var d = 0; d < rowsToDelete.length; d++) {
+      sh.deleteRow(rowsToDelete[d]);
+      if (d % 20 === 0) Utilities.sleep(100); // evita timeout
+    }
+    result.rimossi = rowsToDelete.length;
+  }
+
+  return result;
+}
+
+/**
+ * Normalizza URL per dedup (riusa _canonicalUrl_ se disponibile, altrimenti versione light).
+ */
+function _canonDedupUrl_(url) {
+  if (!url) return '';
+  if (typeof _canonicalUrl_ === 'function') return _canonicalUrl_(url);
+  return String(url).trim().toLowerCase()
+    .replace(/^https?:\/\//, '').replace(/^www\./, '')
+    .replace(/#.*$/, '').replace(/\?.*$/, '').replace(/\/+$/, '');
+}
+
+/**
+ * Normalizza titolo per dedup: lowercase, rimuove punteggiatura, spazi multipli.
+ */
+function _normTitle_(t) {
+  if (!t) return '';
+  return String(t).trim().toLowerCase()
+    .replace(/[^\w\sàáâãäåèéêëìíîïòóôõöùúûüñç]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+// v4.19.1 — Trigger rimosso: dailyDedupCheck integrato in sasRun (giornaliero 04:30)
+// Non serve trigger dedicato — viene chiamato come step MA3 del supervisore.

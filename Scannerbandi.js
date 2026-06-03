@@ -169,6 +169,9 @@ const FONTI_NEWS_ISTITUZIONALI = [
   { nome:'Apollo Magazine',         url:'https://www.apollo-magazine.com/feed/',                     ambito:'Arte & Mostre',         priorita:2 },
   { nome:'AIB Associazione Bibl.',  url:'https://www.aib.it/feed/',                                  ambito:'Gestione Culturale',    priorita:2 },
   { nome:'Touring Club Italiano',   url:'https://www.touringclub.it/feed/',                          ambito:'Musei & Patrimonio',    priorita:2 },
+  // v4.19.1 — Testate generaliste cultura (gate semantico passaFiltroCulturaMusei_ in scanSources)
+  { nome:'Il Sole 24 Ore — Cultura', url:'https://www.ilsole24ore.com/rss/cultura.xml',              ambito:'Cultura & Societa',     priorita:2 },
+  { nome:'Repubblica — Cultura',     url:'https://www.repubblica.it/rss/cultura/rss2.0.xml',         ambito:'Cultura & Societa',     priorita:2 },
 ];
 
 // ==================================================================
@@ -898,7 +901,7 @@ function auditBandiSystem() {
     report.raccomandazioni.push('CRITICO: ' + report.summary.percSenzaLink + '% bandi senza link. Verifica salvaNewBandi e il fallback url_bando.');
   }
   if (report.summary.percLinkDiretti < 40) {
-    report.raccomandazioni.push('GRAVE: solo ' + report.summary.percLinkDiretti + '% dei link sono diretti al bando. La maggioranza punta alla pagina lista. Fix pulisciHtmlBandi v4.12.3 risolve. Lancia retroactiveFixOldBandiLinks() (TODO) o re-scan completo.');
+    report.raccomandazioni.push('GRAVE: solo ' + report.summary.percLinkDiretti + '% dei link sono diretti al bando. La maggioranza punta alla pagina lista. Esegui un re-scan completo per aggiornare i link.');
   }
   if (report.summary.percSenzaAmbito > 20) {
     report.raccomandazioni.push('Ambiti mancanti su ' + report.summary.percSenzaAmbito + '% bandi. Lancia migraBandiAmbito() per ricalcolare via tagger.');

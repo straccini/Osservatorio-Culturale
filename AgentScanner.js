@@ -424,7 +424,8 @@ function _agentFetchUrl_(url) {
       muteHttpExceptions: true,
       followRedirects: true,
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0)' },
-      validateHttpsCertificates: false
+      validateHttpsCertificates: false,
+      deadline: 10
     });
     if (resp.getResponseCode() !== 200) return null;
     return resp.getContentText();
@@ -445,7 +446,8 @@ function _euftFetch_(url) {
     var resp = UrlFetchApp.fetch(url, {
       method: 'post', muteHttpExceptions: true,
       payload: { languages: 'en', pageNumber: '1', pageSize: '50' },
-      headers: { 'Accept': 'application/json' }
+      headers: { 'Accept': 'application/json' },
+      deadline: 10
     });
     if (resp.getResponseCode() !== 200) return null;
     var data;
@@ -508,7 +510,7 @@ function testEuFtFetch() {
  */
 function _cordisFetch_(url) {
   try {
-    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'Accept': 'application/json' } });
+    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'Accept': 'application/json' }, deadline: 10 });
     if (resp.getResponseCode() !== 200) return null;
     var data;
     try { data = JSON.parse(resp.getContentText()); } catch(e0) { return null; }
@@ -587,7 +589,8 @@ function _tedFetch_(url) {
       payload: JSON.stringify(_tedBuildBody_(url)),
       muteHttpExceptions: true,
       followRedirects: true,
-      headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0)' }
+      headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0)' },
+      deadline: 10
     });
     if (resp.getResponseCode() !== 200) return null;
     return resp.getContentText();
@@ -619,7 +622,8 @@ function testTedApi() {
       var resp = UrlFetchApp.fetch(endpoint, {
         method: 'post', contentType: 'application/json',
         payload: JSON.stringify(v.body), muteHttpExceptions: true,
-        headers: { 'Accept': 'application/json' }
+        headers: { 'Accept': 'application/json' },
+        deadline: 10
       });
       var code = resp.getResponseCode();
       var txt = resp.getContentText() || '';
@@ -653,7 +657,8 @@ function testTedEsiti() {
     var resp = UrlFetchApp.fetch(endpoint, {
       method: 'post', contentType: 'application/json',
       payload: JSON.stringify(body), muteHttpExceptions: true,
-      headers: { 'Accept': 'application/json' }
+      headers: { 'Accept': 'application/json' },
+      deadline: 10
     });
     var code = resp.getResponseCode();
     Logger.log('=== TED ESITI -> HTTP ' + code + ' ===');
@@ -729,7 +734,8 @@ function _agentExtractWithClaude_(text, fonte, agent) {
           max_tokens: 2500,
           messages: [{ role: 'user', content: prompt }]
         }),
-        muteHttpExceptions: true
+        muteHttpExceptions: true,
+        deadline: 30
       });
 
       var httpCode = resp.getResponseCode();

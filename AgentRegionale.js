@@ -165,7 +165,8 @@ function _agrScanSingleOpenData_(reg, existingUrls, failLog) {
 
     var resp = UrlFetchApp.fetch(url, {
       muteHttpExceptions: true, followRedirects: true, validateHttpsCertificates: false,
-      headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
+      headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' },
+      deadline: 10
     });
 
     if (resp.getResponseCode() !== 200) {
@@ -215,7 +216,8 @@ function _agrScanSingleBur_(reg, existingUrls, failLog) {
     Logger.log('[AGR] BUR ' + reg.regione + ': ' + reg.bur);
     var resp = UrlFetchApp.fetch(reg.bur, {
       muteHttpExceptions: true, followRedirects: true, validateHttpsCertificates: false,
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0)', 'Accept': 'text/html, application/rss+xml, */*' }
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0)', 'Accept': 'text/html, application/rss+xml, */*' },
+      deadline: 10
     });
 
     if (resp.getResponseCode() !== 200) {
@@ -276,7 +278,8 @@ function _agrAutoHeal_(reg, tipo, failLog) {
       var testEndpoint = tipo === 'opendata' ? testUrl + '/status_show' : testUrl;
       var resp = UrlFetchApp.fetch(testEndpoint, {
         muteHttpExceptions: true, followRedirects: true, validateHttpsCertificates: false,
-        headers: { 'User-Agent': 'SinopiaBot/1.0' }
+        headers: { 'User-Agent': 'SinopiaBot/1.0' },
+        deadline: 10
       });
       if (resp.getResponseCode() === 200) {
         Logger.log('[AGR] HEALED ' + reg.regione + ' ' + tipo + ': ' + testUrl);
@@ -410,7 +413,8 @@ function _agrScanWpJson_(reg, existingUrls, failLog) {
     Logger.log('[AGR] WP_JSON ' + reg.regione + ': ' + reg.bur.substring(0, 80));
     var resp = UrlFetchApp.fetch(reg.bur, {
       muteHttpExceptions: true, followRedirects: true, validateHttpsCertificates: false,
-      headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
+      headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' },
+      deadline: 10
     });
 
     if (resp.getResponseCode() !== 200) {
@@ -514,7 +518,7 @@ function agrVerificaUrl() {
     if (reg.tipo === 'CKAN' || reg.tipo === 'CKAN_UNRELIABLE') {
       try {
         var odUrl = reg.opendata + '/status_show';
-        var resp = UrlFetchApp.fetch(odUrl, { muteHttpExceptions: true, followRedirects: true, validateHttpsCertificates: false, headers: { 'User-Agent': 'SinopiaBot/1.0' } });
+        var resp = UrlFetchApp.fetch(odUrl, { muteHttpExceptions: true, followRedirects: true, validateHttpsCertificates: false, headers: { 'User-Agent': 'SinopiaBot/1.0' }, deadline: 10 });
         entry.opendata_code = resp.getResponseCode();
         entry.opendata_ok = (resp.getResponseCode() === 200);
         if (entry.opendata_ok) funzionanti++; else falliti++;
@@ -536,7 +540,7 @@ function agrVerificaUrl() {
     // Test BUR
     if (reg.burTipo !== 'JS' && reg.burTipo !== 'NONE' && reg.bur) {
       try {
-        var fetchOpts = { muteHttpExceptions: true, followRedirects: true, validateHttpsCertificates: false, headers: { 'User-Agent': 'SinopiaBot/1.0' } };
+        var fetchOpts = { muteHttpExceptions: true, followRedirects: true, validateHttpsCertificates: false, headers: { 'User-Agent': 'SinopiaBot/1.0' }, deadline: 10 };
         if (reg.burTipo === 'WP_JSON') fetchOpts.headers['Accept'] = 'application/json';
         var resp2 = UrlFetchApp.fetch(reg.bur, fetchOpts);
         entry.bur_code = resp2.getResponseCode();

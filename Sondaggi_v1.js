@@ -173,10 +173,10 @@ function saveSondaggio(data) {
       sondaggio.codice,
       sondaggio.nome,
       JSON.stringify(data.risposte),
-      String(data.nota || ''),
-      String(data.email || ''),
+      _sanitizeForCell_(data.nota || ''),
+      _sanitizeForCell_(data.email || ''),
       data.consent === true ? true : false,
-      String(data.museoNome || ''),
+      _sanitizeForCell_(data.museoNome || ''),
       ''
     ]);
 

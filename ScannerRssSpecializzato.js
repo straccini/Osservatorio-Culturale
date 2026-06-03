@@ -127,6 +127,7 @@ function _scanSingleRssFeed_(fonte, existingUrls, dryRun) {
     resp = UrlFetchApp.fetch(fonte.url, {
       muteHttpExceptions: true,
       followRedirects: true,
+      deadline: 10,
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0; +https://sinopia.netlify.app)',
         'Accept': 'application/rss+xml, application/xml, text/xml, */*'

@@ -226,6 +226,7 @@ function _seasDiscoverLinks_(pageUrl, maxLinks) {
     resp = UrlFetchApp.fetch(pageUrl, {
       muteHttpExceptions: true,
       followRedirects: true,
+      deadline: 10,
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; SinopiaExplorer/1.0)',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
@@ -328,6 +329,7 @@ function _seasClassifyWithClaude_(apiKey, link, seed) {
     var resp = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
       method: 'post',
       contentType: 'application/json',
+      deadline: 30,
       headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
       payload: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',

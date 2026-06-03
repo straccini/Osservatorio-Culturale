@@ -716,7 +716,8 @@ function _claudeApiCall_(apiKey, model, prompt, maxTokens, maxRetry) {
         contentType: 'application/json',
         headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
         payload: JSON.stringify({ model: model, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] }),
-        muteHttpExceptions: true
+        muteHttpExceptions: true,
+        deadline: 30
       });
       var code = resp.getResponseCode();
       if (code === 200) {
@@ -807,7 +808,7 @@ function _normalizzaData_(input) {
 
 function _parseFonteRSS_(fonte) {
   var risultati = [];
-  var resp = UrlFetchApp.fetch(fonte.url, { muteHttpExceptions: true, followRedirects: true });
+  var resp = UrlFetchApp.fetch(fonte.url, { muteHttpExceptions: true, followRedirects: true, deadline: 10 });
   if (resp.getResponseCode() !== 200) throw new Error('HTTP ' + resp.getResponseCode());
 
   var xml;
@@ -876,7 +877,8 @@ function _parseFonteHTML_(fonte) {
   var resp = UrlFetchApp.fetch(fonte.url, {
     muteHttpExceptions: true,
     followRedirects: true,
-    headers: headers
+    headers: headers,
+    deadline: 10
   });
 
   var code = resp.getResponseCode();
@@ -893,7 +895,7 @@ function _parseFonteHTML_(fonte) {
 
 function _parseFonteSitemap_(fonte) {
   var risultati = [];
-  var resp = UrlFetchApp.fetch(fonte.url, { muteHttpExceptions: true });
+  var resp = UrlFetchApp.fetch(fonte.url, { muteHttpExceptions: true, deadline: 10 });
   if (resp.getResponseCode() !== 200) throw new Error('HTTP ' + resp.getResponseCode());
 
   var xml;
@@ -1474,7 +1476,7 @@ function riparaURLFonti() {
     var trovato = false;
     for (var c = 0; c < candidati.length; c++) {
       try {
-        var resp = UrlFetchApp.fetch(candidati[c], { muteHttpExceptions: true, followRedirects: true });
+        var resp = UrlFetchApp.fetch(candidati[c], { muteHttpExceptions: true, followRedirects: true, deadline: 10 });
         var code = resp.getResponseCode();
         var len  = resp.getContentText().length;
         Logger.log('    [' + code + '] ' + candidati[c] + ' (' + len + ' chars)');
@@ -1609,7 +1611,8 @@ function testClaudeAPIKey() {
         max_tokens: 10,
         messages: [{ role: 'user', content: 'Rispondi solo: OK' }]
       }),
-      muteHttpExceptions: true
+      muteHttpExceptions: true,
+      deadline: 30
     });
 
     var code = resp.getResponseCode();
@@ -1896,7 +1899,7 @@ function getBandiV5(limit) {
         link     : String(x.link || '')
       };
     });
-  } catch(e) { console.error('getBandiV5:', e); return []; }
+  } catch(e) { Logger.log('getBandiV5:', e); return []; }
 }
 
 /**
@@ -1951,7 +1954,7 @@ function getUltimiBandiV5(limit) {
         link    : String(row[COL_B.URL_BANDO - 1] || row[COL_B.URL_ENTE - 1] || '')
       };
     });
-  } catch(e) { console.error('getUltimiBandiV5:', e); return []; }
+  } catch(e) { Logger.log('getUltimiBandiV5:', e); return []; }
 }
 
 /**

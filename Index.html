@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Osservatorio Culturale · Duemilamusei</title>
+  <title>Sinopia · Osservatorio Culturale</title>
 
   <!-- URL GAS (sostituita da doGet string-replace) -->
   <script>
@@ -82,16 +82,16 @@
     <button onclick="OC.closeRegistrationModal()" aria-label="Chiudi" style="position:absolute;top:12px;right:12px;background:transparent;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;color:var(--ink-3,var(--ink-3,#6E6E73));font-size:22px;line-height:1">×</button>
 
     <div style="background:linear-gradient(135deg,#F1E6D6 0%,var(--surface,#F7F7F8) 100%);padding:24px 28px;border-bottom:1px solid var(--rule,#E5E5E7)">
-      <div style="font-family:var(--font-display,Georgia,serif);font-style:italic;font-size:24px;color:var(--accent,#E84B1C);line-height:1">Sinopia</div>
+      <div style="font-family:var(--font-display,Georgia,serif);font-style:italic;font-size:24px;color:var(--accent,#935851);line-height:1">Sinopia</div>
       <div style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#5C4332;margin-top:4px">Osservatorio Culturale</div>
     </div>
 
     <div style="padding:24px 28px">
-      <h2 id="ocRegTitle" style="font-family:var(--font-display,Georgia,serif);font-size:1.4rem;font-weight:500;color:var(--ink);margin:0 0 8px;line-height:1.25">Sblocca <em style="color:var(--accent,#E84B1C)">salvataggi, download e workspace</em></h2>
+      <h2 id="ocRegTitle" style="font-family:var(--font-display,Georgia,serif);font-size:1.4rem;font-weight:500;color:var(--ink);margin:0 0 8px;line-height:1.25">Sblocca <em style="color:var(--accent,#935851)">salvataggi, download e workspace</em></h2>
       <p id="ocRegSubtitle" style="font-size:13.5px;color:var(--ink-2);line-height:1.55;margin:0 0 20px">Gratis. Niente password. Bastano 10 minuti del MuseMu Matrix oppure una richiesta di consulenza, ed entri nella tua area personale Sinopia.</p>
 
       <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:8px">
-        <button type="button" onclick="OC.closeRegistrationModal(); OC.go('matrix');" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:14px 20px;border-radius:8px;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px;letter-spacing:.01em">
+        <button type="button" onclick="OC.closeRegistrationModal(); OC.go('matrix');" style="background:var(--accent,#935851);color:#fff;border:none;padding:14px 20px;border-radius:8px;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px;letter-spacing:.01em">
           <span style="width:36px;height:36px;border:1.5px solid rgba(255,255,255,.4);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></span>
           <div style="flex:1">
             <div style="font-size:14px;font-weight:700">Compila MuseMu Matrix</div>
@@ -126,7 +126,7 @@
     <p style="font-size:13px;color:var(--ink-2);line-height:1.6;margin:0 0 20px">Download, preferiti, workspace e digest settimanale. Scegli come accedere — tutto gratuito, nessun obbligo.</p>
 
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
-      <button type="button" onclick="OC.closeNewsletterOptIn();OC.go('matrix');" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:14px 18px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px">
+      <button type="button" onclick="OC.closeNewsletterOptIn();OC.go('matrix');" style="background:var(--accent,#935851);color:#fff;border:none;padding:14px 18px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px">
         <span style="width:32px;height:32px;border:1.5px solid rgba(255,255,255,.4);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></span>
         <div><div style="font-weight:700">Compila MuseMu Matrix</div><div style="font-size:11px;opacity:.8;margin-top:2px">10 min · report personalizzato + accesso completo</div></div>
       </button>
@@ -135,7 +135,7 @@
         <div><div style="font-weight:700">Autovalutazione rapida</div><div style="font-size:11px;opacity:.8;margin-top:2px">3 min · diagnosi + accesso completo</div></div>
       </button>
       <button type="button" onclick="OC.closeNewsletterOptIn();OC.prenotaConsulenza(event,'generica');" style="background:var(--surface-2,var(--surface-2,#EFEFF1));color:var(--ink,var(--ink,#101010));border:1px solid var(--rule,var(--rule,#E5E5E7));padding:14px 18px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px">
-        <span style="width:32px;height:32px;border:1.5px solid var(--accent,#E84B1C);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#E84B1C)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+        <span style="width:32px;height:32px;border:1.5px solid var(--accent,#935851);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#935851)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
         <div><div style="font-weight:700">Prenota consulenza gratuita</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px">30 min · zero impegno · accesso subito dopo</div></div>
       </button>
     </div>
@@ -145,11 +145,11 @@
       <div id="nlOptInForm">
         <div style="display:flex;gap:8px">
           <input type="email" id="nlOptInEmail" placeholder="email@museo.it" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit;color:var(--ink,#1a1a1a);background:var(--surface,#fff)" />
-          <button type="button" onclick="OC.submitNewsletterOptIn()" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:10px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Iscrivimi</button>
+          <button type="button" onclick="OC.submitNewsletterOptIn()" style="background:var(--accent,#935851);color:#fff;border:none;padding:10px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Iscrivimi</button>
         </div>
         <label id="nlOptInGdprLabel" style="display:flex;align-items:start;gap:6px;margin-top:8px;cursor:pointer">
           <input type="checkbox" id="nlOptInGdpr" style="margin-top:3px" />
-          <span style="font-size:11px;color:var(--ink-3);line-height:1.4">Acconsento al trattamento dei dati per ricevere la newsletter. <a href="https://www.duemilamusei.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#E84B1C)">Privacy policy</a></span>
+          <span style="font-size:11px;color:var(--ink-3);line-height:1.4">Acconsento al trattamento dei dati per ricevere la newsletter. <a href="https://www.duemilamusei.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#935851)">Privacy policy</a></span>
         </label>
       </div>
       <div id="nlOptInSuccess" hidden style="text-align:center;padding:10px 0"><span style="color:var(--amb-2,#10916D);font-weight:600">Controlla la tua email per confermare.</span></div>
@@ -168,9 +168,9 @@
 
     <!-- STEP 1: PRIVACY -->
     <div id="prenotaStep1" style="padding:32px 36px 28px">
-      <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--link,var(--accent,#E84B1C));letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Step 1 di 2 · Privacy e consenso</div>
+      <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--link,var(--accent,#935851));letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Step 1 di 2 · Privacy e consenso</div>
       <h2 id="prenotaTitle" style="font-family:var(--font-display);font-size:22px;font-weight:500;color:var(--ink);margin:0 0 14px;line-height:1.3">Prima di prenotare la consulenza gratuita</h2>
-      <div style="background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-left:3px solid var(--accent,#E84B1C);border-radius:8px;padding:14px 18px;margin-bottom:18px;font-size:13.5px;line-height:1.6;color:var(--ink-2)">
+      <div style="background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-left:3px solid var(--accent,#935851);border-radius:8px;padding:14px 18px;margin-bottom:18px;font-size:13.5px;line-height:1.6;color:var(--ink-2)">
         <p style="margin:0 0 10px"><b>Natura del contatto.</b> Le attività proposte da Duemilamusei in questa sede sono finalizzate al <b>supporto e alla consulenza gratuita</b>, limitatamente al colloquio richiesto.</p>
         <p style="margin:0 0 10px"><b>Nessun obbligo.</b> Non sussiste tra le parti alcun obbligo, presente o futuro, di natura contrattuale o commerciale. Il colloquio è esplorativo e gratuito, senza vincoli per il museo né per Duemilamusei.</p>
         <p style="margin:0"><b>Trattamento dati.</b> I dati forniti (email, tematica di interesse, descrizione) saranno utilizzati esclusivamente per gestire la richiesta e per eventuali follow-up consulenziali, nel rispetto del Regolamento UE 2016/679 (GDPR). Nessuna cessione a terzi.</p>
@@ -181,13 +181,13 @@
       </label>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;flex-wrap:wrap;gap:10px">
         <button onclick="OC.chiudiPrenotazione()" style="background:transparent;color:var(--ink-3);border:1px solid var(--rule);padding:10px 20px;border-radius:8px;font-family:inherit;font-size:13px;cursor:pointer">Annulla</button>
-        <button id="prenotaBtnStep1Next" disabled onclick="OC._prenotaStep1Next_()" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:11px 26px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.02em;opacity:.4;transition:opacity .15s">Continua →</button>
+        <button id="prenotaBtnStep1Next" disabled onclick="OC._prenotaStep1Next_()" style="background:var(--accent,#935851);color:#fff;border:none;padding:11px 26px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.02em;opacity:.4;transition:opacity .15s">Continua →</button>
       </div>
     </div>
 
     <!-- STEP 2: ARGOMENTO (generica / pre-bando — v4.18.22) -->
     <div id="prenotaStep2" hidden style="padding:32px 36px 28px">
-      <div id="prenotaStep2Eyebrow" style="font-family:var(--font-ui);font-size:10.5px;color:var(--link,var(--accent,#E84B1C));letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Step 2 di 2 · Argomento di interesse</div>
+      <div id="prenotaStep2Eyebrow" style="font-family:var(--font-ui);font-size:10.5px;color:var(--link,var(--accent,#935851));letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Step 2 di 2 · Argomento di interesse</div>
       <h2 id="prenotaStep2Title" style="font-family:var(--font-display);font-size:22px;font-weight:500;color:var(--ink);margin:0 0 14px;line-height:1.3">Su cosa vuoi confrontarti?</h2>
       <p id="prenotaStep2Intro" style="font-size:13.5px;color:var(--ink-3);line-height:1.55;margin:0 0 18px">Scegli la tematica più pertinente al tuo museo. Se nessuna ti sembra calzante seleziona <i>Altro</i> e descrivi brevemente l'argomento.</p>
 
@@ -223,7 +223,7 @@
 
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <button onclick="OC._prenotaStep1Show_()" style="background:transparent;color:var(--ink-3);border:1px solid var(--rule);padding:10px 20px;border-radius:8px;font-family:inherit;font-size:13px;cursor:pointer">← Indietro</button>
-        <button id="prenotaBtnSubmit" onclick="OC._prenotaSubmit_()" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:11px 26px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.02em">Apri calendario →</button>
+        <button id="prenotaBtnSubmit" onclick="OC._prenotaSubmit_()" style="background:var(--accent,#935851);color:#fff;border:none;padding:11px 26px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.02em">Apri calendario →</button>
       </div>
     </div>
 
@@ -924,7 +924,7 @@
         <h1 class="serif" style="font-size:34px;margin:14px 0 12px;line-height:1.2;max-width:760px">Il tuo museo è pronto per i prossimi 5 anni?</h1>
         <p style="font-size:17px;line-height:1.6;max-width:680px;opacity:.95">10 minuti di autovalutazione strutturata, un report PDF gratuito, una roadmap chiara per orientare il cambiamento — senza impegno, senza vendita.</p>
         <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:24px">
-          <button onclick="OC.go('matrix')" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:14px 28px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(184,144,42,.35)">Inizia l'autovalutazione gratuita →</button>
+          <button onclick="OC.go('matrix')" style="background:var(--accent,#935851);color:#fff;border:none;padding:14px 28px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(184,144,42,.35)">Inizia l'autovalutazione gratuita →</button>
           <a href="mailto:s.straccini@gmail.com?subject=MuseMu%20Matrix%20-%20Vorrei%20parlarne%20prima" style="display:inline-block;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4);padding:14px 24px;border-radius:8px;font-size:14px;text-decoration:none">Voglio prima parlarne con te</a>
         </div>
         <div style="margin-top:28px;font-size:13px;opacity:.85;border-top:1px solid rgba(255,255,255,.15);padding-top:16px;max-width:680px">
@@ -934,29 +934,29 @@
 
       <!-- Cosa ottieni -->
       <div style="margin:36px 0 24px">
-        <div style="font-size:12px;color:var(--accent,#E84B1C);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Cosa ricevi</div>
+        <div style="font-size:12px;color:var(--accent,#935851);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Cosa ricevi</div>
         <h2 style="font-size:24px;color:var(--ink-2,#3A3A3C);margin:6px 0 18px">Tre output concreti, da subito</h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px">
-          <div style="background:#fff;border:1px solid var(--rule,var(--rule,#E5E5E7));border-radius:10px;padding:22px;border-top:3px solid var(--accent,#E84B1C)">
-            <div style="width:40px;height:40px;border:1.5px solid var(--accent,#E84B1C);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#E84B1C)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></div>
-            <h3 style="font-size:16px;color:var(--accent,#E84B1C);margin:0 0 8px">Diagnosi su 10 dimensioni</h3>
+          <div style="background:#fff;border:1px solid var(--rule,var(--rule,#E5E5E7));border-radius:10px;padding:22px;border-top:3px solid var(--accent,#935851)">
+            <div style="width:40px;height:40px;border:1.5px solid var(--accent,#935851);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#935851)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></div>
+            <h3 style="font-size:16px;color:var(--accent,#935851);margin:0 0 8px">Diagnosi su 10 dimensioni</h3>
             <p style="font-size:13px;color:#555;line-height:1.6;margin:0">Score 0-100 per ciascuna delle 10 dimensioni del modello (identità, patrimonio, spazi, programma, servizi, digital, accessibilità, audience, governance, welfare).</p>
           </div>
-          <div style="background:#fff;border:1px solid var(--rule,var(--rule,#E5E5E7));border-radius:10px;padding:22px;border-top:3px solid var(--accent,#E84B1C)">
-            <div style="width:40px;height:40px;border:1.5px solid var(--accent,#E84B1C);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#E84B1C)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg></div>
-            <h3 style="font-size:16px;color:var(--accent,#E84B1C);margin:0 0 8px">Report PDF dettagliato</h3>
+          <div style="background:#fff;border:1px solid var(--rule,var(--rule,#E5E5E7));border-radius:10px;padding:22px;border-top:3px solid var(--accent,#935851)">
+            <div style="width:40px;height:40px;border:1.5px solid var(--accent,#935851);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#935851)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg></div>
+            <h3 style="font-size:16px;color:var(--accent,#935851);margin:0 0 8px">Report PDF dettagliato</h3>
             <p style="font-size:13px;color:#555;line-height:1.6;margin:0">Profilo identitario, mappatura per dimensione, top 3 opportunità prioritarie, raccomandazioni di intervento, roadmap a 3 fasi.</p>
           </div>
-          <div style="background:#fff;border:1px solid var(--rule,var(--rule,#E5E5E7));border-radius:10px;padding:22px;border-top:3px solid var(--accent,#E84B1C)">
-            <div style="width:40px;height:40px;border:1.5px solid var(--accent,#E84B1C);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#E84B1C)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 0 0 1 1h3m10-11l2 2m-2-2v10a1 1 0 0 1-1 1h-3m-4 0v-6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v6"/></svg></div>
-            <h3 style="font-size:16px;color:var(--accent,#E84B1C);margin:0 0 8px">Roadmap personalizzata</h3>
+          <div style="background:#fff;border:1px solid var(--rule,var(--rule,#E5E5E7));border-radius:10px;padding:22px;border-top:3px solid var(--accent,#935851)">
+            <div style="width:40px;height:40px;border:1.5px solid var(--accent,#935851);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#935851)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 0 0 1 1h3m10-11l2 2m-2-2v10a1 1 0 0 1-1 1h-3m-4 0v-6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v6"/></svg></div>
+            <h3 style="font-size:16px;color:var(--accent,#935851);margin:0 0 8px">Roadmap personalizzata</h3>
             <p style="font-size:13px;color:#555;line-height:1.6;margin:0">Percorso a 3 orizzonti temporali (0-6 / 6-18 / 18-36 mesi) coerente con il framework Musei Sensibili e con le risorse della tua struttura.</p>
           </div>
         </div>
       </div>
 
       <!-- Come funziona -->
-      <div style="background:var(--accent-soft,#FCEEE7);padding:28px;border-radius:12px;margin:28px 0">
+      <div style="background:var(--accent-soft,#F0E6E4);padding:28px;border-radius:12px;margin:28px 0">
         <div style="font-size:12px;color:var(--ink-3,#6E6E73);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Come funziona</div>
         <h2 style="font-size:24px;color:var(--ink-2,#3A3A3C);margin:6px 0 22px">Tre passaggi, un'ora del tuo tempo in tutto</h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px">
@@ -968,7 +968,7 @@
             </div>
           </div>
           <div style="display:flex;gap:14px">
-            <div style="flex-shrink:0;width:36px;height:36px;background:var(--accent,#E84B1C);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700">2</div>
+            <div style="flex-shrink:0;width:36px;height:36px;background:var(--accent,#935851);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700">2</div>
             <div>
               <h4 style="font-size:14px;color:var(--ink-2,#3A3A3C);margin:0 0 4px">Ricevi il report PDF</h4>
               <p style="font-size:13px;color:#555;line-height:1.5;margin:0">Subito a video, opzionalmente per email. Condivisibile con il consiglio di amministrazione.</p>
@@ -986,7 +986,7 @@
 
       <!-- Per chi è pensato -->
       <div style="margin:28px 0">
-        <div style="font-size:12px;color:var(--accent,#E84B1C);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Per chi è pensato</div>
+        <div style="font-size:12px;color:var(--accent,#935851);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Per chi è pensato</div>
         <h2 style="font-size:24px;color:var(--ink-2,#3A3A3C);margin:6px 0 14px">Direttori, conservatori, responsabili museali</h2>
         <div style="background:#fff;border:1px solid #E5E5E5;border-radius:10px;padding:20px">
           <ul style="list-style:none;padding:0;margin:0;color:#555;font-size:14px;line-height:1.9">
@@ -1001,7 +1001,7 @@
 
       <!-- Le 10 dimensioni -->
       <div style="margin:28px 0">
-        <div style="font-size:12px;color:var(--accent,#E84B1C);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Cosa misura il modello</div>
+        <div style="font-size:12px;color:var(--accent,#935851);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Cosa misura il modello</div>
         <h2 style="font-size:24px;color:var(--ink-2,#3A3A3C);margin:6px 0 14px">10 dimensioni, 43 domande mirate</h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px">
           <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--amb-5,#0E7490);padding:12px 16px;border-radius:6px"><b style="color:var(--amb-5,#0E7490)">D1</b> Identità e marca · <span style="color:#666">posizionamento istituzionale</span></div>
@@ -1009,11 +1009,11 @@
           <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--amb-5,#0E7490);padding:12px 16px;border-radius:6px"><b style="color:var(--amb-5,#0E7490)">D3</b> Spazi e allestimenti · <span style="color:#666">facility e progetto espositivo</span></div>
           <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--amb-5,#0E7490);padding:12px 16px;border-radius:6px"><b style="color:var(--amb-5,#0E7490)">D4</b> Programma educativo · <span style="color:#666">mediazione, didattica, divulgazione</span></div>
           <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--amb-5,#0E7490);padding:12px 16px;border-radius:6px"><b style="color:var(--amb-5,#0E7490)">D5</b> Servizi al visitatore · <span style="color:#666">accoglienza, CRM, fidelizzazione</span></div>
-          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--accent,#E84B1C);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#E84B1C)">D6</b> Maturità digitale · <span style="color:#666">infrastruttura, dati, AI</span></div>
-          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--accent,#E84B1C);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#E84B1C)">D7</b> Accessibilità · <span style="color:#666">fisica, cognitiva, sensoriale, linguistica</span></div>
-          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--accent,#E84B1C);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#E84B1C)">D8</b> Audience engagement · <span style="color:#666">community, partecipazione, social</span></div>
-          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--accent,#E84B1C);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#E84B1C)">D9</b> Governance · <span style="color:#666">strategia, partnership, fundraising</span></div>
-          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--accent,#E84B1C);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#E84B1C)">D10</b> Welfare culturale · <span style="color:#666">impatto sociale, pubblici fragili</span></div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--accent,#935851);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#935851)">D6</b> Maturità digitale · <span style="color:#666">infrastruttura, dati, AI</span></div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--accent,#935851);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#935851)">D7</b> Accessibilità · <span style="color:#666">fisica, cognitiva, sensoriale, linguistica</span></div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--accent,#935851);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#935851)">D8</b> Audience engagement · <span style="color:#666">community, partecipazione, social</span></div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--accent,#935851);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#935851)">D9</b> Governance · <span style="color:#666">strategia, partnership, fundraising</span></div>
+          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--accent,#935851);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#935851)">D10</b> Welfare culturale · <span style="color:#666">impatto sociale, pubblici fragili</span></div>
         </div>
         <p style="font-size:12px;color:#888;margin-top:10px;font-style:italic">Le dimensioni 1-5 misurano i fondamentali tradizionali, le 6-10 i fattori di trasformazione contemporanea (Musei Sensibili).</p>
       </div>
@@ -1022,12 +1022,12 @@
       <div style="background:#fff;border:1px solid #E5E5E5;border-radius:12px;padding:28px;margin:28px 0">
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:24px">
           <div>
-            <div style="font-size:12px;color:var(--accent,#E84B1C);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Chi sviluppa il modello</div>
+            <div style="font-size:12px;color:var(--accent,#935851);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Chi sviluppa il modello</div>
             <h3 style="font-size:18px;color:var(--ink-2,#3A3A3C);margin:6px 0 10px">Duemilamusei</h3>
             <p style="font-size:13px;color:#555;line-height:1.6">Studio fondato a Fano nel 1988. 30+ anni di consulenza per il settore culturale, museale e turistico per enti pubblici e privati: Pesaro Musei (Direzione Generale 2022-2025), Pesaro Capitale Italiana della Cultura 2024 (Direzione Generale), Comuni di Recanati e Macerata, Regione Marche.</p>
           </div>
           <div>
-            <div style="font-size:12px;color:var(--accent,#E84B1C);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Cosa abbiamo fatto</div>
+            <div style="font-size:12px;color:var(--accent,#935851);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Cosa abbiamo fatto</div>
             <h3 style="font-size:18px;color:var(--ink-2,#3A3A3C);margin:6px 0 10px">Oltre 100 progetti</h3>
             <ul style="list-style:none;padding:0;margin:0;color:#555;font-size:13px;line-height:1.9">
               <li>· Museo Nazionale Rossini (2019)</li>
@@ -1042,7 +1042,7 @@
 
       <!-- FAQ -->
       <div style="margin:28px 0">
-        <div style="font-size:12px;color:var(--accent,#E84B1C);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Domande frequenti</div>
+        <div style="font-size:12px;color:var(--accent,#935851);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Domande frequenti</div>
         <h2 style="font-size:24px;color:var(--ink-2,#3A3A3C);margin:6px 0 14px">Quello che vorresti chiedere</h2>
         <div style="display:grid;grid-template-columns:1fr;gap:10px">
           <details style="background:#fff;border:1px solid #E5E5E5;border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:var(--ink-2,#3A3A3C)">Quanto costa l'autovalutazione?</summary><p style="font-size:13px;color:#555;line-height:1.6;margin:10px 0 0">Il questionario, il report PDF e l'eventuale confronto di 30 minuti sono <b>completamente gratuiti</b>. A costo zero per la tua struttura. Eventuali approfondimenti consulenziali successivi sono a preventivo, su tua espressa richiesta.</p></details>
@@ -1054,7 +1054,7 @@
       </div>
 
       <!-- CTA finale -->
-      <div style="background:linear-gradient(135deg,var(--accent,#E84B1C) 0%,#8E6E1F 100%);color:#fff;padding:42px 32px;border-radius:12px;text-align:center;margin:28px 0">
+      <div style="background:linear-gradient(135deg,var(--accent,#935851) 0%,#8E6E1F 100%);color:#fff;padding:42px 32px;border-radius:12px;text-align:center;margin:28px 0">
         <h2 style="font-size:26px;margin:0 0 12px;font-family:Georgia,serif">Pronti a iniziare?</h2>
         <p style="font-size:15px;line-height:1.6;max-width:560px;margin:0 auto 22px;opacity:.95">10 minuti per avere uno strumento di lavoro che normalmente costa migliaia di euro di consulenza esterna. Senza impegno, senza vendita, senza follow-up indesiderato.</p>
         <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
@@ -1121,7 +1121,7 @@
         <div id="sasRaccomandazioni" style="margin-bottom:16px"></div>
 
         <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-primary" data-action="sasRunNow" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:10px 22px;border-radius:6px;font-weight:600;cursor:pointer;font-family:inherit">Esegui ciclo supervisore</button>
+          <button class="btn btn-primary" data-action="sasRunNow" style="background:var(--accent,#935851);color:#fff;border:none;padding:10px 22px;border-radius:6px;font-weight:600;cursor:pointer;font-family:inherit">Esegui ciclo supervisore</button>
           <button class="btn btn-secondary" data-action="sasRefresh" style="padding:10px 18px;border-radius:6px;font-family:inherit">Aggiorna KPI</button>
           <button class="btn btn-secondary" data-action="sasRunWeeklyNow" style="padding:10px 18px;border-radius:6px;font-family:inherit">Analisi settimanale</button>
         </div>
@@ -1142,7 +1142,7 @@
           </div>
         </div>
         <div style="display:flex;gap:10px;align-items:center">
-          <button class="btn btn-primary" data-action="saveCommercialConfig" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:8px 18px;border-radius:6px;font-weight:600;cursor:pointer;font-family:inherit;font-size:0.875rem">Salva</button>
+          <button class="btn btn-primary" data-action="saveCommercialConfig" style="background:var(--accent,#935851);color:#fff;border:none;padding:8px 18px;border-radius:6px;font-weight:600;cursor:pointer;font-family:inherit;font-size:0.875rem">Salva</button>
           <button class="btn btn-secondary" data-action="loadCommercialConfig" style="padding:8px 18px;border-radius:6px;font-family:inherit;font-size:0.875rem">Ricarica</button>
           <span id="cfgCommercialStatus" style="font-size:0.75rem;color:var(--ink-3)"></span>
         </div>
@@ -1154,15 +1154,15 @@
     <!-- v4.18.48 (2026-05-15) — PAGE WORKSPACE: area personale del Lead -->
     <section class="page" id="page-workspace">
       <div class="page-head">
-        <div class="page-eyebrow" style="color:var(--accent,#E84B1C)">Sinopia &middot; La tua area</div>
+        <div class="page-eyebrow" style="color:var(--accent,#935851)">Sinopia &middot; La tua area</div>
         <h1 class="page-title">Benvenuto/a, <em id="wsUserHello">Lead</em></h1>
         <p class="page-sub" id="wsUserSub">Qui trovi i tuoi bandi salvati, il report MuseMu Matrix e lo storico delle tue consulenze.</p>
       </div>
 
       <!-- ═══ 1. FILTRO GLOBALE — BANNER PROMINENTE ═══ -->
-      <div id="wsFilterBanner" style="margin-top:20px;padding:16px 24px;background:linear-gradient(135deg,#FFF3E0 0%,#FFE0B2 100%);border:2px solid var(--accent,#E84B1C);border-radius:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div id="wsFilterBanner" style="margin-top:20px;padding:16px 24px;background:linear-gradient(135deg,#FFF3E0 0%,#FFE0B2 100%);border:2px solid var(--accent,#935851);border-radius:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
         <div style="display:flex;align-items:center;gap:14px;flex:1">
-          <div style="width:40px;height:40px;border-radius:50%;background:var(--accent,#E84B1C);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--accent,#935851);display:flex;align-items:center;justify-content:center;flex-shrink:0">
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" width="20" height="20"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
           </div>
           <div>
@@ -1256,7 +1256,7 @@
 
     <section class="page" id="page-chisiamo">
       <div class="page-head">
-        <div class="page-eyebrow" style="color:var(--accent,#E84B1C)">Osservatorio Culturale &middot; Sinopia &middot; Chi siamo</div>
+        <div class="page-eyebrow" style="color:var(--accent,#935851)">Osservatorio Culturale &middot; Sinopia &middot; Chi siamo</div>
         <h1 class="page-title">Una rete di esperti per la <em>cultura italiana</em></h1>
         <p class="page-sub">
           Siamo un team di progettisti culturali, esperti di tecnologie inclusive, ricercatori
@@ -1268,10 +1268,10 @@
       </div>
 
       <!-- v4.18.26 — Sezione "Perché Sinopia" -->
-      <section style="margin:24px 0 28px;padding:24px 32px;background:#F1E6D6;border:1px solid var(--rule,#E5E5E7);border-left:3px solid var(--accent,#E84B1C);border-radius:12px;display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:start">
-        <div style="font-family:var(--font-display);font-size:60px;line-height:.85;color:var(--accent,#E84B1C);opacity:.85;flex-shrink:0;font-style:italic">S</div>
+      <section style="margin:24px 0 28px;padding:24px 32px;background:#F1E6D6;border:1px solid var(--rule,#E5E5E7);border-left:3px solid var(--accent,#935851);border-radius:12px;display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:start">
+        <div style="font-family:var(--font-display);font-size:60px;line-height:.85;color:var(--accent,#935851);opacity:.85;flex-shrink:0;font-style:italic">S</div>
         <div>
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#E84B1C);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Perch&eacute; Sinopia</div>
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#935851);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Perch&eacute; Sinopia</div>
           <h2 style="font-family:var(--font-display);font-size:1.4rem;line-height:1.2;margin:0 0 10px;color:var(--ink,#101010);font-weight:500"><em>Sinopia</em> &mdash; il disegno che precede l&rsquo;affresco.</h2>
           <p style="font-family:var(--font-display);font-size:14.5px;line-height:1.6;color:#5C4332;margin:0 0 8px">
             La <b>sinopia</b> &egrave; il disegno preparatorio in terra rossa che gli artisti del Medioevo
@@ -1291,9 +1291,9 @@
 
       <!-- Manifesto operativo -->
       <section style="margin:24px 0 28px;padding:26px 32px;background:#F6F2EA;border:1px solid var(--rule);border-radius:14px;display:grid;grid-template-columns:3px 1fr;gap:24px;align-items:start">
-        <span aria-hidden="true" style="align-self:stretch;background:linear-gradient(180deg,var(--accent,#E84B1C) 0%,var(--amb-2,#10916D) 50%,var(--amb-3,#2563EB) 100%);border-radius:2px"></span>
+        <span aria-hidden="true" style="align-self:stretch;background:linear-gradient(180deg,var(--accent,#935851) 0%,var(--amb-2,#10916D) 50%,var(--amb-3,#2563EB) 100%);border-radius:2px"></span>
         <div>
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--link,var(--accent,#E84B1C));letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Manifesto operativo</div>
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--link,var(--accent,#935851));letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Manifesto operativo</div>
           <h2 style="font-family:var(--font-display);font-size:1.5rem;line-height:1.2;margin:0 0 12px;color:var(--ink);font-weight:500">Il museo come <em>presidio identitario</em>, non come contenitore.</h2>
           <p style="font-family:var(--font-display);font-size:15px;line-height:1.65;color:var(--ink-2);margin:0">
             Crediamo nel modello dei <b>Musei Sensibili</b>: luoghi della cultura che sanno ascoltare le proprie
@@ -1319,8 +1319,8 @@
            verranno aggiunte in seguito quando i profili reali saranno confermati. -->
       <div class="cs-competenze-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:36px">
 
-        <article style="padding:20px 22px;background:#fff;border:1px solid var(--rule);border-radius:12px;border-left:4px solid var(--accent,#E84B1C)">
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#E84B1C);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Coordinamento generale</div>
+        <article style="padding:20px 22px;background:#fff;border:1px solid var(--rule);border-radius:12px;border-left:4px solid var(--accent,#935851)">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#935851);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Coordinamento generale</div>
           <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:600;color:var(--ink);margin:0 0 8px">Direzione operativa del progetto</h3>
           <p style="font-size:13.5px;line-height:1.55;color:var(--ink-2);margin:0">
             Coordinamento integrato del team multidisciplinare, gestione delle relazioni con i committenti,
@@ -1328,8 +1328,8 @@
           </p>
         </article>
 
-        <article style="padding:20px 22px;background:#fff;border:1px solid var(--rule);border-radius:12px;border-left:4px solid var(--accent,#E84B1C)">
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#E84B1C);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Coordinamento strategico</div>
+        <article style="padding:20px 22px;background:#fff;border:1px solid var(--rule);border-radius:12px;border-left:4px solid var(--accent,#935851)">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#935851);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Coordinamento strategico</div>
           <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:600;color:var(--ink);margin:0 0 8px">Strategia culturale &amp; bandi</h3>
           <p style="font-size:13.5px;line-height:1.55;color:var(--ink-2);margin:0">
             Strategia culturale e turistica, candidature bandi UE/PNRR/MiC, capitali della cultura,
@@ -1357,8 +1357,8 @@
           </p>
         </article>
 
-        <article style="padding:20px 22px;background:#fff;border:1px solid var(--rule);border-radius:12px;border-left:4px solid var(--accent,#E84B1C)">
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#E84B1C);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Pubblico &amp; comunit&agrave;</div>
+        <article style="padding:20px 22px;background:#fff;border:1px solid var(--rule);border-radius:12px;border-left:4px solid var(--accent,#935851)">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#935851);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Pubblico &amp; comunit&agrave;</div>
           <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:600;color:var(--ink);margin:0 0 8px">Co-progettazione &amp; mediazione</h3>
           <p style="font-size:13.5px;line-height:1.55;color:var(--ink-2);margin:0">
             Segmentazione e profilazione dei pubblici, mediazione culturale, partecipazione attiva
@@ -1426,7 +1426,7 @@
 
       <!-- CTA finale: due consulenze -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0 36px">
-        <button type="button" onclick="OC.prenotaConsulenza(event,'generica')" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:18px 24px;border-radius:12px;font-family:var(--font-ui);font-size:14px;font-weight:600;cursor:pointer;text-align:left">
+        <button type="button" onclick="OC.prenotaConsulenza(event,'generica')" style="background:var(--accent,#935851);color:#fff;border:none;padding:18px 24px;border-radius:12px;font-family:var(--font-ui);font-size:14px;font-weight:600;cursor:pointer;text-align:left">
           <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.85;margin-bottom:6px">Consulenza gratuita</div>
           <div style="font-size:16px;font-weight:700">Parliamone &mdash; scegli tu l&rsquo;argomento</div>
           <div style="font-size:12px;font-weight:400;opacity:.9;margin-top:4px">Su una qualunque tematica strategica del museo</div>
@@ -1460,13 +1460,13 @@
       </div>
 
       <!-- Box intro: come usiamo questa pagina -->
-      <section style="margin:18px 0 24px;padding:18px 24px;background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-left:3px solid var(--accent,#E84B1C);border-radius:10px;display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start">
+      <section style="margin:18px 0 24px;padding:18px 24px;background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-left:3px solid var(--accent,#935851);border-radius:10px;display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start">
         <div style="font-size:32px;line-height:1"></div>
         <div>
           <div style="font-family:var(--font-display);font-size:15px;color:var(--ink-2,#3A3A3C);line-height:1.55;margin-bottom:6px">
             <b>Le candidature speciali non sono bandi qualsiasi.</b> Richiedono un dossier strutturato, un percorso di costruzione lungo (da 6 mesi a 5 anni), un budget di scrittura significativo e la mobilitazione di amministrazione, comunità e istituzioni culturali.
           </div>
-          <div style="font-size:12.5px;color:var(--accent-hover,#C23A11);line-height:1.5">
+          <div style="font-size:12.5px;color:var(--accent-hover,#7A4940);line-height:1.5">
             Duemilamusei accompagna i Comuni in tutto il percorso: dalla fattibilit&agrave; iniziale alla scrittura del dossier, dalla creazione delle partnership al recruiting di esperti, fino alla difesa orale davanti alla giuria. Servizi: <b>LS1</b> (pre-progettazione gratuita) &middot; <b>LS2</b> (consulenza strategica) &middot; <b>LS3</b> (scrittura dossier completo).
           </div>
         </div>
@@ -1482,13 +1482,13 @@
       <!-- CTA finale: prenota consulenza -->
       <section style="margin:32px 0 36px;padding:28px 32px;background:linear-gradient(135deg,var(--surface,#F7F7F8) 0%,var(--surface,#F7F7F8) 100%);border:1px solid var(--rule,#E5E5E7);border-radius:14px;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center">
         <div>
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent-hover,#C23A11);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Consulenza dedicata</div>
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent-hover,#7A4940);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Consulenza dedicata</div>
           <h2 style="font-family:var(--font-display);font-size:1.4rem;line-height:1.2;margin:0 0 8px;color:var(--ink-2,#3A3A3C);font-weight:500">Vuoi candidare il tuo Comune?</h2>
           <p style="font-family:var(--font-display);font-size:14px;color:var(--ink-2,#3A3A3C);line-height:1.55;margin:0;max-width:560px">
             Una call gratuita di 30-45 minuti per valutare insieme se ci sono i requisiti, definire il posizionamento strategico, costruire un cronoprogramma realistico verso la scadenza.
           </p>
         </div>
-        <button type="button" onclick="OC.prenotaConsulenza(event,'generica')" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:14px 28px;border-radius:10px;font-family:var(--font-ui);font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.02em;white-space:nowrap">Prenota una consulenza &rarr;</button>
+        <button type="button" onclick="OC.prenotaConsulenza(event,'generica')" style="background:var(--accent,#935851);color:#fff;border:none;padding:14px 28px;border-radius:10px;font-family:var(--font-ui);font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.02em;white-space:nowrap">Prenota una consulenza &rarr;</button>
       </section>
 
       <style>
@@ -1627,7 +1627,7 @@
       </div>
 
       <!-- 2) Digest segmentato MuseMu Matrix -->
-      <div class="admin-card" style="margin-bottom:20px;border-left:4px solid var(--accent,#E84B1C)">
+      <div class="admin-card" style="margin-bottom:20px;border-left:4px solid var(--accent,#935851)">
         <h3>✉️ Digest segmentato per compilatori MuseMu Matrix</h3>
         <p class="hint">Genera bozze email personalizzate per ogni compilatore Matrix (top 3 gap del museo + contenuti pertinenti). Idempotente: salta gli utenti con bozze recenti (&lt;6gg).</p>
 
@@ -1941,7 +1941,7 @@
 
       <!-- TAB UTENTI & ACCESSI (Sprint 1.4 - 2026-05-01) -->
       <div class="settings-tab-content" data-tab-content="utenti" hidden>
-        <div class="admin-card" style="margin-bottom:14px;border-left:4px solid var(--accent,#E84B1C)">
+        <div class="admin-card" style="margin-bottom:14px;border-left:4px solid var(--accent,#935851)">
           <h3> Gestione utenti, ruoli e opt-in email</h3>
           <p class="hint">Tabella unica utenti consolidata (ex MailingList + ContactsMatrix + Admin). Approva/sospendi utenti, cambia ruoli, gestisci opt-in granulari per ogni servizio.</p>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
@@ -1964,7 +1964,7 @@
           </div>
           <div id="utentiStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:14px">
             <div style="background:#FAFAFA;border:1px solid #E5E5E5;padding:10px;border-radius:6px"><div style="font-size:11px;color:#666;text-transform:uppercase;font-weight:700">Totale</div><div id="statUtTot" style="font-size:20px;font-weight:700;color:var(--ink-2,#3A3A3C)">—</div></div>
-            <div style="background:#FAFAFA;border-left:3px solid var(--accent,#E84B1C);padding:10px;border-radius:6px"><div style="font-size:11px;color:var(--accent,#E84B1C);text-transform:uppercase;font-weight:700">In attesa</div><div id="statUtPending" style="font-size:20px;font-weight:700;color:var(--ink-2,#3A3A3C)">—</div></div>
+            <div style="background:#FAFAFA;border-left:3px solid var(--accent,#935851);padding:10px;border-radius:6px"><div style="font-size:11px;color:var(--accent,#935851);text-transform:uppercase;font-weight:700">In attesa</div><div id="statUtPending" style="font-size:20px;font-weight:700;color:var(--ink-2,#3A3A3C)">—</div></div>
             <div style="background:#FAFAFA;border-left:3px solid var(--amb-2,#10916D);padding:10px;border-radius:6px"><div style="font-size:11px;color:var(--amb-2,#10916D);text-transform:uppercase;font-weight:700">Attivi</div><div id="statUtAttivi" style="font-size:20px;font-weight:700;color:var(--ink-2,#3A3A3C)">—</div></div>
             <div style="background:#FAFAFA;border-left:3px solid var(--amb-1,#7C3AED);padding:10px;border-radius:6px"><div style="font-size:11px;color:var(--amb-1,#7C3AED);text-transform:uppercase;font-weight:700">Admin</div><div id="statUtAdmin" style="font-size:20px;font-weight:700;color:var(--ink-2,#3A3A3C)">—</div></div>
           </div>
@@ -1987,11 +1987,11 @@
       <div class="settings-tab-content" data-tab-content="config" hidden>
 
         <!-- Setup v4.18 one-click (2026-05-11) -->
-        <div class="admin-card" style="margin-bottom:14px;background:linear-gradient(135deg,#FAF8F4 0%,var(--amb-4-soft,#FFEDD5) 100%);border-left:4px solid var(--accent,#E84B1C)">
+        <div class="admin-card" style="margin-bottom:14px;background:linear-gradient(135deg,#FAF8F4 0%,var(--amb-4-soft,#FFEDD5) 100%);border-left:4px solid var(--accent,#935851)">
           <h3>Setup post-deploy v4.18.0</h3>
           <p class="hint">Esegue in cascata <b>tutte le funzioni di setup</b> necessarie dopo il deploy v4.18: cron bandi Lun/Mer/Ven 01:00, schema fogli bandi v5, foglio Pubblicazioni con 10 seed, foglio Norme con 5 seed, database MuseiDB_v1, fogli FontiNews+FontiVideo, migrazione SocialFonti→FontiNews. Idempotente: si può rilanciare in sicurezza.</p>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0">
-            <button class="btn btn-primary" data-action="runAllSetup" style="background:var(--accent,#E84B1C);color:#fff;font-weight:600;padding:10px 20px;font-size:14px">Esegui setup completo</button>
+            <button class="btn btn-primary" data-action="runAllSetup" style="background:var(--accent,#935851);color:#fff;font-weight:600;padding:10px 20px;font-size:14px">Esegui setup completo</button>
             <button class="btn btn-secondary" data-action="checkSetupStatus" style="padding:10px 20px;font-size:14px">Verifica solo stato</button>
             <button class="btn btn-secondary" data-action="debugAuthClient" style="padding:10px 20px;font-size:14px">🔐 Debug Auth (chi sono?)</button>
           </div>
@@ -1999,7 +1999,7 @@
 
           <!-- Import TSV one-click (2026-05-11) -->
           <div style="margin-top:18px;padding-top:18px;border-top:1px dashed var(--rule-2,#D2D2D7)">
-            <div style="font-size:13px;font-weight:700;color:var(--accent,#E84B1C);margin-bottom:6px"> Import dati TSV dal computer</div>
+            <div style="font-size:13px;font-weight:700;color:var(--accent,#935851);margin-bottom:6px"> Import dati TSV dal computer</div>
             <p class="hint" style="margin-bottom:10px">Carica direttamente dal tuo PC i 2 file TSV con i dati iniziali. Niente più drag&amp;drop in Drive.</p>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">
               <div style="padding:14px;background:#FAFAFA;border:1px solid #E5E5E5;border-radius:6px">
@@ -2286,7 +2286,7 @@
             <button class="btn btn-secondary" data-action="reloadQueue" style="font-size:12px">Ricarica queue</button>
           </div>
           <div id="digestTabResult" style="font-size:12px;min-height:18px;color:#666"></div>
-          <p style="margin-top:14px;font-size:12px"><a href="#" onclick="OC.go('digest');return false" style="color:var(--accent,#E84B1C)">Apri pagina Digest completa →</a></p>
+          <p style="margin-top:14px;font-size:12px"><a href="#" onclick="OC.go('digest');return false" style="color:var(--accent,#935851)">Apri pagina Digest completa →</a></p>
         </div>
       </div>
 
@@ -2492,6 +2492,7 @@
           //   L'hero home non usa più immagini esterne. Le proprietà logoUrl/heroImageUrl restano
           //   in ScriptProperties per backward-compat (Setup commerciale non le espone più).
         })
+        .withFailureHandler(function(){})
         .getOcConstants();
     } catch(e) {}
   })();
@@ -2528,7 +2529,7 @@
       tematiche.forEach(function(t){
         // Card cliccabile per ogni tematica
         html += '<label class="prenota-tem-card" data-codice="'+esc(t.codice)+'" onclick="OC._prenotaTematicaPick_(\''+esc(t.codice)+'\',\''+esc(t.nome).replace(/\\\\/g,"\\\\\\\\").replace(/\'/g,"\\\\\\\'")+'\')" style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--rule,var(--rule,#E5E5E7));border-radius:8px;cursor:pointer;background:#fff;transition:all .15s">';
-        html += '<span style="flex-shrink:0;min-width:30px;height:24px;display:inline-flex;align-items:center;justify-content:center;background:var(--surface,#F7F7F8);color:var(--link,var(--accent,#E84B1C));border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.04em">'+esc(t.codice)+'</span>';
+        html += '<span style="flex-shrink:0;min-width:30px;height:24px;display:inline-flex;align-items:center;justify-content:center;background:var(--surface,#F7F7F8);color:var(--link,var(--accent,#935851));border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.04em">'+esc(t.codice)+'</span>';
         html += '<div style="flex:1"><div style="font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">'+esc(t.nome)+'</div>';
         if (t.descrizione) html += '<div style="font-size:11.5px;color:var(--ink-3);line-height:1.45">'+esc(t.descrizione)+'</div>';
         html += '</div></label>';
@@ -3413,12 +3414,12 @@
     var wrap = $('homeCapitaliList'); if (!wrap) return;
     list = list || [];
     if (!list.length) {
-      wrap.innerHTML = '<div style="padding:14px;text-align:center;color:var(--accent-hover,#C23A11);font-size:12.5px">Nessuna candidatura in elenco.</div>';
+      wrap.innerHTML = '<div style="padding:14px;text-align:center;color:var(--accent-hover,#7A4940);font-size:12.5px">Nessuna candidatura in elenco.</div>';
       return;
     }
     var html = '';
     list.forEach(function(c, i){
-      var urgBg = '#fff', urgCol = 'var(--accent-hover,#C23A11)', urgLbl = '';
+      var urgBg = '#fff', urgCol = 'var(--accent-hover,#7A4940)', urgLbl = '';
       if (c.urgenza === 'urgente')  { urgBg = '#FEE7DA'; urgCol = '#9A3412'; urgLbl = 'Urgente'; }
       else if (c.urgenza === 'imminente') { urgBg = '#FFF4D6'; urgCol = '#7A5A1A'; urgLbl = 'Imminente'; }
       else if (c.urgenza === 'scaduto')   { urgBg = '#FEE2E2'; urgCol = '#7F1D1D'; urgLbl = 'Scaduto'; }
@@ -3427,14 +3428,14 @@
         : (c.giorniResidui != null && c.giorniResidui < 0 ? 'Scaduto' : 'Continuo');
       var border = (i === list.length - 1) ? 'none' : '1px solid rgba(217,200,150,.5)';
       html += '<a href="#" data-page="capitali" style="display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;padding:11px 4px;border-bottom:' + border + ';text-decoration:none;color:inherit;transition:background .12s" onmouseover="this.style.background=\'rgba(255,255,255,.5)\'" onmouseout="this.style.background=\'transparent\'">'
-        +   '<span style="width:32px;height:32px;border:1.5px solid var(--accent,#E84B1C);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-ui);font-size:11px;color:var(--accent,#E84B1C);font-weight:700;flex-shrink:0;letter-spacing:.02em">' + esc(c.icona || (c.nome||'C').charAt(0)) + '</span>'
+        +   '<span style="width:32px;height:32px;border:1.5px solid var(--accent,#935851);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-ui);font-size:11px;color:var(--accent,#935851);font-weight:700;flex-shrink:0;letter-spacing:.02em">' + esc(c.icona || (c.nome||'C').charAt(0)) + '</span>'
         +   '<div style="min-width:0">'
         +     '<div style="font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--ink-2,#3A3A3C);line-height:1.25">' + esc(c.nome) + '</div>'
-        +     '<div style="font-family:var(--font-ui);font-size:11px;color:var(--accent-hover,#C23A11);letter-spacing:.04em;margin-top:2px">' + esc(c.promotore) + ' · target ' + esc(c.annoTarget) + '</div>'
+        +     '<div style="font-family:var(--font-ui);font-size:11px;color:var(--accent-hover,#7A4940);letter-spacing:.04em;margin-top:2px">' + esc(c.promotore) + ' · target ' + esc(c.annoTarget) + '</div>'
         +   '</div>'
         +   '<div style="text-align:right;font-family:var(--font-ui);font-size:11.5px;color:var(--ink-2,#3A3A3C);line-height:1.2;white-space:nowrap">'
         +     '<div style="font-weight:600">' + esc(c.scadenzaFormat || 'continuo') + '</div>'
-        +     '<div style="font-size:10.5px;color:var(--accent-hover,#C23A11)">' + esc(giorniTxt) + '</div>'
+        +     '<div style="font-size:10.5px;color:var(--accent-hover,#7A4940)">' + esc(giorniTxt) + '</div>'
         +   '</div>'
         +   (urgLbl ? '<span style="background:' + urgBg + ';color:' + urgCol + ';font-family:var(--font-ui);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:4px;white-space:nowrap">' + urgLbl + '</span>' : '<span></span>')
         + '</a>';
@@ -3549,19 +3550,19 @@
     html += '<div class="section-head" style="margin-top:0"><div class="left"><h2 class="section-title">Il tuo <em>profilo Matrix</em></h2></div></div>';
     if (data.matrixResponse && data.matrixResponse.responseId) {
       var m = data.matrixResponse;
-      html += '<div style="background:#F1E6D6;border:1px solid var(--rule,#E5E5E7);border-left:4px solid var(--accent,#E84B1C);border-radius:10px;padding:18px 22px;margin-bottom:24px">';
+      html += '<div style="background:#F1E6D6;border:1px solid var(--rule,#E5E5E7);border-left:4px solid var(--accent,#935851);border-radius:10px;padding:18px 22px;margin-bottom:24px">';
       html += '<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px">';
       html += '<div>';
       if (m.museumName) html += '<div style="font-family:var(--font-display);font-size:1.1rem;font-weight:600;color:var(--ink);margin-bottom:4px">' + esc(m.museumName) + '</div>';
-      html += '<div style="font-family:var(--font-ui);font-size:11px;color:var(--accent-hover,#C23A11);letter-spacing:.08em;text-transform:uppercase">Profilo identificato: <b>' + esc(m.profileAssigned || '?') + '</b></div>';
+      html += '<div style="font-family:var(--font-ui);font-size:11px;color:var(--accent-hover,#7A4940);letter-spacing:.08em;text-transform:uppercase">Profilo identificato: <b>' + esc(m.profileAssigned || '?') + '</b></div>';
       if (m.compilationDate) html += '<div style="font-size:11.5px;color:var(--ink-3);margin-top:4px">Compilato il ' + esc(new Date(m.compilationDate).toLocaleDateString('it-IT')) + '</div>';
       html += '</div>';
       html += '<div style="text-align:right">';
-      if (m.syntheticScore != null) html += '<div style="font-family:var(--font-display);font-size:2.2rem;font-weight:600;color:var(--accent,#E84B1C);line-height:1">' + m.syntheticScore + '<span style="font-size:1rem;opacity:.7"> /100</span></div>';
+      if (m.syntheticScore != null) html += '<div style="font-family:var(--font-display);font-size:2.2rem;font-weight:600;color:var(--accent,#935851);line-height:1">' + m.syntheticScore + '<span style="font-size:1rem;opacity:.7"> /100</span></div>';
       html += '<div style="font-size:11px;color:var(--ink-3)">score sintetico</div>';
       html += '</div></div>';
       html += '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">';
-      html += '<button class="btn btn-primary" onclick="OC.openMatrixReport(\'' + esc(m.responseId) + '\')" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer">Apri report completo</button>';
+      html += '<button class="btn btn-primary" onclick="OC.openMatrixReport(\'' + esc(m.responseId) + '\')" style="background:var(--accent,#935851);color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer">Apri report completo</button>';
       if (m.pdfUrl) {
         html += '<a href="' + esc(m.pdfUrl) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;background:transparent;border:1px solid var(--rule);padding:8px 16px;border-radius:6px;font-size:12.5px;color:var(--ink-2);text-decoration:none;font-weight:600;cursor:pointer">PDF report</a>';
       }
@@ -3574,7 +3575,7 @@
       html += '</div>';
       html += '</div>';
     } else {
-      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Non hai ancora completato il MuseMu Matrix. <a href="#" onclick="OC.go(\'matrix\');return false" style="color:var(--accent,#E84B1C);font-weight:600">Compilalo ora →</a></div>';
+      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Non hai ancora completato il MuseMu Matrix. <a href="#" onclick="OC.go(\'matrix\');return false" style="color:var(--accent,#935851);font-weight:600">Compilalo ora →</a></div>';
     }
 
     // Sezione 2: Sondaggi compilati
@@ -3598,7 +3599,7 @@
       });
       html += '</div>';
     } else {
-      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessun sondaggio compilato. <a href="#" onclick="OC.go(\'sondaggi-catalogo\');return false" style="color:var(--accent,#E84B1C);font-weight:600">Scopri le 6 autovalutazioni rapide →</a></div>';
+      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessun sondaggio compilato. <a href="#" onclick="OC.go(\'sondaggi-catalogo\');return false" style="color:var(--accent,#935851);font-weight:600">Scopri le 6 autovalutazioni rapide →</a></div>';
     }
 
     // Sezione 3: Bandi salvati
@@ -3611,13 +3612,13 @@
         html += '<div style="font-family:var(--font-display);font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.3">' + esc(b.titolo || '(senza titolo)') + '</div>';
         if (b.ente) html += '<div style="font-size:12px;color:var(--ink-3);margin-top:3px">' + esc(b.ente) + '</div>';
         html += '</div>';
-        if (b.scadenza) html += '<div style="font-size:12px;color:var(--accent,#E84B1C);font-weight:600;white-space:nowrap">Scade ' + esc(b.scadenza) + '</div>';
+        if (b.scadenza) html += '<div style="font-size:12px;color:var(--accent,#935851);font-weight:600;white-space:nowrap">Scade ' + esc(b.scadenza) + '</div>';
         if (b.url) html += '<a href="' + esc(b.url) + '" target="_blank" rel="noopener" style="color:var(--amb-3,#2563EB);text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap">↗ apri</a>';
         html += '</div>';
       });
       html += '</div>';
     } else {
-      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessun bando salvato. Esplora il <a href="#" onclick="OC.go(\'bandi\');return false" style="color:var(--accent,#E84B1C);font-weight:600">Radar Bandi →</a> e clicca ★ per salvare quelli interessanti.</div>';
+      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessun bando salvato. Esplora il <a href="#" onclick="OC.go(\'bandi\');return false" style="color:var(--accent,#935851);font-weight:600">Radar Bandi →</a> e clicca ★ per salvare quelli interessanti.</div>';
     }
 
     // News salvate
@@ -3634,7 +3635,7 @@
       });
       html += '</div>';
     } else {
-      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessuna news salvata. <a href="#" onclick="OC.go(\'news\');return false" style="color:var(--accent,#E84B1C);font-weight:600">Esplora le News →</a></div>';
+      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessuna news salvata. <a href="#" onclick="OC.go(\'news\');return false" style="color:var(--accent,#935851);font-weight:600">Esplora le News →</a></div>';
     }
 
     // Podcast salvati
@@ -3651,7 +3652,7 @@
       });
       html += '</div>';
     } else {
-      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessun podcast salvato. <a href="#" onclick="OC.go(\'podcast\');return false" style="color:var(--accent,#E84B1C);font-weight:600">Esplora i Podcast →</a></div>';
+      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessun podcast salvato. <a href="#" onclick="OC.go(\'podcast\');return false" style="color:var(--accent,#935851);font-weight:600">Esplora i Podcast →</a></div>';
     }
 
     // Video salvati
@@ -3668,7 +3669,7 @@
       });
       html += '</div>';
     } else {
-      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessun video salvato. <a href="#" onclick="OC.go(\'video\');return false" style="color:var(--accent,#E84B1C);font-weight:600">Esplora i Video →</a></div>';
+      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessun video salvato. <a href="#" onclick="OC.go(\'video\');return false" style="color:var(--accent,#935851);font-weight:600">Esplora i Video →</a></div>';
     }
 
     // Libri salvati
@@ -3685,7 +3686,7 @@
       });
       html += '</div>';
     } else {
-      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessun libro salvato. <a href="#" onclick="OC.go(\'libri\');return false" style="color:var(--accent,#E84B1C);font-weight:600">Esplora i Libri →</a></div>';
+      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessun libro salvato. <a href="#" onclick="OC.go(\'libri\');return false" style="color:var(--accent,#935851);font-weight:600">Esplora i Libri →</a></div>';
     }
 
     // Sezione 3: Storico consulenze
@@ -3693,7 +3694,7 @@
     if (data.prenotazioni && data.prenotazioni.length) {
       html += '<div style="display:grid;gap:8px;margin-bottom:24px">';
       data.prenotazioni.forEach(function(pr){
-        var statoColor = pr.stato === 'nuovo' ? 'var(--accent,#E84B1C)' : (pr.stato === 'completato' ? 'var(--amb-2,#10916D)' : 'var(--ink-3,#6E6E73)');
+        var statoColor = pr.stato === 'nuovo' ? 'var(--accent,#935851)' : (pr.stato === 'completato' ? 'var(--amb-2,#10916D)' : 'var(--ink-3,#6E6E73)');
         html += '<div style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">';
         html += '<div style="flex:1;min-width:0">';
         html += '<div style="font-size:13.5px;font-weight:600;color:var(--ink)">' + esc(pr.tematica || '?') + '</div>';
@@ -3705,14 +3706,14 @@
       });
       html += '</div>';
     } else {
-      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessuna consulenza richiesta. Per parlarne con noi: <a href="#" onclick="OC.prenotaConsulenza(event,\'generica\');return false" style="color:var(--accent,#E84B1C);font-weight:600">richiedi consulenza gratuita →</a></div>';
+      html += '<div style="padding:18px 22px;background:#fff;border:1px dashed var(--rule);border-radius:10px;margin-bottom:24px;color:var(--ink-3)">Nessuna consulenza richiesta. Per parlarne con noi: <a href="#" onclick="OC.prenotaConsulenza(event,\'generica\');return false" style="color:var(--accent,#935851);font-weight:600">richiedi consulenza gratuita →</a></div>';
     }
 
     // Sezione Agenti tematici
     html += '<div class="section-head"><div class="left"><h2 class="section-title">I tuoi <em>agenti tematici</em></h2></div></div>';
     if (data.profiloAgenti && data.profiloAgenti.agenti) {
       var agIcons = { Bandi:'📊', Normativa:'📜', Innovazione:'💡', Comunita:'🤝', Digital:'💻' };
-      var agColors = { Bandi:'var(--accent,#E84B1C)', Normativa:'var(--amb-3,#2563EB)', Innovazione:'var(--amb-1,#7C3AED)', Comunita:'#9C6A36', Digital:'var(--amb-5,#0E7490)' };
+      var agColors = { Bandi:'var(--accent,#935851)', Normativa:'var(--amb-3,#2563EB)', Innovazione:'var(--amb-1,#7C3AED)', Comunita:'#9C6A36', Digital:'var(--amb-5,#0E7490)' };
       html += '<div style="display:grid;gap:10px;margin-bottom:24px">';
       data.profiloAgenti.agenti.forEach(function(ag){
         var ico = agIcons[ag.codice] || '📋';
@@ -3756,7 +3757,7 @@
       html += '<option value="'+f+'"'+(dp.frequenza===f?' selected':'')+'>'+f.charAt(0).toUpperCase()+f.slice(1)+'</option>';
     });
     html += '</select>';
-    html += '<button onclick="OC._saveDigestPrefs_()" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:8px 18px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Salva</button>';
+    html += '<button onclick="OC._saveDigestPrefs_()" style="background:var(--accent,#935851);color:#fff;border:none;padding:8px 18px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Salva</button>';
     html += '</div>';
     html += '</div>';
 
@@ -3764,10 +3765,10 @@
     if (data.micCompliance) {
       var mic = data.micCompliance;
       html += '<div class="section-head"><div class="left"><h2 class="section-title">Compliance <em>ministeriale MiC</em></h2></div></div>';
-      html += '<div style="background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-left:4px solid var(--accent,#E84B1C);border-radius:10px;padding:18px 22px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">';
-      html += '<div><div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent-hover,#C23A11);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">Standard Minimi MiC SM-LUQV</div>';
+      html += '<div style="background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-left:4px solid var(--accent,#935851);border-radius:10px;padding:18px 22px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">';
+      html += '<div><div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent-hover,#7A4940);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">Standard Minimi MiC SM-LUQV</div>';
       html += '<div style="font-size:13px;color:var(--ink-2,#3A3A3C)">' + mic.smRispettati + ' / ' + mic.smTotali + ' standard rispettati</div></div>';
-      html += '<div style="font-family:var(--font-display);font-size:2rem;font-weight:600;color:var(--accent,#E84B1C)">' + mic.complianceScore + '<span style="font-size:1rem;opacity:.7">%</span></div>';
+      html += '<div style="font-family:var(--font-display);font-size:2rem;font-weight:600;color:var(--accent,#935851)">' + mic.complianceScore + '<span style="font-size:1rem;opacity:.7">%</span></div>';
       html += '</div>';
     }
 
@@ -3788,7 +3789,7 @@
         if (r && r.ok) {
           btn.textContent = r.attivo ? 'ON' : 'OFF';
           if (r.attivo) {
-            btn.style.background = 'var(--accent,#E84B1C)'; btn.style.color = '#fff'; btn.style.border = 'none';
+            btn.style.background = 'var(--accent,#935851)'; btn.style.color = '#fff'; btn.style.border = 'none';
           } else {
             btn.style.background = 'var(--surface-2)'; btn.style.color = 'var(--ink-3)'; btn.style.border = '1px solid var(--rule)';
           }
@@ -3850,7 +3851,7 @@
         ? (c.giorniResidui === 0 ? 'Scade oggi' : 'fra ' + c.giorniResidui + ' giorni')
         : (c.giorniResidui != null && c.giorniResidui < 0 ? 'Scaduto da ' + Math.abs(c.giorniResidui) + ' giorni' : 'Sempre aperto');
 
-      html += '<article style="margin-bottom:18px;padding:22px 26px;background:#fff;border:1px solid var(--rule,#E5E5E7);border-left:4px solid var(--accent,#E84B1C);border-radius:12px">'
+      html += '<article style="margin-bottom:18px;padding:22px 26px;background:#fff;border:1px solid var(--rule,#E5E5E7);border-left:4px solid var(--accent,#935851);border-radius:12px">'
         +   '<div style="display:flex;align-items:start;gap:18px;flex-wrap:wrap;margin-bottom:12px">'
         +     '<div style="font-size:38px;line-height:1;flex-shrink:0">' + (c.icona || '🏛️') + '</div>'
         +     '<div style="flex:1;min-width:240px">'
@@ -3865,17 +3866,17 @@
         +     '<div style="text-align:right;flex-shrink:0">'
         +       '<div style="font-family:var(--font-ui);font-size:10.5px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px">Prossima scadenza</div>'
         +       '<div style="font-family:var(--font-display);font-size:1.1rem;font-weight:600;color:var(--ink-2,#3A3A3C)">' + esc(c.scadenzaFormat || 'Continua') + '</div>'
-        +       '<div style="font-family:var(--font-ui);font-size:11.5px;color:var(--accent-hover,#C23A11);margin-top:2px">' + esc(giorniTxt) + ' &middot; target ' + esc(c.annoTarget) + '</div>'
+        +       '<div style="font-family:var(--font-ui);font-size:11.5px;color:var(--accent-hover,#7A4940);margin-top:2px">' + esc(giorniTxt) + ' &middot; target ' + esc(c.annoTarget) + '</div>'
         +     '</div>'
         +   '</div>'
         +   '<p style="font-family:var(--font-display);font-size:14px;color:var(--ink-2);line-height:1.55;margin:0 0 14px">' + esc(c.descrizioneBreve) + '</p>'
         +   '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 16px;padding:12px 14px;background:var(--surface,#F7F7F8);border-radius:8px;margin-bottom:14px">'
-        +     '<div><div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent-hover,#C23A11);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px">Impegno tempi</div><div style="font-size:13px;color:var(--ink-2,#3A3A3C);font-weight:500">' + esc(c.impegno) + '</div></div>'
-        +     '<div><div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent-hover,#C23A11);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px">Budget di riferimento</div><div style="font-size:13px;color:var(--ink-2,#3A3A3C);font-weight:500">' + esc(c.budgetRif) + '</div></div>'
+        +     '<div><div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent-hover,#7A4940);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px">Impegno tempi</div><div style="font-size:13px;color:var(--ink-2,#3A3A3C);font-weight:500">' + esc(c.impegno) + '</div></div>'
+        +     '<div><div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent-hover,#7A4940);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px">Budget di riferimento</div><div style="font-size:13px;color:var(--ink-2,#3A3A3C);font-weight:500">' + esc(c.budgetRif) + '</div></div>'
         +   '</div>'
         +   '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">'
-        +     (c.link ? '<a href="' + esc(c.link) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;color:var(--accent,#E84B1C);font-family:var(--font-ui);font-size:13px;font-weight:600;text-decoration:none;padding:8px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:6px">↗ Sito ufficiale</a>' : '')
-        +     '<button type="button" onclick="OC.prenotaConsulenza(event,\'generica\')" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:8px 16px;border-radius:6px;font-family:var(--font-ui);font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.02em">Consulenza dedicata</button>'
+        +     (c.link ? '<a href="' + esc(c.link) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;color:var(--accent,#935851);font-family:var(--font-ui);font-size:13px;font-weight:600;text-decoration:none;padding:8px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:6px">↗ Sito ufficiale</a>' : '')
+        +     '<button type="button" onclick="OC.prenotaConsulenza(event,\'generica\')" style="background:var(--accent,#935851);color:#fff;border:none;padding:8px 16px;border-radius:6px;font-family:var(--font-ui);font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.02em">Consulenza dedicata</button>'
         +   '</div>'
         + '</article>';
     });
@@ -4333,7 +4334,7 @@
     sortedList.forEach(function(n) {
       var ambN = _ambNum_(n.ambito) || _ambNum_(n.settore) || 0;
       var _nHay = String(n.titolo||'') + ' ' + String(n.fonte||'') + ' ' + String(n.settore||'') + ' ' + String(n.sommario||'');
-      if (!_identFilterItem_(ambN, '', _nHay)) return; // filtro globale identita (keyword match regione)
+      if (!_identFilterItem_(ambN, n.regione || '', _nHay)) return; // filtro identita (regione strutturata + fallback keyword)
       if (fAmb > 0 && ambN !== fAmb) return;
       if (preset === 'recenti' && !n.isRecente) return;
       if (preset === 'salvati' && !n.salvato) return;
@@ -4961,7 +4962,7 @@
     html += '</div>';
 
     // Email opt-in + museo nome
-    html += '<div class="sond-q" style="background:var(--surface,#F7F7F8);border:1px solid #D5CFC4;border-left:4px solid var(--accent,#E84B1C);border-radius:8px;padding:14px 18px;margin-bottom:12px">';
+    html += '<div class="sond-q" style="background:var(--surface,#F7F7F8);border:1px solid #D5CFC4;border-left:4px solid var(--accent,#935851);border-radius:8px;padding:14px 18px;margin-bottom:12px">';
     html += '<div style="font-size:14px;color:var(--ink);margin-bottom:10px;font-weight:500">Vuoi la pre-valutazione gratuita?</div>';
     html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">';
     html += '<input type="text" id="sondMuseo" placeholder="Nome del museo (es. Museo Civico di X)" style="padding:10px;border:1px solid var(--rule-2,#D2D2D7);border-radius:6px;font-size:13px;font-family:inherit" />';
@@ -5076,7 +5077,7 @@
 
         html += '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:20px">';
         html += '<button onclick="OC.go(\'matrix\')" style="background:var(--amb-2,#10916D);color:#fff;border:none;padding:12px 28px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">Diagnosi completa (Matrix) →</button>';
-        html += '<button onclick="OC.go(\'home\')" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:12px 28px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">Torna alla home</button>';
+        html += '<button onclick="OC.go(\'home\')" style="background:var(--accent,#935851);color:#fff;border:none;padding:12px 28px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">Torna alla home</button>';
         html += '</div>';
 
         html += '</div>';
@@ -5103,7 +5104,7 @@
     if (!list || !list.length) { wrap.innerHTML = '<p style="color:var(--ink-3)">Nessun sondaggio disponibile.</p>'; return; }
 
     var icons = { gestione:'⚙', accessibilita:'♿', digital:'💻', audience:'👥', turismo:'🗺', reti:'🔗' };
-    var colors = { gestione:'var(--amb-1,#7C3AED)', accessibilita:'var(--amb-2,#10916D)', digital:'var(--amb-5,#0E7490)', audience:'#9C6A36', turismo:'var(--amb-3,#2563EB)', reti:'var(--accent,#E84B1C)' };
+    var colors = { gestione:'var(--amb-1,#7C3AED)', accessibilita:'var(--amb-2,#10916D)', digital:'var(--amb-5,#0E7490)', audience:'#9C6A36', turismo:'var(--amb-3,#2563EB)', reti:'var(--accent,#935851)' };
 
     var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-top:10px">';
     list.forEach(function(s){
@@ -5162,7 +5163,7 @@
     }
 
     // Profile colors P1-P5
-    var profColor = { P1:'var(--accent,#E84B1C)', P2:'var(--accent,#E84B1C)', P3:'var(--amb-3,#2563EB)', P4:'var(--amb-2,#10916D)', P5:'var(--amb-1,#7C3AED)' };
+    var profColor = { P1:'var(--accent,#935851)', P2:'var(--accent,#935851)', P3:'var(--amb-3,#2563EB)', P4:'var(--amb-2,#10916D)', P5:'var(--amb-1,#7C3AED)' };
 
     var html = '<div style="overflow-x:auto">';
     html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
@@ -5189,7 +5190,7 @@
       if (!top3html) top3html = '<span style="font-size:11.5px;color:var(--ink-3)">—</span>';
 
       var emailCell = c.email
-        ? '<a href="mailto:' + esc(c.email) + '" style="font-size:12px;color:var(--link,var(--accent,#E84B1C));text-decoration:none">' + esc(c.email) + '</a><div style="font-size:10px;color:var(--amb-2,#10916D);font-weight:600">● opt-in</div>'
+        ? '<a href="mailto:' + esc(c.email) + '" style="font-size:12px;color:var(--link,var(--accent,#935851));text-decoration:none">' + esc(c.email) + '</a><div style="font-size:10px;color:var(--amb-2,#10916D);font-weight:600">● opt-in</div>'
         : '<span style="font-size:11.5px;color:var(--ink-3)">— nessun opt-in</span>';
 
       var dataDisplay = '';
@@ -5215,8 +5216,8 @@
     // Footer: legenda profili
     html += '<div style="margin-top:18px;padding:12px 16px;background:#FAF8F4;border:1px solid var(--rule,#E5E5E7);border-radius:8px;font-size:11.5px;color:var(--ink-3);line-height:1.6">';
     html += '<b>Legenda profili</b> · ';
-    html += '<span style="display:inline-block;padding:1px 6px;background:var(--accent,#E84B1C);color:#fff;border-radius:8px;font-size:10px;font-weight:700">P1</span> Iniziale · ';
-    html += '<span style="display:inline-block;padding:1px 6px;background:var(--accent,#E84B1C);color:#fff;border-radius:8px;font-size:10px;font-weight:700">P2</span> In costruzione · ';
+    html += '<span style="display:inline-block;padding:1px 6px;background:var(--accent,#935851);color:#fff;border-radius:8px;font-size:10px;font-weight:700">P1</span> Iniziale · ';
+    html += '<span style="display:inline-block;padding:1px 6px;background:var(--accent,#935851);color:#fff;border-radius:8px;font-size:10px;font-weight:700">P2</span> In costruzione · ';
     html += '<span style="display:inline-block;padding:1px 6px;background:var(--amb-3,#2563EB);color:#fff;border-radius:8px;font-size:10px;font-weight:700">P3</span> Consolidato · ';
     html += '<span style="display:inline-block;padding:1px 6px;background:var(--amb-2,#10916D);color:#fff;border-radius:8px;font-size:10px;font-weight:700">P4</span> In crescita · ';
     html += '<span style="display:inline-block;padding:1px 6px;background:var(--amb-1,#7C3AED);color:#fff;border-radius:8px;font-size:10px;font-weight:700">P5</span> Maturo';
@@ -5259,12 +5260,12 @@
     html += '</tbody></table></div>';
 
     // === SEZIONE: Tematiche T_n (interne, mappate sugli ambiti) ===
-    html += '<div class="admin-card" style="margin-bottom:18px;border-left:4px solid var(--accent,#E84B1C)">';
+    html += '<div class="admin-card" style="margin-bottom:18px;border-left:4px solid var(--accent,#935851)">';
     html += '<h3 style="margin-top:0">Tematiche interne (T1-T9)</h3>';
     html += '<p class="hint">Classificazione più fine usata internamente per la consulenza. Ogni tematica T è mappata a uno degli ambiti pubblici (visibili).</p>';
     html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#F4F1EA;text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:50px">Cod.</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Nome</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Descrizione / esempi</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:140px">Ambito pubblico</th></tr></thead><tbody>';
     (kb.tematiche || []).forEach(function(t){
-      html += '<tr><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:700;color:var(--accent,#E84B1C)">' + esc(t.codice) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:500">' + esc(t.nome) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--ink-3);font-size:12px">' + esc(t.descrizione) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--amb-'+t.ambitoPubblico+');font-weight:600">→ ' + esc(ambNameByNum[t.ambitoPubblico] || '—') + '</td></tr>';
+      html += '<tr><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:700;color:var(--accent,#935851)">' + esc(t.codice) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:500">' + esc(t.nome) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--ink-3);font-size:12px">' + esc(t.descrizione) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--amb-'+t.ambitoPubblico+');font-weight:600">→ ' + esc(ambNameByNum[t.ambitoPubblico] || '—') + '</td></tr>';
     });
     html += '</tbody></table></div>';
 
@@ -5285,18 +5286,18 @@
     html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#F4F1EA;text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:50px">Cod.</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Modello</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Evidence Duemilamusei</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:60px;text-align:center">Forza</th></tr></thead><tbody>';
     (kb.modelli || []).forEach(function(m){
       var stelle = '★'.repeat(m.forza || 0) + '☆'.repeat(3 - (m.forza || 0));
-      var starColor = m.forza >= 3 ? 'var(--accent,#E84B1C)' : (m.forza >= 2 ? '#888' : '#BBB');
+      var starColor = m.forza >= 3 ? 'var(--accent,#935851)' : (m.forza >= 2 ? '#888' : '#BBB');
       html += '<tr><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:700;color:var(--amb-2,#10916D)">' + esc(m.codice) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:500">' + esc(m.nome) + '<div style="font-size:11px;color:var(--ink-3);font-style:italic;margin-top:3px">' + esc(m.quandoSiAttiva) + '</div></td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--ink-3);font-size:11.5px;line-height:1.5">' + esc(m.evidence) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;text-align:center;color:' + starColor + ';font-size:14px;letter-spacing:1px">' + stelle + '</td></tr>';
     });
     html += '</tbody></table></div>';
 
     // === SEZIONE: Linee di servizio LS1-LS3 ===
-    html += '<div class="admin-card" style="margin-bottom:18px;border-left:4px solid var(--accent,#E84B1C)">';
+    html += '<div class="admin-card" style="margin-bottom:18px;border-left:4px solid var(--accent,#935851)">';
     html += '<h3 style="margin-top:0">Linee di servizio commerciali (LS1 / LS2 / LS3)</h3>';
     html += '<p class="hint">I 3 prodotti commerciali Duemilamusei, ciascuno con il suo trigger e workflow.</p>';
     html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#F4F1EA;text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:60px">Cod.</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Linea di servizio</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Trigger</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Output</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:80px">Cap</th></tr></thead><tbody>';
     (kb.lineeServizio || []).forEach(function(l){
-      html += '<tr><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:700;color:var(--accent,#E84B1C)">' + esc(l.codice) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:500">' + esc(l.nome) + '<div style="font-size:11px;color:var(--ink-3);margin-top:3px">Beneficiario: ' + esc(l.beneficiario) + '</div></td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--ink-3);font-size:11.5px">' + esc(l.trigger) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--ink-3);font-size:11.5px">' + esc(l.output) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;font-size:11px;color:#666">' + esc(l.cap) + '</td></tr>';
+      html += '<tr><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:700;color:var(--accent,#935851)">' + esc(l.codice) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:500">' + esc(l.nome) + '<div style="font-size:11px;color:var(--ink-3);margin-top:3px">Beneficiario: ' + esc(l.beneficiario) + '</div></td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--ink-3);font-size:11.5px">' + esc(l.trigger) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--ink-3);font-size:11.5px">' + esc(l.output) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;font-size:11px;color:#666">' + esc(l.cap) + '</td></tr>';
     });
     html += '</tbody></table></div>';
 
@@ -5306,7 +5307,7 @@
     html += '<p class="hint">9 riconoscimenti tracciati con calendario proattivo: outreach 6+ mesi prima della scadenza ai Comuni potenzialmente candidabili.</p>';
     html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#F4F1EA;text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:80px">Ambito</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Riconoscimento</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:120px">Ciclo</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Beneficiario</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Promotore</th></tr></thead><tbody>';
     (kb.candidature || []).forEach(function(c){
-      var ambBg = c.ambito === 'IT' ? '#E6F4EA' : (c.ambito === 'EU' ? '#EEF3F8' : 'var(--accent-soft,#FCEEE7)');
+      var ambBg = c.ambito === 'IT' ? '#E6F4EA' : (c.ambito === 'EU' ? '#EEF3F8' : 'var(--accent-soft,#F0E6E4)');
       var ambColor = c.ambito === 'IT' ? '#1E6B3A' : (c.ambito === 'EU' ? 'var(--amb-3,#2563EB)' : '#8B6314');
       html += '<tr><td style="padding:6px;border-bottom:1px solid #EFECE4"><span style="display:inline-block;padding:2px 8px;background:' + ambBg + ';color:' + ambColor + ';border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.05em">' + esc(c.ambito) + '</span></td><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:500">' + esc(c.nome) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--ink-3);font-size:12px">' + esc(c.ciclo) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--ink-3);font-size:12px">' + esc(c.beneficiario) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--ink-3);font-size:12px">' + esc(c.promotore) + '</td></tr>';
     });
@@ -5565,14 +5566,14 @@
         if (!wrap) return;
         var items = (r && r.items) || [];
         if (!items.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna bozza in queue.</div>'; return; }
-        var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--accent-soft,#FCEEE7)">'
-          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#E84B1C);font-weight:700">Email</th>'
-          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#E84B1C)">Stato</th>'
-          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#E84B1C)">Generato</th>'
-          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#E84B1C)">Note</th>'
+        var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--accent-soft,#F0E6E4)">'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851);font-weight:700">Email</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Stato</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Generato</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Note</th>'
           + '</tr></thead><tbody>';
         items.forEach(function(it){
-          var statusColor = it.Status === 'sent' ? 'var(--amb-2,#10916D)' : (it.Status === 'draft' ? 'var(--accent,#E84B1C)' : 'var(--danger,#C2410C)');
+          var statusColor = it.Status === 'sent' ? 'var(--amb-2,#10916D)' : (it.Status === 'draft' ? 'var(--accent,#935851)' : 'var(--danger,#C2410C)');
           html += '<tr><td style="padding:6px;border-bottom:1px solid #eee">'+esc(it.Email||'')+'</td>'
             + '<td style="padding:6px;border-bottom:1px solid #eee;color:'+statusColor+';font-weight:600">'+esc(it.Status||'')+'</td>'
             + '<td style="padding:6px;border-bottom:1px solid #eee;color:#666;font-size:11px">'+esc(String(it.GeneratedAt||'').substring(0,16).replace('T',' '))+'</td>'
@@ -5655,7 +5656,7 @@
     google.script.run
       .withSuccessHandler(function(r){
         if (r && r.errori && r.errori.length) {
-          out.innerHTML = '<span style="color:var(--accent,#E84B1C)">⚠ Eseguito con errori ('+r.errori.length+'): '+esc(r.errori.join(' · '))+'</span>';
+          out.innerHTML = '<span style="color:var(--accent,#935851)">⚠ Eseguito con errori ('+r.errori.length+'): '+esc(r.errori.join(' · '))+'</span>';
         } else {
           var sg = (r && r.segmentati && r.segmentati.generati) || 0;
           var ge = (r && r.generalista && r.generalista.ok) ? 'ok' : 'no';
@@ -5769,7 +5770,7 @@
         el('sysClaudeKey').textContent = r.claudeApiKey ? 'Configurata' : 'Non configurata';
         el('sysClaudeKey').style.color = r.claudeApiKey ? '#3F7A5E' : '#8C2626';
       }
-    }).sasDiagnostica();
+    }).withFailureHandler(function(){}).sasDiagnostica();
   }
 
   function reloadFontiBandiTable() {
@@ -5867,15 +5868,15 @@
     }
 
     var html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
-    html += '<thead><tr style="background:var(--accent-soft,#FCEEE7)">';
-    html += '<th style="text-align:center;padding:8px;border-bottom:1px solid var(--accent,#E84B1C);width:90px">Stato</th>';
-    html += '<th style="text-align:center;padding:8px;border-bottom:1px solid var(--accent,#E84B1C);width:80px">Tipo</th>';
-    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#E84B1C)">Nome</th>';
-    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#E84B1C)">URL</th>';
-    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#E84B1C);width:110px">Tag</th>';
-    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#E84B1C);width:120px">Ultima scan</th>';
-    html += '<th style="text-align:center;padding:8px;border-bottom:1px solid var(--accent,#E84B1C);width:70px">Attiva</th>';
-    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#E84B1C);width:200px">Azioni</th>';
+    html += '<thead><tr style="background:var(--accent-soft,#F0E6E4)">';
+    html += '<th style="text-align:center;padding:8px;border-bottom:1px solid var(--accent,#935851);width:90px">Stato</th>';
+    html += '<th style="text-align:center;padding:8px;border-bottom:1px solid var(--accent,#935851);width:80px">Tipo</th>';
+    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851)">Nome</th>';
+    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851)">URL</th>';
+    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851);width:110px">Tag</th>';
+    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851);width:120px">Ultima scan</th>';
+    html += '<th style="text-align:center;padding:8px;border-bottom:1px solid var(--accent,#935851);width:70px">Attiva</th>';
+    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851);width:200px">Azioni</th>';
     html += '</tr></thead><tbody>';
     fonti.forEach(function(f) {
       var s = statoOf(f);
@@ -6045,7 +6046,7 @@
             reloadFontiPodTable();
           })
           .withFailureHandler(function(e2) {
-            if (out) out.innerHTML = '<span style="color:var(--accent,#E84B1C)">Podcast/video ok ('+(n1||0)+' nuovi). Errore scan news: '+esc(String(e2))+'</span>';
+            if (out) out.innerHTML = '<span style="color:var(--accent,#935851)">Podcast/video ok ('+(n1||0)+' nuovi). Errore scan news: '+esc(String(e2))+'</span>';
           })
           .scanSources();
       })
@@ -6085,20 +6086,20 @@
     if (!wrap) return;
     if (!fonti.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna fonte presente. Aggiungi la prima.</div>'; return; }
     var html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
-    html += '<thead><tr style="background:var(--accent-soft,#FCEEE7)">';
-    if (kind === 'bandi') html += '<th style="text-align:center;padding:8px;border-bottom:1px solid var(--accent,#E84B1C);width:90px">Stato</th>';
-    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#E84B1C)">Nome</th>';
-    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#E84B1C)">URL</th>';
+    html += '<thead><tr style="background:var(--accent-soft,#F0E6E4)">';
+    if (kind === 'bandi') html += '<th style="text-align:center;padding:8px;border-bottom:1px solid var(--accent,#935851);width:90px">Stato</th>';
+    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851)">Nome</th>';
+    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851)">URL</th>';
     if (kind === 'bandi') {
-      html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#E84B1C)">Categoria</th>';
-      html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#E84B1C);width:120px">Ultima scan</th>';
+      html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851)">Categoria</th>';
+      html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851);width:120px">Ultima scan</th>';
     }
     if (kind === 'podcast') {
-      html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#E84B1C)">Tematica</th>';
-      html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#E84B1C)">Tipo</th>';
+      html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851)">Tematica</th>';
+      html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851)">Tipo</th>';
     }
-    html += '<th style="text-align:center;padding:8px;border-bottom:1px solid var(--accent,#E84B1C);width:80px">Attiva</th>';
-    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#E84B1C);width:200px">Azioni</th>';
+    html += '<th style="text-align:center;padding:8px;border-bottom:1px solid var(--accent,#935851);width:80px">Attiva</th>';
+    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851);width:200px">Azioni</th>';
     html += '</tr></thead><tbody>';
     fonti.forEach(function(f) {
       var attivaCol = f.Attiva === true ? 'var(--amb-2,#10916D)' : '#999';
@@ -6200,6 +6201,7 @@
         if (r && r.hasToken && r.hasChat) el.innerHTML = '<span style="color:var(--amb-2,#10916D);font-weight:600">✓ Configurato</span>';
         else el.innerHTML = '<span style="color:var(--danger,#C2410C)">✗ Mancano: '+(r&&r.hasToken?'':'token ')+(r&&r.hasChat?'':'chat_id')+'</span>';
       })
+      .withFailureHandler(function(){})
       .getTelegramConfigStatus();
     google.script.run
       .withSuccessHandler(function(s) {
@@ -6208,12 +6210,14 @@
         if (s && s.active) el.innerHTML = '<span style="color:var(--amb-2,#10916D);font-weight:600">✓ Attivo</span> · martedì ore '+(s.hour||'?')+':00';
         else el.innerHTML = '<span style="color:var(--danger,#C2410C)">✗ Non attivo</span>';
       })
+      .withFailureHandler(function(){})
       .getMatrixDigestTriggerStatus();
     google.script.run
       .withSuccessHandler(function(url) {
         var el = $('settingsWebUrl');
         if (el) el.textContent = url || '(non disponibile in modalità editor)';
       })
+      .withFailureHandler(function(){})
       .getWebAppUrl();
   }
 
@@ -6258,18 +6262,18 @@
   function renderUtentiTable(wrap, items) {
     if (!wrap) return;
     if (!items.length) { wrap.innerHTML = '<div class="empty-state sm">Nessun utente. Esegui "Migrazione one-shot" per importare da MailingList+ContactsMatrix.</div>'; return; }
-    var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--accent-soft,#FCEEE7)">'
-      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#E84B1C)">Email</th>'
-      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#E84B1C)">Nome</th>'
-      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#E84B1C)">Ruolo</th>'
-      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#E84B1C)">Stato</th>'
-      + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#E84B1C)">Digest</th>'
-      + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#E84B1C)">Bandi</th>'
-      + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#E84B1C)">Matrix</th>'
-      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#E84B1C);width:240px">Azioni</th>'
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--accent-soft,#F0E6E4)">'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Email</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Nome</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Ruolo</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Stato</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Digest</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Bandi</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Matrix</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851);width:240px">Azioni</th>'
       + '</tr></thead><tbody>';
     items.forEach(function(u) {
-      var statoCol = u.Stato === 'attivo' ? 'var(--amb-2,#10916D)' : (u.Stato === 'pending' ? 'var(--accent,#E84B1C)' : (u.Stato === 'sospeso' ? '#999' : 'var(--danger,#C2410C)'));
+      var statoCol = u.Stato === 'attivo' ? 'var(--amb-2,#10916D)' : (u.Stato === 'pending' ? 'var(--accent,#935851)' : (u.Stato === 'sospeso' ? '#999' : 'var(--danger,#C2410C)'));
       var ruoloCol = u.Ruolo === 'admin' ? 'var(--amb-1,#7C3AED)' : (u.Ruolo === 'editor' ? 'var(--amb-5,#0E7490)' : '#666');
       function chk(v) { return (v===true||v==='TRUE'||v===1) ? '✓' : '—'; }
       function chkColor(v) { return (v===true||v==='TRUE'||v===1) ? 'var(--amb-2,#10916D)' : '#999'; }
@@ -6361,7 +6365,7 @@
     google.script.run.withSuccessHandler(function(r) {
       if (r && r.ok) { if (typeof showToast==='function') showToast('Segnalazione approvata','ok'); _loadSegCoda(); }
       else { if (typeof showToast==='function') showToast(r&&r.error||'Errore','err'); }
-    }).approvaSegnalazione(id, '', (window.OC_SESSION && window.OC_SESSION.token) || null);
+    }).withFailureHandler(function(err){ if(typeof showToast==='function') showToast('Errore: '+err,'err'); }).approvaSegnalazione(id, '', (window.OC_SESSION && window.OC_SESSION.token) || null);
   }
 
   function _segRifiuta(id) {
@@ -6370,7 +6374,7 @@
     google.script.run.withSuccessHandler(function(r) {
       if (r && r.ok) { if (typeof showToast==='function') showToast('Segnalazione rifiutata','ok'); _loadSegCoda(); }
       else { if (typeof showToast==='function') showToast(r&&r.error||'Errore','err'); }
-    }).rifiutaSegnalazione(id, note, (window.OC_SESSION && window.OC_SESSION.token) || null);
+    }).withFailureHandler(function(err){ if(typeof showToast==='function') showToast('Errore: '+err,'err'); }).rifiutaSegnalazione(id, note, (window.OC_SESSION && window.OC_SESSION.token) || null);
   }
 
   function _segPubblica(id) {
@@ -6378,7 +6382,7 @@
     google.script.run.withSuccessHandler(function(r) {
       if (r && r.ok) { if (typeof showToast==='function') showToast('Segnalazione pubblicata!','ok'); _loadSegCoda(); }
       else { if (typeof showToast==='function') showToast(r&&r.error||'Errore','err'); }
-    }).pubblicaSegnalazione(id, (window.OC_SESSION && window.OC_SESSION.token) || null);
+    }).withFailureHandler(function(err){ if(typeof showToast==='function') showToast('Errore: '+err,'err'); }).pubblicaSegnalazione(id, (window.OC_SESSION && window.OC_SESSION.token) || null);
   }
 
   function _segUnpublish(id) {
@@ -6387,7 +6391,7 @@
     google.script.run.withSuccessHandler(function(r) {
       if (r && r.ok) { if (typeof showToast==='function') showToast('Segnalazione ritirata','ok'); _loadSegCoda(); }
       else { if (typeof showToast==='function') showToast(r&&r.error||'Errore','err'); }
-    }).unpublishSegnalazione(id, tk);
+    }).withFailureHandler(function(err){ if(typeof showToast==='function') showToast('Errore: '+err,'err'); }).unpublishSegnalazione(id, tk);
   }
 
   function _segCancella(id) {
@@ -6396,7 +6400,7 @@
     google.script.run.withSuccessHandler(function(r) {
       if (r && r.ok) { if (typeof showToast==='function') showToast('Segnalazione cancellata','ok'); _loadSegCoda(); }
       else { if (typeof showToast==='function') showToast(r&&r.error||'Errore','err'); }
-    }).cancellaSegnalazione(id, tk);
+    }).withFailureHandler(function(err){ if(typeof showToast==='function') showToast('Errore: '+err,'err'); }).cancellaSegnalazione(id, tk);
   }
 
   // ── v4.19.1 — Tab Archivio & Backup ──
@@ -6485,13 +6489,14 @@
     if (!confirm('Rifiutare la richiesta di ' + email + '?')) return;
     google.script.run
       .withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); })
+      .withFailureHandler(function(){})
       .rejectUser(email, 'Rifiutato da admin');
   }
 
   function sospendiUtente(email) {
     if (!hasGAS()) return;
     if (!confirm('Sospendere l\'utente ' + email + '?')) return;
-    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).suspendUser(email);
+    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).withFailureHandler(function(){}).suspendUser(email);
   }
 
   function eliminaUtente(email) {
@@ -6508,7 +6513,7 @@
 
   function cambiaRuolo(email, ruolo) {
     if (!hasGAS()) return;
-    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).updateUserRuolo(email, ruolo);
+    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).withFailureHandler(function(){}).updateUserRuolo(email, ruolo);
   }
 
   // v4.20 — Modello "menu Stato+Ruolo + Salva per riga"
@@ -6543,7 +6548,7 @@
     if (!hasGAS()) return;
     var btn = event.target;
     var newVal = (btn.textContent.trim() === '—');
-    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).updateUserOptIn(email, key, newVal);
+    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).withFailureHandler(function(){}).updateUserOptIn(email, key, newVal);
   }
 
   // ==========================================================
@@ -6737,7 +6742,7 @@
         html += (r.ok ? 'Setup completato con successo' : '⚠️ Setup completato con alcuni errori');
         html += ' (' + (r.totalDurMs || 0) + 'ms totali)</div>';
         html += '<table style="width:100%;font-size:12px;border-collapse:collapse">';
-        html += '<thead><tr style="background:var(--accent-soft,#FCEEE7)"><th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#E84B1C)">Step</th><th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#E84B1C);width:60px">Esito</th><th style="text-align:right;padding:6px;border-bottom:1px solid var(--accent,#E84B1C);width:80px">Durata</th><th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#E84B1C)">Messaggio</th></tr></thead><tbody>';
+        html += '<thead><tr style="background:var(--accent-soft,#F0E6E4)"><th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Step</th><th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851);width:60px">Esito</th><th style="text-align:right;padding:6px;border-bottom:1px solid var(--accent,#935851);width:80px">Durata</th><th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Messaggio</th></tr></thead><tbody>';
         (r.steps || []).forEach(function(s){
           html += '<tr>';
           html += '<td style="padding:6px;border-bottom:1px solid #eee;font-weight:600">' + esc(s.name) + '</td>';
@@ -6762,7 +6767,7 @@
         if (!r) { if (out) out.innerHTML = '<div style="color:var(--danger,#C2410C)">Risposta vuota</div>'; return; }
         var html = '<div style="color:var(--amb-5,#0E7490);font-weight:600;margin-bottom:8px">🔐 Diagnostica autenticazione</div>';
         html += '<pre style="font-size:11px;background:#FAFAFA;padding:12px;border:1px solid #E5E5E5;border-radius:6px;overflow-x:auto;white-space:pre-wrap;font-family:monospace">' + esc(JSON.stringify(r, null, 2)) + '</pre>';
-        html += '<div style="margin-top:10px;padding:10px;background:var(--accent-soft,#FCEEE7);border-left:3px solid var(--amb-8,#B45309);font-size:12px;color:var(--ink-3,#6E6E73)">';
+        html += '<div style="margin-top:10px;padding:10px;background:var(--accent-soft,#F0E6E4);border-left:3px solid var(--amb-8,#B45309);font-size:12px;color:var(--ink-3,#6E6E73)">';
         if (r.sessionInfo && r.sessionInfo.effectiveUser === '(vuoto)' && r.sessionInfo.activeUser === '(vuoto)') {
           html += '<b>⚠️ Causa probabile:</b> Session.getEffectiveUser() e getActiveUser() ritornano entrambi vuoti. La webapp è distribuita come "Esegui come: ME" + "Accesso: Chiunque (anche senza accesso Google)" — in questa configurazione GAS non passa email del visitatore. Soluzione: nell\'editor GAS modifica deployment → "Esegui come: TE (s.straccini@gmail.com)" + "Chi ha accesso: Chiunque" (NON "anche senza accesso Google").';
         } else if (r.authInfo && r.authInfo.isAdmin) {
@@ -6786,7 +6791,7 @@
         if (!r || !r.ok) { if (out) out.innerHTML = '<div style="color:var(--danger,#C2410C)">Verifica fallita: ' + esc((r&&r.error)||'sconosciuto') + '</div>'; return; }
         var html = '<div style="color:var(--amb-5,#0E7490);font-weight:600;margin-bottom:8px">Stato setup v' + esc(r.version || '?') + '</div>';
         html += '<table style="width:100%;font-size:12px;border-collapse:collapse">';
-        html += '<thead><tr style="background:var(--accent-soft,#FCEEE7)"><th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#E84B1C)">Check</th><th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#E84B1C);width:80px">Stato</th><th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#E84B1C)">Dettagli</th></tr></thead><tbody>';
+        html += '<thead><tr style="background:var(--accent-soft,#F0E6E4)"><th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Check</th><th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851);width:80px">Stato</th><th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Dettagli</th></tr></thead><tbody>';
         Object.keys(r.checks || {}).forEach(function(k){
           var c = r.checks[k];
           var statoEmoji = c.ok ? '🟢' : (c.exists !== undefined ? (c.exists ? '⚠️' : '⚪') : '🔴');
@@ -7168,9 +7173,9 @@
       + '</div></div>'
       + '<label style="display:flex;align-items:start;gap:6px;margin-bottom:14px;cursor:pointer">'
       + '<input type="checkbox" id="regFormGdpr" style="margin-top:3px" />'
-      + '<span style="font-size:11px;color:var(--ink-3);line-height:1.4">Acconsento al trattamento dei dati personali. <a href="https://www.duemilamusei.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#E84B1C)">Privacy policy</a></span>'
+      + '<span style="font-size:11px;color:var(--ink-3);line-height:1.4">Acconsento al trattamento dei dati personali. <a href="https://www.duemilamusei.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#935851)">Privacy policy</a></span>'
       + '</label>'
-      + '<button type="button" onclick="OC._submitRegForm()" style="width:100%;background:var(--accent,#E84B1C);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Registrati gratis</button>'
+      + '<button type="button" onclick="OC._submitRegForm()" style="width:100%;background:var(--accent,#935851);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Registrati gratis</button>'
       + '<div id="regFormMsg" style="text-align:center;margin-top:8px;font-size:13px" hidden></div>'
       // --- Chiudi ---
       + '<button type="button" onclick="document.getElementById(\'oc-regform-overlay\').remove()" style="display:block;width:100%;margin-top:14px;background:transparent;border:none;color:var(--ink-3);font-size:12px;cursor:pointer;font-family:inherit;padding:6px">Annulla</button>'
@@ -7261,7 +7266,7 @@
               : 'Registrazione completata! Accesso in corso...';
             if (msg) { msg.textContent = msgText; msg.style.color = 'var(--amb-2,#10916D)'; }
             // Salva anche nella mailing list per newsletter
-            google.script.run.saveMailing({ Email: email, Nome: nomeCompleto, Attivo: true, ConsensoGDPR: true, Sorgente: 'registrazione' });
+            google.script.run.withFailureHandler(function(){}).saveMailing({ Email: email, Nome: nomeCompleto, Attivo: true, ConsensoGDPR: true, Sorgente: 'registrazione' });
             // Login automatico dopo registrazione
             google.script.run
               .withSuccessHandler(function(lr) {
@@ -7284,7 +7289,7 @@
               .withFailureHandler(function() { location.reload(); })
               .loginConEmail(email);
           } else if (r && r.error === 'gia_registrato') {
-            if (msg) { msg.textContent = 'Questa email e gia registrata. Usa "Accedi" qui sopra.'; msg.style.color = 'var(--accent,#E84B1C)'; }
+            if (msg) { msg.textContent = 'Questa email e gia registrata. Usa "Accedi" qui sopra.'; msg.style.color = 'var(--accent,#935851)'; }
           } else {
             if (msg) { msg.textContent = (r && r.error) || 'Errore nella registrazione'; msg.style.color = 'var(--danger,#C2410C)'; }
           }
@@ -7615,7 +7620,7 @@
     var profiloNav = document.querySelector('[data-action="goProfiloTab"]');
     if (profiloNav) {
       if (on) {
-        profiloNav.style.background = 'var(--accent,#E84B1C)';
+        profiloNav.style.background = 'var(--accent,#935851)';
         profiloNav.style.color = '#fff';
         profiloNav.style.borderRadius = '8px';
         profiloNav.querySelector('.lbl').textContent = 'Il mio profilo · attivo';
@@ -7650,17 +7655,17 @@
     if (wsToggle) wsToggle.checked = !!on;
     var wsSlider = $('identFilterSlider');
     var wsKnob = $('identFilterKnob');
-    if (wsSlider) wsSlider.style.background = on ? 'var(--accent,#E84B1C)' : '#ccc';
+    if (wsSlider) wsSlider.style.background = on ? 'var(--accent,#935851)' : '#ccc';
     if (wsKnob) wsKnob.style.left = on ? '27px' : '3px';
     var wsBanner = $('wsFilterBanner');
     if (wsBanner) {
       wsBanner.style.background = on ? 'linear-gradient(135deg,#FFF3E0 0%,#FFCC80 100%)' : 'linear-gradient(135deg,#FFF3E0 0%,#FFE0B2 100%)';
-      wsBanner.style.borderColor = on ? 'var(--accent,#E84B1C)' : '#FFB74D';
+      wsBanner.style.borderColor = on ? 'var(--accent,#935851)' : '#FFB74D';
     }
     var wsStatus = $('identFilterStatus');
     if (wsStatus) {
       wsStatus.textContent = on ? 'Attivo: ' + n + ' dim.' + (reg ? ', ' + reg : '') : 'Disattivato';
-      wsStatus.style.color = on ? 'var(--accent,#E84B1C)' : 'var(--ink-4)';
+      wsStatus.style.color = on ? 'var(--accent,#935851)' : 'var(--ink-4)';
       wsStatus.style.fontWeight = on ? '700' : '600';
     }
   }
@@ -7764,8 +7769,8 @@
       var active = map.dims && map.dims[key];
       var name = _IDENT_DIM_NAMES[key] || key;
       var amb = _IDENT_DIM_AMBITI[key] || '';
-      html += '<label class="ident-dim-toggle' + (active ? ' active' : '') + '" data-dim="' + key + '" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid ' + (active ? 'var(--accent,#E84B1C)' : 'var(--rule,#E5E5E7)') + ';border-radius:8px;background:' + (active ? 'var(--accent-soft,#FEF0EB)' : 'var(--paper,#fff)') + ';cursor:pointer;transition:all .15s">'
-        + '<input type="checkbox" data-dim="' + key + '"' + (active ? ' checked' : '') + ' style="accent-color:var(--accent,#E84B1C);width:16px;height:16px">'
+      html += '<label class="ident-dim-toggle' + (active ? ' active' : '') + '" data-dim="' + key + '" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid ' + (active ? 'var(--accent,#935851)' : 'var(--rule,#E5E5E7)') + ';border-radius:8px;background:' + (active ? 'var(--accent-soft,#FEF0EB)' : 'var(--paper,#fff)') + ';cursor:pointer;transition:all .15s">'
+        + '<input type="checkbox" data-dim="' + key + '"' + (active ? ' checked' : '') + ' style="accent-color:var(--accent,#935851);width:16px;height:16px">'
         + '<div style="min-width:0">'
         + '<div style="font-family:var(--font-ui);font-size:13px;font-weight:500;color:var(--ink)">' + key + ' ' + esc(name) + '</div>'
         + '<div style="font-family:var(--font-ui);font-size:11px;color:var(--ink-4)">' + esc(amb) + '</div>'
@@ -7780,13 +7785,13 @@
         var cb = label.querySelector('input[type="checkbox"]');
         cb.checked = !cb.checked;
         label.classList.toggle('active', cb.checked);
-        label.style.borderColor = cb.checked ? 'var(--accent,#E84B1C)' : 'var(--rule,#E5E5E7)';
+        label.style.borderColor = cb.checked ? 'var(--accent,#935851)' : 'var(--rule,#E5E5E7)';
         label.style.background = cb.checked ? 'var(--accent-soft,#FEF0EB)' : 'var(--paper,#fff)';
       });
       var cb = label.querySelector('input[type="checkbox"]');
       cb.addEventListener('change', function() {
         label.classList.toggle('active', cb.checked);
-        label.style.borderColor = cb.checked ? 'var(--accent,#E84B1C)' : 'var(--rule,#E5E5E7)';
+        label.style.borderColor = cb.checked ? 'var(--accent,#935851)' : 'var(--rule,#E5E5E7)';
         label.style.background = cb.checked ? 'var(--accent-soft,#FEF0EB)' : 'var(--paper,#fff)';
       });
     });
@@ -7826,7 +7831,7 @@
       badge.style.borderColor = 'var(--rule)';
     } else {
       badge.textContent = active.length + ' dim. attive · ' + reg;
-      badge.style.borderColor = 'var(--accent,#E84B1C)';
+      badge.style.borderColor = 'var(--accent,#935851)';
     }
 
     // Aggiorna badge nel header (topbar) se esiste
@@ -8050,7 +8055,7 @@
         }
         if (el('statSessioni')) el('statSessioni').textContent = (kpi.sessioniTotali || 0) + ' (+' + (kpi.sessioniNuove7gg || 0) + ')';
         if (el('statFontiAttive')) el('statFontiAttive').textContent = (kpi.fontiAttive || 0) + ' (' + (kpi.fontiSilenti || 0) + ' silenti)';
-      }).sasDiagnostica();
+      }).withFailureHandler(function(){}).sasDiagnostica();
 
       // Agenti
       google.script.run.withSuccessHandler(function(r){
@@ -8062,7 +8067,7 @@
         if (el('statAG3')) el('statAG3').textContent = (fp[3]||0) + ' fonti';
         if (el('statAG4')) el('statAG4').textContent = (fp[4]||0) + ' fonti';
         if (el('statAG5')) el('statAG5').textContent = (fp[5]||0) + ' fonti';
-      }).diagnosticaAgenti();
+      }).withFailureHandler(function(){}).diagnosticaAgenti();
 
       // Matrix compilazioni
       google.script.run.withSuccessHandler(function(r){
@@ -8712,7 +8717,7 @@
       html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">';
       var linkUrl = d.link || d.url || '';
       if (linkUrl) {
-        html += '<a href="' + esc(linkUrl) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--accent,#E84B1C);color:#fff;padding:10px 20px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;font-family:inherit">';
+        html += '<a href="' + esc(linkUrl) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--accent,#935851);color:#fff;padding:10px 20px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;font-family:inherit">';
         html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
         html += 'Vai al bando</a>';
       }
@@ -9671,7 +9676,7 @@
       nodes.forEach(function(n){
         var sel = (n.dataset.codice === codice);
         n.style.background = sel ? 'var(--surface,#F7F7F8)' : '#fff';
-        n.style.borderColor = sel ? 'var(--accent,#E84B1C)' : 'var(--rule,var(--rule,#E5E5E7))';
+        n.style.borderColor = sel ? 'var(--accent,#935851)' : 'var(--rule,var(--rule,#E5E5E7))';
         n.style.borderWidth = sel ? '2px' : '1px';
       });
     },
@@ -9769,6 +9774,7 @@
           if (el('sasKpiUtenti')) el('sasKpiUtenti').textContent = (kpi.sessioniTotali || 0) + ' (+' + (kpi.sessioniNuove7gg || 0) + ')';
           if (el('sasKpiAgenti')) el('sasKpiAgenti').textContent = (kpi.agentiAttivi || 0) + '/5';
         })
+        .withFailureHandler(function(){})
         .sasDiagnostica();
     },
     sasRunNow: function(){
@@ -10434,7 +10440,7 @@
           html += '</div>';
           html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">';
           html += '<span id="wsAgenSaveMsg" style="font-size:12px;color:var(--ink-3)"></span>';
-          html += '<button class="btn btn-primary" onclick="OC.saveMyAgentiOptIn()" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:9px 22px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">💾 Salva preferenze</button>';
+          html += '<button class="btn btn-primary" onclick="OC.saveMyAgentiOptIn()" style="background:var(--accent,#935851);color:#fff;border:none;padding:9px 22px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">💾 Salva preferenze</button>';
           html += '</div>';
           html += '</div>';
           wrap.innerHTML = html;
@@ -10486,7 +10492,7 @@
             lab += '<span style="color:' + (liOk ? 'var(--amb-2,#10916D)' : 'var(--danger,#C2410C)') + '">LI ' + (liOk ? '✓' : '✗') + '</span>';
             var k = $('socKpiCreds'); if (k) k.innerHTML = lab;
           }
-        }).getSocialCredentialsStatus();
+        }).withFailureHandler(function(){}).getSocialCredentialsStatus();
       // Carica lista
       var filterEl = $('socFilterStato');
       var stato = filterEl ? filterEl.value : 'draft';
@@ -10518,7 +10524,7 @@
         .getSocialQueueList(stato);
     },
     _socRowHtml: function(p){
-      var statoColor = { draft:'var(--accent,#E84B1C)', approved:'var(--amb-2,#10916D)', scheduled:'#1A237E', published:'#0097A7', rejected:'var(--danger,#C2410C)' };
+      var statoColor = { draft:'var(--accent,#935851)', approved:'var(--amb-2,#10916D)', scheduled:'#1A237E', published:'#0097A7', rejected:'var(--danger,#C2410C)' };
       var col = statoColor[p.Stato] || '#888';
       var data = p.DataCreazione ? new Date(p.DataCreazione).toLocaleString('it-IT', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
       var capIg = String(p.CaptionInstagram || '');
@@ -10555,7 +10561,7 @@
       // Body con immagine + testi
       html += '<div style="display:grid;grid-template-columns:' + (img ? '120px 1fr' : '1fr') + ';gap:14px;margin-top:8px">';
       if (img) {
-        html += '<div><img src="' + esc(img) + '" style="width:120px;height:120px;object-fit:cover;border-radius:6px;border:1px solid var(--rule,#E5E5E7)" onerror="this.style.display=\'none\'"><div style="font-size:9px;color:#aaa;margin-top:3px">' + esc(imgSrc) + '</div></div>';
+        html += '<div><img src="' + esc(img) + '" alt="" style="width:120px;height:120px;object-fit:cover;border-radius:6px;border:1px solid var(--rule,#E5E5E7)" onerror="this.style.display=\'none\'"><div style="font-size:9px;color:#aaa;margin-top:3px">' + esc(imgSrc) + '</div></div>';
       }
       html += '<div>';
       // Caption IG
@@ -10566,7 +10572,7 @@
       html += '<pre style="white-space:pre-wrap;font-family:var(--font-display);font-size:12.5px;color:var(--ink);margin:6px 0 0;padding:10px 12px;background:#FAFAF6;border-radius:6px;line-height:1.55">' + esc(postLi) + '</pre></details>';
       html += '</div></div>';
       // Footer meta
-      if (p.NoteAdmin) html += '<div style="margin-top:8px;font-size:11px;color:var(--accent-hover,#C23A11);font-style:italic">Note: ' + esc(p.NoteAdmin) + '</div>';
+      if (p.NoteAdmin) html += '<div style="margin-top:8px;font-size:11px;color:var(--accent-hover,#7A4940);font-style:italic">Note: ' + esc(p.NoteAdmin) + '</div>';
       if (p.ApprovatoDa) html += '<div style="margin-top:4px;font-size:10.5px;color:#888">Approvato da: ' + esc(p.ApprovatoDa) + '</div>';
       html += '</div>';
       return html;
@@ -11010,11 +11016,11 @@
     <!-- Consenso + Salva -->
     <div style="background:#fff;border:1px solid var(--rule,#E5E5E7);border-radius:12px;padding:24px;margin-bottom:20px">
       <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:18px">
-        <input type="checkbox" id="pro-consenso" checked style="margin-top:2px;width:16px;height:16px;accent-color:var(--accent,#E84B1C)">
+        <input type="checkbox" id="pro-consenso" checked style="margin-top:2px;width:16px;height:16px;accent-color:var(--accent,#935851)">
         <span style="font-size:12.5px;color:var(--ink-2);line-height:1.5">Acconsento alla profilazione dei miei interessi professionali per ricevere contenuti personalizzati. Posso modificare o cancellare i dati in qualsiasi momento.</span>
       </label>
       <div style="display:flex;gap:12px;align-items:center">
-        <button type="button" onclick="OC.saveProfiloSettings()" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Salva profilo</button>
+        <button type="button" onclick="OC.saveProfiloSettings()" style="background:var(--accent,#935851);color:#fff;border:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Salva profilo</button>
         <span id="proSaveMsg" style="font-size:13px;color:var(--ink-3)"></span>
       </div>
     </div>
@@ -11158,19 +11164,19 @@
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)';
     ov.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:440px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);position:relative;font-family:var(--font-ui,sans-serif);padding:32px 28px">'
       + '<button onclick="document.getElementById(\'oc-regform-overlay\').remove()" style="position:absolute;top:12px;right:12px;background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--ink-3)">&times;</button>'
-      + '<div style="font-family:var(--font-display,Georgia,serif);font-style:italic;font-size:22px;color:var(--accent,#E84B1C)">Sinopia</div>'
+      + '<div style="font-family:var(--font-display,Georgia,serif);font-style:italic;font-size:22px;color:var(--accent,#935851)">Sinopia</div>'
       + '<div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#5C4332;margin:4px 0 16px">Osservatorio Culturale</div>'
       + '<h2 style="font-size:1.15rem;font-weight:500;color:var(--ink);margin:0 0 6px">Accedi o registrati</h2>'
       + '<p style="font-size:13px;color:var(--ink-2);margin:0 0 18px;line-height:1.5">Per accedere al profilo, segnalare iniziative e ricevere contenuti personalizzati.</p>'
       // Tab login / registrazione
       + '<div id="_gateTabBar" style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid #E5E5E7">'
-      + '<button type="button" onclick="OC._gateTab(\'login\')" id="_gateTabLogin" style="flex:1;padding:8px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid var(--accent,#E84B1C);color:var(--accent,#E84B1C);margin-bottom:-2px">Accedi</button>'
+      + '<button type="button" onclick="OC._gateTab(\'login\')" id="_gateTabLogin" style="flex:1;padding:8px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid var(--accent,#935851);color:var(--accent,#935851);margin-bottom:-2px">Accedi</button>'
       + '<button type="button" onclick="OC._gateTab(\'reg\')" id="_gateTabReg" style="flex:1;padding:8px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:#888;margin-bottom:-2px">Registrati</button>'
       + '</div>'
       // Form login
       + '<div id="_gateLogin">'
       + '<input type="email" id="_gateEmail" placeholder="La tua email" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px">'
-      + '<button type="button" onclick="OC._gateDoLogin()" style="width:100%;background:var(--accent,#E84B1C);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Accedi</button>'
+      + '<button type="button" onclick="OC._gateDoLogin()" style="width:100%;background:var(--accent,#935851);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Accedi</button>'
       + '</div>'
       // Form registrazione (nascosto)
       + '<div id="_gateReg" hidden>'
@@ -11178,7 +11184,7 @@
       + '<input type="text" id="_gateCognome" placeholder="Cognome" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px">'
       + '<input type="email" id="_gateRegEmail" placeholder="Email" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px">'
       + '<label style="display:flex;align-items:start;gap:6px;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="_gateGdpr" style="margin-top:3px"><span style="font-size:11px;color:var(--ink-3)">Acconsento al trattamento dei dati personali</span></label>'
-      + '<button type="button" onclick="OC._gateDoReg()" style="width:100%;background:var(--accent,#E84B1C);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Registrati</button>'
+      + '<button type="button" onclick="OC._gateDoReg()" style="width:100%;background:var(--accent,#935851);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Registrati</button>'
       + '</div>'
       + '<div id="_gateMsg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>'
       + '<button type="button" onclick="document.getElementById(\'oc-regform-overlay\').remove()" style="display:block;width:100%;margin-top:14px;background:transparent;border:none;color:var(--ink-3);font-size:12px;cursor:pointer">Continua senza accesso</button>'
@@ -11194,11 +11200,11 @@
     var tabR = document.getElementById('_gateTabReg');
     if (tab==='login') {
       if(loginDiv)loginDiv.hidden=false; if(regDiv)regDiv.hidden=true;
-      if(tabL){tabL.style.borderBottomColor='var(--accent,#E84B1C)';tabL.style.color='var(--accent,#E84B1C)';}
+      if(tabL){tabL.style.borderBottomColor='var(--accent,#935851)';tabL.style.color='var(--accent,#935851)';}
       if(tabR){tabR.style.borderBottomColor='transparent';tabR.style.color='#888';}
     } else {
       if(loginDiv)loginDiv.hidden=true; if(regDiv)regDiv.hidden=false;
-      if(tabR){tabR.style.borderBottomColor='var(--accent,#E84B1C)';tabR.style.color='var(--accent,#E84B1C)';}
+      if(tabR){tabR.style.borderBottomColor='var(--accent,#935851)';tabR.style.color='var(--accent,#935851)';}
       if(tabL){tabL.style.borderBottomColor='transparent';tabL.style.color='#888';}
     }
   };
@@ -11320,7 +11326,7 @@
         if(p.interessi_dimensioni) {
           String(p.interessi_dimensioni).split(',').forEach(function(d){
             var chip=document.querySelector('#pro-dims-container [data-dim="'+d.trim()+'"]');
-            if(chip){chip.classList.add('selected');chip.style.borderColor='var(--accent,#E84B1C)';chip.style.background='rgba(232,75,28,.06)';}
+            if(chip){chip.classList.add('selected');chip.style.borderColor='var(--accent,#935851)';chip.style.background='rgba(232,75,28,.06)';}
           });
         }
       }).withFailureHandler(function(){}).getProfilo();
@@ -11383,12 +11389,12 @@
       var card = document.createElement('div');
       card.setAttribute('data-dim', d);
       card.style.cssText = 'padding:14px 16px;border:1.5px solid #E5E5E7;border-radius:10px;cursor:pointer;transition:all .15s;background:#fff';
-      card.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:11px;font-weight:700;color:var(--accent,#E84B1C);background:rgba(232,75,28,.08);padding:2px 6px;border-radius:4px">'+d+'</span><span style="font-size:13px;font-weight:600;color:var(--ink)">'+h.titolo+'</span></div>'
+      card.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:11px;font-weight:700;color:var(--accent,#935851);background:rgba(232,75,28,.08);padding:2px 6px;border-radius:4px">'+d+'</span><span style="font-size:13px;font-weight:600;color:var(--ink)">'+h.titolo+'</span></div>'
         + '<div style="font-size:12px;color:var(--ink-2);line-height:1.5">'+h.desc+'</div>'
         + temiHtml;
       card.onclick = function() {
         card.classList.toggle('selected');
-        card.style.borderColor = card.classList.contains('selected') ? 'var(--accent,#E84B1C)' : '#E5E5E7';
+        card.style.borderColor = card.classList.contains('selected') ? 'var(--accent,#935851)' : '#E5E5E7';
         card.style.background = card.classList.contains('selected') ? 'rgba(232,75,28,.06)' : '#fff';
       };
       c.appendChild(card);

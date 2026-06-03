@@ -415,7 +415,7 @@ function verificaFontiNews() {
     else {
       try {
         var resp = UrlFetchApp.fetch(url, {
-          muteHttpExceptions: true, followRedirects: true, validateHttpsCertificates: false,
+          muteHttpExceptions: true, followRedirects: true, validateHttpsCertificates: false, deadline: 10,
           headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0)' }
         });
         var code = resp.getResponseCode();
@@ -619,18 +619,8 @@ function _test_getFeedSources_off_() {
   _ffAssert_(getFeedSources('video').length >= 0, 'video OFF ritorna lista');
 }
 
-function _test_updateFeedSourceStats_() {
-  enableFontiFeed('podcast');
-  var src = getFeedSources('podcast')[0];
-  _ffAssert_(!!src, 'esiste fonte podcast in FontiFeed');
-  updateFeedSourceStats('podcast', src, 'OK', 3, '');
-  var ss = getMainSS();
-  var v = ss.getSheetByName(FONTIFEED_SHEET).getDataRange().getValues(); var h = v[0];
-  var iId = h.indexOf('ID'), iUlt = h.indexOf('NRecordUltimo'); var ok = false;
-  for (var r=1; r<v.length; r++) { if (String(v[r][iId]) === String(src.id || src.ID)) { ok = Number(v[r][iUlt]) === 3; break; } }
-  _ffAssert_(ok, 'NRecordUltimo=3 scritto');
-  disableAllFontiFeed();
-}
+// v4.19.1 — DEPRECATO: test con side-effect, NON eseguire in produzione
+// function _test_updateFeedSourceStats_() { ... }
 
 function _test_verificaFontiFeed_() {
   var r = verificaFontiFeed();
@@ -771,7 +761,7 @@ function runFontiFeedTests() {
   _test_migraFontiFeed_();        // crea+popola FontiFeed (idempotente, non distruttivo)
   _test_getFeedSources_off_();
   _test_scanSources_off_();
-  _test_updateFeedSourceStats_(); // usa flag podcast ON temporaneo, poi rimette OFF
+  // _test_updateFeedSourceStats_(); // v4.19.1 — RIMOSSO: funzione deprecata (side-effect in produzione)
   _test_verificaFontiFeed_();
   _test_getFontiFeedAdmin_();
   disableAllFontiFeed();

@@ -108,7 +108,8 @@ function _tgSend_(text) {
     method: 'post',
     contentType: 'application/json',
     payload: JSON.stringify(payload),
-    muteHttpExceptions: true
+    muteHttpExceptions: true,
+    deadline: 10
   };
   try {
     var resp = UrlFetchApp.fetch(url, opts);

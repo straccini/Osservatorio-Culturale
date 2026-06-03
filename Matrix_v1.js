@@ -635,7 +635,7 @@ function _matrixGetServiceRecommendations_(responses, scoring) {
     'D2': { code:'S15', name:'Catalogazione AI-assistita',                     desc:'Riconoscimento immagini, completamento schede ICCD',   ocAmbito:3, ocPage:null},
     'D3': { code:'S22', name:'Consulenza strategica spazi e allestimenti',     desc:'Audit spazi + roadmap intervento reversibile',         ocAmbito:3, ocPage:null},
     'D4': { code:'S13', name:'Generazione contenuti educativi AI',             desc:'Materiali didattici, percorsi tematici',               ocAmbito:3, ocPage:null},
-    'D5': { code:'S10', name:'CRM museale Duemilamusei',                       desc:'Gestione visitatori, soci, programmi membership',      ocAmbito:3, ocPage:null},
+    'D5': { code:'S10', name:'CRM museale Sinopia',                             desc:'Gestione visitatori, soci, programmi membership',      ocAmbito:3, ocPage:null},
     'D6': { code:'S01', name:'Chatbot visitatori AI multilingue',              desc:'Assistente conversazionale integrato sul sito',        ocAmbito:5, ocPage:null},
     'D7': { code:'S07', name:'Generazione testi Easy-to-Read (E2R)',           desc:'Riformulazione automatica testi espositivi',           ocAmbito:2, ocPage:null},
     'D8': { code:'S17', name:'Edutainment AI per scuole',                      desc:'Escape room culturali, ARG, percorsi adattivi',        ocAmbito:4, ocPage:null},
@@ -654,7 +654,7 @@ function _matrixGetServiceRecommendations_(responses, scoring) {
     var s = dimToService[opp.dimensionCode];
     if (s) {
       var ocLabel = s.ocAmbito ? ('Approfondisci nell\'Osservatorio: ' + ambitoLabels[s.ocAmbito])
-                  : (s.ocPage === 'bandi' ? 'Vedi bandi attivi nel Radar Bandi'
+                  : (s.ocPage === 'bandi' ? 'Vedi bandi attivi'
                   : null);
       recs.push({
         opportunityRank: opp.rank,
@@ -737,7 +737,10 @@ function _matrixGetOrCreateContactsSheet_() {
 
 function _matrixAppendRow_(sheet, rowObj) {
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  var rowArr = headers.map(function(h){ return rowObj[h] !== undefined ? rowObj[h] : ''; });
+  var rowArr = headers.map(function(h){
+    var v = rowObj[h] !== undefined ? rowObj[h] : '';
+    return (typeof v === 'string') ? _sanitizeForCell_(v) : v;
+  });
   sheet.appendRow(rowArr);
 }
 
@@ -884,8 +887,8 @@ function testMatrixPDFEmail() {
 // ============================================================================
 
 var OC_MATRIX_PDF_FOLDER_NAME = 'MuseMu Matrix - Report';
-var OC_MATRIX_DUEMILAMUSEI_BRAND = 'Duemilamusei · MuseMu Matrix';
-var OC_MATRIX_DUEMILAMUSEI_FOOTER = 'Duemilamusei | Fano (PU) | duemilamusei.it';
+var OC_MATRIX_DUEMILAMUSEI_BRAND = 'Sinopia · MuseMu Matrix';
+var OC_MATRIX_DUEMILAMUSEI_FOOTER = 'Sinopia | Fano (PU) | sinopia.consulting';
 
 /**
  * Recupera o crea la cartella Drive che ospita i PDF generati.
@@ -1006,7 +1009,7 @@ function sendMatrixReportEmail(data) {
       subject: subject,
       htmlBody: htmlBody,
       attachments: [pdfBlob],
-      name: 'MuseMu Matrix · Duemilamusei',
+      name: 'MuseMu Matrix · Sinopia',
       replyTo: 's.straccini@gmail.com'
     });
 
@@ -1099,7 +1102,7 @@ function _matrixBuildReportDoc_(doc, report) {
 
   // === SEZIONE 4: SERVIZI RACCOMANDATI ===
   body.appendParagraph('').setAttributes(styleBody);
-  body.appendParagraph('4. Servizi Duemilamusei raccomandati').setAttributes(styleH2);
+  body.appendParagraph('4. Servizi Sinopia raccomandati').setAttributes(styleH2);
   body.appendParagraph('Interventi a base AI per chiudere i gap identificati.').setAttributes(styleBody);
   (report.serviceRecommendations || []).forEach(function(rec) {
     var pSvc = body.appendParagraph('▸ ' + rec.serviceName + '  [' + rec.serviceCode + ']');
@@ -1254,7 +1257,7 @@ function _matrixBuildEmailBody_(nome, report, fileUrl) {
   return ''
     + '<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#333;max-width:600px;line-height:1.5">'
     + '<div style="background:linear-gradient(135deg,#0E7490,#2E5266);color:#fff;padding:24px;border-radius:8px 8px 0 0">'
-    +   '<div style="font-size:12px;letter-spacing:1px;opacity:.85">DUEMILAMUSEI · MUSEMU MATRIX</div>'
+    +   '<div style="font-size:12px;letter-spacing:1px;opacity:.85">SINOPIA · MUSEMU MATRIX</div>'
     +   '<h1 style="margin:6px 0 0;font-size:22px;font-weight:600">Report di autovalutazione</h1>'
     +   '<div style="margin-top:6px;opacity:.9">' + museumName + '</div>'
     + '</div>'
@@ -1267,15 +1270,15 @@ function _matrixBuildEmailBody_(nome, report, fileUrl) {
     +   '</p>'
     +   '<h3 style="color:#2E5266;font-size:14px;margin-top:24px">Le tre opportunità prioritarie emerse</h3>'
     +   '<ul>' + top3Html + '</ul>'
-    +   '<p>Il report contiene la mappatura completa per dimensione, le raccomandazioni di servizio Duemilamusei coerenti con i gap rilevati e una roadmap suggerita su tre orizzonti temporali (0-6 / 6-18 / 18-36 mesi).</p>'
+    +   '<p>Il report contiene la mappatura completa per dimensione, le raccomandazioni di servizio Sinopia coerenti con i gap rilevati e una roadmap suggerita su tre orizzonti temporali (0-6 / 6-18 / 18-36 mesi).</p>'
     +   '<p style="text-align:center;margin:28px 0">'
     +     '<a href="' + fileUrl + '" style="display:inline-block;background:#0E7490;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600">Apri il report online</a>'
     +   '</p>'
     +   '<p>Sono a disposizione per un confronto sui prossimi passi: una sessione gratuita di 30 minuti per discutere insieme priorità, fattibilità e tempi di intervento.</p>'
-    +   '<p style="margin-top:28px">Cordialmente,<br><b>Silvano Straccini</b><br>Duemilamusei · Fano (PU)</p>'
+    +   '<p style="margin-top:28px">Cordialmente,<br><b>Silvano Straccini</b><br>Sinopia · Fano (PU)</p>'
     +   '<hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0">'
     +   '<p style="font-size:11px;color:#888;line-height:1.4">'
-    +     'Riceve questa email perché ha completato il questionario MuseMu Matrix sull\'Osservatorio Culturale Duemilamusei e ha espresso consenso al follow-up. '
+    +     'Riceve questa email perché ha completato il questionario MuseMu Matrix sull\'Osservatorio Culturale Sinopia e ha espresso consenso al follow-up. '
     +     'Modello v' + OC_MATRIX_VERSION + ' · Riferimento risposta: ' + report.responseId + '. '
     +     'Per non ricevere ulteriori comunicazioni risponda con oggetto "RIMUOVI".'
     +   '</p>'

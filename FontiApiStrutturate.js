@@ -231,6 +231,7 @@ function fasRetryFontiSilenti(opts) {
           var resp = UrlFetchApp.fetch(url, {
             muteHttpExceptions: true,
             followRedirects: true,
+            deadline: 10,
             headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0)' }
           });
           var code = resp.getResponseCode();
@@ -406,6 +407,7 @@ function _fasFetchRss_(url, tipo) {
     var resp = UrlFetchApp.fetch(url, {
       muteHttpExceptions: true,
       followRedirects: true,
+      deadline: 10,
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0)',
         'Accept': 'application/rss+xml, application/xml, text/xml, application/json, */*'
@@ -645,7 +647,7 @@ function fasParserOpenCoesione(opts) {
           '&formato=json&ordinamento=-data_inizio_prevista&page=' + pag;
 
         var resp = UrlFetchApp.fetch(url, {
-          muteHttpExceptions: true,
+          muteHttpExceptions: true, deadline: 10,
           headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
         });
 
@@ -733,7 +735,7 @@ function fasParserCkanRegionale(opts) {
         '&rows=' + maxPerPortale + '&sort=metadata_modified+desc';
 
       var resp = UrlFetchApp.fetch(url, {
-        muteHttpExceptions: true,
+        muteHttpExceptions: true, deadline: 10,
         headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
       });
 
@@ -955,7 +957,7 @@ function fasParserAnac(opts) {
   endpoints.forEach(function(ep) {
     try {
       var resp = UrlFetchApp.fetch(ep.url, {
-        muteHttpExceptions: true,
+        muteHttpExceptions: true, deadline: 10,
         headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
       });
       if (resp.getResponseCode() !== 200) {
@@ -1028,7 +1030,7 @@ function fasParserOpenCup(opts) {
   var url = 'https://www.dati.gov.it/opendata/api/3/action/package_search?q=CUP+cultura+museo+patrimonio&rows=30&sort=metadata_modified+desc';
   try {
     var resp = UrlFetchApp.fetch(url, {
-      muteHttpExceptions: true,
+      muteHttpExceptions: true, deadline: 10,
       headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
     });
     if (resp.getResponseCode() !== 200) {
@@ -1090,7 +1092,7 @@ function fasParserSediaEU(opts) {
   try {
     var resp = UrlFetchApp.fetch(searchUrl, {
       method: 'get',
-      muteHttpExceptions: true,
+      muteHttpExceptions: true, deadline: 10,
       headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
     });
     if (resp.getResponseCode() !== 200) {
@@ -1098,7 +1100,7 @@ function fasParserSediaEU(opts) {
       resp = UrlFetchApp.fetch('https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=cultural+heritage', {
         method: 'post',
         contentType: 'application/json',
-        muteHttpExceptions: true,
+        muteHttpExceptions: true, deadline: 10,
         payload: JSON.stringify({ query: 'museum OR cultural heritage', languages: ['en','it'], sortField: 'sortDate', sortOrder: 'DESC' }),
         headers: { 'User-Agent': 'SinopiaBot/1.0' }
       });
@@ -1166,13 +1168,13 @@ function fasParserLombardia(opts) {
 
   try {
     var resp = UrlFetchApp.fetch(url, {
-      muteHttpExceptions: true,
+      muteHttpExceptions: true, deadline: 10,
       headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
     });
     if (resp.getResponseCode() !== 200) {
       // Fallback: CKAN API
       url = 'https://www.dati.lombardia.it/api/views.json?category=Bandi&limit=20';
-      resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'Accept': 'application/json' } });
+      resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, deadline: 10, headers: { 'Accept': 'application/json' } });
     }
     if (resp.getResponseCode() !== 200) {
       report.dettagli.push({ fonte: 'Lombardia OData', errore: 'HTTP ' + resp.getResponseCode() });
@@ -1321,6 +1323,7 @@ function fasDeprecaFontiIrrecuperabili(opts) {
           var resp = UrlFetchApp.fetch(url, {
             muteHttpExceptions: true,
             followRedirects: true,
+            deadline: 10,
             headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0)' }
           });
           var code = resp.getResponseCode();

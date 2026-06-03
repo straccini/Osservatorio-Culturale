@@ -47,7 +47,11 @@ function savePrenotazioneIntent(data) {
     if (!data.tematicaCodice) {
       return { ok:false, error:'Seleziona almeno una tematica di interesse (Step 2).' };
     }
-    // Tronca descrizione a 300 char (sicurezza server-side)
+    // v4.19.1 — Validazione email
+    if (data.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(data.email).trim())) {
+      return { ok:false, error:'Indirizzo email non valido.' };
+    }
+    // Tronca e sanitizza input (sicurezza server-side)
     var descr = String(data.descrizione || '').substring(0, 300);
     var sh = _getOrCreatePrenotazioniSheet_();
     var id = 'PR' + Date.now() + Math.random().toString(36).substring(2, 6);
@@ -56,11 +60,11 @@ function savePrenotazioneIntent(data) {
       new Date(),
       true,
       OC_PRIVACY_VERSION_PRENOTAZIONE,
-      String(data.tematicaCodice || ''),
-      String(data.tematicaNome || ''),
-      descr,
-      String(data.museoNome || ''),
-      String(data.email || ''),
+      _sanitizeForCell_(data.tematicaCodice || ''),
+      _sanitizeForCell_(data.tematicaNome || ''),
+      _sanitizeForCell_(descr),
+      _sanitizeForCell_(data.museoNome || ''),
+      _sanitizeForCell_(data.email || ''),
       '',
       'nuovo'
     ]);

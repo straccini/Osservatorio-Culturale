@@ -92,6 +92,20 @@ function _doGetReader(params) {
 function doGet(e) {
   var params = (e && e.parameter) || {};
 
+  // v4.19.1 — Bootstrap check: se mancano le dipendenze critiche, pagina di errore
+  var _bootErrors = [];
+  if (!SHEET_ID) _bootErrors.push('SHEET_ID mancante nelle ScriptProperties');
+  if (!CLAUDE_API_KEY) _bootErrors.push('CLAUDE_API_KEY mancante nelle ScriptProperties');
+  try { if (typeof OC_MATRIX_SCHEMA === 'undefined' || !OC_MATRIX_SCHEMA) _bootErrors.push('Matrix_schema non caricato'); } catch(_){}
+  if (_bootErrors.length > 0) {
+    return HtmlService.createHtmlOutput(
+      '<h2 style="color:#935851;font-family:sans-serif">Sinopia — Errore di configurazione</h2>'
+      + '<p style="font-family:sans-serif">L\'app non puo avviarsi. Problemi rilevati:</p>'
+      + '<ul style="font-family:sans-serif">' + _bootErrors.map(function(e){ return '<li>'+e+'</li>'; }).join('') + '</ul>'
+      + '<p style="font-family:sans-serif;color:#666">Configura le ScriptProperties nel pannello GAS e rideploya.</p>'
+    ).setTitle('Sinopia — Setup richiesto');
+  }
+
   // v4.18.1 (2026-05-11) — Token admin URL: ?adm=TOKEN attiva sessione admin 24h
   if (params.adm) {
     try {
@@ -114,6 +128,7 @@ function doGet(e) {
 
   // ---------- 0b) Sondaggio pubblico (?survey=accessibilita) — NO AUTH ----------
   if (params.survey) {
+    if (_rateLimited_('survey', 30, 3600)) return HtmlService.createHtmlOutput('<h1>Troppe richieste</h1><p>Riprova tra qualche minuto.</p>');
     try { return _doGetSurvey(params); }
     catch(eSurvey) {
       return HtmlService.createHtmlOutput('<h1>Errore</h1><p>' + String(eSurvey.message) + '</p>')
@@ -135,6 +150,7 @@ function doGet(e) {
 
   // ---------- 1) Flusso Digest Reader (token) ----------
   if (params.reader === '1' && params.t) {
+    if (_rateLimited_('reader', 60, 3600)) return HtmlService.createHtmlOutput('<h1>Troppe richieste</h1><p>Riprova tra qualche minuto.</p>');
     try { return _doGetReader(params); }
     catch(err) {
       return HtmlService
@@ -146,6 +162,7 @@ function doGet(e) {
   // ---------- 1-bis-0a) v4.18.54 — Unsubscribe (?action=unsubscribe&e=...&s=...) ----------
   // Pubblico: NON richiede login (i destinatari delle email non sono autenticati).
   if (params.action === 'unsubscribe') {
+    if (_rateLimited_('unsub', 10, 3600)) return HtmlService.createHtmlOutput('<h1>Troppe richieste</h1><p>Riprova tra qualche minuto.</p>');
     try {
       if (typeof _handleUnsubscribe_ === 'function') {
         return HtmlService.createHtmlOutput(_handleUnsubscribe_(params))
@@ -492,6 +509,33 @@ function _serveDigestReader(token) {
   }
 }
 
+/**
+ * v4.19.1 — Sanitizza valore utente prima di scrivere in cella Google Sheets.
+ * Previene CSV injection: celle che iniziano con = + @ - vengono prefissate con apice singolo.
+ * @param {*} val — valore da sanitizzare
+ * @return {string}
+ */
+function _sanitizeForCell_(val) {
+  var s = String(val == null ? '' : val);
+  if (/^[=+@\-]/.test(s)) return "'" + s;
+  return s;
+}
+
+/**
+ * v4.19.1 — Rate limiter semplice via CacheService. Max N richieste per chiave in finestra T secondi.
+ * @return {boolean} true se il rate limit è superato (= bloccare la richiesta)
+ */
+function _rateLimited_(key, maxPerWindow, windowSec) {
+  try {
+    var cache = CacheService.getScriptCache();
+    var ck = 'rl_' + key;
+    var count = parseInt(cache.get(ck) || '0');
+    if (count >= maxPerWindow) return true;
+    cache.put(ck, String(count + 1), windowSec || 60);
+    return false;
+  } catch(_) { return false; }
+}
+
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
@@ -652,6 +696,10 @@ function doPost(e) {
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
         return jsonOk(setupPubblicazioniSheet());
 
+      // GDPR — Right to be forgotten (richiede autenticazione)
+      case 'forgetMyData':
+        return jsonOk(forgetMyData(body.identifier || '', token));
+
       // Gestione dati
       case 'getGestioneStats':  return jsonOk(getGestioneStats());
       case 'archiviaOlderThan':
@@ -666,8 +714,10 @@ function doPost(e) {
 
       // Manutenzione remota (chiave segreta, senza login utente)
       case 'runMaintenance': {
-        const MAINT_KEY = 'oc-maint-4K9xZq2p8vR1';
-        if (body.key !== MAINT_KEY) return jsonOk({ error: 'Chiave non valida' });
+        // v4.19.1 — Rate limit: max 5 tentativi manutenzione per minuto
+        if (_rateLimited_('maint', 5, 60)) return jsonOk({ error: 'Troppi tentativi. Riprova tra un minuto.' });
+        var MAINT_KEY = PropertiesService.getScriptProperties().getProperty('OC_MAINT_KEY') || '';
+        if (!MAINT_KEY || body.key !== MAINT_KEY) return jsonOk({ error: 'Chiave non valida' });
         const ALLOWED = {
           correggiSocialFontiFallite: correggiSocialFontiFallite,
           fetchAndCacheSocialWall:    fetchAndCacheSocialWall,
@@ -688,8 +738,8 @@ function doPost(e) {
       default: return jsonOk({ error:'Azione non riconosciuta' });
     }
   } catch(err) {
-    Logger.log('doPost error: '+err.message);
-    return jsonOk({ error: err.message });
+    Logger.log('doPost error: ' + (err && err.message) + '\n' + (err && err.stack));
+    return jsonOk({ error: 'Errore interno del server' });
   }
 }
 
@@ -779,7 +829,7 @@ function scanSingolaFontePodcast(id) {
 
 function _scanSingolaFontePodcastRSS(fonte) {
   const resp = UrlFetchApp.fetch(fonte.URL_RSS, {
-    muteHttpExceptions:true,
+    muteHttpExceptions:true, deadline:10,
     headers:{'User-Agent':'Mozilla/5.0 Feedfetcher'}
   });
   if (resp.getResponseCode() !== 200) throw new Error('HTTP ' + resp.getResponseCode());
@@ -852,7 +902,7 @@ function _youtubeChannelToFeedUrl(input) {
   if (m) {
     try {
       var resp = UrlFetchApp.fetch('https://www.youtube.com/@' + m[1], {
-        muteHttpExceptions:true, followRedirects:true,
+        muteHttpExceptions:true, followRedirects:true, deadline:10,
         headers:{'User-Agent':'Mozilla/5.0 Feedfetcher'}
       });
       if (resp.getResponseCode() === 200) {
@@ -1985,7 +2035,7 @@ function sendTelegram(message) {
     const resp=UrlFetchApp.fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,{
       method:'post', contentType:'application/json',
       payload:JSON.stringify({chat_id:TELEGRAM_CHAT_ID,text:message,parse_mode:'Markdown',disable_web_page_preview:false}),
-      muteHttpExceptions:true,
+      muteHttpExceptions:true, deadline:30,
     });
     const result=JSON.parse(resp.getContentText());
     if(!result.ok) throw new Error('Telegram: '+result.description);
@@ -2141,7 +2191,7 @@ function getMailingList() {
 
 function saveMailing(body) {
   var email = String(body.email || body.Email || '').trim().toLowerCase();
-  if (!email || email.indexOf('@') < 0) return {error: 'Email non valida'};
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return {error: 'Email non valida'};
   // GDPR: consenso obbligatorio per nuove iscrizioni
   if (!body.id && !body.ConsensoGDPR) return {error: 'Consenso GDPR obbligatorio'};
 
@@ -2220,7 +2270,7 @@ function _sendConfirmationEmail(email, mailingId) {
     + '<div style="font-size:22px;font-weight:600;margin-bottom:12px">Conferma la tua iscrizione</div>'
     + '<p style="color:#555;line-height:1.6">Hai richiesto di ricevere la newsletter settimanale di <b>Sinopia - Osservatorio Culturale</b>.</p>'
     + '<p style="color:#555;line-height:1.6">Clicca il bottone per confermare:</p>'
-    + '<a href="' + confirmUrl + '" style="display:inline-block;background:#E84B1C;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">Confermo la mia iscrizione</a>'
+    + '<a href="' + confirmUrl + '" style="display:inline-block;background:#935851;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">Confermo la mia iscrizione</a>'
     + '<p style="font-size:12px;color:#999;margin-top:24px">Se non hai richiesto questa iscrizione, ignora questa email.</p>'
     + '</body></html>';
 
@@ -2263,7 +2313,7 @@ function _handleConfirmNewsletter(params) {
         + '<div style="font-size:48px;margin-bottom:16px">&#10003;</div>'
         + '<h1 style="font-size:24px;color:#1a1a1a">Iscrizione confermata!</h1>'
         + '<p style="color:#555;line-height:1.6">Riceverai la newsletter settimanale di <b>Sinopia</b> con bandi, news e opportunita selezionate per il settore culturale.</p>'
-        + '<a href="' + ScriptApp.getService().getUrl() + '" style="display:inline-block;margin-top:20px;background:#E84B1C;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">Vai all\'Osservatorio</a>'
+        + '<a href="' + ScriptApp.getService().getUrl() + '" style="display:inline-block;margin-top:20px;background:#935851;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">Vai all\'Osservatorio</a>'
         + '</body></html>';
     }
   }
@@ -2441,25 +2491,99 @@ Ambito: ${ambitoDesc[ambito]||'cultura'}
 Titolo: ${titolo}
 Estratto: ${estratto.substring(0,500)}
 Rispondi SOLO JSON (no markdown):
-{"sommario":"2-3 frasi italiano max 300 caratteri","tag":["t1","t2","t3"],"score":4,"tipologia":"ricerca"}
-Score 1-5. Tipologia: ricerca|evento|caso|bando.`;
+{"sommario":"2-3 frasi italiano max 300 caratteri","tag":["t1","t2","t3"],"score":4,"tipologia":"ricerca","regione":""}
+Score 1-5. Tipologia: ricerca|evento|caso|bando. Regione: se il contenuto riguarda una regione italiana specifica scrivi il nome (es. "Puglia", "Toscana"), altrimenti stringa vuota.`;
   try {
     const resp=UrlFetchApp.fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
+      method:'POST', deadline:30,
       headers:{'x-api-key':CLAUDE_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},
       payload:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:350,messages:[{role:'user',content:prompt}]}),
       muteHttpExceptions:true
     });
     const data=JSON.parse(resp.getContentText());
     const parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());
-    return {sommario:parsed.sommario||estratto.substring(0,300),tag:parsed.tag||[],score:parsed.score||3,tipologia:parsed.tipologia||'ricerca'};
-  } catch(err) { return {sommario:estratto.substring(0,300),tag:[],score:2,tipologia:'ricerca'}; }
+    return {sommario:parsed.sommario||estratto.substring(0,300),tag:parsed.tag||[],score:parsed.score||3,tipologia:parsed.tipologia||'ricerca',regione:parsed.regione||''};
+  } catch(err) { return {sommario:estratto.substring(0,300),tag:[],score:2,tipologia:'ricerca',regione:''}; }
 }
 
 function saveItem(sh,item,fonte,ai) {
   const id='I'+Date.now()+'_'+Math.random().toString(36).substr(2,4);
   sh.appendRow([id,fonte.Ambito,AMBITO_LABEL[fonte.Ambito]||'',fonte.Nome,item.url,item.titolo,item.estratto,ai.sommario,'',
-    (ai.tag||[]).join(', '),ai.score||3,ai.tipologia||'ricerca',formatDate(item.data),formatDate(new Date()),'',false,false,false,false]);  // * InclusiNelDigest=false: selezione manuale
+    (ai.tag||[]).join(', '),ai.score||3,ai.tipologia||'ricerca',formatDate(item.data),formatDate(new Date()),'',false,false,false,false,ai.regione||'']);  // * InclusiNelDigest=false; col 20=Regione
+}
+
+/**
+ * v4.19.1 — Popola retroattivamente la colonna Regione sulle news esistenti.
+ * Usa regex locale (zero chiamate API) per estrarre la regione italiana
+ * dal titolo + estratto + sommarioAI. Scrive solo nelle righe con Regione vuota.
+ * Idempotente: può essere rieseguita senza danni.
+ *
+ * Eseguire dall'editor GAS: backfillRegioneNews()
+ * @return {Object} { ok, totale, aggiornate, nonTrovate }
+ */
+function backfillRegioneNews() {
+  var ss = getMainSS();
+  var sh = ss.getSheetByName('Items');
+  if (!sh || sh.getLastRow() < 2) return { ok:true, totale:0, aggiornate:0, nonTrovate:0 };
+
+  var data = sh.getDataRange().getValues();
+  var head = data[0];
+  var iTit = head.indexOf('Titolo');
+  var iEstr = head.indexOf('Estratto');
+  var iSomm = head.indexOf('SommarioAI');
+
+  // Cerca o crea colonna Regione
+  var iReg = head.indexOf('Regione');
+  if (iReg === -1) {
+    // Aggiungi header Regione in colonna 20 (indice 19)
+    iReg = head.length;
+    sh.getRange(1, iReg + 1).setValue('Regione');
+    Logger.log('[backfillRegioneNews] Creata colonna Regione in posizione ' + (iReg+1));
+  }
+
+  var REGIONI = [
+    'Abruzzo','Basilicata','Calabria','Campania','Emilia-Romagna','Emilia Romagna',
+    'Friuli-Venezia Giulia','Friuli Venezia Giulia','Lazio','Liguria','Lombardia',
+    'Marche','Molise','Piemonte','Puglia','Sardegna','Sicilia','Toscana',
+    'Trentino-Alto Adige','Trentino Alto Adige','Umbria','Valle d\'Aosta','Veneto'
+  ];
+  // Normalizza per matching: minuscolo senza trattini
+  var regNorm = REGIONI.map(function(r) { return { orig: r.replace(/Emilia.Romagna/i,'Emilia-Romagna').replace(/Friuli.Venezia.Giulia/i,'Friuli-Venezia Giulia').replace(/Trentino.Alto.Adige/i,'Trentino-Alto Adige'), low: r.toLowerCase() }; });
+  // Dedup nomi normalizzati
+  var seen = {};
+  regNorm = regNorm.filter(function(r) { if (seen[r.orig]) return false; seen[r.orig] = true; return true; });
+
+  var aggiornate = 0, nonTrovate = 0;
+  var updates = []; // batch: [row, col, value]
+
+  for (var r = 1; r < data.length; r++) {
+    var existing = iReg < data[r].length ? String(data[r][iReg] || '').trim() : '';
+    if (existing) continue; // già popolata
+
+    var testo = (String(data[r][iTit] || '') + ' ' + String(data[r][iEstr] || '') + ' ' + String(data[r][iSomm] || '')).toLowerCase();
+    var found = '';
+    for (var i = 0; i < regNorm.length; i++) {
+      if (testo.indexOf(regNorm[i].low) !== -1) {
+        found = regNorm[i].orig;
+        break;
+      }
+    }
+    if (found) {
+      updates.push([r + 1, iReg + 1, found]);
+      aggiornate++;
+    } else {
+      nonTrovate++;
+    }
+  }
+
+  // Scrivi batch (50 alla volta per evitare timeout)
+  for (var u = 0; u < updates.length; u++) {
+    sh.getRange(updates[u][0], updates[u][1]).setValue(updates[u][2]);
+    if (u % 50 === 49) Utilities.sleep(200);
+  }
+
+  Logger.log('[backfillRegioneNews] Totale: ' + (data.length - 1) + ' righe, Aggiornate: ' + aggiornate + ', Non trovate: ' + nonTrovate);
+  return { ok: true, totale: data.length - 1, aggiornate: aggiornate, nonTrovate: nonTrovate };
 }
 
 /**
@@ -2778,6 +2902,49 @@ function setupPubblicazioniSheet() {
   }
   Logger.log('[OK] setupPubblicazioniSheet completato');
   return { foglio: SH.LIBRI, righe: sh.getLastRow() - 1 };
+}
+
+/**
+ * v4.19.1 — Seed 16 libri di museologia selezionati (giugno 2026).
+ * Idempotente: salta titoli già presenti. Eseguire dall'editor GAS.
+ */
+function seedLibriMuseologia2026() {
+  var SS = getMainSS();
+  var sh = SS.getSheetByName(SH.LIBRI);
+  if (!sh) { setupPubblicazioniSheet(); sh = SS.getSheetByName(SH.LIBRI); }
+  var existing = sh.getDataRange().getValues();
+  var titoli = {};
+  for (var i = 1; i < existing.length; i++) titoli[String(existing[i][1]||'').trim().toLowerCase()] = true;
+  var now = new Date();
+  var seed = [
+    ['LIB101','I musei e le forme dello Storytelling digitale','Elisa Bonacini','Aracne',2020,1,'Storytelling digitale','','https://www.libreriauniversitaria.it/musei-forme-storytelling-digitale-bonacini/libro/9788825533699','',now,'Libreria Universitaria','attivo',90,false,false],
+    ['LIB102','Il museo come cura. Guida alla prescrizione museale','Angela Savino, Ottavio De Clemente','Universitalia',2025,4,'Cura museale','','https://www.libreriauniversitaria.it/museo-cura-guida-prescrizione-museale/libro/9788832938517','',now,'Libreria Universitaria','attivo',88,false,false],
+    ['LIB103','Manuale di gestione e cura delle collezioni museali','Federica Manoli','Le Monnier Università',2022,3,'Gestione collezioni','','https://www.libreriauniversitaria.it/manuale-gestione-cura-collezioni-museali/libro/9788800862264','',now,'Libreria Universitaria','attivo',92,false,false],
+    ['LIB104','Il museo nella storia. Dallo studiolo al museo virtuale','Maria Teresa Fiorio','Pearson',2023,1,'Storia dei musei','','https://www.libreriauniversitaria.it/museo-storia-studiolo-museo-virtuale/libro/9788891932099','',now,'Libreria Universitaria','attivo',85,false,false],
+    ['LIB105','Il museo nel mondo contemporaneo. La teoria e la prassi','Maria Vittoria Marini Clarelli','Carocci',2024,1,'Teoria e prassi museale','','https://www.libreriauniversitaria.it/museo-mondo-contemporaneo-teoria-prassi/libro/9788829022403','',now,'Libreria Universitaria','attivo',87,false,false],
+    ['LIB106','Esperienza o interpretazione. Il dilemma del museo d\'arte moderna','Nicholas Serota','Kappa',2002,3,'Musei d\'arte moderna','','https://www.libreriauniversitaria.it/esperienza-interpretazione-dilemma-museo-arte/libro/9788878904583','',now,'Libreria Universitaria','attivo',91,false,false],
+    ['LIB107','Il museo necessario. Mappe per tempi complessi','S. Bodo, A. C. Cimoli','Nomos Edizioni',2023,4,'Museologia sociale','','https://www.libreriauniversitaria.it/museo-necessario-mappe-tempi-complessi/libro/9791259580917','',now,'Libreria Universitaria','attivo',50,false,false],
+    ['LIB108','Economia e gestione dei beni culturali e dei musei','Mara Cerquetti, Marta Maria Montella','McGraw-Hill',2024,5,'Gestione d\'impresa nei musei','Il volume discute i paradigmi dell\'economia e gestione delle imprese applicandoli ai beni culturali.','','',now,'McGraw-Hill','attivo',0,false,false],
+    ['LIB109','Acquisizioni museali: etica, pratiche e visioni','Valeria Arrabito, Ilaria Navarro','ICOM Italia - CEDOM',2025,3,'Etica e diritto museale','Il volume offre uno sguardo ampio e concreto sul mondo delle acquisizioni museali, trattando provenienze e traffici illeciti.','','',now,'ICOM Italia','attivo',0,false,false],
+    ['LIB110','Museologia del presente. Musei sostenibili e inclusivi si diventa','M. Lanzinger, D. Piraina, M. Vanni','Pacini Editore',2024,2,'Sostenibilità e inclusione','Gli autori sottolineano l\'importanza di una progettualità etica e del ruolo olistico, inclusivo e sostenibile (biomuseologia) del museo.','https://www.libreriauniversitaria.it/museologia-presente-musei-sostenibili-inclusivi/libro/9791254863855','',now,'Federculture / Libreria Univ.','attivo',0,false,false],
+    ['LIB111','Museologia radicale. Ovvero, cos\'è «contemporaneo» nei musei d\'arte contemporanea?','Claire Bishop','Johan & Levi',2025,3,'Arte contemporanea','','https://www.libreriauniversitaria.it/museologia-radicale-ovvero-cos-contemporaneo/libro/9788860103925','',now,'Libreria Universitaria','attivo',0,false,false],
+    ['LIB112','Diritto del patrimonio culturale','Carla Barbati, Marco Cammelli, Lorenzo Casini','Il Mulino',2025,5,'Tutela dei beni culturali','','','',now,'IBS','attivo',0,false,false],
+    ['LIB113','Crossroads. Incroci (Museografia e Allestimento nella dimensione "Post-Digitale")','M. Borsotti','Politecnico di Milano',2025,5,'Post-digitale','Contributo in atti di convegno sul rapporto tra musei, spazi espositivi e implementazioni di tecnologie digitali.','https://hdl.handle.net/11311/1300513','',now,'Re.Public@polimi','attivo',0,false,false],
+    ['LIB114','Il digitale per i musei. Comunicazione, fruizione, valorizzazione','Nicolette Mandarano','Carocci',2024,5,'Digitalizzazione museale','','https://www.libreriauniversitaria.it/digitale-musei-comunicazione-fruizione-valorizzazione/libro/9788829027354','',now,'Libreria Universitaria','attivo',0,false,false],
+    ['LIB115','Il museo immediato. Digitale per la cultura: da Arpanet all\'intelligenza artificiale','Giuliano Gaia','Editrice Bibliografica',2024,5,'Intelligenza artificiale nei musei','','https://www.libreriauniversitaria.it/museo-immediato-digitale-cultura-arpanet/libro/9788893576369','',now,'Libreria Universitaria','attivo',0,false,false],
+    ['LIB116','ICOM Italia dalle origini ad oggi (1947-2024). La storia, i temi, i protagonisti','Adele Maresca Compagna','Gangemi Editore',2025,1,'Storia ICOM','','https://www.libreriauniversitaria.it/icom-italia-origini-oggi-1947/libro/9788849251869','',now,'Libreria Universitaria','attivo',0,false,false]
+  ];
+  var added = 0, skip = 0;
+  seed.forEach(function(row) {
+    var key = String(row[1]).trim().toLowerCase();
+    if (titoli[key]) { skip++; return; }
+    sh.appendRow(row);
+    titoli[key] = true;
+    added++;
+    Utilities.sleep(100);
+  });
+  Logger.log('[seedLibriMuseologia2026] Aggiunti: ' + added + ', Già presenti: ' + skip);
+  return { ok: true, aggiunti: added, skip: skip };
 }
 
 function getLibriList(params) {
