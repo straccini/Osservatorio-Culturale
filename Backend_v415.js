@@ -44,6 +44,9 @@ var BV415_LIBRI_HEAD  = [
 // ============================================================================
 
 function saveLibro(body) {
+  if (typeof _isCurrentUserEditorOrAdmin_ === 'function' && !_isCurrentUserEditorOrAdmin_()) {
+    return { ok: false, error: 'forbidden' };
+  }
   try {
     body = body || {};
     if (!body.titolo || !body.autore) {
@@ -154,6 +157,9 @@ function setupLibriSeed() {
 // ============================================================================
 
 function saveNorma(body) {
+  if (typeof _isCurrentUserEditorOrAdmin_ === 'function' && !_isCurrentUserEditorOrAdmin_()) {
+    return { ok: false, error: 'forbidden' };
+  }
   try {
     body = body || {};
     if (!body.titolo || !body.fonte) {
@@ -197,6 +203,9 @@ function saveNorma(body) {
 // ============================================================================
 
 function invitaUtenteSendEmail(body) {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) {
+    return { ok: false, error: 'forbidden' };
+  }
   try {
     body = body || {};
     var email = String(body.email || '').trim().toLowerCase();
@@ -225,15 +234,15 @@ function invitaUtenteSendEmail(body) {
     try { webappUrl = ScriptApp.getService().getUrl() || ''; } catch(e) {}
     var inviteUrl = webappUrl + '?invite=' + token;
 
-    var subject = 'Invito Osservatorio Culturale Duemilamusei — accesso admin';
+    var subject = 'Invito Osservatorio Culturale Sinopia — accesso admin';
     var htmlBody =
       '<div style="font-family:Arial,sans-serif;font-size:14px;color:#1A1815;max-width:600px">' +
       '<p>Gentile ' + escapeHtml_(nome) + ',</p>' +
-      '<p>ti invito ad accedere come <strong>' + escapeHtml_(ruolo) + '</strong> all Osservatorio Culturale Duemilamusei, ' +
+      '<p>ti invito ad accedere come <strong>' + escapeHtml_(ruolo) + '</strong> all Osservatorio Culturale Sinopia, ' +
       'la piattaforma che monitora bandi, news e podcast del settore museale italiano e supporta l autovalutazione MuseMu Matrix.</p>' +
       '<p style="margin:24px 0"><a href="' + inviteUrl + '" style="background:#1A1815;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:600">Accetta l invito</a></p>' +
       '<p style="font-size:12px;color:#6E6A62">Link valido 7 giorni. Se non hai richiesto questo invito, puoi ignorare il messaggio.</p>' +
-      '<p>Buon lavoro,<br>Silvano Straccini<br>Duemilamusei</p>' +
+      '<p>Buon lavoro,<br>Silvano Straccini<br>Sinopia</p>' +
       '</div>';
 
     MailApp.sendEmail({ to: email, subject: subject, htmlBody: htmlBody });
@@ -257,6 +266,9 @@ function escapeHtml_(s) {
 // ============================================================================
 
 function exportArchivio() {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) {
+    return { ok: false, error: 'forbidden' };
+  }
   try {
     var ss = getMainSS();
     var folder = DriveApp.getRootFolder();
@@ -314,7 +326,7 @@ function exportArchivio() {
     var fname = 'archivio_OC_' + Utilities.formatDate(new Date(), 'Europe/Rome', 'yyyyMMdd_HHmm') + '.csv';
     var blob = Utilities.newBlob(csv, 'text/csv', fname);
     var file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    // v4.20 — Niente sharing pubblico: il file resta privato, accessibile solo all'admin via download URL
     Logger.log('exportArchivio: ' + (rows.length - 1) + ' record esportati in ' + fname);
     return { ok: true, file: fname, url: file.getDownloadUrl(), viewUrl: file.getUrl(), totale: rows.length - 1 };
   } catch(e) {
@@ -333,6 +345,9 @@ function exportArchivio() {
 // ============================================================================
 
 function emptyTrash(opts) {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) {
+    return { ok: false, error: 'forbidden' };
+  }
   try {
     opts = opts || {};
     var minAgeDays = (opts.minAgeDays != null) ? Number(opts.minAgeDays) : 30;

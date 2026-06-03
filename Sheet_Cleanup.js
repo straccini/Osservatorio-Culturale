@@ -109,6 +109,9 @@ const TAB_ORDER = [
 // ─── FUNZIONE PRINCIPALE ──────────────────────────────────────────────────
 
 function runSheetCleanup() {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) {
+    return { ok: false, error: 'forbidden' };
+  }
   const SS = getMainSS();
   const log = [];
 
@@ -385,6 +388,9 @@ function diagnosticaFogli() {
  * @return {Object} { ok, rinominati, saltati, dettaglio }
  */
 function archiviaFogliObsoleti() {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) {
+    return { ok: false, error: 'forbidden' };
+  }
   var ss = getMainSS();
   // NOTA: 'Fonti' NON incluso — ancora usato attivamente da scanSources/getFonti in Codice.js
   var obsoleti = ['SocialFonti', 'FontiBandi', 'Podcast_Episodes', 'RADAR BANDI'];
@@ -434,6 +440,9 @@ function archiviaFogliObsoleti() {
  * @return {Object} { ok, report: { items, podcast, libri, bandi } }
  */
 function dailyDedupCheck() {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) {
+    return { ok: false, error: 'forbidden' };
+  }
   var ss = getMainSS();
   var report = {};
 
