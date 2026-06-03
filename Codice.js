@@ -2856,29 +2856,32 @@ function deleteFonteArticoli(id) {
 }
 
 // -- FONTI BANDI ---------------------------------------------------
+// v4.20 — Archivio UNICO: legge da FontiBandi_v5 (lettura per nome colonna,
+// date come stringa per la serializzazione google.script.run).
 function getFontiBandi() {
-  const SS=getMainSS();
-  let sh=SS.getSheetByName('FontiBandi'); if(!sh) sh=_createFontiBandiSheet(SS);
-  const rows=sh.getDataRange().getValues(), h=rows[0], fonti=[];
-  for(let i=1;i<rows.length;i++){if(!rows[i][0])continue;const f={};h.forEach((col,idx)=>{f[col]=rows[i][idx];});fonti.push(f);}
-  try {
-    const sh5 = SS.getSheetByName('FontiBandi_v5');
-    if (sh5) {
-      const r5 = sh5.getDataRange().getValues();
-      const lookupByUrl = {};
-      for (let i = 1; i < r5.length; i++) {
-        if (!r5[i][2]) continue;
-        const url = String(r5[i][2]).trim().toLowerCase();
-        lookupByUrl[url] = { ultimaScan: r5[i][8] || null, ultimoEsito: String(r5[i][9] || ''), failConsec: Number(r5[i][12] || 0) };
-      }
-      fonti.forEach(function(f){
-        const k = String(f.URL || f.URL_RSS || '').trim().toLowerCase();
-        const m = lookupByUrl[k];
-        if (m) { f.ultimaScan = m.ultimaScan ? new Date(m.ultimaScan).toISOString() : null; f.ultimoEsito = m.ultimoEsito; f.failConsec = m.failConsec; }
-      });
-    }
-  } catch(e) { Logger.log('getFontiBandi enrich v5 errore: ' + e.message); }
-  return {fonti};
+  const SS = getMainSS();
+  const sh = SS.getSheetByName('FontiBandi_v5');
+  if (!sh || sh.getLastRow() < 2) return { fonti: [] };
+  const v = sh.getDataRange().getValues();
+  const h = v[0].map(function(x){ return String(x || '').trim(); });
+  function col(n){ return h.indexOf(n); }
+  const iId=col('ID'), iNome=col('Nome'), iUrl=col('URL'), iCat=col('Categoria'),
+        iAtt=col('Attiva'), iScan=col('UltimaScan'), iEsito=col('UltimoEsito'),
+        iFail=col('FailConsecutivi'), iTipo=col('Tipo'), iPri=col('Priorita');
+  const fonti = [];
+  for (let i = 1; i < v.length; i++) {
+    const r = v[i]; if (iId >= 0 && !r[iId]) continue;
+    fonti.push({
+      ID: String(r[iId] || ''), Nome: String(r[iNome] || ''), URL: String(r[iUrl] || ''),
+      Categoria: String(iCat >= 0 ? r[iCat] : ''), Tipo: String(iTipo >= 0 ? r[iTipo] : ''),
+      Priorita: Number(iPri >= 0 ? r[iPri] : 2) || 2,
+      Attiva: (r[iAtt] === true || String(r[iAtt]).toUpperCase() === 'TRUE'),
+      ultimaScan: (iScan >= 0 && r[iScan]) ? String(r[iScan]) : '',
+      ultimoEsito: String(iEsito >= 0 ? r[iEsito] : ''),
+      failConsec: Number(iFail >= 0 ? r[iFail] : 0) || 0
+    });
+  }
+  return { fonti: fonti };
 }
 
 function _createFontiBandiSheet(SS) {
@@ -2933,11 +2936,11 @@ function addFonteBandi(body) {
 }
 function deleteFonteBandiById(id) {
   var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
-  return _deleteRowById(getMainSS().getSheetByName('FontiBandi'), id);
+  return _deleteRowById(getMainSS().getSheetByName('FontiBandi_v5'), id);
 }
 function toggleFonteBandiField(id, field) {
   var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
-  return _toggleField(getMainSS().getSheetByName('FontiBandi'), id, field);
+  return _toggleField(getMainSS().getSheetByName('FontiBandi_v5'), id, field);
 }
 
 /**
