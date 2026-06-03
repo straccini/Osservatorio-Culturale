@@ -319,7 +319,8 @@ function _agentFetchUrl_(url) {
 
 /** Estrae query+limit dall'URL-convenzione TED e costruisce il body POST. */
 function _tedBuildBody_(url) {
-  var q = '*';
+  // Default valido (mai '*': TED lo rifiuta con 400). Famiglia CPV cultura/musei.
+  var q = 'classification-cpv IN (92500000 92520000 92521000 92522000)';
   var mq = url.match(/[?&]query=([^&]+)/);
   if (mq) { try { q = decodeURIComponent(mq[1].replace(/\+/g, ' ')); } catch(e0) { q = mq[1]; } }
   var lim = 20;
@@ -361,10 +362,17 @@ function _tedFetch_(url) {
  */
 function testTedApi() {
   var endpoint = 'https://api.ted.europa.eu/v3/notices/search';
+  // Data limite = 365 giorni fa, in due formati da provare.
+  var d = new Date(); d.setDate(d.getDate() - 365);
+  var yyyy = d.getFullYear(), mm = ('0' + (d.getMonth() + 1)).slice(-2), dd = ('0' + d.getDate()).slice(-2);
+  var dataDash = yyyy + '-' + mm + '-' + dd;   // 2025-06-03
+  var dataComp = yyyy + mm + dd;               // 20250603
+  var qBase = 'classification-cpv IN (92500000 92520000 92521000 92522000) AND place-of-performance=ITA';
+  var mkUrl = function(q) { return endpoint + '?query=' + encodeURIComponent(q) + '&limit=3'; };
   var varianti = [
-    { nome: 'A_minimale_no_fields', body: { query: '*', page: 1, limit: 3, scope: 'ACTIVE', paginationMode: 'PAGE_NUMBER' } },
-    { nome: 'B_con_fields',         body: _tedBuildBody_(endpoint + '?query=*&limit=3') },
-    { nome: 'C_cultura_CPV_Italia', body: _tedBuildBody_(endpoint + '?query=' + encodeURIComponent('classification-cpv IN (92500000 92520000 92521000 92522000) AND place-of-performance=ITA') + '&limit=3') }
+    { nome: 'C_controllo_no_data',  body: _tedBuildBody_(mkUrl(qBase)) },
+    { nome: 'D_data_trattini',      body: _tedBuildBody_(mkUrl(qBase + ' AND publication-date>=' + dataDash)) },
+    { nome: 'E_data_compatta',      body: _tedBuildBody_(mkUrl(qBase + ' AND publication-date>=' + dataComp)) }
   ];
   var report = [];
   varianti.forEach(function(v) {
