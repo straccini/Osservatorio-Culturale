@@ -144,6 +144,36 @@ function dedupFontiBandiV5() {
 }
 
 /**
+ * Marca con prefisso _OLD_ i fogli bandi non piu' usati. DA LANCIARE SOLO DOPO
+ * consolidaBandiFonti() e verifica del pannello. NON cancella: rinomina, cosi' li
+ * riconosci nel foglio Google e li elimini tu a mano.
+ *
+ * Sicuri perche' (verificato): FontiBandi -> getFontiBandi/add/delete/toggle ora
+ * puntano a FontiBandi_v5; i 2 riferimenti residui sono diagnostici e null-safe.
+ * FontiBandi_v5_pre_FU17 -> solo backup pre-migrazione.
+ * NON tocca: FontiAgenti (letto da scanAgente), RADAR BANDI / _RADAR_BANDI_LEGACY_ (fallback).
+ */
+function deprecaFontiBandiOld() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var candidati = ['FontiBandi', 'FontiBandi_v5_pre_FU17'];
+  var fatti = [], saltati = [];
+  candidati.forEach(function(nome) {
+    var sh = ss.getSheetByName(nome);
+    if (!sh) { saltati.push(nome + ' (assente)'); return; }
+    var target = '_OLD_' + nome;
+    if (ss.getSheetByName(target)) {
+      target = '_OLD_' + nome + '_' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd');
+    }
+    sh.setName(target);
+    fatti.push(nome + ' -> ' + target);
+  });
+  var rep = { ok: true, rinominati: fatti, saltati: saltati,
+    nota: 'Ora puoi cancellare a mano i fogli che iniziano con _OLD_. NON cancellare FontiAgenti, RADAR BANDI, _RADAR_BANDI_LEGACY_.' };
+  Logger.log('deprecaFontiBandiOld: ' + JSON.stringify(rep, null, 2));
+  return rep;
+}
+
+/**
  * Anteprima (NON modifica): quante fonti porterebbe dentro la consolidazione.
  */
 function anteprimaConsolidaBandi() {
