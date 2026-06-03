@@ -363,9 +363,14 @@ function correggiAgentiMalformati() {
   var corrette = [];
   for (var r = 1; r < data.length; r++) {
     var val = String(data[r][iAg] == null ? '' : data[r][iAg]).trim();
-    if (/\d\.\d/.test(val)) {
-      var nuovo = val.replace(/\./g, ',');
-      sh.getRange(r + 1, iAg + 1).setValue(nuovo);
+    // Multi-agente malformato: punto O virgola tra cifre. In locale IT la virgola
+    // verrebbe letta come decimale, quindi usiamo il PUNTO E VIRGOLA (";") e
+    // forziamo il formato TESTO sulla cella, cosi' non viene piu' coerciuto a numero.
+    if (/\d[.,]\d/.test(val)) {
+      var nuovo = val.replace(/[.,]/g, ';');
+      var cell = sh.getRange(r + 1, iAg + 1);
+      cell.setNumberFormat('@');  // testo semplice
+      cell.setValue(nuovo);
       corrette.push(data[r][iNome] + ': "' + val + '" -> "' + nuovo + '"');
     }
   }
@@ -418,11 +423,14 @@ function assegnaAgenteAFonte(nome, agente) {
   if (iNome < 0 || iAg < 0) return { ok: false, error: 'colonne Nome/Agente assenti' };
   var target = String(nome || '').trim().toLowerCase();
   var fatte = [];
+  var ag = String(agente);
   for (var r = 1; r < data.length; r++) {
     if (String(data[r][iNome] || '').trim().toLowerCase() === target) {
-      sh.getRange(r + 1, iAg + 1).setValue(String(agente));
+      var cell = sh.getRange(r + 1, iAg + 1);
+      if (/[,;.]/.test(ag)) cell.setNumberFormat('@');  // multi-agente -> forza testo (locale IT)
+      cell.setValue(ag);
       if (iAtt >= 0) sh.getRange(r + 1, iAtt + 1).setValue(true);
-      fatte.push(data[r][iNome] + ' -> AG' + agente);
+      fatte.push(data[r][iNome] + ' -> AG' + ag);
     }
   }
   Logger.log('assegnaAgenteAFonte("' + nome + '", ' + agente + '): ' + JSON.stringify(fatte));
