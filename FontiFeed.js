@@ -315,6 +315,37 @@ function updateFeedSourceStats(tipo, fonte, esito, nRecord, errore) {
 // ============================================================================
 
 /**
+ * STATO ARCHIVIO UNICO FONTIFEED (sola lettura): mostra se news/podcast/video
+ * leggono GIA' da FontiFeed (flag ON) o ancora dalle sorgenti legacy (flag OFF),
+ * e quante fonti per Tipo vivono nell'archivio unico. Base per capire il grado di
+ * unificazione e per pianificare l'aggiunta del Tipo 'newsletter'.
+ */
+function statoFontiFeed() {
+  var flags = {
+    rss:     (typeof isFontiFeedEnabled_ === 'function') ? isFontiFeedEnabled_('rss') : null,
+    podcast: (typeof isFontiFeedEnabled_ === 'function') ? isFontiFeedEnabled_('podcast') : null,
+    video:   (typeof isFontiFeedEnabled_ === 'function') ? isFontiFeedEnabled_('video') : null
+  };
+  Logger.log('=== STATO FONTIFEED (archivio unico fonti) ===');
+  Logger.log('Le sezioni leggono da FontiFeed?  News/RSS: ' + flags.rss + ' | Podcast: ' + flags.podcast + ' | Video: ' + flags.video);
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(FONTIFEED_SHEET);
+  if (!sh) { Logger.log('Foglio FontiFeed ASSENTE'); return { flags: flags, esiste: false }; }
+  var v = sh.getDataRange().getValues(); var h = v[0];
+  var iTipo = h.indexOf('Tipo'), iAtt = h.indexOf('Attiva');
+  var perTipo = {}, attive = {};
+  for (var r = 1; r < v.length; r++) {
+    var t = String(v[r][iTipo] || '?').toLowerCase();
+    perTipo[t] = (perTipo[t] || 0) + 1;
+    if (v[r][iAtt] === true || String(v[r][iAtt]).toUpperCase() === 'TRUE') attive[t] = (attive[t] || 0) + 1;
+  }
+  Logger.log('Fonti in FontiFeed — per Tipo (totali): ' + JSON.stringify(perTipo));
+  Logger.log('Fonti in FontiFeed — per Tipo (attive): ' + JSON.stringify(attive));
+  Logger.log('Totale righe FontiFeed: ' + (v.length - 1));
+  return { flags: flags, esiste: true, perTipo: perTipo, attive: attive, totale: v.length - 1 };
+}
+
+/**
  * VERIFICA CONNETTIVITA' FONTI NEWS (sola lettura): testa ogni feed RSS news
  * realmente usato (getFeedSources('rss')) facendo una richiesta e classificando
  * OK / EMPTY / ERR / NO_URL. Logga il riepilogo e l'elenco delle fonti MORTE.
