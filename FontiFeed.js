@@ -382,7 +382,8 @@ function getFontiFeedAdmin(filtro) {
       note: String(g(row, 'Note') || '')
     });
   }
-  return { ok: true, fonti: out, totale: out.length };
+  return { ok: true, fonti: out, totale: out.length,
+    _diag: (out.length ? '' : 'ssId=' + ss.getId() + ' righe=' + (v.length - 1) + ' idxID=' + idx.ID + ' campioneID=' + String(v[1] ? v[1][idx.ID] : '?')) };
 }
 
 // ============================================================================
