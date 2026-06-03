@@ -24,6 +24,68 @@
 var BANDI_V5_SHEET = 'FontiBandi_v5';
 
 /**
+ * PONTE: promuove i bandi trovati dagli AGENTI (AgentScanResults, es. BandiUp/TED/
+ * EU F&T) nel foglio bandi che l'APP legge, cosi' compaiono nella pagina "Radar
+ * Bandi" e non solo nelle email digest.
+ *
+ * Riusa salvaNewBandi() (scrittura formato Bandi_v5 a 26 col + dedup per titolo +
+ * triage ROC), scrivendo su getSheetRadar() (lo stesso foglio dello scanner classico).
+ * Default: solo AG1 (l'agente bandi). NON distruttivo, idempotente (dedup titolo).
+ *
+ * IMPORTANTE: lanciare contaBandiContenitori() PRIMA, per verificare che getSheetRadar()
+ * e il frontend leggano lo STESSO foglio (flag USE_BANDI_V5). Se disallineati, prima
+ * allineare il flag, altrimenti i bandi finiscono in un foglio non letto dall'app.
+ *
+ * @param {Object} opts { agenti?: number[] (default [1]) }
+ */
+function promuoviBandiAgenti(opts) {
+  opts = opts || {};
+  var agenti = opts.agenti || [1];
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var shA = ss.getSheetByName('AgentScanResults');
+  if (!shA || shA.getLastRow() < 2) { Logger.log('AgentScanResults vuoto'); return { ok: false }; }
+  if (typeof getSheetRadar !== 'function' || typeof salvaNewBandi !== 'function' || typeof normalizzaBandi !== 'function') {
+    Logger.log('Funzioni richieste assenti (getSheetRadar/salvaNewBandi/normalizzaBandi)'); return { ok: false };
+  }
+  var sheet = getSheetRadar();
+  if (!sheet) { Logger.log('Foglio bandi non trovato'); return { ok: false }; }
+  Logger.log('Promuovo verso il foglio: ' + sheet.getName());
+
+  // Titoli gia' presenti nel foglio bandi (per dedup tramite salvaNewBandi).
+  var titoliEsistenti = [];
+  if (sheet.getLastRow() > 1) {
+    var bh = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    var iTitB = bh.indexOf('Titolo'); if (iTitB < 0) iTitB = 3;
+    sheet.getRange(2, iTitB + 1, sheet.getLastRow() - 1, 1).getValues().forEach(function(r) {
+      if (r[0]) titoliEsistenti.push(normalizzaBandi(String(r[0])));
+    });
+  }
+
+  var data = shA.getDataRange().getValues();
+  var h = data[0];
+  var iAg = h.indexOf('AgenteID'), iTit = h.indexOf('Titolo'), iUrl = h.indexOf('URL'),
+      iSom = h.indexOf('SommarioAI'), iFonte = h.indexOf('FonteNome'), iArch = h.indexOf('Archiviato');
+  var promossi = 0, esaminati = 0;
+  for (var r = 1; r < data.length; r++) {
+    if (agenti.indexOf(Number(data[r][iAg])) < 0) continue;
+    if (iArch >= 0 && (data[r][iArch] === true || String(data[r][iArch]).toLowerCase() === 'true')) continue;
+    esaminati++;
+    var bandiObj = {
+      titolo: String(data[r][iTit] || ''),
+      url_bando: String(data[r][iUrl] || ''),
+      note: iSom >= 0 ? String(data[r][iSom] || '') : '',
+      sommario: iSom >= 0 ? String(data[r][iSom] || '') : '',
+      settore: 'Valorizzazione'
+    };
+    var fonte = { nome: (iFonte >= 0 ? String(data[r][iFonte] || '') : '') || ('Agente AG' + data[r][iAg]),
+                  ente_default: '', livello: '', url_ente: '' };
+    promossi += salvaNewBandi(sheet, [bandiObj], fonte, titoliEsistenti);
+  }
+  Logger.log('=== PROMUOVI BANDI AGENTI: ' + promossi + ' promossi su ' + esaminati + ' esaminati (AG' + agenti.join(',') + ') verso ' + sheet.getName() + ' ===');
+  return { ok: true, promossi: promossi, esaminati: esaminati, foglio: sheet.getName() };
+}
+
+/**
  * DIAGNOSTICA (sola lettura): conta le righe nei contenitori di BANDI (i record,
  * non le fonti) per capire dove vivono davvero i dati prima di consolidare.
  * Lanciare dall'editor (Esegui -> contaBandiContenitori) e leggere il Log.

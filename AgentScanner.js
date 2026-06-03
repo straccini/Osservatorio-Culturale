@@ -535,6 +535,18 @@ function _cordisFetch_(url) {
   } catch(e) { return null; }
 }
 
+/** DIAGNOSTICA: mostra cosa produce _cordisFetch_ (cosa riceve Claude). */
+function testCordisFetch() {
+  var q = "contenttype='project' AND ('cultural heritage' OR 'museum' OR 'cultural tourism')";
+  var url = 'https://cordis.europa.eu/search?q=' + encodeURIComponent(q) + '&p=1&num=10&format=json';
+  var out = _cordisFetch_(url);
+  if (out === null) { Logger.log('_cordisFetch_ -> NULL (fetch/parse fallito o 0 risultati)'); return 0; }
+  Logger.log('_cordisFetch_ OK — ' + out.length + ' char');
+  Logger.log('--- TESTO PASSATO A CLAUDE (primi 2500 char) ---');
+  Logger.log(out.substring(0, 2500));
+  return out.length;
+}
+
 /** Estrae query+limit dall'URL-convenzione TED e costruisce il body POST. */
 function _tedBuildBody_(url) {
   // Default valido (mai '*': TED lo rifiuta con 400). Famiglia CPV cultura/musei.
