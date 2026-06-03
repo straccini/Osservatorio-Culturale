@@ -766,3 +766,21 @@ function aggiungiDatiGovCultura() {
     note: 'CKAN open data nazionale. Dataset/cataloghi culturali (musei, beni culturali), NON bandi. Agente AG5.'
   });
 }
+
+/**
+ * Pronta: OpenCoesione via CKAN (dati.gov.it) — AGENTE 5 (open data / analisi territoriale).
+ * NB: sono PROGETTI FINANZIATI/CONCLUSI (coesione, cultura, turismo), NON call aperte.
+ * Verificato: l'endpoint CKAN /api/3/action/package_search risponde (success:true).
+ * Utile per analisi investimenti culturali sul territorio, non per "bandi aperti".
+ */
+function aggiungiOpenCoesione() {
+  return aggiungiFonteApiAgente({
+    id: 'opencoesione_cultura',
+    nome: 'OpenCoesione — Cultura/Turismo (API CKAN)',
+    url: 'https://dati.gov.it/opendata/api/3/action/package_search?q=opencoesione cultura turismo&rows=10',
+    agente: 5,
+    categoria: 'Aggregatore',
+    priorita: 2,
+    note: 'CKAN dati.gov.it (federa OpenCoesione). Dataset progetti finanziati coesione cultura/turismo. AG5 open data, non bandi.'
+  });
+}

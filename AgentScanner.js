@@ -511,6 +511,50 @@ function testTedApi() {
   return report;
 }
 
+/**
+ * TEST one-click EU Funding & Tenders (sistema SEDIA). Prova piu' modi di chiamare
+ * il search-api per scoprire quale GAS riesce a inviare e cosa accetta il server.
+ * Lanciare dall'editor (Esegui -> testEuFtApi) e leggere il Log/Esecuzioni.
+ * Query: grant+tender (type 1,2) con stato Forthcoming/Open (31094501/31094502).
+ */
+function testEuFtApi() {
+  var base = 'https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=';
+  var queryJson = '{"bool":{"must":[{"terms":{"type":["1","2"]}},{"terms":{"status":["31094501","31094502"]}}]}}';
+  var report = [];
+
+  function prova(nome, url, options) {
+    try {
+      var resp = UrlFetchApp.fetch(url, options);
+      var code = resp.getResponseCode();
+      var txt = resp.getContentText() || '';
+      Logger.log('=== EUFT ' + nome + ' -> HTTP ' + code + ' ===');
+      Logger.log('RISPOSTA (primi 1800 char): ' + txt.substring(0, 1800));
+      report.push({ variante: nome, http: code, lung: txt.length });
+    } catch(e) {
+      Logger.log('=== EUFT ' + nome + ' -> ERRORE: ' + e + ' ===');
+      report.push({ variante: nome, errore: String(e) });
+    }
+  }
+
+  // A) GET semplice con parola chiave
+  prova('A_GET_text', base + 'culture&pageSize=5',
+    { method: 'get', muteHttpExceptions: true, headers: { 'Accept': 'application/json' } });
+
+  // B) POST form-urlencoded (query come campo)
+  prova('B_POST_form', base + '***',
+    { method: 'post', muteHttpExceptions: true,
+      payload: { query: queryJson, languages: 'en', pageNumber: '1', pageSize: '5' } });
+
+  // C) POST multipart (query come blob -> forza multipart/form-data)
+  prova('C_POST_multipart', base + '***',
+    { method: 'post', muteHttpExceptions: true,
+      payload: { query: Utilities.newBlob(queryJson, 'application/json', 'query'),
+                 languages: 'en', pageNumber: '1', pageSize: '5' } });
+
+  Logger.log('RIEPILOGO testEuFtApi: ' + JSON.stringify(report, null, 2));
+  return report;
+}
+
 function _agentCleanHtml_(html) {
   // Preserva link come [URL: href] prima di stripare tag (fix v4.12.3)
   var cleaned = html.replace(/<a\s+[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi, function(m, href, text) {
