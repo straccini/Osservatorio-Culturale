@@ -170,6 +170,69 @@ function scanAgente5() { return scanAgente(5); }
  */
 function diagnosiFontiAg1() { return diagnosiFontiAgente(1); }
 
+/**
+ * BONIFICA: disattiva le fonti di AG1 perennemente "vuote" — quelle con
+ * UltimoEsito che inizia per 'EMPTY' E nessun bando mai raccolto (NRecordTotali=0).
+ * Lo scan diventa piu' veloce e mirato (non sprecano slot di scansione).
+ *
+ * REVERSIBILE: marca la colonna UltimoErrore = 'BONIFICATO_EMPTY' e mette
+ * Attiva=false. Per riattivarle tutte: annullaBonificaFontiAg1().
+ * Oppure a mano: rimetti Attiva=true nella riga del foglio FontiBandi_v5.
+ *
+ * NB: NON tocca le fonti NO_MATCH o con bandi gia' raccolti (le tiene attive).
+ */
+function bonificaFontiAg1() { return bonificaFontiEmptyAgente(1); }
+
+function bonificaFontiEmptyAgente(agenteId) {
+  var sh = _agentGetFontiSheet_();
+  if (!sh || sh.getLastRow() < 2) { Logger.log('Nessuna fonte trovata'); return { ok: false }; }
+  var data = sh.getDataRange().getValues();
+  var h = data[0];
+  var iAg = h.indexOf('Agente'), iAtt = h.indexOf('Attiva'), iNome = h.indexOf('Nome'),
+      iEsito = h.indexOf('UltimoEsito'), iTot = h.indexOf('NRecordTotali'), iErr = h.indexOf('UltimoErrore');
+  if (iAtt < 0 || iEsito < 0) { Logger.log('Colonne Attiva/UltimoEsito assenti'); return { ok: false }; }
+  var disattivate = [];
+  for (var r = 1; r < data.length; r++) {
+    var row = data[r];
+    var ags = String(row[iAg] == null ? '' : row[iAg]).split(/[,;]/).map(function(s) { return Number(s.trim()); });
+    if (ags.indexOf(agenteId) < 0) continue;
+    var attiva = !(row[iAtt] === false || String(row[iAtt]).toLowerCase() === 'false');
+    if (!attiva) continue;
+    var esito = String(row[iEsito] || '');
+    var tot = Number(row[iTot]) || 0;
+    if (esito.indexOf('EMPTY') === 0 && tot === 0) {
+      sh.getRange(r + 1, iAtt + 1).setValue(false);
+      if (iErr >= 0) sh.getRange(r + 1, iErr + 1).setValue('BONIFICATO_EMPTY');
+      disattivate.push(row[iNome]);
+    }
+  }
+  Logger.log('=== BONIFICA AG' + agenteId + ': disattivate ' + disattivate.length + ' fonti vuote (EMPTY, 0 bandi) ===');
+  disattivate.forEach(function(n) { Logger.log('  - ' + n); });
+  Logger.log('Per annullare: annullaBonificaFontiAg1()');
+  return { ok: true, disattivate: disattivate.length, nomi: disattivate };
+}
+
+/** Annulla la bonifica: riattiva tutte le fonti marcate 'BONIFICATO_EMPTY'. */
+function annullaBonificaFontiAg1() {
+  var sh = _agentGetFontiSheet_();
+  if (!sh || sh.getLastRow() < 2) { Logger.log('Nessuna fonte'); return { ok: false }; }
+  var data = sh.getDataRange().getValues();
+  var h = data[0];
+  var iAtt = h.indexOf('Attiva'), iNome = h.indexOf('Nome'), iErr = h.indexOf('UltimoErrore');
+  if (iErr < 0) { Logger.log('Colonna UltimoErrore assente: niente da ripristinare'); return { ok: false }; }
+  var riattivate = [];
+  for (var r = 1; r < data.length; r++) {
+    if (String(data[r][iErr] || '') === 'BONIFICATO_EMPTY') {
+      sh.getRange(r + 1, iAtt + 1).setValue(true);
+      sh.getRange(r + 1, iErr + 1).setValue('');
+      riattivate.push(data[r][iNome]);
+    }
+  }
+  Logger.log('=== ANNULLA BONIFICA: riattivate ' + riattivate.length + ' fonti ===');
+  riattivate.forEach(function(n) { Logger.log('  - ' + n); });
+  return { ok: true, riattivate: riattivate.length, nomi: riattivate };
+}
+
 function diagnosiFontiAgente(agenteId) {
   var sh = _agentGetFontiSheet_();
   if (!sh || sh.getLastRow() < 2) { Logger.log('Nessuna fonte trovata'); return []; }
