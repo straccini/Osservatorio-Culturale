@@ -5791,19 +5791,26 @@
       attiva: ($('fuFiltroAttiva') || {}).value || '',
       q:      ($('fuRicerca')      || {}).value || ''
     };
-    var collected = { bandi: null, feed: null };
+    var collected = { bandi: null, feed: null, bandiErr: '', feedErr: '' };
     function tryRender() {
-      if (collected.bandi === null || collected.feed === null) return;
-      var merged = collected.bandi.concat(collected.feed);
+      var bandi = collected.bandi || [];
+      var feed  = collected.feed  || [];
+      var merged = bandi.concat(feed);
       var fq = String(filtro.q || '').toLowerCase();
-      merged = merged.filter(function(f) {
+      var shown = merged.filter(function(f) {
         if (filtro.tipo && f.tipo !== filtro.tipo) return false;
         if (filtro.attiva === 'true'  && !f.attiva) return false;
         if (filtro.attiva === 'false' &&  f.attiva) return false;
         if (fq && String(f.nome||'').toLowerCase().indexOf(fq) < 0 && String(f.url||'').toLowerCase().indexOf(fq) < 0) return false;
         return true;
       });
-      renderFontiUnifiedTable(wrap, merged, null);
+      if (shown.length) { renderFontiUnifiedTable(wrap, shown, null); return; }
+      // Vuoto: mostra diagnostica solo quando ENTRAMBE le sorgenti hanno risposto
+      if (collected.bandi !== null && collected.feed !== null && wrap) {
+        wrap.innerHTML = '<div class="empty-state sm">Nessuna fonte da mostrare. (bandi: ' + bandi.length +
+          (collected.bandiErr ? ' — err: ' + esc(collected.bandiErr) : '') + ' · feed: ' + feed.length +
+          (collected.feedErr ? ' — err: ' + esc(collected.feedErr) : '') + ')</div>';
+      }
     }
     // BANDI (FU17, sistema invariato)
     google.script.run
@@ -5812,7 +5819,7 @@
         collected.bandi = arr.filter(function(f){ return f.tipo === 'bandi'; }).map(function(f){ f._src = 'fu'; return f; });
         tryRender();
       })
-      .withFailureHandler(function(e) { collected.bandi = []; tryRender(); })
+      .withFailureHandler(function(e) { collected.bandi = []; collected.bandiErr = String(e).substring(0,80); tryRender(); })
       .getFontiUnified({ tipo: 'bandi', sortBy: 'stato' });
     // News/Podcast/Video dal nuovo archivio FontiFeed
     google.script.run
@@ -5824,7 +5831,7 @@
         });
         tryRender();
       })
-      .withFailureHandler(function(e) { collected.feed = []; tryRender(); })
+      .withFailureHandler(function(e) { collected.feed = []; collected.feedErr = String(e).substring(0,80); tryRender(); })
       .getFontiFeedAdmin({});
   }
 
