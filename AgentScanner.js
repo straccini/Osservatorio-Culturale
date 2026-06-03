@@ -473,6 +473,24 @@ function _euftFetch_(url) {
   } catch(e) { return null; }
 }
 
+/**
+ * DIAGNOSTICA: mostra esattamente cosa produce _euftFetch_ (cioe' cosa riceve Claude)
+ * per la keyword 'cultural heritage'. Serve a capire se le call EU arrivano, se il
+ * filtro stato tiene qualcosa, e se i campi sono leggibili. Lanciare da editor.
+ */
+function testEuFtFetch() {
+  var url = 'https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=' + encodeURIComponent('cultural heritage');
+  var out = _euftFetch_(url);
+  if (out === null) {
+    Logger.log('_euftFetch_ -> NULL (fetch fallito / JSON non valido / 0 risultati dopo filtro stato)');
+    return 0;
+  }
+  Logger.log('_euftFetch_ OK — lunghezza testo: ' + out.length + ' char');
+  Logger.log('--- TESTO PASSATO A CLAUDE (primi 2800 char) ---');
+  Logger.log(out.substring(0, 2800));
+  return out.length;
+}
+
 /** Estrae query+limit dall'URL-convenzione TED e costruisce il body POST. */
 function _tedBuildBody_(url) {
   // Default valido (mai '*': TED lo rifiuta con 400). Famiglia CPV cultura/musei.
