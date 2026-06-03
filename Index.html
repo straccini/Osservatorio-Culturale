@@ -388,6 +388,7 @@
           <option value="urgenti10">In scadenza ≤ 10 gg</option>
           <option value="recenti">Ultimi rilevati 30gg</option>
           <option value="salvati">★ Salvati</option>
+          <option value="esiti">🏆 Esiti / Aggiudicazioni</option>
         </select>
         <select id="bandiSort" class="filter-select" onchange="OC.sortBandi(this.value)" title="Ordina i bandi: per scadenza crescente (urgenti prima) · per importo decrescente · per data di rilevamento dello scanner · alfabetico" style="padding:8px 14px;border:1px solid var(--rule-2,#D2D2D7);border-radius:14px;background:#fff;font-size:13px;color:var(--ink,#101010);cursor:pointer">
           <option value="scadenza-asc">Ordina: Scadenza ↑</option>
@@ -4202,6 +4203,9 @@
       if (!_identFilterItem_(ambN, b.regione)) return;
       // L2 tematica
       if (fAmb > 0 && ambN !== fAmb) return;
+      // Esiti/aggiudicazioni: visibili SOLO nel preset 'esiti'; esclusi altrove
+      if (preset === 'esiti') { if (!b.esito) return; }
+      else if (b.esito) return;
       // L1 preset
       if (preset === 'recenti'   && !b.isRecente) return;
       if (preset === 'urgenti10' && !(giorni !== null && giorni >= 0 && giorni <= 10)) return;
@@ -4225,6 +4229,7 @@
       if (preset === 'salvati')    cnt.textContent = shown + ' salvati';
       else if (preset === 'recenti')    cnt.textContent = shown + ' rilevati negli ultimi 30gg';
       else if (preset === 'urgenti10')  cnt.textContent = shown + ' in scadenza entro 10gg';
+      else if (preset === 'esiti')      cnt.textContent = shown + ' esiti / aggiudicazioni';
       else cnt.textContent = shown < total ? shown + ' di ' + total + ' bandi' : total + ' bandi monitorati';
     }
 
@@ -10740,6 +10745,8 @@
       var filtered = list.filter(function(b){
         var ambN = _ambNum_(b.ambito) || _ambNum_(b.settore) || 0;
         if (fAmb > 0 && ambN !== fAmb) return false;
+        if (preset === 'esiti') { if (!b.esito) return false; }
+        else if (b.esito) return false;
         var giorni = b.giorni != null ? parseInt(b.giorni, 10) : null;
         if (preset === 'recenti'   && !b.isRecente) return false;
         if (preset === 'urgenti10' && !(giorni !== null && giorni >= 0 && giorni <= 10)) return false;

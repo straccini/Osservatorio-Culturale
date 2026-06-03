@@ -88,10 +88,13 @@ function importaEsitiTed(opts) {
     var dataPub = arr0(n['publication-date']) || '';
     var link = pubnum ? ('https://ted.europa.eu/it/notice/' + pubnum + '/html') : '';
     var id = 'SB' + Date.now() + Math.random().toString(36).substring(2, 4);
+    var dataTxt = dataPub ? String(dataPub).slice(0, 10) : '';
+    // NB: Scadenza VUOTA (col12): gli esiti non hanno scadenza e cosi' non vengono
+    // scartati da getBandiV5 (che elimina gli scaduti da >30gg). La data e' nel sommario.
     sheet.appendRow([
       id, '', new Date(), titolo, ente, 'UE', 'Tutte', 'Cultura', '', '', '',
-      (dataPub ? new Date(dataPub) : ''), 'TED-Esiti', 'TED — Esiti/Aggiudicazioni',
-      link, '', '', '', 'Avviso di aggiudicazione (esito) — appalto cultura', '', '',
+      '', 'TED-Esiti', 'TED — Esiti/Aggiudicazioni',
+      link, '', '', '', 'Avviso di aggiudicazione (esito) — appalto cultura' + (dataTxt ? ' — pubblicato il ' + dataTxt : ''), '', '',
       'Esito', 'attivo', false, false, '[auto:TED Esiti]'
     ]);
     titoli.push(norm);

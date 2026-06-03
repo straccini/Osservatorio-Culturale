@@ -198,6 +198,34 @@ function backupFoglioV4() {
   return report;
 }
 
+/**
+ * v4.19.1 — Wrapper generalizzato per backup da pannello admin.
+ */
+function backupSpreadsheet() {
+  var r = backupFoglioV4();
+  return { ok: r.ok, nome: r.backupUrl ? r.backupUrl.split('/d/')[1] : '', url: r.backupUrl || '', error: (r.errors||[]).join(', ') };
+}
+
+/**
+ * v4.19.1 — Lista backup recenti dal foglio BackupInfo_v5.
+ */
+function getBackupList() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(SH_BACKUP_INFO);
+  if (!sh || sh.getLastRow() < 2) return { ok:true, backups:[] };
+  var data = sh.getDataRange().getValues();
+  var backups = [];
+  for (var r = data.length - 1; r >= 1 && backups.length < 20; r--) {
+    backups.push({
+      data: data[r][0] ? Utilities.formatDate(new Date(data[r][0]), 'Europe/Rome', 'dd/MM/yyyy HH:mm') : '',
+      nome: String(data[r][1] || ''),
+      url: String(data[r][2] || ''),
+      note: String(data[r][3] || '')
+    });
+  }
+  return { ok:true, backups:backups };
+}
+
 // ============================================================================
 // FASE 1.B - SETUP SCHEMA FOGLI v5
 // ----------------------------------------------------------------------------
@@ -1817,6 +1845,7 @@ function getBandiV5(limit) {
         scadDate: scadDate,
         giorni  : giorni,
         dataRil : rawRil,
+        esito   : String(row[COL_B.STATUS - 1] || '').toLowerCase() === 'esito',
         link    : row[COL_B.URL_BANDO - 1] || row[COL_B.URL_ENTE - 1] || ''
       });
     }
@@ -1863,6 +1892,7 @@ function getBandiV5(limit) {
         isUrgent : x.giorni !== null && x.giorni >= 0 && x.giorni <= 7,
         isRecente: !!(x.dataRil instanceof Date && !isNaN(x.dataRil.getTime()) && x.dataRil.getTime() >= sette_fa),
         dataRil  : rilFmt,
+        esito    : !!x.esito,
         link     : String(x.link || '')
       };
     });
@@ -1891,6 +1921,8 @@ function getUltimiBandiV5(limit) {
       if (!row[COL_B.ID - 1]) continue;
       var stato = String(row[COL_B.STATO_RECORD - 1] || '').toLowerCase();
       if (stato === 'archiviato') continue;
+      // Escludi gli esiti/aggiudicazioni dalla home (sono nella pagina bandi, filtro "Esiti")
+      if (String(row[COL_B.STATUS - 1] || '').toLowerCase() === 'esito') continue;
       var rawRil = row[COL_B.DATA_RILEVAMENTO - 1];
       var rilDate = (rawRil instanceof Date) ? rawRil : (rawRil ? new Date(rawRil) : new Date(0));
       items.push({ r: r, rilDate: rilDate });
