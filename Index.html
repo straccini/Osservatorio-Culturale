@@ -2027,6 +2027,7 @@
             <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Cron digest weekly</td><td style="padding:8px;border-bottom:1px solid #eee" id="settingsCronStatus">verifica…</td></tr>
             <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Trigger scanner bandi</td><td style="padding:8px;border-bottom:1px solid #eee">Mar+Ven 07:00 (lunediMattina + scanSources)</td></tr>
             <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">URL webapp</td><td style="padding:8px;border-bottom:1px solid #eee;font-family:monospace;font-size:11px;word-break:break-all" id="settingsWebUrl">—</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Login pubblico</td><td style="padding:8px;border-bottom:1px solid #eee" id="settingsLoginStatus">verifica…</td></tr>
           </table>
         </div>
         <div class="admin-card" style="margin-bottom:14px">
@@ -2722,6 +2723,13 @@
           })
           .validaSessione(savedToken);
       }
+    }
+    // v4.20 — Check login status
+    if (hasGAS()) {
+      google.script.run
+        .withSuccessHandler(function(r){ window._ocLoginEnabled = !!(r && r.enabled); })
+        .withFailureHandler(function(){ window._ocLoginEnabled = false; })
+        .statoLoginPubblico();
     }
     // v4.18.67 — Mostra bottone login se anonimo
     if (!OC_SESSION || !OC_SESSION.token) {
@@ -6192,6 +6200,26 @@
       .scanSingolaFontePodcast(id);
   }
 
+  // v4.20 — Login pubblico admin toggle
+  function _abilitaLoginPubblico() {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) { showToast('Login pubblico ATTIVATO', 'ok'); window._ocLoginEnabled = true; if (typeof loadSettingsConfig === 'function') loadSettingsConfig(); }
+        else showToast((r && r.error) || 'Errore', 'err');
+      })
+      .withFailureHandler(function(err) { showToast('Errore: ' + err, 'err'); })
+      .abilitaLoginPubblico();
+  }
+  function _disabilitaLoginPubblico() {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) { showToast('Login pubblico DISATTIVATO', 'ok'); window._ocLoginEnabled = false; if (typeof loadSettingsConfig === 'function') loadSettingsConfig(); }
+        else showToast((r && r.error) || 'Errore', 'err');
+      })
+      .withFailureHandler(function(err) { showToast('Errore: ' + err, 'err'); })
+      .disabilitaLoginPubblico();
+  }
+
   function loadSettingsConfig() {
     if (!hasGAS()) return;
     google.script.run
@@ -6219,6 +6247,18 @@
       })
       .withFailureHandler(function(){})
       .getWebAppUrl();
+    // v4.20 — Login pubblico toggle
+    google.script.run
+      .withSuccessHandler(function(r) {
+        var el = $('settingsLoginStatus');
+        if (!el) return;
+        var on = !!(r && r.enabled);
+        el.innerHTML = '<span style="color:' + (on ? 'var(--amb-2,#3F7A5E)' : 'var(--danger,#C2410C)') + ';font-weight:600">' + (on ? 'ATTIVO' : 'DISATTIVO') + '</span>'
+          + ' <button onclick="OC.abilitaLoginPubblico()" style="margin-left:8px;padding:4px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--surface-2);cursor:pointer;font-size:11px;display:' + (on ? 'none' : 'inline-block') + '">Attiva</button>'
+          + '<button onclick="OC.disabilitaLoginPubblico()" style="margin-left:8px;padding:4px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--surface-2);cursor:pointer;font-size:11px;display:' + (on ? 'inline-block' : 'none') + '">Disattiva</button>';
+      })
+      .withFailureHandler(function(){})
+      .statoLoginPubblico();
   }
 
   // ==========================================================
@@ -7147,21 +7187,24 @@
     var overlay = document.createElement('div');
     overlay.id = 'oc-regform-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.6);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
+    var _loginOn = (window._ocLoginEnabled === true);
     overlay.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:460px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);padding:36px 32px;font-family:var(--font-ui,sans-serif);max-height:calc(100vh - 40px);overflow-y:auto">'
-      // --- Sezione 1: Sono gia registrato ---
-      + '<div style="font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:4px">Sono gia registrato</div>'
-      + '<p style="font-size:13px;color:var(--ink-2);line-height:1.5;margin:0 0 14px">Inserisci la tua email per accedere.</p>'
-      + '<div style="display:flex;gap:8px;margin-bottom:6px">'
-      + '<input type="email" id="loginFormEmail" placeholder="La tua email" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />'
-      + '<button type="button" onclick="OC._submitLoginForm()" style="background:var(--ink,#1A1815);color:#fff;border:none;padding:10px 20px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Accedi</button>'
-      + '</div>'
-      + '<div id="loginFormMsg" style="text-align:center;margin-bottom:4px;font-size:12.5px;min-height:18px" hidden></div>'
-      // --- Separatore ---
-      + '<div style="display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--ink-4,#aaa);font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:600">'
-      + '<div style="flex:1;height:1px;background:var(--rule,#E5E5E7)"></div>'
-      + '<span>oppure</span>'
-      + '<div style="flex:1;height:1px;background:var(--rule,#E5E5E7)"></div>'
-      + '</div>'
+      // --- Sezione 1: Sono gia registrato (condizionale v4.20) ---
+      + (_loginOn
+        ? '<div style="font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:4px">Sono gia registrato</div>'
+          + '<p style="font-size:13px;color:var(--ink-2);line-height:1.5;margin:0 0 14px">Inserisci la tua email per accedere.</p>'
+          + '<div style="display:flex;gap:8px;margin-bottom:6px">'
+          + '<input type="email" id="loginFormEmail" placeholder="La tua email" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />'
+          + '<button type="button" onclick="OC._submitLoginForm()" style="background:var(--ink,#1A1815);color:#fff;border:none;padding:10px 20px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Accedi</button>'
+          + '</div>'
+          + '<div id="loginFormMsg" style="text-align:center;margin-bottom:4px;font-size:12.5px;min-height:18px" hidden></div>'
+          + '<div style="display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--ink-4,#aaa);font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:600">'
+          + '<div style="flex:1;height:1px;background:var(--rule,#E5E5E7)"></div>'
+          + '<span>oppure</span>'
+          + '<div style="flex:1;height:1px;background:var(--rule,#E5E5E7)"></div>'
+          + '</div>'
+        : '<div style="text-align:center;padding:16px 0 12px;font-size:13px;color:var(--ink-3);border-bottom:1px solid var(--rule,#E5E5E7);margin-bottom:16px">Accesso utenti non ancora attivo</div>'
+      )
       // --- Sezione 2: Registrati ---
       + '<div style="font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--ink);margin-bottom:4px">Registrati gratuitamente</div>'
       + '<p style="font-size:12.5px;color:var(--ink-2);line-height:1.5;margin:0 0 14px">Accedi a tutti i contenuti: bandi, news, podcast, report e molto altro. <b>Tutti i servizi sono gratuiti.</b></p>'
@@ -9228,6 +9271,9 @@
     _gateSubmitNl: function(){ /* rimosso v5.1.10 */ },
     _submitRegForm: function(){ _submitRegForm_(); },
     _submitLoginForm: function(){ _submitLoginForm_(); },
+    // v4.20 — Login pubblico admin toggle
+    abilitaLoginPubblico: _abilitaLoginPubblico,
+    disabilitaLoginPubblico: _disabilitaLoginPubblico,
     // v4.18.48 — Workspace personale
     loadWorkspacePage: loadWorkspacePage,
     openMatrixReport: function(responseId){

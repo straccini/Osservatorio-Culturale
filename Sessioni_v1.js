@@ -130,8 +130,18 @@ function validaSessione(token) {
     if (!sess) return { ok:true, valid:false, reason:'token_non_trovato' };
     if (sess.revoked) return { ok:true, valid:false, reason:'revocata' };
 
-    // v4.18.47 — Tutte le sessioni sono permanenti. Logica read-only/scaduta eliminata.
+    // v4.19.1 — TTL sessioni: se OC_SESSION_TTL_DAYS è configurato, sessioni scadono dopo N giorni di inattività
     var now = new Date();
+    var ttlDays = 0;
+    try { ttlDays = parseInt(PropertiesService.getScriptProperties().getProperty('OC_SESSION_TTL_DAYS') || '0'); } catch(_){}
+    if (ttlDays > 0 && sess.last_seen) {
+      var lastSeen = new Date(sess.last_seen);
+      var daysSince = (now.getTime() - lastSeen.getTime()) / (86400000);
+      if (daysSince > ttlDays) {
+        Logger.log('[validaSessione] Sessione scaduta per inattivita: ' + sess.email + ' (' + Math.round(daysSince) + 'gg)');
+        return { ok:true, valid:false, reason:'scaduta_inattivita' };
+      }
+    }
     sh.getRange(sess._row, 9).setValue(now); // last_seen
 
     // Determina livello: 3 se admin, 1 altrimenti
@@ -157,6 +167,121 @@ function validaSessione(token) {
   } catch(e) {
     Logger.log('validaSessione errore: ' + e.message);
     return { ok:false, error: e.message, valid:false };
+  }
+}
+
+/**
+ * v5.1.10 — Login con sola email (senza password).
+ * Verifica che l'email esista nel foglio Utenti con stato='attivo'.
+ * Se esiste, crea/riusa sessione e ritorna il token direttamente (login immediato).
+ * Se non esiste, ritorna errore.
+ *
+ * NOTA: sistema senza password (flag OC_AUTH_REQUIRE_PASSWORD in ScriptProperties
+ * per abilitare la verifica password in futuro — default false).
+ *
+ * @param {string} email
+ * @return {Object} {ok, token, livello, email, nome, error?}
+ */
+/**
+ * v4.19.1 — Abilita/disabilita il login pubblico via email.
+ * Quando disabilitato, loginConEmail ritorna errore per tutti tranne admin.
+ * Eseguire dall'editor GAS o dal pannello admin.
+ */
+function enablePublicLogin() {
+  PropertiesService.getScriptProperties().setProperty('OC_PUBLIC_LOGIN_ENABLED', 'true');
+  Logger.log('Login pubblico ABILITATO');
+  return { ok:true, status:'enabled' };
+}
+function disablePublicLogin() {
+  PropertiesService.getScriptProperties().setProperty('OC_PUBLIC_LOGIN_ENABLED', 'false');
+  Logger.log('Login pubblico DISABILITATO');
+  return { ok:true, status:'disabled' };
+}
+
+/**
+ * v4.20 — Helper fail-closed: login pubblico attivo SOLO se flag === 'true'.
+ * Flag assente o qualsiasi altro valore = CHIUSO.
+ */
+function isPublicLoginEnabled_() {
+  try { return PropertiesService.getScriptProperties().getProperty('OC_PUBLIC_LOGIN_ENABLED') === 'true'; }
+  catch (e) { return false; }
+}
+
+/** Toggle admin-only per il login pubblico */
+function abilitaLoginPubblico() {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+  PropertiesService.getScriptProperties().setProperty('OC_PUBLIC_LOGIN_ENABLED', 'true');
+  return { ok:true, enabled:true };
+}
+function disabilitaLoginPubblico() {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+  PropertiesService.getScriptProperties().setProperty('OC_PUBLIC_LOGIN_ENABLED', 'false');
+  return { ok:true, enabled:false };
+}
+/** Stato leggibile dal frontend (nessun guard — info pubblica) */
+function statoLoginPubblico() {
+  return { ok:true, enabled: isPublicLoginEnabled_() };
+}
+
+function loginConEmail(email) {
+  try {
+    if (!email || !String(email).trim()) return { ok:false, error:'email_mancante' };
+    email = String(email).trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok:false, error:'email_non_valida' };
+
+    // v4.20 — Fail-closed: login pubblico attivo SOLO se flag === 'true'
+    if (!isPublicLoginEnabled_()) {
+      return { ok:false, error:'login_disabilitato', message:'Il login pubblico non e ancora attivo. Contatta l\'amministratore.' };
+    }
+
+    // Cerca nel foglio Utenti
+    var utente = (typeof getUtenteByEmail_ === 'function') ? getUtenteByEmail_(email) : null;
+    if (!utente) return { ok:false, error:'email_non_registrata' };
+    if (utente.stato !== 'attivo') return { ok:false, error:'account_non_attivo', stato: utente.stato };
+
+    // v4.20 — Ruoli elevati: admin/editor non accedono via email semplice
+    if (utente.ruolo === 'admin' || utente.ruolo === 'editor') {
+      return { ok:false, error:'usa_accesso_admin', message:'Accedi tramite il link admin dedicato.' };
+    }
+
+    // Crea o riusa sessione (senza inviare magic-link email)
+    var sh = _getOrCreateSessioniSheet_();
+    var existing = _findSessioneByEmail_(sh, email);
+    var token, livello;
+
+    // Livello dal ruolo utente (solo lettore arriva qui)
+    livello = 1;
+
+    if (existing && !existing.revoked) {
+      // Sessione esistente: aggiorna last_seen e livello
+      token = existing.token;
+      sh.getRange(existing._row, 4).setValue(livello);
+      sh.getRange(existing._row, 9).setValue(new Date());
+    } else {
+      // Crea sessione nuova
+      var id = 'S' + Date.now() + Math.random().toString(36).substring(2, 6);
+      token = _generaToken_();
+      sh.appendRow([
+        id, email, token, livello, '', 'login',
+        !!utente.optIn && utente.optIn.matrix,
+        new Date(), new Date(), false
+      ]);
+    }
+
+    Logger.log('[AUTH] loginConEmail OK: ' + email + ' livello=' + livello);
+    return {
+      ok: true,
+      token: token,
+      livello: livello,
+      email: email,
+      nome: utente.nome || email.split('@')[0],
+      ruolo: utente.ruolo || 'lettore',
+      permanente: true,
+      matrixCompletato: !!(existing && existing.matrix_completato)
+    };
+  } catch(e) {
+    Logger.log('loginConEmail errore: ' + e.message);
+    return { ok:false, error: e.message };
   }
 }
 
