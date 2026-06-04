@@ -1533,25 +1533,13 @@
       <!-- ===== 1. AZIONI RAPIDE ===== -->
       <div class="admin-card" style="margin-bottom:16px;border-left:4px solid var(--amb-3,#3C6A95)">
         <h3 style="margin-top:0;font-size:15px">Azioni rapide</h3>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
-          <button class="btn btn-primary" data-action="generaDigest" style="text-align:left;padding:12px 16px">
-            <div style="font-weight:700">Prepara newsletter</div>
-            <div style="font-size:11px;font-weight:400;opacity:.8;margin-top:2px">Crea bozza con bandi, news e podcast recenti. Controlla l'anteprima prima di inviare.</div>
-          </button>
-          <button class="btn btn-secondary" data-action="testDigestAdmin" style="text-align:left;padding:12px 16px">
-            <div style="font-weight:700">Test su mia email</div>
-            <div style="font-size:11px;font-weight:400;opacity:.7;margin-top:2px">Invia una copia della newsletter alla tua email admin per verificare il risultato.</div>
-          </button>
-          <button class="btn btn-primary" data-action="generaQueueAll" style="text-align:left;padding:12px 16px;background:var(--accent,#935851)">
-            <div style="font-weight:700">Genera digest Matrix</div>
-            <div style="font-size:11px;font-weight:400;opacity:.8;margin-top:2px">Crea email personalizzate per i compilatori (top 3 gap + contenuti). Salta bozze recenti.</div>
-          </button>
-          <button class="btn btn-warning" data-action="inviaTuttiPending" style="text-align:left;padding:12px 16px">
-            <div style="font-weight:700">Invia bozze pending</div>
-            <div style="font-size:11px;font-weight:400;opacity:.8;margin-top:2px">Spedisce tutte le bozze in stato 'draft'. Controlla la quota email prima di procedere.</div>
-          </button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn btn-primary" data-action="generaDigest" style="padding:8px 16px;font-size:13px" title="Crea bozza newsletter con bandi, news e podcast recenti">Prepara newsletter</button>
+          <button class="btn btn-secondary" data-action="testDigestAdmin" style="padding:8px 16px;font-size:13px" title="Invia copia di test alla tua email admin">Test su mia email</button>
+          <button class="btn btn-primary" data-action="generaQueueAll" style="padding:8px 16px;font-size:13px;background:var(--accent,#935851)" title="Genera email personalizzate per i compilatori Matrix (top 3 gap + contenuti)">Genera digest Matrix</button>
+          <button class="btn btn-warning" data-action="inviaTuttiPending" style="padding:8px 16px;font-size:13px" title="Spedisce tutte le bozze draft. Controlla quota email prima.">Invia bozze pending</button>
         </div>
-        <div class="admin-counts" style="margin-top:10px">
+        <div class="admin-counts">
           <span><b id="adminLastBandi">—</b> bandi</span>
           <span><b id="adminLastNews">—</b> news</span>
           <span><b id="adminLastPodcast">—</b> podcast</span>
@@ -5144,7 +5132,7 @@
     google.script.run
       .withSuccessHandler(function(r){ _renderCompilatori_(r); })
       .withFailureHandler(function(err){ wrap.innerHTML = '<div style="padding:20px;color:var(--danger,#C2410C)">Errore: ' + esc(err && err.message ? err.message : String(err)) + '</div>'; })
-      .getCompilatoriMatrixSummary({ limit: 100, soloConEmail: soloEmail });
+      .getCompilatoriMatrixSummary({ limit: 100, soloConEmail: soloEmail, token: (window.OC_SESSION && window.OC_SESSION.token) || null });
   }
 
   function _renderCompilatori_(r){

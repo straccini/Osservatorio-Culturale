@@ -777,10 +777,11 @@ function testCronGenerateDigestWeekly() {
  *   syntheticScore, top3 (codici), email, hasOptIn, bandiPertinenti, newsPertinenti}] }
  */
 function getCompilatoriMatrixSummary(opts) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+  opts = opts || {};
+  var tk = opts.token || null;
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(tk)) {
     return { ok:false, error:'forbidden' };
   }
-  opts = opts || {};
   var limit = Number(opts.limit) || 100;
   var soloConEmail = !!opts.soloConEmail;
 
