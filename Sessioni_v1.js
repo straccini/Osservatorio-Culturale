@@ -768,19 +768,35 @@ function cleanupSessioniScadute() {
   try {
     var sh = _getOrCreateSessioniSheet_();
     var vals = sh.getDataRange().getValues();
-    if (vals.length < 2) return { ok:true, scadute:0, totali:0 };
+    if (vals.length < 2) return { ok:true, revocate:0, totali:0 };
     var now = new Date();
-    var scadute = 0, totali = 0;
-    for (var r = 1; r < vals.length; r++) {
+    var ttlDays = 0;
+    try { ttlDays = parseInt(PropertiesService.getScriptProperties().getProperty('OC_SESSION_TTL_DAYS') || '0'); } catch(_){}
+    var revocate = 0, totali = 0;
+    // Colonna 10 (index 9) = revoked
+    for (var r = vals.length - 1; r >= 1; r--) {
       if (!vals[r][2]) continue; // no token
+      if (vals[r][9] === true) continue; // già revocata
       totali++;
-      var scad = vals[r][4]; // scadenza
-      if (!scad) continue; // permanente
-      var d = (scad instanceof Date) ? scad : new Date(scad);
-      if (!isNaN(d.getTime()) && d < now) scadute++;
+      var scaduta = false;
+      // Check scadenza esplicita (colonna 5)
+      var scad = vals[r][4];
+      if (scad) {
+        var d = (scad instanceof Date) ? scad : new Date(scad);
+        if (!isNaN(d.getTime()) && d < now) scaduta = true;
+      }
+      // Check TTL per inattività (colonna 9 = last_seen)
+      if (!scaduta && ttlDays > 0 && vals[r][8]) {
+        var lastSeen = new Date(vals[r][8]);
+        if (!isNaN(lastSeen.getTime()) && (now.getTime() - lastSeen.getTime()) > ttlDays * 86400000) scaduta = true;
+      }
+      if (scaduta) {
+        sh.getRange(r + 1, 10).setValue(true); // revoca effettiva
+        revocate++;
+      }
     }
-    Logger.log('cleanupSessioniScadute: ' + scadute + ' scadute su ' + totali + ' totali');
-    return { ok:true, scadute:scadute, totali:totali };
+    Logger.log('cleanupSessioniScadute: ' + revocate + ' revocate su ' + totali + ' totali (TTL=' + ttlDays + 'gg)');
+    return { ok:true, revocate:revocate, totali:totali };
   } catch(e) { return { ok:false, error: e.message }; }
 }
 

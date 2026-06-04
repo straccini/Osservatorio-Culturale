@@ -559,12 +559,18 @@ function doPost(e) {
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
         return jsonOk(getDigestLog());
 
-      // Items
-      case 'editSommario':    return jsonOk(editSommario(body));
-      case 'toggleSaved':     return jsonOk(toggleItemField(body.id,'Salvato'));
-      case 'toggleArchived':  return jsonOk(toggleItemField(body.id,'Archiviato'));
-      case 'toggleDigest':    return jsonOk(toggleItemField(body.id,'InclusiNelDigest'));
-      case 'markRead':        return jsonOk(setItemField(body.id,'Letto',true));
+      // Items — write di contenuto globale: editor o admin
+      case 'editSommario':
+        if (role!=='editor' && role!=='admin') return jsonOk({error:'Accesso negato'});
+        return jsonOk(editSommario(body));
+      case 'toggleSaved':     return jsonOk(toggleItemField(body.id,'Salvato'));       // personale
+      case 'toggleArchived':
+        if (role!=='editor' && role!=='admin') return jsonOk({error:'Accesso negato'});
+        return jsonOk(toggleItemField(body.id,'Archiviato'));
+      case 'toggleDigest':
+        if (role!=='editor' && role!=='admin') return jsonOk({error:'Accesso negato'});
+        return jsonOk(toggleItemField(body.id,'InclusiNelDigest'));
+      case 'markRead':        return jsonOk(setItemField(body.id,'Letto',true));       // personale
       case 'deleteItem':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
         return jsonOk(_deleteRowById(getMainSS().getSheetByName(SH.ITEMS),body.id));
@@ -593,9 +599,15 @@ function doPost(e) {
       // Radar Bandi CRUD
       case 'getBandiRadar':        return jsonOk(getBandiRadar());
       case 'diagBandiSheet':       return jsonOk(diagBandiSheet());
-      case 'saveBandoRadar':       return jsonOk(saveBandoRadar(body));
-      case 'updateBandoRadar':     return jsonOk(updateBandoRadar(body));
-      case 'toggleNascostoRadar':  return jsonOk(toggleNascostoRadar(body.id,body.nascosto));
+      case 'saveBandoRadar':
+        if (role!=='editor' && role!=='admin') return jsonOk({error:'Accesso negato'});
+        return jsonOk(saveBandoRadar(body));
+      case 'updateBandoRadar':
+        if (role!=='editor' && role!=='admin') return jsonOk({error:'Accesso negato'});
+        return jsonOk(updateBandoRadar(body));
+      case 'toggleNascostoRadar':
+        if (role!=='editor' && role!=='admin') return jsonOk({error:'Accesso negato'});
+        return jsonOk(toggleNascostoRadar(body.id,body.nascosto));
       case 'deleteBandoRadar':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
         return jsonOk(deleteBandoRadar(body.id));
@@ -604,9 +616,13 @@ function doPost(e) {
         return jsonOk(sendTestTelegram());
 
       // * Archivio Bandi v3.0
-      case 'toggleLettoBando': return jsonOk(toggleLettoBando(body));
-      case 'archiviaRecord':   return jsonOk(archiviaRecord(body));
-      case 'ripristinaRecord': return jsonOk(ripristinaRecord(body));
+      case 'toggleLettoBando': return jsonOk(toggleLettoBando(body));          // personale
+      case 'archiviaRecord':
+        if (role!=='editor' && role!=='admin') return jsonOk({error:'Accesso negato'});
+        return jsonOk(archiviaRecord(body));
+      case 'ripristinaRecord':
+        if (role!=='editor' && role!=='admin') return jsonOk({error:'Accesso negato'});
+        return jsonOk(ripristinaRecord(body));
       case 'deleteArchiviato':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
         return jsonOk(deleteArchiviato(body));
@@ -665,8 +681,12 @@ function doPost(e) {
 
       // * PODCAST v3.2
       case 'getPodcasts':     return jsonOk(getPodcasts(body));
-      case 'savePodcast':     return jsonOk(savePodcast(body));
-      case 'togglePodField':  return jsonOk(togglePodField(body));
+      case 'savePodcast':
+        if (role!=='editor' && role!=='admin') return jsonOk({error:'Accesso negato'});
+        return jsonOk(savePodcast(body));
+      case 'togglePodField':
+        if (role!=='editor' && role!=='admin') return jsonOk({error:'Accesso negato'});
+        return jsonOk(togglePodField(body));
       case 'deletePodcast':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
         return jsonOk(deletePodcast(body.id));
