@@ -518,26 +518,9 @@ function previewDigestPerEmail(email) {
  * Da chiamare 1 volta dall'editor GAS o dal pannello admin.
  */
 function setupDigestRoutingTrigger() {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
-    return { ok:false, error:'forbidden' };
-  }
-  try {
-    var triggers = ScriptApp.getProjectTriggers();
-    var rimossi = 0;
-    triggers.forEach(function(t) {
-      var fn = t.getHandlerFunction();
-      if (fn === 'sendDigestAuto' || fn === 'sendDigestAuto2coorti' || fn === 'lunediMattina') {
-        ScriptApp.deleteTrigger(t); rimossi++;
-      }
-    });
-    ScriptApp.newTrigger('sendDigestAuto2coorti')
-      .timeBased()
-      .onWeekDay(ScriptApp.WeekDay.MONDAY)
-      .atHour(7).nearMinute(0)
-      .create();
-    Logger.log('Trigger sendDigestAuto2coorti installato: lunedì 07:00. (rimossi ' + rimossi + ' precedenti)');
-    return { ok:true, schedule:'lunedì 07:00', rimossi_precedenti: rimossi };
-  } catch(e) { return { ok:false, error: e.message }; }
+  // v4.20 DEPRECATO — usare setupMasterTriggers() come unico setup trigger
+  Logger.log('[DEPRECATO] setupDigestRoutingTrigger — usare setupMasterTriggers()');
+  return { ok: false, deprecato: true, message: 'Usare setupMasterTriggers()' };
 }
 
 /**

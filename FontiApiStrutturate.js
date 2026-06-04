@@ -347,23 +347,9 @@ function fasRunFase1() {
  * Installa trigger giornaliero per Fase 1 (ore 06:00, prima del digest).
  */
 function fasSetupTrigger() {
-  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) {
-    return { ok: false, error: 'forbidden' };
-  }
-  try {
-    // Rimuovi trigger esistenti (Fase 1 o completo)
-    ScriptApp.getProjectTriggers().forEach(function(t) {
-      var fn = t.getHandlerFunction();
-      if (fn === 'fasRunFase1' || fn === 'fasRunCompleto') ScriptApp.deleteTrigger(t);
-    });
-    // Installa trigger completo (Fase 1 + 2)
-    ScriptApp.newTrigger('fasRunCompleto')
-      .timeBased().everyDays(1).atHour(6).nearMinute(0).create();
-    Logger.log('[FAS] Trigger installato: fasRunCompleto ogni giorno alle 06:00');
-    return { ok: true, trigger: 'fasRunCompleto', ora: '06:00' };
-  } catch(e) {
-    return { ok: false, error: e.message };
-  }
+  // v4.20 DEPRECATO — usare setupMasterTriggers() come unico setup trigger
+  Logger.log('[DEPRECATO] fasSetupTrigger — usare setupMasterTriggers()');
+  return { ok: false, deprecato: true, message: 'Usare setupMasterTriggers()' };
 }
 
 /**

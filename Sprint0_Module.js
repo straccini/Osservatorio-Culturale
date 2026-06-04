@@ -225,24 +225,9 @@ function _logScan_(nomeFonte, tipo, esito, numNuovi, errore) {
  * Eseguire da editor una sola volta dopo deploy v4.6.0.
  */
 function setupTriggers_v46() {
-  // Delega a setupTriggersUnificati (Scannerbandi.js) che è la funzione master
-  if (typeof setupTriggersUnificati === 'function') {
-    setupTriggersUnificati();
-    return ScriptApp.getProjectTriggers().length;
-  }
-  // Fallback se setupTriggersUnificati non disponibile
-  var existing = ScriptApp.getProjectTriggers();
-  existing.forEach(function(t) { ScriptApp.deleteTrigger(t); });
-  ScriptApp.newTrigger('lunediMattina').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(6).create();
-  ScriptApp.newTrigger('scanSources').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(7).create();
-  ScriptApp.newTrigger('scanPodcast').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(7).nearMinute(30).create();
-  ScriptApp.newTrigger('sendDigestAuto').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(8).create();
-  ScriptApp.newTrigger('scanSources').timeBased().onWeekDay(ScriptApp.WeekDay.THURSDAY).atHour(7).create();
-  ScriptApp.newTrigger('scanPodcast').timeBased().onWeekDay(ScriptApp.WeekDay.THURSDAY).atHour(7).nearMinute(30).create();
-  ScriptApp.newTrigger('sendDigestAuto').timeBased().onWeekDay(ScriptApp.WeekDay.THURSDAY).atHour(8).create();
-  var nuovi = ScriptApp.getProjectTriggers();
-  Logger.log('Triggers configurati (fallback): ' + nuovi.length);
-  return nuovi.length;
+  // v4.20 DEPRECATO — usare setupMasterTriggers() come unico setup trigger
+  Logger.log('[DEPRECATO] setupTriggers_v46 — usare setupMasterTriggers()');
+  return { ok: false, deprecato: true, message: 'Usare setupMasterTriggers()' };
 }
 
 /**

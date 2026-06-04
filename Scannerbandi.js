@@ -517,26 +517,9 @@ function scanPodcast() {
 // ==================================================================
 
 function setupTriggersUnificati() {
-  ScriptApp.getProjectTriggers().forEach(function(t) { ScriptApp.deleteTrigger(t); });
-
-  // Lunedì 06:00 — scan completo + digest settimanale
-  ScriptApp.newTrigger('lunediMattina').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(6).create();
-
-  // Martedì 07:00 — scan news RSS + scan podcast/video
-  ScriptApp.newTrigger('scanSources').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(7).create();
-  ScriptApp.newTrigger('scanPodcast').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(7).nearMinute(30).create();
-
-  // Martedì 08:00 — digest automatico
-  ScriptApp.newTrigger('sendDigestAuto').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(8).create();
-
-  // Giovedì 07:00 — scan news RSS + scan podcast/video
-  ScriptApp.newTrigger('scanSources').timeBased().onWeekDay(ScriptApp.WeekDay.THURSDAY).atHour(7).create();
-  ScriptApp.newTrigger('scanPodcast').timeBased().onWeekDay(ScriptApp.WeekDay.THURSDAY).atHour(7).nearMinute(30).create();
-
-  // Giovedì 08:00 — digest automatico
-  ScriptApp.newTrigger('sendDigestAuto').timeBased().onWeekDay(ScriptApp.WeekDay.THURSDAY).atHour(8).create();
-
-  Logger.log('OK Trigger v4.1: Lun 06:00 | Mar+Gio 07:00 scanSources | Mar+Gio 07:30 scanPodcast | Mar+Gio 08:00 sendDigestAuto');
+  // v4.20 DEPRECATO — usare setupMasterTriggers() come unico setup trigger
+  Logger.log('[DEPRECATO] setupTriggersUnificati — usare setupMasterTriggers()');
+  return { ok: false, deprecato: true, message: 'Usare setupMasterTriggers()' };
 }
 
 // ==================================================================

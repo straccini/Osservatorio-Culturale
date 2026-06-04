@@ -75,7 +75,8 @@ var OC_TRIGGER_SCHEDULE = [
   // === NOTTE (manutenzione) ===
   { fn: 'sasRun',                       tipo: 'daily',    ora: 4,  min: 30,  desc: 'Supervisore: igiene + dedup + archivio bandi + quality check' },
 
-  // === ALBA (territoriale) ===
+  // === ALBA (fonti strutturate + territoriale) ===
+  { fn: 'fasRunCompleto',               tipo: 'daily',    ora: 5,  min: 15,  desc: 'Fonti API strutturate: fase1 fetch + fase2 analisi (daily 05:15)' },
   { fn: 'agrRunOggi',                   tipo: 'daily',    ora: 5,  min: 30,  desc: 'Monitor regionale (4 regioni/giorno)' },
   { fn: 'sasRunWeekly',                 tipo: 'weekly',   giorno: ScriptApp.WeekDay.MONDAY, ora: 5, min: 30, desc: 'Supervisore settimanale + backup + social draft + digest queue' },
   { fn: 'lunediMattina',               tipo: 'weekly',   giorno: ScriptApp.WeekDay.MONDAY, ora: 6, min: 0,  desc: 'Scan completo fonti lunedi' },

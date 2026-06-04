@@ -98,9 +98,9 @@ var OC_AMBITI = [
 // VERSIONE WEBAPP
 // ============================================================================
 
-var OC_VERSION = 'v4.18.63';
-var OC_VERSION_DATE = '2026-05-16';
-var OC_VERSION_NOTES = 'Sprint 2-5 anticipati (2026-05-11) - tutto in codebase locale, deploy non eseguito. SPRINT 2: schema unificato fonti 14 colonne (Fonti_v1.js), migrazione SocialFonti->FontiNews + split video (FontiMigration_v1.js), tab unica Tutte le Fonti in admin con filtri Tipo/Stato/Attiva + ricerca + counters dashboard. Toggle accessibilita topbar Aa+ piu visibile. SPRINT 3: Matrix radar chart Chart.js nel report con benchmark dinamico (Matrix_benchmark_v1.js - mediana/percentili compilatori). Card esplicativa Matrix in home con 3 pittogrammi + CTA dominante. SPRINT 4: CRM_v1.js con lead scoring automatico secondo tabella punti (compilazione+10 / opt-in followup+30 / click servizio+5 / digest open+1...). Notifica Telegram lead hot >=30pt. Privacy_v1.js con UTM tracking endpoint, right-to-be-forgotten /forget, pagina /trasparenza con dati aggregati anonimi. SPRINT 5: ROC_v1.js Radar Opportunita Cultura - 5 moduli outbound bando-driven (triage 4 filtri AND, notify Telegram, match musei, email batch personalizzate, approvazione manuale Silvano). Database MuseiDB_v1.tsv con 260 musei italiani curati. Cap pre-progettazioni 5-8/mese. Tono email noi Duemilamusei + firma Silvano. Da eseguire manualmente post-deploy: setupLibriSeed, runFullMigration_Fonti, roc_setupMuseiDB + import CSV MuseiDB_v1.tsv. Backend mancanti Sprint 1 risolti in Backend_v415.js (saveLibro, setupLibriSeed, saveNorma, invitaUtenteSendEmail, exportArchivio, emptyTrash).';
+var OC_VERSION = 'v4.19.1';
+var OC_VERSION_DATE = '2026-06-01';
+var OC_VERSION_NOTES = 'v4.19.1 — Nuove fonti generaliste cultura (Il Sole 24 Ore Cultura + Repubblica Cultura). Seed SW35/SW36 in SocialFonti + 2 righe in FONTI_NEWS_ISTITUZIONALI (priorita 2). Gate semantico passaFiltroCulturaMusei_ in scanSources: solo articoli musei/patrimonio/cultura dalle generaliste, off-topic scartati. Fonti istituzionali invariate. Monitoraggio via scanSources esistente (ogni 6h), nessun nuovo trigger. Da eseguire post-deploy: seedSocialFontiIstituzionali() + addFontiIstituzionali().';
 
 // ============================================================================
 // SOGLIE OPERATIVE
@@ -124,6 +124,11 @@ var OC_MUSEI_SENSIBILI_URL = '';
 // Caricare i file su Drive con permission "Chiunque con link può visualizzare"
 // e incollare l'URL nella card admin "Setup commerciale".
 // Formato URL Drive supportato: drive.google.com/file/d/{ID}/view oppure /uc?id={ID}
+//
+// ⚠ PRE GO-LIVE: chiamare saveCommercialConfig({calendarUrl, museiSensibiliUrl, logoUrl, heroImageUrl})
+//   dalla card admin "Setup commerciale" per popolare tutti e 4 i valori.
+//   Senza questa configurazione, logo, hero, calendario e PDF Musei Sensibili
+//   resteranno vuoti in produzione. La funzione è definita più avanti in questo file (riga ~299).
 var OC_LOGO_URL = '';
 var OC_HERO_IMAGE_URL = '';
 
