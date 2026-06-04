@@ -37,8 +37,9 @@ var OC_DRAFT_PROP_PFX_ = 'OC_NL_DRAFT_';  // ScriptProperty key prefix per draft
  * Elenco degli ultimi N digest preparati/inviati.
  * Ritorna { ok, items:[{id,data,soggetto,stato,destinatari,autore}], count }
  */
-function adminGetDigestList() {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+function adminGetDigestList(opts) {
+  var tk = (opts && opts.token) || null;
+  if (!_isCurrentUserAdmin_(tk)) return { ok:false, error:'forbidden' };
   var sh = _getOrCreateSheet_(OC_NL_SHEET_, ['ID','Data','Soggetto','Destinatari','Stato','Autore','Token']);
   var vals = sh.getDataRange().getValues();
   if (vals.length < 2) return { ok:true, items:[], count:0 };
@@ -121,8 +122,9 @@ function adminDeleteDigestDraft(draftId) {
  * opts: { maxBandi:int, maxNews:int, maxPodcast:int, soggetto:string, filtroAmbito:string }
  */
 function adminGenerateDigestDraft(opts) {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
   opts = opts || {};
+  var tk = opts.token || null;
+  if (!_isCurrentUserAdmin_(tk)) return { ok:false, error:'forbidden' };
   var maxBandi   = opts.maxBandi   || 8;
   var maxNews    = opts.maxNews    || 6;
   var maxPodcast = opts.maxPodcast || 3;
@@ -187,8 +189,8 @@ function adminGenerateDigestDraft(opts) {
 /**
  * Restituisce HTML completo della newsletter a partire dalla bozza.
  */
-function adminPreviewNewsletterHtml(draftId) {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+function adminPreviewNewsletterHtml(draftId, token) {
+  if (!_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden' };
   var draft = _loadDraft_(draftId);
   if (!draft) return { ok:false, error:'draft_not_found' };
   var html = '';
@@ -207,8 +209,8 @@ function adminPreviewNewsletterHtml(draftId) {
  * Il link apre il webapp in modalità "approva" (?approveNl=ID&t=TOKEN)
  * gestito in doGet di Codice.js (vedi handler in Newsletter_approve.js, rename v4.18.39).
  */
-function adminRequestSendAuthorization(draftId) {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+function adminRequestSendAuthorization(draftId, token) {
+  if (!_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden' };
   var draft = _loadDraft_(draftId);
   if (!draft) return { ok:false, error:'draft_not_found' };
 

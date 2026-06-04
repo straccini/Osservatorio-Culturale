@@ -4653,7 +4653,7 @@
     google.script.run
       .withSuccessHandler(renderDigestList)
       .withFailureHandler(function(err){ console.error(err); renderDigestList({ok:false,error:err}); })
-      .adminGetDigestList();
+      .adminGetDigestList({token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
     // v4.20 — KPI bar digest dashboard
     google.script.run.withSuccessHandler(function(r){
       if (!r) return;
@@ -6882,7 +6882,7 @@
         google.script.run
           .withSuccessHandler(renderDigestList)
           .withFailureHandler(function(err){ console.error('reload digestList:', err); })
-          .adminGetDigestList();
+          .adminGetDigestList({token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
       })
       .withFailureHandler(function(e){ alert('Errore di rete: '+e); })
       .adminDeleteDigestDraft(id);
@@ -7021,7 +7021,7 @@
         openPreview(r.id);
       })
       .withFailureHandler(function(e){ alert('Errore: '+e); $('adminStatus').textContent='errore'; })
-      .adminGenerateDigestDraft({});
+      .adminGenerateDigestDraft({token: (window.OC_SESSION && window.OC_SESSION.token) || null});
   }
 
   function openPreview(draftId){
@@ -7040,7 +7040,7 @@
         $('previewWrap').scrollIntoView({behavior:'smooth', block:'start'});
       })
       .withFailureHandler(function(e){ alert('Errore: '+e); })
-      .adminPreviewNewsletterHtml(draftId);
+      .adminPreviewNewsletterHtml(draftId, (window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
   function richiediAutorizzazione(){
@@ -7062,7 +7062,7 @@
         loadAdminPanel();
       })
       .withFailureHandler(function(e){ alert('Errore: '+e); })
-      .adminRequestSendAuthorization(draftId);
+      .adminRequestSendAuthorization(draftId, (window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
   function chiudiAnteprima(){ $('previewWrap').hidden = true; }
