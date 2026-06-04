@@ -31,7 +31,7 @@ function getUltimiBandiMonitorati(limit) {
       return db - da;
     });
     return rows.slice(0, n).map(_mapBando_);
-  } catch (e) { console.error('getUltimiBandiMonitorati:', e); return []; }
+  } catch (e) { Logger.log('getUltimiBandiMonitorati: ' + (e && e.message || e)); return []; }
 }
 
 // ------------------------------------------------------------
@@ -66,7 +66,7 @@ function getBandiListV42(limit) {
       return db - da;
     });
     return rows.slice(0, n).map(_mapBando_);
-  } catch (e) { console.error('getBandiListV42:', e); return []; }
+  } catch (e) { Logger.log('getBandiListV42: ' + (e && e.message || e)); return []; }
 }
 
 // ------------------------------------------------------------
@@ -96,6 +96,7 @@ function getNewsListV42(limit) {
     var iScore = _findCol_(head, ['Score','score','SCORE','ScoreAI']);
     var iSomm  = _findCol_(head, ['Sommario','SommarioAI','Descrizione','Description','Summary','Estratto']);
     var iSalv  = _findCol_(head, ['Salvato','salvato','SALVATO','Saved']);
+    var iReg   = _findCol_(head, ['Regione','regione','REGIONE','Region']);
     var out = [];
     var sette_fa = new Date(Date.now() - 7 * 86400000);
     // v4.18.15 (2026-05-12) D — Dedup news: stessa URL canonicalizzata (fallback titolo+fonte).
@@ -126,7 +127,8 @@ function getNewsListV42(limit) {
         ambito : iAmb>=0   ? row[iAmb]   : '',
         score  : iScore>=0 ? Math.round(Number(row[iScore])||0) : 0,
         sommario: iSomm>=0 ? String(row[iSomm]||'') : '',
-        salvato: salvVal === true || salvVal === 'TRUE' || salvVal === 1 || String(salvVal).toLowerCase() === 'true'
+        salvato: salvVal === true || salvVal === 'TRUE' || salvVal === 1 || String(salvVal).toLowerCase() === 'true',
+        regione: iReg>=0   ? String(row[iReg]||'') : ''
       });
     }
     out.sort(function(a,b){
@@ -147,10 +149,11 @@ function getNewsListV42(limit) {
         score    : x.score,
         sommario : String(x.sommario||''),
         isRecente: isRecente,
-        salvato  : !!x.salvato
+        salvato  : !!x.salvato,
+        regione  : String(x.regione||'')
       };
     });
-  } catch (e) { console.error('getNewsListV42:', e); return []; }
+  } catch (e) { Logger.log('getNewsListV42: ' + (e && e.message || e)); return []; }
 }
 
 // ------------------------------------------------------------
@@ -225,7 +228,7 @@ function getPodcastListV42(limit) {
         salvato  : !!x.salvato
       };
     });
-  } catch (e) { console.error('getPodcastListV42:', e); return []; }
+  } catch (e) { Logger.log('getPodcastListV42: ' + (e && e.message || e)); return []; }
 }
 
 // ------------------------------------------------------------
@@ -311,7 +314,7 @@ function getLibriListV42(limit) {
         salvato    : !!x.salvato
       };
     });
-  } catch(e) { console.error('getLibriListV42:', e); return []; }
+  } catch(e) { Logger.log('getLibriListV42: ' + (e && e.message || e)); return []; }
 }
 
 // ------------------------------------------------------------
@@ -385,7 +388,7 @@ function getVideoListV42(limit) {
         salvato : !!x.salvato
       };
     });
-  } catch (e) { console.error('getVideoListV42:', e); return []; }
+  } catch (e) { Logger.log('getVideoListV42: ' + (e && e.message || e)); return []; }
 }
 
 // ============================================================
@@ -405,6 +408,7 @@ function _radarBandiRows_(sh) {
   var iLink   = head.indexOf('Link');
   var iStato  = head.indexOf('StatoRecord');
   var iSalv   = _findCol_(head, ['Salvato','salvato','SALVATO','Saved']);
+  var iRegB   = _findCol_(head, ['Regione','regione','REGIONE','Region']);
   if (iTitolo < 0) iTitolo = 1;
   var oggi = new Date(); oggi.setHours(0,0,0,0);
   var out = [];
@@ -430,7 +434,8 @@ function _radarBandiRows_(sh) {
       scadenza: rawScad,
       giorni  : giorni,
       link    : iLink  >= 0 ? row[iLink]  : '',
-      salvato : iSalv  >= 0 ? row[iSalv]  : false
+      salvato : iSalv  >= 0 ? row[iSalv]  : false,
+      regione : iRegB  >= 0 ? String(row[iRegB]||'') : ''
     });
   }
   return out;
@@ -460,7 +465,8 @@ function _mapBando_(x) {
     isRecente: isRecente,
     dataRil  : _fmtBreveUB_(x.dataRil),
     link     : String(x.link || ''),
-    salvato : x.salvato === true || x.salvato === 'TRUE' || x.salvato === 1 || String(x.salvato).toLowerCase() === 'true'
+    salvato : x.salvato === true || x.salvato === 'TRUE' || x.salvato === 1 || String(x.salvato).toLowerCase() === 'true',
+    regione : String(x.regione || '')
   };
 }
 

@@ -1899,7 +1899,7 @@ function getBandiV5(limit) {
         link     : String(x.link || '')
       };
     });
-  } catch(e) { Logger.log('getBandiV5:', e); return []; }
+  } catch(e) { Logger.log('getBandiV5: ' + (e && e.message || e)); return []; }
 }
 
 /**
@@ -1954,7 +1954,7 @@ function getUltimiBandiV5(limit) {
         link    : String(row[COL_B.URL_BANDO - 1] || row[COL_B.URL_ENTE - 1] || '')
       };
     });
-  } catch(e) { Logger.log('getUltimiBandiV5:', e); return []; }
+  } catch(e) { Logger.log('getUltimiBandiV5: ' + (e && e.message || e)); return []; }
 }
 
 /**

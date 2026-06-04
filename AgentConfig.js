@@ -71,7 +71,7 @@ var OC_AGENTI = [
     matrixDims: ['D1', 'D2', 'D4', 'D5'],
     lineaServizio: 'LS2',
     color: '#FF6F00',
-    icon: '����',
+    icon: '\uD83D\uDCA1',
     fontiCategorie: ['innovazione', 'internazionale', 'ricerca', 'editoriale'],
     fontiTipo: ['RSS'],
     scanFrequenza: 'ogni_12h',
