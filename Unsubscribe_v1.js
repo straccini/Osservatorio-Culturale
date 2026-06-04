@@ -29,10 +29,8 @@ function _unsubSecret_() {
   var props = PropertiesService.getScriptProperties();
   var secret = props.getProperty('OC_UNSUB_SECRET');
   if (!secret) {
-    // Genera 32 byte random base64
-    var bytes = [];
-    for (var i = 0; i < 32; i++) bytes.push(Math.floor(Math.random() * 256));
-    secret = Utilities.base64Encode(bytes);
+    // Genera secret CSPRNG via Utilities.getUuid (GAS built-in)
+    secret = Utilities.getUuid() + Utilities.getUuid();
     props.setProperty('OC_UNSUB_SECRET', secret);
     Logger.log('Unsubscribe: generato nuovo secret OC_UNSUB_SECRET');
   }

@@ -730,7 +730,7 @@ function _agentExtractWithClaude_(text, fonte, agent) {
           'anthropic-version': '2023-06-01'
         },
         payload: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
+          model: OC_CLAUDE_MODEL,
           max_tokens: 2500,
           messages: [{ role: 'user', content: prompt }]
         }),

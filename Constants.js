@@ -106,6 +106,8 @@ var OC_VERSION_NOTES = 'v4.19.1 — Nuove fonti generaliste cultura (Il Sole 24 
 // SOGLIE OPERATIVE
 // ============================================================================
 
+var OC_CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
+
 var OC_BANDI_URGENTI_DAYS = 7;     // soglia "in scadenza" per la home
 var OC_AUTO_ARCH_NEWS_DAYS = 30;   // dopo quanti giorni archiviare news non salvate
 var OC_AUTO_ARCH_BANDI_DAYS = 30;  // dopo quanti giorni dalla scadenza archiviare bandi

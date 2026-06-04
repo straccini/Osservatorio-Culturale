@@ -148,6 +148,7 @@ function getSondaggioSchema(codice) {
  * @param {Object} data — { codice, risposte, nota, email, consent, museoNome }
  */
 function saveSondaggio(data) {
+  var sessioneResult = null;
   try {
     if (!data || !data.codice) return { ok:false, error:'codice sondaggio mancante' };
     if (!data.risposte || typeof data.risposte !== 'object') return { ok:false, error:'risposte mancanti' };
@@ -185,7 +186,6 @@ function saveSondaggio(data) {
       try { _emailNotificaSondaggio_(sondaggio, data, responseId, scoreSintetico); } catch(eMail) { Logger.log('Mail notifica: ' + eMail.message); }
 
       // Sblocco sessione permanente (come Matrix)
-      var sessioneResult = null;
       try {
         if (typeof createSessione === 'function') {
           sessioneResult = createSessione(data.email, 'sondaggio_' + sondaggio.codice);

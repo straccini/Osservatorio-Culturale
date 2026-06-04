@@ -173,9 +173,19 @@ function _forgetHash_(s) {
  * @param identifier {string} email O response_id (UUID Matrix)
  * @return { ok, deletedFrom: ['ResponsesMatrix','ContactsMatrix','CRM_Leads','MailingList'], audit }
  */
-function forgetMyData(identifier) {
+function forgetMyData(identifier, token) {
   try {
     if (!identifier) return { ok: false, error: 'identifier mancante (email o response_id)' };
+    // v4.19.2 — Protezione fail-closed: richiede sessione autenticata. L'utente può cancellare solo i propri dati.
+    if (typeof getRuoloCorrente !== 'function') {
+      return { ok: false, error: 'Autenticazione non disponibile.' };
+    }
+    var user = getRuoloCorrente(token || null, token || null);
+    if (!user || !user.email) return { ok: false, error: 'Autenticazione richiesta per la cancellazione dati.' };
+    // L'utente può cancellare solo i propri dati (a meno che non sia admin)
+    var isAdmin = user.livello >= 3;
+    var isOwn = String(identifier).toLowerCase().trim() === String(user.email).toLowerCase().trim();
+    if (!isAdmin && !isOwn) return { ok: false, error: 'Puoi cancellare solo i tuoi dati.' };
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
     var isEmail = String(identifier).indexOf('@') > 0;
     var idLow = String(identifier).toLowerCase().trim();

@@ -332,7 +332,7 @@ function _seasClassifyWithClaude_(apiKey, link, seed) {
       deadline: 30,
       headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
       payload: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: OC_CLAUDE_MODEL,
         max_tokens: 256,
         messages: [{ role: 'user', content: prompt }]
       }),

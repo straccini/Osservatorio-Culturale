@@ -193,6 +193,11 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);font-size:
 var GAS_URL = 'GAS_URL_PLACEHOLDER';
 var READER_DATA = READER_DATA_PLACEHOLDER;
 
+function _safeHref_(url) {
+  var s = String(url || '');
+  return /^https?:\/\//i.test(s) ? s : '#';
+}
+
 var SEL_ITEMS   = new Set();
 var SEL_BANDI   = new Set();
 var SEL_PODCAST = new Set();
@@ -266,7 +271,7 @@ function renderNotizie(items) {
     if (it.SommarioAI) html += '<div class="rd-card-sum">' + esc(it.SommarioAI) + '</div>';
     if (tags) html += '<div class="rd-card-tags">' + tags + '</div>';
     html += '<div class="rd-card-foot">';
-    if (it.FonteURL) html += '<a class="btn-read" href="' + it.FonteURL + '" target="_blank" onclick="event.stopPropagation()">Leggi ↗</a>';
+    if (it.FonteURL) html += '<a class="btn-read" href="' + _safeHref_(it.FonteURL) + '" target="_blank" onclick="event.stopPropagation()">Leggi ↗</a>';
     html += '</div></div>';
   });
   html += '</div>';
@@ -301,8 +306,8 @@ function renderBandi(bandi) {
     html += '</div>';
     if (b.note) html += '<div style="font-size:12px;color:#5a5a5a;line-height:1.5;margin-bottom:10px;border-left:2px solid var(--amb-8,#B45309);padding-left:8px">' + esc(b.note) + '</div>';
     html += '<div style="display:flex;gap:7px;flex-wrap:wrap">';
-    if (b.link) html += '<a class="btn-bando" href="' + b.link + '" target="_blank" onclick="event.stopPropagation()">📄 Apri bando</a>';
-    if (b.urlEnte && b.urlEnte !== b.link) html += '<a class="btn-bando" href="' + b.urlEnte + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--amb-8,#B45309);border-color:rgba(184,144,42,.25)">🏛 Sito ente</a>';
+    if (b.link) html += '<a class="btn-bando" href="' + _safeHref_(b.link) + '" target="_blank" onclick="event.stopPropagation()">📄 Apri bando</a>';
+    if (b.urlEnte && b.urlEnte !== b.link) html += '<a class="btn-bando" href="' + _safeHref_(b.urlEnte) + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--amb-8,#B45309);border-color:rgba(184,144,42,.25)">🏛 Sito ente</a>';
     html += '</div></div>';
   });
   html += '</div>';
@@ -328,7 +333,7 @@ function renderPodcast(podcast) {
     html += '</div>';
     if (p.Sommario) html += '<div style="font-size:12px;color:#5a5a5a;line-height:1.5;margin-bottom:9px">' + esc(p.Sommario) + '</div>';
     html += '<div style="display:flex;gap:7px">';
-    if (p.Link) html += '<a class="btn-listen" href="' + p.Link + '" target="_blank" onclick="event.stopPropagation()">▶ Ascolta</a>';
+    if (p.Link) html += '<a class="btn-listen" href="' + _safeHref_(p.Link) + '" target="_blank" onclick="event.stopPropagation()">▶ Ascolta</a>';
     html += '</div></div>';
   });
   html += '</div>';
@@ -453,15 +458,15 @@ function buildPdfHTML(items, bandi, podcast, nome) {
   html += '@media print{body{padding:0}h2{page-break-after:avoid}}';
   html += '</style></head><body>';
   html += '<h1>Digest Osservatorio Culturale</h1>';
-  html += '<div class="subtitle">Duemilamusei · Fano' + (nome ? ' · Per ' + nome : '') + ' · ' + date + '</div>';
+  html += '<div class="subtitle">Duemilamusei · Fano' + (nome ? ' · Per ' + esc(nome) : '') + ' · ' + esc(date) + '</div>';
 
   if (items.length) {
     html += '<h2 class="sec-not">Notizie &amp; Tendenze</h2>';
     items.forEach(function(it) {
-      html += '<div class="item"><div class="item-title">' + (it.Titolo||'-') + '</div>';
-      html += '<div class="item-meta">' + (it.Fonte||'') + (it.DataPubblicazione?' · '+it.DataPubblicazione:'') + '</div>';
-      if (it.SommarioAI) html += '<div class="item-sum">' + it.SommarioAI + '</div>';
-      if (it.FonteURL) html += '<div class="item-url">' + it.FonteURL + '</div>';
+      html += '<div class="item"><div class="item-title">' + esc(it.Titolo||'-') + '</div>';
+      html += '<div class="item-meta">' + esc(it.Fonte||'') + (it.DataPubblicazione?' · '+esc(it.DataPubblicazione):'') + '</div>';
+      if (it.SommarioAI) html += '<div class="item-sum">' + esc(it.SommarioAI) + '</div>';
+      if (it.FonteURL) html += '<div class="item-url">' + esc(it.FonteURL) + '</div>';
       html += '</div>';
     });
   }
@@ -470,10 +475,10 @@ function buildPdfHTML(items, bandi, podcast, nome) {
     html += '<h2 class="sec-ban">Bandi &amp; Finanziamenti</h2>';
     bandi.forEach(function(b) {
       var dl = b.scadenza ? Math.round((new Date(b.scadenza)-new Date())/86400000) : null;
-      html += '<div class="item"><div class="ban-title">' + (b.titolo||'-') + '</div>';
-      html += '<div class="ban-meta">' + (b.ente||'') + (b.regione?' · '+b.regione:'') + (b.settore?' · '+b.settore:'') + (b.importo?' · EUR '+Number(b.importo).toLocaleString('it-IT'):'') + (dl!==null?' · Scade in '+dl+' gg':'') + '</div>';
-      if (b.note) html += '<div class="ban-note">' + b.note + '</div>';
-      if (b.link) html += '<div class="item-url">' + b.link + '</div>';
+      html += '<div class="item"><div class="ban-title">' + esc(b.titolo||'-') + '</div>';
+      html += '<div class="ban-meta">' + esc(b.ente||'') + (b.regione?' · '+esc(b.regione):'') + (b.settore?' · '+esc(b.settore):'') + (b.importo?' · EUR '+Number(b.importo).toLocaleString('it-IT'):'') + (dl!==null?' · Scade in '+dl+' gg':'') + '</div>';
+      if (b.note) html += '<div class="ban-note">' + esc(b.note) + '</div>';
+      if (b.link) html += '<div class="item-url">' + esc(b.link) + '</div>';
       html += '</div>';
     });
   }
@@ -481,10 +486,10 @@ function buildPdfHTML(items, bandi, podcast, nome) {
   if (podcast.length) {
     html += '<h2 class="sec-pod">Podcast Culturali</h2>';
     podcast.forEach(function(p) {
-      html += '<div class="item"><div class="pod-title">' + (p.Titolo||'-') + '</div>';
-      html += '<div class="ban-meta">' + (p.Serie||'') + (p.Tematica?' · '+p.Tematica:'') + (p.Durata&&p.Durata>0?' · '+p.Durata+' min':'') + '</div>';
-      if (p.Sommario) html += '<div class="item-sum">' + p.Sommario + '</div>';
-      if (p.Link) html += '<div class="item-url">' + p.Link + '</div>';
+      html += '<div class="item"><div class="pod-title">' + esc(p.Titolo||'-') + '</div>';
+      html += '<div class="ban-meta">' + esc(p.Serie||'') + (p.Tematica?' · '+esc(p.Tematica):'') + (p.Durata&&p.Durata>0?' · '+p.Durata+' min':'') + '</div>';
+      if (p.Sommario) html += '<div class="item-sum">' + esc(p.Sommario) + '</div>';
+      if (p.Link) html += '<div class="item-url">' + esc(p.Link) + '</div>';
       html += '</div>';
     });
   }

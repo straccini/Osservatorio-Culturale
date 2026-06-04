@@ -200,6 +200,13 @@ function sendDigestAuto2coorti(opts) {
   opts = opts || {};
   var t0 = new Date().getTime();
   try {
+    // 0. Quota check — evita errori a catena se quota quasi esaurita
+    var remainingQuota = MailApp.getRemainingDailyQuota();
+    if (remainingQuota < 10) {
+      Logger.log('[QUOTA] Solo ' + remainingQuota + ' email rimaste, skip invio digest');
+      return { ok: false, error: 'Quota email insufficiente (' + remainingQuota + ' rimaste)' };
+    }
+
     // 1. Carica items inclusi nel digest dal foglio Items
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
     var sh = ss.getSheetByName(SH.ITEMS || 'Items');
