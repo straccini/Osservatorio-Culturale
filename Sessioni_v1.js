@@ -229,28 +229,34 @@ function loginConEmail(email) {
     email = String(email).trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok:false, error:'email_non_valida' };
 
-    // v4.20 — Fail-closed: login pubblico attivo SOLO se flag === 'true'
-    if (!isPublicLoginEnabled_()) {
+    // Cerca nel foglio Utenti
+    var utente = (typeof getUtenteByEmail_ === 'function') ? getUtenteByEmail_(email) : null;
+
+    // v4.20 — Admin/editor possono SEMPRE accedere via email (bypass flag login pubblico)
+    var isAdminEmail = false;
+    try {
+      var adminCsv = (PropertiesService.getScriptProperties().getProperty('OC_ADMIN_EMAILS') || '').toLowerCase();
+      var editorCsv = (PropertiesService.getScriptProperties().getProperty('OC_EDITOR_EMAILS') || '').toLowerCase();
+      isAdminEmail = adminCsv.indexOf(email) >= 0 || editorCsv.indexOf(email) >= 0;
+    } catch(_){}
+
+    // Fail-closed: login pubblico disabilitato blocca solo utenti NON admin/editor
+    if (!isPublicLoginEnabled_() && !isAdminEmail) {
       return { ok:false, error:'login_disabilitato', message:'Il login pubblico non e ancora attivo. Contatta l\'amministratore.' };
     }
 
-    // Cerca nel foglio Utenti
-    var utente = (typeof getUtenteByEmail_ === 'function') ? getUtenteByEmail_(email) : null;
     if (!utente) return { ok:false, error:'email_non_registrata' };
     if (utente.stato !== 'attivo') return { ok:false, error:'account_non_attivo', stato: utente.stato };
 
-    // v4.20 — Ruoli elevati: admin/editor non accedono via email semplice
-    if (utente.ruolo === 'admin' || utente.ruolo === 'editor') {
-      return { ok:false, error:'usa_accesso_admin', message:'Accedi tramite il link admin dedicato.' };
-    }
-
-    // Crea o riusa sessione (senza inviare magic-link email)
+    // Crea o riusa sessione
     var sh = _getOrCreateSessioniSheet_();
     var existing = _findSessioneByEmail_(sh, email);
     var token, livello;
 
-    // Livello dal ruolo utente (solo lettore arriva qui)
-    livello = 1;
+    // Livello dal ruolo utente
+    if (utente.ruolo === 'admin') livello = 3;
+    else if (utente.ruolo === 'editor') livello = 2;
+    else livello = 1;
 
     if (existing && !existing.revoked) {
       // Sessione esistente: aggiorna last_seen e livello
