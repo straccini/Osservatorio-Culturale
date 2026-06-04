@@ -293,7 +293,13 @@ function doGet(e) {
     }
   } catch(injErr) { Logger.log('inject sessione fallita: ' + injErr.message); }
 
-  var html = page.getContent()
+  var rawHtml = page.getContent();
+  // v4.20 — Debug: verifica che i placeholder esistano nel HTML renderizzato
+  var hasAdmPlaceholder = rawHtml.indexOf('OC_ADMIN_TOKEN_PLACEHOLDER') >= 0;
+  var hasUrlPlaceholder = rawHtml.indexOf('GAS_URL_PLACEHOLDER') >= 0;
+  Logger.log('[doGet] Placeholder check: ADM=' + hasAdmPlaceholder + ' URL=' + hasUrlPlaceholder + ' injectedToken=' + (injectedToken ? injectedToken.substring(0,6)+'...' : 'EMPTY'));
+
+  var html = rawHtml
     .replace(/GAS_URL_PLACEHOLDER/g, url)
     .replace(/OC_ADMIN_TOKEN_PLACEHOLDER/g, injectedToken)
     .replace(/OC_SESSION_PLACEHOLDER/g, injectedSession);
