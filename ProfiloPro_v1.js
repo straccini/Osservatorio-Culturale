@@ -155,7 +155,25 @@ function deleteProfilo() {
       sh.deleteRow(r+1); break;
     }
   }
-  if (typeof forgetMyData === 'function') { try { forgetMyData(user.email); } catch(e){} }
+  // v4.20 — Purga diretta fogli GDPR (utente gia autenticato da _proGetUser_)
+  var emailLower = String(user.email).toLowerCase().trim();
+  try {
+    var ssPurge = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    ['ResponsesMatrix','ContactsMatrix','CRM_Leads','MailingList','ProfiloPro'].forEach(function(shName){
+      var shPurge = ssPurge.getSheetByName(shName);
+      if (!shPurge) return;
+      var dataPurge = shPurge.getDataRange().getValues();
+      var head = dataPurge[0].map(function(h){ return String(h||'').toLowerCase().trim(); });
+      var iEmail = -1;
+      ['email','e-mail','emailutente'].forEach(function(c){ var idx = head.indexOf(c); if (idx >= 0) iEmail = idx; });
+      if (iEmail < 0) return;
+      for (var rp = dataPurge.length - 1; rp >= 1; rp--) {
+        if (String(dataPurge[rp][iEmail]||'').toLowerCase().trim() === emailLower) {
+          shPurge.deleteRow(rp + 1);
+        }
+      }
+    });
+  } catch(ePurge) { Logger.log('deleteProfilo purge GDPR: ' + (ePurge && ePurge.message)); }
   return { ok:true };
 }
 

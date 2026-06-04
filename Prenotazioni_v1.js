@@ -41,6 +41,9 @@ var OC_PRIVACY_VERSION_PRENOTAZIONE = 'v1.0-2026-05-13';
 function savePrenotazioneIntent(data) {
   try {
     data = data || {};
+    if (typeof _rateLimited_ === 'function' && _rateLimited_('prenotazione', 5, 3600)) {
+      return { ok: false, error: 'Troppe richieste. Riprova tra qualche minuto.' };
+    }
     if (data.consent !== true) {
       return { ok:false, error:'Per procedere è necessario il consenso al trattamento dati (Step 1).' };
     }

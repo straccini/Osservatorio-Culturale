@@ -149,6 +149,9 @@ function getSondaggioSchema(codice) {
  */
 function saveSondaggio(data) {
   var sessioneResult = null;
+  if (typeof _rateLimited_ === 'function' && _rateLimited_('sondaggio', 10, 3600)) {
+    return { ok: false, error: 'Troppe richieste. Riprova tra qualche minuto.' };
+  }
   try {
     if (!data || !data.codice) return { ok:false, error:'codice sondaggio mancante' };
     if (!data.risposte || typeof data.risposte !== 'object') return { ok:false, error:'risposte mancanti' };

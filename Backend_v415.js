@@ -299,10 +299,10 @@ function exportArchivio() {
       if (shNews) {
         var n = shNews.getDataRange().getValues();
         var nHead = n[0].map(function(h){ return String(h||'').trim(); });
-        var iN_St = nHead.indexOf('Stato');
+        var iN_St = nHead.indexOf('StatoRecord'); if (iN_St < 0) iN_St = nHead.indexOf('Stato');
         var iN_Tit = nHead.indexOf('Titolo');
-        var iN_Url = nHead.indexOf('URL') >= 0 ? nHead.indexOf('URL') : nHead.indexOf('Link');
-        var iN_Dat = nHead.indexOf('Data');
+        var iN_Url = nHead.indexOf('FonteURL'); if (iN_Url < 0) iN_Url = nHead.indexOf('URL'); if (iN_Url < 0) iN_Url = nHead.indexOf('Link');
+        var iN_Dat = nHead.indexOf('DataPubblicazione'); if (iN_Dat < 0) iN_Dat = nHead.indexOf('Data');
         for (var rr = 1; rr < n.length; rr++) {
           if (iN_St >= 0 && String(n[rr][iN_St]).toLowerCase() === 'archiviato') {
             rows.push(['news', n[rr][0], n[rr][iN_Tit] || '', n[rr][iN_Dat] || '', 'archiviato', n[rr][iN_Url] || '']);
@@ -381,8 +381,8 @@ function emptyTrash(opts) {
     }
 
     deleted.bandi   = purgeSheet('RADAR BANDI', ['StatoRecord','Stato'], ['DataRilevamento','DATA_RILEVAMENTO'], 'bando');
-    deleted.news    = purgeSheet('Items', ['Stato'], ['Data'], 'news');
-    deleted.podcast = purgeSheet('Podcast', ['Stato'], ['Data','DataAggiunta'], 'podcast');
+    deleted.news    = purgeSheet('Items', ['StatoRecord','Stato'], ['DataPubblicazione','Data'], 'news');
+    deleted.podcast = purgeSheet('Podcast', ['StatoRecord','Stato'], ['DataPubblicazione','Data','DataAggiunta'], 'podcast');
     deleted.libri   = purgeSheet(BV415_SH_LIBRI, ['Stato'], ['DataAggiunta'], 'libro');
 
     var total = deleted.bandi + deleted.news + deleted.podcast + deleted.libri;
