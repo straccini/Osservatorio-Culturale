@@ -1122,7 +1122,7 @@
           </div>
           <div>
             <div style="font-family:var(--font-display);font-size:1rem;font-weight:600;color:var(--ink)">Filtro profilo</div>
-            <div style="font-family:var(--font-ui);font-size:12px;color:var(--ink-2);margin-top:2px">Filtra bandi, news, podcast e video in base al tuo profilo di interessi</div>
+            <div style="font-family:var(--font-ui);font-size:12px;color:var(--ink-2);margin-top:2px">Filtra bandi e news in base al tuo profilo di interessi e all'ambito territoriale definito</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
@@ -1552,80 +1552,117 @@
     <!-- ===== PAGE DIGEST (v4.18.11 — tutto digest qui, spostato da admin) ===== -->
     <section class="page" id="page-digest">
       <div class="page-head">
-        <div class="page-eyebrow">Osservatorio Culturale &middot; Comunicazione</div>
-        <h1 class="page-title">Digest <em>&amp; Newsletter</em></h1>
-        <p class="page-sub">Strumenti di invio digest generalista e segmentato per i compilatori MuseMu Matrix.</p>
+        <div class="page-eyebrow">Osservatorio Culturale</div>
+        <h1 class="page-title">Digest</h1>
+        <p class="page-sub">Dashboard unificata per la produzione, gestione e invio dei digest ai destinatari registrati.</p>
       </div>
 
-      <!-- 1) Newsletter / digest generalista -->
-      <div class="admin-grid">
-        <div class="admin-card">
-          <h3>📨 Nuova newsletter / digest</h3>
-          <p class="hint">Prepara automaticamente una bozza con bandi in scadenza, news recenti e podcast più ascoltati. L'invio richiederà autorizzazione esplicita via Telegram.</p>
-          <div class="admin-counts">
-            <span><b id="adminLastBandi">—</b> bandi</span>
-            <span><b id="adminLastNews">—</b> news</span>
-            <span><b id="adminLastPodcast">—</b> podcast</span>
-          </div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn btn-primary" data-action="generaDigest" title="Genera una bozza di newsletter con i contenuti più recenti (bandi urgenti, news, podcast). La bozza richiederà autorizzazione Telegram prima dell'invio.">Prepara bozza</button>
-            <button class="btn btn-secondary" data-action="testTelegram" title="Invia un messaggio di test al bot Telegram configurato per verificare che riceva correttamente le notifiche di autorizzazione invio.">📣 Test Telegram</button>
-          </div>
+      <!-- ===== KPI BAR ===== -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px" id="digestKpiBar">
+        <div style="background:var(--surface-2);border-radius:10px;padding:14px 16px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:var(--ink)" id="dkMailingCount">—</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Iscritti newsletter</div>
         </div>
-
-        <div class="admin-card">
-          <h3> Stato Telegram bot</h3>
-          <p class="hint">Il bot Telegram riceve le richieste di autorizzazione invio. Configura token e chat_id dalle ScriptProperties.</p>
-          <div id="telegramStatus" style="font-size:13px;color:var(--ink-2);margin-bottom:10px">Verifica in corso…</div>
-          <button class="btn btn-secondary" data-action="checkTelegram" title="Riverifica che il bot Telegram sia configurato correttamente (token, chat_id) e raggiungibile.">Verifica configurazione</button>
+        <div style="background:var(--surface-2);border-radius:10px;padding:14px 16px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:var(--accent,#935851)" id="dkLeadCount">—</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Lead caldi (Coorte B)</div>
+        </div>
+        <div style="background:var(--surface-2);border-radius:10px;padding:14px 16px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:var(--amb-2,#3F7A5E)" id="dkMatrixCount">—</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Compilatori Matrix</div>
+        </div>
+        <div style="background:var(--surface-2);border-radius:10px;padding:14px 16px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:var(--amb-5,#4A7884)" id="dkQueueCount">—</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Bozze in coda</div>
+        </div>
+        <div style="background:var(--surface-2);border-radius:10px;padding:14px 16px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:var(--ink)" id="dkQuotaCount">—</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Quota email oggi</div>
         </div>
       </div>
 
-      <!-- 2) Digest segmentato MuseMu Matrix -->
+      <!-- ===== SEZIONE 1: Newsletter generalista (Coorte A) ===== -->
+      <div class="admin-card" style="margin-bottom:20px;border-left:4px solid var(--amb-3,#3C6A95)">
+        <h3 style="margin-top:0">📨 Newsletter generalista <span style="font-size:12px;font-weight:400;color:var(--ink-3)">(Coorte A — iscritti newsletter)</span></h3>
+        <p class="hint">Digest settimanale con bandi in scadenza, news recenti e podcast. Invio automatico ogni lunedi alle 07:00 tramite il sistema a 2 coorti.</p>
+        <div class="admin-counts" style="margin-bottom:10px">
+          <span><b id="adminLastBandi">—</b> bandi</span>
+          <span><b id="adminLastNews">—</b> news</span>
+          <span><b id="adminLastPodcast">—</b> podcast</span>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" data-action="generaDigest">Prepara bozza manuale</button>
+        </div>
+      </div>
+
+      <!-- ===== SEZIONE 2: Digest segmentato Matrix (Coorte B) ===== -->
       <div class="admin-card" style="margin-bottom:20px;border-left:4px solid var(--accent,#935851)">
-        <h3>✉️ Digest segmentato per compilatori MuseMu Matrix</h3>
-        <p class="hint">Genera bozze email personalizzate per ogni compilatore Matrix (top 3 gap del museo + contenuti pertinenti). Idempotente: salta gli utenti con bozze recenti (&lt;6gg).</p>
+        <h3 style="margin-top:0">✉️ Digest segmentato MuseMu Matrix <span style="font-size:12px;font-weight:400;color:var(--ink-3)">(Coorte B — lead caldi e compilatori)</span></h3>
+        <p class="hint">Email personalizzate per ogni compilatore Matrix: top 3 gap del museo + contenuti pertinenti per dimensione. Idempotente: salta bozze recenti (&lt;6gg).</p>
 
-        <div id="cronStatusBox" style="background:#FAFAFA;border:1px solid #E5E5E5;border-radius:6px;padding:12px 14px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
+        <div id="cronStatusBox" style="background:var(--surface-2);border:1px solid var(--rule,#E5E5E7);border-radius:8px;padding:12px 14px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
           <div>
-            <div style="font-size:11px;color:#666;letter-spacing:.05em;text-transform:uppercase;font-weight:700">Cron weekly</div>
-            <div id="cronStatusText" style="font-size:14px;font-weight:600;color:#666;margin-top:3px">Verifica in corso…</div>
-            <div id="cronLastRun" style="font-size:11px;color:#888;margin-top:2px"></div>
+            <div style="font-size:10px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;font-weight:700">Cron settimanale</div>
+            <div id="cronStatusText" style="font-size:14px;font-weight:600;color:var(--ink-2);margin-top:3px">Verifica in corso…</div>
+            <div id="cronLastRun" style="font-size:11px;color:var(--ink-3);margin-top:2px"></div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-secondary" data-action="setupCronDigest" title="Imposta un trigger automatico che ogni martedì alle 06:00 genera e invia i digest segmentati per i compilatori Matrix che hanno opt-in." style="font-size:12px;padding:6px 12px">⏰ Attiva cron martedì 06:00</button>
-            <button class="btn btn-secondary" data-action="removeCronDigest" title="Disattiva il trigger automatico settimanale. Nessun digest verrà inviato finché non rilanci l'attivazione." style="font-size:12px;padding:6px 12px">🛑 Disattiva</button>
-            <button class="btn btn-secondary" data-action="testCronManual" title="Esegue subito una run del cron come se fosse martedì 06:00 — utile per testare il flusso senza aspettare." style="font-size:12px;padding:6px 12px">Esegui ora (test)</button>
+            <button class="btn btn-secondary" data-action="setupCronDigest" style="font-size:12px;padding:6px 12px">Attiva cron</button>
+            <button class="btn btn-secondary" data-action="removeCronDigest" style="font-size:12px;padding:6px 12px">Disattiva</button>
+            <button class="btn btn-secondary" data-action="testCronManual" style="font-size:12px;padding:6px 12px">Esegui ora</button>
           </div>
         </div>
 
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">
-          <button class="btn btn-primary" data-action="generaQueueAll" title="Crea una bozza email personalizzata per ogni compilatore Matrix con opt-in attivo (top 3 gap del museo + contenuti pertinenti).">Genera bozze per tutti i compilatori</button>
-          <button class="btn btn-secondary" data-action="testDigestSegmentato" title="Genera e mostra in anteprima una bozza personalizzata usando il tuo responseId Matrix come campione.">Test bozza personalizzata (mio responseId)</button>
-          <button class="btn btn-warning" data-action="inviaTuttiPending" title="Invia tutte le bozze digest segmentato attualmente in stato 'draft' pending. Azione visibile in Telegram per autorizzazione.">Invia tutti i 'draft' pending</button>
-          <button class="btn btn-secondary" data-action="reloadQueue" title="Ricarica la lista delle bozze in coda dal foglio.">Ricarica queue</button>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <button class="btn btn-primary" data-action="generaQueueAll">Genera bozze per tutti</button>
+          <button class="btn btn-secondary" data-action="testDigestSegmentato">Test bozza (mio profilo)</button>
+          <button class="btn btn-warning" data-action="inviaTuttiPending">Invia tutti i draft</button>
+          <button class="btn btn-secondary" data-action="reloadQueue">Ricarica coda</button>
         </div>
-        <div id="digestQueueWrap" style="margin-top:12px">
-          <div class="empty-state sm">Premi 'Ricarica queue' per visualizzare bozze.</div>
+        <div id="digestQueueWrap" style="margin-top:10px">
+          <div class="empty-state sm">Premi 'Ricarica coda' per visualizzare le bozze.</div>
         </div>
-        <div id="digestSegmResult" style="margin-top:8px;font-size:12px;min-height:18px;color:#666"></div>
+        <div id="digestSegmResult" style="margin-top:8px;font-size:12px;min-height:18px;color:var(--ink-3)"></div>
       </div>
 
-      <!-- 3) Bozze e invii recenti -->
+      <!-- ===== SEZIONE 3: Configurazione ===== -->
+      <div class="admin-card" style="margin-bottom:20px;border-left:4px solid var(--amb-5,#4A7884)">
+        <h3 style="margin-top:0">⚙️ Configurazione <span style="font-size:12px;font-weight:400;color:var(--ink-3)">(Telegram + sistema invio)</span></h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:6px">Stato Telegram bot</div>
+            <div id="telegramStatus" style="font-size:13px;color:var(--ink-2);margin-bottom:8px">Verifica in corso…</div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-secondary" data-action="checkTelegram" style="font-size:12px;padding:5px 10px">Verifica</button>
+              <button class="btn btn-secondary" data-action="testTelegram" style="font-size:12px;padding:5px 10px">Test invio</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:6px">Sistema a 2 coorti</div>
+            <div style="font-size:12px;color:var(--ink-2);line-height:1.5">
+              <b>Coorte A</b>: iscritti newsletter (generalista)<br>
+              <b>Coorte B</b>: lead caldi + compilatori Matrix (personalizzato)<br>
+              <span style="color:var(--ink-3)">Trigger: lunedi 07:00 automatico</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SEZIONE 4: Storico bozze e invii ===== -->
       <div class="admin-card" style="margin-bottom:20px">
-        <h3>Bozze e invii recenti</h3>
+        <h3 style="margin-top:0">📋 Storico bozze e invii</h3>
         <div id="digestList">
           <div class="empty-state sm">Caricamento elenco digest…</div>
         </div>
       </div>
 
-      <!-- 4) Anteprima newsletter (hidden, mostrato dinamicamente) -->
+      <!-- ===== SEZIONE 5: Anteprima (hidden) ===== -->
       <div class="admin-card" id="previewWrap" hidden>
-        <h3>👁 Anteprima newsletter</h3>
+        <h3 style="margin-top:0">Anteprima newsletter</h3>
         <div id="previewInfo" style="font-size:13px;color:var(--ink-3);margin-bottom:10px"></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
-          <button class="btn btn-warning" data-action="richiediAutorizzazione" title="Invia una richiesta di autorizzazione invio al bot Telegram. L'invio reale partirà solo dopo conferma esplicita.">🔐 Richiedi autorizzazione invio</button>
-          <button class="btn btn-secondary" data-action="chiudiAnteprima" title="Chiudi questa anteprima senza inviare.">Chiudi anteprima</button>
+          <button class="btn btn-warning" data-action="richiediAutorizzazione">Richiedi autorizzazione invio</button>
+          <button class="btn btn-secondary" data-action="chiudiAnteprima">Chiudi anteprima</button>
         </div>
         <iframe id="previewFrame" class="preview-iframe" sandbox="allow-same-origin"></iframe>
       </div>
@@ -2368,10 +2405,13 @@
 
     var crumb = $('breadcrumb');
     if (crumb) {
+      var homeLink = '<a href="#" onclick="OC.go(\'home\');return false" style="color:inherit;text-decoration:none;cursor:pointer">Osservatorio</a>';
       if (page==='ambito' && ambito && AMBITI[ambito]){
-        crumb.innerHTML = '<span>Osservatorio</span><span class="sep">/</span><span>Ambiti</span><span class="sep">/</span><b>'+esc(AMBITI[ambito].nome)+'</b>';
+        crumb.innerHTML = homeLink+'<span class="sep">/</span><span>Ambiti</span><span class="sep">/</span><b>'+esc(AMBITI[ambito].nome)+'</b>';
+      } else if (page==='home') {
+        crumb.innerHTML = homeLink;
       } else {
-        crumb.innerHTML = '<span>Osservatorio</span><span class="sep">/</span><b>'+esc(PAGE_TITLES[page]||'Home')+'</b>';
+        crumb.innerHTML = homeLink+'<span class="sep">/</span><b>'+esc(PAGE_TITLES[page]||'Home')+'</b>';
       }
     }
 
@@ -4873,6 +4913,22 @@
       .withSuccessHandler(renderDigestList)
       .withFailureHandler(function(err){ console.error(err); renderDigestList({ok:false,error:err}); })
       .adminGetDigestList();
+    // v4.20 — KPI bar digest dashboard
+    google.script.run.withSuccessHandler(function(r){
+      if (!r) return;
+      var el = function(id){ return document.getElementById(id); };
+      if (el('dkMailingCount') && r.generalisti != null) el('dkMailingCount').textContent = r.generalisti;
+      if (el('dkLeadCount') && r.leadCaldi != null) el('dkLeadCount').textContent = r.leadCaldi;
+      if (el('dkMatrixCount') && r.leadConMatrix != null) el('dkMatrixCount').textContent = r.leadConMatrix;
+    }).withFailureHandler(function(){}).getDigestDashboardKpi();
+    google.script.run.withSuccessHandler(function(r){
+      var el = document.getElementById('dkQueueCount');
+      if (el && r && r.ok) el.textContent = r.pendenti || 0;
+    }).withFailureHandler(function(){}).adminGetDigestQueue({statusFilter:'draft'});
+    google.script.run.withSuccessHandler(function(q){
+      var el = document.getElementById('dkQuotaCount');
+      if (el && q != null) el.textContent = q;
+    }).withFailureHandler(function(){}).getEmailQuotaRemaining();
   }
 
   // v4.18.17 (2026-05-12) L — Page Sondaggio: renderer parametrizzato per codice

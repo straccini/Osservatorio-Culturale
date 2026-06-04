@@ -90,10 +90,18 @@ function generateDigestForUser(email, responseId) {
     var bandiByDim   = {};
     var newsByDim    = {};
     var podcastByDim = {};
+    // v4.19.1 — Dedup cross-dimensione: stesso bando/news/podcast non appare in più sezioni
+    var _seenBandi = {}, _seenNews = {}, _seenPodcast = {};
     topDims.forEach(function(dim) {
-      bandiByDim[dim]   = _queryContenutiPerDim_('bandi',   dim, 4);
-      newsByDim[dim]    = _queryContenutiPerDim_('items',   dim, 3);
-      podcastByDim[dim] = _queryContenutiPerDim_('podcast', dim, 2);
+      bandiByDim[dim]   = _queryContenutiPerDim_('bandi',   dim, 6).filter(function(b) {
+        var k = String(b.titolo||'').trim().toLowerCase(); if (_seenBandi[k]) return false; _seenBandi[k]=true; return true;
+      }).slice(0,4);
+      newsByDim[dim]    = _queryContenutiPerDim_('items',   dim, 5).filter(function(n) {
+        var k = String(n.titolo||'').trim().toLowerCase(); if (_seenNews[k]) return false; _seenNews[k]=true; return true;
+      }).slice(0,3);
+      podcastByDim[dim] = _queryContenutiPerDim_('podcast', dim, 4).filter(function(p) {
+        var k = String(p.titolo||'').trim().toLowerCase(); if (_seenPodcast[k]) return false; _seenPodcast[k]=true; return true;
+      }).slice(0,2);
     });
 
     // Compone HTML
@@ -288,7 +296,8 @@ function adminGetDigestQueue(opts) {
   }).filter(function(o){ return filt === 'all' || o.Status === filt; });
   // Ultime 50, ordine inverso
   items.sort(function(a,b){ return String(b.GeneratedAt).localeCompare(String(a.GeneratedAt)); });
-  return { items: items.slice(0, 50) };
+  var pendenti = items.filter(function(o){ return o.Status === 'draft'; }).length;
+  return { ok: true, items: items.slice(0, 50), pendenti: pendenti };
 }
 
 // ============================================================================

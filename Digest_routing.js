@@ -615,5 +615,36 @@ function testDigestInviaAdmin() {
 }
 
 // ============================================================================
+// v4.20 — KPI per dashboard Digest
+// ============================================================================
+
+/**
+ * Ritorna conteggi rapidi per la KPI bar della pagina Digest.
+ * Chiamata dal frontend in loadDigestPage().
+ */
+function getDigestDashboardKpi() {
+  try {
+    var cohorts = getDigestRecipientsByCohort();
+    if (!cohorts || !cohorts.ok) return { generalisti: 0, leadCaldi: 0, leadConMatrix: 0 };
+    return {
+      generalisti: (cohorts.generalisti || []).length,
+      leadCaldi: (cohorts.leadCaldi || []).length,
+      leadConMatrix: cohorts.counts ? (cohorts.counts.leadConMatrix || 0) : 0
+    };
+  } catch(e) {
+    Logger.log('getDigestDashboardKpi: ' + (e && e.message));
+    return { generalisti: 0, leadCaldi: 0, leadConMatrix: 0 };
+  }
+}
+
+/**
+ * Ritorna la quota email giornaliera rimanente.
+ */
+function getEmailQuotaRemaining() {
+  try { return MailApp.getRemainingDailyQuota(); }
+  catch(e) { return -1; }
+}
+
+// ============================================================================
 // FINE Digest_routing.gs
 // ============================================================================
