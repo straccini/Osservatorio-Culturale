@@ -67,34 +67,23 @@ var OC_ADMIN_DEFAULT_ = 's.straccini@gmail.com';
  * @return {Object} vedi schema in header sezione
  */
 function getRuoloCorrente(token, adminToken) {
-  // --- 1) Email da Google login (priorità massima) ---
-  var emailGoogle = '';
-  try {
-    emailGoogle = Session.getEffectiveUser().getEmail()
-               || Session.getActiveUser().getEmail()
-               || '';
-  } catch(_) {}
-  var emailGoogleLc = String(emailGoogle || '').toLowerCase().trim();
+  // v5.1.10 — Rimossa dipendenza da Google Session API (getEffectiveUser/getActiveUser).
+  // Con deploy ANYONE_ANONYMOUS + USER_DEPLOYING, getEffectiveUser() restituisce SEMPRE
+  // l'email del deployer per tutti i visitatori → tutti risultavano admin.
+  // Ora il ruolo si determina SOLO dal sistema di sessioni custom (token + foglio Utenti).
 
-  // --- 2) Set admin / editor da ScriptProperties ---
   var admins  = _getAdminSet_();
   var editors = _getEditorSet_();
-  var isAdminByGoogle  = emailGoogleLc && admins[emailGoogleLc] === true;
-  var isEditorByGoogle = emailGoogleLc && (admins[emailGoogleLc] === true || editors[emailGoogleLc] === true);
 
-  // --- 3) AdminToken URL (fallback per visitatori anonimi che hanno il token admin) ---
+  // --- 1) AdminToken URL (accesso admin emergenza via ?adm=TOKEN) ---
   var isAdminByToken = false;
   try {
     if (adminToken && typeof _validateAdminToken_ === 'function') {
       isAdminByToken = !!_validateAdminToken_(adminToken);
     }
-    if (!isAdminByToken && typeof isAdminViaToken === 'function') {
-      // Compat: cache vecchia (richiede Google login attivo)
-      isAdminByToken = !!isAdminViaToken();
-    }
   } catch(_) {}
 
-  // --- 4) Magic-link token (sessione lead) ---
+  // --- 2) Magic-link / sessione token (loginConEmail o localStorage) ---
   var sessionInfo = null;
   if (token && typeof validaSessione === 'function') {
     try {
@@ -104,36 +93,29 @@ function getRuoloCorrente(token, adminToken) {
   }
   var emailToken = sessionInfo ? String(sessionInfo.email || '').toLowerCase().trim() : '';
 
-  // --- 5) Risoluzione email finale (Google ha priorità su token) ---
-  var emailFinale = emailGoogleLc || emailToken || '';
+  // --- 3) Risoluzione email finale ---
+  var emailFinale = emailToken || '';
 
-  // --- 6) Determinazione ruolo applicando le precedenze ---
+  // --- 4) Determinazione ruolo ---
   var ruolo, livello, authMethod;
-  if (isAdminByGoogle) {
-    ruolo = 'admin'; livello = 3; authMethod = 'session';
-  } else if (isEditorByGoogle) {
-    ruolo = 'editor'; livello = 2; authMethod = 'session';
-  } else if (isAdminByToken && !emailGoogleLc) {
-    // Admin emergency via URL token, solo se nessun login Google
+  if (isAdminByToken) {
+    // Admin emergency via URL token
     ruolo = 'admin'; livello = 3; authMethod = 'admin_token';
     if (!emailFinale) emailFinale = OC_ADMIN_DEFAULT_;
   } else if (sessionInfo) {
-    // Magic-link valido — verifica se email è in admin/editor anche senza Google login
-    if (admins[emailToken] === true) {
+    // Sessione valida — ruolo dal foglio Utenti (via livello sessione + check admin/editor)
+    if (admins[emailToken] === true || (sessionInfo.livello && sessionInfo.livello >= 3)) {
       ruolo = 'admin'; livello = 3; authMethod = 'token';
-    } else if (editors[emailToken] === true) {
+    } else if (editors[emailToken] === true || (sessionInfo.livello && sessionInfo.livello >= 2)) {
       ruolo = 'editor'; livello = 2; authMethod = 'token';
     } else {
-      ruolo = 'lettore'; livello = 1; authMethod = emailGoogleLc ? 'session+token' : 'token';
+      ruolo = 'lettore'; livello = 1; authMethod = 'token';
     }
-  } else if (emailGoogleLc) {
-    // Google login senza essere admin/editor → lettore base
-    ruolo = 'lettore'; livello = 1; authMethod = 'session';
   } else {
     ruolo = 'anonimo'; livello = 0; authMethod = 'guest';
   }
 
-  // --- 7) Output unificato ---
+  // --- 5) Output unificato ---
   var nome = _deriveName_(emailFinale);
   return {
     ok: true,
@@ -168,13 +150,10 @@ function getRuoloCorrente(token, adminToken) {
  *   logoutUrl: string        // URL per log-out + redirect
  * }
  */
-function getCurrentUser_v44(adminToken) {
-  // v4.18.56 — Wrapper su getRuoloCorrente per backward-compat.
-  // Output mantiene gli stessi campi del v4.4 originale.
-  // NOTE: non passa il magic-link token qui (questa funzione è chiamata dal topbar
-  // senza conoscenza del token URL — il livello "lettore" da magic-link viene gestito
-  // separatamente dal frontend via window.OC_SESSION). Comportamento invariato.
-  var r = getRuoloCorrente(null, adminToken);
+function getCurrentUser_v44(tokenOrAdminToken) {
+  // v4.19.1 — Accetta token sessione O admin token. Lo passa a getRuoloCorrente
+  // come primo arg (session token) e secondo arg (admin token).
+  var r = getRuoloCorrente(tokenOrAdminToken || null, tokenOrAdminToken || null);
 
   // Mappa ruolo 'anonimo' → 'guest' per backward-compat
   var ruoloLegacy = (r.ruolo === 'anonimo') ? 'guest' : r.ruolo;
@@ -247,10 +226,11 @@ function _normalizeCsvEmails_(csv) {
     .join(',');
 }
 
-function _isCurrentUserAdmin_(adminToken) {
-  // v4.18.56 — Wrapper su getRuoloCorrente. Comportamento invariato.
+function _isCurrentUserAdmin_(tokenOrAdminToken) {
+  // v4.20 — Accetta sia session token che admin URL token.
+  // Prova prima come session token (1° arg), poi come admin token (2° arg).
   try {
-    var r = getRuoloCorrente(null, adminToken);
+    var r = getRuoloCorrente(tokenOrAdminToken, tokenOrAdminToken);
     return !!r.isAdmin;
   } catch(_) { return false; }
 }
@@ -263,9 +243,10 @@ function _isCurrentUserAdmin_(adminToken) {
  * @param {string} [magicToken] token magic-link opzionale
  * @return {boolean}
  */
-function _isCurrentUserEditorOrAdmin_(adminToken, magicToken) {
+function _isCurrentUserEditorOrAdmin_(tokenOrAdminToken) {
+  // v4.20 — Accetta sia session token che admin URL token.
   try {
-    var r = getRuoloCorrente(magicToken, adminToken);
+    var r = getRuoloCorrente(tokenOrAdminToken, tokenOrAdminToken);
     return !!r.isEditor;
   } catch(_) { return false; }
 }
