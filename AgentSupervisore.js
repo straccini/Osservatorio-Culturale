@@ -178,12 +178,13 @@ function sasRun() {
     Logger.log('[SAS] MA4 ERRORE: ' + e.message);
   }
 
-  // ── MA5: Archivia bandi scaduti (v4.19.1 — ex trigger autoArchiviaBandiScaduti) ──
+  // ── MA5: Archivia bandi scaduti (v4.20 — usa cleanupBandiV5Scaduti) ──
   try {
-    if (typeof autoArchiviaBandiScaduti === 'function') {
-      autoArchiviaBandiScaduti();
-      report.azioni.push('MA5: archivio bandi scaduti eseguito');
-      Logger.log('[SAS] MA5 archivio bandi scaduti completato');
+    if (typeof cleanupBandiV5Scaduti === 'function') {
+      var ma5 = cleanupBandiV5Scaduti(30);
+      report.agenti.MA5 = ma5;
+      if (ma5 && ma5.archiviati > 0) report.azioni.push('MA5: archiviati ' + ma5.archiviati + ' bandi scaduti (>30gg)');
+      Logger.log('[SAS] MA5 archivio bandi scaduti completato: ' + (ma5 && ma5.archiviati || 0));
     }
   } catch(e) {
     report.errori.push('MA5: ' + e.message);

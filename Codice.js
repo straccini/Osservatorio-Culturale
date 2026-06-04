@@ -2024,25 +2024,9 @@ function eliminaArchiviatiTutti() {
  *   oppure autoArchiveOld('bando', 30) in Workflow_unified.js per il foglio RADAR BANDI legacy.
  */
 function autoArchiviaScaduti() {
-  const sheet=getSheetRadar();
-  if(!sheet||sheet.getLastRow()<2) return 0;
-  const oggi=new Date();
-  const data=sheet.getRange(2,1,sheet.getLastRow()-1,18).getValues();
-  let n=0;
-  data.forEach((row,idx)=>{
-    if(!row[COL.TITOLO-1]) return;
-    if(String(row[COL.STATO_RECORD-1]||'attivo')==='archiviato') return;
-    const scad=row[COL.SCADENZA-1];
-    if(!scad) return;
-    const dataScad=scad instanceof Date?scad:new Date(scad);
-    if(isNaN(dataScad)) return;
-    if(Math.floor((oggi-dataScad)/86400000)>=30) {
-      sheet.getRange(idx+2,COL.STATO_RECORD).setValue('archiviato');
-      n++;
-    }
-  });
-  if(n>0) Logger.log('Auto-archiviati '+n+' bandi scaduti');
-  return n;
+  // v4.20 DEPRECATO — usare cleanupBandiV5Scaduti
+  Logger.log('[DEPRECATO] autoArchiviaScaduti — usare cleanupBandiV5Scaduti()');
+  return { ok: false, deprecato: true };
 }
 
 // ==================================================================
@@ -3910,8 +3894,10 @@ function preparaBozzaDigestLunedi() {
 function lunediMattina() {
   Logger.log('=== LUNEDI MATTINA v4.2 - OSSERVATORIO CULTURALE ===');
 
-  // 1. Auto-archiviazione bandi scaduti
-  try { autoArchiviaScaduti(); } catch(e) { Logger.log('autoArchivia bandi: ' + e.message); }
+  // 1. Auto-archiviazione bandi scaduti (v4.20 — usa cleanupBandiV5Scaduti)
+  try {
+    if (typeof cleanupBandiV5Scaduti === 'function') cleanupBandiV5Scaduti(30);
+  } catch(e) { Logger.log('cleanupBandiV5Scaduti: ' + e.message); }
 
   // 2. Auto-archiviazione notizie > 30gg
   try {

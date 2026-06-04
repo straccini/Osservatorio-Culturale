@@ -571,44 +571,9 @@ function galVerificaUrl() {
  * Archivia se la data di scadenza e passata (giorno stesso incluso).
  */
 function autoArchiviaBandiScaduti() {
-  var oggi = new Date();
-  oggi.setHours(23, 59, 59, 999); // fine giornata: archivia anche quelli che scadono oggi
-  var totale = 0;
-
-  try {
-    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
-
-    // 1. Bandi_v5 (colonna 12 = Scadenza, colonna 23 = StatoRecord)
-    totale += _archiviaScadutiSheet_(ss, 'Bandi_v5', 12, 23, oggi);
-
-    // 2. RADAR BANDI legacy (se ancora esiste, non ancora migrato)
-    var shRadar = ss.getSheetByName('RADAR BANDI');
-    if (shRadar) {
-      var head = shRadar.getRange(1, 1, 1, shRadar.getLastColumn()).getValues()[0];
-      var iScad = -1, iStato = -1;
-      for (var c = 0; c < head.length; c++) {
-        var h = String(head[c]).toLowerCase();
-        if (h === 'scadenza') iScad = c + 1;
-        if (h === 'statorecord' || h === 'stato') iStato = c + 1;
-      }
-      if (iScad > 0 && iStato > 0) {
-        totale += _archiviaScadutiSheet_(ss, 'RADAR BANDI', iScad, iStato, oggi);
-      }
-    }
-
-    if (totale > 0) {
-      Logger.log('[AUTO-ARCH] Archiviati ' + totale + ' bandi scaduti');
-      if (typeof _tgSend_ === 'function') {
-        try { _tgSend_('Archiviati automaticamente ' + totale + ' bandi scaduti'); } catch(_) {}
-      }
-    } else {
-      Logger.log('[AUTO-ARCH] Nessun bando scaduto da archiviare');
-    }
-  } catch(e) {
-    Logger.log('[AUTO-ARCH] Errore: ' + e.message);
-  }
-
-  return { ok: true, archiviati: totale };
+  // v4.20 DEPRECATO — usare cleanupBandiV5Scaduti
+  Logger.log('[DEPRECATO] autoArchiviaBandiScaduti — usare cleanupBandiV5Scaduti()');
+  return { ok: false, deprecato: true };
 }
 
 function _archiviaScadutiSheet_(ss, sheetName, colScadenza, colStato, oggi) {

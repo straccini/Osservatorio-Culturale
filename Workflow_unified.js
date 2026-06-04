@@ -299,20 +299,95 @@ function autoArchiveOld(tipo, sogliaGiorni) {
 // ============================================================================
 
 function autoDeleteVeryOld(tipo, sogliaMesi) {
+  // v4.20 — admin gate: solo admin puo eliminare
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) {
+    return { ok:false, error:'forbidden' };
+  }
   try {
     var c = _wfConfig_(tipo);
     sogliaMesi = sogliaMesi || (typeof OC_AUTO_DELETE_MONTHS !== 'undefined' ? OC_AUTO_DELETE_MONTHS : 12);
+    var sogliaMs = sogliaMesi * 30 * 86400000; // approssimazione mese = 30gg
+    var oggi = new Date(); oggi.setHours(0,0,0,0);
+    var cutoff = new Date(oggi.getTime() - sogliaMs);
 
+    // --- Items / News: foglio Items, colonna Archiviato (boolean) + DataAcquisizione ---
     if (tipo === 'item' || tipo === 'news' || tipo === 'items') {
-      if (typeof eliminaArchiviatiTutti === 'function') {
-        return eliminaArchiviatiTutti();
+      var shName = (c && c.sheetName) ? c.sheetName : 'Items';
+      var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+      var sh = ss.getSheetByName(shName);
+      if (!sh || sh.getLastRow() < 2) return { ok:true, eliminati:0 };
+      var rows = sh.getDataRange().getValues(), h = rows[0];
+      var archI = h.indexOf('Archiviato'), dataI = h.indexOf('DataAcquisizione'), idI = h.indexOf('ID');
+      if (archI < 0 || dataI < 0) return { ok:false, error:'colonne Archiviato/DataAcquisizione mancanti' };
+      var toDelete = [];
+      for (var i = rows.length - 1; i >= 1; i--) {
+        if (!rows[i][idI]) continue;
+        if (!rows[i][archI]) continue; // solo archiviati
+        var d = rows[i][dataI];
+        if (d instanceof Date && d < cutoff) { toDelete.push(i + 1); }
+        else if (d && !isNaN(new Date(d).getTime()) && new Date(d) < cutoff) { toDelete.push(i + 1); }
       }
+      toDelete.forEach(function(r) { try { sh.deleteRow(r); } catch(e2) {} });
+      return { ok:true, eliminati: toDelete.length };
     }
+
+    // --- Bandi: foglio RADAR BANDI, colonna StatoRecord + Scadenza ---
     if (tipo === 'bando' || tipo === 'bandi') {
-      if (typeof deleteArchivioTutto === 'function') {
-        return deleteArchivioTutto();
+      var sheetRadar = (typeof getSheetRadar === 'function') ? getSheetRadar() : null;
+      if (!sheetRadar || sheetRadar.getLastRow() < 2) return { ok:true, eliminati:0 };
+      var dataR = sheetRadar.getDataRange().getValues();
+      var headR = dataR[0];
+      var iStato = -1, iScad = -1;
+      for (var ci = 0; ci < headR.length; ci++) {
+        var hl = String(headR[ci]).toLowerCase();
+        if (hl === 'statorecord' || hl === 'stato') iStato = ci;
+        if (hl === 'scadenza') iScad = ci;
       }
+      if (iStato < 0) return { ok:false, error:'colonna StatoRecord mancante in RADAR BANDI' };
+      var dateCol = iScad >= 0 ? iScad : -1;
+      var toDeleteB = [];
+      for (var j = dataR.length - 1; j >= 1; j--) {
+        if (String(dataR[j][iStato]) !== 'archiviato') continue;
+        var rawD = dateCol >= 0 ? dataR[j][dateCol] : null;
+        if (!rawD) continue; // senza data, non eliminare
+        var dd = (rawD instanceof Date) ? rawD : new Date(rawD);
+        if (isNaN(dd.getTime())) continue;
+        if (dd < cutoff) { toDeleteB.push(j + 1); }
+      }
+      toDeleteB.forEach(function(r) { try { sheetRadar.deleteRow(r); } catch(e2) {} });
+      return { ok:true, eliminati: toDeleteB.length };
     }
+
+    // --- Podcast / Video / Libro: foglio con StatoRecord testo ---
+    if (tipo === 'podcast' || tipo === 'video' || tipo === 'libro') {
+      var shN = (c && c.sheetName) ? c.sheetName : null;
+      if (!shN) return { ok:false, error:'sheetName mancante per tipo ' + tipo };
+      var ssP = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+      var shP = ssP.getSheetByName(shN);
+      if (!shP || shP.getLastRow() < 2) return { ok:true, eliminati:0 };
+      var rowsP = shP.getDataRange().getValues(), hP = rowsP[0];
+      var statoN = (c.colStatoName) ? c.colStatoName : 'StatoRecord';
+      var iStatoP = hP.indexOf(statoN);
+      // Cerchiamo una colonna data per l'eta
+      var iDataP = hP.indexOf('DataPubblicazione');
+      if (iDataP < 0) iDataP = hP.indexOf('DataAcquisizione');
+      if (iDataP < 0) iDataP = hP.indexOf('DataRilevamento');
+      if (iStatoP < 0) return { ok:false, error:'colonna ' + statoN + ' mancante' };
+      var toDeleteP = [];
+      for (var k = rowsP.length - 1; k >= 1; k--) {
+        if (String(rowsP[k][iStatoP]).toLowerCase() !== 'archiviato') continue;
+        if (tipo === 'video' && !String(rowsP[k][0]).startsWith('VID')) continue;
+        if (tipo === 'podcast' && String(rowsP[k][0]).startsWith('VID')) continue;
+        var rawDP = (iDataP >= 0) ? rowsP[k][iDataP] : null;
+        if (!rawDP) continue;
+        var ddP = (rawDP instanceof Date) ? rawDP : new Date(rawDP);
+        if (isNaN(ddP.getTime())) continue;
+        if (ddP < cutoff) { toDeleteP.push(k + 1); }
+      }
+      toDeleteP.forEach(function(r) { try { shP.deleteRow(r); } catch(e2) {} });
+      return { ok:true, eliminati: toDeleteP.length };
+    }
+
     return { ok:false, error:'eliminazione non disponibile per tipo ' + tipo };
   } catch(e) {
     return { ok:false, error:e.message };
