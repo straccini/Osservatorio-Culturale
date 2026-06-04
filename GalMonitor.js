@@ -38,11 +38,14 @@ var GAL_BANDI_PATHS = [
   '/news/', '/category/bandi/'
 ];
 
-// Keywords inclusione (ambito culturale/territoriale)
-var GAL_KW_INCLUDE = /cultur|teatr|spettacol|muse[oi]|esposizion|restaur|recupero.?storico|mulin[oi]|borgh[io]|cammin[oi]|sentierist|artigianat|laborator.?creativ|turismo.?cultural|archeolog|tradizion.?local|bibliotec|patrimoni|beni.?cultural|rigenerazion|valorizzazion|paesagg|storico.?artist|architettur|monumento|festival|rassegn|evento.?cultural|genius.?loci|identit|artigian|botteg|mestier|saper.?fare|enogastronom|produzioni.?tipic|leader|sviluppo.?local|gal|azione.?locale/i;
+// v4.20 — Keywords inclusione STRETTA: solo cultura, musei, beni culturali, turismo culturale
+// Allineate al prompt AG1 (AgentConfig.js). Rimossi termini troppo generici
+// (leader, sviluppo locale, GAL, azione locale, identit, artigian generico)
+// che matchavano il 90% dei bandi GAL senza pertinenza reale.
+var GAL_KW_INCLUDE = /muse[oi]|museal|beni.?cultural|patrimoni.?cultural|turismo.?cultural|archeolog|restaur.?conserv|allestiment|valorizzazion.?cultural|digitalizzazion.?cultural|accessibilit.{0,5}cultur|teatr|spettacol.?dal.?vivo|esposizion|bibliotec|archivi.?storic|monument.?storic|storico.?artist|festival.?cultural|evento.?cultural|rassegn.?cultural|heritage|borgh.{0,3}storic|rigenerazion.?urban.?cultur|paesagg.?cultural|ecomuseo|recupero.?storic|genius.?loci|enogastronom.?cultural|turismo.?esperienzi|turismo.?sostenibil|percors.?cultur|itinerar.?cultur/i;
 
-// Keywords esclusione (zootecnia pura)
-var GAL_KW_EXCLUDE = /trattor[ei]|stall[ae]|fienagion|caseific|mungitr|allevament[oi]|concim[ei]|zootecn|aratr[oi]|biomassa.?agricol|pesticid|fitosanitar|irrigazion.?intensiv|suinicol|avicol|bovini|ovini|mangim/i;
+// Keywords esclusione (agricoltura, zootecnia, infrastrutture non culturali)
+var GAL_KW_EXCLUDE = /trattor[ei]|stall[ae]|fienagion|caseific|mungitr|allevament[oi]|concim[ei]|zootecn|aratr[oi]|biomassa.?agricol|pesticid|fitosanitar|irrigazion.?intensiv|suinicol|avicol|bovini|ovini|mangim|fognatur|acquedott|depurator|fotovoltaic|eolico|biometan|banda.?larg|fibra.?ottic|agroalimentar[ei](?!.*cultur)|agroindustr|olivicol|viticol(?!.*cultur)|cerealicol|orticol/i;
 
 // ============================================================================
 // ESECUZIONE
@@ -191,8 +194,8 @@ function _galScanSingle_(gal, existingUrls) {
   bandi.forEach(function(b) {
     if (!b.link || existingUrls[b.link.toLowerCase()]) return;
 
-    var isCulturale = _galIsCulturale_(b.titolo, b.descrizione);
-    if (!isCulturale) return;
+    var ambito = _galIsCulturale_(b.titolo, b.descrizione);
+    if (!ambito) return;
 
     _galSaveBando_({
       titolo: b.titolo,
@@ -201,7 +204,8 @@ function _galScanSingle_(gal, existingUrls) {
       urlBando: b.link,
       sommario: b.descrizione,
       scadenza: b.scadenza,
-      fonteNome: 'GAL ' + gal.nome
+      fonteNome: 'GAL ' + gal.nome,
+      ambito: ambito
     });
     existingUrls[b.link.toLowerCase()] = true;
     result.nuovi++;
@@ -316,11 +320,21 @@ function _galFindDate_(text) {
 // FILTRO SEMANTICO CULTURALE
 // ============================================================================
 
+/**
+ * v4.20 — Filtro semantico stretto + classificazione ambito.
+ * Ritorna false se non pertinente, oppure il numero ambito (1-5).
+ */
 function _galIsCulturale_(titolo, descrizione) {
   var testo = (titolo + ' ' + (descrizione || '')).toLowerCase();
   if (GAL_KW_EXCLUDE.test(testo)) return false;
-  if (GAL_KW_INCLUDE.test(testo)) return true;
-  return false;
+  if (!GAL_KW_INCLUDE.test(testo)) return false;
+
+  // Classificazione ambito in base ai match
+  if (/accessibilit|inclusio|barriere|disabilit|lingua.?dei.?segni/i.test(testo)) return 2; // Inclusione
+  if (/allestiment|esposizion|collezioni|mostre|restaur|conserv/i.test(testo)) return 3;     // Programma
+  if (/comunit|partecipaz|welfare|rigenerazion|ecomuseo|co.?progett/i.test(testo)) return 4; // Comunita
+  if (/digital|innovazion|tecnolog|smart|virtual|immersiv|ai\b/i.test(testo)) return 5;      // Digital
+  return 1; // Default: Identita e narrazione
 }
 
 // ============================================================================
@@ -364,7 +378,7 @@ function _galSaveBando_(b) {
       String(b.urlBando || ''),
       '', '', '',
       String(b.sommario || '').substring(0, 500),
-      1, // ambito (Identita)
+      b.ambito || 1, // ambito (classificato da _galIsCulturale_)
       '', 'nuovo_da_triage', 'attivo', false, false, ''
     ]);
   } catch (e) { Logger.log('[GAL] save: ' + e.message); }
