@@ -2193,6 +2193,25 @@ function getMailingList() {
   return {list: list};
 }
 
+/** v4.20 — Riepilogo lettori registrati per pagina Compilatori e lettori */
+function getMailingListSummary() {
+  try {
+    var sh = getMainSS().getSheetByName(SH.MAILING);
+    if (!sh || sh.getLastRow() < 2) return { ok:true, destinatari:[] };
+    var data = sh.getDataRange().getValues();
+    var head = data[0].map(function(h){ return String(h||'').trim(); });
+    var iEmail = head.indexOf('Email'), iNome = head.indexOf('Nome'), iAttivo = head.indexOf('Attivo');
+    if (iEmail < 0) return { ok:true, destinatari:[] };
+    var list = [];
+    for (var r = 1; r < data.length; r++) {
+      var email = String(data[r][iEmail] || '').trim();
+      if (!email) continue;
+      list.push({ email: email, nome: (iNome >= 0 ? String(data[r][iNome]||'') : ''), stato: (iAttivo >= 0 && data[r][iAttivo] === true) ? 'attivo' : 'inattivo' });
+    }
+    return { ok:true, destinatari:list };
+  } catch(e) { return { ok:false, error: e.message }; }
+}
+
 function saveMailing(body) {
   var email = String(body.email || body.Email || '').trim().toLowerCase();
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return {error: 'Email non valida'};

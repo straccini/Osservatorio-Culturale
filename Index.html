@@ -1443,6 +1443,17 @@
       <div id="cmpContent" aria-live="polite">
         <div style="padding:30px;text-align:center;color:var(--ink-3);font-size:13px">Caricamento compilatori…</div>
       </div>
+
+      <!-- v4.20 — Lettori registrati -->
+      <div style="margin-top:24px;border-top:2px solid var(--rule,#E5E5E7);padding-top:20px">
+        <h3 style="font-size:16px;font-weight:600;color:var(--ink);margin:0 0 6px">Lettori registrati</h3>
+        <p class="hint" style="margin-bottom:12px">Utenti iscritti alla newsletter. Ricevono il digest generalista settimanale (Coorte A).</p>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <button class="btn btn-secondary" onclick="OC._loadLettoriRegistrati()" style="font-size:12px;padding:6px 12px">Carica elenco</button>
+          <span id="lettoriInfo" style="font-size:12px;color:var(--ink-3);line-height:2"></span>
+        </div>
+        <div id="lettoriContent"></div>
+      </div>
     </section>
 
     <!-- ===== PAGE STATS (Sprint N9) ===== -->
@@ -1881,6 +1892,28 @@
 
       <!-- TAB STATO SISTEMA -->
       <div class="settings-tab-content" data-tab-content="sistema" hidden>
+        <!-- v4.20 — Riepilogo sistema -->
+        <div class="admin-card" style="margin-bottom:14px;border-left:4px solid var(--amb-5,#4A7884)">
+          <h3>Riepilogo sistema</h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:10px 0">
+            <div style="background:var(--surface-2);border-radius:8px;padding:12px">
+              <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;font-weight:700;margin-bottom:6px">Fonti attive</div>
+              <div id="sysRiepFonti" style="font-size:13px;color:var(--ink-2)">Caricamento...</div>
+            </div>
+            <div style="background:var(--surface-2);border-radius:8px;padding:12px">
+              <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;font-weight:700;margin-bottom:6px">Agenti AI</div>
+              <div style="font-size:13px;color:var(--ink-2)">AG1 Bandi · AG2 Norme · AG3 Innovazione · AG4 Comunita · AG5 Digital<br><span style="font-size:11px;color:var(--ink-3)">Scan: ogni 6h · Digest: 07:30</span></div>
+            </div>
+            <div style="background:var(--surface-2);border-radius:8px;padding:12px">
+              <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;font-weight:700;margin-bottom:6px">Trigger attivi</div>
+              <div id="sysRiepTrigger" style="font-size:13px;color:var(--ink-2)">Caricamento...</div>
+            </div>
+            <div style="background:var(--surface-2);border-radius:8px;padding:12px">
+              <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;font-weight:700;margin-bottom:6px">Telegram</div>
+              <div id="sysRiepTelegram" style="font-size:13px;color:var(--ink-2)">Caricamento...</div>
+            </div>
+          </div>
+        </div>
         <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin-bottom:16px">
           <div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin-bottom:16px">Configurazione sistema</div>
           <div id="sistemaConfigGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -1952,25 +1985,17 @@
           <h3>Manutenzione periodica</h3>
           <p class="hint">Verifiche e allineamenti. Girano automaticamente nel supervisore notturno; usa i bottoni per forzare un'esecuzione immediata.</p>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:10px 0">
-            <button class="btn btn-secondary" onclick="OC._runMaintAction('verificaFontiBandi','mpResult')" style="text-align:left;padding:10px 12px;font-size:12px" title="Verifica connettivita delle fonti bandi: quali rispondono, quali sono morte">
-              <div style="font-weight:600">Verifica fonti bandi</div>
-              <div style="font-size:11px;color:var(--ink-3)">Controlla quali rispondono</div>
+            <button class="btn btn-secondary" onclick="OC._runMaintAction('verificaFontiBandi','mpResult')" style="text-align:left;padding:10px 12px;font-size:12px" title="Controlla quali fonti bandi rispondono e quali sono morte">
+              <div style="font-weight:600">Verifica fonti</div>
+              <div style="font-size:11px;color:var(--ink-3)">Bandi + news: connettivita</div>
             </button>
-            <button class="btn btn-secondary" onclick="OC._runMaintAction('verificaFontiNews','mpResult')" style="text-align:left;padding:10px 12px;font-size:12px" title="Verifica connettivita delle fonti news RSS">
-              <div style="font-weight:600">Verifica fonti news</div>
-              <div style="font-size:11px;color:var(--ink-3)">Controlla quali rispondono</div>
+            <button class="btn btn-secondary" onclick="OC._runMaintAction('qualityCheckBandi','mpResult')" style="text-align:left;padding:10px 12px;font-size:12px" title="Trova duplicati, campi mancanti, link rotti nei bandi">
+              <div style="font-weight:600">Quality check</div>
+              <div style="font-size:11px;color:var(--ink-3)">Duplicati e anomalie bandi</div>
             </button>
-            <button class="btn btn-secondary" onclick="OC._runMaintAction('qualityCheckBandi','mpResult')" style="text-align:left;padding:10px 12px;font-size:12px" title="Controlla qualita bandi: duplicati, campi mancanti, link rotti">
-              <div style="font-weight:600">Quality check bandi</div>
-              <div style="font-size:11px;color:var(--ink-3)">Duplicati, campi, link</div>
-            </button>
-            <button class="btn btn-secondary" onclick="OC._runMaintAction('dedupTuttiIFogli','mpResult')" style="text-align:left;padding:10px 12px;font-size:12px" title="Trova e archivia duplicati su tutti i fogli (reversibile)">
+            <button class="btn btn-secondary" onclick="OC._runMaintAction('dedupTuttiIFogli','mpResult')" style="text-align:left;padding:10px 12px;font-size:12px" title="Archivia duplicati su tutti i fogli (reversibile)">
               <div style="font-weight:600">Dedup contenuti</div>
               <div style="font-size:11px;color:var(--ink-3)">Archivia duplicati (reversibile)</div>
-            </button>
-            <button class="btn btn-secondary" onclick="OC._runMaintAction('auditFogli','mpResult')" style="text-align:left;padding:10px 12px;font-size:12px" title="Audit sola lettura: stato fogli, righe, colonne, anomalie">
-              <div style="font-weight:600">Audit fogli</div>
-              <div style="font-size:11px;color:var(--ink-3)">Sola lettura, nessuna modifica</div>
             </button>
           </div>
           <div id="mpResult" style="margin-top:8px;font-size:12px;color:var(--ink-3);max-height:200px;overflow-y:auto"></div>
@@ -5505,7 +5530,20 @@
         el('sysClaudeKey').textContent = r.claudeApiKey ? 'Configurata' : 'Non configurata';
         el('sysClaudeKey').style.color = r.claudeApiKey ? '#3F7A5E' : '#8C2626';
       }
+      // v4.20 — Riepilogo: trigger count
+      var elTrig = document.getElementById('sysRiepTrigger');
+      if (elTrig && r.triggerSAS) elTrig.textContent = r.triggerSAS.length + ' trigger installati';
     }).withFailureHandler(function(){}).sasDiagnostica();
+    // v4.20 — Riepilogo sistema: fonti
+    google.script.run.withSuccessHandler(function(r){
+      var el = document.getElementById('sysRiepFonti');
+      if (el && r && r.ok) el.innerHTML = (r.totaleAttive||0) + ' attive · ' + (r.totaleSilenti||0) + ' silenti · ' + (r.totaleDeprecate||0) + ' disattive';
+    }).withFailureHandler(function(){}).fasReportFontiCompleto();
+    // v4.20 — Riepilogo sistema: Telegram
+    google.script.run.withSuccessHandler(function(r){
+      var el = document.getElementById('sysRiepTelegram');
+      if (el) el.textContent = (r && r.hasToken && r.hasChat) ? 'Configurato' : 'Non configurato';
+    }).withFailureHandler(function(){}).getTelegramConfigStatus();
   }
 
   function reloadFontiBandiTable() {
@@ -7149,6 +7187,11 @@
               if (regOv) { regOv.hidden=true; regOv.style.display='none'; }
               // Invalida tutte le cache dati (erano caricate come ospite)
               try { _cacheBandi=null;_cacheNews=null;_cachePodcast=null;_cacheVideo=null;_cacheLibri=null;_cacheArchivio=null; } catch(_){}
+              // v4.20 — Forza attivazione home page (evita pagina bianca)
+              var allP = document.querySelectorAll('.page');
+              for (var pi=0; pi<allP.length; pi++) allP[pi].classList.remove('active');
+              var hp = document.getElementById('page-home');
+              if (hp) hp.classList.add('active');
               go('home');
               // Ri-hydrata: ricarica dati home + badge + utente col nuovo livello
               hydrate();
@@ -9990,6 +10033,22 @@
     },
     // v4.18.16 J — CRM compilatori Matrix
     loadCompilatori: loadCompilatori,
+    _loadLettoriRegistrati: function() {
+      var wrap = document.getElementById('lettoriContent');
+      var info = document.getElementById('lettoriInfo');
+      if (!wrap || !hasGAS()) return;
+      wrap.innerHTML = '<div style="padding:16px;text-align:center;color:var(--ink-3);font-size:13px">Caricamento...</div>';
+      google.script.run.withSuccessHandler(function(r) {
+        if (!r || !r.ok) { wrap.innerHTML = '<div style="color:var(--danger)">Errore: ' + esc((r&&r.error)||'') + '</div>'; return; }
+        var list = r.destinatari || [];
+        if (info) info.textContent = list.length + ' lettori registrati';
+        if (!list.length) { wrap.innerHTML = '<div style="padding:16px;text-align:center;color:var(--ink-3)">Nessun lettore registrato.</div>'; return; }
+        var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="background:var(--surface-2)"><th style="padding:8px;text-align:left">Email</th><th style="padding:8px;text-align:left">Nome</th><th style="padding:8px;text-align:left">Stato</th></tr>';
+        list.forEach(function(d) { html += '<tr style="border-bottom:1px solid var(--rule)"><td style="padding:6px 8px">' + esc(d.email||'') + '</td><td style="padding:6px 8px">' + esc(d.nome||'') + '</td><td style="padding:6px 8px">' + esc(d.stato||'attivo') + '</td></tr>'; });
+        html += '</table>';
+        wrap.innerHTML = html;
+      }).withFailureHandler(function(e) { wrap.innerHTML = '<div style="color:var(--danger)">Errore: ' + esc(e) + '</div>'; }).getMailingListSummary();
+    },
     // v4.18.17 L — Sondaggi mirati LS2
     openSondaggio: function(codice){
       window._sondaggioCodice = codice || 'gestione';
