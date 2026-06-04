@@ -11349,8 +11349,7 @@
 
   // --- Profilo: pagina autonoma ---
   OC.goProfiloTab = function() {
-    var liv = (window.OC_SESSION && window.OC_SESSION.livello) || 0;
-    if (liv < 1) { _gateOspite(); return; }
+    // v4.20 — Sempre accessibile, anche senza login. Il form chiede l'email al suo interno.
     OC.go('profilo-pro');
   };
 
