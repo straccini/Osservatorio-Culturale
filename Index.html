@@ -446,15 +446,8 @@
         </select>
         <button class="filter-chip" onclick="OC.exportNewsCSV()" title="Scarica in CSV le news attualmente filtrate (rispetta i filtri attivi)" style="white-space:nowrap;padding:8px 14px">⤓&nbsp;Esporta CSV</button>
       </div>
-      <!-- v4.18.10 — Admin tools news -->
-      <div id="newsAdminTools" class="admin-tools-inline" style="display:none;background:var(--surface-2);border:1px solid var(--rule);border-radius:8px;padding:14px;margin:12px 0">
-        <div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;font-weight:600">Strumenti news (solo admin)</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button class="btn btn-secondary" data-action="runScannerNews" style="font-size:12px;padding:6px 12px">Scan news RSS</button>
-          <button class="btn btn-secondary" data-action="addNewsManuale" style="display:none;font-size:12px;padding:6px 12px">+ Aggiungi manuale</button>
-          <span id="scannerResultNews" style="font-size:12px;color:var(--ink-3)"></span>
-        </div>
-      </div>
+      <!-- v4.18.10 — Admin tools news (centralizzati in Settings) -->
+      <div id="newsAdminTools" class="admin-tools-inline" style="display:none"></div>
       <div class="news-list" id="newsListFull" aria-live="polite">
         <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
@@ -501,16 +494,8 @@
         </select>
         <button class="filter-chip" onclick="OC.exportPodcastCSV()" title="Scarica i podcast filtrati in CSV" style="white-space:nowrap;padding:8px 14px">⤓&nbsp;Esporta CSV</button>
       </div>
-      <!-- v4.18.10 — Admin tools podcast -->
-      <div id="podcastAdminTools" class="admin-tools-inline" style="display:none;background:var(--surface-2);border:1px solid var(--rule);border-radius:8px;padding:14px;margin:12px 0">
-        <div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;font-weight:600">Strumenti podcast (solo admin)</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button class="btn btn-secondary" data-action="runScannerPodcast" style="font-size:12px;padding:6px 12px">Scan podcast/video</button>
-          <button class="btn btn-secondary" data-action="seedPodcastRSS" style="font-size:12px;padding:6px 12px">Seed RSS italiani</button>
-          <button class="btn btn-secondary" data-action="addPodcastManuale" style="display:none;font-size:12px;padding:6px 12px">+ Aggiungi manuale</button>
-          <span id="scannerResultPodcast" style="font-size:12px;color:var(--ink-3)"></span>
-        </div>
-      </div>
+      <!-- v4.18.10 — Admin tools podcast (centralizzati in Settings) -->
+      <div id="podcastAdminTools" class="admin-tools-inline" style="display:none"></div>
       <div class="news-list" id="podcastListFull" aria-live="polite">
         <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
@@ -557,38 +542,8 @@
         </select>
         <button class="filter-chip" onclick="OC.exportVideoCSV()" title="Scarica i video filtrati in CSV" style="white-space:nowrap;padding:8px 14px">⤓&nbsp;Esporta CSV</button>
       </div>
-      <!-- v4.18.10 (2026-05-12) — Admin tools video (spostato da admin card eliminata) -->
-      <div id="videoAdminTools" class="admin-tools-inline" style="display:none;background:var(--surface-2);border:1px solid var(--rule);border-radius:8px;padding:14px;margin:12px 0">
-        <div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;font-weight:600">Strumenti video (solo admin)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 160px auto;gap:8px;align-items:end;margin-bottom:10px">
-          <div>
-            <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Nome canale</label>
-            <input type="text" id="ytNome" placeholder="es. Museo Nazionale Rossini" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/>
-          </div>
-          <div>
-            <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">URL canale (handle, channel_id, user)</label>
-            <input type="text" id="ytUrl" placeholder="https://www.youtube.com/@nomeCanale" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/>
-          </div>
-          <div>
-            <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Tematica</label>
-            <select id="ytTematica" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px">
-              <option>Musei &amp; Patrimonio</option>
-              <option>Arte Contemporanea</option>
-              <option>Politiche Culturali</option>
-              <option>Tecnologia &amp; Cultura</option>
-              <option>Accessibilita</option>
-              <option>Audience &amp; Welfare</option>
-            </select>
-          </div>
-          <button class="btn btn-primary" data-action="addYouTube" style="white-space:nowrap">Aggiungi</button>
-        </div>
-        <div id="ytResult" style="font-size:12px;min-height:18px;margin-bottom:8px"></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--rule,#E5E5E7);padding-top:10px">
-          <button class="btn btn-secondary" data-action="runScannerPodcast" title="Lancia subito una scansione manuale di tutte le fonti podcast/video attive. Normalmente parte automaticamente ogni 24h alle 03:00." style="font-size:12px;padding:6px 12px">▶ Scan podcast/video</button>
-          <button class="btn btn-secondary" data-action="seedVideoMusei" title="Aggiunge in un colpo solo 10 canali YouTube di musei italiani come fonti video predefinite (one-shot, idempotente)." style="font-size:12px;padding:6px 12px">Seed YouTube musei italiani</button>
-          <span id="scannerResultVideo" style="font-size:12px;align-self:center;color:var(--ink-2)"></span>
-        </div>
-      </div>
+      <!-- v4.18.10 — Admin tools video (centralizzati in Settings) -->
+      <div id="videoAdminTools" class="admin-tools-inline" style="display:none"></div>
       <div class="news-list" id="videoListFull" aria-live="polite">
         <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
@@ -674,34 +629,8 @@
       </div>
       <!-- Filtri norme: toolbar disabilitata (funzioni OC.searchNorme/setNormeTema/etc. non ancora implementate) -->
       <div class="filters filters-tools" style="display:none"></div>
-      <!-- Admin tools (solo admin, display:none) -->
-      <div id="normeAdminTools" style="display:none;background:var(--surface-2);border:1px solid var(--rule);border-radius:8px;padding:14px;margin-bottom:14px">
-        <div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;font-weight:600">Strumenti normativa (solo admin)</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button class="btn btn-secondary" data-action="runScannerNorme" style="display:none;font-size:12px;padding:6px 12px">Scan norme</button>
-          <button class="btn btn-secondary" onclick="document.getElementById('normeAddForm').style.display=document.getElementById('normeAddForm').style.display==='none'?'block':'none'" style="font-size:12px;padding:6px 12px">+ Aggiungi manuale</button>
-          <span id="scannerResultNorme" style="font-size:12px;color:var(--ink-3)"></span>
-        </div>
-      </div>
-      <div id="normeAddForm" class="lb-add-form" style="display:none">
-        <h3 class="lb-add-title">Aggiungi norma / riferimento</h3>
-        <div class="lb-add-grid">
-          <input id="nmTitolo" class="lb-input" type="text" placeholder="Titolo norma * (es. D.Lgs. 42/2004)" style="grid-column:1/-1"/>
-          <input id="nmFonte" class="lb-input" type="text" placeholder="Fonte (es. Gazzetta Ufficiale)" />
-          <input id="nmLink" class="lb-input" type="url" placeholder="URL testo norma" />
-          <select id="nmAmbito" class="lb-input">
-            <option value="0">— Categoria —</option>
-            <option value="1">01 Identit&agrave; museale</option>
-            <option value="2">02 Inclusione e accessibilit&agrave;</option>
-            <option value="3">03 Programma, mostre e collezioni</option>
-            <option value="4">04 Comunit&agrave; e welfare</option>
-            <option value="5">05 Digital, AI e governance</option>
-          </select>
-          <textarea id="nmDesc" class="lb-input" placeholder="Descrizione / note applicative" rows="2" style="grid-column:1/-1;resize:vertical"></textarea>
-        </div>
-        <button class="lb-add-btn" onclick="OC.saveNorma()">Salva norma</button>
-        <span id="nmFeedback" style="font-size:12px;color:var(--ink-3);margin-left:10px"></span>
-      </div>
+      <!-- Admin tools normativa (centralizzati in Settings) -->
+      <div id="normeAdminTools" class="admin-tools-inline" style="display:none"></div>
       <div class="news-list" id="normeListFull" aria-live="polite">
         <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
@@ -720,16 +649,8 @@
       </div>
       <!-- Filtri social: toolbar disabilitata (funzioni OC.searchSocial/setSocialTipo/etc. non ancora implementate) -->
       <div class="filters filters-tools" style="display:none"></div>
-      <!-- Admin tools (solo admin) -->
-      <div id="socialAdminTools" style="display:none;background:var(--surface-2);border:1px solid var(--rule);border-radius:8px;padding:14px;margin-bottom:14px">
-        <div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;font-weight:600">Strumenti social (solo admin)</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button class="btn btn-secondary" data-action="runScannerSocial" style="display:none;font-size:12px;padding:6px 12px">Scan social</button>
-          <button class="btn btn-secondary" data-action="addSocialFonte" style="display:none;font-size:12px;padding:6px 12px">+ Aggiungi fonte</button>
-          <button class="btn btn-secondary" onclick="OC.seedSocialFonti()" style="font-size:12px;padding:6px 12px">Seed fonti</button>
-          <span id="scannerResultSocial" style="font-size:12px;color:var(--ink-3)"></span>
-        </div>
-      </div>
+      <!-- Admin tools social (centralizzati in Settings) -->
+      <div id="socialAdminTools" class="admin-tools-inline" style="display:none"></div>
       <div id="socialWallList" aria-live="polite">
         <div class="sw-skeleton-grid">
           <div class="skeleton-card sw-skeleton-tile"></div>
@@ -1734,7 +1655,49 @@
       <div class="settings-tab-content" data-tab-content="tutti">
         <div class="admin-card" style="margin-bottom:14px">
           <h3>🗂 Tutte le Fonti monitorate</h3>
-          <p class="hint">Vista unificata di tutte le fonti (bandi, news, podcast, video) con schema 14 colonne. Filtra, cerca, ordina. Per add/scan dettagliato vai sulle tab specifiche.</p>
+          <p class="hint">Gestisci tutte le fonti da qui: aggiungi, attiva/disattiva, elimina. Lo scanner gira in automatico ogni giorno sulle fonti attive.</p>
+
+          <!-- Azioni rapide: scan + aggiungi -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+            <button class="btn btn-primary" data-action="runScannerNews" style="font-size:12px;padding:6px 14px" title="Scansiona tutte le fonti news RSS attive">Scan news</button>
+            <button class="btn btn-primary" data-action="runScannerPodcast" style="font-size:12px;padding:6px 14px" title="Scansiona tutte le fonti podcast e video attive">Scan podcast/video</button>
+            <button class="btn btn-primary" data-action="runScanBandiV5" style="font-size:12px;padding:6px 14px" title="Scansiona tutte le fonti bandi attive">Scan bandi</button>
+            <div style="flex:1"></div>
+            <button class="btn btn-secondary" onclick="var f=document.getElementById('fuAddForm');f.hidden=!f.hidden" style="font-size:12px;padding:6px 14px">+ Aggiungi fonte</button>
+          </div>
+          <div id="fuScanResult" style="font-size:12px;min-height:16px;color:var(--ink-3);margin-bottom:8px"></div>
+
+          <!-- Form aggiungi fonte (nascosto, toggle) -->
+          <div id="fuAddForm" hidden style="background:var(--surface-2);border:1px solid var(--rule,#E5E5E7);border-radius:8px;padding:14px;margin-bottom:14px">
+            <div style="font-weight:600;font-size:13px;color:var(--ink);margin-bottom:10px">Nuova fonte</div>
+            <div style="display:grid;grid-template-columns:120px 1fr;gap:8px 12px;align-items:center;font-size:13px">
+              <label style="font-size:12px;color:var(--ink-2)">Tipo</label>
+              <select id="fuAddTipo" style="padding:7px 10px;border:1px solid var(--rule);border-radius:6px;font-size:13px" onchange="var u=document.getElementById('fuAddUrlHint');var t=this.value;u.textContent=t==='video'?'URL canale YouTube (@handle o /channel/...)':t==='bandi'?'URL pagina bandi o RSS':'URL feed RSS'">
+                <option value="news">News (RSS)</option>
+                <option value="podcast">Podcast (RSS)</option>
+                <option value="video">Video (YouTube)</option>
+                <option value="bandi">Bandi</option>
+              </select>
+              <label style="font-size:12px;color:var(--ink-2)">Nome</label>
+              <input type="text" id="fuAddNome" placeholder="es. Artribune, ICOM Italia, MuseumNext..." style="padding:7px 10px;border:1px solid var(--rule);border-radius:6px;font-size:13px"/>
+              <label style="font-size:12px;color:var(--ink-2)">URL</label>
+              <div>
+                <input type="text" id="fuAddUrl" placeholder="https://..." style="width:100%;padding:7px 10px;border:1px solid var(--rule);border-radius:6px;font-size:13px"/>
+                <div id="fuAddUrlHint" style="font-size:11px;color:var(--ink-3);margin-top:2px">URL feed RSS</div>
+              </div>
+              <label style="font-size:12px;color:var(--ink-2)">Tematica</label>
+              <select id="fuAddTematica" style="padding:7px 10px;border:1px solid var(--rule);border-radius:6px;font-size:13px">
+                <option>Musei & Patrimonio</option><option>Arte Contemporanea</option><option>Politiche Culturali</option>
+                <option>Tecnologia & Cultura</option><option>Accessibilita</option><option>Audience & Welfare</option>
+                <option>Turismo Culturale</option><option>Architettura & Design</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
+              <button class="btn btn-primary" onclick="OC._addFonteUniversale()" style="font-size:12px;padding:6px 16px">Aggiungi</button>
+              <button class="btn btn-secondary" onclick="document.getElementById('fuAddForm').hidden=true" style="font-size:12px;padding:6px 12px">Annulla</button>
+              <span id="fuAddResult" style="font-size:12px;color:var(--ink-3)"></span>
+            </div>
+          </div>
 
           <!-- Toolbar: filtri e ricerca -->
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
@@ -6037,6 +6000,37 @@
   }
 
   // v4.20 — Aggiunta fonte ora scrive su FontiFeed (feed=rss, audio=podcast, video=video).
+  // v4.20 — Aggiungi fonte universale dal tab "Tutte le fonti"
+  function _addFonteUniversale() {
+    if (!hasGAS()) return;
+    var tipo = ($('fuAddTipo')||{}).value || 'news';
+    var nome = ($('fuAddNome')||{}).value || '';
+    var url  = ($('fuAddUrl')||{}).value || '';
+    var tem  = ($('fuAddTematica')||{}).value || '';
+    var out  = $('fuAddResult');
+    if (!nome.trim() || !url.trim()) { if(out) out.textContent = 'Compila nome e URL.'; return; }
+    if(out) out.textContent = 'Aggiunta in corso…';
+    var tk = (window.OC_SESSION && window.OC_SESSION.token) || null;
+    if (tipo === 'bandi') {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          if (r && r.ok) { if(out) out.textContent = 'Fonte bandi aggiunta.'; $('fuAddNome').value=''; $('fuAddUrl').value=''; reloadFontiUnified(); }
+          else { if(out) out.textContent = 'Errore: '+(r&&r.error||'?'); }
+        })
+        .withFailureHandler(function(e){ if(out) out.textContent = 'Errore: '+e; })
+        .addFonteBandi({nome:nome.trim(), url:url.trim(), categoria:tem.trim()});
+    } else {
+      var tipoMap = { news:'rss', podcast:'podcast', video:'video' };
+      google.script.run
+        .withSuccessHandler(function(r) {
+          if (r && r.ok) { if(out) out.textContent = 'Fonte aggiunta (ID: '+(r.id||'')+')'; $('fuAddNome').value=''; $('fuAddUrl').value=''; reloadFontiUnified(); }
+          else { if(out) out.textContent = 'Errore: '+(r&&r.error||'?'); }
+        })
+        .withFailureHandler(function(e){ if(out) out.textContent = 'Errore: '+e; })
+        .addFontiFeed({ tipo: tipoMap[tipo]||'rss', nome: nome.trim(), urlFeed: url.trim(), categoria: tem.trim(), gruppo: nome.trim() }, tk);
+    }
+  }
+
   function addFonteUnificata() {
     if (!hasGAS()) return;
     var nome = ($('fpNomeU')||{}).value || '';
@@ -9441,6 +9435,7 @@
     generaDigest: generaDigest,
     testDigestAdmin: testDigestAdmin,
     testTelegram: testTelegram,
+    _addFonteUniversale: _addFonteUniversale,
     checkTelegram: checkTelegram,
     openPreview: openPreview,
     deleteDigest: deleteDigest,
