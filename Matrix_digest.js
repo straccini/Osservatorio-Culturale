@@ -267,13 +267,15 @@ function sendAllPendingDigest() {
   }
   Logger.log('Digest pending da inviare: ' + pending.length);
   var sent = 0, errors = [];
-  pending.forEach(function(qid) {
+  for (var pi = 0; pi < pending.length; pi++) {
+    var qid = pending[pi];
+    if (MailApp.getRemainingDailyQuota() < 2) { Logger.log('Quota esaurita, stop invio'); break; }
     try {
       var res = sendQueuedDigest(qid);
       if (res.ok) sent++; else errors.push({queueId:qid, err:res.error});
       Utilities.sleep(500);
     } catch(e) { errors.push({queueId:qid, err:e.message}); }
-  });
+  }
   return { sent: sent, errors: errors, total: pending.length };
 }
 

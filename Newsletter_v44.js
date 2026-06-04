@@ -135,7 +135,7 @@ function sendNewsletterEmail_(subject, html) {
           var em = String(r[0] || '').trim();
           if (!em) continue;
           var attivo = r[5];
-          var isActive = (attivo === true || attivo === 1 || String(attivo).toLowerCase() === 'true' || attivo === '');
+          var isActive = (attivo === true || attivo === 1 || String(attivo).toLowerCase() === 'true');
           if (isActive) destinatari.push(em);
         }
       }
@@ -280,6 +280,7 @@ function _trunc_(s, n) {
  * @return {Object} { ok, draftId, htmlPreviewLength, emailSent, error? }
  */
 function testInviaDigestGeneralista(emailDest) {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
   emailDest = emailDest || 's.straccini@gmail.com';
   Logger.log('=== TEST DIGEST GENERALISTA ===');
   Logger.log('Destinatario test: ' + emailDest);
@@ -349,6 +350,7 @@ function testInviaDigestGeneralista(emailDest) {
  * Usare con cautela: se ci sono iscritti reali, riceveranno l'email!
  */
 function testInviaDigestATuttiGliIscritti() {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
   Logger.log('=== TEST INVIO A MAILINGLIST INTERA ===');
   try {
     var draftRes = adminGenerateDigestDraft({

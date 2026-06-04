@@ -348,7 +348,29 @@ function saveMatrixContact(data) {
       consent_timestamp: nowIso,
       consent_text_version: 'v1.0.2-2026-04-30'
     };
-    _matrixAppendRow_(sheet, row);
+
+    // Dedup: cerca riga esistente per response_id o email
+    var existingData = sheet.getDataRange().getValues();
+    var existingHeaders = existingData[0] || [];
+    var iRespId = existingHeaders.indexOf('response_id');
+    var iEmail  = existingHeaders.indexOf('email');
+    var dupRow = -1;
+    if (iRespId >= 0 && iEmail >= 0) {
+      for (var di = 1; di < existingData.length; di++) {
+        if (String(existingData[di][iRespId]) === String(data.responseId) ||
+            String(existingData[di][iEmail]).toLowerCase().trim() === emailLower) {
+          dupRow = di + 1; // 1-based sheet row
+          break;
+        }
+      }
+    }
+    if (dupRow > 0) {
+      // Update existing row
+      var colValues = existingHeaders.map(function(h) { return row[h] !== undefined ? row[h] : ''; });
+      sheet.getRange(dupRow, 1, 1, colValues.length).setValues([colValues]);
+    } else {
+      _matrixAppendRow_(sheet, row);
+    }
 
     // v4.18.46 (2026-05-15) — Upgrade sessione a PERMANENTE: chi completa Matrix
     // sblocca per sempre l'accesso a Sinopia + workspace personale.
@@ -930,8 +952,9 @@ function generateMatrixReportPDF(responseId) {
     var pdfBlob = docFile.getAs('application/pdf').setName(docName + '.pdf');
     var pdfFile = folder.createFile(pdfBlob);
 
-    // Permessi: chiunque con link può visualizzare (necessario per download da webapp)
-    pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    // Permessi: PDF resta privato (accessibile solo a deployer/admin).
+    // La webapp invia il PDF come allegato email, non serve sharing pubblico.
+    // pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
     // Pulisce il Google Doc temporaneo (manteniamo solo il PDF)
     DriveApp.getFileById(doc.getId()).setTrashed(true);
@@ -971,6 +994,7 @@ function getMatrixReportPDFUrl(responseId) {
  */
 function sendMatrixReportEmail(data) {
   try {
+    if (MailApp.getRemainingDailyQuota() < 5) return { ok:false, error:'Quota email insufficiente' };
     if (!data || !data.responseId || !data.email) {
       return { ok:false, error:'responseId ed email obbligatori' };
     }

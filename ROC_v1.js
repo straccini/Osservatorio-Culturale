@@ -407,6 +407,27 @@ function _roc_saveBatch_(batchId, bando, emails) {
 function roc_approveBatch(batchId, approverEmail) {
   try {
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+
+    // --- Cap mensile: conta email outreach inviate questo mese ---
+    var outSh = ss.getSheetByName(ROC_OUTREACH_SHEET);
+    if (outSh) {
+      var outVals = outSh.getDataRange().getValues();
+      var now = new Date();
+      var thisMonth = now.getMonth(), thisYear = now.getFullYear();
+      var sentThisMonth = 0;
+      for (var oi = 1; oi < outVals.length; oi++) {
+        var ts = outVals[oi][0]; // colonna timestamp
+        if (!ts) continue;
+        var d = new Date(ts);
+        if (d.getMonth() === thisMonth && d.getFullYear() === thisYear && String(outVals[oi][5]) === 'sent') {
+          sentThisMonth++;
+        }
+      }
+      if (sentThisMonth >= ROC_CAP_PREPROG_MESE) {
+        return { ok: false, error: 'Cap mensile raggiunto (' + sentThisMonth + '/' + ROC_CAP_PREPROG_MESE + ')' };
+      }
+    }
+
     var sh = ss.getSheetByName(ROC_BATCH_LOG_SHEET);
     if (!sh) return { ok: false, error: 'ROC_BatchLog non trovato' };
     var vals = sh.getDataRange().getValues();
@@ -426,6 +447,7 @@ function roc_approveBatch(batchId, approverEmail) {
         var sent = 0, failed = 0;
         emails.forEach(function(em){
           if (!em.emailTo) { failed++; return; }
+          if (MailApp.getRemainingDailyQuota() < 5) return;
           try {
             MailApp.sendEmail({
               to: em.emailTo, subject: em.subject,
