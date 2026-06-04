@@ -2351,7 +2351,11 @@
 
   function go(page, ambito){
     // Gate ospite: se pagina protetta, mostra card registrazione
+    // v4.20 — Admin via ?adm=TOKEN o sessione attiva bypassa il gate
     var lvl = typeof _ocLivello === 'function' ? _ocLivello() : 0;
+    if (!lvl && window.OC_SESSION && window.OC_SESSION.livello) lvl = window.OC_SESSION.livello;
+    if (!lvl && typeof _admTok_ === 'function' && _admTok_()) lvl = 3;
+    if (!lvl) { try { if (localStorage.getItem('oc_token')) lvl = 1; } catch(_){} }
     if (lvl === 0 && !_GUEST_PAGES[page]) {
       _showGuestGate_(page);
       return;
