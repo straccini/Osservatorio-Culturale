@@ -1708,6 +1708,9 @@
                 <option value="podcast">Podcast (RSS)</option>
                 <option value="video">Video (YouTube)</option>
                 <option value="bandi">Bandi</option>
+                <option value="libri">Libri (manuale)</option>
+                <option value="norme">Norme (manuale)</option>
+                <option value="social">Social Wall</option>
               </select>
               <label style="font-size:12px;color:var(--ink-2)">Nome</label>
               <input type="text" id="fuAddNome" placeholder="es. Artribune, ICOM Italia, MuseumNext..." style="padding:7px 10px;border:1px solid var(--rule);border-radius:6px;font-size:13px"/>
@@ -1738,6 +1741,9 @@
               <option value="news">News</option>
               <option value="podcast">Podcast</option>
               <option value="video">Video</option>
+              <option value="libri">Libri</option>
+              <option value="norme">Norme</option>
+              <option value="social">Social</option>
             </select>
             <select id="fuFiltroStato" style="padding:7px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px;background:#fff" onchange="OC.reloadFontiUnified()">
               <option value="">Tutti gli stati</option>
@@ -1766,201 +1772,11 @@
         </div>
       </div>
 
-      <!-- TAB BANDI -->
-      <div class="settings-tab-content" data-tab-content="bandi" hidden>
-        <div class="admin-card" style="margin-bottom:14px">
-          <h3>Fonti bandi monitorate</h3>
-          <p class="hint">Lo scanner bandi gira automaticamente lunedì, mercoledì e venerdì alle 01:00 su tutte le fonti attive. Aggiungi/disattiva qui per personalizzare.</p>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-            <button class="btn btn-primary" data-action="runScanBandiV5">▶ Avvia scan completo bandi</button>
-            <button class="btn btn-secondary" data-action="reloadFontiBandiTable">Ricarica</button>
-            <button class="btn btn-primary" data-action="showAddBandiForm">Aggiungi nuova fonte bandi</button>
-            <button class="btn btn-secondary" data-action="openSheetFontiBandi">Apri foglio FontiBandi</button>
-          </div>
-          <div id="scanBandiResult" style="margin:6px 0 12px;font-size:13px;min-height:18px"></div>
-          <div id="addBandiForm" style="background:#FAFAFA;border:1px solid #E5E5E5;border-radius:8px;padding:14px;margin-bottom:12px;display:none">
-            <div style="font-size:13px;font-weight:600;color:var(--ink-2,#3A3A3C);margin-bottom:8px">Nuova fonte bandi</div>
-            <div style="display:grid;grid-template-columns:1fr 2fr 160px auto;gap:8px;align-items:end">
-              <div><label style="font-size:11px;color:#666;display:block">Nome</label><input type="text" id="fbNome" placeholder="es. Regione Umbria - Cultura" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
-              <div><label style="font-size:11px;color:#666;display:block">URL</label><input type="text" id="fbUrl" placeholder="https://..." style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
-              <div><label style="font-size:11px;color:#666;display:block">Categoria</label><select id="fbCat" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"><option>Ministero</option><option>Regione</option><option>UE</option><option>Aggregatore</option><option>Fondazione</option><option>Rivista</option></select></div>
-              <button class="btn btn-primary" data-action="addBandi" style="white-space:nowrap">Aggiungi</button>
-            </div>
-            <div id="addBandiResult" style="margin-top:8px;font-size:12px"></div>
-          </div>
-          <div id="fontiBandiTable" style="overflow-x:auto"><div class="empty-state sm">Premi Ricarica per caricare le fonti bandi.</div></div>
-        </div>
-      </div>
+      <!-- tab bandi rimosso: assorbito in Fonti -->
 
-      <!-- TAB PODCAST & VIDEO — redesign unificato -->
-      <div class="settings-tab-content" data-tab-content="podcast" hidden>
+      <!-- tab podcast rimosso: assorbito in Fonti -->
 
-        <!-- CARD 1: Aggiungi fonte (form unificato) -->
-        <div class="admin-card" style="margin-bottom:14px">
-          <h3>Aggiungi fonte</h3>
-          <!-- Selettore tipo -->
-          <div style="display:flex;gap:6px;margin-bottom:14px">
-            <button class="btn btn-primary pod-type-btn" data-type="audio" onclick="OC.setPodAddType('audio')">Podcast RSS</button>
-            <button class="btn btn-secondary pod-type-btn" data-type="video" onclick="OC.setPodAddType('video')">YouTube</button>
-            <button class="btn btn-secondary pod-type-btn" data-type="feed" onclick="OC.setPodAddType('feed')">Feed notizie</button>
-          </div>
-          <!-- Campi -->
-          <div style="display:grid;grid-template-columns:160px 1fr 170px auto;gap:8px;align-items:end;margin-bottom:6px">
-            <div>
-              <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Nome</label>
-              <input type="text" id="fpNomeU" placeholder="es. Treccani Cultura" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/>
-            </div>
-            <div>
-              <label style="font-size:11px;color:#666;display:block;margin-bottom:3px" id="fpUrlLabel">URL feed RSS</label>
-              <input type="text" id="fpUrlU" placeholder="https://...feed.xml" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/>
-            </div>
-            <div>
-              <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Tematica</label>
-              <select id="fpTematicaU" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px">
-                <option>Musei & Patrimonio</option><option>Arte Contemporanea</option><option>Politiche Culturali</option>
-                <option>Tecnologia & Cultura</option><option>Accessibilita</option><option>Audience & Welfare</option>
-                <option>Storia & Patrimonio</option><option>Ricerca & Accademia</option>
-              </select>
-            </div>
-            <button class="btn btn-primary" data-action="addFonteUnificata" style="white-space:nowrap">Aggiungi</button>
-          </div>
-          <div id="fpHint" style="font-size:11px;color:#888;min-height:16px">Feed RSS audio: inserire l'URL diretto del feed .xml / .rss</div>
-          <div id="addFonteResult" style="margin-top:8px;font-size:12px;min-height:16px"></div>
-        </div>
-
-        <!-- CARD 2: Fonti attive + Scan -->
-        <div class="admin-card">
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-            <h3 style="margin:0">Fonti attive</h3>
-            <button class="btn btn-primary" data-action="runScanAll" style="margin-left:auto">▶ Avvia scan completo</button>
-            <button class="btn btn-secondary" data-action="reloadFontiPodTable">Aggiorna</button>
-          </div>
-          <div id="scannerResultPod" style="font-size:12px;min-height:18px;margin-bottom:10px;color:var(--amb-5,#0E7490)"></div>
-
-          <!-- Filtro tipo -->
-          <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
-            <button class="filter-chip active pod-filter-btn" data-ftype="" onclick="OC.filterFontiPod('')">Tutti</button>
-            <button class="filter-chip pod-filter-btn" data-ftype="audio" onclick="OC.filterFontiPod('audio')">Audio</button>
-            <button class="filter-chip pod-filter-btn" data-ftype="video" onclick="OC.filterFontiPod('video')">Video</button>
-            <button class="filter-chip pod-filter-btn" data-ftype="feed" onclick="OC.filterFontiPod('feed')">Feed</button>
-            <span style="flex:1"></span>
-            <button class="btn btn-secondary" data-action="seedVideoMusei" style="font-size:12px;padding:4px 10px">Seed YouTube musei</button>
-            <button class="btn btn-secondary" data-action="seedPodcastRSS" style="font-size:12px;padding:4px 10px">Seed podcast RSS</button>
-            <button class="btn btn-secondary" data-action="openSheetFontiPodcast" style="font-size:12px;padding:4px 10px">Apri foglio</button>
-          </div>
-
-          <div id="fontiPodTable" style="overflow-x:auto"><div class="empty-state sm">Premi Aggiorna per caricare le fonti.</div></div>
-        </div>
-      </div>
-
-      <!-- TAB FONTI ALTRE — Libri & Norme -->
-      <div class="settings-tab-content" data-tab-content="altre" hidden>
-
-        <!-- CARD LIBRI -->
-        <div class="admin-card" style="margin-bottom:14px;border-left:4px solid var(--amb-1,#7C3AED)">
-          <h3>📖 Libri &amp; Pubblicazioni</h3>
-          <p class="hint">Aggiungi manualmente pubblicazioni consigliate. Campi: Titolo, Autore, Editore, Anno, Ambito, URL scheda, Descrizione.</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr 100px 150px auto;gap:8px;align-items:end;margin-bottom:8px">
-            <div>
-              <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Titolo *</label>
-              <input type="text" id="stLbTitolo" class="lb-input" placeholder="es. Il museo liquido" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/>
-            </div>
-            <div>
-              <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Autore/i</label>
-              <input type="text" id="stLbAutore" class="lb-input" placeholder="Cognome Nome" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/>
-            </div>
-            <div>
-              <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Anno</label>
-              <input type="number" id="stLbAnno" class="lb-input" placeholder="2024" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/>
-            </div>
-            <div>
-              <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Categoria</label>
-              <select id="stLbAmbito" class="lb-input" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px">
-                <option value="0">— Ambito —</option>
-                <option value="1">01 Identit&agrave;</option><option value="2">02 Inclusione</option>
-                <option value="3">03 Programma</option><option value="4">04 Comunit&agrave;</option><option value="5">05 Digital &amp; AI</option>
-              </select>
-            </div>
-            <button class="btn btn-primary" data-action="saveLibroSettings" style="white-space:nowrap">Aggiungi</button>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
-            <input type="text" id="stLbEditore" class="lb-input" placeholder="Editore" style="padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/>
-            <input type="url"  id="stLbLink"    class="lb-input" placeholder="URL scheda libro (https://...)" style="padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/>
-          </div>
-          <textarea id="stLbDesc" class="lb-input" placeholder="Descrizione breve" rows="2" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px;resize:vertical;box-sizing:border-box"></textarea>
-          <div id="stLbResult" style="font-size:12px;min-height:16px;margin-top:6px"></div>
-          <div style="margin-top:10px">
-            <button class="btn btn-secondary" onclick="OC.go('libri')" style="font-size:12px">→ Vai alla sezione Libri</button>
-            <button class="btn btn-secondary" data-action="setupLibri" style="font-size:12px;margin-left:6px">Inizializza foglio seed</button>
-          </div>
-        </div>
-
-        <!-- CARD NORME -->
-        <div class="admin-card" style="border-left:4px solid var(--amb-3,#2563EB)">
-          <h3>️ Norme &amp; Riferimenti normativi</h3>
-          <p class="hint">Aggiungi norme, decreti, linee guida e riferimenti legislativi utili per la gestione culturale. Campi: Titolo, Fonte, Link, Categoria, Descrizione.</p>
-          <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px">
-            <div>
-              <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Titolo norma *</label>
-              <input type="text" id="stNmTitolo" placeholder="es. D.Lgs. 42/2004 — Codice dei Beni Culturali" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/>
-            </div>
-            <div>
-              <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Fonte</label>
-              <input type="text" id="stNmFonte" placeholder="es. Gazzetta Ufficiale" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/>
-            </div>
-            <div>
-              <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Categoria</label>
-              <select id="stNmAmbito" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px">
-                <option value="0">— Categoria —</option>
-                <option value="1">01 Identit&agrave; museale</option><option value="2">02 Inclusione e accessibilit&agrave;</option>
-                <option value="3">03 Programma, mostre e collezioni</option><option value="4">04 Comunit&agrave; e welfare</option>
-                <option value="5">05 Digital, AI e governance</option>
-              </select>
-            </div>
-            <button class="btn btn-primary" data-action="saveNormaSettings" style="white-space:nowrap">Aggiungi</button>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:4px">
-            <input type="url" id="stNmLink" placeholder="URL testo norma (https://...)" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px;box-sizing:border-box"/>
-          </div>
-          <textarea id="stNmDesc" placeholder="Descrizione / note applicative" rows="2" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px;resize:vertical;box-sizing:border-box"></textarea>
-          <div id="stNmResult" style="font-size:12px;min-height:16px;margin-top:6px"></div>
-          <div style="margin-top:10px">
-            <button class="btn btn-secondary" onclick="OC.go('norme')" style="font-size:12px">→ Vai alla sezione Norme</button>
-            <button class="btn btn-secondary" data-action="setupNorme" style="font-size:12px;margin-left:6px">Inizializza foglio</button>
-          </div>
-        </div>
-
-        <!-- CARD SOCIAL WALL FONTI -->
-        <div class="admin-card" style="margin-top:14px;border-left:4px solid var(--amb-5)">
-          <h3>&#127760; Social Wall &mdash; Fonti monitorate</h3>
-          <p class="hint">Aggiungi istituzioni, musei, fondazioni e riviste da monitorare. I feed RSS vengono aggiornati ogni 6 ore.</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-            <button class="btn btn-secondary" onclick="OC.reloadSocialFonti()">Ricarica</button>
-            <button class="btn btn-primary"   onclick="OC.showAddSocialForm()">+ Aggiungi fonte</button>
-            <button class="btn btn-secondary" onclick="OC.seedSocialFontiSettings()">Seed istituzioni italiane</button>
-            <button class="btn btn-secondary" onclick="OC.go('social')" style="margin-left:auto">Vai al Social Wall &rarr;</button>
-          </div>
-          <div id="addSocialForm" style="background:#FAFAFA;border:1px solid #E5E5E5;border-radius:8px;padding:14px;margin-bottom:12px;display:none">
-            <div style="font-size:13px;font-weight:600;color:var(--ink-2,#3A3A3C);margin-bottom:8px">Nuova fonte Social Wall</div>
-            <div style="display:grid;grid-template-columns:160px 1fr 130px 130px auto;gap:8px;align-items:end">
-              <div><label style="font-size:11px;color:#666;display:block">Nome</label><input type="text" id="swNome" placeholder="es. ICOM Italia" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
-              <div><label style="font-size:11px;color:#666;display:block">URL feed RSS</label><input type="url" id="swUrl" placeholder="https://...feed/" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
-              <div><label style="font-size:11px;color:#666;display:block">Tipo</label>
-                <select id="swTipo" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px">
-                  <option value="istituzione">Istituzione</option><option value="museo">Museo</option>
-                  <option value="fondazione">Fondazione</option><option value="associazione">Associazione</option>
-                  <option value="rivista">Rivista</option><option value="blog">Blog</option>
-                </select>
-              </div>
-              <div><label style="font-size:11px;color:#666;display:block">Categoria</label><input type="text" id="swCat" placeholder="es. Musei &amp; Patrimonio" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
-              <button class="btn btn-primary" onclick="OC.addSocialFonteSettings()" style="white-space:nowrap">Aggiungi</button>
-            </div>
-            <div id="addSocialResult" style="margin-top:8px;font-size:12px"></div>
-          </div>
-          <div id="socialFontiTable" style="overflow-x:auto"><div class="empty-state sm">Premi Ricarica per caricare le fonti Social Wall.</div></div>
-        </div>
-
-      </div><!-- fine tab altre -->
+      <!-- tab altre rimosso: assorbito in Fonti -->
 
       <!-- TAB UTENTI & ACCESSI (Sprint 1.4 - 2026-05-01) -->
       <div class="settings-tab-content" data-tab-content="utenti" hidden>
@@ -6037,6 +5853,30 @@
         })
         .withFailureHandler(function(e){ if(out) out.textContent = 'Errore: '+e; })
         .addFonteBandi({nome:nome.trim(), url:url.trim(), categoria:tem.trim()});
+    } else if (tipo === 'libri') {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          if (r && r.ok) { if(out) out.textContent = 'Libro aggiunto.'; $('fuAddNome').value=''; $('fuAddUrl').value=''; }
+          else { if(out) out.textContent = 'Errore: '+(r&&r.error||'?'); }
+        })
+        .withFailureHandler(function(e){ if(out) out.textContent = 'Errore: '+e; })
+        .addLibro({titolo:nome.trim(), autore:'', link:url.trim(), tematica:tem.trim()});
+    } else if (tipo === 'norme') {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          if (r && r.ok) { if(out) out.textContent = 'Norma aggiunta.'; $('fuAddNome').value=''; $('fuAddUrl').value=''; }
+          else { if(out) out.textContent = 'Errore: '+(r&&r.error||'?'); }
+        })
+        .withFailureHandler(function(e){ if(out) out.textContent = 'Errore: '+e; })
+        .saveNorma({titolo:nome.trim(), fonte:tem.trim(), link:url.trim()});
+    } else if (tipo === 'social') {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          if (r && r.ok) { if(out) out.textContent = 'Fonte social aggiunta.'; $('fuAddNome').value=''; $('fuAddUrl').value=''; }
+          else { if(out) out.textContent = 'Errore: '+(r&&r.error||'?'); }
+        })
+        .withFailureHandler(function(e){ if(out) out.textContent = 'Errore: '+e; })
+        .addSocialFonte({nome:nome.trim(), url:url.trim(), tipo:'social', categoria:tem.trim()});
     } else {
       var tipoMap = { news:'rss', podcast:'podcast', video:'video' };
       google.script.run
