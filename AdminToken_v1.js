@@ -81,6 +81,27 @@ function generateAdminToken() {
 // showAdminToken() — mostra token corrente
 // ============================================================================
 
+/** v4.20 — Diagnostica completa admin token. Esegui dall'editor GAS. */
+function diagAdminToken() {
+  var token = PropertiesService.getScriptProperties().getProperty(ADMTK_PROP_KEY);
+  Logger.log('=== DIAG ADMIN TOKEN ===');
+  Logger.log('1. Property key: ' + ADMTK_PROP_KEY);
+  Logger.log('2. Token presente: ' + (!!token));
+  Logger.log('3. Token valore: [' + (token || '') + ']');
+  Logger.log('4. Token length: ' + (token ? token.length : 0));
+  Logger.log('5. _validateAdminToken_ esiste: ' + (typeof _validateAdminToken_ === 'function'));
+  if (token && typeof _validateAdminToken_ === 'function') {
+    var valid = _validateAdminToken_(token);
+    Logger.log('6. _validateAdminToken_(token) = ' + valid);
+  }
+  var r = getRuoloCorrente(null, token);
+  Logger.log('7. getRuoloCorrente(null, token) = ' + JSON.stringify(r));
+  var u = getCurrentUser_v44(token);
+  Logger.log('8. getCurrentUser_v44(token) = ' + JSON.stringify(u));
+  Logger.log('=== FINE DIAG ===');
+  return { token: token, valid: typeof _validateAdminToken_ === 'function' ? _validateAdminToken_(token) : 'N/A', ruolo: r.ruolo, user: u };
+}
+
 function showAdminToken() {
   try {
     var token = PropertiesService.getScriptProperties().getProperty(ADMTK_PROP_KEY);
