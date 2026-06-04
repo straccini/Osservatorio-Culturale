@@ -1555,7 +1555,34 @@
       <div class="page-head">
         <div class="page-eyebrow">Sinopia &middot; Osservatorio Culturale</div>
         <h1 class="page-title">Digest</h1>
-        <p class="page-sub">Gestione invii ai destinatari registrati. Ogni lunedi il sistema invia automaticamente il digest a 2 coorti.</p>
+        <p class="page-sub">Gestione invii ai destinatari registrati.</p>
+      </div>
+
+      <!-- ===== GUIDA EDITOR ===== -->
+      <div style="background:var(--surface-2);border:1px solid var(--rule,#E5E5E7);border-radius:10px;padding:16px 20px;margin-bottom:20px;font-size:13px;color:var(--ink-2);line-height:1.6">
+        <div style="font-weight:700;color:var(--ink);margin-bottom:8px;font-size:14px">Come funziona il sistema digest</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <div style="font-weight:600;color:var(--amb-3,#3C6A95);margin-bottom:4px">Newsletter settimanale (tutti gli iscritti)</div>
+            <ol style="margin:0;padding-left:18px;font-size:12px">
+              <li><b>Prepara newsletter</b> — il sistema seleziona bandi in scadenza, news e podcast recenti</li>
+              <li><b>Controlla l'anteprima</b> — verifica contenuti, bilanciamento fonti, tono</li>
+              <li><b>Test su tua email</b> — ricevi una copia per verificare il risultato finale</li>
+              <li><b>Autorizza invio</b> — conferma via Telegram, poi parte l'invio a tutti</li>
+            </ol>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:4px">Invio automatico: ogni lunedi alle 07:00</div>
+          </div>
+          <div>
+            <div style="font-weight:600;color:var(--accent,#935851);margin-bottom:4px">Digest personalizzato (compilatori Matrix)</div>
+            <ol style="margin:0;padding-left:18px;font-size:12px">
+              <li><b>Genera bozze</b> — per ogni compilatore crea un'email con i suoi top 3 gap e contenuti pertinenti</li>
+              <li><b>Controlla la coda</b> — vedi quante bozze sono state generate e il loro stato</li>
+              <li><b>Test mio profilo</b> — genera una bozza usando il tuo profilo Matrix per verificare</li>
+              <li><b>Invia bozze pending</b> — spedisce tutte le bozze pronte (controlla quota prima)</li>
+            </ol>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:4px">Generazione automatica: ogni martedi alle 06:00 (se cron attivo)</div>
+          </div>
+        </div>
       </div>
 
       <!-- ===== KPI ===== -->
@@ -1588,7 +1615,11 @@
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
           <button class="btn btn-primary" data-action="generaDigest" style="text-align:left;padding:12px 16px">
             <div style="font-weight:700">Prepara newsletter</div>
-            <div style="font-size:11px;font-weight:400;opacity:.8;margin-top:2px">Crea bozza con bandi, news e podcast recenti. Richiede approvazione Telegram.</div>
+            <div style="font-size:11px;font-weight:400;opacity:.8;margin-top:2px">Crea bozza con bandi, news e podcast recenti. Controlla l'anteprima prima di inviare.</div>
+          </button>
+          <button class="btn btn-secondary" data-action="testDigestAdmin" style="text-align:left;padding:12px 16px">
+            <div style="font-weight:700">Test su mia email</div>
+            <div style="font-size:11px;font-weight:400;opacity:.7;margin-top:2px">Invia una copia della newsletter alla tua email admin per verificare il risultato.</div>
           </button>
           <button class="btn btn-primary" data-action="generaQueueAll" style="text-align:left;padding:12px 16px;background:var(--accent,#935851)">
             <div style="font-weight:700">Genera digest Matrix</div>
@@ -7079,6 +7110,20 @@
       .telegramTest();
   }
 
+  // v4.20 — Test digest su email admin
+  function testDigestAdmin(){
+    if (!hasGAS()) return;
+    if (!confirm('Inviare una copia di test del digest alla tua email admin?')) return;
+    showToast('Invio test in corso…', 'ok');
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) showToast('Test inviato a ' + (r.emailSent || 'admin'), 'ok');
+        else showToast('Errore: ' + (r && r.error || 'sconosciuto'), 'err');
+      })
+      .withFailureHandler(function(e){ showToast('Errore: ' + e, 'err'); })
+      .testDigestInviaAdmin();
+  }
+
   function generaDigest(){
     if (!hasGAS()) return;
     $('adminStatus').textContent = 'Generazione bozza…';
@@ -9394,6 +9439,7 @@
     },
     // Admin actions
     generaDigest: generaDigest,
+    testDigestAdmin: testDigestAdmin,
     testTelegram: testTelegram,
     checkTelegram: checkTelegram,
     openPreview: openPreview,
