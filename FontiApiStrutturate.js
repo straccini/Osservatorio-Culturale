@@ -34,27 +34,8 @@
 var FAS_TED_FEEDS = [];
 
 // Italia Domani RSS — PNRR
-var FAS_PNRR_FEEDS = [
-  // Italia Domani (403) e Agenzia Coesione (SSL error) bloccano GAS.
-  // Fase 2: integrazione via Gmail scan.
-  {
-    nome: 'Artribune RSS',
-    url: 'https://www.artribune.com/feed/',
-    tipo: 'RSS',
-    ambito: 1,
-    livello: 'Nazionale',
-    ente: 'Artribune'
-  },
-  // FASI.eu (403) blocca GAS. Fase 2: proxy o Gmail scan.
-  {
-    nome: 'Doppiozero — Cultura RSS',
-    url: 'https://www.doppiozero.com/rss.xml',
-    tipo: 'RSS',
-    ambito: 1,
-    livello: 'Nazionale',
-    ente: 'Doppiozero'
-  }
-];
+// v4.20 — Disabilitato: questi sono feed NEWS, non bandi PNRR. Rimuovere o ricategorizzare.
+var FAS_PNRR_FEEDS = [];
 
 // ============================================================================
 // PARSER TED RSS
@@ -369,7 +350,7 @@ function fasDiagnostica() {
   // Trigger installato?
   try {
     var triggers = ScriptApp.getProjectTriggers();
-    out.triggerAttivo = triggers.some(function(t) { return t.getHandlerFunction() === 'fasRunFase1'; });
+    out.triggerAttivo = triggers.some(function(t) { return t.getHandlerFunction() === 'fasRunCompleto'; });
   } catch(_){}
 
   // Feed configurati
@@ -1221,20 +1202,13 @@ function fasRunFase2b() {
     totaleNuovi: 0, durataMs: 0
   };
 
-  Logger.log('================================================================');
-  Logger.log('[FAS] FASE 2b — ANAC + OpenCUP + SEDIA + Lombardia — ' + new Date().toISOString());
-  Logger.log('================================================================');
-
-  try { report.anac = fasParserAnac(); report.totaleNuovi += report.anac.nuovi; } catch(e) { report.anac = { ok:false, error:e.message }; }
-  try { report.opencup = fasParserOpenCup(); report.totaleNuovi += report.opencup.nuovi; } catch(e) { report.opencup = { ok:false, error:e.message }; }
-
-  if (Date.now() - t0 < 240000) {
-    try { report.sedia = fasParserSediaEU(); report.totaleNuovi += report.sedia.nuovi; } catch(e) { report.sedia = { ok:false, error:e.message }; }
-  } else { report.sedia = { skipped: true }; }
-
-  if (Date.now() - t0 < 280000) {
-    try { report.lombardia = fasParserLombardia(); report.totaleNuovi += report.lombardia.nuovi; } catch(e) { report.lombardia = { ok:false, error:e.message }; }
-  } else { report.lombardia = { skipped: true }; }
+  // v4.20 — ANAC, OpenCUP, SEDIA, Lombardia disabilitati: endpoint inerti (0 risultati / errori costanti).
+  // Riabilitare singolarmente quando gli endpoint tornano operativi.
+  Logger.log('[FAS] FASE 2b — SKIP: endpoint ANAC/OpenCUP/SEDIA/Lombardia disabilitati (v4.20)');
+  report.anac = { ok: true, skipped: true, motivo: 'endpoint inerte (v4.20)' };
+  report.opencup = { ok: true, skipped: true, motivo: 'endpoint inerte (v4.20)' };
+  report.sedia = { ok: true, skipped: true, motivo: 'endpoint inerte (v4.20)' };
+  report.lombardia = { ok: true, skipped: true, motivo: 'endpoint inerte (v4.20)' };
 
   report.durataMs = Date.now() - t0;
   Logger.log('[FAS] Fase 2b completata: ' + report.totaleNuovi + ' nuovi (' + report.durataMs + 'ms)');

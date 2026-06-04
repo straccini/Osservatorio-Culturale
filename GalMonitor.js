@@ -55,9 +55,7 @@ var GAL_KW_EXCLUDE = /trattor[ei]|stall[ae]|fienagion|caseific|mungitr|allevamen
  * Scansiona batch di 10 GAL con data piu vecchia.
  */
 function galRunOggi() {
-  // Auto-archivia bandi scaduti prima della scansione
-  try { autoArchiviaBandiScaduti(); } catch(_) {}
-
+  // v4.20 — autoArchiviaBandiScaduti rimosso: centralizzato in sasRun (AgentSupervisore)
   var sheet = _galGetSheet_();
   if (!sheet) return { ok: false, error: 'Foglio ' + GAL_SHEET_NAME + ' non trovato. Lancia galSetupSheet().' };
 
@@ -456,15 +454,15 @@ function _galRowToObj_(head, row, rowNum) {
 // ============================================================================
 
 function galSetupTrigger() {
+  // v4.20 — autoArchiviaBandiScaduti trigger rimosso: centralizzato in sasRun (AgentSupervisore)
   try {
     ScriptApp.getProjectTriggers().forEach(function(t) {
       var fn = t.getHandlerFunction();
       if (fn === 'galRunOggi' || fn === 'autoArchiviaBandiScaduti') ScriptApp.deleteTrigger(t);
     });
     ScriptApp.newTrigger('galRunOggi').timeBased().everyDays(1).atHour(6).nearMinute(15).create();
-    ScriptApp.newTrigger('autoArchiviaBandiScaduti').timeBased().everyDays(1).atHour(4).nearMinute(0).create();
-    Logger.log('[GAL] Trigger: galRunOggi 06:15 + autoArchiviaBandiScaduti 04:00');
-    return { ok: true, triggers: ['galRunOggi 06:15', 'autoArchiviaBandiScaduti 04:00'] };
+    Logger.log('[GAL] Trigger: galRunOggi 06:15');
+    return { ok: true, triggers: ['galRunOggi 06:15'] };
   } catch (e) { return { ok: false, error: e.message }; }
 }
 

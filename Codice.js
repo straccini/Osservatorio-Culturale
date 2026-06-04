@@ -3783,12 +3783,9 @@ function setupSheets() {
 }
 
 function setupTriggers() {
-  if(typeof setupTriggersUnificati==='function') { setupTriggersUnificati(); return; }
-  ScriptApp.getProjectTriggers().forEach(t=>ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('scanSources').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(7).create();
-  ScriptApp.newTrigger('scanSources').timeBased().onWeekDay(ScriptApp.WeekDay.FRIDAY).atHour(7).create();
-  ScriptApp.newTrigger('sendDigestAuto').timeBased().onWeekDay(ScriptApp.WeekDay.TUESDAY).atHour(8).create();
-  ScriptApp.newTrigger('sendDigestAuto').timeBased().onWeekDay(ScriptApp.WeekDay.FRIDAY).atHour(8).create();
+  // v4.20 DEPRECATO — usare setupMasterTriggers()
+  Logger.log('[DEPRECATO] setupTriggers — usare setupMasterTriggers()');
+  return { ok: false, deprecato: true, message: 'Usare setupMasterTriggers()' };
 }
 // ==================================================================
 // AGGIUNTA A ScannerBandi.gs — v4.2

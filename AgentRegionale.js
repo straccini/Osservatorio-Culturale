@@ -68,8 +68,7 @@ var AGR_KEYWORDS = /bando|bandi|finanziament|contribut|agevolazion|fondo.perduto
  * Lun=1, Mar=2, Mer=3, Gio=4, Ven=5. Sab/Dom=skip.
  */
 function agrRunOggi() {
-  // Auto-archivia bandi scaduti (cross-sheet, se GalMonitor disponibile)
-  try { if (typeof autoArchiviaBandiScaduti === 'function') autoArchiviaBandiScaduti(); } catch(_) {}
+  // v4.20 — autoArchiviaBandiScaduti rimosso: centralizzato in sasRun (AgentSupervisore)
 
   var giorno = new Date().getDay(); // 0=dom, 1=lun, ..., 6=sab
   if (giorno === 0 || giorno === 6) {

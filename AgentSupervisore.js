@@ -146,6 +146,63 @@ function sasRun() {
     Logger.log('[SAS] MA2 ERRORE: ' + e.message);
   }
 
+  // ── MA3: Dedup cross-foglio (v4.19.1) ──
+  try {
+    if (typeof dailyDedupCheck === 'function') {
+      var ma3 = dailyDedupCheck();
+      report.agenti.MA3 = ma3;
+      if (ma3.totaleRimossi > 0) report.azioni.push('MA3: rimossi ' + ma3.totaleRimossi + ' duplicati cross-foglio');
+      Logger.log('[SAS] MA3 dedup completato: ' + ma3.totaleRimossi + ' rimossi');
+    }
+  } catch(e) {
+    report.errori.push('MA3: ' + e.message);
+    Logger.log('[SAS] MA3 ERRORE: ' + e.message);
+  }
+
+  // ── MA4: Auto-archivio record vecchi (v4.19.1) ──
+  try {
+    if (typeof autoArchiveOld === 'function') {
+      var archTot = 0;
+      ['item','bando','podcast','video','libro'].forEach(function(tipo) {
+        try {
+          var n = autoArchiveOld(tipo, tipo === 'bando' ? 30 : 30);
+          archTot += (n && n.archiviati) || 0;
+        } catch(e2) { Logger.log('[SAS] MA4 archivio ' + tipo + ' errore: ' + e2.message); }
+      });
+      report.agenti.MA4 = { ok:true, archiviati:archTot };
+      if (archTot > 0) report.azioni.push('MA4: archiviati ' + archTot + ' record vecchi (>30gg)');
+      Logger.log('[SAS] MA4 auto-archivio completato: ' + archTot + ' archiviati');
+    }
+  } catch(e) {
+    report.errori.push('MA4: ' + e.message);
+    Logger.log('[SAS] MA4 ERRORE: ' + e.message);
+  }
+
+  // ── MA5: Archivia bandi scaduti (v4.19.1 — ex trigger autoArchiviaBandiScaduti) ──
+  try {
+    if (typeof autoArchiviaBandiScaduti === 'function') {
+      autoArchiviaBandiScaduti();
+      report.azioni.push('MA5: archivio bandi scaduti eseguito');
+      Logger.log('[SAS] MA5 archivio bandi scaduti completato');
+    }
+  } catch(e) {
+    report.errori.push('MA5: ' + e.message);
+    Logger.log('[SAS] MA5 ERRORE: ' + e.message);
+  }
+
+  // ── MA6: Quality check bandi (v4.19.1 — ex trigger qualityCheckBandiAutoDaily) ──
+  try {
+    if (typeof qualityCheckBandiAutoDaily === 'function') {
+      var qc = qualityCheckBandiAutoDaily();
+      report.agenti.MA6 = qc;
+      report.azioni.push('MA6: quality check bandi eseguito');
+      Logger.log('[SAS] MA6 quality check completato');
+    }
+  } catch(e) {
+    report.errori.push('MA6: ' + e.message);
+    Logger.log('[SAS] MA6 ERRORE: ' + e.message);
+  }
+
   // ── Monitoraggio piattaforma ──
   try {
     report.monitoraggio = _sasMonitoraPiattaforma_();
@@ -212,6 +269,30 @@ function sasRunWeekly() {
   Logger.log('[SAS] ANALISI STRATEGICA SETTIMANALE — ' + new Date().toISOString());
   Logger.log('================================================================');
 
+  // ── Backup settimanale (v4.19.1 — ex trigger backupSpreadsheet) ──
+  try {
+    if (typeof backupSpreadsheet === 'function') {
+      var bk = backupSpreadsheet();
+      report.azioni.push('Backup: ' + (bk.ok ? 'creato' : 'errore: ' + (bk.error||'')));
+      Logger.log('[SAS] Backup settimanale: ' + (bk.ok ? bk.url : bk.error));
+    }
+  } catch(e) {
+    report.errori.push('Backup: ' + e.message);
+    Logger.log('[SAS] Backup ERRORE: ' + e.message);
+  }
+
+  // ── Social draft (v4.19.1 — ex trigger generateNextSocialDraft) ──
+  try {
+    if (typeof generateNextSocialDraft === 'function') {
+      generateNextSocialDraft();
+      report.azioni.push('Social draft: generato (se non in cooldown)');
+      Logger.log('[SAS] Social draft completato');
+    }
+  } catch(e) {
+    report.errori.push('Social: ' + e.message);
+    Logger.log('[SAS] Social draft ERRORE: ' + e.message);
+  }
+
   // ── MA3: Audit & Alert ──
   try {
     var ma3 = maAuditAlert();
@@ -251,6 +332,20 @@ function sasRunWeekly() {
     report.errori.push('Trend: ' + e.message);
   }
 
+  // ── Digest Queue: genera bozze per compilatori Matrix opt-in (v4.19.1) ──
+  try {
+    if (typeof generateDigestQueueAll === 'function') {
+      var dq = generateDigestQueueAll({ silent: true });
+      report.agenti.DigestQueue = dq;
+      var dqGen = (dq && dq.generati) || 0;
+      if (dqGen > 0) report.azioni.push('DigestQueue: generate ' + dqGen + ' bozze personalizzate');
+      Logger.log('[SAS] DigestQueue completato: ' + dqGen + ' bozze');
+    }
+  } catch(e) {
+    report.errori.push('DigestQueue: ' + e.message);
+    Logger.log('[SAS] DigestQueue ERRORE: ' + e.message);
+  }
+
   // ── Strategia e raccomandazioni ──
   try {
     report.strategia = _sasElaboraStrategia_(report.kpi, report.trend);
@@ -284,7 +379,7 @@ function maIgieneDati() {
   try {
     if (typeof autoArchiveOld === 'function') {
       var r1 = autoArchiveOld('item', 90);
-      result.archiviate += (r1 && r1.archived) || 0;
+      result.archiviate += (r1 && r1.archiviati) || 0;
       result.dettagli.push({ azione: 'archive_news_90gg', risultato: r1 });
     }
   } catch(e) { result.dettagli.push({ azione: 'archive_news', errore: e.message }); }
@@ -293,7 +388,7 @@ function maIgieneDati() {
   try {
     if (typeof autoArchiveOld === 'function') {
       var r2 = autoArchiveOld('bando', 30);
-      result.archiviate += (r2 && r2.archived) || 0;
+      result.archiviate += (r2 && r2.archiviati) || 0;
       result.dettagli.push({ azione: 'archive_bandi_scaduti', risultato: r2 });
     }
   } catch(e) { result.dettagli.push({ azione: 'archive_bandi', errore: e.message }); }
@@ -302,7 +397,7 @@ function maIgieneDati() {
   try {
     if (typeof autoArchiveOld === 'function') {
       var r3 = autoArchiveOld('podcast', 180);
-      result.archiviate += (r3 && r3.archived) || 0;
+      result.archiviate += (r3 && r3.archiviati) || 0;
     }
   } catch(e) { result.dettagli.push({ azione: 'archive_podcast', errore: e.message }); }
 
@@ -403,7 +498,7 @@ function maAuditAlert() {
   try {
     var triggers = ScriptApp.getProjectTriggers();
     var triggerNames = triggers.map(function(t) { return t.getHandlerFunction(); });
-    var expected = ['sasRun', 'sasRunWeekly', 'scanSources', 'scanFontiTutte', 'sendAgentEmails'];
+    var expected = ['sasRun', 'sasRunWeekly', 'scanSources', 'scanSourcesBisettimanale', 'sendAgentEmails'];
     var missing = expected.filter(function(e) { return triggerNames.indexOf(e) < 0; });
     if (missing.length > 0) {
       result.problemiTrovati += missing.length;
