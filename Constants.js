@@ -113,6 +113,12 @@ var OC_AUTO_ARCH_NEWS_DAYS = 30;   // dopo quanti giorni archiviare news non sal
 var OC_AUTO_ARCH_BANDI_DAYS = 30;  // dopo quanti giorni dalla scadenza archiviare bandi
 var OC_AUTO_DELETE_MONTHS = 12;    // dopo quanti mesi eliminare definitivamente archiviati
 
+// v4.20 — Digest dedup e subject centralizzati
+var OC_DIGEST_DEDUP_DAYS = 5;
+var OC_DIGEST_SUBJECT_NEWSLETTER = 'Sinopia · Digest settimanale';
+var OC_DIGEST_SUBJECT_MATRIX = 'Sinopia · Digest personalizzato per il tuo museo';
+var OC_DIGEST_SUBJECT_AGENT_PREFIX = 'Sinopia · ';
+
 // v4.18.10 (2026-05-12) — URL del calendario condiviso per prenotazione consulenza gratuita
 // FALLBACK statico. Il valore attivo viene letto da ScriptProperties via getCommercialConfig()
 // (configurabile da card admin "Setup commerciale" — più professionale di editare codice).

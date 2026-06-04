@@ -1562,6 +1562,29 @@
         <div id="digestSegmResult" style="margin-top:6px;font-size:12px;min-height:16px;color:var(--ink-3)"></div>
       </div>
 
+      <!-- ===== ANTEPRIMA PER DESTINATARIO ===== -->
+      <div class="admin-card" style="margin-bottom:16px">
+        <h3 style="margin-top:0;font-size:15px">Anteprima digest per email</h3>
+        <p class="hint">Inserisci un'email per vedere cosa riceverebbe. Funziona per tutti i segmenti (lettore, profilato, Matrix).</p>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input type="email" id="previewEmail" placeholder="email@esempio.it" style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px"/>
+          <button class="btn btn-secondary" onclick="OC._previewForEmail()" style="font-size:13px;padding:8px 14px">Anteprima</button>
+        </div>
+        <div id="previewForEmailResult" style="font-size:12px;color:var(--ink-3);min-height:16px"></div>
+        <iframe id="previewForEmailFrame" style="width:100%;min-height:400px;border:1px solid var(--rule);border-radius:6px;display:none" sandbox="allow-same-origin"></iframe>
+      </div>
+
+      <!-- ===== EMAIL AGENTI AI ===== -->
+      <div class="admin-card" style="margin-bottom:16px;border-left:4px solid var(--amb-4,#9C6A36)">
+        <h3 style="margin-top:0;font-size:15px">Email Agenti AI <span style="font-size:12px;font-weight:400;color:var(--ink-3)">(musei profilati)</span></h3>
+        <p class="hint">Email tematiche giornaliere per i musei con profilo agente attivo. 5 agenti: Bandi, Norme, Innovazione, Comunita, Digital.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn btn-secondary" onclick="OC._loadAgentStats()" style="font-size:12px;padding:6px 12px">Statistiche invii</button>
+          <button class="btn btn-secondary" onclick="OC._sendAgentForced()" style="font-size:12px;padding:6px 12px" title="Forza invio email agenti ora (gated admin)">Invio forzato</button>
+        </div>
+        <div id="agentStatsResult" style="font-size:12px;color:var(--ink-3);min-height:16px"></div>
+      </div>
+
       <!-- ===== 3. AUTOMAZIONE ===== -->
       <div class="admin-card" style="margin-bottom:16px">
         <h3 style="margin-top:0;font-size:15px">Automazione</h3>
@@ -1570,8 +1593,13 @@
           <!-- Cron newsletter -->
           <div style="background:var(--surface-2);border-radius:8px;padding:12px 14px">
             <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:4px">Newsletter (Coorte A+B)</div>
-            <div style="font-size:12px;color:var(--ink-2);margin-bottom:6px">Invio automatico ogni <b>lunedi alle 07:00</b>. Include generalisti + lead personalizzati.</div>
-            <div style="font-size:11px;color:var(--ink-3)">Gestito da: <code>sendDigestAuto2coorti</code></div>
+            <div id="cronCoortiStatus" style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:4px">Invio automatico ogni <b>lunedi alle 07:00</b></div>
+            <div style="font-size:12px;color:var(--ink-2);margin-bottom:6px">Include generalisti + lead personalizzati.</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+              <button class="btn btn-secondary" onclick="OC._dryRunCoorti()" style="font-size:11px;padding:4px 10px" title="Simula invio senza inviare email">Dry-run</button>
+              <button class="btn btn-secondary" onclick="OC._eseguiCoorti()" style="font-size:11px;padding:4px 10px" title="Esegui invio reale a entrambe le coorti">Esegui invio</button>
+            </div>
+            <div id="cronCoortiResult" style="font-size:11px;color:var(--ink-3)">Gestito da: <code>sendDigestAuto2coorti</code></div>
           </div>
           <!-- Cron Matrix -->
           <div style="background:var(--surface-2);border-radius:8px;padding:12px 14px">
@@ -7108,6 +7136,81 @@
       .testDigestInviaAdmin();
   }
 
+  // v4.20 — Cron coorti dry-run
+  function _dryRunCoorti() {
+    if (!hasGAS()) return;
+    showToast('Dry-run coorti in corso (nessuna email inviata)...', 'ok');
+    var out = document.getElementById('cronCoortiResult');
+    if (out) out.textContent = 'Esecuzione dry-run...';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (out) out.textContent = r && r.ok ? 'Dry-run OK: ' + (r.coorteA_count||0) + ' generalisti, ' + (r.coorteB_count||0) + ' lead' : 'Errore: ' + (r&&r.error||'?');
+      })
+      .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
+      .sendDigestAuto2coorti({dryRun:true});
+  }
+
+  function _eseguiCoorti() {
+    if (!hasGAS()) return;
+    if (!confirm('Inviare il digest a 2 coorti ORA? (Generalisti + Lead personalizzati)')) return;
+    showToast('Invio coorti in corso...', 'ok');
+    var out = document.getElementById('cronCoortiResult');
+    if (out) out.textContent = 'Invio in corso...';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (out) out.textContent = r && r.ok ? 'Inviato: ' + (r.coorteA_sent||0) + ' gen + ' + (r.coorteB_sent||0) + ' lead' : 'Errore: ' + (r&&r.error||'?');
+      })
+      .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
+      .sendDigestAuto2coorti({});
+  }
+
+  // v4.20 — Anteprima per destinatario
+  function _previewForEmail() {
+    var email = (document.getElementById('previewEmail') || {}).value || '';
+    var out = document.getElementById('previewForEmailResult');
+    var frame = document.getElementById('previewForEmailFrame');
+    if (!email || email.indexOf('@') < 0) { if (out) out.textContent = 'Inserisci un email valida'; return; }
+    if (out) out.textContent = 'Caricamento anteprima...';
+    if (frame) frame.style.display = 'none';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r || !r.ok) { if (out) out.textContent = 'Errore: ' + (r&&r.error||'non trovato'); return; }
+        if (out) out.textContent = 'Coorte: ' + (r.coorte||'?') + ' · Layout: ' + (r.layout||'?');
+        if (frame && r.html) { frame.srcdoc = r.html; frame.style.display = 'block'; }
+      })
+      .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
+      .previewDigestPerEmail(email);
+  }
+
+  // v4.20 — Email agenti stats
+  function _loadAgentStats() {
+    var out = document.getElementById('agentStatsResult');
+    if (out) out.textContent = 'Caricamento...';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r) { if (out) out.textContent = 'Nessun dato'; return; }
+        var html = '';
+        if (r.byAgent) {
+          Object.keys(r.byAgent).forEach(function(id) {
+            var a = r.byAgent[id];
+            html += '<div style="margin:4px 0">AG' + id + ': ' + (a.sent||0) + ' inviati, ' + (a.failed||0) + ' errori' + (a.lastSent ? ' · ultimo: ' + a.lastSent : '') + '</div>';
+          });
+        }
+        if (out) out.innerHTML = html || 'Nessun invio registrato';
+      })
+      .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
+      .getAgentEmailStats();
+  }
+
+  function _sendAgentForced() {
+    if (!confirm('Forzare invio email agenti ORA? (solo admin)')) return;
+    showToast('Invio agenti in corso...', 'ok');
+    google.script.run
+      .withSuccessHandler(function(r) { showToast(r && r.ok ? 'Invio completato' : 'Errore: ' + (r&&r.error||'?'), r&&r.ok?'ok':'err'); })
+      .withFailureHandler(function(e) { showToast('Errore: ' + e, 'err'); })
+      .sendAgentEmails();
+  }
+
   function generaDigest(){
     if (!hasGAS()) return;
     $('adminStatus').textContent = 'Generazione bozza…';
@@ -9427,6 +9530,11 @@
     // Admin actions
     generaDigest: generaDigest,
     testDigestAdmin: testDigestAdmin,
+    _dryRunCoorti: _dryRunCoorti,
+    _eseguiCoorti: _eseguiCoorti,
+    _previewForEmail: _previewForEmail,
+    _loadAgentStats: _loadAgentStats,
+    _sendAgentForced: _sendAgentForced,
     testTelegram: testTelegram,
     _addFonteUniversale: _addFonteUniversale,
     checkTelegram: checkTelegram,

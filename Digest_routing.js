@@ -250,6 +250,7 @@ function sendDigestAuto2coorti(opts) {
       rec.generalisti.forEach(function(dest){
         if (opts.dryRun) { report.generalisti_inviati++; return; }
         try {
+          if (_digestWasRecentlySent_(dest.email)) { Logger.log('[DIGEST] Skip (dedup): ' + dest.email); return; }
           var token = null;
           try { token = _getOrCreateToken(dest.email); } catch(_) {}
           var readerUrl = token ? (baseUrl + '?reader=1&t=' + token) : null;
@@ -260,6 +261,7 @@ function sendDigestAuto2coorti(opts) {
             name: 'Sinopia · Osservatorio Culturale',
             replyTo: Session.getEffectiveUser().getEmail()
           });
+          _digestMarkSent_(dest.email, 'coorti');
           report.generalisti_inviati++;
           Utilities.sleep(300);
         } catch(e) {
@@ -280,6 +282,7 @@ function sendDigestAuto2coorti(opts) {
           return;
         }
         try {
+          if (_digestWasRecentlySent_(lead.email)) { Logger.log('[DIGEST] Skip (dedup): ' + lead.email); return; }
           var html, subject;
           if (lead.matrixCompletato && lead.responseId && typeof generateDigestForUser === 'function') {
             // Layout 1: digest personalizzato Matrix
@@ -307,6 +310,7 @@ function sendDigestAuto2coorti(opts) {
             name: 'Sinopia · Osservatorio Culturale',
             replyTo: Session.getEffectiveUser().getEmail()
           });
+          _digestMarkSent_(lead.email, 'coorti');
           report.leadCaldi_inviati++;
 
           // CRM scoring +1pt digest_sent
@@ -643,6 +647,54 @@ function getDigestDashboardKpi() {
 function getEmailQuotaRemaining() {
   try { return MailApp.getRemainingDailyQuota(); }
   catch(e) { return -1; }
+}
+
+// ============================================================================
+// v4.20 — Anti-duplicato cross-sistema digest
+// Registro condiviso: foglio DigestSentLog (Email, Sistema, DataInvio)
+// Ogni sistema scrive qui; ogni invio controlla se l'email è stata contattata
+// negli ultimi OC_DIGEST_DEDUP_DAYS (default 5).
+// ============================================================================
+
+function _getDigestSentLogSheet_() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('DigestSentLog');
+  if (!sh) {
+    sh = ss.insertSheet('DigestSentLog');
+    sh.appendRow(['Email','Sistema','DataInvio']);
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function _digestWasRecentlySent_(email, dedupDays) {
+  if (!email) return false;
+  dedupDays = dedupDays || 5;
+  try {
+    var prop = PropertiesService.getScriptProperties().getProperty('OC_DIGEST_DEDUP_DAYS');
+    if (prop) dedupDays = parseInt(prop) || 5;
+  } catch(_){}
+  var sh = _getDigestSentLogSheet_();
+  if (sh.getLastRow() < 2) return false;
+  var data = sh.getDataRange().getValues();
+  var cutoff = new Date(Date.now() - dedupDays * 86400000);
+  var emailLower = String(email).toLowerCase().trim();
+  for (var r = data.length - 1; r >= 1; r--) {
+    if (String(data[r][0] || '').toLowerCase().trim() === emailLower) {
+      var d = data[r][2];
+      if (d instanceof Date && d > cutoff) return true;
+      if (typeof d === 'string') { var dt = new Date(d); if (!isNaN(dt) && dt > cutoff) return true; }
+    }
+  }
+  return false;
+}
+
+function _digestMarkSent_(email, sistema) {
+  if (!email) return;
+  try {
+    var sh = _getDigestSentLogSheet_();
+    sh.appendRow([String(email).toLowerCase().trim(), sistema || 'unknown', new Date()]);
+  } catch(e) { Logger.log('_digestMarkSent_ error: ' + (e && e.message)); }
 }
 
 // ============================================================================

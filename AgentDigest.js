@@ -93,6 +93,10 @@ function _sendForAgent_(agenteId, opts) {
 
     destinatari.forEach(function(dest) {
       try {
+        if (typeof _digestWasRecentlySent_ === 'function' && _digestWasRecentlySent_(dest.email)) {
+          Logger.log('[DIGEST] Skip (dedup): ' + dest.email);
+          return;
+        }
         var relevant = getRelevantContent(dest.email, agenteId, agent.maxContenuti || 10);
         if (!relevant.ok || relevant.items.length === 0) return;
 
@@ -108,6 +112,8 @@ function _sendForAgent_(agenteId, opts) {
             name: 'Sinopia · Osservatorio Culturale',
             replyTo: 's.straccini@gmail.com'
           });
+
+          if (typeof _digestMarkSent_ === 'function') _digestMarkSent_(dest.email, 'agent_' + agent.codice);
 
           // Log
           if (deliverySheet) {
@@ -301,21 +307,49 @@ function previewAgentEmail(agenteId, email) {
 }
 
 /**
- * Statistiche invii per agente.
+ * v4.20 — Statistiche invii per agente, formato {byAgent: {id: {sent, failed, lastSent}}}.
+ * Legge AgentDeliveryLog raggruppando per AgenteID (colonna 2).
  */
 function getAgentEmailStats() {
   var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(AGENT_DELIVERY_SHEET);
-  if (!sh || sh.getLastRow() < 2) return { ok: true, totale: 0, perAgente: {} };
+  if (!sh || sh.getLastRow() < 2) return { ok: true, totale: 0, byAgent: {} };
 
   var data = sh.getDataRange().getValues();
-  var stats = { totale: 0, perAgente: {} };
+  var headers = data[0];
+  var iId = headers.indexOf('AgenteID');
+  var iCodice = headers.indexOf('AgenteCodice');
+  var iData = headers.indexOf('Data');
+  var iErrore = headers.indexOf('Errore');
+  if (iId < 0) iId = 2; // fallback posizionale
+  if (iCodice < 0) iCodice = 3;
+  if (iData < 0) iData = 4;
+  if (iErrore < 0) iErrore = 7;
+
+  var byAgent = {};
+  var totale = 0;
+
   for (var r = 1; r < data.length; r++) {
-    var codice = data[r][3] || 'unknown';
-    stats.totale++;
-    stats.perAgente[codice] = (stats.perAgente[codice] || 0) + 1;
+    var agentId = String(data[r][iId] || 'unknown');
+    var errore = String(data[r][iErrore] || '').trim();
+    var dataInvio = String(data[r][iData] || '');
+
+    if (!byAgent[agentId]) {
+      byAgent[agentId] = { sent: 0, failed: 0, lastSent: '' };
+    }
+
+    if (errore) {
+      byAgent[agentId].failed++;
+    } else {
+      byAgent[agentId].sent++;
+      if (dataInvio > byAgent[agentId].lastSent) {
+        byAgent[agentId].lastSent = dataInvio;
+      }
+    }
+    totale++;
   }
-  return { ok: true, totale: stats.totale, perAgente: stats.perAgente };
+
+  return { ok: true, totale: totale, byAgent: byAgent };
 }
 
 // ============================================================================

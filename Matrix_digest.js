@@ -230,6 +230,12 @@ function sendQueuedDigest(queueId) {
       if (stato === 'sent') return { error:'gia inviato il ' + rows[r][iSent] };
       if (!email || !html)  return { error:'email o html mancanti nella riga ' + queueId };
 
+      if (typeof _digestWasRecentlySent_ === 'function' && _digestWasRecentlySent_(email)) {
+        Logger.log('[DIGEST] Skip (dedup): ' + email);
+        sh.getRange(r+1, iStatus+1).setValue('skipped_dedup');
+        return { error:'dedup — email gia contattata di recente: ' + email };
+      }
+
       MailApp.sendEmail({
         to:       email,
         subject:  subj,
@@ -237,6 +243,7 @@ function sendQueuedDigest(queueId) {
         name:     'Osservatorio Culturale · MuseMu Matrix',
         replyTo:  's.straccini@gmail.com'
       });
+      if (typeof _digestMarkSent_ === 'function') _digestMarkSent_(email, 'matrix');
       var nowIso = new Date().toISOString();
       sh.getRange(r+1, iStatus+1).setValue('sent');
       sh.getRange(r+1, iSent+1).setValue(nowIso);

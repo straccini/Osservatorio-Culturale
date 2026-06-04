@@ -166,6 +166,9 @@ function getDigestByTokenPublic(token) {
 
 // -- EMAIL DIGEST --------------------------------------------------
 function sendDigestAuto() {
+  // v4.20 DEPRECATO — usare sendDigestAuto2coorti
+  Logger.log('[DEPRECATO] sendDigestAuto — usare sendDigestAuto2coorti()');
+  return { ok: false, deprecato: true };
   const sh=getMainSS().getSheetByName(SH.ITEMS);
   const rows=sh.getDataRange().getValues(), h=rows[0];
   const idCol=h.indexOf('ID'), digCol=h.indexOf('InclusiNelDigest'), archCol=h.indexOf('Archiviato');
@@ -181,6 +184,9 @@ function sendDigestAuto() {
 }
 
 function sendDigest(itemIds, bandiIds, podcastIds) {
+  // v4.20 DEPRECATO — usare sendDigestAuto2coorti
+  Logger.log('[DEPRECATO] sendDigest — usare sendDigestAuto2coorti()');
+  return { ok: false, deprecato: true };
   const items = itemIds ? getItemsByIds(itemIds) : [];
   const mailingList = getMailingList().list.filter(m => m.Attivo && m.Stato !== 'pending');
   if (!mailingList.length) return {error:'Nessun destinatario'};
@@ -213,7 +219,7 @@ function sendDigest(itemIds, bandiIds, podcastIds) {
       const html = buildDigestHTML(items, dest, readerUrl);
       GmailApp.sendEmail(dest.Email, subject, 'Visualizza in HTML.', {
         htmlBody: html,
-        name: 'Osservatorio Culturale - Duemilamusei',
+        name: 'Sinopia · Osservatorio Culturale',
         replyTo: Session.getEffectiveUser().getEmail()
       });
       sent++;
