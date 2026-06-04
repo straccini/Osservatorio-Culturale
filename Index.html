@@ -1421,13 +1421,14 @@
     <!-- ===== PAGE COMPILATORI MATRIX (v4.18.16 — 2026-05-12 J) ===== -->
     <section class="page" id="page-compilatori">
       <div class="page-head">
-        <div class="page-eyebrow">Osservatorio Culturale &middot; CRM</div>
-        <h1 class="page-title">Compilatori <em>MuseMu Matrix</em></h1>
-        <p class="page-sub">Profilazione clienti potenziali: chi ha compilato Matrix, i loro 3 gap principali, l'eventuale opt-in al follow-up.</p>
+        <div class="page-eyebrow">Sinopia &middot; Osservatorio Culturale</div>
+        <h1 class="page-title">Compilatori e lettori</h1>
+        <p class="page-sub">Profili dei compilatori Matrix e dei lettori registrati. Da qui gestisci il follow-up e il digest personalizzato.</p>
       </div>
       <!-- Banner intro -->
       <div style="background:linear-gradient(135deg,var(--surface,#F7F7F8) 0%,#FAF8F4 100%);border:1px solid var(--rule,#E5E5E7);border-radius:10px;padding:16px 22px;margin:14px 0 18px;font-size:13.5px;line-height:1.55;color:var(--ink-2)">
-        <b>A cosa serve questa pagina</b> — è il <b>CRM lite</b> dei compilatori MuseMu Matrix. Per ogni compilazione completata vedi il nome del museo (se inserito), il profilo P1-P5, i 3 gap principali su cui agire (D1-D10) e l'email se il museo ha dato opt-in al follow-up. Da qui parte il digest segmentato e l'outreach commerciale LS2/LS1.
+        <b>Compilatori Matrix</b> — Per ogni compilazione completata vedi il museo, il profilo P1-P5, i 3 gap principali (D1-D10) e l'email opt-in. Da qui parte il digest segmentato.<br>
+        <b>Lettori registrati</b> — Utenti che si sono iscritti tramite il form di registrazione. Ricevono il digest generalista settimanale.
       </div>
 
       <!-- Toolbar -->
@@ -1624,19 +1625,31 @@
         <span class="muted" id="settingsStatus">—</span>
       </div>
 
-      <!-- Tab navigation -->
-      <div style="display:flex;gap:6px;margin-bottom:18px;border-bottom:2px solid #E5E5E5;flex-wrap:wrap">
-        <button class="settings-tab active" data-tab="tutti" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:var(--amb-5,#0E7490);border-bottom:3px solid var(--amb-5,#0E7490);margin-bottom:-2px;cursor:pointer">🗂 Tutte le Fonti</button>
-        <button class="settings-tab" data-tab="bandi" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Fonti bandi</button>
-        <button class="settings-tab" data-tab="podcast" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Podcast & Video</button>
-        <button class="settings-tab" data-tab="altre" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Fonti altre</button>
-        <button class="settings-tab" data-tab="utenti" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer"> Utenti & Accessi</button>
-        <button class="settings-tab" data-tab="config" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Configurazione</button>
-        <button class="settings-tab" data-tab="gestione" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Gestione & Stats</button>
-        <button class="settings-tab" data-tab="diagnostica" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Diagnostica</button>
-        <button class="settings-tab" data-tab="sistema" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Automazioni</button>
-        <button class="settings-tab" data-tab="segnalazioni" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Segnalazioni</button>
-        <button class="settings-tab" data-tab="backup" style="background:none;border:none;padding:10px 18px;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Archivio & Backup</button>
+      <!-- v4.20 — Tab riorganizzati in 2 gruppi -->
+      <div style="margin-bottom:18px">
+        <!-- GRUPPO 1: Gestione contenuti -->
+        <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:700;padding:0 4px 6px">Gestione contenuti</div>
+        <div style="display:flex;gap:4px;margin-bottom:8px;border-bottom:2px solid var(--rule,#E5E5E7);flex-wrap:wrap">
+          <button class="settings-tab active" data-tab="tutti" style="background:none;border:none;padding:8px 16px;font-size:13px;font-weight:600;color:var(--amb-5,#0E7490);border-bottom:3px solid var(--amb-5,#0E7490);margin-bottom:-2px;cursor:pointer">Fonti</button>
+          <button class="settings-tab" data-tab="utenti" style="background:none;border:none;padding:8px 16px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Utenti</button>
+          <button class="settings-tab" data-tab="segnalazioni" style="background:none;border:none;padding:8px 16px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Segnalazioni</button>
+        </div>
+        <!-- GRUPPO 2: Manutenzione -->
+        <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:700;padding:6px 4px 6px">Manutenzione e aggiornamento</div>
+        <div style="display:flex;gap:4px;border-bottom:2px solid var(--rule,#E5E5E7);flex-wrap:wrap">
+          <button class="settings-tab" data-tab="sistema" style="background:none;border:none;padding:8px 16px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Sistema</button>
+          <button class="settings-tab" data-tab="config" style="background:none;border:none;padding:8px 16px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Configurazione</button>
+          <button class="settings-tab" data-tab="backup" style="background:none;border:none;padding:8px 16px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Archivio</button>
+        </div>
+      </div>
+
+      <!-- Tab nascosti: il contenuto resta nel DOM per backward compat, ma i tab non sono piu visibili -->
+      <div style="display:none">
+        <button class="settings-tab" data-tab="bandi"></button>
+        <button class="settings-tab" data-tab="podcast"></button>
+        <button class="settings-tab" data-tab="altre"></button>
+        <button class="settings-tab" data-tab="gestione"></button>
+        <button class="settings-tab" data-tab="diagnostica"></button>
       </div>
 
       <!-- TAB TUTTE LE FONTI (Sprint 2 B3 — 2026-05-11) -->
@@ -2292,7 +2305,7 @@
     search:'Ricerca', stats:'Statistiche', ambito:'Ambito', digest:'Digest Reader',
     matrix:'Valuta il tuo museo', 'matrix-landing':'MuseMu Matrix',
     settings:'Impostazioni', archivio:'Archivio', cestino:'Cestino',
-    kb:'Tassonomia KB', compilatori:'Compilatori Matrix', sondaggio:'Sondaggio mirato',
+    kb:'Tassonomia KB', compilatori:'Compilatori e lettori', sondaggio:'Sondaggio mirato',
     'sondaggi-catalogo': 'Autovalutazione rapida',
     capitali:'Capitali & candidature',
     workspace:'La tua area',
