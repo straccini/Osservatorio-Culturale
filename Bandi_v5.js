@@ -2624,8 +2624,9 @@ function qualityCheckBandi(opts) {
       var eNorm = _normText(b.ente).substring(0, 30);
       var tNorm = _normText(b.titolo).substring(0, 50);
       var scaISO = _scadenzaISO(b.scadenza);
-      // Chiave: ente + scadenza + titolo(50). Se manca ente, usa fonte.
-      var key = (eNorm || _normText(b.fonteNome).substring(0,20)) + '|' + scaISO + '|' + tNorm;
+      // Chiave: ente + scadenza + titolo(50) + url. Se manca ente, usa fonte.
+      var urlNorm = _normText(b.url).substring(0, 80);
+      var key = (eNorm || _normText(b.fonteNome).substring(0,20)) + '|' + scaISO + '|' + tNorm + '|' + urlNorm;
       if (!seen[key]) { seen[key] = []; }
       seen[key].push(b);
     });

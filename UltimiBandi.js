@@ -399,14 +399,15 @@ function _radarBandiRows_(sh) {
   var vals = sh.getDataRange().getValues();
   if (vals.length < 2) return [];
   var head = vals[0].map(function(h){ return String(h||'').trim(); });
-  var iData   = head.indexOf('Data_Rilevamento');
-  var iTitolo = head.indexOf('Titolo');
-  var iEnte   = head.indexOf('Ente');
-  var iSett   = head.indexOf('Settore');
+  var iData   = _findCol_(head, ['DataRilevamento','Data_Rilevamento','Data']);
+  var iTitolo = _findCol_(head, ['Titolo','TITOLO']);
+  var iEnte   = _findCol_(head, ['Ente','ENTE']);
+  var iSett   = _findCol_(head, ['Settore','SETTORE','Ambito']);
   var iAmb    = head.indexOf('Ambito');
-  var iScad   = head.indexOf('Scadenza');
-  var iLink   = head.indexOf('Link');
-  var iStato  = head.indexOf('StatoRecord');
+  var iScad   = _findCol_(head, ['Scadenza','SCADENZA']);
+  var iLink   = _findCol_(head, ['UrlBando','URL_BANDO','Link','URL']);
+  var iStato  = _findCol_(head, ['StatoRecord','Stato']);
+  var iSomm   = _findCol_(head, ['SommarioAI','Sommario','Note']);
   var iSalv   = _findCol_(head, ['Salvato','salvato','SALVATO','Saved']);
   var iRegB   = _findCol_(head, ['Regione','regione','REGIONE','Region']);
   if (iTitolo < 0) iTitolo = 1;
@@ -434,6 +435,7 @@ function _radarBandiRows_(sh) {
       scadenza: rawScad,
       giorni  : giorni,
       link    : iLink  >= 0 ? row[iLink]  : '',
+      sommario: iSomm  >= 0 ? String(row[iSomm]||'') : '',
       salvato : iSalv  >= 0 ? row[iSalv]  : false,
       regione : iRegB  >= 0 ? String(row[iRegB]||'') : ''
     });
@@ -465,6 +467,7 @@ function _mapBando_(x) {
     isRecente: isRecente,
     dataRil  : _fmtBreveUB_(x.dataRil),
     link     : String(x.link || ''),
+    sommario: String(x.sommario || ''),
     salvato : x.salvato === true || x.salvato === 'TRUE' || x.salvato === 1 || String(x.salvato).toLowerCase() === 'true',
     regione : String(x.regione || '')
   };

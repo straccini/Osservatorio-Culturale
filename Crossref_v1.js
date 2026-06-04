@@ -233,7 +233,7 @@ function approveCrossrefCandidate(id) {
       try {
         var shBandi = ss.getSheetByName(typeof SH_BANDI_V5 === 'string' ? SH_BANDI_V5 : 'Bandi_v5');
         if (shBandi && typeof COL_B !== 'undefined') {
-          var nr = new Array(20).fill('');
+          var nr = new Array(typeof COL_B_HEADERS !== 'undefined' ? COL_B_HEADERS.length : 26).fill('');
           nr[COL_B.ID - 1]               = 'BC' + Date.now();
           nr[COL_B.FINGERPRINT - 1]      = '';
           nr[COL_B.DATA_RILEVAMENTO - 1] = new Date();
@@ -242,6 +242,7 @@ function approveCrossrefCandidate(id) {
           nr[COL_B.URL_BANDO - 1]        = vals[r][idx.news_link] || '';
           // STATO_RECORD = 'candidato' (da rifinire manualmente)
           nr[COL_B.STATO_RECORD - 1]     = 'candidato';
+          nr[COL_B.STATUS - 1]           = 'Nuovo';
           nr[COL_B.SOMMARIO - 1]         = 'Origine: news con keyword "' + (vals[r][idx.keyword_match] || '') + '". Da rifinire manualmente: scadenza, importo, ente effettivo, URL ufficiale.';
           shBandi.appendRow(nr);
         }

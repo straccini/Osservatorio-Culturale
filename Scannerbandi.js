@@ -284,11 +284,20 @@ function scanBandiAutomatico() {
 
 function estraiConClaudeBandi(prompt, apiKey) {
   try {
-    var risposta = UrlFetchApp.fetch(ANTHROPIC_API_URL, {
-      method:'post', muteHttpExceptions:true,
+    var url = ANTHROPIC_API_URL;
+    var opts = {
+      method:'post', muteHttpExceptions:true, deadline:30,
       headers:{'x-api-key':apiKey,'anthropic-version':'2023-06-01','content-type':'application/json'},
       payload:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:2500, messages:[{role:'user',content:prompt}] }),
-    });
+    };
+    var risposta = UrlFetchApp.fetch(url, opts);
+    var code = risposta.getResponseCode();
+    // Retry once on 429 (rate limit) or 5xx (server error)
+    if (code === 429 || code >= 500) {
+      Utilities.sleep(3000);
+      risposta = UrlFetchApp.fetch(url, opts);
+      code = risposta.getResponseCode();
+    }
     var dati = JSON.parse(risposta.getContentText());
     if (dati.error) { Logger.log('  ! Claude: ' + dati.error.message); return []; }
     if (!dati.content || !dati.content[0]) return [];
