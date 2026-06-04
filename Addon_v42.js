@@ -600,21 +600,16 @@ function _debugBandiKeysV42_() {
   }
 }
 
+// v4.20 — Derivati da OC_AMBITI
 function ambitoColorV42_(id) {
-  // Coerente con AMBITO_COLOR del Code.gs esistente
-  var map = { 1:'#534AB7', 2:'#0F6E56', 3:'#185FA5', 4:'#854F0B', 5:'#0E7490' };
-  return map[Number(id)] || '#6B7280';
+  if (typeof OC_AMBITI === 'undefined') return '#666';
+  var a = OC_AMBITI.find(function(x){ return x.id == id; });
+  return a ? a.color : '#666';
 }
 function ambitoLblV42_(id) {
-  // Versione breve per tag/badge
-  var map = {
-    1:'Tendenze',
-    2:'Accessibilita',
-    3:'Mostre',
-    4:'Comunita',
-    5:'AI Cultura'
-  };
-  return map[Number(id)] || '—';
+  if (typeof OC_AMBITI === 'undefined') return 'Ambito ' + id;
+  var a = OC_AMBITI.find(function(x){ return x.id == id; });
+  return a ? a.nomeBreve : ('Ambito ' + id);
 }
 function formatDataBreveV42_(d) {
   if (!d) return '—';

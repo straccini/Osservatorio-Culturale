@@ -2,7 +2,7 @@
   ============================================================
   OSSERVATORIO CULTURALE / MUSEMU MATRIX — STILES.HTML
   v5.0 — Direzione C Curatoriale Sans (24/05/2026)
-  Palette: bianco puro + ink #101010 + accent vermillion #E84B1C
+  Palette: bianco puro + ink #101010 + accent vermillion #935851
   Tipografia: Inter + Inter Tight (sans-only)
   9 dimensioni MuseMu Matrix ricalibrate per fondo bianco
   Duemilamusei / Silvano Straccini
@@ -33,11 +33,11 @@
   --ink-4:#A1A1A6;
   --ink-5:#D2D2D7;
 
-  --accent:#E84B1C;      /* Vermillion museo */
-  --accent-soft:#FCEEE7;
-  --accent-hover:#C23A11;
-  --link:#E84B1C;
-  --link-hover:#C23A11;
+  --accent:#935851;      /* Terracotta Sinopia */
+  --accent-soft:#F0E6E4;
+  --accent-hover:#7A4940;
+  --link:#935851;
+  --link-hover:#7A4940;
 
   /* 9 dimensioni MuseMu Matrix — palette contemporanea per fondo bianco */
   --amb-1:#7C3AED;  /* 01 Brand — viola elettrico */
@@ -188,11 +188,11 @@
   --ink-4:#71717A;
   --ink-5:#52525B;
 
-  --accent:#FB6B3D;
-  --accent-soft:#2E1A12;
-  --accent-hover:#FF8761;
-  --link:#FB6B3D;
-  --link-hover:#FF8761;
+  --accent:#B87A73;
+  --accent-soft:#2E1E1C;
+  --accent-hover:#D4A09A;
+  --link:#B87A73;
+  --link-hover:#D4A09A;
 
   --amb-1:#A78BFA;
   --amb-2:#34D399;
@@ -522,6 +522,7 @@ h4{font-size:1.0625rem}
   font-size:1rem;
 }
 .breadcrumb .sep{color:var(--ink-4);font-style:normal}
+.breadcrumb a:hover{text-decoration:underline}
 
 /* Search topbar */
 .topbar-search,.search-wrap{
@@ -904,17 +905,12 @@ body.is-home-page .topbar-search{display:none}
 .home-pv-col-left .section-head,
 .home-lsw-libri .section-head{ margin-top:0; }
 
-/* v4.18.21 — Hero headline responsive (collassa segno grafico sotto su mobile) */
+[data-theme="dark"] #heroSinopiaImg{mix-blend-mode:screen;opacity:.45}
+
+/* v4.20 — Hero headline responsive (flex hero mobile) */
 @media(max-width:780px){
-  .home-headline-frame{
-    grid-template-columns:1fr !important;
-    padding:36px 28px 30px !important;
-  }
-  .home-headline-frame > div:last-child{
-    width:140px !important;
-    height:140px !important;
-    margin:0 auto;
-  }
+  .home-headline-frame{flex-direction:column;padding:20px 16px}
+  .home-headline-frame h1{font-size:clamp(28px,7vw,48px) !important}
 }
 
 /* Badge tematica prominente: testo esteso (es. "02 · Inclusione") con colore ambito */
@@ -2390,7 +2386,7 @@ body.is-home-page .topbar-search{display:none}
   letter-spacing: .02em;
 }
 .score-badge.high { background: #E6F4EE; color: var(--success,#0F7B5A); }
-.score-badge.med  { background: #FFF3E0; color: var(--accent,#E84B1C); }
+.score-badge.med  { background: #FFF3E0; color: var(--accent,#935851); }
 
 /* ============================================================
    BR-ROW — Radar Bandi: scheda in griglia 2 colonne
@@ -2426,7 +2422,7 @@ body.is-home-page .topbar-search{display:none}
 .br-a1 { background: #EDE8F5; color: var(--amb-1,#7C3AED); }
 .br-a2 { background: #E4F0EA; color: var(--amb-2,#10916D); }
 .br-a3 { background: #E1ECF5; color: var(--amb-3,#2563EB); }
-.br-a4 { background: #F5EDE0; color: var(--accent,#E84B1C); }
+.br-a4 { background: #F5EDE0; color: var(--accent,#935851); }
 .br-a5 { background: #E3F0F2; color: var(--amb-5,#0E7490); }
 
 /* Badge urgenza / nuovo */
@@ -2550,25 +2546,25 @@ body.is-home-page .topbar-search{display:none}
 .br-act:focus-visible {
   outline: none;
   border-color: var(--ink,#101010);
-  box-shadow: 0 0 0 3px var(--accent-soft,#FCEEE7);
+  box-shadow: 0 0 0 3px var(--accent-soft,#F0E6E4);
 }
 
 /* Stati semantici — colore al hover */
 .br-act-read:hover  { border-color: var(--success,#0F7B5A); color: var(--success,#0F7B5A); background: var(--amb-2-soft,#D1FAE5); }
 .br-act-arch:hover  { border-color: var(--amb-8,#B45309); color: var(--amb-8,#B45309); background: var(--amb-8-soft,#FEF3C7); }
-.br-act-trash:hover { border-color: var(--danger,#C2410C); color: var(--danger,#C2410C); background: var(--accent-soft,#FCEEE7); }
-.br-act-save:hover  { border-color: var(--accent,#E84B1C); color: var(--accent,#E84B1C); background: var(--accent-soft,#FCEEE7); }
+.br-act-trash:hover { border-color: var(--danger,#C2410C); color: var(--danger,#C2410C); background: var(--accent-soft,#F0E6E4); }
+.br-act-save:hover  { border-color: var(--accent,#935851); color: var(--accent,#935851); background: var(--accent-soft,#F0E6E4); }
 
 /* Stato salvato — attivo persistente */
 .br-act-save-on {
-  border-color: var(--accent,#E84B1C);
-  color: var(--accent,#E84B1C);
-  background: var(--accent-soft,#FCEEE7);
+  border-color: var(--accent,#935851);
+  color: var(--accent,#935851);
+  background: var(--accent-soft,#F0E6E4);
   font-weight: 600;
 }
 .br-act-save-on:hover {
-  border-color: var(--accent-hover,#C23A11);
-  color: var(--accent-hover,#C23A11);
+  border-color: var(--accent-hover,#7A4940);
+  color: var(--accent-hover,#7A4940);
   background: #F8DBC9;
 }
 
@@ -3021,7 +3017,7 @@ textarea:focus-visible {
 .tag, .nav-badge, .matrix-tag {
   font-size: 0.875rem !important;
 }
-.nav-item { font-size: 1.0625rem; }
+.nav-item { font-size: 0.8125rem; }
 .filter-chip { font-size: 0.9375rem; }
 .news-meta, .pod-meta { font-size: 0.9375rem; }
 .bando-row-summary {
@@ -3378,7 +3374,7 @@ textarea:focus-visible {
   white-space: nowrap;
 }
 .hlr-stars .star { font-size: 0.9375rem; line-height: 1; }
-.hlr-stars .star.on  { color: var(--amb, var(--accent,#E84B1C)); }
+.hlr-stars .star.on  { color: var(--amb, var(--accent,#935851)); }
 .hlr-stars .star.off { color: var(--rule-2); }
 
 /* Skeleton per home list — usa sistema .skeleton unificato */
@@ -3480,15 +3476,15 @@ textarea:focus-visible {
   font-size: .8125rem;
   font-weight: 500;
   font-style: normal;
-  color: var(--accent, #E84B1C);
-  border: 1px solid var(--accent, #E84B1C);
+  color: var(--accent, #935851);
+  border: 1px solid var(--accent, #935851);
   border-radius: 6px;
   background: none;
   cursor: pointer;
   transition: background .15s, color .15s;
 }
 .empty-state .empty-cta:hover {
-  background: var(--accent, #E84B1C);
+  background: var(--accent, #935851);
   color: #fff;
 }
 
@@ -3613,7 +3609,7 @@ textarea:focus-visible {
 [data-theme="dark"] .fd-fonte-row { border-color:var(--border, #3a352e); }
 
 /* Newsletter CTA */
-.topbar-nl-cta { background:var(--accent,#E84B1C); color:#fff; border:none; padding:6px 14px; border-radius:999px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font-ui); white-space:nowrap; margin-right:8px; }
+.topbar-nl-cta { background:var(--accent,#935851); color:#fff; border:none; padding:6px 14px; border-radius:999px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font-ui); white-space:nowrap; margin-right:8px; }
 .topbar-nl-cta:hover { opacity:.85; }
 /* Sidebar: voci bloccate per ospiti (visibili ma sbiadite, click → gate CTA) */
 .nav-item.nav-locked { opacity:.35; }
@@ -3635,9 +3631,9 @@ textarea:focus-visible {
 [data-theme="dark"] .topbar-user-menu-item:hover { background:#3a352e; }
 /* Sidebar: sezione strumenti museo arancio */
 /* Sidebar: voci con cornice arancio (strumenti di analisi) */
-.nav-item.nav-item-bordered { border:1.5px solid var(--accent,#E84B1C); border-radius:8px; margin-bottom:4px; }
+.nav-item.nav-item-bordered { border:1.5px solid var(--accent,#935851); border-radius:8px; margin-bottom:4px; }
 .nav-item.nav-item-bordered:hover { background:rgba(232,75,28,.06); }
 .nav-item.nav-item-bordered .lbl { font-weight:600; }
-.nav-item.nav-item-bordered svg { stroke:var(--accent,#E84B1C); }
+.nav-item.nav-item-bordered svg { stroke:var(--accent,#935851); }
 
 </style>

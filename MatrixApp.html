@@ -945,7 +945,7 @@
     if (!mount) return;
     mount.innerHTML = '<div class="mx-app"><div class="mx-loading">Caricamento ' + (state.surveyMode ? 'sondaggio' : 'questionario') + ' in corso…</div></div>';
     if (!hasGAS()) {
-      mount.innerHTML = '<div class="mx-app"><div class="mx-error">Impossibile collegarsi al server. Apri questa pagina dalla webapp Osservatorio Culturale.</div></div>';
+      mount.innerHTML = '<div class="mx-app"><div class="mx-error">Impossibile collegarsi al server. Apri questa pagina dalla webapp Sinopia &middot; Osservatorio Culturale.</div></div>';
       return;
     }
 
@@ -1006,7 +1006,7 @@
         + '  </div>'
         + '  <div class="mx-section">'
         + '    <p style="font-size:14px;line-height:1.6;color:#444">Rispondi alle domande in modo sincero: non esiste una risposta giusta. Al termine riceverai una <b>diagnosi immediata</b> sulla dimensione analizzata e suggerimenti operativi personalizzati.</p>'
-        + '    <div style="background:var(--accent-soft,#FCEEE7);padding:14px 18px;border-radius:8px;font-size:13px;color:#555;margin-top:16px">'
+        + '    <div style="background:var(--accent-soft,#F0E6E4);padding:14px 18px;border-radius:8px;font-size:13px;color:#555;margin-top:16px">'
         + '      <b>Privacy.</b> Compilazione anonima (UUID). Nessun dato personale obbligatorio. Conforme GDPR.'
         + '    </div>'
         + '  </div>'
@@ -1040,16 +1040,16 @@
       + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:var(--amb-6,#1D4ED8);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">3</div><div><b>Le vostre priorità</b> · 6 domande di riflessione (~2 min)</div></div>'
       + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:var(--success,#0F7B5A);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">✓</div><div><b>Report personalizzato</b> · profilo del vostro museo + 3 opportunità di sviluppo prioritarie + servizi pertinenti</div></div>'
       + '    </div>'
-      + '    <div style="background:var(--accent-soft,#FCEEE7);padding:14px 18px;border-radius:8px;font-size:13px;color:#555;margin-top:16px">'
+      + '    <div style="background:var(--accent-soft,#F0E6E4);padding:14px 18px;border-radius:8px;font-size:13px;color:#555;margin-top:16px">'
       + '      <b>Privacy.</b> La compilazione è completamente anonima (UUID generato automaticamente). Nessun dato personale obbligatorio. Solo se al termine vorrete ricevere informazioni di follow-up vi sarà chiesta un\'email, conservata in tabella separata. Trattamento dati conforme al Regolamento UE 2016/679 (GDPR).'
       + '    </div>'
 
       // v4.18.37 — Opt-in MiC SM-LUQV (default disattivato)
-      + '    <div style="margin-top:18px;padding:16px 20px;background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-left:3px solid var(--accent,#E84B1C);border-radius:8px">'
+      + '    <div style="margin-top:18px;padding:16px 20px;background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-left:3px solid var(--accent,#935851);border-radius:8px">'
       + '      <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-family:inherit">'
-      + '        <input type="checkbox" id="mxOptInMiC" style="margin-top:3px;width:18px;height:18px;cursor:pointer;flex-shrink:0;accent-color:var(--accent,#E84B1C)" />'
+      + '        <input type="checkbox" id="mxOptInMiC" style="margin-top:3px;width:18px;height:18px;cursor:pointer;flex-shrink:0;accent-color:var(--accent,#935851)" />'
       + '        <span style="flex:1;font-size:13.5px;line-height:1.55;color:var(--ink-2,#3A3A3C)">'
-      + '          <b style="display:block;font-size:14px;margin-bottom:4px;color:var(--accent-hover,#C23A11);letter-spacing:.02em"> Aggiungi la valutazione ministeriale (opzionale)</b>'
+      + '          <b style="display:block;font-size:14px;margin-bottom:4px;color:var(--accent-hover,#7A4940);letter-spacing:.02em"> Aggiungi la valutazione ministeriale (opzionale)</b>'
       + '          Vuoi anche il <b>secondo report sui requisiti minimi del MiC</b> (autovalutazione SM-LUQV — DM 113/2018, Allegato A4)? Il sistema riusa <b>22 risposte su 29</b> dal Matrix e ti chiede solo <b>7 informazioni aggiuntive</b> al termine. Tempo extra: ~3 minuti. Riceverai una sezione aggiuntiva nel PDF finale con la percentuale di compliance e i gap critici.'
       + '        </span>'
       + '      </label>'
@@ -1543,7 +1543,7 @@
     html += '</div>';
 
     // Sprint 2 Step 4 — Barra azioni report (PDF download + email)
-    html += '<div class="mx-section" style="background:var(--accent-soft,#FCEEE7);border-left:3px solid var(--amb-8,#B45309);padding:18px 20px;margin-top:18px">';
+    html += '<div class="mx-section" style="background:var(--accent-soft,#F0E6E4);border-left:3px solid var(--amb-8,#B45309);padding:18px 20px;margin-top:18px">';
     html += '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between">';
     html += '<div>';
     html += '<div style="font-size:13px;color:var(--ink-3,#6E6E73);font-weight:600;letter-spacing:.04em;text-transform:uppercase">Il vostro report PDF è pronto</div>';
@@ -1671,23 +1671,23 @@
     // ====== v4.18.28 — ESTENSIONE MiC SM-LUQV (DM 113/2018) ======
     // v4.18.37 — Se l'utente ha scelto opt-in all'inizio, la card opzionale è sostituita da un
     //            banner di transizione e il wizard MiC parte automaticamente. Altrimenti card standard.
-    html += '<section id="mxMicAnchor" class="mx-section" style="background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-left:4px solid var(--accent,#E84B1C);border-radius:14px;padding:28px 32px;margin-top:24px;position:relative;overflow:hidden">';
-    html += '<span aria-hidden="true" style="position:absolute;top:-30px;right:-10px;font-size:160px;color:var(--accent,#E84B1C);opacity:.06;line-height:1;pointer-events:none"></span>';
+    html += '<section id="mxMicAnchor" class="mx-section" style="background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-left:4px solid var(--accent,#935851);border-radius:14px;padding:28px 32px;margin-top:24px;position:relative;overflow:hidden">';
+    html += '<span aria-hidden="true" style="position:absolute;top:-30px;right:-10px;font-size:160px;color:var(--accent,#935851);opacity:.06;line-height:1;pointer-events:none"></span>';
     html += '<div style="position:relative;z-index:1">';
     if (state.includeMiC) {
-      html += '<div style="font-family:var(--font-ui,sans-serif);font-size:10.5px;color:var(--accent-hover,#C23A11);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Valutazione ministeriale in arrivo</div>';
+      html += '<div style="font-family:var(--font-ui,sans-serif);font-size:10.5px;color:var(--accent-hover,#7A4940);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Valutazione ministeriale in arrivo</div>';
       html += '<h3 style="font-family:var(--font-display,Georgia,serif);font-size:1.4rem;line-height:1.2;margin:0 0 12px;color:var(--ink-2,#3A3A3C);font-weight:500">Stiamo preparando la sezione <em>Standard Minimi MiC</em></h3>';
       html += '<p style="font-family:var(--font-display,Georgia,serif);font-size:14px;color:var(--ink-2,#3A3A3C);line-height:1.6;margin:0 0 8px">Hai scelto di integrare la valutazione ministeriale all\'inizio del questionario. Il sistema sta caricando le risposte pre-compilate dal Matrix e ti chiederà solo le 7 informazioni aggiuntive (statuto, orari, visitatori, segnaletica). La sezione di compliance sarà aggiunta sotto questo report e inclusa nel PDF finale.</p>';
-      html += '<div id="mxMicStatus" style="margin-top:10px;font-size:13px;color:var(--accent-hover,#C23A11);font-weight:600">⏳ Caricamento in corso…</div>';
+      html += '<div id="mxMicStatus" style="margin-top:10px;font-size:13px;color:var(--accent-hover,#7A4940);font-weight:600">⏳ Caricamento in corso…</div>';
     } else {
-      html += '<div style="font-family:var(--font-ui,sans-serif);font-size:10.5px;color:var(--accent-hover,#C23A11);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Estensione opzionale &middot; Standard ministeriali</div>';
+      html += '<div style="font-family:var(--font-ui,sans-serif);font-size:10.5px;color:var(--accent-hover,#7A4940);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Estensione opzionale &middot; Standard ministeriali</div>';
       html += '<h3 style="font-family:var(--font-display,Georgia,serif);font-size:1.4rem;line-height:1.2;margin:0 0 12px;color:var(--ink-2,#3A3A3C);font-weight:500">Vuoi anche valutarti sugli <em>Standard Minimi di Qualità MiC</em>?</h3>';
       html += '<p style="font-family:var(--font-display,Georgia,serif);font-size:14px;color:var(--ink-2,#3A3A3C);line-height:1.6;margin:0 0 16px;max-width:680px">Il questionario di autovalutazione del Ministero della Cultura (Allegato A4 · DM 113/2018) verifica i 25 Standard Minimi necessari per il riconoscimento al Sistema Museale Nazionale e per l\'accesso a numerosi bandi MiC. <b>22 risposte su 29 le ricaviamo direttamente dal tuo Matrix</b>; servono solo 7 informazioni aggiuntive (statuto, orari, visitatori, segnaletica). Tempo: ~3 minuti.</p>';
       html += '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">';
-      html += '<button class="mx-btn mx-btn-primary" id="mxBtnStartMic" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:12px 26px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.02em">→ Sì, calcola la mia compliance MiC</button>';
-      html += '<button class="mx-btn" id="mxBtnSkipMic" style="background:transparent;color:var(--accent-hover,#C23A11);border:1px solid var(--rule,#E5E5E7);padding:12px 22px;border-radius:8px;font-size:13.5px;font-weight:500;cursor:pointer">No grazie, ho finito</button>';
+      html += '<button class="mx-btn mx-btn-primary" id="mxBtnStartMic" style="background:var(--accent,#935851);color:#fff;border:none;padding:12px 26px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.02em">→ Sì, calcola la mia compliance MiC</button>';
+      html += '<button class="mx-btn" id="mxBtnSkipMic" style="background:transparent;color:var(--accent-hover,#7A4940);border:1px solid var(--rule,#E5E5E7);padding:12px 22px;border-radius:8px;font-size:13.5px;font-weight:500;cursor:pointer">No grazie, ho finito</button>';
       html += '</div>';
-      html += '<div id="mxMicStatus" style="margin-top:10px;font-size:12.5px;color:var(--accent-hover,#C23A11)"></div>';
+      html += '<div id="mxMicStatus" style="margin-top:10px;font-size:12.5px;color:var(--accent-hover,#7A4940)"></div>';
     }
     html += '</div></section>';
 
@@ -1841,14 +1841,14 @@
       : '<div class="mx-app">';
 
     // Hero MiC
-    html += '<div class="mx-report-hero" style="background:linear-gradient(135deg,var(--accent,#E84B1C) 0%,var(--accent-hover,#C23A11) 100%)">';
+    html += '<div class="mx-report-hero" style="background:linear-gradient(135deg,var(--accent,#935851) 0%,var(--accent-hover,#7A4940) 100%)">';
     html += '<div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.85">' + (appendMode ? 'Sezione aggiuntiva · ' : '') + 'Standard Minimi di Qualità · MiC</div>';
     html += '<div class="mx-profile-code" style="font-size:32px;margin-top:10px">Compliance MiC SM-LUQV</div>';
     html += '<div class="mx-profile-name" style="font-size:14px;opacity:.92;font-style:italic;margin-top:6px">DM 113/2018 · Allegato A4 · per musei non accreditati al Sistema Museale Nazionale</div>';
     html += '</div>';
 
     // Card statistiche
-    html += '<div class="mx-section" style="background:var(--surface,#F7F7F8);border-left:3px solid var(--accent,#E84B1C);padding:18px 22px;margin-top:18px">';
+    html += '<div class="mx-section" style="background:var(--surface,#F7F7F8);border-left:3px solid var(--accent,#935851);padding:18px 22px;margin-top:18px">';
     html += '<div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:space-around;text-align:center">';
     var stats = [
       { num: stateMic.precompiled.length, lbl: 'Risposte pre-compilate dal Matrix' },
@@ -1856,7 +1856,7 @@
       { num: 25, lbl: 'Standard Minimi (SM) valutati' }
     ];
     stats.forEach(function(s){
-      html += '<div><div style="font-family:var(--font-display);font-size:32px;font-weight:600;color:var(--accent-hover,#C23A11);line-height:1">' + s.num + '</div><div style="font-size:11.5px;color:var(--ink-2,#3A3A3C);letter-spacing:.04em;margin-top:4px">' + s.lbl + '</div></div>';
+      html += '<div><div style="font-family:var(--font-display);font-size:32px;font-weight:600;color:var(--accent-hover,#7A4940);line-height:1">' + s.num + '</div><div style="font-size:11.5px;color:var(--ink-2,#3A3A3C);letter-spacing:.04em;margin-top:4px">' + s.lbl + '</div></div>';
     });
     html += '</div>';
     html += '<p style="margin:14px 0 0;font-size:13px;color:var(--ink-2,#3A3A3C);line-height:1.55;text-align:center"><b>Come funziona:</b> rivedi le risposte pre-compilate (puoi correggerle), compila le 7 domande aggiuntive, ottieni la tua percentuale di compliance MiC.</p>';
@@ -1876,8 +1876,8 @@
 
     // Bottoni
     html += '<div class="mx-section" style="text-align:center;background:transparent;border:none;padding:24px 0">';
-    html += '<button class="mx-btn mx-btn-primary" id="mxBtnCalcMic" style="background:var(--accent,#E84B1C);color:#fff;border:none;padding:14px 34px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:.02em">Calcola la mia compliance MiC →</button>';
-    html += '<div id="mxMicSubmitStatus" style="margin-top:12px;font-size:13px;color:var(--accent-hover,#C23A11)"></div>';
+    html += '<button class="mx-btn mx-btn-primary" id="mxBtnCalcMic" style="background:var(--accent,#935851);color:#fff;border:none;padding:14px 34px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:.02em">Calcola la mia compliance MiC →</button>';
+    html += '<div id="mxMicSubmitStatus" style="margin-top:12px;font-size:13px;color:var(--accent-hover,#7A4940)"></div>';
     html += '</div>';
 
     html += appendMode ? '</section>' : '</div>';
@@ -1910,7 +1910,7 @@
     var html = '';
     Object.keys(groups).sort().forEach(function(sez){
       html += '<div style="margin-bottom:24px">';
-      html += '<h3 style="font-family:var(--font-display,Georgia,serif);font-size:1.05rem;color:var(--accent-hover,#C23A11);margin:0 0 12px;border-bottom:1px solid var(--rule,#E5E5E7);padding-bottom:6px">' + esc(sez + '. ' + (SEZIONI[sez] || 'Altro')) + '</h3>';
+      html += '<h3 style="font-family:var(--font-display,Georgia,serif);font-size:1.05rem;color:var(--accent-hover,#7A4940);margin:0 0 12px;border-bottom:1px solid var(--rule,#E5E5E7);padding-bottom:6px">' + esc(sez + '. ' + (SEZIONI[sez] || 'Altro')) + '</h3>';
       groups[sez].forEach(function(q){
         html += _renderMicQuestion_(q, isPrecompiled);
       });
@@ -2056,7 +2056,7 @@
 
     var pct = result.complianceScore;
     var gradePct = pct >= 90 ? 'eccellente' : pct >= 75 ? 'buona' : pct >= 50 ? 'parziale' : 'critica';
-    var gradeCol = pct >= 90 ? 'var(--success,#0F7B5A)' : pct >= 75 ? 'var(--amb-2,#10916D)' : pct >= 50 ? 'var(--accent,#E84B1C)' : 'var(--danger,#C2410C)';
+    var gradeCol = pct >= 90 ? 'var(--success,#0F7B5A)' : pct >= 75 ? 'var(--amb-2,#10916D)' : pct >= 50 ? 'var(--accent,#935851)' : 'var(--danger,#C2410C)';
 
     // v4.18.37 — Modalità APPEND vs REPLACE.
     // Se l'utente aveva fatto opt-in all'inizio, il MiC è parte naturale del flusso:
@@ -2122,7 +2122,7 @@
     html += '<p style="color:var(--ink-2,#3A3A3C)">Una call gratuita di 30-45 minuti per definire insieme il percorso più efficace verso l\'accreditamento SMN o l\'accesso al prossimo bando MiC strutturale.</p>';
     var ctaSubject = encodeURIComponent('[MuseMu Matrix + MiC] Consulenza accreditamento — ' + (state.museumName || 'struttura'));
     var ctaBody = encodeURIComponent('Buongiorno,\n\nho completato il MuseMu Matrix e l\'autovalutazione MiC SM-LUQV (compliance: ' + pct + '%, ' + result.smRispettati + '/' + result.smTotali + ' SM rispettati). Vorrei una consulenza sulla roadmap di adeguamento.\n\nRif. Matrix: ' + state.responseId + '\nRif. MiC: ' + result.micId + '\n\nGrazie,\n');
-    html += '<a class="mx-btn mx-btn-primary" href="mailto:s.straccini@gmail.com?subject=' + ctaSubject + '&body=' + ctaBody + '" style="text-decoration:none;display:inline-block;background:var(--accent,#E84B1C)">Prenota consulenza accreditamento</a>';
+    html += '<a class="mx-btn mx-btn-primary" href="mailto:s.straccini@gmail.com?subject=' + ctaSubject + '&body=' + ctaBody + '" style="text-decoration:none;display:inline-block;background:var(--accent,#935851)">Prenota consulenza accreditamento</a>';
     html += '</div>';
 
     html += appendMode ? '</section>' : '</div>';

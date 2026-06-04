@@ -19,14 +19,11 @@
  * ================================================================
  */
 
-// Sprint 1.3 (2026-05-01) - allineato Matrix
-var OC_AMB_COLORS_ = {
-  '1': { bg:'#EEEBFF', fg:'#534AB7', label:'Identità e narrazione museale' },
-  '2': { bg:'#E1F4EE', fg:'#0F6E56', label:'Inclusione e accessibilità' },
-  '3': { bg:'#E2EEFA', fg:'#185FA5', label:'Programma, mostre e collezioni' },
-  '4': { bg:'#F5ECD8', fg:'#854F0B', label:'Comunità e welfare culturale' },
-  '5': { bg:'#D7EDF1', fg:'#0E7490', label:'Digital, AI e governance' }
-};
+// v4.20 — Palette da OC_AMBITI (source of truth in Constants.js)
+var OC_AMB_COLORS_ = {};
+if (typeof OC_AMBITI !== 'undefined') {
+  OC_AMBITI.forEach(function(a){ OC_AMB_COLORS_[String(a.id)] = { bg:'#F2F2F4', fg:a.color, label:a.nome }; });
+}
 
 // ================== COMPOSER ==================
 

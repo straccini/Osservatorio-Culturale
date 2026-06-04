@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Digest Osservatorio Culturale</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23935851'/><text x='16' y='23' text-anchor='middle' font-family='Georgia,serif' font-size='22' font-weight='700' fill='white'>S</text></svg>">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -135,12 +136,12 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);font-size:
   <div class="rd-header">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
       <div>
-        <div class="rd-brand">Osservatorio Culturale</div>
+        <div class="rd-brand">Sinopia &middot; Osservatorio Culturale</div>
         <div class="rd-sub">Duemilamusei · Fano · Digest personale</div>
       </div>
       <div style="text-align:right">
-        <div id="rd-data" style="font-size:11px;color:rgba(255,255,255,.4)">-</div>
-        <div id="rd-scad" style="font-size:10px;color:rgba(255,255,255,.25);margin-top:2px"></div>
+        <div id="rd-data" style="font-size:11px;color:var(--ink-3,#888)">-</div>
+        <div id="rd-scad" style="font-size:10px;color:var(--ink-4,#aaa);margin-top:2px"></div>
       </div>
     </div>
     <div class="rd-meta">
@@ -168,7 +169,7 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);font-size:
   <!-- FOOTER -->
   <div class="rd-footer">
     <p>
-      Osservatorio Culturale · <a href="https://www.duemilamusei.it" target="_blank">Duemilamusei</a> · Fano (PU)<br>
+      Sinopia &middot; Osservatorio Culturale · <a href="https://www.duemilamusei.it" target="_blank">Duemilamusei</a> · Fano (PU)<br>
       Link personale valido 30 giorni · <a href="mailto:info@duemilamusei.it">info@duemilamusei.it</a>
     </p>
   </div>
@@ -457,7 +458,7 @@ function buildPdfHTML(items, bandi, podcast, nome) {
   html += '.footer{margin-top:32px;padding-top:12px;border-top:1px solid #eee;font-size:9pt;color:#aaa;text-align:center}';
   html += '@media print{body{padding:0}h2{page-break-after:avoid}}';
   html += '</style></head><body>';
-  html += '<h1>Digest Osservatorio Culturale</h1>';
+  html += '<h1>Digest Sinopia &middot; Osservatorio Culturale</h1>';
   html += '<div class="subtitle">Duemilamusei · Fano' + (nome ? ' · Per ' + esc(nome) : '') + ' · ' + esc(date) + '</div>';
 
   if (items.length) {
@@ -494,7 +495,7 @@ function buildPdfHTML(items, bandi, podcast, nome) {
     });
   }
 
-  html += '<div class="footer">Osservatorio Culturale · Duemilamusei · info@duemilamusei.it</div>';
+  html += '<div class="footer">Sinopia &middot; Osservatorio Culturale · Duemilamusei · info@duemilamusei.it</div>';
   html += '</body></html>';
   return html;
 }
