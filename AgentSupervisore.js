@@ -146,18 +146,8 @@ function sasRun() {
     Logger.log('[SAS] MA2 ERRORE: ' + e.message);
   }
 
-  // ── MA3: Dedup cross-foglio (v4.19.1) ──
-  try {
-    if (typeof dailyDedupCheck === 'function') {
-      var ma3 = dailyDedupCheck();
-      report.agenti.MA3 = ma3;
-      if (ma3.totaleRimossi > 0) report.azioni.push('MA3: rimossi ' + ma3.totaleRimossi + ' duplicati cross-foglio');
-      Logger.log('[SAS] MA3 dedup completato: ' + ma3.totaleRimossi + ' rimossi');
-    }
-  } catch(e) {
-    report.errori.push('MA3: ' + e.message);
-    Logger.log('[SAS] MA3 ERRORE: ' + e.message);
-  }
+  // ── MA3: Dedup cross-foglio — rimosso (v4.20): dailyDedupCheck (hard delete) sostituito
+  //    da dedupTuttiIFogli (soft archive, reversibile) gia presente in MA1 (lunedi) ──
 
   // ── MA4: Auto-archivio record vecchi (v4.19.1) ──
   try {
@@ -453,13 +443,7 @@ function maQualityCheck() {
     }
   } catch(e) { result.dettagli.push({ azione: 'attiva_fonti', errore: e.message }); }
 
-  // 3. Quality check bandi (se disponibile)
-  try {
-    if (typeof qualityCheckBandiAutoDaily === 'function') {
-      var r3 = qualityCheckBandiAutoDaily();
-      result.qualityFix = (r3 && r3.fixed) || 0;
-    }
-  } catch(e) { result.dettagli.push({ azione: 'qc_bandi', errore: e.message }); }
+  // 3. Quality check bandi — rimosso da MA2 (v4.20): eseguito in MA6 nel flusso sasRun principale
 
   return result;
 }

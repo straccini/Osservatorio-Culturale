@@ -2078,6 +2078,35 @@
             <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">Tagger</span> MatrixDim auto</div>
           </div>
         </div>
+
+        <!-- v4.20 — Manutenzioni periodiche -->
+        <div class="admin-card" style="margin-bottom:14px;border-left:4px solid var(--amb-4,#9C6A36)">
+          <h3>Manutenzione periodica</h3>
+          <p class="hint">Verifiche e allineamenti. Girano automaticamente nel supervisore notturno; usa i bottoni per forzare un'esecuzione immediata.</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:10px 0">
+            <button class="btn btn-secondary" onclick="OC._runMaintAction('verificaFontiBandi','mpResult')" style="text-align:left;padding:10px 12px;font-size:12px" title="Verifica connettivita delle fonti bandi: quali rispondono, quali sono morte">
+              <div style="font-weight:600">Verifica fonti bandi</div>
+              <div style="font-size:11px;color:var(--ink-3)">Controlla quali rispondono</div>
+            </button>
+            <button class="btn btn-secondary" onclick="OC._runMaintAction('verificaFontiNews','mpResult')" style="text-align:left;padding:10px 12px;font-size:12px" title="Verifica connettivita delle fonti news RSS">
+              <div style="font-weight:600">Verifica fonti news</div>
+              <div style="font-size:11px;color:var(--ink-3)">Controlla quali rispondono</div>
+            </button>
+            <button class="btn btn-secondary" onclick="OC._runMaintAction('qualityCheckBandi','mpResult')" style="text-align:left;padding:10px 12px;font-size:12px" title="Controlla qualita bandi: duplicati, campi mancanti, link rotti">
+              <div style="font-weight:600">Quality check bandi</div>
+              <div style="font-size:11px;color:var(--ink-3)">Duplicati, campi, link</div>
+            </button>
+            <button class="btn btn-secondary" onclick="OC._runMaintAction('dedupTuttiIFogli','mpResult')" style="text-align:left;padding:10px 12px;font-size:12px" title="Trova e archivia duplicati su tutti i fogli (reversibile)">
+              <div style="font-weight:600">Dedup contenuti</div>
+              <div style="font-size:11px;color:var(--ink-3)">Archivia duplicati (reversibile)</div>
+            </button>
+            <button class="btn btn-secondary" onclick="OC._runMaintAction('auditFogli','mpResult')" style="text-align:left;padding:10px 12px;font-size:12px" title="Audit sola lettura: stato fogli, righe, colonne, anomalie">
+              <div style="font-weight:600">Audit fogli</div>
+              <div style="font-size:11px;color:var(--ink-3)">Sola lettura, nessuna modifica</div>
+            </button>
+          </div>
+          <div id="mpResult" style="margin-top:8px;font-size:12px;color:var(--ink-3);max-height:200px;overflow-y:auto"></div>
+        </div>
       </div>
       <!-- TAB SEGNALAZIONI (v4.19.1) -->
       <div class="settings-tab-content" data-tab-content="segnalazioni" hidden>
@@ -6379,6 +6408,20 @@
     }).backupSpreadsheet();
   }
 
+  // v4.20 — Manutenzione periodica: handler generico
+  function _runMaintAction(fnName, resultId) {
+    var out = document.getElementById(resultId);
+    if (out) out.textContent = 'Esecuzione ' + fnName + '...';
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (out) out.textContent = JSON.stringify(r, null, 2).substring(0, 500);
+      })
+      .withFailureHandler(function(e) {
+        if (out) out.textContent = 'Errore: ' + e;
+      })[fnName]();
+  }
+
   function showInvitaUtenteForm() {
     var f = $('invitaUtenteForm');
     if (f) f.style.display = (f.style.display === 'none' ? 'block' : 'none');
@@ -9244,6 +9287,7 @@
     _segUnpublish: _segUnpublish,
     _segCancella: _segCancella,
     _backupNow: _backupNow,
+    _runMaintAction: _runMaintAction,
     _loadBackupTab: _loadBackupTab_,
     setUser: setUser,
     // v4.18.47 — Modal registrazione anonimo
