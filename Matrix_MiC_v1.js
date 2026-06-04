@@ -853,6 +853,15 @@ function setupMicSheet() {
   } catch(e) { return { ok:false, error: e.message }; }
 }
 
+/**
+ * Ritorna il report MiC per una compilazione specifica.
+ * @param {string} micId - ID della risposta MiC
+ * @return {Object}
+ */
+function getMicReport(micId) {
+  return { ok: false, error: 'Funzione non ancora implementata. Contatta l\'amministratore.' };
+}
+
 // ============================================================================
 // FINE Matrix_MiC_v1.gs
 // ============================================================================

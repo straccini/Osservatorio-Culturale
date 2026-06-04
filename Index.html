@@ -450,7 +450,7 @@
         <div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;font-weight:600">Strumenti news (solo admin)</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <button class="btn btn-secondary" data-action="runScannerNews" style="font-size:12px;padding:6px 12px">Scan news RSS</button>
-          <button class="btn btn-secondary" data-action="addNewsManuale" style="font-size:12px;padding:6px 12px">+ Aggiungi manuale</button>
+          <button class="btn btn-secondary" data-action="addNewsManuale" style="display:none;font-size:12px;padding:6px 12px">+ Aggiungi manuale</button>
           <span id="scannerResultNews" style="font-size:12px;color:var(--ink-3)"></span>
         </div>
       </div>
@@ -506,7 +506,7 @@
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <button class="btn btn-secondary" data-action="runScannerPodcast" style="font-size:12px;padding:6px 12px">Scan podcast/video</button>
           <button class="btn btn-secondary" data-action="seedPodcastRSS" style="font-size:12px;padding:6px 12px">Seed RSS italiani</button>
-          <button class="btn btn-secondary" data-action="addPodcastManuale" style="font-size:12px;padding:6px 12px">+ Aggiungi manuale</button>
+          <button class="btn btn-secondary" data-action="addPodcastManuale" style="display:none;font-size:12px;padding:6px 12px">+ Aggiungi manuale</button>
           <span id="scannerResultPodcast" style="font-size:12px;color:var(--ink-3)"></span>
         </div>
       </div>
@@ -671,34 +671,13 @@
         <h1 class="page-title">Norme <em>&amp; Riferimenti</em></h1>
         <p class="page-sub" id="normeCount">Caricamento&hellip;</p>
       </div>
-      <!-- Filtri uniformati: search + tema + preset + sort + export -->
-      <div class="filters filters-tools">
-        <div class="filter-search"><input id="normeSearch" type="text" class="search" placeholder="Cerca per titolo, fonte, categoria o parola chiave&hellip;" oninput="OC.searchNorme(this.value)" /></div>
-        <select id="normeTema" class="filter-select" onchange="OC.setNormeTema(this.value)">
-          <option value="">Tutte le categorie</option>
-          <option value="1">01 Identit&agrave; museale</option>
-          <option value="2">02 Inclusione e accessibilit&agrave;</option>
-          <option value="3">03 Programma e collezioni</option>
-          <option value="4">04 Comunit&agrave; e welfare</option>
-          <option value="5">05 Digital, AI e governance</option>
-        </select>
-        <select id="normePreset" class="filter-select" onchange="OC.setNormePreset(this.value)">
-          <option value="">Tutte le norme</option>
-          <option value="recenti">Recenti 30gg</option>
-          <option value="salvati">&#9733; Salvati</option>
-        </select>
-        <select id="normeSort" class="filter-select" onchange="OC.sortNorme(this.value)">
-          <option value="data">Pi&ugrave; recenti</option>
-          <option value="titolo">Titolo A&ndash;Z</option>
-          <option value="fonte">Fonte A&ndash;Z</option>
-        </select>
-        <button class="filter-chip" onclick="OC.exportNormeCSV()">&#10515; Esporta CSV</button>
-      </div>
+      <!-- Filtri norme: toolbar disabilitata (funzioni OC.searchNorme/setNormeTema/etc. non ancora implementate) -->
+      <div class="filters filters-tools" style="display:none"></div>
       <!-- Admin tools (solo admin, display:none) -->
       <div id="normeAdminTools" style="display:none;background:var(--surface-2);border:1px solid var(--rule);border-radius:8px;padding:14px;margin-bottom:14px">
         <div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;font-weight:600">Strumenti normativa (solo admin)</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button class="btn btn-secondary" data-action="runScannerNorme" style="font-size:12px;padding:6px 12px">Scan norme</button>
+          <button class="btn btn-secondary" data-action="runScannerNorme" style="display:none;font-size:12px;padding:6px 12px">Scan norme</button>
           <button class="btn btn-secondary" onclick="document.getElementById('normeAddForm').style.display=document.getElementById('normeAddForm').style.display==='none'?'block':'none'" style="font-size:12px;padding:6px 12px">+ Aggiungi manuale</button>
           <span id="scannerResultNorme" style="font-size:12px;color:var(--ink-3)"></span>
         </div>
@@ -738,38 +717,14 @@
         <p class="page-sub" id="socialUpdatedAt">Caricamento&hellip;</p>
         <button id="socialRefreshBtn" class="btn btn-secondary" onclick="OC.loadSocialWall(true)" style="font-size:12px;padding:6px 14px;margin-top:8px" hidden>&#8635; Aggiorna ora</button>
       </div>
-      <!-- Filtri uniformati: search + tipo + tema + sort + export -->
-      <div class="filters filters-tools">
-        <div class="filter-search"><input id="socialSearch" type="text" class="search" placeholder="Cerca per titolo, fonte, ente o parola chiave&hellip;" oninput="OC.searchSocial(this.value)" /></div>
-        <select id="socialTipo" class="filter-select" onchange="OC.setSocialTipo(this.value)">
-          <option value="">Tutti i tipi</option>
-          <option value="istituzione">Istituzioni</option>
-          <option value="museo">Musei</option>
-          <option value="fondazione">Fondazioni</option>
-          <option value="associazione">Associazioni</option>
-          <option value="rivista">Riviste</option>
-        </select>
-        <select id="socialTema" class="filter-select" onchange="OC.setSocialTema(this.value)">
-          <option value="">Tutte le tematiche</option>
-          <option value="1">01 Identit&agrave; museale</option>
-          <option value="2">02 Inclusione e accessibilit&agrave;</option>
-          <option value="3">03 Programma e collezioni</option>
-          <option value="4">04 Comunit&agrave; e welfare</option>
-          <option value="5">05 Digital, AI e governance</option>
-        </select>
-        <select id="socialSort" class="filter-select" onchange="OC.sortSocial(this.value)">
-          <option value="data">Pi&ugrave; recenti</option>
-          <option value="titolo">Titolo A&ndash;Z</option>
-          <option value="fonte">Fonte A&ndash;Z</option>
-        </select>
-        <button class="filter-chip" onclick="OC.exportSocialCSV()">&#10515; Esporta CSV</button>
-      </div>
+      <!-- Filtri social: toolbar disabilitata (funzioni OC.searchSocial/setSocialTipo/etc. non ancora implementate) -->
+      <div class="filters filters-tools" style="display:none"></div>
       <!-- Admin tools (solo admin) -->
       <div id="socialAdminTools" style="display:none;background:var(--surface-2);border:1px solid var(--rule);border-radius:8px;padding:14px;margin-bottom:14px">
         <div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;font-weight:600">Strumenti social (solo admin)</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button class="btn btn-secondary" data-action="runScannerSocial" style="font-size:12px;padding:6px 12px">Scan social</button>
-          <button class="btn btn-secondary" data-action="addSocialFonte" style="font-size:12px;padding:6px 12px">+ Aggiungi fonte</button>
+          <button class="btn btn-secondary" data-action="runScannerSocial" style="display:none;font-size:12px;padding:6px 12px">Scan social</button>
+          <button class="btn btn-secondary" data-action="addSocialFonte" style="display:none;font-size:12px;padding:6px 12px">+ Aggiungi fonte</button>
           <button class="btn btn-secondary" onclick="OC.seedSocialFonti()" style="font-size:12px;padding:6px 12px">Seed fonti</button>
           <span id="scannerResultSocial" style="font-size:12px;color:var(--ink-3)"></span>
         </div>
@@ -2087,7 +2042,7 @@
         <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin-bottom:16px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
             <div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink)">Email inviate</div>
-            <button class="btn btn-secondary" data-action="loadEmailLog" style="font-size:0.75rem;padding:6px 14px">Aggiorna</button>
+            <button class="btn btn-secondary" data-action="loadEmailLog" style="display:none;font-size:0.75rem;padding:6px 14px">Aggiorna</button>
           </div>
           <div id="gestioneEmailLog">
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px">
@@ -2116,7 +2071,7 @@
         <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin-bottom:16px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
             <div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink)">Aggiornamento fonti</div>
-            <button class="btn btn-secondary" data-action="loadFontiStatus" style="font-size:0.75rem;padding:6px 14px">Aggiorna</button>
+            <button class="btn btn-secondary" data-action="loadFontiStatus" style="display:none;font-size:0.75rem;padding:6px 14px">Aggiorna</button>
           </div>
           <div id="gestioneFontiStatus">
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px">
@@ -2145,7 +2100,7 @@
         <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
             <div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink)">Dati Google Sheets</div>
-            <button class="btn btn-secondary" data-action="loadSheetsStatus" style="font-size:0.75rem;padding:6px 14px">Aggiorna</button>
+            <button class="btn btn-secondary" data-action="loadSheetsStatus" style="display:none;font-size:0.75rem;padding:6px 14px">Aggiorna</button>
           </div>
           <div id="gestioneSheetsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
             <div style="padding:10px 14px;background:var(--surface-2,#F7F5F0);border-radius:8px"><div style="font-size:0.75rem;color:var(--ink-3)">Bandi_v5</div><div style="font-size:1rem;font-weight:700" id="gdShBandi">-- righe</div></div>
@@ -8118,13 +8073,13 @@
         if (el) el.textContent = (r && r.length) || 0;
       }).withFailureHandler(function(){}).getHomepageDataV42();
 
-      // Sondaggi
-      try {
-        google.script.run.withSuccessHandler(function(count){
-          var el = document.getElementById('statSondaggi');
-          if (el) el.textContent = count || 0;
-        }).withFailureHandler(function(){});
-      } catch(_){}
+      // Sondaggi — disabled: dangling google.script.run chain (no terminal method)
+      // try {
+      //   google.script.run.withSuccessHandler(function(count){
+      //     var el = document.getElementById('statSondaggi');
+      //     if (el) el.textContent = count || 0;
+      //   }).withFailureHandler(function(){});
+      // } catch(_){}
     }
   }
 

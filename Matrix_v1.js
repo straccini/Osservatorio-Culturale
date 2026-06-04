@@ -154,7 +154,7 @@ function getMatrixSurveySchema(dimCode) {
     questions: filteredQuestions,
     anagrafica: surveyAnagrafica,
     section11: [],
-    section12: schema.section12 || []
+    section12: (schema.section12 && schema.section12.items) ? schema.section12.items : []
   };
 }
 
@@ -537,6 +537,7 @@ function _matrixScoreToReading_(s) {
  * Mai esposti al compilatore.
  */
 function _matrixComputeConsistencyFlags_(responses, section11, scoring) {
+  if (typeof OC_MATRIX_SCHEMA === 'undefined' || !OC_MATRIX_SCHEMA) return {};
   var flags = {};
   // Flag 1: triangolazione D1.4 vs D1.2 (leadership comunicativa vs coerenza)
   if (responses['D1.4'] && responses['D1.2']) {

@@ -353,6 +353,7 @@ function getUserWorkspaceData(token) {
       } catch(_){}
       if (admins[token.toLowerCase().trim()]) {
         email = token.toLowerCase().trim();
+        sess = { source: 'admin', matrix_completato: false };
       } else {
         return { ok:false, error:'accesso non autorizzato' };
       }
