@@ -245,8 +245,13 @@ function loginConEmail(email) {
       return { ok:false, error:'login_disabilitato', message:'Il login pubblico non e ancora attivo. Contatta l\'amministratore.' };
     }
 
+    // v4.20 — Admin/editor senza riga in Utenti: crea automaticamente
+    if (!utente && isAdminEmail) {
+      utente = { email: email, nome: email.split('@')[0], ruolo: 'admin', stato: 'attivo' };
+      Logger.log('[AUTH] Auto-creato utente admin: ' + email);
+    }
     if (!utente) return { ok:false, error:'email_non_registrata' };
-    if (utente.stato !== 'attivo') return { ok:false, error:'account_non_attivo', stato: utente.stato };
+    if (utente.stato !== 'attivo' && !isAdminEmail) return { ok:false, error:'account_non_attivo', stato: utente.stato };
 
     // Crea o riusa sessione
     var sh = _getOrCreateSessioniSheet_();

@@ -7296,8 +7296,15 @@
               showToast('Bentornato, ' + (r.nome || r.email.split('@')[0]) + '!', 'ok');
             }, 400);
           } else {
-            var errMsg = 'Email non trovata. Sei sicuro di essere registrato?';
-            if (r && r.error === 'account_non_attivo') errMsg = 'Il tuo account non e ancora attivo. Contatta l\'amministratore.';
+            var _errMap = {
+              'email_mancante': 'Inserisci un indirizzo email.',
+              'email_non_valida': 'Formato email non valido.',
+              'email_non_registrata': 'Email non registrata. Usa il form sotto per registrarti.',
+              'login_disabilitato': 'Login pubblico non attivo. Contatta l\'amministratore.',
+              'account_non_attivo': 'Account non ancora attivo. Contatta l\'amministratore.',
+              'usa_accesso_admin': 'Usa il link admin dedicato per accedere.'
+            };
+            var errMsg = (r && r.error && _errMap[r.error]) ? _errMap[r.error] : (r && r.message) || 'Errore di accesso. Riprova.';
             if (msg) { msg.textContent = errMsg; msg.style.color = 'var(--danger,#C2410C)'; }
           }
         })
