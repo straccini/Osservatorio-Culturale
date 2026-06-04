@@ -11173,9 +11173,16 @@
       if (empty) empty.hidden = true;
       var html = '';
       r.segnalazioni.forEach(function(s) {
+        var titolo = (s.titolo||'').replace(/</g,'&lt;');
+        var desc = (s.descrizione||'').replace(/</g,'&lt;');
+        if (desc.length > 80) desc = desc.substring(0, 80) + '…';
+        var url = (s.url||'').trim();
         html += '<div style="padding:12px 0;border-bottom:1px solid var(--rule,#E5E5E7)">'
-          + '<div style="font-size:14px;font-weight:600;color:var(--ink);line-height:1.35">' + (s.titolo||'').replace(/</g,'&lt;') + '</div>'
-          + '<div style="font-size:12px;color:var(--ink-3);margin-top:4px">'
+          + '<div style="font-size:14px;font-weight:600;color:var(--ink);line-height:1.35">'
+          + (url ? '<a href="'+url.replace(/"/g,'&quot;')+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">' + titolo + ' ↗</a>' : titolo)
+          + '</div>'
+          + (desc ? '<div style="font-size:12.5px;color:var(--ink-2);margin-top:3px;line-height:1.4">' + desc + '</div>' : '')
+          + '<div style="font-size:11px;color:var(--ink-3);margin-top:4px">'
           + '<span style="font-weight:600;color:#3F7A5E">' + (s.tipo||'').replace(/</g,'&lt;') + '</span>'
           + (s.area_geografica ? ' &middot; '+(s.area_geografica||'').replace(/</g,'&lt;') : '')
           + ' &middot; ' + (s.nome_autore||'Community').replace(/</g,'&lt;')
