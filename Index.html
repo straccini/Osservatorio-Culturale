@@ -7213,11 +7213,9 @@
     var overlay = document.createElement('div');
     overlay.id = 'oc-regform-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.6);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
-    var _loginOn = (window._ocLoginEnabled === true);
     overlay.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:460px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);padding:36px 32px;font-family:var(--font-ui,sans-serif);max-height:calc(100vh - 40px);overflow-y:auto">'
-      // --- Sezione 1: Sono gia registrato (condizionale v4.20) ---
-      + (_loginOn
-        ? '<div style="font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:4px">Sono gia registrato</div>'
+      // --- Sezione 1: Accesso (sempre visibile — backend controlla il ruolo) ---
+      + '<div style="font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:4px">Accedi</div>'
           + '<p style="font-size:13px;color:var(--ink-2);line-height:1.5;margin:0 0 14px">Inserisci la tua email per accedere.</p>'
           + '<div style="display:flex;gap:8px;margin-bottom:6px">'
           + '<input type="email" id="loginFormEmail" placeholder="La tua email" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />'
@@ -7229,8 +7227,6 @@
           + '<span>oppure</span>'
           + '<div style="flex:1;height:1px;background:var(--rule,#E5E5E7)"></div>'
           + '</div>'
-        : '<div style="text-align:center;padding:16px 0 12px;font-size:13px;color:var(--ink-3);border-bottom:1px solid var(--rule,#E5E5E7);margin-bottom:16px">Accesso utenti non ancora attivo</div>'
-      )
       // --- Sezione 2: Registrati ---
       + '<div style="font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--ink);margin-bottom:4px">Registrati gratuitamente</div>'
       + '<p style="font-size:12.5px;color:var(--ink-2);line-height:1.5;margin:0 0 14px">Accedi a tutti i contenuti: bandi, news, podcast, report e molto altro. <b>Tutti i servizi sono gratuiti.</b></p>'
