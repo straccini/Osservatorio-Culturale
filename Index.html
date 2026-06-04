@@ -1979,14 +1979,14 @@
       <!-- TAB CONFIGURAZIONE -->
       <div class="settings-tab-content" data-tab-content="config" hidden>
 
-        <!-- Setup v4.18 one-click (2026-05-11) -->
-        <div class="admin-card" style="margin-bottom:14px;background:linear-gradient(135deg,#FAF8F4 0%,var(--amb-4-soft,#FFEDD5) 100%);border-left:4px solid var(--accent,#935851)">
-          <h3>Setup post-deploy v4.18.0</h3>
-          <p class="hint">Esegue in cascata <b>tutte le funzioni di setup</b> necessarie dopo il deploy v4.18: cron bandi Lun/Mer/Ven 01:00, schema fogli bandi v5, foglio Pubblicazioni con 10 seed, foglio Norme con 5 seed, database MuseiDB_v1, fogli FontiNews+FontiVideo, migrazione SocialFonti→FontiNews. Idempotente: si può rilanciare in sicurezza.</p>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0">
-            <button class="btn btn-primary" data-action="runAllSetup" style="background:var(--accent,#935851);color:#fff;font-weight:600;padding:10px 20px;font-size:14px">Esegui setup completo</button>
-            <button class="btn btn-secondary" data-action="checkSetupStatus" style="padding:10px 20px;font-size:14px">Verifica solo stato</button>
-            <button class="btn btn-secondary" data-action="debugAuthClient" style="padding:10px 20px;font-size:14px">🔐 Debug Auth (chi sono?)</button>
+        <!-- Setup iniziale (solo admin, primo deploy o aggiornamenti maggiori) -->
+        <div class="admin-card" style="margin-bottom:14px;border-left:4px solid var(--accent,#935851)">
+          <h3>Setup e inizializzazione</h3>
+          <p class="hint">Da usare <b>solo al primo deploy</b> o dopo aggiornamenti strutturali. Crea fogli mancanti, seed dati iniziali, migra fonti. Idempotente: rieseguibile senza rischi.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">
+            <button class="btn btn-primary" data-action="runAllSetup" style="padding:8px 16px;font-size:13px" title="Crea fogli, seed dati, configura struttura. Sicuro da rieseguire.">Esegui setup</button>
+            <button class="btn btn-secondary" data-action="checkSetupStatus" style="padding:8px 16px;font-size:13px" title="Verifica quali fogli e configurazioni sono presenti">Verifica stato</button>
+            <button class="btn btn-secondary" data-action="debugAuthClient" style="padding:8px 16px;font-size:13px" title="Mostra come il sistema ti identifica (utile per debug permessi)">Debug Auth</button>
           </div>
           <div id="setupResult" style="margin-top:12px;font-size:13px;min-height:18px"></div>
 

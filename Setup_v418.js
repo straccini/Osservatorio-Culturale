@@ -200,13 +200,11 @@ function runAllSetupV418Status() {
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
     var checks = {};
 
-    // Trigger cron Lun/Mer/Ven 01:00
+    // v4.20 — Trigger: conta quanti sono attivi (gestiti da setupMasterTriggers)
     try {
       var triggers = ScriptApp.getProjectTriggers();
-      var ok = 0;
-      triggers.forEach(function(t){ if (t.getHandlerFunction() === 'scanFontiTutte') ok++; });
-      checks.cron_scanFontiTutte = { ok: ok === 3, count: ok };
-    } catch(e) { checks.cron_scanFontiTutte = { ok:false, error:e.message }; }
+      checks.triggers = { ok: triggers.length >= 10, count: triggers.length };
+    } catch(e) { checks.triggers = { ok:false, error:e.message }; }
 
     // Fogli
     ['FontiBandi_v5','FontiNews','FontiVideo','FontiPodcast','Pubblicazioni','Norme','MuseiDB_v1','CRM_Leads','ROC_TriageLog'].forEach(function(name){
