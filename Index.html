@@ -1625,22 +1625,24 @@
         <span class="muted" id="settingsStatus">—</span>
       </div>
 
-      <!-- v4.20 — Tab riorganizzati in 2 gruppi -->
-      <div style="margin-bottom:18px">
-        <!-- GRUPPO 1: Gestione contenuti -->
-        <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:700;padding:0 4px 6px">Gestione contenuti</div>
-        <div style="display:flex;gap:4px;margin-bottom:8px;border-bottom:2px solid var(--rule,#E5E5E7);flex-wrap:wrap">
-          <button class="settings-tab active" data-tab="tutti" style="background:none;border:none;padding:8px 16px;font-size:13px;font-weight:600;color:var(--amb-5,#0E7490);border-bottom:3px solid var(--amb-5,#0E7490);margin-bottom:-2px;cursor:pointer">Fonti</button>
-          <button class="settings-tab" data-tab="utenti" style="background:none;border:none;padding:8px 16px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Utenti</button>
-          <button class="settings-tab" data-tab="segnalazioni" style="background:none;border:none;padding:8px 16px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Segnalazioni</button>
-        </div>
-        <!-- GRUPPO 2: Manutenzione -->
-        <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:700;padding:6px 4px 6px">Manutenzione e aggiornamento</div>
-        <div style="display:flex;gap:4px;border-bottom:2px solid var(--rule,#E5E5E7);flex-wrap:wrap">
-          <button class="settings-tab" data-tab="sistema" style="background:none;border:none;padding:8px 16px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Sistema</button>
-          <button class="settings-tab" data-tab="config" style="background:none;border:none;padding:8px 16px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Configurazione</button>
-          <button class="settings-tab" data-tab="backup" style="background:none;border:none;padding:8px 16px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Archivio</button>
-        </div>
+      <!-- v4.20 — Tab su riga unica con 3 categorie -->
+      <div style="display:flex;gap:2px;margin-bottom:18px;border-bottom:2px solid var(--rule,#E5E5E7);flex-wrap:wrap;align-items:end">
+        <!-- Gestione contenuti -->
+        <span style="font-size:9px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.08em;font-weight:700;padding:0 8px 8px;margin-right:-4px">Contenuti</span>
+        <button class="settings-tab active" data-tab="tutti" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:var(--amb-5,#0E7490);border-bottom:3px solid var(--amb-5,#0E7490);margin-bottom:-2px;cursor:pointer">Fonti</button>
+        <button class="settings-tab" data-tab="utenti" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Utenti</button>
+        <button class="settings-tab" data-tab="segnalazioni" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Segnalazioni</button>
+        <!-- Separatore -->
+        <span style="width:1px;height:20px;background:var(--rule,#E5E5E7);margin:0 6px 6px"></span>
+        <!-- Manutenzione -->
+        <span style="font-size:9px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.08em;font-weight:700;padding:0 8px 8px;margin-right:-4px">Manutenzione</span>
+        <button class="settings-tab" data-tab="sistema" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Sistema</button>
+        <button class="settings-tab" data-tab="backup" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Archivio</button>
+        <!-- Separatore -->
+        <span style="width:1px;height:20px;background:var(--rule,#E5E5E7);margin:0 6px 6px"></span>
+        <!-- Aggiornamento -->
+        <span style="font-size:9px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.08em;font-weight:700;padding:0 8px 8px;margin-right:-4px">Aggiornamento</span>
+        <button class="settings-tab" data-tab="config" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Configurazione</button>
       </div>
 
       <!-- Tab nascosti: il contenuto resta nel DOM per backward compat, ma i tab non sono piu visibili -->
@@ -2015,39 +2017,22 @@
           <h3>Configurazione sistema</h3>
           <p class="hint">Stato generale dei trigger automatici, integrazioni e versione webapp.</p>
           <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
-            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;width:200px">Versione webapp</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600">v4.12.2 (Sprint 1.5 Editoriale Museale - grafica applicata)</td></tr>
-            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Bot Telegram</td><td style="padding:8px;border-bottom:1px solid #eee" id="settingsTgStatus">verifica…</td></tr>
-            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Cron digest weekly</td><td style="padding:8px;border-bottom:1px solid #eee" id="settingsCronStatus">verifica…</td></tr>
-            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Trigger scanner bandi</td><td style="padding:8px;border-bottom:1px solid #eee">Mar+Ven 07:00 (lunediMattina + scanSources)</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;width:180px">Versione</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:600" id="settingsVersion">v4.20</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Telegram</td><td style="padding:8px;border-bottom:1px solid #eee" id="settingsTgStatus">verifica…</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Digest cron</td><td style="padding:8px;border-bottom:1px solid #eee" id="settingsCronStatus">verifica…</td></tr>
             <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">URL webapp</td><td style="padding:8px;border-bottom:1px solid #eee;font-family:monospace;font-size:11px;word-break:break-all" id="settingsWebUrl">—</td></tr>
             <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666">Login pubblico</td><td style="padding:8px;border-bottom:1px solid #eee" id="settingsLoginStatus">verifica…</td></tr>
           </table>
         </div>
         <div class="admin-card" style="margin-bottom:14px">
-          <h3>Manutenzione operativa</h3>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:10px">
-            <div style="padding:12px;background:#FAFAFA;border:1px solid #E5E5E5;border-radius:6px">
-              <div style="font-size:13px;font-weight:600;color:var(--ink-2,#3A3A3C);margin-bottom:6px">Migrazione ambito sui bandi esistenti</div>
-              <p style="font-size:12px;color:#666;margin:0 0 10px">Ricalcola la colonna AMBITO sui bandi storici per renderli visibili nelle pagine ambito (oggi solo 6/95 visibili).</p>
-              <button class="btn btn-secondary" data-action="runMigraBandiAmbito" style="font-size:12px;padding:6px 14px">▶️ Esegui migrazione</button>
-            </div>
-            <div style="padding:12px;background:#FAFAFA;border:1px solid #E5E5E5;border-radius:6px">
-              <div style="font-size:13px;font-weight:600;color:var(--ink-2,#3A3A3C);margin-bottom:6px">Re-tag Matrix incrementale</div>
-              <p style="font-size:12px;color:#666;margin:0 0 10px">Esegui da Impostazioni → Configurazione per applicare il tagger ai contenuti non ancora taggati.</p>
-              <button class="btn btn-secondary" data-page="settings" style="font-size:12px;padding:6px 14px">→ Vai a Impostazioni</button>
-            </div>
-            <div style="padding:12px;background:#FFF8E7;border:1px solid #F0D78C;border-radius:6px">
-              <div style="font-size:13px;font-weight:600;color:#7A5A00;margin-bottom:6px">🗂 Archivio massivo</div>
-              <p style="font-size:12px;color:#666;margin:0 0 10px">Archivia in un colpo solo bandi/news/podcast piu vecchi di N giorni (default 30). Reversibile dal foglio.</p>
-              <button class="btn btn-secondary" data-action="runAutoArchive" style="font-size:12px;padding:6px 14px">▶️ Archivia massivo</button>
-            </div>
-            <div style="padding:12px;background:#FBEAEA;border:1px solid #E8B4B4;border-radius:6px">
-              <div style="font-size:13px;font-weight:600;color:var(--danger,#C2410C);margin-bottom:6px"> Eliminazione definitiva</div>
-              <p style="font-size:12px;color:#666;margin:0 0 10px">⚠️ Distruttiva. Elimina record archiviati piu vecchi di N mesi (default 12). Conferma doppia richiesta.</p>
-              <button class="btn btn-secondary" data-action="runAutoDelete" style="font-size:12px;padding:6px 14px;color:var(--danger,#C2410C);border-color:#E8B4B4">▶️ Elimina archiviati vecchi</button>
-            </div>
+          <h3>Azioni manuali</h3>
+          <p class="hint">Queste operazioni girano gia in automatico (supervisore giornaliero alle 04:30). Usa i bottoni solo se devi forzare un'esecuzione immediata.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
+            <button class="btn btn-secondary" data-action="runAutoArchive" style="font-size:12px;padding:6px 14px" title="Archivia bandi/news/podcast piu vecchi di 30 giorni. Gia automatico nel supervisore giornaliero.">Archivia vecchi</button>
+            <button class="btn btn-secondary" data-action="runMigraBandiAmbito" style="font-size:12px;padding:6px 14px" title="Ricalcola la colonna Ambito sui bandi che non ce l'hanno.">Ricalcola ambiti bandi</button>
+            <button class="btn btn-secondary" data-action="runAutoDelete" style="font-size:12px;padding:6px 14px;color:var(--danger,#C2410C)" title="Elimina definitivamente i record archiviati da piu di 12 mesi. Irreversibile.">Elimina archiviati vecchi</button>
           </div>
-          <div id="settingsResult" style="margin-top:10px;font-size:12px;color:#666"></div>
+          <div id="settingsResult" style="margin-top:6px;font-size:12px;color:var(--ink-3)"></div>
         </div>
       </div>
 
