@@ -2424,6 +2424,13 @@
   }
 
   function hydrate(){
+    // v4.20 — Deep-link: ?goto=pagina (usato dalle newsletter)
+    try {
+      var gotoMatch = (window.location.search || '').match(/[?&]goto=([^&]+)/);
+      if (gotoMatch && gotoMatch[1]) {
+        setTimeout(function(){ try { go(decodeURIComponent(gotoMatch[1])); } catch(_){} }, 1000);
+      }
+    } catch(_){}
     // v4.18.11 — avvia autorotation slideshow appena la home è hydratata
     if ($('hcTrack')) _hcStart_();
     // v4.18.67 — Validazione sessione da localStorage (login automatico)

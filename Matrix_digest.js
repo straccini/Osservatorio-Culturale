@@ -532,6 +532,11 @@ function _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcas
     parts.push('</td></tr>');
   }
 
+  // v4.20 — CTA Candidature Capitale della Cultura
+  if (typeof _digestCapitaleCta_ === 'function') {
+    parts.push('<tr><td style="padding:0 28px;">' + _digestCapitaleCta_(webUrl || '') + '</td></tr>');
+  }
+
   // Footer
   parts.push('<tr><td style="padding:14px 28px 28px 28px;border-top:1px solid #ECECEE;">');
   parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;">Ricevi questa email perche hai completato il questionario MuseMu Matrix per ' + _h_(museumName) + ' e hai espresso consenso al follow-up. Dati trattati ai sensi del Reg. UE 2016/679.</p>');

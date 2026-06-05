@@ -433,6 +433,53 @@ function buildTematicDigest(items, tematica, lead) {
     + '</h1>'
     + '<p style="font-size:14px;line-height:1.6;color:#5C4332;margin:0 0 22px">Hai espresso interesse per <b>' + _escapeHtml_(tematica) + '</b>. Ecco i contenuti più recenti dell\'Osservatorio Sinopia su questa tematica.</p>';
 
+  // v4.20 — Sezione bandi filtrati per interesse
+  var kwRegex = kws.length > 0 ? new RegExp(kws.map(function(k){ return k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|'), 'i') : null;
+  var bandiHtml = '';
+  try {
+    var shBandi = (typeof getSheetRadar === 'function') ? getSheetRadar() : null;
+    if (shBandi && shBandi.getLastRow() > 1 && kwRegex) {
+      var bVals = shBandi.getDataRange().getValues();
+      var bHead = bVals[0].map(function(h){ return String(h||'').trim(); });
+      var bTit = _findCol_(bHead, ['Titolo','TITOLO']);
+      var bEnte = _findCol_(bHead, ['Ente','ENTE']);
+      var bScad = _findCol_(bHead, ['Scadenza','SCADENZA']);
+      var bLink = _findCol_(bHead, ['UrlBando','URL_BANDO','Link','URL']);
+      var bStato = _findCol_(bHead, ['StatoRecord','Stato']);
+      var bSett = _findCol_(bHead, ['Settore','SETTORE','Ambito']);
+      var oggi = new Date(); oggi.setHours(0,0,0,0);
+      var bandiMatch = [];
+      for (var bi = 1; bi < bVals.length && bandiMatch.length < 5; bi++) {
+        if (bStato >= 0 && String(bVals[bi][bStato]||'').toLowerCase() === 'archiviato') continue;
+        var scadB = bScad >= 0 ? bVals[bi][bScad] : null;
+        var scadDate = (scadB instanceof Date) ? scadB : (scadB ? new Date(scadB) : null);
+        if (scadDate && !isNaN(scadDate.getTime()) && scadDate < oggi) continue;
+        var bText = String(bVals[bi][bTit]||'') + ' ' + String(bVals[bi][bSett>=0?bSett:0]||'');
+        if (kwRegex.test(bText.toLowerCase())) {
+          bandiMatch.push({
+            titolo: bTit >= 0 ? String(bVals[bi][bTit]||'') : '',
+            ente: bEnte >= 0 ? String(bVals[bi][bEnte]||'') : '',
+            scadenza: scadDate ? Utilities.formatDate(scadDate, 'Europe/Rome', 'dd/MM/yyyy') : '',
+            link: bLink >= 0 ? String(bVals[bi][bLink]||'') : ''
+          });
+        }
+      }
+      if (bandiMatch.length > 0) {
+        bandiHtml = '<div style="margin-bottom:20px"><div style="font-size:16px;font-weight:700;color:#935851;margin-bottom:10px">Bandi per te</div>';
+        bandiMatch.forEach(function(b) {
+          bandiHtml += '<div style="padding:10px 0;border-bottom:1px solid #E5E5E7">'
+            + '<div style="font-size:14px;font-weight:600"><a href="' + (b.link||'#') + '" style="color:#1A1815;text-decoration:none">' + b.titolo + '</a></div>'
+            + '<div style="font-size:12px;color:#888;margin-top:3px">' + b.ente + (b.scadenza ? ' · Scad. ' + b.scadenza : '') + '</div>'
+            + '</div>';
+        });
+        bandiHtml += '</div>';
+      }
+    }
+  } catch(eBandi) { Logger.log('buildTematicDigest bandi: ' + (eBandi && eBandi.message)); }
+
+  // Bandi section (before news)
+  html += bandiHtml;
+
   // Lista items
   html += '<div>';
   matched.slice(0, 10).forEach(function(it){
@@ -450,6 +497,9 @@ function buildTematicDigest(items, tematica, lead) {
     + '</td></tr></table>';
 
   html += '<p style="font-size:11px;color:#8B5E2B;line-height:1.5;margin:24px 0 0;padding-top:14px;border-top:1px solid #E5E1D8;text-align:center;font-style:italic">Ricevi questo digest perché hai richiesto una consulenza su ' + _escapeHtml_(tematica) + '.</p>';
+
+  // v4.20 — CTA Candidature Capitale della Cultura
+  html += (typeof _digestCapitaleCta_ === 'function') ? _digestCapitaleCta_(appUrl || '') : '';
 
   // v4.18.54 — Footer unsubscribe link
   if (lead2.email && typeof _digestUnsubFooter_ === 'function') {

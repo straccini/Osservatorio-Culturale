@@ -197,5 +197,22 @@ function buildDigestHTML(items, dest, readerUrl) {
   const unsubFooter = (dest && (dest.Email || dest.email) && typeof _digestUnsubFooter_ === 'function')
     ? _digestUnsubFooter_(dest.Email || dest.email, { style: 'standard' })
     : '';
-  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Digest</title></head><body style="margin:0;padding:0;background:#f5f3ee;font-family:-apple-system,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f5f3ee" style="padding:28px 0"><tr><td align="center"><table width="620" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e8e5e0"><tr><td style="background:#1a1a1a;padding:28px 36px 24px"><div style="font-family:Georgia,serif;font-style:italic;font-size:24px;font-weight:500;color:#E89B7C;letter-spacing:.01em">Sinopia</div><div style="font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#bbb;margin-top:6px">Osservatorio Culturale &middot; Digest del ${formatDate(new Date())}</div></td></tr>${readerBtn}<tr><td style="padding:4px 36px 36px"><table width="100%" cellpadding="0" cellspacing="0">${sectionsHTML}</table></td></tr><tr><td style="border-top:1px solid #eee">${unsubFooter}</td></tr></table></td></tr></table></body></html>`;
+  // v4.20 — CTA Candidature Capitale della Cultura
+  const capitaleCta = (typeof _digestCapitaleCta_ === 'function') ? _digestCapitaleCta_(readerUrl || '') : '';
+  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Digest</title></head><body style="margin:0;padding:0;background:#f5f3ee;font-family:-apple-system,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f5f3ee" style="padding:28px 0"><tr><td align="center"><table width="620" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e8e5e0"><tr><td style="background:#1a1a1a;padding:28px 36px 24px"><div style="font-family:Georgia,serif;font-style:italic;font-size:24px;font-weight:500;color:#E89B7C;letter-spacing:.01em">Sinopia</div><div style="font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#bbb;margin-top:6px">Osservatorio Culturale &middot; Digest del ${formatDate(new Date())}</div></td></tr>${readerBtn}<tr><td style="padding:4px 36px 36px"><table width="100%" cellpadding="0" cellspacing="0">${sectionsHTML}</table>${capitaleCta}</td></tr><tr><td style="border-top:1px solid #eee">${unsubFooter}</td></tr></table></td></tr></table></body></html>`;
+}
+
+/**
+ * v4.20 — CTA "Candidatura Capitale della Cultura" per newsletter.
+ * Inserito in tutti i 3 template digest.
+ * @param {string} [appUrl] URL webapp per deep-link
+ * @return {string} HTML block
+ */
+function _digestCapitaleCta_(appUrl) {
+  var link = (appUrl || '') + '?goto=capitali';
+  return '<div style="background:linear-gradient(135deg,#F7F4EE 0%,#EDE8DF 100%);border:2px solid #935851;border-radius:12px;padding:20px 24px;margin:24px 0;text-align:center">'
+    + '<div style="font-size:18px;font-weight:700;color:#935851;margin-bottom:8px">Candidature Capitale della Cultura</div>'
+    + '<div style="font-size:14px;color:#5A5A5A;line-height:1.5;margin-bottom:14px">Il tuo territorio puo candidarsi. Scopri scadenze, percorsi e requisiti per le candidature italiane ed europee.</div>'
+    + '<a href="' + link + '" style="display:inline-block;background:#935851;color:#fff;text-decoration:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600">Scopri le candidature aperte &rarr;</a>'
+    + '</div>';
 }
