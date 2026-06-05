@@ -290,9 +290,18 @@ function crm_onMatrixOptIn(responseId, email, nome, preferences) {
     preferences = preferences || {};
     var delta = 0;
     var ev = [];
-    if (preferences.contatto_consulenziale) { delta += 30; ev.push('optin_followup'); }
-    if (preferences.digest_tematico)        { delta += 5;  ev.push('optin_tematico'); }
-    if (delta === 0) delta = 1;  // basic opt-in
+    // v4.20.x — Riconosce le chiavi REALI del questionario (D12.1) oltre alle legacy.
+    // Interesse a bandi/avvisi = segnale consulenziale forte (core business Duemilamusei)
+    // -> lead caldo (+30) e alert Telegram. Interesse a contenuti -> +5.
+    var BANDI_KEYS   = ['contatto_consulenziale','bandi_pnrr_mic','bandi_fondazioni',
+                        'bandi_regionali','bandi_europei','avvisi_locali'];
+    var CONTENT_KEYS = ['digest_tematico','casi_studio','podcast_tematici','webinar',
+                        'matrix_aggiornamenti','convegni_eventi'];
+    var wantsBandi   = BANDI_KEYS.some(function(k){ return preferences[k]; });
+    var wantsContent = CONTENT_KEYS.some(function(k){ return preferences[k]; });
+    if (wantsBandi)   { delta += 30; ev.push('optin_followup'); }
+    if (wantsContent) { delta += 5;  ev.push('optin_tematico'); }
+    if (delta === 0) delta = 1;  // basic opt-in (solo email lasciata)
 
     var sh = _crmGetSheet_();
     var row = _crmFindRow_(sh, responseId);
