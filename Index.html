@@ -7258,6 +7258,11 @@
                   try { _cacheBandi=null;_cacheNews=null;_cachePodcast=null;_cacheVideo=null;_cacheLibri=null;_cacheArchivio=null; } catch(_){}
                   go('home'); hydrate();
                   showToast(r.action==='reactivated' ? 'Bentornato!' : 'Benvenuto!', 'ok');
+                  // v4.20 — Invita a completare il profilo dopo registrazione
+                  setTimeout(function(){
+                    if (typeof showToast === 'function') showToast('Completa il tuo profilo per ricevere contenuti mirati', 'ok');
+                    setTimeout(function(){ try { OC.goProfiloTab(); } catch(_){} }, 2000);
+                  }, 3000);
                 } else {
                   var ov2 = document.getElementById('oc-regform-overlay'); if (ov2) ov2.remove();
                   go('home'); hydrate();
@@ -10960,6 +10965,31 @@
   </div>
   <div id="profiloProContent" style="max-width:680px">
     <p style="font-size:14px;color:var(--ink-2);line-height:1.6;margin:0 0 24px">Raccontaci chi sei e cosa ti interessa. Riceverai contenuti mirati sulle tematiche che scegli. Tutto e modificabile in qualsiasi momento. I dati sono anonimi e aggregati.</p>
+
+    <!-- v4.20 — Tabella servizi per livello utente -->
+    <div style="background:var(--surface-2);border:1px solid var(--rule);border-radius:12px;padding:20px 24px;margin-bottom:24px;overflow-x:auto">
+      <h3 style="font-size:15px;font-weight:600;color:var(--ink);margin:0 0 14px">Cosa puoi fare con Sinopia</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:center">
+        <thead>
+          <tr style="border-bottom:2px solid var(--rule)">
+            <th style="text-align:left;padding:8px;color:var(--ink-2);font-weight:600">Servizio</th>
+            <th style="padding:8px;color:var(--ink-3);font-weight:600;width:90px">Ospite</th>
+            <th style="padding:8px;color:var(--amb-3,#3C6A95);font-weight:600;width:90px">Lettore</th>
+            <th style="padding:8px;color:var(--accent,#935851);font-weight:600;width:100px">Profilato</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Leggere bandi, news, podcast</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
+          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Salvare preferiti</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
+          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Newsletter settimanale</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
+          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Filtri e contenuti personalizzati</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
+          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Bandi mirati per il tuo territorio</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
+          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Digest personalizzato Matrix</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
+          <tr><td style="text-align:left;padding:8px">Report benchmark museo</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:12px;text-align:center;font-size:12px;color:var(--ink-3)">Completa il tuo profilo qui sotto per sbloccare tutti i servizi personalizzati.</div>
+    </div>
 
     <!-- Anagrafica professionale -->
     <div style="background:#fff;border:1px solid var(--rule,#E5E5E7);border-radius:12px;padding:24px;margin-bottom:20px">
