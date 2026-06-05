@@ -588,10 +588,8 @@ function testGenerateDigestSegmentato(token) {
   Logger.log('Risultato generazione: ' + JSON.stringify(res, null, 2));
   if (!res.ok) return res;
 
-  // Invio immediato (test)
-  var sendRes = sendQueuedDigest(res.queueId);
-  Logger.log('Risultato invio: ' + JSON.stringify(sendRes, null, 2));
-  return { generate: res, send: sendRes };
+  // v4.20 — Dry-run: genera bozza ma NON invia (l'admin puo vedere in coda e inviare manualmente)
+  return { ok: true, dryRun: true, queueId: res.queueId, message: 'Bozza generata (non inviata). Verifica nella coda e invia manualmente.' };
 }
 
 // ============================================================================

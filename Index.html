@@ -2177,8 +2177,8 @@
     if (page==='settings') loadSettingsPage();  // Sprint 1.3 D2.5
     if (page==='search')   { /* loadSearch called with query via OC.search */ }
     // v4.19.1 — stats e fonti-diagnostica compattate in Impostazioni
-    if (page==='stats')    { go('settings'); setTimeout(function(){ switchSettingsTab('gestione'); },200); return; }
-    if (page==='fonti-diagnostica') { go('settings'); setTimeout(function(){ switchSettingsTab('diagnostica'); },200); return; }
+    if (page==='stats') { go('settings'); return; }
+    if (page==='fonti-diagnostica') { go('settings'); return; }
     if (page==='archivio') loadArchivio();
     if (page==='cestino')  loadCestino();
     // v4.5.1 — A1 Ambiti navigabili
@@ -5442,7 +5442,6 @@
       });
       loadSettingsPage._initialized = true;
     }
-    reloadFontiBandiTable();
     loadSettingsConfig();
   }
 
@@ -5457,13 +5456,9 @@
       div.hidden = (div.getAttribute('data-tab-content') !== tabName);
     });
     if (tabName === 'tutti') reloadFontiUnified();
-    else if (tabName === 'bandi') reloadFontiBandiTable();
-    if (tabName === 'podcast') reloadFontiPodTable();
     if (tabName === 'altre') { /* nessun auto-load richiesto */ }
     if (tabName === 'utenti') reloadUtentiTable();
     if (tabName === 'config') loadSettingsConfig();
-    if (tabName === 'gestione') { _loadGestioneDatiTab_(); loadStatsPage(); }
-    if (tabName === 'diagnostica') loadFontiDiagnostica();
     if (tabName === 'sistema') _loadSistemaTab_();
     if (tabName === 'backup') _loadBackupTab_();
     if (tabName === 'digest') { /* azioni via data-action, nessun autoload */ }

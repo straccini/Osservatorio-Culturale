@@ -169,68 +169,12 @@ function sendDigestAuto() {
   // v4.20 DEPRECATO — usare sendDigestAuto2coorti
   Logger.log('[DEPRECATO] sendDigestAuto — usare sendDigestAuto2coorti()');
   return { ok: false, deprecato: true };
-  const sh=getMainSS().getSheetByName(SH.ITEMS);
-  const rows=sh.getDataRange().getValues(), h=rows[0];
-  const idCol=h.indexOf('ID'), digCol=h.indexOf('InclusiNelDigest'), archCol=h.indexOf('Archiviato');
-  const itemIds=[];
-  for(let i=1;i<rows.length;i++) {
-    if(rows[i][idCol]&&rows[i][digCol]&&!rows[i][archCol]) itemIds.push(rows[i][idCol]);
-  }
-  if(!itemIds.length){ Logger.log('Digest: nessun item'); return; }
-  const result=sendDigest(itemIds);
-  if(result.ok) {
-    for(let i=1;i<rows.length;i++) { if(itemIds.includes(rows[i][idCol])) sh.getRange(i+1,digCol+1).setValue(false); }
-  }
 }
 
 function sendDigest(itemIds, bandiIds, podcastIds) {
   // v4.20 DEPRECATO — usare sendDigestAuto2coorti
   Logger.log('[DEPRECATO] sendDigest — usare sendDigestAuto2coorti()');
   return { ok: false, deprecato: true };
-  const items = itemIds ? getItemsByIds(itemIds) : [];
-  const mailingList = getMailingList().list.filter(m => m.Attivo && m.Stato !== 'pending');
-  if (!mailingList.length) return {error:'Nessun destinatario'};
-  const baseUrl = ScriptApp.getService().getUrl();
-  const subject = 'Osservatorio Culturale - Digest ' + formatDate(new Date());
-  let sent = 0;
-
-  for (const dest of mailingList) {
-    try {
-      // Genera token personale (FIX v4.3: controllo null esplicito)
-      const token = _getOrCreateToken(dest.Email);
-      if (!token) {
-        Logger.log('sendDigest: token null per ' + dest.Email + ' — invio senza link reader');
-        // Invia comunque la mail, senza il link reader personalizzato
-        const htmlNoReader = buildDigestHTML(items, dest, null);
-        GmailApp.sendEmail(dest.Email, subject, 'Visualizza in HTML.', {
-          htmlBody: htmlNoReader,
-          name: 'Sinopia · Osservatorio Culturale',
-          replyTo: Session.getEffectiveUser().getEmail()
-        });
-        sent++;
-        Utilities.sleep(300);
-        continue;
-      }
-      // Salva il digest per questo token
-      _saveDigestForToken(token, itemIds||[], bandiIds||[], podcastIds||[]);
-      // Link personalizzato
-      const readerUrl = baseUrl + '?reader=1&t=' + token;
-      // HTML mail con link reader
-      const html = buildDigestHTML(items, dest, readerUrl);
-      GmailApp.sendEmail(dest.Email, subject, 'Visualizza in HTML.', {
-        htmlBody: html,
-        name: 'Sinopia · Osservatorio Culturale',
-        replyTo: Session.getEffectiveUser().getEmail()
-      });
-      sent++;
-      Utilities.sleep(300);
-    } catch(e) { Logger.log('sendDigest errore per ' + dest.Email + ': ' + e.message); }
-  }
-
-  getMainSS().getSheetByName(SH.LOG).appendRow(
-    ['D'+Date.now(), new Date(), items.length, mailingList.map(m=>m.Email).join(', '), 'inviato']
-  );
-  return {ok:true, items:items.length, recipients:sent};
 }
 
 function buildDigestHTML(items, dest, readerUrl) {
