@@ -151,6 +151,9 @@ function generateDigestForUser(email, responseId) {
  */
 function generateDigestQueueAll(opts) {
   opts = opts || {};
+  if (opts.token && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(opts.token)) {
+    return { ok:false, error:'forbidden' };
+  }
   var dryRun = !!opts.dryRun;
   Logger.log('=== GENERA DIGEST QUEUE (bulk personalizzati) dryRun=' + dryRun + ' ===');
 
@@ -261,7 +264,10 @@ function sendQueuedDigest(queueId) {
  * Invia tutti i digest con status='draft' nella queue.
  * @return { sent, errors, total }
  */
-function sendAllPendingDigest() {
+function sendAllPendingDigest(token) {
+  if (token && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
+    return { ok:false, error:'forbidden' };
+  }
   var sh = _getDigestQueueSheet_();
   var rows = sh.getDataRange().getValues();
   var headers = rows[0];
@@ -549,7 +555,10 @@ function _dsCard_(item, color, kind) {
  * Genera bozza per s.straccini@gmail.com e usa l'ULTIMO responseId in
  * ResponsesMatrix (utile dopo aver eseguito testMatrixModule).
  */
-function testGenerateDigestSegmentato() {
+function testGenerateDigestSegmentato(token) {
+  if (token && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
+    return { ok:false, error:'forbidden' };
+  }
   Logger.log('=== TEST DIGEST SEGMENTATO ===');
   var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActive();
   if (!ss) return { error:'no spreadsheet' };

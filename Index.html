@@ -5284,7 +5284,7 @@
         reloadQueue();
       })
       .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
-      .generateDigestQueueAll({});
+      .generateDigestQueueAll({token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
   }
 
   function testDigestSegmentato(){
@@ -5300,7 +5300,7 @@
         reloadQueue();
       })
       .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
-      .testGenerateDigestSegmentato();
+      .testGenerateDigestSegmentato((window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
   function inviaTuttiPending(){
@@ -5315,7 +5315,7 @@
         reloadQueue();
       })
       .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
-      .sendAllPendingDigest();
+      .sendAllPendingDigest((window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
   function reloadQueue(){
@@ -6927,7 +6927,7 @@
         else showToast('Errore: ' + (r && r.error || 'sconosciuto'), 'err');
       })
       .withFailureHandler(function(e){ showToast('Errore: ' + e, 'err'); })
-      .testDigestInviaAdmin();
+      .testDigestInviaAdmin((window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
   // v4.20 — Cron coorti dry-run
@@ -6941,7 +6941,7 @@
         if (out) out.textContent = r && r.ok ? 'Dry-run OK: ' + (r.coorteA_count||0) + ' generalisti, ' + (r.coorteB_count||0) + ' lead' : 'Errore: ' + (r&&r.error||'?');
       })
       .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
-      .sendDigestAuto2coorti({dryRun:true});
+      .sendDigestAuto2coorti({dryRun:true, token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
   }
 
   function _eseguiCoorti() {
@@ -6955,7 +6955,7 @@
         if (out) out.textContent = r && r.ok ? 'Inviato: ' + (r.coorteA_sent||0) + ' gen + ' + (r.coorteB_sent||0) + ' lead' : 'Errore: ' + (r&&r.error||'?');
       })
       .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
-      .sendDigestAuto2coorti({});
+      .sendDigestAuto2coorti({token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
   }
 
   // v4.20 — Anteprima per destinatario

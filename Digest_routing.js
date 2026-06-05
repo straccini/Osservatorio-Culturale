@@ -544,8 +544,8 @@ function setupDigestRoutingTrigger() {
  *
  * @return {Object} { ok, destinatario, coorte, layout, subject, sent }
  */
-function testDigestInviaAdmin() {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function testDigestInviaAdmin(token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
     return { ok:false, error:'forbidden' };
   }
   try {
