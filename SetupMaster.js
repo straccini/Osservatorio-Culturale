@@ -89,6 +89,9 @@ var OC_TRIGGER_SCHEDULE = [
   { fn: 'scanPodcastBisettimanale',     tipo: 'daily',    ora: 7,  min: 30,  desc: 'Scan podcast (solo mar+gio)' },
   { fn: 'sendAgentEmails',              tipo: 'daily',    ora: 7,  min: 30,  desc: 'Email agenti (check giorno interno)' },
 
+  // === OUTREACH ===
+  { fn: 'outreachRunDaily',              tipo: 'daily',    ora: 9,  min: 0,   desc: 'Outreach: sequenze follow-up 14gg' },
+
   // === AGENTI SCAN (scacchiera settimanale v4.20) ===
   { fn: 'scanAgente1',                  tipo: 'weekly',   giorno: ScriptApp.WeekDay.MONDAY,    ora: 7, min: 0,  desc: 'AG1 Bandi (lunedi)' },
   { fn: 'scanAgente2',                  tipo: 'weekly',   giorno: ScriptApp.WeekDay.TUESDAY,   ora: 7, min: 0,  desc: 'AG2 Normativa (martedi)' },
