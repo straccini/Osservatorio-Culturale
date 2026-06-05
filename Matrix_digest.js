@@ -341,18 +341,33 @@ function _queryContenutiPerDim_(target, dim, limit) {
 
     var headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
     var iDim = headers.indexOf('MatrixDim');
-    if (iDim < 0) return [];
     var iTit = _findCol_(headers, ['Titolo','titolo','Title','title']);
     var iLink = _findCol_(headers, ['Link','link','URL','url','URL_bando','UrlBando','LinkBando']);
     var iSca  = _findCol_(headers, ['Scadenza','scadenza','DataPubblicazione','Data','data','DataRilevamento']);
     var iEnt  = _findCol_(headers, ['Ente','ente','Fonte','fonte','Autore','autore','Serie']);
 
+    // v4.20 — Fallback per ambito se MatrixDim non e popolata
+    var useFallback = (iDim < 0);
+    var iAmbito = -1;
+    var dimToAmbito = { D1:1, D2:2, D3:3, D4:3, D5:4, D6:5, D7:2, D8:1, D9:5, D10:4 };
+    if (useFallback) {
+      iAmbito = _findCol_(headers, ['Ambito','ambito','AmbitoId']);
+      if (iAmbito < 0) return [];
+    }
+    var targetAmbito = dimToAmbito[dim] || 1;
+
     var rows = sh.getRange(2, 1, sh.getLastRow()-1, headers.length).getValues();
     var out = [];
     for (var i = rows.length - 1; i >= 0 && out.length < limit; i--) { // dal piu recente
-      var dims = String(rows[i][iDim] || '').trim();
-      if (!dims) continue;
-      if (dims.split(',').map(function(d){return d.trim();}).indexOf(dim) < 0) continue;
+      if (useFallback) {
+        // Fallback: filtra per ambito mappato alla dimensione
+        var rowAmbito = Number(rows[i][iAmbito]) || 0;
+        if (rowAmbito !== targetAmbito) continue;
+      } else {
+        var dims = String(rows[i][iDim] || '').trim();
+        if (!dims) continue;
+        if (dims.split(',').map(function(d){return d.trim();}).indexOf(dim) < 0) continue;
+      }
       out.push({
         titolo: iTit >= 0 ? String(rows[i][iTit] || '') : '',
         link:   iLink >= 0 ? String(rows[i][iLink] || '') : '',

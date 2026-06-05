@@ -1005,26 +1005,6 @@
         <div id="sasRunReport" style="margin-top:14px;font-size:0.75rem;font-family:Consolas,monospace;color:var(--ink-2);white-space:pre-wrap;line-height:1.55;max-height:300px;overflow-y:auto"></div>
       </div>
 
-      <!-- Configurazione -->
-      <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin-bottom:20px">
-        <div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin-bottom:14px">Configurazione</div>
-        <div style="display:grid;gap:12px;margin-bottom:14px">
-          <div>
-            <label style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">URL calendario consulenza</label>
-            <input type="url" id="cfgCalendarUrl" placeholder="https://cal.com/silvano-straccini" style="width:100%;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:0.875rem;font-family:inherit" />
-          </div>
-          <div>
-            <label style="font-size:0.75rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">URL PDF Musei Sensibili</label>
-            <input type="url" id="cfgMuseiSensibili" placeholder="https://drive.google.com/file/d/.../view" style="width:100%;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:0.875rem;font-family:inherit" />
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;align-items:center">
-          <button class="btn btn-primary" data-action="saveCommercialConfig" style="background:var(--accent,#935851);color:#fff;border:none;padding:8px 18px;border-radius:6px;font-weight:600;cursor:pointer;font-family:inherit;font-size:0.875rem">Salva</button>
-          <button class="btn btn-secondary" data-action="loadCommercialConfig" style="padding:8px 18px;border-radius:6px;font-family:inherit;font-size:0.875rem">Ricarica</button>
-          <span id="cfgCommercialStatus" style="font-size:0.75rem;color:var(--ink-3)"></span>
-        </div>
-      </div>
-
     </section>
 
     <!-- ===== PAGE CHI SIAMO (v4.18.27 — Osservatorio Culturale · Sinopia) ===== -->
@@ -1884,6 +1864,27 @@
           </div>
           <div id="settingsResult" style="margin-top:6px;font-size:12px;color:var(--ink-3)"></div>
         </div>
+
+        <!-- v4.20 — Configurazione commerciale (spostata da #page-admin) -->
+        <div class="admin-card" style="margin-bottom:14px">
+          <h3>Configurazione commerciale</h3>
+          <p class="hint">URL per il calendario consulenze e il PDF Musei Sensibili. Usati nelle CTA del sito.</p>
+          <div style="display:grid;gap:12px;margin-bottom:14px">
+            <div>
+              <label style="font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">URL calendario consulenza</label>
+              <input type="url" id="cfgCalendarUrl" placeholder="https://cal.com/silvano-straccini" style="width:100%;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">URL PDF Musei Sensibili</label>
+              <input type="url" id="cfgMuseiSensibili" placeholder="https://drive.google.com/file/d/.../view" style="width:100%;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-primary" data-action="saveCommercialConfig" style="font-size:12px;padding:6px 14px">Salva</button>
+            <button class="btn btn-secondary" data-action="loadCommercialConfig" style="font-size:12px;padding:6px 14px">Ricarica</button>
+            <span id="cfgCommercialStatus" style="font-size:12px;color:var(--ink-3)"></span>
+          </div>
+        </div>
       </div>
 
       <!-- tab gestione rimosso: stats integrate in Sistema -->
@@ -2164,7 +2165,7 @@
     if (page==='norme')    loadNormeList(false);
     if (page==='social')   loadSocialWall(false);
     // v4.19.1 — Pannello admin fuso in Impostazioni
-    if (page==='admin') { go('settings'); return; }
+    if (page==='admin') { go('settings'); setTimeout(function(){ if(typeof switchSettingsTab==='function') switchSettingsTab('config'); },200); return; }
     if (page==='digest')       loadDigestPage();   // v4.18.11 — card digest spostate qui
     if (page==='kb')           loadKBPage();       // v4.18.16 F3 — tassonomia Duemilamusei
     if (page==='compilatori')  loadCompilatori();  // v4.18.16 J — CRM compilatori Matrix
@@ -6938,7 +6939,7 @@
     if (out) out.textContent = 'Esecuzione dry-run...';
     google.script.run
       .withSuccessHandler(function(r) {
-        if (out) out.textContent = r && r.ok ? 'Dry-run OK: ' + (r.coorteA_count||0) + ' generalisti, ' + (r.coorteB_count||0) + ' lead' : 'Errore: ' + (r&&r.error||'?');
+        if (out) out.textContent = r && r.ok ? 'Dry-run OK: ' + (r.generalisti_inviati||0) + ' generalisti, ' + (r.leadCaldi_inviati||0) + ' lead' : 'Errore: ' + (r&&r.error||'?');
       })
       .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
       .sendDigestAuto2coorti({dryRun:true, token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
@@ -6952,7 +6953,7 @@
     if (out) out.textContent = 'Invio in corso...';
     google.script.run
       .withSuccessHandler(function(r) {
-        if (out) out.textContent = r && r.ok ? 'Inviato: ' + (r.coorteA_sent||0) + ' gen + ' + (r.coorteB_sent||0) + ' lead' : 'Errore: ' + (r&&r.error||'?');
+        if (out) out.textContent = r && r.ok ? 'Inviato: ' + (r.generalisti_inviati||0) + ' gen + ' + (r.leadCaldi_inviati||0) + ' lead' : 'Errore: ' + (r&&r.error||'?');
       })
       .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
       .sendDigestAuto2coorti({token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
@@ -8535,13 +8536,9 @@
       .restore(tipo, id);
   }
 
+  // v4.20 — emptyTrash disabilitato: il cestino client-only è deprecato
   function emptyTrash() {
-    if (!Object.keys(_trash).length) { showToast('Il cestino è già vuoto', 'warn'); return; }
-    if (!confirm('Svuotare il cestino? Gli elementi non verranno archiviati nel backend.')) return;
-    _trash = {};
-    _updateCestinoBadge();
-    loadCestino();
-    showToast('Cestino svuotato', 'ok');
+    showToast('Usa Archivio \u2192 Elimina definitivamente', 'warn');
   }
 
   function exportArchivio() {

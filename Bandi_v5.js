@@ -2259,9 +2259,8 @@ function setFonteV5Attiva(fonteId, attiva) {
  * Idempotente: bandi già 'archiviato' vengono saltati.
  */
 function cleanupBandiV5Scaduti(gg) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
-    return { ok:false, error:'forbidden' };
-  }
+  // v4.20 — Gate rimosso: funzione di manutenzione chiamata da trigger schedulati
+  // (sasRun MA5). I trigger non hanno contesto utente → _isCurrentUserAdmin_() falliva.
   try {
     var sogliaGg = Number(gg) || 30;
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();

@@ -298,9 +298,9 @@ function autoArchiveOld(tipo, sogliaGiorni) {
 // Nei prossimi sprint si aggiunge il filtro per data archiviazione.
 // ============================================================================
 
-function autoDeleteVeryOld(tipo, sogliaMesi) {
-  // v4.20 — admin gate: solo admin puo eliminare
-  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) {
+function autoDeleteVeryOld(tipo, sogliaMesi, opts) {
+  // v4.20 — Gate: solo admin dal frontend; trigger schedulati passano (nessun contesto utente)
+  if (opts && opts.token && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(opts.token)) {
     return { ok:false, error:'forbidden' };
   }
   try {
