@@ -198,6 +198,10 @@ function getDigestRecipientsByCohort() {
  */
 function sendDigestAuto2coorti(opts) {
   opts = opts || {};
+  // Gating: se chiamata dal frontend (token presente) richiede admin; dai trigger (no token) procede.
+  if (opts.token && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(opts.token)) {
+    return { ok:false, error:'forbidden' };
+  }
   var t0 = new Date().getTime();
   try {
     // 0. Quota check — evita errori a catena se quota quasi esaurita
@@ -217,11 +221,12 @@ function sendDigestAuto2coorti(opts) {
     for (var i = 1; i < rows.length; i++) {
       if (rows[i][idCol] && rows[i][digCol] && !rows[i][archCol]) itemIds.push(rows[i][idCol]);
     }
-    if (!itemIds.length) {
-      Logger.log('sendDigestAuto2coorti: nessun item incluso nel digest. Skip invio.');
-      return { ok:true, skipped:true, reason:'no_items' };
-    }
-    var items = getItemsByIds(itemIds);
+    // v4.20.x — Niente news incluse: NON saltare tutto. Coorte A e lead tematici/fallback
+    // richiedono news (vengono saltati), ma i lead MATRIX hanno contenuti propri
+    // (bandi/news/podcast per dimensione) e devono partire comunque.
+    var hasItems = itemIds.length > 0;
+    var items = hasItems ? getItemsByIds(itemIds) : [];
+    if (!hasItems) Logger.log('sendDigestAuto2coorti: nessuna news inclusa — invio solo digest Matrix personalizzati.');
 
     // 2. Recipients per coorte
     var rec = getDigestRecipientsByCohort();
@@ -245,8 +250,8 @@ function sendDigestAuto2coorti(opts) {
     var baseUrl = ScriptApp.getService().getUrl();
     var subjGen = 'Osservatorio Culturale · Digest del ' + Utilities.formatDate(new Date(), 'Europe/Rome', 'd MMM yyyy');
 
-    // 3. INVIO COORTE A (generalisti)
-    if (!opts.onlyLead) {
+    // 3. INVIO COORTE A (generalisti) — solo se ci sono news da mandare
+    if (!opts.onlyLead && hasItems) {
       rec.generalisti.forEach(function(dest){
         if (opts.dryRun) { report.generalisti_inviati++; return; }
         try {
@@ -285,14 +290,16 @@ function sendDigestAuto2coorti(opts) {
           if (_digestWasRecentlySent_(lead.email)) { Logger.log('[DIGEST] Skip (dedup): ' + lead.email); return; }
           var html, subject;
           if (lead.matrixCompletato && lead.responseId && typeof generateDigestForUser === 'function') {
-            // Layout 1: digest personalizzato Matrix
-            var res = generateDigestForUser(lead.email, lead.responseId);
+            // Layout 1: digest personalizzato Matrix (save:false = invio diretto, niente bozza)
+            var res = generateDigestForUser(lead.email, lead.responseId, { save:false });
             if (res && res.ok && res.html) {
               html = res.html;
               subject = 'Sinopia · Il tuo digest personalizzato sui contenuti del tuo museo';
               report.leadCaldi_personalizzati_matrix++;
             }
           }
+          // Senza Matrix e senza news non c'è nulla da inviare a questo lead
+          if (!html && !hasItems) { Logger.log('[DIGEST] Skip lead senza news né Matrix: ' + lead.email); return; }
           if (!html && lead.tematica) {
             // Layout 2: digest tematico
             html = buildTematicDigest(items, lead.tematica, lead);
@@ -503,7 +510,7 @@ function previewDigestPerEmail(email) {
     if (inB) {
       var html, layout;
       if (inB.matrixCompletato && inB.responseId && typeof generateDigestForUser === 'function') {
-        var r = generateDigestForUser(email, inB.responseId);
+        var r = generateDigestForUser(email, inB.responseId, { save:false });
         html = r && r.html || ''; layout = 'matrix-personalizzato';
       } else if (inB.tematica) {
         html = buildTematicDigest(items, inB.tematica, inB); layout = 'tematico';

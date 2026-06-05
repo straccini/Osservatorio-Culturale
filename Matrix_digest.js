@@ -72,7 +72,8 @@ function _h_(val) {
  * @param {string} responseId
  * @return {Object} { ok, queueId, subject, htmlPreview, top3Dims } | { error }
  */
-function generateDigestForUser(email, responseId) {
+function generateDigestForUser(email, responseId, opts) {
+  opts = opts || {};
   try {
     if (!email || !responseId) return { error:'email e responseId obbligatori' };
     if (typeof getMatrixReport !== 'function') return { error:'getMatrixReport non disponibile (manca Matrix_v1.gs)' };
@@ -110,22 +111,27 @@ function generateDigestForUser(email, responseId) {
     var subject = '[Personalizzato] Aggiornamenti per ' + museumName + ' — ' + dataStr;
     var html = _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcastByDim, email);
 
-    // Salva in DigestQueue
-    var queueId = _saveDigestQueueRow_({
-      Email: email,
-      ResponseId: responseId,
-      GeneratedAt: new Date().toISOString(),
-      Subject: subject,
-      HtmlBlob: html,
-      Status: 'draft',
-      SentAt: '',
-      Note: 'top3=' + topDims.join(',') + ' · museo=' + museumName
-    });
+    // Salva in DigestQueue solo se richiesto (default sì, per generateDigestQueueAll).
+    // Invio diretto coorte B e anteprima passano {save:false} → niente bozza spuria.
+    var queueId = null;
+    if (opts.save !== false) {
+      queueId = _saveDigestQueueRow_({
+        Email: email,
+        ResponseId: responseId,
+        GeneratedAt: new Date().toISOString(),
+        Subject: subject,
+        HtmlBlob: html,
+        Status: 'draft',
+        SentAt: '',
+        Note: 'top3=' + topDims.join(',') + ' · museo=' + museumName
+      });
+    }
 
     return {
       ok: true,
       queueId: queueId,
       subject: subject,
+      html: html,
       htmlLength: html.length,
       top3Dims: topDims,
       contentCounts: {
@@ -239,6 +245,8 @@ function sendQueuedDigest(queueId) {
         return { error:'dedup — email gia contattata di recente: ' + email };
       }
 
+      try { if (MailApp.getRemainingDailyQuota() < 1) return { error:'quota_esaurita' }; } catch(_){}
+
       MailApp.sendEmail({
         to:       email,
         subject:  subj,
@@ -346,28 +354,26 @@ function _queryContenutiPerDim_(target, dim, limit) {
     var iSca  = _findCol_(headers, ['Scadenza','scadenza','DataPubblicazione','Data','data','DataRilevamento']);
     var iEnt  = _findCol_(headers, ['Ente','ente','Fonte','fonte','Autore','autore','Serie']);
 
-    // v4.20 — Fallback per ambito se MatrixDim non e popolata
-    var useFallback = (iDim < 0);
-    var iAmbito = -1;
-    var dimToAmbito = { D1:1, D2:2, D3:3, D4:3, D5:4, D6:5, D7:2, D8:1, D9:5, D10:4 };
-    if (useFallback) {
-      iAmbito = _findCol_(headers, ['Ambito','ambito','AmbitoId']);
-      if (iAmbito < 0) return [];
-    }
+    // v4.20.x — Mappa dimensione -> ambito primario (allineata a OC_AMBITI in Constants).
+    // Usata come FALLBACK per le righe NON taggate (colonna MatrixDim assente O vuota),
+    // così il digest Matrix non si svuota durante il backlog del tagger.
+    var dimToAmbito = { D1:1, D2:3, D3:3, D4:3, D5:3, D6:5, D7:2, D8:4, D9:5, D10:4 };
     var targetAmbito = dimToAmbito[dim] || 1;
+    var iAmbito = _findCol_(headers, ['Ambito','ambito','AmbitoId']);
 
     var rows = sh.getRange(2, 1, sh.getLastRow()-1, headers.length).getValues();
     var out = [];
     for (var i = rows.length - 1; i >= 0 && out.length < limit; i--) { // dal piu recente
-      if (useFallback) {
-        // Fallback: filtra per ambito mappato alla dimensione
-        var rowAmbito = Number(rows[i][iAmbito]) || 0;
-        if (rowAmbito !== targetAmbito) continue;
-      } else {
-        var dims = String(rows[i][iDim] || '').trim();
-        if (!dims) continue;
-        if (dims.split(',').map(function(d){return d.trim();}).indexOf(dim) < 0) continue;
+      var dims = (iDim >= 0) ? String(rows[i][iDim] || '').trim() : '';
+      var match = false;
+      if (dims) {
+        // riga taggata: match per dimensione esatta
+        match = dims.split(',').map(function(d){ return d.trim(); }).indexOf(dim) >= 0;
+      } else if (iAmbito >= 0) {
+        // riga NON taggata: fallback per ambito mappato alla dimensione
+        match = (Number(rows[i][iAmbito]) || 0) === targetAmbito;
       }
+      if (!match) continue;
       out.push({
         titolo: iTit >= 0 ? String(rows[i][iTit] || '') : '',
         link:   iLink >= 0 ? String(rows[i][iLink] || '') : '',

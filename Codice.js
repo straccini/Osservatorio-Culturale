@@ -2356,7 +2356,9 @@ function toggleMailingField(id,field) {
 function getDigestLog() {
   var log = _sheetToObjects(SH.LOG);
   log.forEach(function(entry) {
-    if (entry.DataInvio instanceof Date) entry.DataInvio = formatDate(entry.DataInvio);
+    ['DataInvio','Data','data','Timestamp','timestamp'].forEach(function(k){
+      if (entry[k] instanceof Date) entry[k] = formatDate(entry[k]);
+    });
   });
   log.reverse();
   return {log: log};
