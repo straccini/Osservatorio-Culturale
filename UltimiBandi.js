@@ -423,6 +423,8 @@ function _radarBandiRows_(sh) {
     }
     var rawScad = iScad >= 0 ? row[iScad] : '';
     var scadDate = (rawScad instanceof Date) ? rawScad : (rawScad ? new Date(rawScad) : null);
+    // v4.20 — Nascondi bandi con scadenza superata (non devono comparire in home/liste)
+    if (scadDate && !isNaN(scadDate.getTime()) && scadDate.getTime() < oggi.getTime()) continue;
     var giorni = (scadDate && !isNaN(scadDate.getTime()))
       ? Math.round((scadDate.getTime() - oggi.getTime()) / 86400000) : null;
     out.push({

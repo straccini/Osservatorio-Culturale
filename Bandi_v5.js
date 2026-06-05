@@ -2262,7 +2262,7 @@ function cleanupBandiV5Scaduti(gg) {
   // v4.20 — Gate rimosso: funzione di manutenzione chiamata da trigger schedulati
   // (sasRun MA5). I trigger non hanno contesto utente → _isCurrentUserAdmin_() falliva.
   try {
-    var sogliaGg = Number(gg) || 30;
+    var sogliaGg = (gg != null && gg !== '') ? Number(gg) : 0; // v4.20 — default 0: scaduto = archiviato subito
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
     var sh = ss.getSheetByName(SH_BANDI_V5);
     if (!sh) return { ok:false, error:'foglio_assente' };
@@ -2290,6 +2290,43 @@ function cleanupBandiV5Scaduti(gg) {
     }
     Logger.log('cleanupBandiV5Scaduti: ' + archiviati + ' archiviati su ' + scansionati + ' scansionati (soglia ' + sogliaGg + 'gg)');
     return { ok:true, archiviati: archiviati, scansionati: scansionati, soglia_gg: sogliaGg };
+  } catch(e) { return { ok:false, error: e.message }; }
+}
+
+/**
+ * v4.20 — Cancella definitivamente i bandi archiviati da piu di N giorni.
+ * Chiamata dal supervisore notturno (sasRun MA5).
+ * @param {number} gg — soglia in giorni (default 90)
+ * @return {Object} { ok, cancellati, scansionati }
+ */
+function _purgeBandiArchiviatiVecchi_(gg) {
+  try {
+    var sogliaGg = (gg != null) ? Number(gg) : 90;
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName(SH_BANDI_V5);
+    if (!sh) return { ok:false, error:'foglio_assente' };
+    var vals = sh.getDataRange().getValues();
+    if (vals.length < 2) return { ok:true, cancellati:0, scansionati:0 };
+    var oggi = new Date(); oggi.setHours(0,0,0,0);
+    var sogliaMs = oggi.getTime() - (sogliaGg * 86400000);
+    var cancellati = 0;
+    // Itero dal fondo per non spostare gli indici durante la cancellazione
+    for (var r = vals.length - 1; r >= 1; r--) {
+      var row = vals[r];
+      if (!row[COL_B.ID - 1]) continue;
+      var stato = String(row[COL_B.STATO_RECORD - 1] || '').toLowerCase();
+      if (stato !== 'archiviato') continue;
+      // Usa la scadenza come riferimento per l'eta dell'archiviazione
+      var rawScad = row[COL_B.SCADENZA - 1];
+      var sd = (rawScad instanceof Date) ? rawScad : (rawScad ? new Date(rawScad) : null);
+      if (!sd || isNaN(sd.getTime())) continue;
+      if (sd.getTime() < sogliaMs) {
+        sh.deleteRow(r + 1);
+        cancellati++;
+      }
+    }
+    Logger.log('_purgeBandiArchiviatiVecchi_: ' + cancellati + ' cancellati (>'+sogliaGg+'gg)');
+    return { ok:true, cancellati:cancellati };
   } catch(e) { return { ok:false, error: e.message }; }
 }
 

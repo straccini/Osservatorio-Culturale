@@ -168,13 +168,19 @@ function sasRun() {
     Logger.log('[SAS] MA4 ERRORE: ' + e.message);
   }
 
-  // ── MA5: Archivia bandi scaduti (v4.20 — usa cleanupBandiV5Scaduti) ──
+  // ── MA5: Archivia bandi scaduti + cancella archiviati >90gg ──
   try {
     if (typeof cleanupBandiV5Scaduti === 'function') {
-      var ma5 = cleanupBandiV5Scaduti(30);
+      // v4.20 — soglia 0: scaduto = archiviato subito (non piu 30gg)
+      var ma5 = cleanupBandiV5Scaduti(0);
       report.agenti.MA5 = ma5;
-      if (ma5 && ma5.archiviati > 0) report.azioni.push('MA5: archiviati ' + ma5.archiviati + ' bandi scaduti (>30gg)');
-      Logger.log('[SAS] MA5 archivio bandi scaduti completato: ' + (ma5 && ma5.archiviati || 0));
+      if (ma5 && ma5.archiviati > 0) report.azioni.push('MA5: archiviati ' + ma5.archiviati + ' bandi scaduti');
+      Logger.log('[SAS] MA5 archivio bandi scaduti: ' + (ma5 && ma5.archiviati || 0));
+    }
+    // v4.20 — Cancella definitivamente bandi archiviati da >90 giorni
+    if (typeof _purgeBandiArchiviatiVecchi_ === 'function') {
+      var purge = _purgeBandiArchiviatiVecchi_(90);
+      if (purge && purge.cancellati > 0) report.azioni.push('MA5: cancellati ' + purge.cancellati + ' bandi archiviati >90gg');
     }
   } catch(e) {
     report.errori.push('MA5: ' + e.message);
