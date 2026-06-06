@@ -1,0 +1,12 @@
+# --- Sinopia / Osservatorio Culturale ---
+
+# Log transitorio del push clasp
+_push.log
+
+# File di lock temporanei di Microsoft Word (~$Nomefile.docx)
+~$*
+
+# Eventuali copie di sicurezza locali create dentro il repo
+oc-codebase-backup-*/
+
+# Nota: clasp usa il proprio .claspignore separato
