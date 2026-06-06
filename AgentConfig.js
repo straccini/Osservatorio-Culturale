@@ -250,3 +250,42 @@ function getAgentCalendar(year, month) {
   }
   return result;
 }
+
+// ============================================================================
+// v4.22 — Fonti agenti per matrice admin (read-only)
+// ============================================================================
+
+/**
+ * Ritorna le fonti degli agenti in formato compatibile con la matrice Fonti.
+ * Ogni agente diventa una riga con: nome, descrizione filtri, contenitori target.
+ * @return {Object} { ok, fonti: [{id, nome, codice, url, tipo, stato, ...}] }
+ */
+function getAgentFontiForMatrix() {
+  if (typeof OC_AGENTI === 'undefined') return { ok: false, error: 'OC_AGENTI non definito' };
+  var fonti = OC_AGENTI.map(function(ag) {
+    return {
+      id: 'AGENT_' + ag.codice,
+      nome: ag.nome,
+      codice: ag.codice,
+      url: 'Filtro: ' + (ag.fontiCategorie || []).join(', '),
+      tipo: (ag.fontiTipo || []).join('/'),
+      stato: 'agente',
+      attiva: true,
+      descrizione: ag.descrizione || '',
+      fontiCategorie: ag.fontiCategorie || [],
+      fontiTipo: ag.fontiTipo || [],
+      matrixDims: ag.matrixDims || [],
+      alimentaBandi: (ag.fontiCategorie || []).some(function(c) {
+        return ['ministero','regione','ue','aggregatore','fondazione','associazione'].indexOf(c) >= 0;
+      }),
+      alimentaNews: (ag.fontiCategorie || []).some(function(c) {
+        return ['istituzionale','editoriale','settoriale','innovazione','internazionale','ricerca','welfare','accessibilita','audience','sociale','digital','ai','tech','normativa','standard'].indexOf(c) >= 0;
+      }),
+      alimentaPodcast: false,
+      alimentaVideo: false,
+      recordTotali: null,
+      ultimoPrelievoReale: null
+    };
+  });
+  return { ok: true, fonti: fonti };
+}

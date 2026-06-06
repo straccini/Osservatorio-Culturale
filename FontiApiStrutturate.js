@@ -362,6 +362,125 @@ function fasDiagnostica() {
 }
 
 // ============================================================================
+// v4.22 — REGISTRY API + STATUS PER MATRICE ADMIN
+// ============================================================================
+
+var FAS_API_REGISTRY = [
+  {
+    id: 'ted_eu',
+    nome: 'TED — Bandi europei',
+    endpoint: 'https://ted.europa.eu/api/v3.0/notices/search',
+    formato: 'JSON',
+    auth: 'Nessuna (public API)',
+    alimenta: 'Bandi',
+    stato: 'bloccata',
+    motivoBlocco: 'TED blocca richieste server-to-server da Google Apps Script (HTTP 403). Richiede proxy o integrazione via Gmail scan.',
+    limiteRate: '100 richieste/giorno (API pubblica)',
+    mappaCampi: 'titolo->Titolo, ente->Ente, scadenza->Scadenza, link->Link, sommario->SommarioAI'
+  },
+  {
+    id: 'opencoesione',
+    nome: 'OpenCoesione — Progetti PNRR',
+    endpoint: 'https://opencoesione.gov.it/api/progetti/',
+    formato: 'JSON',
+    auth: 'Nessuna (open data)',
+    alimenta: 'Bandi',
+    stato: 'in_sviluppo',
+    motivoBlocco: 'Parser implementato (fasParserOpenCoesione) ma non ancora testato in produzione. Filtri cultura/turismo da calibrare.',
+    limiteRate: 'Non documentato',
+    mappaCampi: 'titolo->Titolo, programma->Ente, importo->Importo, stato->Stato'
+  },
+  {
+    id: 'ckan_regionale',
+    nome: 'CKAN — Portali open data regionali',
+    endpoint: 'https://dati.puglia.it/ckan/api/3/action/package_search',
+    formato: 'JSON',
+    auth: 'Nessuna (open data)',
+    alimenta: 'Bandi',
+    stato: 'in_sviluppo',
+    motivoBlocco: 'Parser implementato (fasParserCkanRegionale) ma endpoint regionali variano. Servono URL per Puglia, Marche, ER.',
+    limiteRate: 'Variabile per portale',
+    mappaCampi: 'title->Titolo, organization->Ente, notes->SommarioAI, url->Link'
+  }
+];
+
+function getApiStrutturateStatus() {
+  var apis = FAS_API_REGISTRY.map(function(api) {
+    var recordTotali = 0;
+    var record30gg = 0;
+    var ultimoPrelievo = null;
+    try {
+      var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+      var shBandi = ss.getSheetByName('FontiBandi_v5');
+      if (shBandi && shBandi.getLastRow() >= 2) {
+        var vals = shBandi.getDataRange().getValues();
+        var head = vals[0].map(function(h){ return String(h||'').toLowerCase(); });
+        var iNome = head.indexOf('nome');
+        var iScan = head.indexOf('ultimascan');
+        var iRec = head.indexOf('nrecordtotali');
+        var soglia30 = Date.now() - 30 * 86400000;
+        for (var r = 1; r < vals.length; r++) {
+          if (String(vals[r][iNome]||'').toLowerCase().indexOf(api.id.split('_')[0]) >= 0) {
+            recordTotali += Number(vals[r][iRec] || 0);
+            var scanDate = vals[r][iScan] ? new Date(vals[r][iScan]) : null;
+            if (scanDate && scanDate.getTime() > soglia30) record30gg += Number(vals[r][iRec] || 0);
+            if (scanDate && (!ultimoPrelievo || scanDate > new Date(ultimoPrelievo))) {
+              ultimoPrelievo = scanDate.toISOString();
+            }
+          }
+        }
+      }
+    } catch(_){}
+
+    return {
+      id: api.id, nome: api.nome, endpoint: api.endpoint, formato: api.formato,
+      auth: api.auth, alimenta: api.alimenta, stato: api.stato,
+      motivoBlocco: api.motivoBlocco, limiteRate: api.limiteRate, mappaCampi: api.mappaCampi,
+      recordTotali: recordTotali, record30gg: record30gg, ultimoPrelievo: ultimoPrelievo
+    };
+  });
+
+  var contatori = {
+    totale: apis.length,
+    operative: apis.filter(function(a){ return a.stato === 'operativa'; }).length,
+    inSviluppo: apis.filter(function(a){ return a.stato === 'in_sviluppo'; }).length,
+    bloccate: apis.filter(function(a){ return a.stato === 'bloccata'; }).length,
+    recordTotali: apis.reduce(function(s,a){ return s + a.recordTotali; }, 0)
+  };
+
+  return { ok: true, apis: apis, contatori: contatori };
+}
+
+function testApiConnessione(apiId) {
+  var api = null;
+  for (var i = 0; i < FAS_API_REGISTRY.length; i++) {
+    if (FAS_API_REGISTRY[i].id === apiId) { api = FAS_API_REGISTRY[i]; break; }
+  }
+  if (!api) return { ok: false, error: 'API non trovata: ' + apiId };
+
+  var start = Date.now();
+  try {
+    var resp = UrlFetchApp.fetch(api.endpoint, {
+      muteHttpExceptions: true, followRedirects: true, validateHttpsCertificates: true,
+      headers: { 'User-Agent': 'SinopiaOC/1.0 (cultural-observatory)' },
+      deadline: 10
+    });
+    var elapsed = Date.now() - start;
+    var status = resp.getResponseCode();
+    return {
+      ok: status >= 200 && status < 400, apiId: apiId, httpStatus: status,
+      responseTime: elapsed + 'ms', contentLength: resp.getContentText().length,
+      accessibile: status >= 200 && status < 400, bloccata: status === 403 || status === 401
+    };
+  } catch(e) {
+    return {
+      ok: false, apiId: apiId, httpStatus: 0, responseTime: (Date.now() - start) + 'ms',
+      error: e.message, accessibile: false, bloccata: true
+    };
+  }
+}
+
+// ============================================================================
 // HELPERS PRIVATI
 // ============================================================================
 

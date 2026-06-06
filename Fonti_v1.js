@@ -119,7 +119,7 @@ function getFonteSheet(tipo) {
 // ============================================================================
 
 function _fuRowToObj_(row, tipo) {
-  return {
+  var obj = {
     id:           String(row[FU_COL.ID - 1] || ''),
     nome:         String(row[FU_COL.NOME - 1] || ''),
     url:          String(row[FU_COL.URL - 1] || ''),
@@ -140,6 +140,19 @@ function _fuRowToObj_(row, tipo) {
     livello:      String(row[FU_COL.LIVELLO - 1] || ''),
     extrasJson:   String(row[FU_COL.EXTRAS_JSON - 1] || '')
   };
+
+  // v4.22 — Produttivita: ultimo prelievo reale
+  var _extras = {};
+  try { if (obj.extrasJson) _extras = JSON.parse(obj.extrasJson); } catch(_){}
+  obj.recordTotali = Number(row[FU_COL.N_REC_TOTALI - 1] || 0);
+  obj.ultimoPrelievoReale = null;
+  if (obj.nRecUltimo > 0 && obj.ultimaScan) {
+    obj.ultimoPrelievoReale = obj.ultimaScan;
+  } else if (_extras.lastRealFetch) {
+    obj.ultimoPrelievoReale = _extras.lastRealFetch;
+  }
+
+  return obj;
 }
 
 // ============================================================================
@@ -201,8 +214,8 @@ function getFontiUnified(filtro) {
         return tb - ta;
       });
     } else {
-      // stato: silente -> fail -> stantia -> ok -> mai
-      var ordStato = { silente:0, fail:1, stantia:2, mai:3, ok:4 };
+      // stato: fail -> silente -> stantia -> ok -> mai
+      var ordStato = { fail:0, silente:1, stantia:2, ok:3, mai:4 };
       out.sort(function(a, b) {
         return (ordStato[_fuStatoSemaforo_(a)] || 5) - (ordStato[_fuStatoSemaforo_(b)] || 5);
       });
@@ -430,6 +443,24 @@ function attivaFontiVuote(tipo) {
     });
     return { ok: true, perTipo: out };
   } catch(e) { return { ok: false, error: e.message }; }
+}
+
+// v4.22 — Salva data ultimo prelievo reale in extras_json
+function _fuUpdateLastRealFetch_(tipo, fonteId) {
+  try {
+    var sh = getFonteSheet(tipo);
+    if (!sh) return;
+    var vals = sh.getDataRange().getValues();
+    for (var r = 1; r < vals.length; r++) {
+      if (String(vals[r][FU_COL.ID - 1]) === String(fonteId)) {
+        var extras = {};
+        try { extras = JSON.parse(vals[r][FU_COL.EXTRAS_JSON - 1] || '{}'); } catch(_){}
+        extras.lastRealFetch = new Date().toISOString();
+        sh.getRange(r + 1, FU_COL.EXTRAS_JSON).setValue(JSON.stringify(extras));
+        return;
+      }
+    }
+  } catch(e) { Logger.log('_fuUpdateLastRealFetch_ err: ' + e.message); }
 }
 
 // ============================================================================
