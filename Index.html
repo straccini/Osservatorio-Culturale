@@ -25,6 +25,8 @@
     if (OC_SESSION && OC_SESSION.token) {
       try { localStorage.setItem('oc_token', OC_SESSION.token); } catch(_){}
     }
+    // v4.21.2 — Flag primo accesso (magic link appena cliccato)
+    window._ocFirstAccess = !!(OC_SESSION && OC_SESSION.token && !localStorage.getItem('oc_gdpr_accepted_' + (OC_SESSION.email || '')));
   </script>
   <?var sc = (typeof sondaggioCodice !== 'undefined' && sondaggioCodice) ? String(sondaggioCodice).replace(/[^a-zA-Z0-9_]/g, '') : ''; ?>
   <? if (sc) { ?>
@@ -1527,7 +1529,7 @@
         <h3 style="margin-top:0;font-size:15px">Azioni rapide</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
           <button class="btn btn-primary" data-action="generaDigest" style="padding:8px 16px;font-size:13px" title="Crea bozza newsletter con bandi, news e podcast recenti">Prepara newsletter</button>
-          <button class="btn btn-secondary" data-action="testDigestAdmin" style="padding:8px 16px;font-size:13px" title="Invia copia di test alla tua email admin">Test su mia email</button>
+          <button class="btn btn-secondary" onclick="OC.testDigestEmail()" style="padding:8px 16px;font-size:13px" title="Invia copia di test newsletter generalista a un indirizzo email">Test newsletter</button>
           <button class="btn btn-primary" data-action="generaQueueAll" style="padding:8px 16px;font-size:13px;background:var(--accent,#935851)" title="Genera email personalizzate per i compilatori Matrix (top 3 gap + contenuti)">Genera digest Matrix</button>
           <button class="btn btn-warning" data-action="inviaTuttiPending" style="padding:8px 16px;font-size:13px" title="Spedisce tutte le bozze draft. Controlla quota email prima.">Invia bozze pending</button>
         </div>
@@ -1538,17 +1540,23 @@
         </div>
       </div>
 
-      <!-- ===== 2. CODA BOZZE MATRIX ===== -->
+      <!-- ===== 2. CODA BOZZE MATRIX (profilati) ===== -->
       <div class="admin-card" style="margin-bottom:16px">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-          <h3 style="margin:0;font-size:15px">Coda bozze Matrix</h3>
+          <h3 style="margin:0;font-size:15px">Digest Matrix <span style="font-size:12px;font-weight:400;color:var(--ink-3)">(utenti profilati)</span></h3>
           <div style="display:flex;gap:6px">
-            <button class="btn btn-secondary" data-action="testDigestSegmentato" style="font-size:11px;padding:5px 10px" title="Genera una bozza di test usando il tuo profilo Matrix">Test mio profilo</button>
-            <button class="btn btn-secondary" data-action="reloadQueue" style="font-size:11px;padding:5px 10px" title="Aggiorna la lista delle bozze dal server">Aggiorna</button>
+            <button class="btn btn-secondary" onclick="OC.reloadQueue()" style="font-size:11px;padding:5px 10px" title="Aggiorna la lista delle bozze dal server">Aggiorna coda</button>
           </div>
         </div>
+        <p class="hint" style="margin:8px 0 10px">Ogni utente profilato riceve un digest personalizzato basato sui suoi <b>top 3 gap</b> (dimensioni con score &lt; 60). Per ogni dimensione vengono selezionati fino a 4 bandi + 3 news + 2 podcast.</p>
+        <!-- v4.21 — Test su email specifica -->
+        <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+          <input type="email" id="matrixTestEmail" placeholder="Email compilatore Matrix per test..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
+          <button class="btn btn-secondary" onclick="OC.testDigestMatrixPerEmail()" style="font-size:12px;padding:7px 14px" title="Genera bozza digest personalizzata per l'email indicata">Test su email</button>
+          <button class="btn btn-secondary" onclick="OC.testDigestSegmentato()" style="font-size:12px;padding:7px 14px" title="Genera bozza usando ultimo responseId in ResponsesMatrix">Test ultimo profilo</button>
+        </div>
         <div id="digestQueueWrap" style="margin-top:10px">
-          <div class="empty-state sm">Premi 'Aggiorna' per caricare la coda bozze.</div>
+          <div class="empty-state sm">Premi 'Aggiorna coda' per caricare le bozze.</div>
         </div>
         <div id="digestSegmResult" style="margin-top:6px;font-size:12px;min-height:16px;color:var(--ink-3)"></div>
       </div>
@@ -1781,14 +1789,22 @@
             <div style="background:#FAFAFA;border-left:3px solid var(--amb-1,#7C3AED);padding:10px;border-radius:6px"><div style="font-size:11px;color:var(--amb-1,#7C3AED);text-transform:uppercase;font-weight:700">Admin</div><div id="statUtAdmin" style="font-size:20px;font-weight:700;color:var(--ink-2,#3A3A3C)">—</div></div>
           </div>
           <div id="invitaUtenteForm" style="background:#FAFAFA;border:1px solid #E5E5E5;border-radius:8px;padding:14px;margin-bottom:12px;display:none">
-            <div style="font-size:13px;font-weight:600;color:var(--ink-2,#3A3A3C);margin-bottom:8px">Invita nuovo utente (verrà aggiunto come "attivo" subito)</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 130px auto;gap:8px;align-items:end">
-              <div><label style="font-size:11px;color:#666;display:block">Email</label><input type="email" id="invEmail" placeholder="email@museo.it" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
-              <div><label style="font-size:11px;color:#666;display:block">Nome</label><input type="text" id="invNome" placeholder="Nome Cognome" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
-              <div><label style="font-size:11px;color:#666;display:block">Ruolo</label><select id="invRuolo" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"><option>lettore</option><option>editor</option><option>admin</option></select></div>
-              <button class="btn btn-primary" data-action="invitaUtente" style="white-space:nowrap">Invita</button>
+            <div style="font-size:13px;font-weight:600;color:var(--ink-2,#3A3A3C);margin-bottom:4px">Invita nuovi utenti</div>
+            <p style="font-size:11px;color:var(--ink-3);margin:0 0 10px;line-height:1.4">L'utente ricevera un'email di invito da Sinopia. Restera in stato <b>pending</b> finche non clicca il link di conferma. Il profilo selezionato viene attivato automaticamente al click.</p>
+            <!-- Lista inviti dinamica -->
+            <div id="invRows" style="display:flex;flex-direction:column;gap:6px">
+              <div class="inv-row" style="display:grid;grid-template-columns:1fr 1fr 130px 32px;gap:8px;align-items:end">
+                <div><label style="font-size:11px;color:#666;display:block">Email *</label><input type="email" class="inv-email" placeholder="email@museo.it" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
+                <div><label style="font-size:11px;color:#666;display:block">Nome</label><input type="text" class="inv-nome" placeholder="Nome Cognome" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>
+                <div><label style="font-size:11px;color:#666;display:block">Profilo</label><select class="inv-ruolo" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"><option value="lettore">Lettore</option><option value="editor">Redattore</option><option value="admin">Admin</option><option value="ospite">Ospite</option></select></div>
+                <div></div>
+              </div>
             </div>
-            <div id="invResult" style="margin-top:8px;font-size:12px"></div>
+            <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+              <button class="btn btn-secondary" onclick="OC.addInvRow()" style="font-size:11px;padding:5px 12px" title="Aggiungi un altro destinatario">+ Aggiungi</button>
+              <button class="btn btn-primary" onclick="OC.invitaUtenti()" style="white-space:nowrap;padding:8px 18px">Invia inviti</button>
+              <span id="invResult" style="font-size:12px;flex:1"></span>
+            </div>
           </div>
           <div id="utentiTable" style="overflow-x:auto"><div class="empty-state sm">Premi "Ricarica" per caricare gli utenti.</div></div>
           <div id="utentiResult" style="margin-top:10px;font-size:12px;min-height:18px"></div>
@@ -5298,17 +5314,39 @@
   function testDigestSegmentato(){
     if (!hasGAS()) return;
     var out = $('digestSegmResult');
-    out.innerHTML = '<span style="color:#666">Test su ultimo responseId in ResponsesMatrix + invio a s.straccini@gmail.com…</span>';
+    out.innerHTML = '<span style="color:#666">Test su ultimo responseId in ResponsesMatrix…</span>';
     google.script.run
       .withSuccessHandler(function(r){
         if (r && r.error) { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(r.error)+'</span>'; return; }
-        var msg = '<span style="color:var(--amb-2,#10916D)">✓ Generato + inviato</span>';
+        var msg = '<span style="color:var(--amb-2,#10916D)">✓ Bozza generata (dry-run)</span>';
         if (r.generate && r.generate.top3Dims) msg += '<div style="font-size:11px;color:#666;margin-top:2px">Top 3 dim: '+esc(r.generate.top3Dims.join(', '))+' · contenuti: '+esc(r.generate.contentCounts.bandi||0)+' bandi · '+esc(r.generate.contentCounts.news||0)+' news · '+esc(r.generate.contentCounts.podcast||0)+' podcast</div>';
         out.innerHTML = msg;
         reloadQueue();
       })
       .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
       .testGenerateDigestSegmentato((window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  // v4.21 — Test digest Matrix per email specifica
+  function testDigestMatrixPerEmail(){
+    if (!hasGAS()) return;
+    var emailInput = $('matrixTestEmail');
+    var email = (emailInput && emailInput.value || '').trim().toLowerCase();
+    if (!email || email.indexOf('@') < 0) { alert('Inserisci un indirizzo email valido di un compilatore Matrix.'); return; }
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Ricerca profilo Matrix per ' + esc(email) + '…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.error) { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(r.error)+'</span>'; return; }
+        var msg = '<span style="color:var(--amb-2,#10916D)">✓ Digest generato per '+esc(email)+'</span>';
+        if (r.top3Dims) msg += '<div style="font-size:11px;color:#666;margin-top:4px"><b>Dimensioni selezionate:</b> '+esc(r.top3Dims.join(', '))+'</div>';
+        if (r.contentCounts) msg += '<div style="font-size:11px;color:#666">Contenuti: '+esc(r.contentCounts.bandi||0)+' bandi · '+esc(r.contentCounts.news||0)+' news · '+esc(r.contentCounts.podcast||0)+' podcast</div>';
+        if (r.queueId) msg += '<div style="font-size:11px;color:var(--accent);margin-top:2px">Bozza in coda: '+esc(r.queueId)+' — premi "Aggiorna coda" per vederla.</div>';
+        out.innerHTML = msg;
+        reloadQueue();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .testDigestMatrixForEmail(email, (window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
   function inviaTuttiPending(){
@@ -5334,18 +5372,34 @@
         if (!wrap) return;
         var items = (r && r.items) || [];
         if (!items.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna bozza in queue.</div>'; return; }
+        // v4.21 — Tabella coda con email, interessi, stato
         var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--accent-soft,#F0E6E4)">'
-          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851);font-weight:700">Email</th>'
-          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Stato</th>'
-          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Generato</th>'
-          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Note</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851);font-weight:700">Email destinatario</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Interessi (dimensioni)</th>'
+          + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Stato</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Data</th>'
           + '</tr></thead><tbody>';
+        // v4.21 — Mappa dimensioni per label leggibili
+        var _dimLabels = {D1:'Identita',D2:'Patrimonio',D3:'Spazi',D4:'Educazione',D5:'Servizi',D6:'Digitale',D7:'Accessibilita',D8:'Audience',D9:'Governance',D10:'Welfare'};
         items.forEach(function(it){
           var statusColor = it.Status === 'sent' ? 'var(--amb-2,#10916D)' : (it.Status === 'draft' ? 'var(--accent,#935851)' : 'var(--danger,#C2410C)');
-          html += '<tr><td style="padding:6px;border-bottom:1px solid #eee">'+esc(it.Email||'')+'</td>'
-            + '<td style="padding:6px;border-bottom:1px solid #eee;color:'+statusColor+';font-weight:600">'+esc(it.Status||'')+'</td>'
+          // Estrai dimensioni dalla nota (formato: "top3=D7,D9,D10 · museo=...")
+          var dims = '';
+          var noteStr = String(it.Note || '');
+          var topMatch = noteStr.match(/top3=([A-Z0-9,]+)/i);
+          if (topMatch) {
+            dims = topMatch[1].split(',').map(function(d) {
+              d = d.trim();
+              return '<span style="display:inline-block;background:rgba(147,88,81,.1);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:10px;margin:1px 2px">' + esc(_dimLabels[d] || d) + '</span>';
+            }).join('');
+          }
+          var museoMatch = noteStr.match(/museo=(.+)/);
+          var museo = museoMatch ? museoMatch[1].trim() : '';
+          html += '<tr>'
+            + '<td style="padding:6px;border-bottom:1px solid #eee"><div>'+esc(it.Email||'')+'</div>' + (museo ? '<div style="font-size:10px;color:var(--ink-3)">'+esc(museo)+'</div>' : '') + '</td>'
+            + '<td style="padding:6px;border-bottom:1px solid #eee">' + (dims || '<span style="color:#999;font-size:11px">—</span>') + '</td>'
+            + '<td style="padding:6px;border-bottom:1px solid #eee;text-align:center;color:'+statusColor+';font-weight:600">'+esc(it.Status||'')+'</td>'
             + '<td style="padding:6px;border-bottom:1px solid #eee;color:#666;font-size:11px">'+esc(String(it.GeneratedAt||'').substring(0,16).replace('T',' '))+'</td>'
-            + '<td style="padding:6px;border-bottom:1px solid #eee;color:#666;font-size:11px">'+esc(it.Note||'')+'</td>'
             + '</tr>';
         });
         html += '</tbody></table>';
@@ -6135,16 +6189,24 @@
       + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Matrix</th>'
       + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851);width:240px">Azioni</th>'
       + '</tr></thead><tbody>';
+    // v4.21 — Super admin: solo s.straccini@gmail.com puo modificare admin
+    var currentEmail = (window.OC_SESSION && window.OC_SESSION.email) || '';
+    var isSuperAdmin = (currentEmail.toLowerCase() === 's.straccini@gmail.com');
     items.forEach(function(u) {
       var isAdmin = (u.Ruolo === 'admin');
+      var isSuperAdminRow = (String(u.Email||'').toLowerCase() === 's.straccini@gmail.com');
       var statoCol = u.Stato === 'attivo' ? 'var(--amb-2,#10916D)' : (u.Stato === 'pending' ? 'var(--accent,#935851)' : (u.Stato === 'sospeso' ? '#999' : 'var(--danger,#C2410C)'));
       var ruoloCol = isAdmin ? 'var(--amb-1,#7C3AED)' : (u.Ruolo === 'editor' ? 'var(--amb-5,#0E7490)' : '#666');
       function chk(v) { return (v===true||v==='TRUE'||v===1) ? '✓' : '—'; }
       function chkColor(v) { return (v===true||v==='TRUE'||v===1) ? 'var(--amb-2,#10916D)' : '#999'; }
-      // v4.21 — Admin protetti: dropdown e bottoni disabilitati per admin
-      var disabledAttr = isAdmin ? ' disabled title="Amministratore protetto"' : '';
+      // v4.21 — Admin protetti: il super_admin puo modificare gli admin, gli altri admin no
+      var adminProtected = isAdmin && !isSuperAdmin;
+      var superProtected = isSuperAdminRow; // il super admin non si puo eliminare
+      var disabledAttr = adminProtected ? ' disabled title="Amministratore protetto — solo il super-admin puo modificare"' : '';
+      var adminBadge = isSuperAdminRow ? ' <span style="font-size:9px;color:var(--amb-1);font-weight:700;font-family:sans-serif">SUPER ADMIN</span>'
+        : (isAdmin ? ' <span style="font-size:9px;color:var(--amb-1);font-weight:700;font-family:sans-serif">ADMIN</span>' : '');
       html += '<tr' + (isAdmin ? ' style="background:rgba(124,58,237,.04)"' : '') + '>'
-        + '<td style="padding:5px;border-bottom:1px solid #eee;font-family:monospace;font-size:11px">'+esc(u.Email||'') + (isAdmin ? ' <span style="font-size:9px;color:var(--amb-1);font-weight:700;font-family:sans-serif">ADMIN</span>' : '') + '</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;font-family:monospace;font-size:11px">'+esc(u.Email||'') + adminBadge + '</td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee">'+esc(u.Nome||'')+'</td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee">'
           + '<select class="u-ruolo" data-email="'+esc(u.Email)+'" data-orig="'+esc(u.Ruolo||'')+'" onchange="OC.userRowChanged(\''+esc(u.Email)+'\')" style="font-size:11px;padding:2px 4px;font-weight:600;color:'+ruoloCol+'"' + disabledAttr + '>'
@@ -6158,10 +6220,12 @@
         + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInBandi)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'bandi\')" title="Clicca per toggle">'+chk(u.OptInBandi)+'</td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInMatrix)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'matrix\')" title="Clicca per toggle">'+chk(u.OptInMatrix)+'</td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee">'
-          + (isAdmin
-            ? '<span style="font-size:10px;color:var(--ink-3);font-style:italic">Protetto</span>'
-            : '<button class="btn btn-secondary u-save" data-email="'+esc(u.Email)+'" onclick="OC.salvaUtente(\''+esc(u.Email)+'\')" style="display:none;font-size:10px;padding:3px 8px;margin-right:4px;background:var(--amb-2,#10916D);color:#fff;font-weight:600">Salva</button>'
-              + '<button class="btn btn-secondary" onclick="OC.eliminaUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;color:var(--danger,#C2410C)">Elimina</button>')
+          + (superProtected
+            ? '<span style="font-size:10px;color:var(--amb-1);font-style:italic;font-weight:600">Super admin</span>'
+            : (adminProtected
+              ? '<span style="font-size:10px;color:var(--ink-3);font-style:italic">Protetto</span>'
+              : '<button class="btn btn-secondary u-save" data-email="'+esc(u.Email)+'" onclick="OC.salvaUtente(\''+esc(u.Email)+'\')" style="display:none;font-size:10px;padding:3px 8px;margin-right:4px;background:var(--amb-2,#10916D);color:#fff;font-weight:600">Salva</button>'
+                + '<button class="btn btn-secondary" onclick="OC.eliminaUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;color:var(--danger,#C2410C)">Elimina</button>'))
         + '</td></tr>';
     });
     html += '</tbody></table>';
@@ -6333,24 +6397,75 @@
     if (f) f.style.display = (f.style.display === 'none' ? 'block' : 'none');
   }
 
-  function invitaUtente() {
+  // v4.21.2 — Multi-invito con ruolo per ciascun utente
+  function addInvRow() {
+    var container = $('invRows');
+    if (!container) return;
+    var rowCount = container.querySelectorAll('.inv-row').length;
+    var row = document.createElement('div');
+    row.className = 'inv-row';
+    row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 130px 32px;gap:8px;align-items:end';
+    row.innerHTML = ''
+      + '<div><input type="email" class="inv-email" placeholder="email@museo.it" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>'
+      + '<div><input type="text" class="inv-nome" placeholder="Nome Cognome" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>'
+      + '<div><select class="inv-ruolo" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"><option value="lettore">Lettore</option><option value="editor">Redattore</option><option value="admin">Admin</option><option value="ospite">Ospite</option></select></div>'
+      + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger,#C2410C);font-size:18px;cursor:pointer;padding:4px" title="Rimuovi riga">&times;</button>';
+    container.appendChild(row);
+  }
+
+  function invitaUtenti() {
     if (!hasGAS()) return;
-    var email = ($('invEmail')||{}).value || '';
-    var nome  = ($('invNome')||{}).value || '';
-    var ruolo = ($('invRuolo')||{}).value || 'lettore';
+    var rows = document.querySelectorAll('#invRows .inv-row');
+    var batch = [];
+    for (var i = 0; i < rows.length; i++) {
+      var emailEl = rows[i].querySelector('.inv-email');
+      var nomeEl = rows[i].querySelector('.inv-nome');
+      var ruoloEl = rows[i].querySelector('.inv-ruolo');
+      var email = (emailEl ? emailEl.value : '').trim();
+      if (!email) continue;
+      batch.push({
+        email: email,
+        nome: (nomeEl ? nomeEl.value : '').trim(),
+        ruolo: (ruoloEl ? ruoloEl.value : 'lettore')
+      });
+    }
+    if (!batch.length) { $('invResult').innerHTML = '<span style="color:var(--danger)">Inserisci almeno un\'email.</span>'; return; }
     var out = $('invResult');
-    if (!email.trim()) { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Email obbligatoria.</span>'; return; }
-    out.innerHTML = '<span style="color:#666">Invito in corso…</span>';
+    out.innerHTML = '<span style="color:#666">Invio inviti in corso (' + batch.length + ')…</span>';
     google.script.run
       .withSuccessHandler(function(r) {
-        if (r && r.ok) {
-          out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Utente invitato. Email di benvenuto inviata.</span>';
-          $('invEmail').value = ''; $('invNome').value = '';
+        if (r && r.ok && r.batch) {
+          var msgs = [];
+          r.results.forEach(function(res) {
+            if (res.ok) msgs.push('<span style="color:var(--amb-2)">✓ ' + esc(res.email) + ' (' + esc(res.ruolo) + ') — invito inviato</span>');
+            else msgs.push('<span style="color:var(--danger)">✗ ' + esc(res.email||'') + ' — ' + esc(res.error||'') + '</span>');
+          });
+          out.innerHTML = msgs.join('<br>');
+          // Pulisci righe extra, mantieni solo la prima
+          var container = $('invRows');
+          var allRows = container.querySelectorAll('.inv-row');
+          for (var ri = allRows.length - 1; ri > 0; ri--) allRows[ri].remove();
+          var firstEmail = container.querySelector('.inv-email');
+          var firstName = container.querySelector('.inv-nome');
+          if (firstEmail) firstEmail.value = '';
+          if (firstName) firstName.value = '';
           reloadUtentiTable();
-        } else { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; }
+        } else if (r && r.ok) {
+          out.innerHTML = '<span style="color:var(--amb-2)">✓ Invito inviato a ' + esc(r.email) + ' (stato: pending)</span>';
+          var firstEmail = document.querySelector('#invRows .inv-email');
+          var firstName = document.querySelector('#invRows .inv-nome');
+          if (firstEmail) firstEmail.value = '';
+          if (firstName) firstName.value = '';
+          reloadUtentiTable();
+        } else {
+          out.innerHTML = '<span style="color:var(--danger)">Errore: ' + esc((r&&r.error)||'sconosciuto') + '</span>';
+        }
       })
-      .withFailureHandler(function(e) { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
-      .invitaNuovoUtente({ email: email.trim(), nome: nome.trim(), ruolo: ruolo });
+      .withFailureHandler(function(e) { out.innerHTML = '<span style="color:var(--danger)">Errore: ' + esc(e) + '</span>'; })
+      .invitaNuovoUtente(batch.length === 1
+        ? { email: batch[0].email, nome: batch[0].nome, ruolo: batch[0].ruolo, token: (window.OC_SESSION&&window.OC_SESSION.token)||null }
+        : { batch: batch, token: (window.OC_SESSION&&window.OC_SESSION.token)||null }
+      );
   }
 
   function approvaUtente(email) {
@@ -6835,20 +6950,23 @@
 
   function testDigestEmail(){
     if (!hasGAS()) return;
-    if (!confirm('Genera digest generalista e invia a s.straccini@gmail.com (bypass workflow Telegram). Procedere?')) return;
-    $('adminStatus').textContent = 'Generazione + invio email in corso (15-25s)…';
+    // v4.21 — Chiedi email destinatario per il test newsletter generalista
+    var emailDest = prompt('Inserisci l\'email destinatario per il test newsletter (lettori):', 's.straccini@gmail.com');
+    if (!emailDest || emailDest.indexOf('@') < 0) return;
+    if (!confirm('Genera newsletter generalista e invia a ' + emailDest + '.\nQuesto e il digest per i LETTORI (non profilati).\nProcedere?')) return;
+    $('adminStatus').textContent = 'Generazione + invio a ' + emailDest + ' in corso (15-25s)…';
     google.script.run
       .withSuccessHandler(function(r){
         if (r && r.ok) {
-          $('adminStatus').textContent = 'email inviata a ' + r.emailSent;
-          alert('✓ Email inviata.\n\n' + (r.message||''));
+          $('adminStatus').textContent = 'Newsletter inviata a ' + (r.emailSent || emailDest);
+          showToast && showToast('Newsletter test inviata a ' + (r.emailSent || emailDest), 'ok');
         } else {
           $('adminStatus').textContent = 'errore: ' + (r && r.error || '');
           alert('Errore: ' + (r && r.error || 'sconosciuto'));
         }
       })
       .withFailureHandler(function(e){ alert('Errore di rete: '+e); $('adminStatus').textContent='errore'; })
-      .testInviaDigestGeneralista();
+      .testInviaDigestGeneralista(emailDest, (window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
   function renderDigestList(res){
@@ -7153,7 +7271,7 @@
       + '<div style="font-size:11px;color:var(--ink-3);line-height:1.5;padding-left:24px">'
       + '<p style="margin:0 0 6px"><b>Finalita:</b> I dati sono trattati esclusivamente per finalita informative e di personalizzazione dei contenuti dell\'Osservatorio Culturale Sinopia (bandi, news, podcast, report).</p>'
       + '<p style="margin:0 0 6px"><b>Nessun vincolo temporale:</b> L\'iscrizione e gratuita, senza obblighi ne scadenze. Puoi richiedere la cancellazione del tuo account e di tutti i dati in qualsiasi momento.</p>'
-      + '<p style="margin:0 0 6px"><b>Diritti:</b> Hai diritto di accesso, rettifica, cancellazione, portabilita e opposizione al trattamento dei tuoi dati. Per esercitarli scrivi a <b>info@duemilamusei.it</b>.</p>'
+      + '<p style="margin:0 0 6px"><b>Diritti:</b> Hai diritto di accesso, rettifica, cancellazione, portabilita e opposizione al trattamento dei tuoi dati. Per esercitarli scrivi a <b>info@sinopiaconsulting.it</b>.</p>'
       + '<p style="margin:0"><b>Titolare:</b> Duemilamusei · <a href="https://www.duemilamusei.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#935851)">Informativa completa</a></p>'
       + '</div></div>'
       + '<button type="button" onclick="OC._submitRegForm()" style="width:100%;background:var(--accent,#935851);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Registrati gratis</button>'
@@ -10773,6 +10891,8 @@
     // Sprint 1.3 D2.3 - Digest segmentato admin
     generaQueueAll: generaQueueAll,
     testDigestSegmentato: testDigestSegmentato,
+    testDigestMatrixPerEmail: testDigestMatrixPerEmail,
+    testDigestEmail: testDigestEmail,
     inviaTuttiPending: inviaTuttiPending,
     reloadQueue: reloadQueue,
     // Sprint 1.3 D2.4 - Cron weekly admin
@@ -10802,7 +10922,9 @@
     // Sprint 1.4 - Gestione utenti
     reloadUtentiTable: reloadUtentiTable,
     showInvitaUtenteForm: showInvitaUtenteForm,
-    invitaUtente: invitaUtente,
+    addInvRow: addInvRow,
+    invitaUtenti: invitaUtenti,
+    invitaUtente: invitaUtenti,
     runMigraUtenti: runMigraUtenti,
     approvaUtente: approvaUtente,
     rifiutaUtente: rifiutaUtente,
@@ -11044,6 +11166,62 @@
     </div>
   </div>
 </div>
+
+<!-- ===== v4.21.2 — Overlay GDPR consent al primo accesso via magic link ===== -->
+<div id="oc-gdpr-gate" hidden style="position:fixed;inset:0;background:rgba(26,24,21,.7);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)">
+  <div role="dialog" aria-modal="true" style="background:#fff;border-radius:16px;max-width:500px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.3);padding:36px 32px;font-family:var(--font-ui,sans-serif)">
+    <div style="text-align:center;margin-bottom:8px">
+      <div style="font-family:Georgia,serif;font-style:italic;font-size:28px;color:#8B3A1F;letter-spacing:.01em">Sinopia</div>
+      <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-top:2px">Osservatorio Culturale</div>
+    </div>
+    <h2 style="font-size:18px;font-weight:600;color:var(--ink);margin:16px 0 8px;text-align:center">Benvenuto in Sinopia!</h2>
+    <p style="font-size:13.5px;color:var(--ink-2);line-height:1.6;margin:0 0 16px;text-align:center">Per accedere ai contenuti dell'Osservatorio Culturale, conferma di aver letto e accettato le condizioni di utilizzo.</p>
+
+    <div style="background:var(--surface-2,#FAFAF9);border:1px solid var(--rule,#E5E5E7);border-radius:10px;padding:16px;margin-bottom:18px">
+      <div style="font-size:12.5px;color:var(--ink-2);line-height:1.6">
+        <p style="margin:0 0 8px"><b>Finalita:</b> I tuoi dati sono trattati esclusivamente per finalita informative e di personalizzazione dei contenuti (bandi, news, podcast, report per il settore museale e culturale).</p>
+        <p style="margin:0 0 8px"><b>Nessun vincolo:</b> L'iscrizione e gratuita, senza obblighi ne scadenze temporali. Puoi richiedere la cancellazione del tuo account e di tutti i dati in qualsiasi momento.</p>
+        <p style="margin:0 0 8px"><b>Diritti:</b> Hai diritto di accesso, rettifica, cancellazione, portabilita e opposizione al trattamento dei tuoi dati ai sensi del GDPR (Reg. UE 2016/679).</p>
+        <p style="margin:0"><b>Contatti:</b> Per esercitare i tuoi diritti scrivi a <b>info@sinopiaconsulting.it</b> · <a href="https://www.duemilamusei.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#935851)">Informativa completa</a></p>
+      </div>
+    </div>
+
+    <label id="oc-gdpr-label" style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:16px;padding:12px;border:2px solid var(--rule,#E5E5E7);border-radius:8px;transition:border-color .2s">
+      <input type="checkbox" id="oc-gdpr-check" style="margin-top:2px;width:18px;height:18px;accent-color:var(--accent,#935851);flex-shrink:0" onchange="document.getElementById('oc-gdpr-label').style.borderColor=this.checked?'var(--accent,#935851)':'var(--rule,#E5E5E7)';document.getElementById('oc-gdpr-error').hidden=true">
+      <span style="font-size:13px;color:var(--ink);line-height:1.5">Acconsento al trattamento dei miei dati personali ai sensi del GDPR per le finalita sopra descritte.</span>
+    </label>
+    <div id="oc-gdpr-error" hidden style="text-align:center;color:var(--danger,#C2410C);font-size:13px;font-weight:600;margin-bottom:12px;padding:8px;background:rgba(194,65,12,.06);border-radius:6px">Per procedere devi acconsentire al trattamento dei dati.</div>
+
+    <button type="button" onclick="window._acceptGdpr()" style="width:100%;background:var(--accent,#935851);color:#fff;border:none;padding:13px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Accetta e accedi</button>
+    <p style="text-align:center;margin:12px 0 0;font-size:11px;color:var(--ink-3);font-style:italic">Il team di assistenza di Sinopia</p>
+  </div>
+</div>
+<script>
+  // v4.21.2 — GDPR gate: mostra al primo accesso via magic link
+  window._acceptGdpr = function() {
+    var chk = document.getElementById('oc-gdpr-check');
+    var err = document.getElementById('oc-gdpr-error');
+    if (!chk || !chk.checked) {
+      if (err) err.hidden = false;
+      // Scuoti il label per attirare attenzione
+      var lbl = document.getElementById('oc-gdpr-label');
+      if (lbl) { lbl.style.borderColor = 'var(--danger,#C2410C)'; setTimeout(function(){ lbl.style.borderColor = 'var(--rule)'; }, 1500); }
+      return;
+    }
+    // Accettato: salva in localStorage e chiudi overlay
+    var email = (window.OC_SESSION && window.OC_SESSION.email) || '';
+    try { localStorage.setItem('oc_gdpr_accepted_' + email, new Date().toISOString()); } catch(_){}
+    var ov = document.getElementById('oc-gdpr-gate');
+    if (ov) { ov.hidden = true; ov.style.display = 'none'; }
+  };
+  // Mostra automaticamente se primo accesso
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window._ocFirstAccess) {
+      var ov = document.getElementById('oc-gdpr-gate');
+      if (ov) { ov.hidden = false; ov.style.display = 'flex'; }
+    }
+  });
+</script>
 
 <!-- ===== v4.19.0 — PROFILO + SEGNALAZIONI (modali + JS) ===== -->
 <div id="oc-segnalazione-overlay" hidden style="position:fixed;inset:0;background:rgba(26,24,21,.5);z-index:9997;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px);overflow-y:auto">

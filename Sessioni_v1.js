@@ -71,7 +71,10 @@ function createSessione(email, source) {
       sh.getRange(existing._row, 7).setValue(matrixCompleted);
       sh.getRange(existing._row, 9).setValue(now);
       var magicUrl = _buildMagicLink_(existing.token);
-      _sendMagicLinkEmail_(email, magicUrl, source, true, null);
+      // v4.21.2 — Skip email per inviti admin (l'email brandizzata viene inviata da _sendInviteEmail_)
+      if (source !== 'invito') {
+        _sendMagicLinkEmail_(email, magicUrl, source, true, null);
+      }
       return {
         ok: true,
         token: existing.token,
@@ -100,7 +103,10 @@ function createSessione(email, source) {
     ]);
 
     var magicUrl = _buildMagicLink_(token);
-    _sendMagicLinkEmail_(email, magicUrl, source, true, null);
+    // v4.21.2 — Skip email per inviti admin
+    if (source !== 'invito') {
+      _sendMagicLinkEmail_(email, magicUrl, source, true, null);
+    }
 
     return {
       ok: true,
@@ -144,13 +150,48 @@ function validaSessione(token) {
     }
     sh.getRange(sess._row, 9).setValue(now); // last_seen
 
-    // Determina livello: 3 se admin, 1 altrimenti
+    // v4.21.2 — Attiva utente pending al primo accesso via magic link
+    try {
+      if (typeof getUtenteByEmail_ === 'function') {
+        var utente = getUtenteByEmail_(sess.email);
+        if (utente && utente.stato === 'pending') {
+          var utSh = (typeof _getOrCreateUtentiSheet_ === 'function') ? _getOrCreateUtentiSheet_() : null;
+          if (utSh) {
+            var utHeaders = utSh.getRange(1,1,1,utSh.getLastColumn()).getValues()[0];
+            var iUtEmail = utHeaders.indexOf('Email');
+            var iUtStato = utHeaders.indexOf('Stato');
+            var iUtAppr = utHeaders.indexOf('DataApprovazione');
+            var utRows = utSh.getDataRange().getValues();
+            for (var ui = 1; ui < utRows.length; ui++) {
+              if (String(utRows[ui][iUtEmail]||'').toLowerCase().trim() === sess.email.toLowerCase().trim()) {
+                if (iUtStato >= 0) utSh.getRange(ui+1, iUtStato+1).setValue('attivo');
+                if (iUtAppr >= 0) utSh.getRange(ui+1, iUtAppr+1).setValue(now.toISOString());
+                Logger.log('[validaSessione] Utente attivato via magic link: ' + sess.email);
+                break;
+              }
+            }
+          }
+        }
+      }
+    } catch(eAct) { Logger.log('[validaSessione] Errore attivazione pending: ' + eAct.message); }
+
+    // Determina livello dal ruolo utente in foglio Utenti (v4.21.2)
     var livello = 1;
     try {
-      var adminCsv = PropertiesService.getScriptProperties().getProperty('OC_ADMIN_EMAILS') || '';
-      if (!adminCsv && typeof OC_ADMIN_EMAILS !== 'undefined') adminCsv = OC_ADMIN_EMAILS.join(',');
-      var adminSet = adminCsv.toLowerCase().split(',').map(function(e){ return e.trim(); });
-      if (adminSet.indexOf(sess.email.toLowerCase().trim()) >= 0) livello = 3;
+      var _utRuolo = null;
+      if (typeof getUtenteByEmail_ === 'function') {
+        var _ut = getUtenteByEmail_(sess.email);
+        if (_ut) _utRuolo = _ut.ruolo;
+      }
+      if (_utRuolo === 'admin') livello = 3;
+      else if (_utRuolo === 'editor') livello = 2;
+      else {
+        // Fallback: controlla lista admin hardcoded
+        var adminCsv = PropertiesService.getScriptProperties().getProperty('OC_ADMIN_EMAILS') || '';
+        if (!adminCsv && typeof OC_ADMIN_EMAILS !== 'undefined') adminCsv = OC_ADMIN_EMAILS.join(',');
+        var adminSet = adminCsv.toLowerCase().split(',').map(function(e){ return e.trim(); });
+        if (adminSet.indexOf(sess.email.toLowerCase().trim()) >= 0) livello = 3;
+      }
     } catch(_){}
 
     return {

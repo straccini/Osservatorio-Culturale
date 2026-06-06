@@ -603,6 +603,54 @@ function testGenerateDigestSegmentato(token) {
   return { ok: true, dryRun: true, queueId: res.queueId, message: 'Bozza generata (non inviata). Verifica nella coda e invia manualmente.' };
 }
 
+/**
+ * v4.21 — Test digest Matrix per un'email specifica.
+ * Cerca il responseId associato all'email in ContactsMatrix, genera il digest e lo salva in coda.
+ * Ritorna top3Dims + contentCounts per visualizzazione admin.
+ */
+function testDigestMatrixForEmail(email, token) {
+  if (token && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
+    return { ok:false, error:'forbidden' };
+  }
+  email = String(email || '').trim().toLowerCase();
+  if (!email || email.indexOf('@') < 0) return { error:'email non valida' };
+
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActive();
+  if (!ss) return { error:'spreadsheet non disponibile' };
+
+  // Cerca responseId in ContactsMatrix
+  var contactsSh = ss.getSheetByName('ContactsMatrix');
+  if (!contactsSh || contactsSh.getLastRow() < 2) return { error:'ContactsMatrix vuoto. Nessun compilatore Matrix trovato.' };
+  var headers = contactsSh.getRange(1,1,1,contactsSh.getLastColumn()).getValues()[0];
+  var iEmail = headers.indexOf('email');
+  var iRid = headers.indexOf('response_id');
+  if (iEmail < 0 || iRid < 0) return { error:'colonne email/response_id mancanti in ContactsMatrix' };
+
+  var rows = contactsSh.getRange(2, 1, contactsSh.getLastRow()-1, headers.length).getValues();
+  var responseId = null;
+  for (var i = rows.length - 1; i >= 0; i--) {
+    if (String(rows[i][iEmail] || '').trim().toLowerCase() === email) {
+      responseId = String(rows[i][iRid] || '');
+      break;
+    }
+  }
+  if (!responseId) return { error:'Email ' + email + ' non trovata in ContactsMatrix. L\'utente non ha compilato il Matrix.' };
+
+  Logger.log('[TEST DIGEST MATRIX] email=' + email + ' responseId=' + responseId);
+  var res = generateDigestForUser(email, responseId);
+  if (!res || !res.ok) return res;
+
+  return {
+    ok: true,
+    email: email,
+    responseId: responseId,
+    queueId: res.queueId,
+    top3Dims: res.top3Dims,
+    contentCounts: res.contentCounts,
+    message: 'Bozza generata per ' + email + '. Verifica nella coda e invia manualmente.'
+  };
+}
+
 // ============================================================================
 // SPRINT 1.3 D2.4 (2026-05-01) — CRON WEEKLY + WORKFLOW BOZZE
 // ============================================================================

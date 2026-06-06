@@ -59,6 +59,9 @@ var OC_UTENTI_STATI = ['pending','attivo','sospeso','rifiutato'];
 // Email admin "fondatori" sempre attivi (fallback se Utenti vuoto)
 var OC_ADMIN_EMAILS = ['s.straccini@gmail.com'];
 
+// v4.21 — Super admin: unico utente che puo modificare/eliminare altri admin
+var OC_SUPER_ADMIN_EMAIL = 's.straccini@gmail.com';
+
 // ============================================================================
 // FOGLIO Utenti — creazione e accesso
 // ============================================================================
@@ -707,16 +710,36 @@ function approveUser(email, ruolo) {
 }
 
 /**
- * Sprint 1.4 (2026-05-01) — Invito diretto da admin: crea utente attivo subito.
+ * v4.21.2 — Invito utente: crea come PENDING + invia magic link di invito.
+ * L'utente diventa attivo solo quando clicca il link nell'email.
+ * Supporta invito singolo o batch (body.batch = [{email, nome, ruolo}, ...]).
  */
 function invitaNuovoUtente(body) {
-  requireAuth(['admin']);
   body = body || {};
-  var email = String(body.email||'').toLowerCase().trim();
-  if (!email) return { error:'email obbligatoria' };
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error:'email non valida' };
-  var nome = String(body.nome||'').trim();
-  var ruolo = body.ruolo;
+  var auth = getCurrentUserAuth(body.token || null);
+  if (!auth || !auth.isAdmin) return { error: 'Accesso negato (non admin). Email: ' + (auth ? auth.email || 'vuota' : 'errore') };
+
+  // Batch mode: invita più utenti
+  if (body.batch && Array.isArray(body.batch)) {
+    var results = [];
+    body.batch.forEach(function(item) {
+      var r = _invitaSingoloUtente_(item.email, item.nome, item.ruolo, auth);
+      results.push(r);
+    });
+    var okCount = results.filter(function(r){ return r.ok; }).length;
+    var errCount = results.filter(function(r){ return !r.ok; }).length;
+    return { ok: true, batch: true, results: results, invited: okCount, errors: errCount };
+  }
+
+  // Singolo invito
+  return _invitaSingoloUtente_(body.email, body.nome, body.ruolo, auth);
+}
+
+function _invitaSingoloUtente_(emailIn, nome, ruolo, auth) {
+  var email = String(emailIn||'').toLowerCase().trim();
+  if (!email) return { ok:false, error:'email obbligatoria', email: emailIn };
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok:false, error:'email non valida', email: email };
+  nome = String(nome||'').trim();
   if (OC_UTENTI_RUOLI.indexOf(ruolo) < 0) ruolo = 'lettore';
 
   var sh = _getOrCreateUtentiSheet_();
@@ -725,21 +748,113 @@ function invitaNuovoUtente(body) {
   var iEmail = headers.indexOf('Email');
   for (var i = 1; i < rows.length; i++) {
     if (String(rows[i][iEmail]||'').toLowerCase().trim() === email) {
-      return { error:'utente gia presente' };
+      return { ok:false, error:'utente gia presente', email: email };
     }
   }
+
+  // Crea utente PENDING (si attiva al click del magic link)
   var id = 'U' + Date.now() + Math.floor(Math.random()*1000);
   var nowIso = new Date().toISOString();
-  var auth = getCurrentUserAuth();
   sh.appendRow([
-    id, email, nome, ruolo, 'attivo',
-    true, false, false,
-    nowIso, nowIso,
+    id, email, nome, ruolo, 'pending',
+    true, true, false,
+    nowIso, '',
     'invito_admin:' + (auth.email||'system'),
-    'Invitato da admin il ' + nowIso.substring(0,10)
+    'Invitato il ' + nowIso.substring(0,10) + ' — in attesa conferma'
   ]);
-  _sendWelcomeEmail_(email, ruolo);
-  return { ok:true, email: email, ruolo: ruolo };
+
+  // Crea sessione con magic link e invia email di invito brandizzata
+  try {
+    var sessResult = (typeof createSessione === 'function') ? createSessione(email, 'invito') : null;
+    if (sessResult && sessResult.ok) {
+      // Invia email di invito personalizzata (non la generica magic link)
+      _sendInviteEmail_(email, nome, ruolo, sessResult.magicLink || _buildMagicLink_(sessResult.token));
+    }
+  } catch(e) {
+    Logger.log('[invitaNuovoUtente] Errore invio email: ' + e.message);
+  }
+
+  return { ok:true, email: email, ruolo: ruolo, stato: 'pending' };
+}
+
+/**
+ * v4.21.2 — Email di invito brandizzata Sinopia.
+ * Firma: "Il team di assistenza di Sinopia"
+ */
+function _sendInviteEmail_(email, nome, ruolo, magicUrl) {
+  try {
+    var ruoloLabel = {
+      'admin':   'Amministratore — accesso completo a tutti i contenuti e al pannello di gestione',
+      'editor':  'Redattore — puoi creare e modificare contenuti, gestire bandi e news',
+      'lettore': 'Lettore — accesso completo a bandi, news, podcast, video, libri e report',
+      'ospite':  'Ospite — esplora i contenuti pubblici e scopri le funzionalita'
+    };
+    var greeting = nome ? ('Ciao ' + nome.split(' ')[0] + ',') : 'Ciao,';
+    var ruoloDesc = ruoloLabel[ruolo] || ruoloLabel['lettore'];
+
+    var body = ''
+      + '<!doctype html><html><head><meta charset="utf-8"><title>Sinopia</title></head>'
+      + '<body style="margin:0;padding:0;background:#F1E6D6;font-family:Georgia,serif;color:#3A2818">'
+      + '<table width="100%" cellpadding="0" cellspacing="0" style="background:#F1E6D6;padding:32px 0">'
+      + '<tr><td align="center">'
+      + '<table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border:1px solid #D4BFA0;border-radius:12px;overflow:hidden">'
+      // Hero
+      + '<tr><td style="background:#F1E6D6;border-bottom:1px solid #D4BFA0;padding:28px 32px">'
+      + '<div style="font-family:Georgia,serif;font-style:italic;font-size:32px;font-weight:500;color:#8B3A1F;letter-spacing:.01em">Sinopia</div>'
+      + '<div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#5C4332;margin-top:4px">Osservatorio Culturale</div>'
+      + '</td></tr>'
+      // Body
+      + '<tr><td style="padding:32px">'
+      + '<h1 style="font-family:Georgia,serif;font-weight:500;font-size:22px;line-height:1.3;color:#3A2818;margin:0 0 18px">Sei stato invitato a entrare in Sinopia</h1>'
+      + '<p style="font-size:15px;line-height:1.6;color:#5C4332;margin:0 0 14px">' + greeting + '</p>'
+      + '<p style="font-size:15px;line-height:1.6;color:#5C4332;margin:0 0 14px">'
+      + 'Ti invitiamo a scoprire <b>Sinopia</b>, l\'Osservatorio Culturale dedicato ai professionisti dei musei e dei luoghi della cultura in Italia.</p>'
+      + '<p style="font-size:15px;line-height:1.6;color:#5C4332;margin:0 0 14px">'
+      + 'Sinopia ti offre <b>gratuitamente</b> e <b>senza vincoli temporali</b>:</p>'
+      + '<ul style="font-size:14px;color:#5C4332;line-height:1.7;margin:0 0 14px;padding-left:20px">'
+      + '<li>Monitoraggio continuo di <b>bandi e finanziamenti</b> per la cultura (PNRR, fondi europei, regionali)</li>'
+      + '<li><b>News, podcast, video e pubblicazioni</b> selezionate dal mondo museale e culturale</li>'
+      + '<li><b>Digest settimanale personalizzato</b> sui temi di tuo interesse</li>'
+      + '<li><b>MuseMu Matrix</b> — autovalutazione gratuita della maturita della tua struttura culturale</li>'
+      + '<li><b>Report e benchmark</b> per confrontarti con il settore</li>'
+      + '</ul>'
+      + '<p style="font-size:14px;line-height:1.6;color:#5C4332;margin:0 0 6px">'
+      + 'Il tuo profilo di accesso: <b style="color:#8B3A1F">' + ruoloDesc + '</b></p>'
+      + '<p style="font-size:14px;line-height:1.6;color:#5C4332;margin:0 0 24px">'
+      + 'Clicca il pulsante qui sotto per confermare la tua iscrizione, accedere a Sinopia e completare il tuo profilo professionale.</p>'
+      // CTA
+      + '<table cellpadding="0" cellspacing="0" style="margin:0 auto 26px"><tr><td style="background:#8B3A1F;border-radius:8px">'
+      + '<a href="' + magicUrl + '" style="display:inline-block;padding:14px 32px;color:#fff;text-decoration:none;font-family:Arial,sans-serif;font-size:15px;font-weight:600;letter-spacing:.02em">Conferma e accedi a Sinopia &rarr;</a>'
+      + '</td></tr></table>'
+      // Privacy
+      + '<div style="border-top:1px solid #E5E1D8;padding-top:14px;margin-top:8px">'
+      + '<p style="font-size:12px;color:#8B5E2B;line-height:1.5;margin:0">'
+      + 'L\'iscrizione e <b>completamente gratuita</b>, senza vincoli temporali. '
+      + 'I tuoi dati sono trattati ai sensi del GDPR (Reg. UE 2016/679) esclusivamente per finalita informative. '
+      + 'Puoi richiedere la cancellazione del tuo account e dei tuoi dati in qualsiasi momento scrivendo a info@sinopiaconsulting.it.</p>'
+      + '</div>'
+      // Link fallback
+      + '<p style="font-size:11px;color:#8B5E2B;line-height:1.5;margin:20px 0 0;font-style:italic">Se il bottone non funziona, copia e incolla questo link nel browser:<br><span style="color:#5C4332;font-family:monospace;font-size:10px;word-break:break-all">' + magicUrl + '</span></p>'
+      + '</td></tr>'
+      // Footer
+      + '<tr><td style="background:#F1E6D6;padding:18px 32px;border-top:1px solid #D4BFA0;text-align:center">'
+      + '<div style="font-family:Arial,sans-serif;font-size:12px;color:#5C4332;line-height:1.5;font-weight:600">Il team di assistenza di Sinopia</div>'
+      + '<div style="font-family:Arial,sans-serif;font-size:11px;color:#8B5E2B;line-height:1.5;margin-top:4px">Sinopia &middot; Osservatorio Culturale<br>Il disegno preparatorio della cultura italiana<br>Un progetto Duemilamusei</div>'
+      + '</td></tr>'
+      + '</table>'
+      + '</td></tr></table>'
+      + '</body></html>';
+
+    MailApp.sendEmail({
+      to: email,
+      subject: 'Sei stato invitato a Sinopia — Osservatorio Culturale',
+      htmlBody: body,
+      name: 'Sinopia — Osservatorio Culturale'
+    });
+    Logger.log('[invitaNuovoUtente] Email invito inviata a ' + email);
+  } catch(e) {
+    Logger.log('[invitaNuovoUtente] Errore invio email: ' + e.message);
+  }
 }
 
 function rejectUser(email, motivo) {
@@ -759,7 +874,8 @@ function deleteUser(email, token) {
   if (!email) return { error:'email mancante' };
   email = String(email).toLowerCase().trim();
 
-  // v4.21 — Protezione admin-su-admin: un admin non puo cancellare un altro admin
+  // v4.21 — Protezione admin: solo il super_admin puo cancellare un altro admin
+  var isSuperAdmin = (String(auth.email || '').toLowerCase().trim() === OC_SUPER_ADMIN_EMAIL);
   var sh = _getOrCreateUtentiSheet_();
   var rows = sh.getDataRange().getValues();
   var headers = rows[0];
@@ -768,8 +884,12 @@ function deleteUser(email, token) {
   for (var i = rows.length-1; i >= 1; i--) {
     if (String(rows[i][iEmail] || '').toLowerCase().trim() === email) {
       var targetRuolo = String(rows[i][iRuolo] || '').toLowerCase();
-      if (targetRuolo === 'admin') {
-        return { error: 'Non puoi eliminare un altro amministratore. Contatta il super-admin.' };
+      if (targetRuolo === 'admin' && !isSuperAdmin) {
+        return { error: 'Solo il super-admin (' + OC_SUPER_ADMIN_EMAIL + ') puo eliminare un amministratore.' };
+      }
+      // Il super admin non puo eliminare se stesso
+      if (email === OC_SUPER_ADMIN_EMAIL) {
+        return { error: 'L\'account super-admin non puo essere eliminato.' };
       }
       sh.deleteRow(i+1);
       return { ok:true };
@@ -810,10 +930,11 @@ function saveUserStatoRuolo(email, stato, ruolo, oldStato, token) {
   var rows = sh.getDataRange().getValues();
   for (var i = 1; i < rows.length; i++) {
     if (String(rows[i][iEmail] || '').toLowerCase().trim() === email) {
-      // v4.21 — Protezione admin-su-admin: non modificare ruolo/stato di un altro admin
+      // v4.21 — Protezione admin: solo il super_admin puo modificare un altro admin
       var currentTargetRuolo = String(rows[i][iRuolo] || '').toLowerCase();
-      if (currentTargetRuolo === 'admin' && email !== String(auth.email || '').toLowerCase().trim()) {
-        return { error: 'Non puoi modificare un altro amministratore.' };
+      var isSuperAdmin = (String(auth.email || '').toLowerCase().trim() === OC_SUPER_ADMIN_EMAIL);
+      if (currentTargetRuolo === 'admin' && !isSuperAdmin) {
+        return { error: 'Solo il super-admin puo modificare un altro amministratore.' };
       }
       if (iStato >= 0) sh.getRange(i+1, iStato+1).setValue(stato);
       if (iRuolo >= 0) sh.getRange(i+1, iRuolo+1).setValue(ruolo);

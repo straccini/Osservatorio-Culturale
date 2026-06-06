@@ -279,8 +279,10 @@ function _trunc_(s, n) {
  * @param {string} [emailDest='s.straccini@gmail.com'] destinatario test
  * @return {Object} { ok, draftId, htmlPreviewLength, emailSent, error? }
  */
-function testInviaDigestGeneralista(emailDest) {
-  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+function testInviaDigestGeneralista(emailDest, token) {
+  // v4.21 — Auth via token per deploy "Chiunque"
+  var tk = token || null;
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_(tk)) return { ok:false, error:'forbidden' };
   emailDest = emailDest || 's.straccini@gmail.com';
   Logger.log('=== TEST DIGEST GENERALISTA ===');
   Logger.log('Destinatario test: ' + emailDest);
