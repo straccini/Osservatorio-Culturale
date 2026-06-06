@@ -1663,101 +1663,73 @@
         <button class="settings-tab" data-tab="backup" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Archivio</button>
       </div>
 
-      <!-- TAB TUTTE LE FONTI (Sprint 2 B3 — 2026-05-11) -->
+      <!-- TAB TUTTE LE FONTI (v4.22 — matrice 11-col + modale + API) -->
       <div class="settings-tab-content" data-tab-content="tutti">
+        <!-- v4.22 — ZONA 1: Header diagnostica -->
         <div class="admin-card" style="margin-bottom:14px">
-          <h3>🗂 Tutte le Fonti monitorate</h3>
-          <p class="hint">Gestisci tutte le fonti da qui: aggiungi, attiva/disattiva, elimina. Lo scanner gira in automatico ogni giorno sulle fonti attive.</p>
-
-          <!-- Azioni rapide: scan + aggiungi -->
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
-            <button class="btn btn-primary" data-action="runScannerNews" style="font-size:12px;padding:6px 14px" title="Scansiona tutte le fonti news RSS attive">Scan news</button>
-            <button class="btn btn-primary" data-action="runScannerPodcast" style="font-size:12px;padding:6px 14px" title="Scansiona tutte le fonti podcast e video attive">Scan podcast/video</button>
-            <button class="btn btn-primary" data-action="runScanBandiV5" style="font-size:12px;padding:6px 14px" title="Scansiona tutte le fonti bandi attive">Scan bandi</button>
-            <div style="flex:1"></div>
-            <button class="btn btn-secondary" onclick="var f=document.getElementById('fuAddForm');f.hidden=!f.hidden" style="font-size:12px;padding:6px 14px">+ Aggiungi fonte</button>
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <h3 style="margin:0;font-size:15px">Fonti monitorate</h3>
+            <div id="fmCounters" style="font-size:13px;color:var(--ink-2)">Caricamento...</div>
           </div>
-          <div id="fuScanResult" style="font-size:12px;min-height:16px;color:var(--ink-3);margin-bottom:8px"></div>
-
-          <!-- Form aggiungi fonte (nascosto, toggle) -->
-          <div id="fuAddForm" hidden style="background:var(--surface-2);border:1px solid var(--rule,#E5E5E7);border-radius:8px;padding:14px;margin-bottom:14px">
-            <div style="font-weight:600;font-size:13px;color:var(--ink);margin-bottom:10px">Nuova fonte</div>
-            <div style="display:grid;grid-template-columns:120px 1fr;gap:8px 12px;align-items:center;font-size:13px">
-              <label style="font-size:12px;color:var(--ink-2)">Tipo</label>
-              <select id="fuAddTipo" style="padding:7px 10px;border:1px solid var(--rule);border-radius:6px;font-size:13px" onchange="var u=document.getElementById('fuAddUrlHint');var t=this.value;u.textContent=t==='video'?'URL canale YouTube (@handle o /channel/...)':t==='bandi'?'URL pagina bandi o RSS':'URL feed RSS'">
-                <option value="news">News (RSS)</option>
-                <option value="podcast">Podcast (RSS)</option>
-                <option value="video">Video (YouTube)</option>
-                <option value="bandi">Bandi</option>
-                <option value="libri">Libri (manuale)</option>
-                <option value="norme">Norme (manuale)</option>
-                <option value="social">Social Wall</option>
-              </select>
-              <label style="font-size:12px;color:var(--ink-2)">Nome</label>
-              <input type="text" id="fuAddNome" placeholder="es. Artribune, ICOM Italia, MuseumNext..." style="padding:7px 10px;border:1px solid var(--rule);border-radius:6px;font-size:13px"/>
-              <label style="font-size:12px;color:var(--ink-2)">URL</label>
-              <div>
-                <input type="text" id="fuAddUrl" placeholder="https://..." style="width:100%;padding:7px 10px;border:1px solid var(--rule);border-radius:6px;font-size:13px"/>
-                <div id="fuAddUrlHint" style="font-size:11px;color:var(--ink-3);margin-top:2px">URL feed RSS</div>
-              </div>
-              <label style="font-size:12px;color:var(--ink-2)">Tematica</label>
-              <select id="fuAddTematica" style="padding:7px 10px;border:1px solid var(--rule);border-radius:6px;font-size:13px">
-                <option>Musei & Patrimonio</option><option>Arte Contemporanea</option><option>Politiche Culturali</option>
-                <option>Tecnologia & Cultura</option><option>Accessibilita</option><option>Audience & Welfare</option>
-                <option>Turismo Culturale</option><option>Architettura & Design</option>
-              </select>
-            </div>
-            <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
-              <button class="btn btn-primary" onclick="OC._addFonteUniversale()" style="font-size:12px;padding:6px 16px">Aggiungi</button>
-              <button class="btn btn-secondary" onclick="document.getElementById('fuAddForm').hidden=true" style="font-size:12px;padding:6px 12px">Annulla</button>
-              <span id="fuAddResult" style="font-size:12px;color:var(--ink-3)"></span>
-            </div>
+          <div id="fmDiagToggle" style="margin-top:8px">
+            <button class="btn btn-secondary" onclick="var d=document.getElementById('fmDiagPanel');d.hidden=!d.hidden;this.textContent=d.hidden?'Dettagli diagnostica':'Nascondi diagnostica'" style="font-size:11px;padding:4px 10px">Dettagli diagnostica</button>
           </div>
-
-          <!-- Toolbar: filtri e ricerca -->
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
-            <select id="fuFiltroTipo" style="padding:7px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px;background:#fff" onchange="OC.reloadFontiUnified()">
-              <option value="">Tutti i tipi</option>
-              <option value="bandi">Bandi</option>
-              <option value="news">News</option>
-              <option value="podcast">Podcast</option>
-              <option value="video">Video</option>
-              <option value="libri">Libri</option>
-              <option value="norme">Norme</option>
-              <option value="social">Social</option>
-            </select>
-            <select id="fuFiltroStato" style="padding:7px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px;background:#fff" onchange="OC.reloadFontiUnified()">
-              <option value="">Tutti gli stati</option>
-              <option value="ok">🟢 OK</option>
-              <option value="stantia">🟡 Stantia</option>
-              <option value="fail">🟠 Fail</option>
-              <option value="silente">🔴 Silente</option>
-              <option value="mai">⚪ Mai scansionata</option>
-            </select>
-            <select id="fuFiltroAttiva" style="padding:7px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px;background:#fff" onchange="OC.reloadFontiUnified()">
-              <option value="">Attive + disattive</option>
-              <option value="true">Solo attive</option>
-              <option value="false">Solo disattive</option>
-            </select>
-            <input id="fuRicerca" type="text" placeholder="Cerca nome o URL…" style="flex:1;min-width:180px;padding:7px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px" onkeyup="if(event.key===&apos;Enter&apos;)OC.reloadFontiUnified()"/>
-            <button class="btn btn-secondary" onclick="OC.reloadFontiUnified()" style="font-size:13px">Applica</button>
+          <div id="fmDiagPanel" hidden style="margin-top:10px;padding:12px;background:var(--surface-2);border-radius:8px;border:1px solid var(--rule)">
+            <div id="fmDiagContent" style="font-size:12px;color:var(--ink-2)">Caricamento diagnostica...</div>
+            <button class="btn btn-secondary" onclick="OC._runAuditFonti()" style="font-size:11px;padding:4px 10px;margin-top:8px">Esegui audit completo</button>
           </div>
+        </div>
 
-          <!-- Counters dashboard -->
-          <div id="fuCounters" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:10px;background:#F7F4EE;border-radius:6px;font-size:13px">
-            <span class="muted">Caricamento contatori…</span>
+        <!-- Azioni rapide -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+          <button class="btn btn-primary" onclick="OC._scanNews()" style="font-size:12px;padding:6px 14px">Scan news</button>
+          <button class="btn btn-primary" onclick="OC._scanPodcast()" style="font-size:12px;padding:6px 14px">Scan podcast/video</button>
+          <button class="btn btn-primary" onclick="OC._scanBandi()" style="font-size:12px;padding:6px 14px">Scan bandi</button>
+          <div style="flex:1"></div>
+          <button class="btn btn-secondary" onclick="OC._openAddFonteModal()" style="font-size:12px;padding:6px 14px">+ Aggiungi fonte</button>
+        </div>
+        <div id="fmScanResult" style="font-size:12px;min-height:16px;color:var(--ink-3);margin-bottom:8px"></div>
+
+        <!-- Barra filtri -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+          <select id="fmFiltroContenitore" style="padding:7px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px;background:#fff" onchange="OC._reloadFontiMatrix()">
+            <option value="">Tutti i contenitori</option>
+            <option value="bandi">Bandi</option>
+            <option value="news">News</option>
+            <option value="podcast">Podcast</option>
+            <option value="video">Video</option>
+          </select>
+          <select id="fmFiltroStato" style="padding:7px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px;background:#fff" onchange="OC._reloadFontiMatrix()">
+            <option value="">Tutti gli stati</option>
+            <option value="ok">OK</option>
+            <option value="stantia">Stantia</option>
+            <option value="fail">Fail</option>
+            <option value="silente">Silente</option>
+            <option value="mai">Mai scansionata</option>
+          </select>
+          <input id="fmRicerca" type="text" placeholder="Cerca nome o URL..." style="flex:1;min-width:180px;padding:7px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px" onkeyup="if(event.key==='Enter')OC._reloadFontiMatrix()"/>
+          <button class="btn btn-secondary" onclick="OC._reloadFontiMatrix()" style="font-size:13px">Applica</button>
+        </div>
+
+        <!-- Nota agenti -->
+        <div style="background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.15);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--ink-2);line-height:1.5">
+          <b style="color:var(--amb-5,#0E7490)">Fonti Agenti AI</b> — Le fonti contrassegnate con badge Agente sono gestite dal sistema multi-agente (AgentConfig) e non sono modificabili da questo pannello. Per modificarle e necessario intervenire nel codice sorgente.
+        </div>
+
+        <!-- ZONA 2: Matrice fonti -->
+        <div id="fontiMatrixTable" style="overflow-x:auto"><div class="empty-state sm">Caricamento matrice fonti...</div></div>
+
+        <!-- ZONA 3: Sezione API Strutturate -->
+        <div style="margin-top:24px;padding-top:20px;border-top:2px solid var(--rule)">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+            <h3 style="margin:0;font-size:15px">API Strutturate — Fonti dati programmatiche</h3>
+            <div id="fmApiCounters" style="font-size:12px;color:var(--ink-3)"></div>
           </div>
-
-          <!-- Tabella -->
-          <div id="fontiUnifiedTable" style="overflow-x:auto"><div class="empty-state sm">Premi Applica per caricare.</div></div>
+          <div id="fontiApiCards" style="display:flex;flex-direction:column;gap:12px">
+            <div class="empty-state sm">Caricamento API...</div>
+          </div>
         </div>
       </div>
-
-      <!-- tab bandi rimosso: assorbito in Fonti -->
-
-      <!-- tab podcast rimosso: assorbito in Fonti -->
-
-      <!-- tab altre rimosso: assorbito in Fonti -->
 
       <!-- TAB UTENTI & ACCESSI (Sprint 1.4 - 2026-05-01) -->
       <div class="settings-tab-content" data-tab-content="utenti" hidden>
@@ -5516,7 +5488,7 @@
     document.querySelectorAll('.settings-tab-content').forEach(function(div) {
       div.hidden = (div.getAttribute('data-tab-content') !== tabName);
     });
-    if (tabName === 'tutti') reloadFontiUnified();
+    if (tabName === 'tutti') _reloadFontiMatrix();
     if (tabName === 'altre') { /* nessun auto-load richiesto */ }
     if (tabName === 'utenti') reloadUtentiTable();
     if (tabName === 'config') loadSettingsConfig();
@@ -5614,146 +5586,368 @@
   }
 
   // ============================================================================
-  // SPRINT 2 B3 (2026-05-11) — Vista unificata fonti
+  // v4.22 — MATRICE FONTI + API + MODALE
   // ============================================================================
 
-  // v4.20 — Pannello unificato: BANDI dai vecchi fogli FU17 + News/Podcast/Video dal nuovo archivio FontiFeed.
-  function reloadFontiUnified() {
-    if (!hasGAS()) return;
-    var wrap = $('fontiUnifiedTable');
-    if (wrap) wrap.innerHTML = '<div class="empty-state sm">Caricamento…</div>';
-    var filtro = {
-      tipo:   ($('fuFiltroTipo')   || {}).value || '',
-      attiva: ($('fuFiltroAttiva') || {}).value || '',
-      q:      ($('fuRicerca')      || {}).value || ''
-    };
-    var collected = { bandi: null, feed: null, bandiErr: '', feedErr: '' };
-    function tryRender() {
-      var bandi = collected.bandi || [];
-      var feed  = collected.feed  || [];
-      var merged = bandi.concat(feed);
-      var fq = String(filtro.q || '').toLowerCase();
-      var shown = merged.filter(function(f) {
-        if (filtro.tipo && f.tipo !== filtro.tipo) return false;
-        if (filtro.attiva === 'true'  && !f.attiva) return false;
-        if (filtro.attiva === 'false' &&  f.attiva) return false;
-        if (fq && String(f.nome||'').toLowerCase().indexOf(fq) < 0 && String(f.url||'').toLowerCase().indexOf(fq) < 0) return false;
-        return true;
-      });
-      if (shown.length) { renderFontiUnifiedTable(wrap, shown, null); return; }
-      // Vuoto: mostra diagnostica solo quando ENTRAMBE le sorgenti hanno risposto
-      if (collected.bandi !== null && collected.feed !== null && wrap) {
-        wrap.innerHTML = '<div class="empty-state sm">Nessuna fonte da mostrare. (bandi: ' + bandi.length +
-          (collected.bandiErr ? ' — err: ' + esc(collected.bandiErr) : '') + ' · feed: ' + feed.length +
-          (collected.feedErr ? ' — err: ' + esc(collected.feedErr) : '') + ')</div>';
-      }
-    }
-    // BANDI (FU17, sistema invariato)
-    google.script.run
-      .withSuccessHandler(function(r) {
-        var arr = (r && r.fonti) || [];
-        collected.bandi = arr.filter(function(f){ return f.tipo === 'bandi'; }).map(function(f){ f._src = 'fu'; return f; });
-        tryRender();
-      })
-      .withFailureHandler(function(e) { collected.bandi = []; collected.bandiErr = String(e).substring(0,80); tryRender(); })
-      .getFontiUnified({ tipo: 'bandi', sortBy: 'stato' });
-    // News/Podcast/Video dal nuovo archivio FontiFeed
-    google.script.run
-      .withSuccessHandler(function(r) {
-        var arr = (r && r.fonti) || [];
-        if (r && r._diag) collected.feedErr = r._diag;
-        collected.feed = arr.map(function(f) {
-          return { _src:'feed', id:f.id, nome:f.nome, tipo:(f.tipo === 'rss' ? 'news' : f.tipo), url:f.url,
-                   tag:f.categoria || '', attiva:f.attiva, ultimaScan:f.ultimaScan, ultimoEsito:f.ultimoEsito, failConsec:f.failConsec };
-        });
-        tryRender();
-      })
-      .withFailureHandler(function(e) { collected.feed = []; collected.feedErr = String(e).substring(0,80); tryRender(); })
-      .getFontiFeedAdmin({});
+  var _FM_SEMAFORO = {
+    ok:       { dot:'#10B981', label:'OK' },
+    stantia:  { dot:'#F59E0B', label:'Stantia' },
+    fail:     { dot:'#F97316', label:'Fail' },
+    silente:  { dot:'#EF4444', label:'Silente' },
+    mai:      { dot:'#9CA3AF', label:'Mai' },
+    agente:   { dot:'#3B82F6', label:'Agente' }
+  };
+
+  var _FM_API_SEMAFORO = {
+    operativa:   { dot:'#10B981', label:'Operativa' },
+    in_sviluppo: { dot:'#F59E0B', label:'In sviluppo' },
+    bloccata:    { dot:'#EF4444', label:'Bloccata' }
+  };
+
+  function _fmDot(color, title) {
+    return '<svg width="12" height="12" style="vertical-align:middle" title="'+esc(title)+'"><circle cx="6" cy="6" r="5" fill="'+color+'"/></svg>';
   }
 
-  function renderFontiUnifiedTable(wrap, fonti, perTipo) {
+  function _fmBadge(text, bg, color) {
+    return '<span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:'+bg+';color:'+color+';margin-left:4px;vertical-align:middle;letter-spacing:.03em">'+esc(text)+'</span>';
+  }
+
+  function _fmTimeAgo(dateStr) {
+    if (!dateStr) return '—';
+    var d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '—';
+    var diff = (Date.now() - d.getTime()) / 1000;
+    if (diff < 3600) return Math.round(diff/60) + 'min fa';
+    if (diff < 86400) return Math.round(diff/3600) + 'h fa';
+    if (diff < 2592000) return Math.round(diff/86400) + 'gg fa';
+    return d.toLocaleDateString('it-IT');
+  }
+
+  function _reloadFontiMatrix() {
+    if (!hasGAS()) return;
+    var wrap = $('fontiMatrixTable');
+    if (wrap) wrap.innerHTML = '<div class="empty-state sm">Caricamento...</div>';
+    var filtro = {
+      tipo: ($('fmFiltroContenitore')||{}).value || '',
+      stato: ($('fmFiltroStato')||{}).value || '',
+      q: ($('fmRicerca')||{}).value || ''
+    };
+    // Load classiche + agenti in parallelo
+    var classiche = null, agenti = null;
+    var render = function() {
+      if (classiche === null || agenti === null) return;
+      _renderFontiMatrix(classiche, agenti, filtro);
+    };
+    google.script.run.withSuccessHandler(function(r) {
+      classiche = (r && r.ok) ? r.fonti : [];
+      // Update counters
+      var ctr = $('fmCounters');
+      if (ctr && r && r.ok) {
+        var tot = r.totale || 0;
+        var att = classiche.filter(function(f){return f.attiva;}).length;
+        var err = classiche.filter(function(f){var s=f.stato||'';return s==='fail'||s==='silente';}).length;
+        ctr.textContent = tot+' fonti · '+att+' attive · '+err+' in errore';
+      }
+      render();
+    }).withFailureHandler(function(e) {
+      if (wrap) wrap.innerHTML = '<div class="empty-state sm">Errore: '+esc(e)+'</div>';
+    }).getFontiUnified(filtro.tipo ? {tipo:filtro.tipo, stato:filtro.stato||undefined, q:filtro.q||undefined} : {stato:filtro.stato||undefined, q:filtro.q||undefined});
+
+    google.script.run.withSuccessHandler(function(r) {
+      agenti = (r && r.ok) ? r.fonti : [];
+      render();
+    }).withFailureHandler(function() { agenti = []; render(); }).getAgentFontiForMatrix();
+
+    // Load API section
+    _loadApiSection();
+  }
+
+  function _renderFontiMatrix(fontiClassiche, fontiAgenti, filtro) {
+    var wrap = $('fontiMatrixTable');
     if (!wrap) return;
-    // Counter client-side (bandi FU17 + feed FontiFeed, sul set mostrato)
-    var cWrap = $('fuCounters');
-    if (cWrap) {
-      var byT = {};
-      (fonti || []).forEach(function(f){ var t = f.tipo; byT[t] = byT[t] || { tot:0, att:0 }; byT[t].tot++; if (f.attiva) byT[t].att++; });
-      var ch = '';
-      ['bandi','news','podcast','video'].forEach(function(t){ var x = byT[t] || { tot:0, att:0 }; ch += '<span style="margin-right:14px"><b>'+t.charAt(0).toUpperCase()+t.slice(1)+':</b> '+x.tot+' · '+x.att+' attive</span>'; });
-      cWrap.innerHTML = ch;
-    }
-    if (!fonti.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna fonte corrisponde ai filtri.</div>'; return; }
-    var statoLabels = { silente:'🔴 Silente', fail:'🟠 Fail', stantia:'🟡 Stantia', ok:'🟢 OK', mai:'⚪ Mai' };
-    var statoColors = { silente:'var(--danger,#C2410C)', fail:'var(--warning,#B45309)', stantia:'var(--warning,#B45309)', ok:'var(--success,#0F7B5A)', mai:'#BDB7AB' };
-    var tipoEmoji   = { bandi:'📡', news:'📰', podcast:'🎙', video:'🎬' };
 
-    function statoOf(f) {
-      if (Number(f.failConsec||0) >= 3) return 'silente';
-      if (Number(f.failConsec||0) >= 1) return 'fail';
-      if (!f.ultimaScan) return 'mai';
-      var hours = (Date.now() - new Date(f.ultimaScan).getTime()) / 3600000;
-      if (f.ultimoEsito === 'OK' && hours < 36) return 'ok';
-      return 'stantia';
+    // Filter agenti if contenitore filter is set
+    if (filtro && filtro.tipo) {
+      fontiAgenti = fontiAgenti.filter(function(a) {
+        if (filtro.tipo === 'bandi') return a.alimentaBandi;
+        if (filtro.tipo === 'news') return a.alimentaNews;
+        return false;
+      });
     }
 
-    var html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
-    html += '<thead><tr style="background:var(--accent-soft,#F0E6E4)">';
-    html += '<th style="text-align:center;padding:8px;border-bottom:1px solid var(--accent,#935851);width:90px">Stato</th>';
-    html += '<th style="text-align:center;padding:8px;border-bottom:1px solid var(--accent,#935851);width:80px">Tipo</th>';
-    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851)">Nome</th>';
-    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851)">URL</th>';
-    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851);width:110px">Tag</th>';
-    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851);width:120px">Ultima scan</th>';
-    html += '<th style="text-align:center;padding:8px;border-bottom:1px solid var(--accent,#935851);width:70px">Attiva</th>';
-    html += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--accent,#935851);width:200px">Azioni</th>';
-    html += '</tr></thead><tbody>';
-    fonti.forEach(function(f) {
-      var s = statoOf(f);
-      var urlShort = String(f.url||'').replace(/^https?:\/\/(www\.)?/, '').substring(0, 50);
-      var ultima = '—';
-      if (f.ultimaScan) {
-        var d = new Date(f.ultimaScan);
-        ultima = d.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit' }) + ' ' + d.toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' });
-      }
-      html += '<tr>';
-      html += '<td style="padding:6px;border-bottom:1px solid #eee;text-align:center;color:'+statoColors[s]+';font-weight:600">'+statoLabels[s]+(f.failConsec?' ('+f.failConsec+')':'')+'</td>';
-      html += '<td style="padding:6px;border-bottom:1px solid #eee;text-align:center;font-size:14px">'+tipoEmoji[f.tipo]+'</td>';
-      html += '<td style="padding:6px;border-bottom:1px solid #eee;font-weight:600;color:var(--ink-2,#3A3A3C)">'+esc(f.nome||'')+'</td>';
-      html += '<td style="padding:6px;border-bottom:1px solid #eee;color:#666;font-size:11px;font-family:monospace">'+esc(urlShort)+'</td>';
-      html += '<td style="padding:6px;border-bottom:1px solid #eee;color:#444">'+esc(f.tag||'')+'</td>';
-      html += '<td style="padding:6px;border-bottom:1px solid #eee;color:#666;font-size:11px">'+esc(ultima)+'</td>';
-      html += '<td style="padding:6px;border-bottom:1px solid #eee;text-align:center"><span style="color:'+(f.attiva?'var(--amb-2,#10916D)':'#999')+';font-weight:700">'+(f.attiva?'✓':'✗')+'</span></td>';
-      html += '<td style="padding:6px;border-bottom:1px solid #eee">';
-      html += '<button class="btn btn-secondary" onclick="OC.toggleFonteU(\''+(f._src||'fu')+'\',\''+f.tipo+'\',\''+esc(f.id)+'\','+(!f.attiva)+')" style="font-size:11px;padding:3px 8px;margin-right:4px">'+(f.attiva?'Disattiva':'Attiva')+'</button>';
-      if (f.tipo === 'bandi' && Number(f.failConsec||0) >= 1) {
-        html += '<button class="btn btn-secondary" onclick="OC.resetFailBandi(\''+esc(f.url||'')+'\')" style="font-size:11px;padding:3px 8px;margin-right:4px;color:var(--warning,#B45309)">Reset</button>';
-      }
-      html += '<button class="btn btn-secondary" onclick="OC.deleteFonteU(\''+(f._src||'fu')+'\',\''+f.tipo+'\',\''+esc(f.id)+'\',\''+esc(f.nome||'')+'\')" style="font-size:11px;padding:3px 8px;color:var(--danger,#C2410C)">Elimina</button>';
-      html += '</td></tr>';
+    if (!fontiClassiche.length && !fontiAgenti.length) {
+      wrap.innerHTML = '<div class="empty-state sm">Nessuna fonte trovata con i filtri selezionati.</div>';
+      return;
+    }
+
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--accent-soft,#F0E6E4)">'
+      + '<th style="padding:6px;border-bottom:2px solid var(--accent);width:30px" title="Stato">St.</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:2px solid var(--accent)">Nome</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:2px solid var(--accent);width:180px">URL</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:2px solid var(--accent);width:50px">Bandi</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:2px solid var(--accent);width:50px">News</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:2px solid var(--accent);width:50px">Podcast</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:2px solid var(--accent);width:50px">Video</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:2px solid var(--accent);width:60px">Agenti</th>'
+      + '<th style="text-align:right;padding:6px;border-bottom:2px solid var(--accent);width:70px">Record</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:2px solid var(--accent);width:90px">Ultimo prelievo</th>'
+      + '<th style="padding:6px;border-bottom:2px solid var(--accent);width:70px">Azioni</th>'
+      + '</tr></thead><tbody>';
+
+    // Classic fonti
+    fontiClassiche.forEach(function(f) {
+      var sem = _FM_SEMAFORO[f.stato] || _FM_SEMAFORO[_fuStatoLabel(f)] || _FM_SEMAFORO.mai;
+      var stato = f.stato || _fuStatoLabel(f) || 'mai';
+      sem = _FM_SEMAFORO[stato] || _FM_SEMAFORO.mai;
+      var tipoBadge = _fmBadge(f.tipoFonte || f.tipo || 'RSS', 'rgba(0,0,0,.06)', '#555');
+      var urlShort = String(f.url||'').replace(/^https?:\/\/(www\.)?/,'').substring(0,35);
+      var isBandi = (f._tipo === 'bandi');
+      var isNews = (f._tipo === 'news');
+      var isPodcast = (f._tipo === 'podcast');
+      var isVideo = (f._tipo === 'video');
+      var chk = function(v) { return v ? '<span style="color:var(--amb-2,#10916D);font-weight:700">&#10003;</span>' : '<span style="color:#ccc">—</span>'; };
+      html += '<tr style="border-bottom:1px solid #eee">'
+        + '<td style="padding:5px;text-align:center">'+_fmDot(sem.dot, sem.label)+'</td>'
+        + '<td style="padding:5px">'+esc(f.nome||'')+tipoBadge+'</td>'
+        + '<td style="padding:5px;font-size:11px"><a href="'+esc(f.url||'')+'" target="_blank" rel="noopener" style="color:var(--amb-5);text-decoration:none" title="'+esc(f.url||'')+'">'+esc(urlShort)+(urlShort.length<String(f.url||'').length?'...':'')+'</a></td>'
+        + '<td style="padding:5px;text-align:center">'+chk(isBandi)+'</td>'
+        + '<td style="padding:5px;text-align:center">'+chk(isNews)+'</td>'
+        + '<td style="padding:5px;text-align:center">'+chk(isPodcast)+'</td>'
+        + '<td style="padding:5px;text-align:center">'+chk(isVideo)+'</td>'
+        + '<td style="padding:5px;text-align:center;color:#ccc">—</td>'
+        + '<td style="padding:5px;text-align:right;font-weight:600">'+((f.recordTotali||0)>0?f.recordTotali:'—')+'</td>'
+        + '<td style="padding:5px;font-size:11px;color:var(--ink-2)" title="'+(f.ultimaScan?'Ultima scan: '+f.ultimaScan:'')+'">'+_fmTimeAgo(f.ultimoPrelievoReale)+'</td>'
+        + '<td style="padding:5px">'
+          + '<button onclick="OC._toggleFonte(\''+esc(f._tipo)+'\',\''+esc(f.id)+'\',' + (!f.attiva) + ')" style="font-size:10px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;background:none;cursor:pointer;color:'+(f.attiva?'var(--danger)':'var(--amb-2)')+'" title="'+(f.attiva?'Disattiva':'Attiva')+'">'+(f.attiva?'Off':'On')+'</button> '
+          + '<button onclick="OC._deleteFonte(\''+esc(f._tipo)+'\',\''+esc(f.id)+'\')" style="font-size:10px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;background:none;cursor:pointer;color:var(--danger)" title="Elimina">&#10005;</button>'
+        + '</td></tr>';
     });
+
+    // Separator + agent fonti
+    if (fontiAgenti.length > 0) {
+      html += '<tr><td colspan="11" style="padding:10px 5px;text-align:center;font-size:11px;color:var(--ink-3);border-bottom:1px solid var(--rule);letter-spacing:.05em">── Fonti Agenti AI (read-only) ──</td></tr>';
+      fontiAgenti.forEach(function(a) {
+        var sem = _FM_SEMAFORO.agente;
+        var badge = _fmBadge(a.codice, 'rgba(59,130,246,.12)', '#3B82F6');
+        var chk = function(v) { return v ? '<span style="color:var(--amb-2);font-weight:700">&#10003;</span>' : '<span style="color:#ccc">—</span>'; };
+        html += '<tr style="border-bottom:1px solid #eee;background:rgba(59,130,246,.02)">'
+          + '<td style="padding:5px;text-align:center">'+_fmDot(sem.dot, sem.label)+'</td>'
+          + '<td style="padding:5px">'+esc(a.nome)+badge+'</td>'
+          + '<td style="padding:5px;font-size:11px;color:var(--ink-3)">'+esc(a.url)+'</td>'
+          + '<td style="padding:5px;text-align:center">'+chk(a.alimentaBandi)+'</td>'
+          + '<td style="padding:5px;text-align:center">'+chk(a.alimentaNews)+'</td>'
+          + '<td style="padding:5px;text-align:center">'+chk(a.alimentaPodcast)+'</td>'
+          + '<td style="padding:5px;text-align:center">'+chk(a.alimentaVideo)+'</td>'
+          + '<td style="padding:5px;text-align:center;font-weight:600;color:var(--amb-5)">'+esc(a.codice)+'</td>'
+          + '<td style="padding:5px;text-align:right;color:#ccc">—</td>'
+          + '<td style="padding:5px;color:#ccc">—</td>'
+          + '<td style="padding:5px"></td></tr>';
+      });
+    }
+
     html += '</tbody></table>';
     wrap.innerHTML = html;
   }
 
-  function toggleFonteU(src, tipo, id, attiva) {
-    if (!hasGAS()) return;
-    var tk = (window.OC_SESSION && window.OC_SESSION.token) || null;
-    var ok = function(r) { if (r && r.ok) reloadFontiUnified(); else alert('Errore: '+(r && r.error || 'sconosciuto')); };
-    var fail = function(e) { alert('Errore: '+e); };
-    if (src === 'feed') google.script.run.withSuccessHandler(ok).withFailureHandler(fail).toggleFontiFeed(id, attiva, tk);
-    else google.script.run.withSuccessHandler(ok).withFailureHandler(fail).toggleFonteUnified(tipo, id, attiva);
+  function _fuStatoLabel(f) {
+    if (f.failConsec >= 3) return 'silente';
+    if (f.failConsec >= 1) return 'fail';
+    if (!f.ultimaScan) return 'mai';
+    var hours = (Date.now() - new Date(f.ultimaScan).getTime()) / 3600000;
+    if (f.ultimoEsito === 'OK' && hours < 36) return 'ok';
+    return 'stantia';
   }
 
-  function deleteFonteU(src, tipo, id, nome) {
+  function _loadApiSection() {
     if (!hasGAS()) return;
-    if (!confirm('Eliminare definitivamente la fonte "'+nome+'"?')) return;
-    var tk = (window.OC_SESSION && window.OC_SESSION.token) || null;
-    var ok = function(r) { if (r && r.ok) reloadFontiUnified(); else alert('Errore: '+(r && r.error || 'sconosciuto')); };
-    var fail = function(e) { alert('Errore: '+e); };
-    if (src === 'feed') google.script.run.withSuccessHandler(ok).withFailureHandler(fail).deleteFontiFeed(id, tk);
-    else google.script.run.withSuccessHandler(ok).withFailureHandler(fail).deleteFonteUnified(tipo, id);
+    google.script.run.withSuccessHandler(function(r) {
+      if (!r || !r.ok) return;
+      var ctr = $('fmApiCounters');
+      if (ctr) ctr.textContent = r.contatori.totale+' API · '+r.contatori.operative+' operative · '+r.contatori.inSviluppo+' in sviluppo · '+r.contatori.bloccate+' bloccate';
+      _renderApiCards(r.apis);
+    }).withFailureHandler(function(){}).getApiStrutturateStatus();
   }
+
+  function _renderApiCards(apis) {
+    var wrap = $('fontiApiCards');
+    if (!wrap || !apis) return;
+    if (!apis.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna API configurata.</div>'; return; }
+    var html = '';
+    apis.forEach(function(api) {
+      var sem = _FM_API_SEMAFORO[api.stato] || _FM_API_SEMAFORO.bloccata;
+      var dotHtml = _fmDot(sem.dot, sem.label);
+      var detailId = 'api-detail-' + api.id;
+      html += '<div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:16px;position:relative">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">'
+        + '<div style="flex:1;min-width:200px">'
+          + '<div style="font-size:14px;font-weight:600;color:var(--ink)">'+dotHtml+' '+esc(api.nome)+'</div>'
+          + '<div style="font-size:11px;color:var(--ink-3);margin-top:4px;font-family:monospace">'+esc(api.endpoint)+'</div>'
+          + '<div style="font-size:12px;color:var(--ink-2);margin-top:6px">Alimenta: <b>→ '+esc(api.alimenta)+'</b></div>'
+        + '</div>'
+        + '<div style="text-align:right;min-width:140px">'
+          + '<div style="font-size:12px;color:var(--ink-2)"><b>'+api.recordTotali+'</b> record totali · <b>'+api.record30gg+'</b> ultimi 30gg</div>'
+          + '<div style="font-size:11px;color:var(--ink-3);margin-top:2px">Ultimo: '+_fmTimeAgo(api.ultimoPrelievo)+'</div>'
+        + '</div></div>';
+      if (api.motivoBlocco) {
+        html += '<div style="margin-top:8px;padding:8px 10px;background:rgba(239,68,68,.04);border-radius:6px;font-size:12px;color:var(--danger,#C2410C)"><b>Stato:</b> '+esc(api.motivoBlocco)+'</div>';
+      }
+      html += '<div style="margin-top:10px;display:flex;gap:8px">'
+        + '<button class="btn btn-secondary" onclick="OC._testApiConnessione(\''+esc(api.id)+'\')" style="font-size:11px;padding:4px 10px">Testa connessione</button>'
+        + '<button class="btn btn-secondary" onclick="var d=document.getElementById(\''+detailId+'\');d.hidden=!d.hidden" style="font-size:11px;padding:4px 10px">Dettagli</button>'
+        + '<span id="api-test-'+esc(api.id)+'" style="font-size:11px;color:var(--ink-3)"></span>'
+        + '</div>';
+      html += '<div id="'+detailId+'" hidden style="margin-top:10px;padding:10px;background:var(--surface-2);border-radius:6px;font-size:12px;color:var(--ink-2)">'
+        + '<div><b>Formato:</b> '+esc(api.formato)+'</div>'
+        + '<div><b>Autenticazione:</b> '+esc(api.auth)+'</div>'
+        + '<div><b>Limiti rate:</b> '+esc(api.limiteRate)+'</div>'
+        + '<div style="margin-top:4px"><b>Mappatura campi:</b> '+esc(api.mappaCampi)+'</div>'
+        + '</div>';
+      html += '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function _openAddFonteModal() {
+    var ov = document.getElementById('oc-addfonte-overlay');
+    if (ov) { ov.hidden = false; ov.style.display = 'flex'; }
+  }
+  function _closeAddFonteModal() {
+    var ov = document.getElementById('oc-addfonte-overlay');
+    if (ov) { ov.hidden = true; ov.style.display = 'none'; }
+    var r = $('afResult'); if (r) r.textContent = '';
+  }
+
+  function _submitAddFonte() {
+    if (!hasGAS()) return;
+    var nome = ($('afNome')||{}).value || '';
+    var url = ($('afUrl')||{}).value || '';
+    var tipoFonte = ($('afTipoFonte')||{}).value || 'RSS';
+    var checks = document.querySelectorAll('.af-alimenta:checked');
+    var tipi = [];
+    for (var i = 0; i < checks.length; i++) tipi.push(checks[i].value);
+    var out = $('afResult');
+
+    if (!nome.trim()) { if(out) out.innerHTML='<span style="color:var(--danger)">Nome obbligatorio</span>'; return; }
+    if (!url.trim()) { if(out) out.innerHTML='<span style="color:var(--danger)">URL obbligatorio</span>'; return; }
+    if (!tipi.length) { if(out) out.innerHTML='<span style="color:var(--danger)">Seleziona almeno un contenitore</span>'; return; }
+
+    if(out) out.innerHTML='<span style="color:var(--ink-3)">Salvataggio...</span>';
+    var done = 0, total = tipi.length, errors = [];
+    tipi.forEach(function(tipo) {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          done++;
+          if (!r || !r.ok) errors.push(tipo + ': ' + (r&&r.error||'errore'));
+          if (done === total) {
+            if (errors.length) { if(out) out.innerHTML='<span style="color:var(--danger)">Errori: '+esc(errors.join(', '))+'</span>'; }
+            else {
+              if(out) out.innerHTML='<span style="color:var(--amb-2)">Fonte aggiunta a '+total+' contenitor'+(total>1?'i':'e')+'</span>';
+              setTimeout(function(){ _closeAddFonteModal(); _reloadFontiMatrix(); }, 1200);
+            }
+          }
+        })
+        .withFailureHandler(function(e) { done++; errors.push(tipo+': '+e); if(done===total && out) out.innerHTML='<span style="color:var(--danger)">'+esc(errors.join(', '))+'</span>'; })
+        .addFonteUnificataV2({
+          tipo: tipo, nome: nome.trim(), url: url.trim(), tipoFonte: tipoFonte,
+          tag: ($('afTag')||{}).value || '', categoria: ($('afCategoria')||{}).value || '',
+          priorita: Number(($('afPriorita')||{}).value) || 2,
+          enteDefault: ($('afEnte')||{}).value || '', livello: ($('afLivello')||{}).value || ''
+        });
+    });
+  }
+
+  function _toggleFonte(tipo, id, newState) {
+    if (!hasGAS()) return;
+    google.script.run.withSuccessHandler(function(r) {
+      if (r && r.ok) _reloadFontiMatrix();
+      else showToast && showToast((r&&r.error)||'Errore','err');
+    }).withFailureHandler(function(e){ showToast && showToast('Errore: '+e,'err'); }).toggleFonteUnified(tipo, id, newState);
+  }
+
+  function _deleteFonte(tipo, id) {
+    if (!hasGAS()) return;
+    if (!confirm('Eliminare definitivamente questa fonte?')) return;
+    google.script.run.withSuccessHandler(function(r) {
+      if (r && r.ok) { _reloadFontiMatrix(); showToast && showToast('Fonte eliminata','ok'); }
+      else showToast && showToast((r&&r.error)||'Errore','err');
+    }).withFailureHandler(function(e){ showToast && showToast('Errore: '+e,'err'); }).deleteFonteUnified(tipo, id);
+  }
+
+  function _scanNews() {
+    if (!hasGAS()) return;
+    var out = $('fmScanResult');
+    if(out) out.innerHTML='<span style="color:var(--ink-3)">Scan news in corso (30-90s)...</span>';
+    google.script.run.withSuccessHandler(function(n){
+      if(out) out.innerHTML='<span style="color:var(--amb-2)">Scan completato: '+(n||0)+' nuovi</span>';
+      _reloadFontiMatrix();
+    }).withFailureHandler(function(e){ if(out) out.innerHTML='<span style="color:var(--danger)">Errore: '+esc(e)+'</span>'; }).scanSources();
+  }
+
+  function _scanBandi() {
+    if (!hasGAS()) return;
+    var out = $('fmScanResult');
+    if(out) out.innerHTML='<span style="color:var(--ink-3)">Scan bandi in corso (60-180s)...</span>';
+    google.script.run.withSuccessHandler(function(r){
+      if(out) out.innerHTML='<span style="color:var(--amb-2)">Scan bandi completato</span>';
+      _reloadFontiMatrix();
+    }).withFailureHandler(function(e){ if(out) out.innerHTML='<span style="color:var(--danger)">Errore: '+esc(e)+'</span>'; }).scanBandiAutomatico();
+  }
+
+  function _scanPodcast() {
+    if (!hasGAS()) return;
+    var out = $('fmScanResult');
+    if(out) out.innerHTML='<span style="color:var(--ink-3)">Scan podcast/video in corso (30-90s)...</span>';
+    google.script.run.withSuccessHandler(function(n){
+      if(out) out.innerHTML='<span style="color:var(--amb-2)">Scan completato: '+(n||0)+' nuovi episodi</span>';
+      _reloadFontiMatrix();
+    }).withFailureHandler(function(e){ if(out) out.innerHTML='<span style="color:var(--danger)">Errore: '+esc(e)+'</span>'; }).scanPodcast();
+  }
+
+  function _runAuditFonti() {
+    if (!hasGAS()) return;
+    var out = $('fmDiagContent');
+    if(out) out.textContent='Audit in corso...';
+    google.script.run.withSuccessHandler(function(r){
+      if(!out) return;
+      if(!r||!r.ok) { out.textContent='Errore audit'; return; }
+      var h='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">';
+      if(r.kpi) {
+        h+='<div><b>'+r.kpi.totali+'</b> fonti totali</div>';
+        h+='<div><b>'+r.kpi.attive+'</b> attive</div>';
+        h+='<div><b>'+r.kpi.silenti+'</b> silenti</div>';
+        h+='<div><b>'+r.kpi.bandiTotali+'</b> bandi totali</div>';
+      }
+      h+='</div>';
+      if(r.raccomandazioni && r.raccomandazioni.length) {
+        h+='<div style="margin-top:8px">';
+        r.raccomandazioni.forEach(function(rc) {
+          var col = rc.livello==='critico'?'var(--danger)':rc.livello==='warning'?'#F59E0B':'var(--ink-3)';
+          h+='<div style="padding:4px 0;color:'+col+';font-size:12px">'+esc(rc.testo)+'</div>';
+        });
+        h+='</div>';
+      }
+      out.innerHTML=h;
+    }).withFailureHandler(function(e){ if(out) out.textContent='Errore: '+e; }).getFontiDiagnostics();
+  }
+
+  function _testApiConnessione(apiId) {
+    if (!hasGAS()) return;
+    var out = document.getElementById('api-test-'+apiId);
+    if(out) out.innerHTML='<span style="color:var(--ink-3)">Test in corso...</span>';
+    google.script.run.withSuccessHandler(function(r){
+      if(!out) return;
+      if(r && r.ok) {
+        out.innerHTML='<span style="color:var(--amb-2)">HTTP '+r.httpStatus+' · '+r.responseTime+' · '+r.contentLength+' byte</span>';
+      } else {
+        out.innerHTML='<span style="color:var(--danger)">HTTP '+(r?r.httpStatus:'?')+' · '+(r?r.error:'errore')+'</span>';
+      }
+    }).withFailureHandler(function(e){ if(out) out.innerHTML='<span style="color:var(--danger)">Errore: '+e+'</span>'; }).testApiConnessione(apiId);
+  }
+
+  // Backward-compat aliases
+  var reloadFontiUnified = _reloadFontiMatrix;
+  function toggleFonteU(src, tipo, id, attiva) { _toggleFonte(tipo, id, attiva); }
+  function deleteFonteU(src, tipo, id, nome) { _deleteFonte(tipo, id); }
 
 
   function showAddBandiForm() {
@@ -5830,84 +6024,8 @@
     }
   }
 
-  // v4.20 — Aggiunta fonte ora scrive su FontiFeed (feed=rss, audio=podcast, video=video).
-  // v4.20 — Aggiungi fonte universale dal tab "Tutte le fonti"
-  function _addFonteUniversale() {
-    if (!hasGAS()) return;
-    var tipo = ($('fuAddTipo')||{}).value || 'news';
-    var nome = ($('fuAddNome')||{}).value || '';
-    var url  = ($('fuAddUrl')||{}).value || '';
-    var tem  = ($('fuAddTematica')||{}).value || '';
-    var out  = $('fuAddResult');
-    if (!nome.trim() || !url.trim()) { if(out) out.textContent = 'Compila nome e URL.'; return; }
-    if(out) out.textContent = 'Aggiunta in corso…';
-    var tk = (window.OC_SESSION && window.OC_SESSION.token) || null;
-    if (tipo === 'bandi') {
-      google.script.run
-        .withSuccessHandler(function(r) {
-          if (r && r.ok) { if(out) out.textContent = 'Fonte bandi aggiunta.'; $('fuAddNome').value=''; $('fuAddUrl').value=''; reloadFontiUnified(); }
-          else { if(out) out.textContent = 'Errore: '+(r&&r.error||'?'); }
-        })
-        .withFailureHandler(function(e){ if(out) out.textContent = 'Errore: '+e; })
-        .addFonteBandi({nome:nome.trim(), url:url.trim(), categoria:tem.trim()});
-    } else if (tipo === 'libri') {
-      google.script.run
-        .withSuccessHandler(function(r) {
-          if (r && r.ok) { if(out) out.textContent = 'Libro aggiunto.'; $('fuAddNome').value=''; $('fuAddUrl').value=''; }
-          else { if(out) out.textContent = 'Errore: '+(r&&r.error||'?'); }
-        })
-        .withFailureHandler(function(e){ if(out) out.textContent = 'Errore: '+e; })
-        .addLibro({titolo:nome.trim(), autore:'', link:url.trim(), tematica:tem.trim()});
-    } else if (tipo === 'norme') {
-      google.script.run
-        .withSuccessHandler(function(r) {
-          if (r && r.ok) { if(out) out.textContent = 'Norma aggiunta.'; $('fuAddNome').value=''; $('fuAddUrl').value=''; }
-          else { if(out) out.textContent = 'Errore: '+(r&&r.error||'?'); }
-        })
-        .withFailureHandler(function(e){ if(out) out.textContent = 'Errore: '+e; })
-        .saveNorma({titolo:nome.trim(), fonte:tem.trim(), link:url.trim()});
-    } else if (tipo === 'social') {
-      google.script.run
-        .withSuccessHandler(function(r) {
-          if (r && r.ok) { if(out) out.textContent = 'Fonte social aggiunta.'; $('fuAddNome').value=''; $('fuAddUrl').value=''; }
-          else { if(out) out.textContent = 'Errore: '+(r&&r.error||'?'); }
-        })
-        .withFailureHandler(function(e){ if(out) out.textContent = 'Errore: '+e; })
-        .addSocialFonte({nome:nome.trim(), url:url.trim(), tipo:'social', categoria:tem.trim()});
-    } else {
-      var tipoMap = { news:'rss', podcast:'podcast', video:'video' };
-      google.script.run
-        .withSuccessHandler(function(r) {
-          if (r && r.ok) { if(out) out.textContent = 'Fonte aggiunta (ID: '+(r.id||'')+')'; $('fuAddNome').value=''; $('fuAddUrl').value=''; reloadFontiUnified(); }
-          else { if(out) out.textContent = 'Errore: '+(r&&r.error||'?'); }
-        })
-        .withFailureHandler(function(e){ if(out) out.textContent = 'Errore: '+e; })
-        .addFontiFeed({ tipo: tipoMap[tipo]||'rss', nome: nome.trim(), urlFeed: url.trim(), categoria: tem.trim(), gruppo: nome.trim() }, tk);
-    }
-  }
-
-  function addFonteUnificata() {
-    if (!hasGAS()) return;
-    var nome = ($('fpNomeU')||{}).value || '';
-    var url  = ($('fpUrlU')||{}).value || '';
-    var tem  = ($('fpTematicaU')||{}).value || '';
-    var out  = $('addFonteResult');
-    if (!nome.trim() || !url.trim()) { if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Compila nome e URL.</span>'; return; }
-    var tipoMap = { feed:'rss', audio:'podcast', video:'video' };
-    var tipo = tipoMap[_podAddType] || 'rss';
-    if(out) out.innerHTML = '<span style="color:#666">Aggiunta in corso…</span>';
-    var tk = (window.OC_SESSION && window.OC_SESSION.token) || null;
-    google.script.run
-      .withSuccessHandler(function(r) {
-        if (r && r.ok) {
-          out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Fonte aggiunta a FontiFeed (ID: '+esc(r.id||'')+')</span>';
-          $('fpNomeU').value = ''; $('fpUrlU').value = '';
-          reloadFontiUnified();
-        } else { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; }
-      })
-      .withFailureHandler(function(e) { if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
-      .addFontiFeed({ tipo: tipo, nome: nome.trim(), urlFeed: url.trim(), categoria: tem.trim(), gruppo: nome.trim() }, tk);
-  }
+  // v4.22 — _addFonteUniversale rimossa, sostituita da _submitAddFonte (modale)
+  var _addFonteUniversale = _submitAddFonte; // backward-compat alias
 
   function filterFontiPod(tipo) {
     _fontiPodFilter = tipo;
@@ -9450,7 +9568,19 @@
     runScannerPodcast: runScannerPodcast,
     runScanBandiV5: runScanBandiV5,
     resetFailBandi: resetFailBandi,
-    reloadFontiUnified: reloadFontiUnified,
+    reloadFontiUnified: _reloadFontiMatrix,
+    _reloadFontiMatrix: _reloadFontiMatrix,
+    _loadApiSection: _loadApiSection,
+    _openAddFonteModal: _openAddFonteModal,
+    _closeAddFonteModal: _closeAddFonteModal,
+    _submitAddFonte: _submitAddFonte,
+    _scanNews: _scanNews,
+    _scanBandi: _scanBandi,
+    _scanPodcast: _scanPodcast,
+    _runAuditFonti: _runAuditFonti,
+    _testApiConnessione: _testApiConnessione,
+    _toggleFonte: _toggleFonte,
+    _deleteFonte: _deleteFonte,
     toggleFonteU: toggleFonteU,
     deleteFonteU: deleteFonteU,
     runAllSetup: runAllSetup,
@@ -11163,6 +11293,52 @@
     <div style="margin-top:20px;display:flex;align-items:center;justify-content:space-between">
       <span id="oc-servizi-timer" style="font-size:12px;color:var(--ink-3);font-style:italic">Si chiude tra 10s...</span>
       <button type="button" id="oc-servizi-continua" onclick="OC._chiudiServiziOverlay()" style="background:var(--accent,#935851);color:#fff;border:none;padding:11px 28px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Continua</button>
+    </div>
+  </div>
+</div>
+
+<!-- v4.22 — Modale Aggiungi Fonte -->
+<div id="oc-addfonte-overlay" hidden style="position:fixed;inset:0;background:rgba(26,24,21,.55);z-index:9998;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)">
+  <div role="dialog" aria-modal="true" style="background:#fff;border-radius:16px;max-width:540px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.22);padding:32px;font-family:var(--font-ui,sans-serif);max-height:calc(100vh - 40px);overflow-y:auto;position:relative">
+    <button onclick="OC._closeAddFonteModal()" aria-label="Chiudi" style="position:absolute;top:12px;right:12px;background:transparent;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;color:var(--ink-3);font-size:22px;line-height:1">&times;</button>
+    <div style="font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:4px">Aggiungi fonte</div>
+    <p style="font-size:13px;color:var(--ink-2);line-height:1.5;margin:0 0 18px">Inserisci i dati della nuova fonte da monitorare. I campi con * sono obbligatori.</p>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Identificazione</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Nome *</label><input id="afNome" type="text" placeholder="Es. ICOM Italia, Artribune" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"/><div style="font-size:11px;color:var(--ink-3);margin-top:2px">Nome leggibile della fonte</div></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">URL *</label><input id="afUrl" type="url" placeholder="https://..." style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"/><div style="font-size:11px;color:var(--ink-3);margin-top:2px">Indirizzo RSS, pagina web o canale YouTube</div></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Tipo fonte *</label><select id="afTipoFonte" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"><option value="RSS">RSS — feed XML</option><option value="HTML">HTML — pagina web</option><option value="YouTube">YouTube — canale video</option><option value="API">API — endpoint strutturato</option></select></div>
+      </div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Classificazione</div>
+      <div style="margin-bottom:10px"><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px">Alimenta * <span style="font-weight:400;color:var(--ink-3)">(almeno uno)</span></label>
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" class="af-alimenta" value="bandi" style="accent-color:var(--accent)"/> Bandi</label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" class="af-alimenta" value="news" style="accent-color:var(--accent)"/> News</label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" class="af-alimenta" value="podcast" style="accent-color:var(--accent)"/> Podcast</label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" class="af-alimenta" value="video" style="accent-color:var(--accent)"/> Video</label>
+        </div>
+        <div style="font-size:11px;color:var(--ink-3);margin-top:4px">Se selezioni piu di uno, vengono create righe separate per contenitore.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Categoria</label><select id="afCategoria" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"><option value="">— opzionale —</option><option>Ministero</option><option>Regione</option><option>UE</option><option>Fondazione</option><option>Associazione</option><option>Rivista</option><option>Aggregatore</option><option>Altro</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Livello</label><select id="afLivello" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"><option value="">— opzionale —</option><option>Nazionale</option><option>Regionale</option><option>EU</option><option>Locale</option></select></div>
+      </div>
+      <div style="margin-top:10px"><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Priorita</label><select id="afPriorita" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"><option value="1">1 — Alta (ogni ciclo)</option><option value="2" selected>2 — Media (settimane alterne)</option><option value="3">3 — Bassa (mensile)</option></select></div>
+    </div>
+    <div style="margin-bottom:18px">
+      <div style="font-size:12px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Opzionali</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Tag</label><input id="afTag" type="text" placeholder="Es. accessibilita, PNRR, musei" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"/><div style="font-size:11px;color:var(--ink-3);margin-top:2px">Etichette separate da virgola</div></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Ente default</label><input id="afEnte" type="text" placeholder="Es. MiC, Regione Puglia" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"/></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button type="button" onclick="OC._submitAddFonte()" style="background:var(--accent,#935851);color:#fff;border:none;padding:11px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Aggiungi fonte</button>
+      <button type="button" onclick="OC._closeAddFonteModal()" style="background:none;border:1px solid var(--rule);padding:11px 18px;border-radius:8px;font-size:13px;cursor:pointer;color:var(--ink-2)">Annulla</button>
+      <span id="afResult" style="font-size:12px;flex:1"></span>
     </div>
   </div>
 </div>
