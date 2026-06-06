@@ -279,7 +279,11 @@ function loginConEmail(email) {
       ]);
     }
 
-    Logger.log('[AUTH] loginConEmail OK: ' + email + ' livello=' + livello);
+    // v4.21 — Magic link: invia email con link di accesso invece di restituire token al client
+    var magicUrl = _buildMagicLink_(token);
+    _sendMagicLinkEmail_(email, magicUrl, 'login', true, null);
+
+    Logger.log('[AUTH] loginConEmail magic-link inviato: ' + email + ' livello=' + livello);
     return {
       ok: true,
       token: token,

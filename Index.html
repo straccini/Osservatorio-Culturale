@@ -6136,27 +6136,32 @@
       + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851);width:240px">Azioni</th>'
       + '</tr></thead><tbody>';
     items.forEach(function(u) {
+      var isAdmin = (u.Ruolo === 'admin');
       var statoCol = u.Stato === 'attivo' ? 'var(--amb-2,#10916D)' : (u.Stato === 'pending' ? 'var(--accent,#935851)' : (u.Stato === 'sospeso' ? '#999' : 'var(--danger,#C2410C)'));
-      var ruoloCol = u.Ruolo === 'admin' ? 'var(--amb-1,#7C3AED)' : (u.Ruolo === 'editor' ? 'var(--amb-5,#0E7490)' : '#666');
+      var ruoloCol = isAdmin ? 'var(--amb-1,#7C3AED)' : (u.Ruolo === 'editor' ? 'var(--amb-5,#0E7490)' : '#666');
       function chk(v) { return (v===true||v==='TRUE'||v===1) ? '✓' : '—'; }
       function chkColor(v) { return (v===true||v==='TRUE'||v===1) ? 'var(--amb-2,#10916D)' : '#999'; }
-      html += '<tr>'
-        + '<td style="padding:5px;border-bottom:1px solid #eee;font-family:monospace;font-size:11px">'+esc(u.Email||'')+'</td>'
+      // v4.21 — Admin protetti: dropdown e bottoni disabilitati per admin
+      var disabledAttr = isAdmin ? ' disabled title="Amministratore protetto"' : '';
+      html += '<tr' + (isAdmin ? ' style="background:rgba(124,58,237,.04)"' : '') + '>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;font-family:monospace;font-size:11px">'+esc(u.Email||'') + (isAdmin ? ' <span style="font-size:9px;color:var(--amb-1);font-weight:700;font-family:sans-serif">ADMIN</span>' : '') + '</td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee">'+esc(u.Nome||'')+'</td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee">'
-          + '<select class="u-ruolo" data-email="'+esc(u.Email)+'" data-orig="'+esc(u.Ruolo||'')+'" onchange="OC.userRowChanged(\''+esc(u.Email)+'\')" style="font-size:11px;padding:2px 4px;font-weight:600;color:'+ruoloCol+'">'
+          + '<select class="u-ruolo" data-email="'+esc(u.Email)+'" data-orig="'+esc(u.Ruolo||'')+'" onchange="OC.userRowChanged(\''+esc(u.Email)+'\')" style="font-size:11px;padding:2px 4px;font-weight:600;color:'+ruoloCol+'"' + disabledAttr + '>'
             + ['admin','editor','lettore','ospite'].map(function(r){ return '<option value="'+r+'"'+(u.Ruolo===r?' selected':'')+'>'+r+'</option>'; }).join('')
           + '</select></td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee">'
-          + '<select class="u-stato" data-email="'+esc(u.Email)+'" data-orig="'+esc(u.Stato||'')+'" onchange="OC.userRowChanged(\''+esc(u.Email)+'\')" style="font-size:11px;padding:2px 4px;font-weight:600;color:'+statoCol+'">'
+          + '<select class="u-stato" data-email="'+esc(u.Email)+'" data-orig="'+esc(u.Stato||'')+'" onchange="OC.userRowChanged(\''+esc(u.Email)+'\')" style="font-size:11px;padding:2px 4px;font-weight:600;color:'+statoCol+'"' + disabledAttr + '>'
             + ['pending','attivo','sospeso','rifiutato'].map(function(s){ return '<option value="'+s+'"'+(u.Stato===s?' selected':'')+'>'+s+'</option>'; }).join('')
           + '</select></td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInDigest)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'digest\')" title="Clicca per toggle">'+chk(u.OptInDigest)+'</td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInBandi)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'bandi\')" title="Clicca per toggle">'+chk(u.OptInBandi)+'</td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInMatrix)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'matrix\')" title="Clicca per toggle">'+chk(u.OptInMatrix)+'</td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee">'
-          + '<button class="btn btn-secondary u-save" data-email="'+esc(u.Email)+'" onclick="OC.salvaUtente(\''+esc(u.Email)+'\')" style="display:none;font-size:10px;padding:3px 8px;margin-right:4px;background:var(--amb-2,#10916D);color:#fff;font-weight:600">💾 Salva</button>'
-          + '<button class="btn btn-secondary" onclick="OC.eliminaUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;color:var(--danger,#C2410C)">🗑 Elimina</button>'
+          + (isAdmin
+            ? '<span style="font-size:10px;color:var(--ink-3);font-style:italic">Protetto</span>'
+            : '<button class="btn btn-secondary u-save" data-email="'+esc(u.Email)+'" onclick="OC.salvaUtente(\''+esc(u.Email)+'\')" style="display:none;font-size:10px;padding:3px 8px;margin-right:4px;background:var(--amb-2,#10916D);color:#fff;font-weight:600">Salva</button>'
+              + '<button class="btn btn-secondary" onclick="OC.eliminaUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;color:var(--danger,#C2410C)">Elimina</button>')
         + '</td></tr>';
     });
     html += '</tbody></table>';
@@ -6855,16 +6860,20 @@
       var stato = it.stato || '';
       var isInviato = (stato === 'inviato' || stato === 'inviata');
       // Pulsante azione principale: Anteprima se bozza/in_attesa, riepilogo invio se inviato
+      // v4.21 — Fix: onclick diretto
       var actPrimary = (stato === 'bozza' || stato === 'in_attesa_approvazione')
-        ? ('<button class="btn btn-secondary btn-sm" data-action="openPreview" data-id="'+esc(it.id)+'" title="Apri l\'anteprima di questa newsletter">Anteprima</button>')
+        ? ('<button class="btn btn-secondary btn-sm" onclick="OC.openPreview(\''+esc(it.id)+'\')" title="Apri l\'anteprima di questa newsletter">Anteprima</button>')
         : (isInviato ? '<span class="muted">Destinatari: '+(it.destinatari||0)+'</span>' : '');
       // Pulsante elimina: solo se NON inviato (sicurezza: bozze inviate non si toccano)
+      // v4.21 — Fix: onclick diretto al posto di data-action (non c'era event delegation)
       var actDelete = isInviato ? ''
-        : '<button class="btn btn-danger btn-sm" data-action="deleteDigest" data-id="'+esc(it.id)+'" title="Elimina definitivamente questa bozza" aria-label="Elimina bozza">&#10005;&nbsp;Elimina</button>';
+        : '<button class="btn btn-danger btn-sm" onclick="OC.deleteDigest(\''+esc(it.id)+'\')" title="Elimina definitivamente questa bozza" aria-label="Elimina bozza">&#10005;&nbsp;Elimina</button>';
+      // v4.21 — Data newsletter in evidenza
+      var dataLabel = it.data ? '<span style="color:var(--ink-2);font-weight:600">' + esc(it.data) + '</span> &middot; ' : '';
       html += ''
         + '<div class="digest-row">'
         +   '<div style="flex:1;min-width:0"><b>'+esc(it.soggetto||'(senza soggetto)')+'</b><br>'
-        +     '<small class="muted">'+esc(it.id)+' &middot; '+esc(it.data||'')+' &middot; '+esc(it.autore||'')+'</small>'
+        +     '<small class="muted">' + dataLabel + esc(it.id)+' &middot; '+esc(it.autore||'')+'</small>'
         +   '</div>'
         +   '<span class="status '+esc(stato)+'">'+esc(stato.replace(/_/g,' '))+'</span>'
         +   '<div class="digest-row-actions">'+actPrimary+actDelete+'</div>'
@@ -6888,7 +6897,7 @@
           .adminGetDigestList({token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
       })
       .withFailureHandler(function(e){ alert('Errore di rete: '+e); })
-      .adminDeleteDigestDraft(id);
+      .adminDeleteDigestDraft(id, (window.OC_SESSION && window.OC_SESSION.token) || null);
   }
 
   function checkTelegram(){
@@ -7116,10 +7125,10 @@
     overlay.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:460px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);padding:36px 32px;font-family:var(--font-ui,sans-serif);max-height:calc(100vh - 40px);overflow-y:auto">'
       // --- Sezione 1: Accesso (sempre visibile — backend controlla il ruolo) ---
       + '<div style="font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:4px">Accedi</div>'
-          + '<p style="font-size:13px;color:var(--ink-2);line-height:1.5;margin:0 0 14px">Inserisci la tua email per accedere.</p>'
+          + '<p style="font-size:13px;color:var(--ink-2);line-height:1.5;margin:0 0 14px">Inserisci la tua email. Ti invieremo un link di accesso sicuro.</p>'
           + '<div style="display:flex;gap:8px;margin-bottom:6px">'
           + '<input type="email" id="loginFormEmail" placeholder="La tua email" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />'
-          + '<button type="button" onclick="OC._submitLoginForm()" style="background:var(--ink,#1A1815);color:#fff;border:none;padding:10px 20px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Accedi</button>'
+          + '<button type="button" onclick="OC._submitLoginForm()" style="background:var(--ink,#1A1815);color:#fff;border:none;padding:10px 20px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Invia link</button>'
           + '</div>'
           + '<div id="loginFormMsg" style="text-align:center;margin-bottom:4px;font-size:12.5px;min-height:18px" hidden></div>'
           + '<div style="display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--ink-4,#aaa);font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:600">'
@@ -7136,10 +7145,17 @@
       + '<input type="text" id="regFormNome" placeholder="Nome" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />'
       + '<input type="text" id="regFormCognome" placeholder="Cognome" style="flex:1;padding:10px 14px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-size:13px;font-family:inherit" />'
       + '</div></div>'
-      + '<label style="display:flex;align-items:start;gap:6px;margin-bottom:14px;cursor:pointer">'
-      + '<input type="checkbox" id="regFormGdpr" style="margin-top:3px" />'
-      + '<span style="font-size:11px;color:var(--ink-3);line-height:1.4">Acconsento al trattamento dei dati personali. <a href="https://www.duemilamusei.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#935851)">Privacy policy</a></span>'
+      + '<div style="background:var(--surface-2,#FAFAF9);border:1px solid var(--rule,#E5E5E7);border-radius:8px;padding:14px;margin-bottom:14px">'
+      + '<label style="display:flex;align-items:start;gap:8px;cursor:pointer;margin-bottom:10px">'
+      + '<input type="checkbox" id="regFormGdpr" style="margin-top:2px;width:16px;height:16px;accent-color:var(--accent,#935851)" />'
+      + '<span style="font-size:12px;color:var(--ink-2);line-height:1.5">Acconsento al trattamento dei miei dati personali ai sensi del GDPR (Reg. UE 2016/679).</span>'
       + '</label>'
+      + '<div style="font-size:11px;color:var(--ink-3);line-height:1.5;padding-left:24px">'
+      + '<p style="margin:0 0 6px"><b>Finalita:</b> I dati sono trattati esclusivamente per finalita informative e di personalizzazione dei contenuti dell\'Osservatorio Culturale Sinopia (bandi, news, podcast, report).</p>'
+      + '<p style="margin:0 0 6px"><b>Nessun vincolo temporale:</b> L\'iscrizione e gratuita, senza obblighi ne scadenze. Puoi richiedere la cancellazione del tuo account e di tutti i dati in qualsiasi momento.</p>'
+      + '<p style="margin:0 0 6px"><b>Diritti:</b> Hai diritto di accesso, rettifica, cancellazione, portabilita e opposizione al trattamento dei tuoi dati. Per esercitarli scrivi a <b>info@duemilamusei.it</b>.</p>'
+      + '<p style="margin:0"><b>Titolare:</b> Duemilamusei · <a href="https://www.duemilamusei.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#935851)">Informativa completa</a></p>'
+      + '</div></div>'
       + '<button type="button" onclick="OC._submitRegForm()" style="width:100%;background:var(--accent,#935851);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Registrati gratis</button>'
       + '<div id="regFormMsg" style="text-align:center;margin-top:8px;font-size:13px" hidden></div>'
       // --- Chiudi ---
@@ -7151,55 +7167,26 @@
     if (loginInput) setTimeout(function(){ loginInput.focus(); }, 100);
   }
 
-  // v5.1.10 — Login con email (utente gia registrato)
+  // v4.21 — Login con magic link: invia link di accesso via email (no accesso diretto)
   function _submitLoginForm_() {
     var email = (document.getElementById('loginFormEmail') || {}).value || '';
     var msg = document.getElementById('loginFormMsg');
     if (!email || email.indexOf('@') < 0) { alert('Inserisci un indirizzo email valido'); return; }
-    if (msg) { msg.hidden = false; msg.textContent = 'Accesso in corso...'; msg.style.color = 'var(--ink-2)'; }
+    if (msg) { msg.hidden = false; msg.textContent = 'Invio link di accesso...'; msg.style.color = 'var(--ink-2)'; }
     if (hasGAS()) {
       google.script.run
         .withSuccessHandler(function(r) {
           if (r && r.ok && r.token) {
-            if (msg) { msg.textContent = 'Accesso riuscito!'; msg.style.color = 'var(--amb-2,#10916D)'; }
-            try { localStorage.setItem('oc_token', r.token); } catch(_){}
-            try { localStorage.removeItem('oc_force_guest'); } catch(_){}
-            window.OC_SESSION = {
-              token: r.token, email: r.email, livello: r.livello,
-              permanente: !!r.permanente, matrixCompletato: !!r.matrixCompletato
-            };
-            // Aggiorna UI senza reload: setUser + chiudi modal + vai a home
-            var ruoloMap = { 3:'admin', 2:'editor' };
-            setUser({
-              ruolo: ruoloMap[r.livello] || r.ruolo || 'lettore',
-              nome: r.nome || r.email.split('@')[0],
-              email: r.email,
-              initials: (r.nome || r.email).substring(0,2).toUpperCase(),
-              isAdmin: r.livello >= 3,
-              isEditor: r.livello >= 2
-            });
-            setTimeout(function() {
-              var ov = document.getElementById('oc-regform-overlay');
-              if (ov) ov.remove();
-              var gg = document.getElementById('oc-guest-gate');
-              if (gg) gg.remove();
-              // Chiudi anche eventuali overlay newsletter/registrazione rimasti aperti
-              var nlOv = document.getElementById('oc-newsletter-overlay');
-              if (nlOv) { nlOv.hidden=true; nlOv.style.display='none'; }
-              var regOv = document.getElementById('oc-reg-overlay');
-              if (regOv) { regOv.hidden=true; regOv.style.display='none'; }
-              // Invalida tutte le cache dati (erano caricate come ospite)
-              try { _cacheBandi=null;_cacheNews=null;_cachePodcast=null;_cacheVideo=null;_cacheLibri=null;_cacheArchivio=null; } catch(_){}
-              // v4.20 — Forza attivazione home page (evita pagina bianca)
-              var allP = document.querySelectorAll('.page');
-              for (var pi=0; pi<allP.length; pi++) allP[pi].classList.remove('active');
-              var hp = document.getElementById('page-home');
-              if (hp) hp.classList.add('active');
-              go('home');
-              // Ri-hydrata: ricarica dati home + badge + utente col nuovo livello
-              hydrate();
-              showToast('Bentornato, ' + (r.nome || r.email.split('@')[0]) + '!', 'ok');
-            }, 400);
+            // Magic link inviato con successo — mostra conferma
+            if (msg) {
+              msg.innerHTML = '<div style="text-align:center;padding:4px 0">'
+                + '<div style="font-size:22px;margin-bottom:4px">&#9993;</div>'
+                + '<div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px">Link di accesso inviato!</div>'
+                + '<div style="font-size:12.5px;color:var(--ink-2);line-height:1.5">Controlla la tua casella <b>' + email + '</b> e clicca il link per accedere.</div>'
+                + '<div style="font-size:11px;color:var(--ink-3);margin-top:6px;font-style:italic">Non la trovi? Controlla lo spam.</div>'
+                + '</div>';
+              msg.hidden = false;
+            }
           } else {
             var _errMap = {
               'email_mancante': 'Inserisci un indirizzo email.',
@@ -7235,41 +7222,32 @@
     if (msg) { msg.hidden = false; msg.textContent = 'Registrazione in corso...'; msg.style.color = 'var(--ink-2)'; }
 
     if (hasGAS()) {
+      // v4.21 — Registrazione con magic link: registra utente, poi invia magic link di conferma
       google.script.run
         .withSuccessHandler(function(r) {
           if (r && r.ok) {
-            var msgText = r.action === 'reactivated'
-              ? 'Account riattivato! Accesso in corso...'
-              : 'Registrazione completata! Accesso in corso...';
-            if (msg) { msg.textContent = msgText; msg.style.color = 'var(--amb-2,#10916D)'; }
             // Salva anche nella mailing list per newsletter
             google.script.run.withFailureHandler(function(){}).saveMailing({ Email: email, Nome: nomeCompleto, Attivo: true, ConsensoGDPR: true, Sorgente: 'registrazione' });
-            // Login automatico dopo registrazione
+            // Invia magic link di conferma (NON login diretto)
             google.script.run
-              .withSuccessHandler(function(lr) {
-                if (lr && lr.ok && lr.token) {
-                  try { localStorage.setItem('oc_token', lr.token); } catch(_){}
-                  try { localStorage.removeItem('oc_force_guest'); } catch(_){}
-                  window.OC_SESSION = { token:lr.token, email:lr.email, livello:lr.livello, permanente:true };
-                  var ruoloMap = { 3:'admin', 2:'editor' };
-                  setUser({ ruolo:ruoloMap[lr.livello]||lr.ruolo||'lettore', nome:lr.nome||lr.email.split('@')[0], email:lr.email, initials:(lr.nome||lr.email).substring(0,2).toUpperCase() });
-                  var ov = document.getElementById('oc-regform-overlay'); if (ov) ov.remove();
-                  var gg = document.getElementById('oc-guest-gate'); if (gg) gg.remove();
-                  try { _cacheBandi=null;_cacheNews=null;_cachePodcast=null;_cacheVideo=null;_cacheLibri=null;_cacheArchivio=null; } catch(_){}
-                  go('home'); hydrate();
-                  showToast(r.action==='reactivated' ? 'Bentornato!' : 'Benvenuto!', 'ok');
-                  // v4.20 — Invita a completare il profilo dopo registrazione
-                  setTimeout(function(){
-                    if (typeof showToast === 'function') showToast('Completa il tuo profilo per ricevere contenuti mirati', 'ok');
-                    setTimeout(function(){ try { OC.goProfiloTab(); } catch(_){} }, 2000);
-                  }, 3000);
-                } else {
-                  var ov2 = document.getElementById('oc-regform-overlay'); if (ov2) ov2.remove();
-                  go('home'); hydrate();
+              .withSuccessHandler(function(sr) {
+                if (msg) {
+                  msg.innerHTML = '<div style="text-align:center;padding:8px 0">'
+                    + '<div style="font-size:28px;margin-bottom:8px">&#9993;</div>'
+                    + '<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">Controlla la tua email!</div>'
+                    + '<div style="font-size:13px;color:var(--ink-2);line-height:1.5">Abbiamo inviato un <b>link di conferma</b> a <b>' + email + '</b>.<br>Clicca il link nell\'email per completare l\'iscrizione e accedere a Sinopia.</div>'
+                    + '<div style="font-size:11.5px;color:var(--ink-3);margin-top:10px;font-style:italic">Non la trovi? Controlla la cartella spam.</div>'
+                    + '</div>';
+                  msg.hidden = false;
                 }
+                // Nascondi il form dopo invio riuscito
+                var formInputs = document.querySelectorAll('#oc-regform-overlay input, #oc-regform-overlay button[onclick*="submitRegForm"]');
+                for (var fi=0; fi<formInputs.length; fi++) formInputs[fi].style.display = 'none';
               })
-              .withFailureHandler(function() { location.reload(); })
-              .loginConEmail(email);
+              .withFailureHandler(function(e) {
+                if (msg) { msg.textContent = 'Registrazione avvenuta ma errore invio email. Prova con "Accedi".'; msg.style.color = 'var(--accent,#935851)'; }
+              })
+              .createSessione(email, 'registrazione');
           } else if (r && r.error === 'gia_registrato') {
             if (msg) { msg.textContent = 'Questa email e gia registrata. Usa "Accedi" qui sopra.'; msg.style.color = 'var(--accent,#935851)'; }
           } else {
@@ -10966,30 +10944,7 @@
   <div id="profiloProContent" style="max-width:680px">
     <p style="font-size:14px;color:var(--ink-2);line-height:1.6;margin:0 0 24px">Raccontaci chi sei e cosa ti interessa. Riceverai contenuti mirati sulle tematiche che scegli. Tutto e modificabile in qualsiasi momento. I dati sono anonimi e aggregati.</p>
 
-    <!-- v4.20 — Tabella servizi per livello utente -->
-    <div style="background:var(--surface-2);border:1px solid var(--rule);border-radius:12px;padding:20px 24px;margin-bottom:24px;overflow-x:auto">
-      <h3 style="font-size:15px;font-weight:600;color:var(--ink);margin:0 0 14px">Cosa puoi fare con Sinopia</h3>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:center">
-        <thead>
-          <tr style="border-bottom:2px solid var(--rule)">
-            <th style="text-align:left;padding:8px;color:var(--ink-2);font-weight:600">Servizio</th>
-            <th style="padding:8px;color:var(--ink-3);font-weight:600;width:90px">Ospite</th>
-            <th style="padding:8px;color:var(--amb-3,#3C6A95);font-weight:600;width:90px">Lettore</th>
-            <th style="padding:8px;color:var(--accent,#935851);font-weight:600;width:100px">Profilato</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Leggere bandi, news, podcast</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
-          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Salvare preferiti</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
-          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Newsletter settimanale</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
-          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Filtri e contenuti personalizzati</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
-          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Bandi mirati per il tuo territorio</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
-          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Digest personalizzato Matrix</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
-          <tr><td style="text-align:left;padding:8px">Report benchmark museo</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
-        </tbody>
-      </table>
-      <div style="margin-top:12px;text-align:center;font-size:12px;color:var(--ink-3)">Completa il tuo profilo qui sotto per sbloccare tutti i servizi personalizzati.</div>
-    </div>
+    <!-- v4.21 — Tabella servizi spostata in overlay (vedi oc-servizi-overlay) -->
 
     <!-- Anagrafica professionale -->
     <div style="background:#fff;border:1px solid var(--rule,#E5E5E7);border-radius:12px;padding:24px;margin-bottom:20px">
@@ -11053,6 +11008,39 @@
         <button type="button" onclick="OC.saveProfiloSettings()" style="background:var(--accent,#935851);color:#fff;border:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Salva profilo</button>
         <span id="proSaveMsg" style="font-size:13px;color:var(--ink-3)"></span>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== v4.21 — Overlay tabella servizi pre-profilo ===== -->
+<div id="oc-servizi-overlay" hidden style="position:fixed;inset:0;background:rgba(26,24,21,.55);z-index:9998;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)">
+  <div role="dialog" aria-modal="true" style="background:#fff;border-radius:16px;max-width:520px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.22);padding:36px 32px;font-family:var(--font-ui,sans-serif);position:relative">
+    <div style="font-family:var(--font-display,Georgia,serif);font-size:22px;font-weight:600;color:var(--ink);margin-bottom:6px">Cosa puoi fare con Sinopia</div>
+    <p style="font-size:13px;color:var(--ink-2);line-height:1.5;margin:0 0 20px">Scopri i vantaggi di ogni livello. Completa il tuo profilo per sbloccare tutti i servizi personalizzati.</p>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:center">
+        <thead>
+          <tr style="border-bottom:2px solid var(--rule)">
+            <th style="text-align:left;padding:8px;color:var(--ink-2);font-weight:600">Servizio</th>
+            <th style="padding:8px;color:var(--ink-3);font-weight:600;width:80px">Ospite</th>
+            <th style="padding:8px;color:var(--amb-3,#3C6A95);font-weight:600;width:80px">Lettore</th>
+            <th style="padding:8px;color:var(--accent,#935851);font-weight:600;width:90px">Profilato</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Leggere bandi, news, podcast</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
+          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Salvare preferiti</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
+          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Newsletter settimanale</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
+          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Filtri e contenuti personalizzati</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
+          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Bandi mirati per il tuo territorio</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
+          <tr style="border-bottom:1px solid var(--rule)"><td style="text-align:left;padding:8px">Digest personalizzato Matrix</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
+          <tr><td style="text-align:left;padding:8px">Report benchmark museo</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--ink-3)">—</td><td style="padding:8px;color:var(--amb-2)">&#10003;</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:20px;display:flex;align-items:center;justify-content:space-between">
+      <span id="oc-servizi-timer" style="font-size:12px;color:var(--ink-3);font-style:italic">Si chiude tra 10s...</span>
+      <button type="button" id="oc-servizi-continua" onclick="OC._chiudiServiziOverlay()" style="background:var(--accent,#935851);color:#fff;border:none;padding:11px 28px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Continua</button>
     </div>
   </div>
 </div>
@@ -11308,8 +11296,35 @@
   };
 
   // --- Profilo: pagina autonoma ---
+  var _serviziTimerId = null;
   OC.goProfiloTab = function() {
-    // v4.20 — Sempre accessibile, anche senza login. Il form chiede l'email al suo interno.
+    // v4.21 — Mostra overlay tabella servizi prima di navigare al profilo
+    var ov = document.getElementById('oc-servizi-overlay');
+    if (ov) {
+      ov.hidden = false;
+      ov.style.display = 'flex';
+      // Timer auto-chiusura 10 secondi
+      var remaining = 10;
+      var timerEl = document.getElementById('oc-servizi-timer');
+      if (timerEl) timerEl.textContent = 'Si chiude tra ' + remaining + 's...';
+      if (_serviziTimerId) clearInterval(_serviziTimerId);
+      _serviziTimerId = setInterval(function() {
+        remaining--;
+        if (timerEl) timerEl.textContent = remaining > 0 ? ('Si chiude tra ' + remaining + 's...') : '';
+        if (remaining <= 0) {
+          clearInterval(_serviziTimerId);
+          _serviziTimerId = null;
+          OC._chiudiServiziOverlay();
+        }
+      }, 1000);
+    } else {
+      OC.go('profilo-pro');
+    }
+  };
+  OC._chiudiServiziOverlay = function() {
+    if (_serviziTimerId) { clearInterval(_serviziTimerId); _serviziTimerId = null; }
+    var ov = document.getElementById('oc-servizi-overlay');
+    if (ov) { ov.hidden = true; ov.style.display = 'none'; }
     OC.go('profilo-pro');
   };
 

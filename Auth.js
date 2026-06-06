@@ -757,12 +757,20 @@ function deleteUser(email, token) {
   var auth = getCurrentUserAuth(token || null);
   if (!auth || !auth.isAdmin) return { error: 'Accesso negato (non admin)' };
   if (!email) return { error:'email mancante' };
+  email = String(email).toLowerCase().trim();
+
+  // v4.21 — Protezione admin-su-admin: un admin non puo cancellare un altro admin
   var sh = _getOrCreateUtentiSheet_();
   var rows = sh.getDataRange().getValues();
   var headers = rows[0];
   var iEmail = headers.indexOf('Email');
+  var iRuolo = headers.indexOf('Ruolo');
   for (var i = rows.length-1; i >= 1; i--) {
-    if (String(rows[i][iEmail] || '').toLowerCase().trim() === email.toLowerCase().trim()) {
+    if (String(rows[i][iEmail] || '').toLowerCase().trim() === email) {
+      var targetRuolo = String(rows[i][iRuolo] || '').toLowerCase();
+      if (targetRuolo === 'admin') {
+        return { error: 'Non puoi eliminare un altro amministratore. Contatta il super-admin.' };
+      }
       sh.deleteRow(i+1);
       return { ok:true };
     }
@@ -802,6 +810,11 @@ function saveUserStatoRuolo(email, stato, ruolo, oldStato, token) {
   var rows = sh.getDataRange().getValues();
   for (var i = 1; i < rows.length; i++) {
     if (String(rows[i][iEmail] || '').toLowerCase().trim() === email) {
+      // v4.21 — Protezione admin-su-admin: non modificare ruolo/stato di un altro admin
+      var currentTargetRuolo = String(rows[i][iRuolo] || '').toLowerCase();
+      if (currentTargetRuolo === 'admin' && email !== String(auth.email || '').toLowerCase().trim()) {
+        return { error: 'Non puoi modificare un altro amministratore.' };
+      }
       if (iStato >= 0) sh.getRange(i+1, iStato+1).setValue(stato);
       if (iRuolo >= 0) sh.getRange(i+1, iRuolo+1).setValue(ruolo);
       var primaAttivazione = (stato === 'attivo' && String(oldStato || rows[i][iStato] || '').toLowerCase() !== 'attivo');
