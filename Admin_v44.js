@@ -68,8 +68,10 @@ function adminGetDigestList(opts) {
  * @param {string} draftId ID della bozza (es: 'DR20260524150300')
  * @return {{ok:boolean, id?:string, stato?:string, error?:string}}
  */
-function adminDeleteDigestDraft(draftId) {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+function adminDeleteDigestDraft(draftId, token) {
+  // v4.21 — Accetta token per deploy "Chiunque" (sessione Google vuota)
+  var tk = token || (typeof OC_SESSION !== 'undefined' && OC_SESSION ? OC_SESSION.token : null);
+  if (!_isCurrentUserAdmin_(tk)) return { ok:false, error:'forbidden' };
   if (!draftId) return { ok:false, error:'missing_id' };
 
   var sh = _getOrCreateSheet_(OC_NL_SHEET_, ['ID','Data','Soggetto','Destinatari','Stato','Autore','Token']);
