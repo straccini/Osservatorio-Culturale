@@ -311,14 +311,19 @@ function _autoRegisterUser_(email, nome, source) {
         if (stato === 'attivo') {
           return { ok: false, error: 'gia_registrato', ruolo: ruolo };
         }
+        // v4.22 SEC — Rifiutati e sospesi NON possono auto-riregistrarsi
+        if (stato === 'rifiutato') {
+          return { ok: false, error: 'accesso_rifiutato' };
+        }
+        if (stato === 'sospeso') {
+          return { ok: false, error: 'account_sospeso' };
+        }
 
-        // Sospeso, rifiutato, pending: riattiva come lettore
+        // Solo pending: riattiva come lettore
         sh.getRange(i + 1, iStato + 1).setValue('attivo');
         if (ruolo === 'ospite' || !ruolo) sh.getRange(i + 1, iRuolo + 1).setValue('lettore');
         if (nome && !rows[i][iNome]) sh.getRange(i + 1, iNome + 1).setValue(nome);
         Logger.log('[AUTH] Riattivato: ' + email + ' (era ' + stato + ')');
-        // v4.20 — Welcome email post-registrazione
-        try { if (typeof sendWelcomeEmail === 'function') sendWelcomeEmail(email, body.nome || ''); } catch(_){}
         return { ok: true, action: 'reactivated' };
       }
     }
@@ -741,6 +746,10 @@ function _invitaSingoloUtente_(emailIn, nome, ruolo, auth) {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok:false, error:'email non valida', email: email };
   nome = String(nome||'').trim();
   if (OC_UTENTI_RUOLI.indexOf(ruolo) < 0) ruolo = 'lettore';
+  // v4.22 SEC — Solo il super_admin puo invitare con ruolo admin
+  if (ruolo === 'admin' && String(auth.email || '').toLowerCase().trim() !== OC_SUPER_ADMIN_EMAIL.toLowerCase().trim()) {
+    return { ok:false, error:'Solo il super-admin puo invitare un nuovo amministratore.', email: email };
+  }
 
   var sh = _getOrCreateUtentiSheet_();
   var rows = sh.getDataRange().getValues();
@@ -930,11 +939,11 @@ function saveUserStatoRuolo(email, stato, ruolo, oldStato, token) {
   var rows = sh.getDataRange().getValues();
   for (var i = 1; i < rows.length; i++) {
     if (String(rows[i][iEmail] || '').toLowerCase().trim() === email) {
-      // v4.21 — Protezione admin: solo il super_admin puo modificare un altro admin
+      // v4.22 SEC — Protezione admin: solo il super_admin puo modificare admin O assegnare ruolo admin
       var currentTargetRuolo = String(rows[i][iRuolo] || '').toLowerCase();
-      var isSuperAdmin = (String(auth.email || '').toLowerCase().trim() === OC_SUPER_ADMIN_EMAIL);
-      if (currentTargetRuolo === 'admin' && !isSuperAdmin) {
-        return { error: 'Solo il super-admin puo modificare un altro amministratore.' };
+      var isSuperAdmin = (String(auth.email || '').toLowerCase().trim() === OC_SUPER_ADMIN_EMAIL.toLowerCase().trim());
+      if ((currentTargetRuolo === 'admin' || ruolo === 'admin') && !isSuperAdmin) {
+        return { error: 'Solo il super-admin puo assegnare o modificare un ruolo amministratore.' };
       }
       if (iStato >= 0) sh.getRange(i+1, iStato+1).setValue(stato);
       if (iRuolo >= 0) sh.getRange(i+1, iRuolo+1).setValue(ruolo);

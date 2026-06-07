@@ -404,7 +404,11 @@ var FAS_API_REGISTRY = [
   }
 ];
 
-function getApiStrutturateStatus() {
+function getApiStrutturateStatus(token) {
+  // v4.22 SEC — Auth obbligatoria
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_(token)) {
+    return { ok: false, error: 'forbidden' };
+  }
   var apis = FAS_API_REGISTRY.map(function(api) {
     var recordTotali = 0;
     var record30gg = 0;
@@ -451,7 +455,11 @@ function getApiStrutturateStatus() {
   return { ok: true, apis: apis, contatori: contatori };
 }
 
-function testApiConnessione(apiId) {
+function testApiConnessione(apiId, token) {
+  // v4.22 SEC — Auth obbligatoria
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_(token)) {
+    return { ok: false, error: 'forbidden' };
+  }
   var api = null;
   for (var i = 0; i < FAS_API_REGISTRY.length; i++) {
     if (FAS_API_REGISTRY[i].id === apiId) { api = FAS_API_REGISTRY[i]; break; }

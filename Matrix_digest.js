@@ -273,7 +273,8 @@ function sendQueuedDigest(queueId) {
  * @return { sent, errors, total }
  */
 function sendAllPendingDigest(token) {
-  if (token && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
+  // v4.22 SEC — Guard incondizionato (token obbligatorio, no bypass senza token)
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_(token)) {
     return { ok:false, error:'forbidden' };
   }
   var sh = _getDigestQueueSheet_();
@@ -582,7 +583,8 @@ function _dsCard_(item, color, kind) {
  * ResponsesMatrix (utile dopo aver eseguito testMatrixModule).
  */
 function testGenerateDigestSegmentato(token) {
-  if (token && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
+  // v4.22 SEC — Guard incondizionato (token obbligatorio, no bypass senza token)
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_(token)) {
     return { ok:false, error:'forbidden' };
   }
   Logger.log('=== TEST DIGEST SEGMENTATO ===');
@@ -609,7 +611,8 @@ function testGenerateDigestSegmentato(token) {
  * Ritorna top3Dims + contentCounts per visualizzazione admin.
  */
 function testDigestMatrixForEmail(email, token) {
-  if (token && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
+  // v4.22 SEC — Guard incondizionato (token obbligatorio, no bypass senza token)
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_(token)) {
     return { ok:false, error:'forbidden' };
   }
   email = String(email || '').trim().toLowerCase();

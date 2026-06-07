@@ -276,9 +276,10 @@ function loginConEmail(email) {
     // v4.20 — Admin/editor possono SEMPRE accedere via email (bypass flag login pubblico)
     var isAdminEmail = false;
     try {
-      var adminCsv = (PropertiesService.getScriptProperties().getProperty('OC_ADMIN_EMAILS') || '').toLowerCase();
-      var editorCsv = (PropertiesService.getScriptProperties().getProperty('OC_EDITOR_EMAILS') || '').toLowerCase();
-      isAdminEmail = adminCsv.indexOf(email) >= 0 || editorCsv.indexOf(email) >= 0;
+      // v4.22 SEC — Array split per evitare match per sottostringa (es. admin@x.com in superadmin@x.com)
+      var adminArr = (PropertiesService.getScriptProperties().getProperty('OC_ADMIN_EMAILS') || '').toLowerCase().split(',').map(function(e){ return e.trim(); });
+      var editorArr = (PropertiesService.getScriptProperties().getProperty('OC_EDITOR_EMAILS') || '').toLowerCase().split(',').map(function(e){ return e.trim(); });
+      isAdminEmail = adminArr.indexOf(email) >= 0 || editorArr.indexOf(email) >= 0;
     } catch(_){}
 
     // Fail-closed: login pubblico disabilitato blocca solo utenti NON admin/editor
@@ -324,16 +325,13 @@ function loginConEmail(email) {
     var magicUrl = _buildMagicLink_(token);
     _sendMagicLinkEmail_(email, magicUrl, 'login', true, null);
 
-    Logger.log('[AUTH] loginConEmail magic-link inviato: ' + email + ' livello=' + livello);
+    Logger.log('[AUTH] loginConEmail magic-link inviato: ' + email);
+    // v4.22 SEC — NON restituire il token al frontend. Il token arriva SOLO via email.
     return {
       ok: true,
-      token: token,
-      livello: livello,
       email: email,
       nome: utente.nome || email.split('@')[0],
-      ruolo: utente.ruolo || 'lettore',
-      permanente: true,
-      matrixCompletato: !!(existing && existing.matrix_completato)
+      message: 'magic_link_inviato'
     };
   } catch(e) {
     Logger.log('loginConEmail errore: ' + e.message);

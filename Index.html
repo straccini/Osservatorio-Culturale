@@ -2505,8 +2505,7 @@
 
     if (!hasGAS()) return;
 
-    // v4.18.7 (2026-05-11) — log diagnostico stato token + 5 call principali home
-    console.log('[OC-DEBUG] OC_ADMIN_TOKEN type=', typeof OC_ADMIN_TOKEN, 'val=', (typeof OC_ADMIN_TOKEN==='string' ? (OC_ADMIN_TOKEN.substring(0,8) + '... len=' + OC_ADMIN_TOKEN.length) : OC_ADMIN_TOKEN));
+    // v4.22 SEC — Rimosso log diagnostico OC_ADMIN_TOKEN (esponeva primi 8 char in console)
 
     // v4.18.7 — wrap try/catch su ogni render per scoprire l'eccezione che blocca la home
     function _safeRender_(name, fn){
@@ -5765,7 +5764,7 @@
       var ctr = $('fmApiCounters');
       if (ctr) ctr.textContent = r.contatori.totale+' API · '+r.contatori.operative+' operative · '+r.contatori.inSviluppo+' in sviluppo · '+r.contatori.bloccate+' bloccate';
       _renderApiCards(r.apis);
-    }).withFailureHandler(function(){}).getApiStrutturateStatus();
+    }).withFailureHandler(function(){}).getApiStrutturateStatus((window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
   function _renderApiCards(apis) {
@@ -5941,7 +5940,7 @@
       } else {
         out.innerHTML='<span style="color:var(--danger)">HTTP '+(r?r.httpStatus:'?')+' · '+(r?r.error:'errore')+'</span>';
       }
-    }).withFailureHandler(function(e){ if(out) out.innerHTML='<span style="color:var(--danger)">Errore: '+e+'</span>'; }).testApiConnessione(apiId);
+    }).withFailureHandler(function(e){ if(out) out.innerHTML='<span style="color:var(--danger)">Errore: '+esc(e)+'</span>'; }).testApiConnessione(apiId, (window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
   // Backward-compat aliases
@@ -7418,7 +7417,7 @@
               msg.innerHTML = '<div style="text-align:center;padding:4px 0">'
                 + '<div style="font-size:22px;margin-bottom:4px">&#9993;</div>'
                 + '<div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px">Link di accesso inviato!</div>'
-                + '<div style="font-size:12.5px;color:var(--ink-2);line-height:1.5">Controlla la tua casella <b>' + email + '</b> e clicca il link per accedere.</div>'
+                + '<div style="font-size:12.5px;color:var(--ink-2);line-height:1.5">Controlla la tua casella <b>' + esc(email) + '</b> e clicca il link per accedere.</div>'
                 + '<div style="font-size:11px;color:var(--ink-3);margin-top:6px;font-style:italic">Non la trovi? Controlla lo spam.</div>'
                 + '</div>';
               msg.hidden = false;
@@ -7471,7 +7470,7 @@
                   msg.innerHTML = '<div style="text-align:center;padding:8px 0">'
                     + '<div style="font-size:28px;margin-bottom:8px">&#9993;</div>'
                     + '<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">Controlla la tua email!</div>'
-                    + '<div style="font-size:13px;color:var(--ink-2);line-height:1.5">Abbiamo inviato un <b>link di conferma</b> a <b>' + email + '</b>.<br>Clicca il link nell\'email per completare l\'iscrizione e accedere a Sinopia.</div>'
+                    + '<div style="font-size:13px;color:var(--ink-2);line-height:1.5">Abbiamo inviato un <b>link di conferma</b> a <b>' + esc(email) + '</b>.<br>Clicca il link nell\'email per completare l\'iscrizione e accedere a Sinopia.</div>'
                     + '<div style="font-size:11.5px;color:var(--ink-3);margin-top:10px;font-style:italic">Non la trovi? Controlla la cartella spam.</div>'
                     + '</div>';
                   msg.hidden = false;
