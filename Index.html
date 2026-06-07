@@ -6014,6 +6014,8 @@
   // Compat alias per vecchi data-action rimasti nel markup bandi tab
   function showAddPodForm() { setPodAddType('audio'); }
   function showAddYouTubeForm() { setPodAddType('video'); }
+  // v4.22 — addFonteUnificata: apre la modale aggiungi fonte (era undefined dopo refactoring)
+  function addFonteUnificata() { if (typeof _openAddFonteModal === 'function') _openAddFonteModal(); }
   function addPodcast() { addFonteUnificata(); }
   function addYouTubeSettings() { addFonteUnificata(); }
 
