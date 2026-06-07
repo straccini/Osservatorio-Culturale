@@ -25,8 +25,9 @@
     if (OC_SESSION && OC_SESSION.token) {
       try { localStorage.setItem('oc_token', OC_SESSION.token); } catch(_){}
     }
-    // v4.21.2 — Flag primo accesso (magic link appena cliccato)
-    window._ocFirstAccess = !!(OC_SESSION && OC_SESSION.token && !localStorage.getItem('oc_gdpr_accepted_' + (OC_SESSION.email || '')));
+    // v4.22 — GDPR overlay solo per utenti NUOVI (non già attivi nel sistema)
+    // Se alreadyActive=true, l'utente ha già accettato le condizioni durante la registrazione
+    window._ocFirstAccess = !!(OC_SESSION && OC_SESSION.token && !OC_SESSION.alreadyActive && !localStorage.getItem('oc_gdpr_accepted_' + (OC_SESSION.email || '')));
   </script>
   <?var sc = (typeof sondaggioCodice !== 'undefined' && sondaggioCodice) ? String(sondaggioCodice).replace(/[^a-zA-Z0-9_]/g, '') : ''; ?>
   <? if (sc) { ?>

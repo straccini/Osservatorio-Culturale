@@ -307,6 +307,14 @@ function doGet(e) {
     if (sessTok && typeof validaSessione === 'function') {
       var sessInfo = validaSessione(sessTok);
       if (sessInfo && sessInfo.ok && sessInfo.valid) {
+        // v4.22 — Determina se l'utente è già attivo (no GDPR overlay per utenti esistenti)
+        var _userAlreadyActive = false;
+        try {
+          if (typeof getUtenteByEmail_ === 'function') {
+            var _ut = getUtenteByEmail_(sessInfo.email);
+            _userAlreadyActive = !!(_ut && _ut.stato === 'attivo');
+          }
+        } catch(_){}
         injectedSession = JSON.stringify({
           token: sessTok,
           email: sessInfo.email || '',
@@ -315,7 +323,8 @@ function doGet(e) {
           giorniResidui: sessInfo.giorniResidui,
           scaduta: !!sessInfo.scaduta,
           readOnly: !!sessInfo.readOnly,
-          matrixCompletato: !!sessInfo.matrixCompletato
+          matrixCompletato: !!sessInfo.matrixCompletato,
+          alreadyActive: _userAlreadyActive
         });
       }
     }
