@@ -77,7 +77,8 @@ function _ed_costruisciBrief_() {
   var brief = {
     settimana: _ed_isoWeek_(now),
     dataGenerazione: now.toISOString(),
-    cosasiMuove: [],    // top entità con delta occorrenze
+    cosasiMuove: [],    // top entità con delta occorrenze (da L2)
+    opinionLeader: [],  // top persone influenti (da L3)
     norme: [],          // contenuti tipo norma
     studi: [],          // pubblicazioni/studi recenti
     dinamico: [],       // podcast/video recenti
@@ -103,6 +104,23 @@ function _ed_costruisciBrief_() {
       }
     }
   } catch (e) { Logger.log('[Brief] cosasiMuove (L2) err: ' + e.message); }
+
+  // --- 1b. OPINION LEADER (dal Leader Layer L3) ---
+  try {
+    if (typeof leaderTop === 'function') {
+      var leaders = leaderTop({ limite: 5 });
+      if (leaders && leaders.ok && leaders.leader) {
+        brief.opinionLeader = leaders.leader.map(function(l) {
+          return {
+            nome: String(l.nome || ''),
+            strutture: String(l.strutture_associate || ''),
+            score: Number(l.score_leader || 0),
+            occorrenze: Number(l.n_occorrenze || 0)
+          };
+        });
+      }
+    }
+  } catch (e) { Logger.log('[Brief] opinionLeader (L3) err: ' + e.message); }
 
   // --- 2-5. CONTENUTI RECENTI (news, norme, podcast, video, pubblicazioni) ---
   var fontiAutorevoli = (typeof OC_FONTI_AUTOREVOLI !== 'undefined') ? OC_FONTI_AUTOREVOLI : [];
@@ -199,6 +217,13 @@ function _ed_generaConClaude_(brief) {
       briefText += '- ' + e.nome + ' (' + e.tipo + ', score ' + e.score + ', +' + e.delta + ' vs media)\n';
     });
   } else { briefText += '- Nessun trend significativo questa settimana.\n'; }
+
+  briefText += '\n### VOCI AUTOREVOLI (opinion leader del settore)\n';
+  if (brief.opinionLeader && brief.opinionLeader.length) {
+    brief.opinionLeader.forEach(function(l) {
+      briefText += '- ' + l.nome + (l.strutture ? ' (' + l.strutture + ')' : '') + ' — score ' + l.score + ', ' + l.occorrenze + ' citazioni\n';
+    });
+  } else { briefText += '- Nessun opinion leader rilevante questa settimana.\n'; }
 
   briefText += '\n### NORME E REGOLAMENTI\n';
   if (brief.norme.length) {
