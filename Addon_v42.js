@@ -700,5 +700,68 @@ function settoreToAmbitoId_(settore, titolo, ente) {
  * Esegui da editor GAS: Seleziona funzione `migraBandiAmbito` -> Esegui.
  */
 // migraBandiAmbito() RIMOSSA da Addon_v42 (v4.18.55) — versione corretta è in Codice.js
-// Questa versione usava getMainSS() invece di getSheetRadar() (spreadsheet sbagliato).
+
+// ============================================================================
+// v4.22 PERF — getHomePayload: bundle di 6 chiamate homepage in 1 round-trip
+// Fonde: getHomepageDataV42 + getUltimiBandiMonitorati + getVideoListV42 +
+//        getLibriListV42 + getSocialWall + getCapitaliRemember
+// ============================================================================
+
+/**
+ * @return {Object} { homepage, ultimiBandi, video, libri, social, capitali }
+ */
+function getHomePayload() {
+  var result = {};
+
+  // 1) Homepage principale (news, bandi urgenti, badges, ambiti, stats)
+  try {
+    result.homepage = (typeof getHomepageDataV42 === 'function') ? getHomepageDataV42() : {};
+  } catch(e) {
+    result.homepage = { error: e.message };
+    Logger.log('[getHomePayload] getHomepageDataV42 err: ' + e.message);
+  }
+
+  // 2) Ultimi bandi monitorati (card home)
+  try {
+    result.ultimiBandi = (typeof getUltimiBandiMonitorati === 'function') ? getUltimiBandiMonitorati(6) : [];
+  } catch(e) {
+    result.ultimiBandi = [];
+    Logger.log('[getHomePayload] getUltimiBandiMonitorati err: ' + e.message);
+  }
+
+  // 3) Video (cache completa, home mostra top 4)
+  try {
+    result.video = (typeof getVideoListV42 === 'function') ? getVideoListV42(300) : [];
+  } catch(e) {
+    result.video = [];
+    Logger.log('[getHomePayload] getVideoListV42 err: ' + e.message);
+  }
+
+  // 4) Libri (cache completa, home mostra top 4)
+  try {
+    result.libri = (typeof getLibriListV42 === 'function') ? getLibriListV42(500) : [];
+  } catch(e) {
+    result.libri = [];
+    Logger.log('[getHomePayload] getLibriListV42 err: ' + e.message);
+  }
+
+  // 5) Social Wall
+  try {
+    result.social = (typeof getSocialWall === 'function') ? getSocialWall() : { posts: [] };
+  } catch(e) {
+    result.social = { posts: [] };
+    Logger.log('[getHomePayload] getSocialWall err: ' + e.message);
+  }
+
+  // 6) Capitali Italiane
+  try {
+    result.capitali = (typeof getCapitaliRemember === 'function') ? getCapitaliRemember({ limit: 5 }) : { list: [] };
+  } catch(e) {
+    result.capitali = { list: [] };
+    Logger.log('[getHomePayload] getCapitaliRemember err: ' + e.message);
+  }
+
+  return result;
+}
+
 // ============================================================

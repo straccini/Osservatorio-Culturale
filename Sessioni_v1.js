@@ -227,6 +227,48 @@ function validaSessione(token) {
   }
 }
 
+// ============================================================================
+// v4.22 PERF — initSession: bundle di validaSessione + statoLoginPubblico +
+// getCurrentUser_v44 in una sola chiamata GAS (riduce 3 round-trip a 1).
+// ============================================================================
+
+/**
+ * @param {string} token - session token (da localStorage o OC_SESSION)
+ * @param {string} [adminToken] - admin URL token (opzionale)
+ * @return {Object} { session:{ok,valid,livello,email,...}, loginEnabled:bool, user:{ruolo,nome,...} }
+ */
+function initSession(token, adminToken) {
+  var result = { session: null, loginEnabled: false, user: null };
+
+  // 1) Valida sessione
+  try {
+    result.session = (typeof validaSessione === 'function') ? validaSessione(token) : { ok:true, valid:false };
+  } catch(e) {
+    result.session = { ok:false, valid:false, error: e.message };
+  }
+
+  // 2) Stato login pubblico
+  try {
+    result.loginEnabled = isPublicLoginEnabled_();
+  } catch(_) {
+    result.loginEnabled = false;
+  }
+
+  // 3) Profilo utente corrente
+  try {
+    var tk = token || adminToken || '';
+    if (typeof getCurrentUser_v44 === 'function') {
+      result.user = getCurrentUser_v44(tk);
+    } else {
+      result.user = { ruolo:'guest', nome:'Ospite', isAdmin:false, isEditor:false };
+    }
+  } catch(e) {
+    result.user = { ruolo:'guest', nome:'Ospite', isAdmin:false, isEditor:false, error: e.message };
+  }
+
+  return result;
+}
+
 /**
  * v5.1.10 — Login con sola email (senza password).
  * Verifica che l'email esista nel foglio Utenti con stato='attivo'.
