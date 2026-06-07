@@ -34,7 +34,8 @@ function _assert_(c, m){ if (!c) throw new Error('ASSERT FALLITO: ' + m); Logger
 function kb_normalizeKey_(nome, tipo){
   var s = String(nome || '').toLowerCase();
   s = s.normalize('NFD').replace(/[̀-ͯ]/g, '');   // rimuove accenti
-  s = s.replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim(); // punteggiatura + spazi
+  s = s.replace(/[.’']/g, '');                              // punti/apostrofi: I.C.O.M. -> icom
+  s = s.replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim(); // altra punteggiatura -> spazio
   return s;
 }
 
