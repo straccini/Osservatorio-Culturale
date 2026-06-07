@@ -211,3 +211,115 @@ function _test_kb_hook_robusto_(){
   _assert_(r2.ok === true, 'tipo non valido ignorato senza crash');
   Logger.log('TUTTI OK');
 }
+
+// ============================================================================
+// INGESTIONE ENTITÀ — passo ISOLATO (NON tocca gli scanner)
+// Legge i contenuti già salvati ed estrae le entità con una chiamata Claude
+// dedicata. Idempotente (salta i contenuti già presenti in Occorrenze).
+// Sostituisce, in modo sicuro, l'hook integrato del piano (Task 6) — vedi commit.
+// ============================================================================
+function _kb_extractEntitiesFromText_(titolo, sommario){
+  var apiKey = ''; try { apiKey = PropertiesService.getScriptProperties().getProperty('CLAUDE_API_KEY') || ''; } catch(_){}
+  if (!apiKey) { Logger.log('[kb] CLAUDE_API_KEY assente: skip estrazione'); return []; }
+  var text = String(titolo || '') + '. ' + String(sommario || '');
+  if (text.replace(/[.\s]/g, '').length < 4) return [];
+  var prompt = 'Estrai SOLO le entità realmente citate nel testo culturale. Rispondi SOLO con un JSON array: '
+    + '[{"nome":"...","tipo":"persona|struttura|tema|progetto","ruolo":"breve o vuoto"}]. '
+    + 'persona = direttori, studiosi, autori, relatori; struttura = musei, fondazioni, enti, università, reti; '
+    + 'tema = argomenti/topic ricorrenti; progetto = mostre, programmi, progetti finanziati. Max 12. Se nessuna: [].\n\nTesto:\n"' + text + '"';
+  for (var attempt = 1; attempt <= 2; attempt++){
+    try {
+      var resp = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+        method: 'post', contentType: 'application/json',
+        headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        payload: JSON.stringify({ model: OC_CLAUDE_MODEL, max_tokens: 800, messages: [{ role:'user', content: prompt }] }),
+        muteHttpExceptions: true, deadline: 30
+      });
+      var code = resp.getResponseCode();
+      if (code === 429 || code >= 500){ if (attempt < 2){ Utilities.sleep(2000); continue; } return []; }
+      var body = JSON.parse(resp.getContentText());
+      var content = (body.content && body.content[0] && body.content[0].text) || '[]';
+      var m = content.match(/\[[\s\S]*\]/); if (!m) return [];
+      var arr = JSON.parse(m[0]); return Array.isArray(arr) ? arr : [];
+    } catch(e){ if (attempt < 2){ Utilities.sleep(2000); continue; } Logger.log('[kb extract] ' + e.message); return []; }
+  }
+  return [];
+}
+
+function _kb_pick_(H, cands){ for (var i = 0; i < cands.length; i++){ var x = H.indexOf(cands[i]); if (x >= 0) return x; } return -1; }
+
+function _kb_sourceCfg_(tipo){
+  var C = {
+    news:          { foglio:'Items',            titolo:['Titolo','titolo'], sommario:['SommarioAI','SommarioEditato','Estratto','sommario'], data:['DataPubblicazione','DataAcquisizione','Data'], ambito:['Ambito','ambito'], fonte:['Fonte','fonte'], id:['ID','id'] },
+    agente:        { foglio:'AgentScanResults', titolo:['titolo','Titolo'], sommario:['sommario','Sommario'], data:['data','Data'], ambito:['ambito','Ambito'], fonte:['fonte','Fonte'], id:['id','ID'], tipoCol:['tipo','Tipo'] },
+    podcast:       { foglio:'Podcast',          titolo:['Titolo','titolo'], sommario:['SommarioAI','Tematica'], data:['DataPubblicazione','Data'], ambito:['Ambito','ambito'], fonte:['Fonte','Serie'], id:['ID','id'] },
+    pubblicazione: { foglio:'Pubblicazioni',    titolo:['Titolo','titolo'], sommario:['Descrizione','Tematica'], data:['DataAggiunta','Anno'], ambito:['Ambito','ambito'], fonte:['Fonte','Editore'], id:['ID','id'] }
+  };
+  return C[tipo] || null;
+}
+
+// Processa fino a `cap` contenuti del tipo dato NON ancora presenti in Occorrenze (idempotente).
+function kb_backfill_(tipo, cap){
+  cap = cap || OC_KB_BACKFILL_CAP;
+  var cfg = _kb_sourceCfg_(tipo); if (!cfg) return { ok:false, error:'tipo non gestito: ' + tipo };
+  kb_ensureSheets_();
+  var ss = _kb_ss_(); var sh = ss.getSheetByName(cfg.foglio);
+  if (!sh || sh.getLastRow() < 2) return { ok:true, processed:0, done:true, note:'foglio assente/vuoto: ' + cfg.foglio };
+  var occ = ss.getSheetByName(OC_KB_SHEETS.occorrenze).getDataRange().getValues();
+  var oC = occ[0].indexOf('contenuto_id'); var seen = {};
+  for (var i = 1; i < occ.length; i++){ seen[String(occ[i][oC])] = true; }
+  var vals = sh.getDataRange().getValues(), H = vals[0];
+  var iId=_kb_pick_(H,cfg.id), iT=_kb_pick_(H,cfg.titolo), iS=_kb_pick_(H,cfg.sommario),
+      iD=_kb_pick_(H,cfg.data), iA=_kb_pick_(H,cfg.ambito), iF=_kb_pick_(H,cfg.fonte),
+      iTipo=cfg.tipoCol ? _kb_pick_(H,cfg.tipoCol) : -1;
+  if (iId < 0 || iT < 0) return { ok:false, error:'colonne id/titolo non trovate in ' + cfg.foglio };
+  var done = 0;
+  for (var r = 1; r < vals.length && done < cap; r++){
+    var cid = String(vals[r][iId]); if (!cid || seen[cid]) continue;
+    var ent = _kb_extractEntitiesFromText_(vals[r][iT], iS >= 0 ? vals[r][iS] : '');
+    var tc = (iTipo >= 0 && vals[r][iTipo]) ? String(vals[r][iTipo]) : tipo;
+    kb_recordEntities_(ent, { contenuto_id:cid, tipo_contenuto:tc, titolo:vals[r][iT],
+      data: iD>=0?vals[r][iD]:'', ambito: iA>=0?vals[r][iA]:'', fonte: iF>=0?vals[r][iF]:'', dedup:true });
+    seen[cid] = true; done++;
+  }
+  return { ok:true, foglio:cfg.foglio, processed:done, done:(done < cap) };
+}
+
+// Un giro su tutti i tipi (per trigger periodico). Cap piccolo per i tempi GAS + costo Claude.
+function kb_ingestAll_(capPerTipo){
+  capPerTipo = capPerTipo || 25;
+  var out = {};
+  ['agente','news','podcast','pubblicazione'].forEach(function(t){ out[t] = kb_backfill_(t, capPerTipo); });
+  Logger.log('[kb_ingestAll_] ' + JSON.stringify(out));
+  return out;
+}
+
+// OPZIONALE: crea un trigger ogni 6h per l'ingestione continua. Esegui una volta.
+function kb_setupTrigger_(){
+  var exist = ScriptApp.getProjectTriggers().some(function(t){ return t.getHandlerFunction() === 'kb_ingestAll_'; });
+  if (exist) return { ok:true, note:'trigger già presente' };
+  ScriptApp.newTrigger('kb_ingestAll_').timeBased().everyHours(6).create();
+  return { ok:true, note:'trigger kb_ingestAll_ ogni 6h creato' };
+}
+
+// Pulizia righe di prova (usata dal runner di test)
+function _kb_cleanupTestRows_(){
+  var ss = _kb_ss_();
+  var e = ss.getSheetByName('Entita');
+  if (e){ var ev = e.getDataRange().getValues(); for (var r = ev.length-1; r >= 1; r--){ var ch = String(ev[r][1]); if (ch === 'mario rossi' || ch === 'icom italia') e.deleteRow(r+1); } }
+  var o = ss.getSheetByName('Occorrenze');
+  if (o){ var ov = o.getDataRange().getValues(); var iC = ov[0].indexOf('contenuto_id'); for (var r2 = ov.length-1; r2 >= 1; r2--){ var c = String(ov[r2][iC]); if (c === 'T1' || c === 'T2') o.deleteRow(r2+1); } }
+}
+
+// === ESEGUI QUESTO nell'editor GAS: lancia tutti i test e ripulisce le righe di prova ===
+function _test_kb_all_(){
+  _kb_cleanupTestRows_();
+  _test_kb_costanti_();
+  _test_kb_normalize_();
+  _test_kb_score_();
+  _test_kb_record_();
+  _test_kb_top_();
+  _test_kb_hook_robusto_();
+  _kb_cleanupTestRows_();
+  Logger.log('=== TUTTI I TEST OK — righe di prova ripulite ===');
+}
