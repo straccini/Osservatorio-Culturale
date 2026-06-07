@@ -84,61 +84,25 @@ function _ed_costruisciBrief_() {
     newsAutorevoli: []  // news da fonti autorevoli
   };
 
-  // --- 1. COSA SI MUOVE (entità con delta occorrenze) ---
+  // --- 1. COSA SI MUOVE (dal Trend Layer L2, con fallback) ---
   try {
-    var shOcc = ss.getSheetByName('Occorrenze');
-    var shEnt = ss.getSheetByName('Entita');
-    if (shOcc && shEnt && shOcc.getLastRow() > 1 && shEnt.getLastRow() > 1) {
-      // Conta occorrenze per entità nella settimana vs media 4 settimane
-      var occVals = shOcc.getDataRange().getValues();
-      var occH = occVals[0];
-      var iEntId = occH.indexOf('entita_id');
-      var iData = occH.indexOf('data');
-      var iFa = occH.indexOf('fonte_autorevole');
-
-      var countWeek = {}, countMonth = {};
-      for (var r = 1; r < occVals.length; r++) {
-        var entId = String(occVals[r][iEntId] || '');
-        var dt = occVals[r][iData] ? new Date(occVals[r][iData]) : null;
-        if (!entId || !dt) continue;
-        if (dt >= soglia) countWeek[entId] = (countWeek[entId] || 0) + 1;
-        if (dt >= sogliaMedia) countMonth[entId] = (countMonth[entId] || 0) + 1;
-      }
-
-      // Calcola delta (settimana vs media settimanale del mese)
-      var deltas = [];
-      for (var eid in countWeek) {
-        var weekCount = countWeek[eid];
-        var monthAvg = (countMonth[eid] || weekCount) / cfg.FINESTRA_MEDIA_SETTIMANE;
-        var delta = weekCount - monthAvg;
-        deltas.push({ id: eid, weekCount: weekCount, delta: delta });
-      }
-      deltas.sort(function(a, b) { return b.delta - a.delta; });
-
-      // Arricchisci con nome/tipo dall'Entita
-      var entVals = shEnt.getDataRange().getValues();
-      var entH = entVals[0];
-      var entMap = {};
-      for (var er = 1; er < entVals.length; er++) {
-        entMap[String(entVals[er][entH.indexOf('id')])] = {
-          nome: String(entVals[er][entH.indexOf('nome_canonico')] || ''),
-          tipo: String(entVals[er][entH.indexOf('tipo')] || ''),
-          score: Number(entVals[er][entH.indexOf('score_autorevolezza')] || 0)
-        };
-      }
-
-      for (var di = 0; di < Math.min(deltas.length, cfg.MAX_ENTITA_BRIEF); di++) {
-        var d = deltas[di];
-        var ent = entMap[d.id];
-        if (ent) {
-          brief.cosasiMuove.push({
-            nome: ent.nome, tipo: ent.tipo, score: ent.score,
-            occorrenzeSettimana: d.weekCount, delta: Math.round(d.delta * 10) / 10
-          });
-        }
+    if (typeof trendTop === 'function') {
+      var trends = trendTop({ limite: cfg.MAX_ENTITA_BRIEF });
+      if (trends && trends.ok) {
+        // Unisci crescita + esplosivi + emergenti (priorità: esplosivi, poi emergenti, poi crescita)
+        var allTrend = [].concat(trends.esplosivi || [], trends.emergenti || [], trends.crescita || []);
+        brief.cosasiMuove = allTrend.slice(0, cfg.MAX_ENTITA_BRIEF).map(function(t) {
+          return {
+            nome: String(t.nome_entita || ''), tipo: String(t.tipo_entita || ''),
+            score: Number(t.score_autorevolezza || 0),
+            occorrenzeSettimana: Number(t.occ_settimana || 0),
+            delta: Number(t.momentum || 0),
+            segnale: String(t.segnale || '')
+          };
+        });
       }
     }
-  } catch (e) { Logger.log('[Brief] cosasiMuove err: ' + e.message); }
+  } catch (e) { Logger.log('[Brief] cosasiMuove (L2) err: ' + e.message); }
 
   // --- 2-5. CONTENUTI RECENTI (news, norme, podcast, video, pubblicazioni) ---
   var fontiAutorevoli = (typeof OC_FONTI_AUTOREVOLI !== 'undefined') ? OC_FONTI_AUTOREVOLI : [];
