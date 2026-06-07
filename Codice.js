@@ -1,14 +1,40 @@
-const PROPS = PropertiesService.getScriptProperties();
-const CLAUDE_API_KEY = PROPS.getProperty('CLAUDE_API_KEY');
-const ADMIN_PWD      = PROPS.getProperty('ADMIN_PASSWORD');
-const EDITOR_PWD     = PROPS.getProperty('EDITOR_PASSWORD');
-const TELEGRAM_TOKEN   = PROPS.getProperty('TELEGRAM_TOKEN');
-const TELEGRAM_CHAT_ID = PROPS.getProperty('TELEGRAM_CHAT_ID');
-const GIORNI_ALERT     = parseInt(PROPS.getProperty('GIORNI_SCADENZA_ALERT') || '10');
+// v4.22 PERF — Lazy config: PropertiesService lette UNA volta (on-demand), non a parse-time.
+// Prima: 8 getProperty() ad ogni esecuzione GAS (anche per funzioni che non le usano).
+// Dopo: 1 getProperties() alla prima chiamata, poi cache in-memory.
+var _OC_CONFIG_CACHE_ = null;
+function _getConfig_() {
+  if (_OC_CONFIG_CACHE_) return _OC_CONFIG_CACHE_;
+  var p = PropertiesService.getScriptProperties().getProperties();
+  _OC_CONFIG_CACHE_ = {
+    CLAUDE_API_KEY:   p.CLAUDE_API_KEY || '',
+    ADMIN_PWD:        p.ADMIN_PASSWORD || '',
+    EDITOR_PWD:       p.EDITOR_PASSWORD || '',
+    TELEGRAM_TOKEN:   p.TELEGRAM_TOKEN || '',
+    TELEGRAM_CHAT_ID: p.TELEGRAM_CHAT_ID || '',
+    GIORNI_ALERT:     parseInt(p.GIORNI_SCADENZA_ALERT || '10'),
+    SHEET_ID:         p.SHEET_ID || ''
+  };
+  return _OC_CONFIG_CACHE_;
+}
 
-// Progetto BOUND al Sheet: usa sempre il foglio attivo
-// SHEET_ID mantenuto come fallback per ambienti standalone
-const SHEET_ID = PROPS.getProperty('SHEET_ID') || '';
+// Backward-compat: costanti lazy (le vecchie const erano parse-time, ora sono getter)
+// Usare _getConfig_().CAMPO nelle nuove funzioni.
+var SHEET_ID; // inizializzata sotto dopo getMainSS
+try { SHEET_ID = PropertiesService.getScriptProperties().getProperty('SHEET_ID') || ''; } catch(_) { SHEET_ID = ''; }
+// Le altre costanti legacy diventano funzioni getter per retrocompatibilita
+function _claudeKey_()    { return _getConfig_().CLAUDE_API_KEY; }
+function _telegramToken_(){ return _getConfig_().TELEGRAM_TOKEN; }
+function _telegramChat_() { return _getConfig_().TELEGRAM_CHAT_ID; }
+function _giorniAlert_()  { return _getConfig_().GIORNI_ALERT; }
+
+// Backward-compat alias: le vecchie const globali ora sono var lazy
+// (le funzioni che le usano le leggono a runtime, non a parse-time)
+var CLAUDE_API_KEY, ADMIN_PWD, EDITOR_PWD, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, GIORNI_ALERT;
+function _initLegacyConsts_() {
+  var c = _getConfig_();
+  CLAUDE_API_KEY = c.CLAUDE_API_KEY; ADMIN_PWD = c.ADMIN_PWD; EDITOR_PWD = c.EDITOR_PWD;
+  TELEGRAM_TOKEN = c.TELEGRAM_TOKEN; TELEGRAM_CHAT_ID = c.TELEGRAM_CHAT_ID; GIORNI_ALERT = c.GIORNI_ALERT;
+}
 
 // v4.22 PERF — Singleton: evita openById ripetuti nella stessa esecuzione GAS
 var _mainSS_cached_ = null;
@@ -91,6 +117,7 @@ function _doGetReader(params) {
 }
 
 function doGet(e) {
+  _initLegacyConsts_(); // v4.22 PERF — lazy init delle costanti config
   var params = (e && e.parameter) || {};
 
   // v4.19.1 — Bootstrap check: se mancano le dipendenze critiche, pagina di errore
@@ -544,6 +571,7 @@ function _rateLimited_(key, maxPerWindow, windowSec) {
 }
 
 function doPost(e) {
+  _initLegacyConsts_(); // v4.22 PERF — lazy init
   try {
     const body = JSON.parse(e.postData.contents);
     const token = body.token || '';
@@ -2398,6 +2426,7 @@ function passaFiltroCulturaMusei_(titolo, testo) {
 }
 
 function scanSources() {
+  _initLegacyConsts_(); // v4.22 — trigger entry point
   const SS=getMainSS();
   const fonti=getFeedSources('rss');  // FontiFeed: OFF=foglio Fonti (getFonti), ON=FontiFeed
   const sh=SS.getSheetByName(SH.ITEMS);
@@ -3920,6 +3949,7 @@ function preparaBozzaDigestLunedi() {
 // Sostituisce COMPLETAMENTE la funzione lunediMattina() esistente
 // ==================================================================
 function lunediMattina() {
+  _initLegacyConsts_(); // v4.22 — trigger entry point
   Logger.log('=== LUNEDI MATTINA v4.2 - OSSERVATORIO CULTURALE ===');
 
   // 1. Auto-archiviazione bandi scaduti (v4.20 — usa cleanupBandiV5Scaduti)
