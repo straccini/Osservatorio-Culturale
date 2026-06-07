@@ -57,6 +57,22 @@ function createSessione(email, source) {
     email = String(email).trim().toLowerCase();
     source = String(source || 'manual_admin').toLowerCase();
 
+    // v4.22 SEC — Validazione contesto: solo source interne fidate possono creare sessioni.
+    // Il frontend puo chiamare createSessione solo per 'registrazione' (post registraUtente)
+    // e 'invito' (post invitaNuovoUtente) — in entrambi i casi l'utente DEVE gia esistere in Utenti.
+    var _TRUSTED_SOURCES = ['matrix','prenotazione','invito','registrazione','sondaggio','manual_admin'];
+    var _isTrustedSource = _TRUSTED_SOURCES.some(function(s) { return source.indexOf(s) >= 0; });
+    if (!_isTrustedSource) {
+      return { ok:false, error:'source non autorizzata: ' + source };
+    }
+    // Per source 'registrazione' e 'invito': l'utente deve gia esistere nel foglio Utenti
+    if (source === 'registrazione' || source === 'invito') {
+      var utente = (typeof getUtenteByEmail_ === 'function') ? getUtenteByEmail_(email) : null;
+      if (!utente) {
+        return { ok:false, error:'utente_non_registrato' };
+      }
+    }
+
     var sh = _getOrCreateSessioniSheet_();
     var existing = _findSessioneByEmail_(sh, email);
 
@@ -362,14 +378,22 @@ function invalidaSessione(token) {
 /**
  * Upgrade sessione esistente a permanente (chiamata quando l'utente completa Matrix).
  * Se non esiste, crea una nuova sessione permanente.
+ * v4.22 SEC — Richiede che l'email abbia gia una sessione valida (no upgrade arbitrario).
  *
  * @param {string} email
- * @return {Object} {ok, upgraded, newSession?, token, magicLink}
+ * @return {Object} {ok, upgraded, newSession?, magicLink}
  */
 function upgradeAPermanente(email) {
   try {
     if (!email) return { ok:false, error:'email_mancante' };
     email = String(email).trim().toLowerCase();
+
+    // v4.22 SEC — Verifica che l'email esista nel foglio Utenti (no upgrade di email arbitrarie)
+    var utente = (typeof getUtenteByEmail_ === 'function') ? getUtenteByEmail_(email) : null;
+    if (!utente) {
+      return { ok:false, error:'utente_non_registrato' };
+    }
+
     var sh = _getOrCreateSessioniSheet_();
     var sess = _findSessioneByEmail_(sh, email);
     if (sess && !sess.revoked) {
@@ -377,11 +401,12 @@ function upgradeAPermanente(email) {
       sh.getRange(sess._row, 7).setValue(true);          // matrix_completato
       sh.getRange(sess._row, 9).setValue(new Date());    // last_seen
       Logger.log('upgradeAPermanente: ' + email + ' → permanente');
-      return { ok:true, upgraded:true, token:sess.token, magicLink:_buildMagicLink_(sess.token) };
+      // v4.22 SEC — Non restituire token nel return (solo magicLink per uso interno)
+      return { ok:true, upgraded:true, magicLink:_buildMagicLink_(sess.token) };
     }
     // Non esiste: crea nuova sessione permanente con source='matrix'
     var r = createSessione(email, 'matrix');
-    return { ok:r.ok, upgraded:false, newSession:true, token:r.token, magicLink:r.magicLink };
+    return { ok:r.ok, upgraded:false, newSession:true, magicLink:r.magicLink };
   } catch(e) { return { ok:false, error: e.message }; }
 }
 
@@ -395,30 +420,14 @@ function upgradeAPermanente(email) {
  * @return {Object} { ok, profilo, bandiSalvati, matrixResponse, prenotazioni, micCompliance }
  */
 function getUserWorkspaceData(token) {
-  // Supporta token sessione O email diretta (per admin senza magic-link)
+  // v4.22 SEC — Solo token sessione valido (rimosso bypass email-come-token)
   var email = '';
   try {
-    if (token && token.indexOf('@') >= 0) {
-      // E' un'email, non un token: verifica che sia admin
-      var admins = {};
-      try {
-        var csv = PropertiesService.getScriptProperties().getProperty('OC_ADMIN_EMAILS') || '';
-        csv.toLowerCase().split(',').forEach(function(e){ var t = e.trim(); if (t) admins[t] = true; });
-      } catch(_){}
-      if (admins[token.toLowerCase().trim()]) {
-        email = token.toLowerCase().trim();
-        sess = { source: 'admin', matrix_completato: false };
-      } else {
-        return { ok:false, error:'accesso non autorizzato' };
-      }
-    } else if (token) {
-      var sh = _getOrCreateSessioniSheet_();
-      var sess = _findSessioneByToken_(sh, token);
-      if (!sess || sess.revoked) return { ok:false, error:'sessione non valida' };
-      email = sess.email;
-    } else {
-      return { ok:false, error:'token mancante' };
-    }
+    if (!token) return { ok:false, error:'token mancante' };
+    var sh = _getOrCreateSessioniSheet_();
+    var sess = _findSessioneByToken_(sh, token);
+    if (!sess || sess.revoked) return { ok:false, error:'sessione non valida' };
+    email = sess.email;
   } catch(e) { return { ok:false, error:e.message }; }
   try {
 
