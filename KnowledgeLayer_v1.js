@@ -323,3 +323,13 @@ function _test_kb_all_(){
   _kb_cleanupTestRows_();
   Logger.log('=== TUTTI I TEST OK — righe di prova ripulite ===');
 }
+
+// ============================================================================
+// ENTRY POINT PUBBLICI per il menù "Esegui" dell'editor GAS.
+// GAS NASCONDE dal menù le funzioni che iniziano con "_": questi wrapper
+// (niente underscore iniziale, niente argomenti) sono quelli da selezionare.
+// ============================================================================
+function kbRunTests(){ return _test_kb_all_(); }                      // lancia tutti i test
+function kbIngestNews(){ var r = kb_backfill_('news', 10); Logger.log('kbIngestNews → ' + JSON.stringify(r)); return r; }   // popola entità dalle news (10)
+function kbIngestAll(){ var r = kb_ingestAll_(25); Logger.log('kbIngestAll → ' + JSON.stringify(r)); return r; }            // tutti i tipi (25 cad.)
+function kbSetupTrigger(){ var r = kb_setupTrigger_(); Logger.log('kbSetupTrigger → ' + JSON.stringify(r)); return r; }      // ingestione automatica ogni 6h (opz.)
