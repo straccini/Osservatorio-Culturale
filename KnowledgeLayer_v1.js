@@ -228,10 +228,14 @@ function _kb_extractEntitiesFromText_(titolo, sommario){
   if (!apiKey) { Logger.log('[kb] CLAUDE_API_KEY assente: skip estrazione'); return []; }
   var text = String(titolo || '') + '. ' + String(sommario || '');
   if (text.replace(/[.\s]/g, '').length < 4) return [];
-  var prompt = 'Estrai SOLO le entità realmente citate nel testo culturale. Rispondi SOLO con un JSON array: '
-    + '[{"nome":"...","tipo":"persona|struttura|tema|progetto","ruolo":"breve o vuoto"}]. '
-    + 'persona = direttori, studiosi, autori, relatori; struttura = musei, fondazioni, enti, università, reti; '
-    + 'tema = argomenti/topic ricorrenti; progetto = mostre, programmi, progetti finanziati. Max 12. Se nessuna: [].\n\nTesto:\n"' + text + '"';
+  var prompt = 'Estrai SOLO entità realmente NOMINATE nel testo culturale (nomi propri o temi brevi). '
+    + 'NON estrarre il titolo/headline dell\'articolo né frasi descrittive come entità. '
+    + 'Rispondi SOLO con un JSON array: [{"nome":"...","tipo":"persona|struttura|tema|progetto","ruolo":""}]. '
+    + 'persona = nome di persona (direttori, studiosi, artisti, autori, relatori); '
+    + 'struttura = museo, fondazione, ente, università, rete, istituzione; '
+    + 'tema = argomento conciso SEMPRE IN ITALIANO, 1-4 parole (es. "arte contemporanea", "accessibilità museale", "mercato dell\'arte"); '
+    + 'progetto = nome proprio di mostra/programma/iniziativa (NON una frase). '
+    + 'Max 10, solo le più rilevanti. Se nessuna: [].\n\nTesto:\n"' + text + '"';
   for (var attempt = 1; attempt <= 2; attempt++){
     try {
       var resp = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
@@ -338,3 +342,9 @@ function kbRunTests(){ return _test_kb_all_(); }                      // lancia 
 function kbIngestNews(){ var r = kb_backfill_('news', 10); Logger.log('kbIngestNews → ' + JSON.stringify(r)); return r; }   // popola entità dalle news (10)
 function kbIngestAll(){ var r = kb_ingestAll_(25); Logger.log('kbIngestAll → ' + JSON.stringify(r)); return r; }            // tutti i tipi (25 cad.)
 function kbSetupTrigger(){ var r = kb_setupTrigger_(); Logger.log('kbSetupTrigger → ' + JSON.stringify(r)); return r; }      // ingestione automatica ogni 6h (opz.)
+function kbReset(){                                                          // svuota Entita/Occorrenze (header mantenuti) per ri-ingerire da zero
+  var ss = _kb_ss_();
+  ['Entita','Occorrenze'].forEach(function(n){ var sh = ss.getSheetByName(n); if (sh && sh.getLastRow() > 1) sh.deleteRows(2, sh.getLastRow() - 1); });
+  Logger.log('kbReset: fogli svuotati. Rilancia kbIngestNews / kbIngestAll.');
+  return { ok:true };
+}
