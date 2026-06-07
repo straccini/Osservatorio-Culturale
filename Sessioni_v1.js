@@ -381,12 +381,26 @@ function loginConEmail(email) {
       ]);
     }
 
-    // v4.21 — Magic link: invia email con link di accesso invece di restituire token al client
+    // v4.22 — Admin/editor: login diretto (token restituito). Utenti normali: solo magic link email.
+    if (livello >= 2) {
+      // Admin/editor: accesso diretto senza magic link
+      Logger.log('[AUTH] loginConEmail DIRETTO (admin/editor): ' + email + ' livello=' + livello);
+      return {
+        ok: true,
+        token: token,
+        livello: livello,
+        email: email,
+        nome: utente.nome || email.split('@')[0],
+        ruolo: utente.ruolo || 'admin',
+        permanente: true,
+        matrixCompletato: !!(existing && existing.matrix_completato),
+        directLogin: true
+      };
+    }
+    // Utenti normali: magic link via email (token NON restituito)
     var magicUrl = _buildMagicLink_(token);
     _sendMagicLinkEmail_(email, magicUrl, 'login', true, null);
-
     Logger.log('[AUTH] loginConEmail magic-link inviato: ' + email);
-    // v4.22 SEC — NON restituire il token al frontend. Il token arriva SOLO via email.
     return {
       ok: true,
       email: email,

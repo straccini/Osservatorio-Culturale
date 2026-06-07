@@ -7360,17 +7360,47 @@
     if (loginInput) setTimeout(function(){ loginInput.focus(); }, 100);
   }
 
-  // v4.21 — Login con magic link: invia link di accesso via email (no accesso diretto)
+  // v4.22 — Login: admin/editor accesso diretto, utenti normali magic link
   function _submitLoginForm_() {
     var email = (document.getElementById('loginFormEmail') || {}).value || '';
     var msg = document.getElementById('loginFormMsg');
     if (!email || email.indexOf('@') < 0) { alert('Inserisci un indirizzo email valido'); return; }
-    if (msg) { msg.hidden = false; msg.textContent = 'Invio link di accesso...'; msg.style.color = 'var(--ink-2)'; }
+    if (msg) { msg.hidden = false; msg.textContent = 'Accesso in corso...'; msg.style.color = 'var(--ink-2)'; }
     if (hasGAS()) {
       google.script.run
         .withSuccessHandler(function(r) {
-          if (r && r.ok && r.token) {
-            // Magic link inviato con successo — mostra conferma
+          if (r && r.ok && r.directLogin && r.token) {
+            // Admin/editor: login diretto (token restituito dal backend)
+            if (msg) { msg.textContent = 'Accesso riuscito!'; msg.style.color = 'var(--amb-2,#10916D)'; }
+            try { localStorage.setItem('oc_token', r.token); } catch(_){}
+            try { localStorage.removeItem('oc_force_guest'); } catch(_){}
+            window.OC_SESSION = {
+              token: r.token, email: r.email, livello: r.livello,
+              permanente: !!r.permanente, matrixCompletato: !!r.matrixCompletato,
+              alreadyActive: true
+            };
+            var ruoloMap = { 3:'admin', 2:'editor' };
+            setUser({
+              ruolo: ruoloMap[r.livello] || r.ruolo || 'lettore',
+              nome: r.nome || r.email.split('@')[0],
+              email: r.email,
+              initials: (r.nome || r.email).substring(0,2).toUpperCase(),
+              isAdmin: r.livello >= 3,
+              isEditor: r.livello >= 2
+            });
+            setTimeout(function() {
+              var ov = document.getElementById('oc-regform-overlay'); if (ov) ov.remove();
+              var gg = document.getElementById('oc-guest-gate'); if (gg) gg.remove();
+              var nlOv = document.getElementById('oc-newsletter-overlay'); if (nlOv) { nlOv.hidden=true; nlOv.style.display='none'; }
+              try { _cacheBandi=null;_cacheNews=null;_cachePodcast=null;_cacheVideo=null;_cacheLibri=null;_cacheArchivio=null; } catch(_){}
+              var allP = document.querySelectorAll('.page');
+              for (var pi=0; pi<allP.length; pi++) allP[pi].classList.remove('active');
+              var hp = document.getElementById('page-home'); if (hp) hp.classList.add('active');
+              go('home'); hydrate();
+              showToast('Bentornato, ' + (r.nome || r.email.split('@')[0]) + '!', 'ok');
+            }, 400);
+          } else if (r && r.ok && r.message === 'magic_link_inviato') {
+            // Utente normale: magic link inviato via email
             if (msg) {
               msg.innerHTML = '<div style="text-align:center;padding:4px 0">'
                 + '<div style="font-size:22px;margin-bottom:4px">&#9993;</div>'
