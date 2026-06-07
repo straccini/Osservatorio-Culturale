@@ -84,3 +84,11 @@ Sistema troppo grande per una sola specifica: si costruisce a strati, ciascuno c
 Partire dal **Knowledge layer (L1)** — eventualmente preceduto da un L0 sottile — perché è ciò che trasforma Sinopia da *aggregatore* a *sistema di intelligence*, e abilita sia i trend (L2) sia gli opinion leader (L3). È il vero elemento di unicità, ed è esportabile perché lavora sui contenuti, non su una singola lingua/paese.
 
 Ogni layer manterrà il metodo: **specifica → piano → runbook Claude Code**, con interventi additivi e senza stravolgere il motore di raccolta esistente.
+
+---
+
+## 7. Aggiornamento 2026-06-07 — Editoriale "Capo Redattore" + priorità norme/pubblicazioni
+
+- **Nuovo componente E1 — Editoriale settimanale ("Capo Redattore"):** consuma L1 (entità/temi + delta settimanale) e i contenuti freschi per produrre l'editoriale che **apre la newsletter**. Usa un segnale di trend *leggero* (delta questa-settimana vs 4 settimane) senza attendere L2. Sequenza aggiornata: **L0 → L1 → E1** (primo payoff visibile) → L2/L3. Spec: `superpowers/specs/2026-06-07-e1-editoriale-capo-redattore-design.md`.
+- **Norme e pubblicazioni salgono di priorità (L4):** sono pilastri di **credibilità** (norme) e di **valore scientifico** (studi/scoperte degli studiosi, oggi serviti solo in parte) e oggi sono **fonti carenti**. Vanno rafforzate (foglio `Norme` dedicato + fonti ufficiali Normattiva/EUR-Lex; pubblicazioni meno manuali) perché alimentano l'editoriale. L1+E1 partono col contenuto attuale e migliorano man mano.
+- **Fonti autorevoli di riferimento:** Symbola, Fitzcarraldo, Federculture (+ enti certificati e studiosi) → flag `fonte_autorevole` che pesa su autorevolezza e selezione editoriale.

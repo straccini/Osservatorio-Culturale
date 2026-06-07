@@ -81,11 +81,12 @@ Principio: **una sola estrazione** alimenta tutto. Il passo entità è **additiv
 | `id` | string | |
 | `entita_id` | string | → `Entita.id` |
 | `contenuto_id` | string | id del record sorgente |
-| `tipo_contenuto` | enum | `bando` \| `news` \| `norma` \| `podcast` \| `video` |
+| `tipo_contenuto` | enum | `bando` \| `news` \| `norma` \| `pubblicazione` \| `podcast` \| `video` |
 | `titolo_contenuto` | string | per leggibilità |
 | `data` | ISO | data del contenuto (`DataPubblicazione`/`timestamp_fine`/…) |
 | `ambito` | int | 1-5 |
 | `fonte` | string | nome fonte |
+| `fonte_autorevole` | bool | `true` se la fonte è in lista curata (Symbola, Fitzcarraldo, Federculture, enti certificati, studiosi) → peso editoriale + boost `score_autorevolezza` |
 
 ---
 
@@ -183,3 +184,15 @@ Funzione `kb_getTopEntita_(tipo, limite)` + un pannello "Entità" in area admin 
 2. **Wording dei prompt** per ciascun sito (agenti/news/bandi) — coerenza dei `tipo` restituiti.
 3. **Stima costo backfill:** contare i record storici (× token) prima di lanciarlo; eseguirlo a lotti.
 4. **Mappa sigle strutture** iniziale (ICOM, NEMO, MiC, ANCI, Federculture…): quanto ampia in v1.
+
+---
+
+## 14. Aggiornamento 2026-06-07 — editoriale, norme, pubblicazioni, fonti autorevoli
+
+Estensioni decise dopo l'approvazione del flusso, da riflettere in implementazione:
+
+- **Tipi di contenuto di prima classe:** oltre a bandi/news, l'estrazione tratta esplicitamente **norme** (credibilità strutturale del settore) e **pubblicazioni/studi** (scoperte e approfondimenti). `tipo_contenuto` include ora anche `pubblicazione`.
+- **Entità da norme e studi:** dalle norme → enti regolatori (`struttura`) e la norma come `tema`; dalle pubblicazioni → autori/**studiosi** (`persona`, pubblico oggi servito solo in parte) e le scoperte/approfondimenti come `tema`.
+- **Fonti autorevoli (flag `fonte_autorevole`):** lista curata — **Symbola, Fitzcarraldo, Federculture** + enti certificati e studiosi riconosciuti — che dà boost a `score_autorevolezza` (§7) e priorità nella selezione editoriale.
+- **Primo consumatore = Editoriale settimanale (E1):** L1 alimenta il "Capo Redattore" (`2026-06-07-e1-editoriale-capo-redattore-design.md`) che ogni settimana sintetizza cosa si muove, con pilastri **norme** (cosa cambia nelle regole) e **studi/scoperte** (dalle pubblicazioni), oltre a news e dinamico.
+- **Dipendenza nota:** norme e pubblicazioni sono oggi **fonti carenti** (manca foglio Norme dedicato + fonti ufficiali; pubblicazioni inserite a mano). Il loro rafforzamento è il layer **L4**, che sale di priorità perché alimenta la credibilità dell'editoriale. L1+E1 partono col contenuto attuale e migliorano man mano che L4 arricchisce le fonti.
