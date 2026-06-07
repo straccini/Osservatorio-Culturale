@@ -1,0 +1,366 @@
+<script>
+  // ============================================================================
+  // v4.22 — MATRICE FONTI + API + MODALE
+  // Extracted from Index.html → LR-1 modularization
+  // ============================================================================
+
+  var _FM_SEMAFORO = {
+    ok:       { dot:'#10B981', label:'OK' },
+    stantia:  { dot:'#F59E0B', label:'Stantia' },
+    fail:     { dot:'#F97316', label:'Fail' },
+    silente:  { dot:'#EF4444', label:'Silente' },
+    mai:      { dot:'#9CA3AF', label:'Mai' },
+    agente:   { dot:'#3B82F6', label:'Agente' }
+  };
+
+  var _FM_API_SEMAFORO = {
+    operativa:   { dot:'#10B981', label:'Operativa' },
+    in_sviluppo: { dot:'#F59E0B', label:'In sviluppo' },
+    bloccata:    { dot:'#EF4444', label:'Bloccata' }
+  };
+
+  function _fmDot(color, title) {
+    return '<svg width="12" height="12" style="vertical-align:middle" title="'+esc(title)+'"><circle cx="6" cy="6" r="5" fill="'+color+'"/></svg>';
+  }
+
+  function _fmBadge(text, bg, color) {
+    return '<span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:'+bg+';color:'+color+';margin-left:4px;vertical-align:middle;letter-spacing:.03em">'+esc(text)+'</span>';
+  }
+
+  function _fmTimeAgo(dateStr) {
+    if (!dateStr) return '—';
+    var d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '—';
+    var diff = (Date.now() - d.getTime()) / 1000;
+    if (diff < 3600) return Math.round(diff/60) + 'min fa';
+    if (diff < 86400) return Math.round(diff/3600) + 'h fa';
+    if (diff < 2592000) return Math.round(diff/86400) + 'gg fa';
+    return d.toLocaleDateString('it-IT');
+  }
+
+  function _reloadFontiMatrix() {
+    if (!hasGAS()) return;
+    var wrap = $('fontiMatrixTable');
+    if (wrap) wrap.innerHTML = '<div class="empty-state sm">Caricamento...</div>';
+    var filtro = {
+      tipo: ($('fmFiltroContenitore')||{}).value || '',
+      stato: ($('fmFiltroStato')||{}).value || '',
+      q: ($('fmRicerca')||{}).value || ''
+    };
+    // Load classiche + agenti in parallelo
+    var classiche = null, agenti = null;
+    var render = function() {
+      if (classiche === null || agenti === null) return;
+      _renderFontiMatrix(classiche, agenti, filtro);
+    };
+    google.script.run.withSuccessHandler(function(r) {
+      classiche = (r && r.ok) ? r.fonti : [];
+      // Update counters
+      var ctr = $('fmCounters');
+      if (ctr && r && r.ok) {
+        var tot = r.totale || 0;
+        var att = classiche.filter(function(f){return f.attiva;}).length;
+        var err = classiche.filter(function(f){var s=f.stato||'';return s==='fail'||s==='silente';}).length;
+        ctr.textContent = tot+' fonti · '+att+' attive · '+err+' in errore';
+      }
+      render();
+    }).withFailureHandler(function(e) {
+      if (wrap) wrap.innerHTML = '<div class="empty-state sm">Errore: '+esc(e)+'</div>';
+    }).getFontiUnified(filtro.tipo ? {tipo:filtro.tipo, stato:filtro.stato||undefined, q:filtro.q||undefined} : {stato:filtro.stato||undefined, q:filtro.q||undefined});
+
+    google.script.run.withSuccessHandler(function(r) {
+      agenti = (r && r.ok) ? r.fonti : [];
+      render();
+    }).withFailureHandler(function() { agenti = []; render(); }).getAgentFontiForMatrix();
+
+    // Load API section
+    _loadApiSection();
+  }
+
+  function _renderFontiMatrix(fontiClassiche, fontiAgenti, filtro) {
+    var wrap = $('fontiMatrixTable');
+    if (!wrap) return;
+
+    // Filter agenti if contenitore filter is set
+    if (filtro && filtro.tipo) {
+      fontiAgenti = fontiAgenti.filter(function(a) {
+        if (filtro.tipo === 'bandi') return a.alimentaBandi;
+        if (filtro.tipo === 'news') return a.alimentaNews;
+        return false;
+      });
+    }
+
+    if (!fontiClassiche.length && !fontiAgenti.length) {
+      wrap.innerHTML = '<div class="empty-state sm">Nessuna fonte trovata con i filtri selezionati.</div>';
+      return;
+    }
+
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--accent-soft,#F0E6E4)">'
+      + '<th style="padding:6px;border-bottom:2px solid var(--accent);width:30px" title="Stato">St.</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:2px solid var(--accent)">Nome</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:2px solid var(--accent);width:180px">URL</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:2px solid var(--accent);width:50px">Bandi</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:2px solid var(--accent);width:50px">News</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:2px solid var(--accent);width:50px">Podcast</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:2px solid var(--accent);width:50px">Video</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:2px solid var(--accent);width:60px">Agenti</th>'
+      + '<th style="text-align:right;padding:6px;border-bottom:2px solid var(--accent);width:70px">Record</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:2px solid var(--accent);width:90px">Ultimo prelievo</th>'
+      + '<th style="padding:6px;border-bottom:2px solid var(--accent);width:70px">Azioni</th>'
+      + '</tr></thead><tbody>';
+
+    // Classic fonti
+    fontiClassiche.forEach(function(f) {
+      var sem = _FM_SEMAFORO[f.stato] || _FM_SEMAFORO[_fuStatoLabel(f)] || _FM_SEMAFORO.mai;
+      var stato = f.stato || _fuStatoLabel(f) || 'mai';
+      sem = _FM_SEMAFORO[stato] || _FM_SEMAFORO.mai;
+      var tipoBadge = _fmBadge(f.tipoFonte || f.tipo || 'RSS', 'rgba(0,0,0,.06)', '#555');
+      var urlShort = String(f.url||'').replace(/^https?:\/\/(www\.)?/,'').substring(0,35);
+      var isBandi = (f._tipo === 'bandi');
+      var isNews = (f._tipo === 'news');
+      var isPodcast = (f._tipo === 'podcast');
+      var isVideo = (f._tipo === 'video');
+      var chk = function(v) { return v ? '<span style="color:var(--amb-2,#10916D);font-weight:700">&#10003;</span>' : '<span style="color:#ccc">—</span>'; };
+      html += '<tr style="border-bottom:1px solid #eee">'
+        + '<td style="padding:5px;text-align:center">'+_fmDot(sem.dot, sem.label)+'</td>'
+        + '<td style="padding:5px">'+esc(f.nome||'')+tipoBadge+'</td>'
+        + '<td style="padding:5px;font-size:11px"><a href="'+esc(f.url||'')+'" target="_blank" rel="noopener" style="color:var(--amb-5);text-decoration:none" title="'+esc(f.url||'')+'">'+esc(urlShort)+(urlShort.length<String(f.url||'').length?'...':'')+'</a></td>'
+        + '<td style="padding:5px;text-align:center">'+chk(isBandi)+'</td>'
+        + '<td style="padding:5px;text-align:center">'+chk(isNews)+'</td>'
+        + '<td style="padding:5px;text-align:center">'+chk(isPodcast)+'</td>'
+        + '<td style="padding:5px;text-align:center">'+chk(isVideo)+'</td>'
+        + '<td style="padding:5px;text-align:center;color:#ccc">—</td>'
+        + '<td style="padding:5px;text-align:right;font-weight:600">'+((f.recordTotali||0)>0?f.recordTotali:'—')+'</td>'
+        + '<td style="padding:5px;font-size:11px;color:var(--ink-2)" title="'+(f.ultimaScan?'Ultima scan: '+f.ultimaScan:'')+'">'+_fmTimeAgo(f.ultimoPrelievoReale)+'</td>'
+        + '<td style="padding:5px">'
+          + '<button onclick="OC._toggleFonte(\''+esc(f._tipo)+'\',\''+esc(f.id)+'\',' + (!f.attiva) + ')" style="font-size:10px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;background:none;cursor:pointer;color:'+(f.attiva?'var(--danger)':'var(--amb-2)')+'" title="'+(f.attiva?'Disattiva':'Attiva')+'">'+(f.attiva?'Off':'On')+'</button> '
+          + '<button onclick="OC._deleteFonte(\''+esc(f._tipo)+'\',\''+esc(f.id)+'\')" style="font-size:10px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;background:none;cursor:pointer;color:var(--danger)" title="Elimina">&#10005;</button>'
+        + '</td></tr>';
+    });
+
+    // Separator + agent fonti
+    if (fontiAgenti.length > 0) {
+      html += '<tr><td colspan="11" style="padding:10px 5px;text-align:center;font-size:11px;color:var(--ink-3);border-bottom:1px solid var(--rule);letter-spacing:.05em">── Fonti Agenti AI (read-only) ──</td></tr>';
+      fontiAgenti.forEach(function(a) {
+        var sem = _FM_SEMAFORO.agente;
+        var badge = _fmBadge(a.codice, 'rgba(59,130,246,.12)', '#3B82F6');
+        var chk = function(v) { return v ? '<span style="color:var(--amb-2);font-weight:700">&#10003;</span>' : '<span style="color:#ccc">—</span>'; };
+        html += '<tr style="border-bottom:1px solid #eee;background:rgba(59,130,246,.02)">'
+          + '<td style="padding:5px;text-align:center">'+_fmDot(sem.dot, sem.label)+'</td>'
+          + '<td style="padding:5px">'+esc(a.nome)+badge+'</td>'
+          + '<td style="padding:5px;font-size:11px;color:var(--ink-3)">'+esc(a.url)+'</td>'
+          + '<td style="padding:5px;text-align:center">'+chk(a.alimentaBandi)+'</td>'
+          + '<td style="padding:5px;text-align:center">'+chk(a.alimentaNews)+'</td>'
+          + '<td style="padding:5px;text-align:center">'+chk(a.alimentaPodcast)+'</td>'
+          + '<td style="padding:5px;text-align:center">'+chk(a.alimentaVideo)+'</td>'
+          + '<td style="padding:5px;text-align:center;font-weight:600;color:var(--amb-5)">'+esc(a.codice)+'</td>'
+          + '<td style="padding:5px;text-align:right;color:#ccc">—</td>'
+          + '<td style="padding:5px;color:#ccc">—</td>'
+          + '<td style="padding:5px"></td></tr>';
+      });
+    }
+
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+
+  function _fuStatoLabel(f) {
+    if (f.failConsec >= 3) return 'silente';
+    if (f.failConsec >= 1) return 'fail';
+    if (!f.ultimaScan) return 'mai';
+    var hours = (Date.now() - new Date(f.ultimaScan).getTime()) / 3600000;
+    if (f.ultimoEsito === 'OK' && hours < 36) return 'ok';
+    return 'stantia';
+  }
+
+  function _loadApiSection() {
+    if (!hasGAS()) return;
+    google.script.run.withSuccessHandler(function(r) {
+      if (!r || !r.ok) return;
+      var ctr = $('fmApiCounters');
+      if (ctr) ctr.textContent = r.contatori.totale+' API · '+r.contatori.operative+' operative · '+r.contatori.inSviluppo+' in sviluppo · '+r.contatori.bloccate+' bloccate';
+      _renderApiCards(r.apis);
+    }).withFailureHandler(function(){}).getApiStrutturateStatus((window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  function _renderApiCards(apis) {
+    var wrap = $('fontiApiCards');
+    if (!wrap || !apis) return;
+    if (!apis.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna API configurata.</div>'; return; }
+    var html = '';
+    apis.forEach(function(api) {
+      var sem = _FM_API_SEMAFORO[api.stato] || _FM_API_SEMAFORO.bloccata;
+      var dotHtml = _fmDot(sem.dot, sem.label);
+      var detailId = 'api-detail-' + api.id;
+      html += '<div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:16px;position:relative">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">'
+        + '<div style="flex:1;min-width:200px">'
+          + '<div style="font-size:14px;font-weight:600;color:var(--ink)">'+dotHtml+' '+esc(api.nome)+'</div>'
+          + '<div style="font-size:11px;color:var(--ink-3);margin-top:4px;font-family:monospace">'+esc(api.endpoint)+'</div>'
+          + '<div style="font-size:12px;color:var(--ink-2);margin-top:6px">Alimenta: <b>→ '+esc(api.alimenta)+'</b></div>'
+        + '</div>'
+        + '<div style="text-align:right;min-width:140px">'
+          + '<div style="font-size:12px;color:var(--ink-2)"><b>'+api.recordTotali+'</b> record totali · <b>'+api.record30gg+'</b> ultimi 30gg</div>'
+          + '<div style="font-size:11px;color:var(--ink-3);margin-top:2px">Ultimo: '+_fmTimeAgo(api.ultimoPrelievo)+'</div>'
+        + '</div></div>';
+      if (api.motivoBlocco) {
+        html += '<div style="margin-top:8px;padding:8px 10px;background:rgba(239,68,68,.04);border-radius:6px;font-size:12px;color:var(--danger,#C2410C)"><b>Stato:</b> '+esc(api.motivoBlocco)+'</div>';
+      }
+      html += '<div style="margin-top:10px;display:flex;gap:8px">'
+        + '<button class="btn btn-secondary" onclick="OC._testApiConnessione(\''+esc(api.id)+'\')" style="font-size:11px;padding:4px 10px">Testa connessione</button>'
+        + '<button class="btn btn-secondary" onclick="var d=document.getElementById(\''+detailId+'\');d.hidden=!d.hidden" style="font-size:11px;padding:4px 10px">Dettagli</button>'
+        + '<span id="api-test-'+esc(api.id)+'" style="font-size:11px;color:var(--ink-3)"></span>'
+        + '</div>';
+      html += '<div id="'+detailId+'" hidden style="margin-top:10px;padding:10px;background:var(--surface-2);border-radius:6px;font-size:12px;color:var(--ink-2)">'
+        + '<div><b>Formato:</b> '+esc(api.formato)+'</div>'
+        + '<div><b>Autenticazione:</b> '+esc(api.auth)+'</div>'
+        + '<div><b>Limiti rate:</b> '+esc(api.limiteRate)+'</div>'
+        + '<div style="margin-top:4px"><b>Mappatura campi:</b> '+esc(api.mappaCampi)+'</div>'
+        + '</div>';
+      html += '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function _openAddFonteModal() {
+    var ov = document.getElementById('oc-addfonte-overlay');
+    if (ov) { ov.hidden = false; ov.style.display = 'flex'; }
+  }
+  function _closeAddFonteModal() {
+    var ov = document.getElementById('oc-addfonte-overlay');
+    if (ov) { ov.hidden = true; ov.style.display = 'none'; }
+    var r = $('afResult'); if (r) r.textContent = '';
+  }
+
+  function _submitAddFonte() {
+    if (!hasGAS()) return;
+    var nome = ($('afNome')||{}).value || '';
+    var url = ($('afUrl')||{}).value || '';
+    var tipoFonte = ($('afTipoFonte')||{}).value || 'RSS';
+    var checks = document.querySelectorAll('.af-alimenta:checked');
+    var tipi = [];
+    for (var i = 0; i < checks.length; i++) tipi.push(checks[i].value);
+    var out = $('afResult');
+
+    if (!nome.trim()) { if(out) out.innerHTML='<span style="color:var(--danger)">Nome obbligatorio</span>'; return; }
+    if (!url.trim()) { if(out) out.innerHTML='<span style="color:var(--danger)">URL obbligatorio</span>'; return; }
+    if (!tipi.length) { if(out) out.innerHTML='<span style="color:var(--danger)">Seleziona almeno un contenitore</span>'; return; }
+
+    if(out) out.innerHTML='<span style="color:var(--ink-3)">Salvataggio...</span>';
+    var done = 0, total = tipi.length, errors = [];
+    tipi.forEach(function(tipo) {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          done++;
+          if (!r || !r.ok) errors.push(tipo + ': ' + (r&&r.error||'errore'));
+          if (done === total) {
+            if (errors.length) { if(out) out.innerHTML='<span style="color:var(--danger)">Errori: '+esc(errors.join(', '))+'</span>'; }
+            else {
+              if(out) out.innerHTML='<span style="color:var(--amb-2)">Fonte aggiunta a '+total+' contenitor'+(total>1?'i':'e')+'</span>';
+              setTimeout(function(){ _closeAddFonteModal(); _reloadFontiMatrix(); }, 1200);
+            }
+          }
+        })
+        .withFailureHandler(function(e) { done++; errors.push(tipo+': '+e); if(done===total && out) out.innerHTML='<span style="color:var(--danger)">'+esc(errors.join(', '))+'</span>'; })
+        .addFonteUnificataV2({
+          tipo: tipo, nome: nome.trim(), url: url.trim(), tipoFonte: tipoFonte,
+          tag: ($('afTag')||{}).value || '', categoria: ($('afCategoria')||{}).value || '',
+          priorita: Number(($('afPriorita')||{}).value) || 2,
+          enteDefault: ($('afEnte')||{}).value || '', livello: ($('afLivello')||{}).value || ''
+        });
+    });
+  }
+
+  function _toggleFonte(tipo, id, newState) {
+    if (!hasGAS()) return;
+    google.script.run.withSuccessHandler(function(r) {
+      if (r && r.ok) _reloadFontiMatrix();
+      else showToast && showToast((r&&r.error)||'Errore','err');
+    }).withFailureHandler(function(e){ showToast && showToast('Errore: '+e,'err'); }).toggleFonteUnified(tipo, id, newState);
+  }
+
+  function _deleteFonte(tipo, id) {
+    if (!hasGAS()) return;
+    if (!confirm('Eliminare definitivamente questa fonte?')) return;
+    google.script.run.withSuccessHandler(function(r) {
+      if (r && r.ok) { _reloadFontiMatrix(); showToast && showToast('Fonte eliminata','ok'); }
+      else showToast && showToast((r&&r.error)||'Errore','err');
+    }).withFailureHandler(function(e){ showToast && showToast('Errore: '+e,'err'); }).deleteFonteUnified(tipo, id);
+  }
+
+  function _scanNews() {
+    if (!hasGAS()) return;
+    var out = $('fmScanResult');
+    if(out) out.innerHTML='<span style="color:var(--ink-3)">Scan news in corso (30-90s)...</span>';
+    google.script.run.withSuccessHandler(function(n){
+      if(out) out.innerHTML='<span style="color:var(--amb-2)">Scan completato: '+(n||0)+' nuovi</span>';
+      _reloadFontiMatrix();
+    }).withFailureHandler(function(e){ if(out) out.innerHTML='<span style="color:var(--danger)">Errore: '+esc(e)+'</span>'; }).scanSources();
+  }
+
+  function _scanBandi() {
+    if (!hasGAS()) return;
+    var out = $('fmScanResult');
+    if(out) out.innerHTML='<span style="color:var(--ink-3)">Scan bandi in corso (60-180s)...</span>';
+    google.script.run.withSuccessHandler(function(r){
+      if(out) out.innerHTML='<span style="color:var(--amb-2)">Scan bandi completato</span>';
+      _reloadFontiMatrix();
+    }).withFailureHandler(function(e){ if(out) out.innerHTML='<span style="color:var(--danger)">Errore: '+esc(e)+'</span>'; }).scanBandiAutomatico();
+  }
+
+  function _scanPodcast() {
+    if (!hasGAS()) return;
+    var out = $('fmScanResult');
+    if(out) out.innerHTML='<span style="color:var(--ink-3)">Scan podcast/video in corso (30-90s)...</span>';
+    google.script.run.withSuccessHandler(function(n){
+      if(out) out.innerHTML='<span style="color:var(--amb-2)">Scan completato: '+(n||0)+' nuovi episodi</span>';
+      _reloadFontiMatrix();
+    }).withFailureHandler(function(e){ if(out) out.innerHTML='<span style="color:var(--danger)">Errore: '+esc(e)+'</span>'; }).scanPodcast();
+  }
+
+  function _runAuditFonti() {
+    if (!hasGAS()) return;
+    var out = $('fmDiagContent');
+    if(out) out.textContent='Audit in corso...';
+    google.script.run.withSuccessHandler(function(r){
+      if(!out) return;
+      if(!r||!r.ok) { out.textContent='Errore audit'; return; }
+      var h='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">';
+      if(r.kpi) {
+        h+='<div><b>'+r.kpi.totali+'</b> fonti totali</div>';
+        h+='<div><b>'+r.kpi.attive+'</b> attive</div>';
+        h+='<div><b>'+r.kpi.silenti+'</b> silenti</div>';
+        h+='<div><b>'+r.kpi.bandiTotali+'</b> bandi totali</div>';
+      }
+      h+='</div>';
+      if(r.raccomandazioni && r.raccomandazioni.length) {
+        h+='<div style="margin-top:8px">';
+        r.raccomandazioni.forEach(function(rc) {
+          var col = rc.livello==='critico'?'var(--danger)':rc.livello==='warning'?'#F59E0B':'var(--ink-3)';
+          h+='<div style="padding:4px 0;color:'+col+';font-size:12px">'+esc(rc.testo)+'</div>';
+        });
+        h+='</div>';
+      }
+      out.innerHTML=h;
+    }).withFailureHandler(function(e){ if(out) out.textContent='Errore: '+e; }).getFontiDiagnostics();
+  }
+
+  function _testApiConnessione(apiId) {
+    if (!hasGAS()) return;
+    var out = document.getElementById('api-test-'+apiId);
+    if(out) out.innerHTML='<span style="color:var(--ink-3)">Test in corso...</span>';
+    google.script.run.withSuccessHandler(function(r){
+      if(!out) return;
+      if(r && r.ok) {
+        out.innerHTML='<span style="color:var(--amb-2)">HTTP '+r.httpStatus+' · '+r.responseTime+' · '+r.contentLength+' byte</span>';
+      } else {
+        out.innerHTML='<span style="color:var(--danger)">HTTP '+(r?r.httpStatus:'?')+' · '+(r?r.error:'errore')+'</span>';
+      }
+    }).withFailureHandler(function(e){ if(out) out.innerHTML='<span style="color:var(--danger)">Errore: '+esc(e)+'</span>'; }).testApiConnessione(apiId, (window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  // Backward-compat aliases
+  var reloadFontiUnified = _reloadFontiMatrix;
+  function toggleFonteU(src, tipo, id, attiva) { _toggleFonte(tipo, id, attiva); }
+  function deleteFonteU(src, tipo, id, nome) { _deleteFonte(tipo, id); }
+</script>

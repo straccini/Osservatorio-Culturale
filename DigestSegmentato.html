@@ -1,0 +1,201 @@
+<script>
+  // ==========================================================
+  // E.quater) DIGEST SEGMENTATO (Sprint 1.3 D2.3 - 2026-05-01)
+  // Extracted from Index.html → LR-1 modularization
+  // ==========================================================
+  function generaQueueAll(){
+    if (!hasGAS()) return;
+    if (!confirm('Genera bozze digest personalizzate per TUTTI i compilatori Matrix con email opt-in?\n(idempotente: salta utenti con bozze recenti)')) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Generazione in corso…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.error) { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(r.error)+'</span>'; return; }
+        out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Generati: '+esc(r.generati||0)+' · skipped: '+esc(r.skipped||0)+' · errori: '+esc(r.errori||0)+' (su '+esc(r.totale||0)+' totali)</span>';
+        reloadQueue();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .generateDigestQueueAll({token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
+  }
+
+  function testDigestSegmentato(){
+    if (!hasGAS()) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Test su ultimo responseId in ResponsesMatrix…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.error) { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(r.error)+'</span>'; return; }
+        var msg = '<span style="color:var(--amb-2,#10916D)">✓ Bozza generata (dry-run)</span>';
+        if (r.generate && r.generate.top3Dims) msg += '<div style="font-size:11px;color:#666;margin-top:2px">Top 3 dim: '+esc(r.generate.top3Dims.join(', '))+' · contenuti: '+esc(r.generate.contentCounts.bandi||0)+' bandi · '+esc(r.generate.contentCounts.news||0)+' news · '+esc(r.generate.contentCounts.podcast||0)+' podcast</div>';
+        out.innerHTML = msg;
+        reloadQueue();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .testGenerateDigestSegmentato((window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  // v4.21 — Test digest Matrix per email specifica
+  function testDigestMatrixPerEmail(){
+    if (!hasGAS()) return;
+    var emailInput = $('matrixTestEmail');
+    var email = (emailInput && emailInput.value || '').trim().toLowerCase();
+    if (!email || email.indexOf('@') < 0) { alert('Inserisci un indirizzo email valido di un compilatore Matrix.'); return; }
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Ricerca profilo Matrix per ' + esc(email) + '…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.error) { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(r.error)+'</span>'; return; }
+        var msg = '<span style="color:var(--amb-2,#10916D)">✓ Digest generato per '+esc(email)+'</span>';
+        if (r.top3Dims) msg += '<div style="font-size:11px;color:#666;margin-top:4px"><b>Dimensioni selezionate:</b> '+esc(r.top3Dims.join(', '))+'</div>';
+        if (r.contentCounts) msg += '<div style="font-size:11px;color:#666">Contenuti: '+esc(r.contentCounts.bandi||0)+' bandi · '+esc(r.contentCounts.news||0)+' news · '+esc(r.contentCounts.podcast||0)+' podcast</div>';
+        if (r.queueId) msg += '<div style="font-size:11px;color:var(--accent);margin-top:2px">Bozza in coda: '+esc(r.queueId)+' — premi "Aggiorna coda" per vederla.</div>';
+        out.innerHTML = msg;
+        reloadQueue();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .testDigestMatrixForEmail(email, (window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  function inviaTuttiPending(){
+    if (!hasGAS()) return;
+    if (!confirm('Inviare TUTTE le bozze digest in stato "draft" della queue?\nDestinatari: i singoli compilatori Matrix.')) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Invio in corso…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.error) { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(r.error)+'</span>'; return; }
+        out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Inviati: '+esc(r.sent||0)+' / '+esc(r.total||0)+' · errori: '+esc((r.errors||[]).length)+'</span>';
+        reloadQueue();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .sendAllPendingDigest((window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  function reloadQueue(){
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(r){
+        var wrap = $('digestQueueWrap');
+        if (!wrap) return;
+        var items = (r && r.items) || [];
+        if (!items.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna bozza in queue.</div>'; return; }
+        // v4.21 — Tabella coda con email, interessi, stato
+        var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--accent-soft,#F0E6E4)">'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851);font-weight:700">Email destinatario</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Interessi (dimensioni)</th>'
+          + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Stato</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Data</th>'
+          + '</tr></thead><tbody>';
+        // v4.21 — Mappa dimensioni per label leggibili
+        var _dimLabels = {D1:'Identita',D2:'Patrimonio',D3:'Spazi',D4:'Educazione',D5:'Servizi',D6:'Digitale',D7:'Accessibilita',D8:'Audience',D9:'Governance',D10:'Welfare'};
+        items.forEach(function(it){
+          var statusColor = it.Status === 'sent' ? 'var(--amb-2,#10916D)' : (it.Status === 'draft' ? 'var(--accent,#935851)' : 'var(--danger,#C2410C)');
+          // Estrai dimensioni dalla nota (formato: "top3=D7,D9,D10 · museo=...")
+          var dims = '';
+          var noteStr = String(it.Note || '');
+          var topMatch = noteStr.match(/top3=([A-Z0-9,]+)/i);
+          if (topMatch) {
+            dims = topMatch[1].split(',').map(function(d) {
+              d = d.trim();
+              return '<span style="display:inline-block;background:rgba(147,88,81,.1);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:10px;margin:1px 2px">' + esc(_dimLabels[d] || d) + '</span>';
+            }).join('');
+          }
+          var museoMatch = noteStr.match(/museo=(.+)/);
+          var museo = museoMatch ? museoMatch[1].trim() : '';
+          html += '<tr>'
+            + '<td style="padding:6px;border-bottom:1px solid #eee"><div>'+esc(it.Email||'')+'</div>' + (museo ? '<div style="font-size:10px;color:var(--ink-3)">'+esc(museo)+'</div>' : '') + '</td>'
+            + '<td style="padding:6px;border-bottom:1px solid #eee">' + (dims || '<span style="color:#999;font-size:11px">—</span>') + '</td>'
+            + '<td style="padding:6px;border-bottom:1px solid #eee;text-align:center;color:'+statusColor+';font-weight:600">'+esc(it.Status||'')+'</td>'
+            + '<td style="padding:6px;border-bottom:1px solid #eee;color:#666;font-size:11px">'+esc(String(it.GeneratedAt||'').substring(0,16).replace('T',' '))+'</td>'
+            + '</tr>';
+        });
+        html += '</tbody></table>';
+        wrap.innerHTML = html;
+      })
+      .withFailureHandler(function(e){ console.error('reloadQueue:', e); })
+      .adminGetDigestQueue({});
+  }
+
+  // ==========================================================
+  // E.cinque) CRON DIGEST WEEKLY (Sprint 1.3 D2.4 - 2026-05-01)
+  // ==========================================================
+  function loadCronStatus(){
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(s){
+        var txt = $('cronStatusText'), last = $('cronLastRun');
+        if (!txt) return;
+        if (s && s.active) {
+          txt.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Attivo</span> · martedì ore '+esc(s.hour||'?')+':00';
+        } else {
+          txt.innerHTML = '<span style="color:var(--danger,#C2410C)">✗ Non attivo</span> · clicca "Attiva cron" per installare';
+        }
+        if (last) {
+          if (s && s.lastRunHumanIt) {
+            var lr = s.lastResult || {};
+            var sg = (lr.segmentati && lr.segmentati.generati) || 0;
+            var ge = (lr.generalista && lr.generalista.ok) ? 1 : 0;
+            last.innerHTML = 'Ultima esecuzione: <b>'+esc(s.lastRunHumanIt)+'</b> · '+sg+' segmentati + '+ge+' generalista';
+          } else {
+            last.textContent = 'Mai eseguito.';
+          }
+        }
+      })
+      .withFailureHandler(function(e){ console.error('loadCronStatus:', e); })
+      .getMatrixDigestTriggerStatus();
+  }
+
+  function setupCronDigest(){
+    if (!hasGAS()) return;
+    if (!confirm('Attivare il cron weekly (martedì 06:00)?\nGenera automaticamente le bozze digest senza inviarle.\nL\'invio resta manuale.')) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Installazione trigger…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Cron attivato. Trigger ID: '+esc(r.triggerId||'')+'</span>';
+          loadCronStatus();
+        } else { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; }
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .setupMatrixDigestTrigger();
+  }
+
+  function removeCronDigest(){
+    if (!hasGAS()) return;
+    if (!confirm('Disattivare il cron weekly?\nDovrai generare le bozze manualmente ogni settimana.')) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Rimozione trigger…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Cron disattivato. Rimossi '+esc(r.removed||0)+' trigger.</span>';
+          loadCronStatus();
+        } else { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; }
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .removeMatrixDigestTrigger();
+  }
+
+  function testCronManual(){
+    if (!hasGAS()) return;
+    if (!confirm('Esegui MANUALMENTE il cron weekly (per test)?\nGenererà bozze segmentate + generalista + notifica Telegram (se configurata).\nNON invierà email ai destinatari.')) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Esecuzione cron in corso (può richiedere fino a 2 minuti)…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.errori && r.errori.length) {
+          out.innerHTML = '<span style="color:var(--accent,#935851)">⚠ Eseguito con errori ('+r.errori.length+'): '+esc(r.errori.join(' · '))+'</span>';
+        } else {
+          var sg = (r && r.segmentati && r.segmentati.generati) || 0;
+          var ge = (r && r.generalista && r.generalista.ok) ? 'ok' : 'no';
+          var tg = (r && r.telegram && r.telegram.ok) ? 'ok' : 'no';
+          out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Cron eseguito. Segmentati: '+sg+' bozze · Generalista: '+ge+' · Telegram: '+tg+' · durata '+esc(r&&r.durataSec||0)+'s</span>';
+        }
+        loadCronStatus();
+        reloadQueue();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .testCronGenerateDigestWeekly();
+  }
+</script>

@@ -1,0 +1,269 @@
+<script>
+  // ==========================================================
+  // F.bis) GESTIONE UTENTI (Sprint 1.4 - 2026-05-01)
+  // Extracted from Index.html → LR-1 modularization
+  // ==========================================================
+  function reloadUtentiTable() {
+    if (!hasGAS()) return;
+    var stato = ($('utentiFiltroStato')||{}).value || '';
+    var ruolo = ($('utentiFiltroRuolo')||{}).value || '';
+    var wrap = $('utentiTable');
+    if (wrap) wrap.innerHTML = '<div class="empty-state sm">Caricamento…</div>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && !r.ok && r.error) {
+          if (wrap) wrap.innerHTML = '<div style="color:var(--danger,#C2410C);padding:12px;background:#FFF5F5;border:1px solid #FFCCCC;border-radius:6px">⚠️ <b>Errore:</b> ' + esc(r.error) + '</div>';
+          return;
+        }
+        var items = (r && r.items) || [];
+        renderUtentiTable(wrap, items);
+        updateUtentiStats(items);
+        if (r && r.info && wrap) {
+          var infoEl = document.createElement('div');
+          infoEl.style.cssText = 'color:var(--danger,#C2410C);font-size:11px;margin-top:8px;padding:8px;background:#FFF5F5;border:1px solid #FFCCCC;border-radius:4px;word-break:break-all';
+          infoEl.innerHTML = '<b>DEBUG:</b> ' + esc(r.info);
+          wrap.appendChild(infoEl);
+        }
+      })
+      .withFailureHandler(function(e) {
+        if (wrap) wrap.innerHTML = '<div style="color:var(--danger,#C2410C);padding:12px;background:#FFF5F5;border:1px solid #FFCCCC;border-radius:6px">⚠️ <b>Errore GAS:</b> ' + esc(String(e)) + '</div>';
+      })
+      .getAllUtenti({ statoFilter: stato || null, ruoloFilter: ruolo || null, token: (window.OC_SESSION && window.OC_SESSION.token) || null });
+  }
+
+  function updateUtentiStats(items) {
+    if ($('statUtTot'))     $('statUtTot').textContent = items.length;
+    if ($('statUtPending')) $('statUtPending').textContent = items.filter(function(u){return u.Stato==='pending';}).length;
+    if ($('statUtAttivi'))  $('statUtAttivi').textContent = items.filter(function(u){return u.Stato==='attivo';}).length;
+    if ($('statUtAdmin'))   $('statUtAdmin').textContent = items.filter(function(u){return u.Ruolo==='admin';}).length;
+  }
+
+  function renderUtentiTable(wrap, items) {
+    if (!wrap) return;
+    if (!items.length) { wrap.innerHTML = '<div class="empty-state sm">Nessun utente. Esegui "Migrazione one-shot" per importare da MailingList+ContactsMatrix.</div>'; return; }
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--accent-soft,#F0E6E4)">'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Email</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Nome</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Ruolo</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Stato</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Digest</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Bandi</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Matrix</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851);width:240px">Azioni</th>'
+      + '</tr></thead><tbody>';
+    // v4.21 — Super admin: solo s.straccini@gmail.com puo modificare admin
+    var currentEmail = (window.OC_SESSION && window.OC_SESSION.email) || '';
+    var isSuperAdmin = (currentEmail.toLowerCase() === 's.straccini@gmail.com');
+    items.forEach(function(u) {
+      var isAdmin = (u.Ruolo === 'admin');
+      var isSuperAdminRow = (String(u.Email||'').toLowerCase() === 's.straccini@gmail.com');
+      var statoCol = u.Stato === 'attivo' ? 'var(--amb-2,#10916D)' : (u.Stato === 'pending' ? 'var(--accent,#935851)' : (u.Stato === 'sospeso' ? '#999' : 'var(--danger,#C2410C)'));
+      var ruoloCol = isAdmin ? 'var(--amb-1,#7C3AED)' : (u.Ruolo === 'editor' ? 'var(--amb-5,#0E7490)' : '#666');
+      function chk(v) { return (v===true||v==='TRUE'||v===1) ? '✓' : '—'; }
+      function chkColor(v) { return (v===true||v==='TRUE'||v===1) ? 'var(--amb-2,#10916D)' : '#999'; }
+      // v4.21 — Admin protetti: il super_admin puo modificare gli admin, gli altri admin no
+      var adminProtected = isAdmin && !isSuperAdmin;
+      var superProtected = isSuperAdminRow; // il super admin non si puo eliminare
+      var disabledAttr = adminProtected ? ' disabled title="Amministratore protetto — solo il super-admin puo modificare"' : '';
+      var adminBadge = isSuperAdminRow ? ' <span style="font-size:9px;color:var(--amb-1);font-weight:700;font-family:sans-serif">SUPER ADMIN</span>'
+        : (isAdmin ? ' <span style="font-size:9px;color:var(--amb-1);font-weight:700;font-family:sans-serif">ADMIN</span>' : '');
+      html += '<tr' + (isAdmin ? ' style="background:rgba(124,58,237,.04)"' : '') + '>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;font-family:monospace;font-size:11px">'+esc(u.Email||'') + adminBadge + '</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee">'+esc(u.Nome||'')+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee">'
+          + '<select class="u-ruolo" data-email="'+esc(u.Email)+'" data-orig="'+esc(u.Ruolo||'')+'" onchange="OC.userRowChanged(\''+esc(u.Email)+'\')" style="font-size:11px;padding:2px 4px;font-weight:600;color:'+ruoloCol+'"' + disabledAttr + '>'
+            + ['admin','editor','lettore','ospite'].map(function(r){ return '<option value="'+r+'"'+(u.Ruolo===r?' selected':'')+'>'+r+'</option>'; }).join('')
+          + '</select></td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee">'
+          + '<select class="u-stato" data-email="'+esc(u.Email)+'" data-orig="'+esc(u.Stato||'')+'" onchange="OC.userRowChanged(\''+esc(u.Email)+'\')" style="font-size:11px;padding:2px 4px;font-weight:600;color:'+statoCol+'"' + disabledAttr + '>'
+            + ['pending','attivo','sospeso','rifiutato'].map(function(s){ return '<option value="'+s+'"'+(u.Stato===s?' selected':'')+'>'+s+'</option>'; }).join('')
+          + '</select></td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInDigest)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'digest\')" title="Clicca per toggle">'+chk(u.OptInDigest)+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInBandi)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'bandi\')" title="Clicca per toggle">'+chk(u.OptInBandi)+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInMatrix)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'matrix\')" title="Clicca per toggle">'+chk(u.OptInMatrix)+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee">'
+          + (superProtected
+            ? '<span style="font-size:10px;color:var(--amb-1);font-style:italic;font-weight:600">Super admin</span>'
+            : (adminProtected
+              ? '<span style="font-size:10px;color:var(--ink-3);font-style:italic">Protetto</span>'
+              : '<button class="btn btn-secondary u-save" data-email="'+esc(u.Email)+'" onclick="OC.salvaUtente(\''+esc(u.Email)+'\')" style="display:none;font-size:10px;padding:3px 8px;margin-right:4px;background:var(--amb-2,#10916D);color:#fff;font-weight:600">Salva</button>'
+                + '<button class="btn btn-secondary" onclick="OC.eliminaUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;color:var(--danger,#C2410C)">Elimina</button>'))
+        + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+
+  function showInvitaUtenteForm() {
+    var f = $('invitaUtenteForm');
+    if (f) f.style.display = (f.style.display === 'none' ? 'block' : 'none');
+  }
+
+  // v4.21.2 — Multi-invito con ruolo per ciascun utente
+  function addInvRow() {
+    var container = $('invRows');
+    if (!container) return;
+    var rowCount = container.querySelectorAll('.inv-row').length;
+    var row = document.createElement('div');
+    row.className = 'inv-row';
+    row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 130px 32px;gap:8px;align-items:end';
+    row.innerHTML = ''
+      + '<div><input type="email" class="inv-email" placeholder="email@museo.it" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>'
+      + '<div><input type="text" class="inv-nome" placeholder="Nome Cognome" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>'
+      + '<div><select class="inv-ruolo" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"><option value="lettore">Lettore</option><option value="editor">Redattore</option><option value="admin">Admin</option><option value="ospite">Ospite</option></select></div>'
+      + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger,#C2410C);font-size:18px;cursor:pointer;padding:4px" title="Rimuovi riga">&times;</button>';
+    container.appendChild(row);
+  }
+
+  function invitaUtenti() {
+    if (!hasGAS()) return;
+    var rows = document.querySelectorAll('#invRows .inv-row');
+    var batch = [];
+    for (var i = 0; i < rows.length; i++) {
+      var emailEl = rows[i].querySelector('.inv-email');
+      var nomeEl = rows[i].querySelector('.inv-nome');
+      var ruoloEl = rows[i].querySelector('.inv-ruolo');
+      var email = (emailEl ? emailEl.value : '').trim();
+      if (!email) continue;
+      batch.push({
+        email: email,
+        nome: (nomeEl ? nomeEl.value : '').trim(),
+        ruolo: (ruoloEl ? ruoloEl.value : 'lettore')
+      });
+    }
+    if (!batch.length) { $('invResult').innerHTML = '<span style="color:var(--danger)">Inserisci almeno un\'email.</span>'; return; }
+    var out = $('invResult');
+    out.innerHTML = '<span style="color:#666">Invio inviti in corso (' + batch.length + ')…</span>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok && r.batch) {
+          var msgs = [];
+          r.results.forEach(function(res) {
+            if (res.ok) msgs.push('<span style="color:var(--amb-2)">✓ ' + esc(res.email) + ' (' + esc(res.ruolo) + ') — invito inviato</span>');
+            else msgs.push('<span style="color:var(--danger)">✗ ' + esc(res.email||'') + ' — ' + esc(res.error||'') + '</span>');
+          });
+          out.innerHTML = msgs.join('<br>');
+          // Pulisci righe extra, mantieni solo la prima
+          var container = $('invRows');
+          var allRows = container.querySelectorAll('.inv-row');
+          for (var ri = allRows.length - 1; ri > 0; ri--) allRows[ri].remove();
+          var firstEmail = container.querySelector('.inv-email');
+          var firstName = container.querySelector('.inv-nome');
+          if (firstEmail) firstEmail.value = '';
+          if (firstName) firstName.value = '';
+          reloadUtentiTable();
+        } else if (r && r.ok) {
+          out.innerHTML = '<span style="color:var(--amb-2)">✓ Invito inviato a ' + esc(r.email) + ' (stato: pending)</span>';
+          var firstEmail = document.querySelector('#invRows .inv-email');
+          var firstName = document.querySelector('#invRows .inv-nome');
+          if (firstEmail) firstEmail.value = '';
+          if (firstName) firstName.value = '';
+          reloadUtentiTable();
+        } else {
+          out.innerHTML = '<span style="color:var(--danger)">Errore: ' + esc((r&&r.error)||'sconosciuto') + '</span>';
+        }
+      })
+      .withFailureHandler(function(e) { out.innerHTML = '<span style="color:var(--danger)">Errore: ' + esc(e) + '</span>'; })
+      .invitaNuovoUtente(batch.length === 1
+        ? { email: batch[0].email, nome: batch[0].nome, ruolo: batch[0].ruolo, token: (window.OC_SESSION&&window.OC_SESSION.token)||null }
+        : { batch: batch, token: (window.OC_SESSION&&window.OC_SESSION.token)||null }
+      );
+  }
+
+  function approvaUtente(email) {
+    if (!hasGAS()) return;
+    var ruolo = prompt('Ruolo da assegnare a ' + email + ':\n- admin\n- editor\n- lettore (default)', 'lettore');
+    if (!ruolo) return;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) { reloadUtentiTable(); $('utentiResult').innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Utente approvato come '+esc(r.ruolo)+'</span>'; }
+        else { $('utentiResult').innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc((r&&r.error)||'')+'</span>'; }
+      })
+      .withFailureHandler(function(e){ $('utentiResult').innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .approveUser(email, ruolo.trim());
+  }
+
+  function rifiutaUtente(email) {
+    if (!hasGAS()) return;
+    if (!confirm('Rifiutare la richiesta di ' + email + '?')) return;
+    google.script.run
+      .withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); })
+      .withFailureHandler(function(){})
+      .rejectUser(email, 'Rifiutato da admin');
+  }
+
+  function sospendiUtente(email) {
+    if (!hasGAS()) return;
+    if (!confirm('Sospendere l\'utente ' + email + '?')) return;
+    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).withFailureHandler(function(){}).suspendUser(email);
+  }
+
+  function eliminaUtente(email) {
+    if (!hasGAS()) return;
+    if (!confirm('Eliminare DEFINITIVAMENTE ' + email + '?')) return;
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) { if (typeof showToast==='function') showToast('Utente eliminato','ok'); reloadUtentiTable(); }
+        else { if (typeof showToast==='function') showToast((r&&r.error)||'Errore','err'); }
+      })
+      .withFailureHandler(function(e){ if (typeof showToast==='function') showToast('Errore: '+e,'err'); })
+      .deleteUser(email, (window.OC_SESSION && window.OC_SESSION.token) || null);
+  }
+
+  function cambiaRuolo(email, ruolo) {
+    if (!hasGAS()) return;
+    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).withFailureHandler(function(){}).updateUserRuolo(email, ruolo);
+  }
+
+  // v4.20 — Modello "menu Stato+Ruolo + Salva per riga"
+  function userRowChanged(email) {
+    var st = document.querySelector('.u-stato[data-email="'+email+'"]');
+    var ru = document.querySelector('.u-ruolo[data-email="'+email+'"]');
+    var sv = document.querySelector('.u-save[data-email="'+email+'"]');
+    if (!st || !ru || !sv) return;
+    var changed = (st.value !== st.getAttribute('data-orig')) || (ru.value !== ru.getAttribute('data-orig'));
+    sv.style.display = changed ? '' : 'none';
+  }
+
+  function salvaUtente(email) {
+    if (!hasGAS()) return;
+    var st = document.querySelector('.u-stato[data-email="'+email+'"]');
+    var ru = document.querySelector('.u-ruolo[data-email="'+email+'"]');
+    if (!st || !ru) return;
+    var stato = st.value, ruolo = ru.value, oldStato = st.getAttribute('data-orig');
+    if (!confirm('Salvare le modifiche per ' + email + ' ?\nStato: ' + stato + '\nRuolo: ' + ruolo)) return;
+    var sv = document.querySelector('.u-save[data-email="'+email+'"]');
+    if (sv) { sv.disabled = true; sv.textContent = '…'; }
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) { if (typeof showToast==='function') showToast('Salvato','ok'); reloadUtentiTable(); }
+        else { if (typeof showToast==='function') showToast((r&&r.error)||'Errore','err'); if (sv){ sv.disabled=false; sv.textContent='💾 Salva'; } }
+      })
+      .withFailureHandler(function(e){ if (typeof showToast==='function') showToast('Errore: '+e,'err'); if (sv){ sv.disabled=false; sv.textContent='💾 Salva'; } })
+      .saveUserStatoRuolo(email, stato, ruolo, oldStato, (window.OC_SESSION && window.OC_SESSION.token) || null);
+  }
+
+  function toggleOptIn(email, key) {
+    if (!hasGAS()) return;
+    var btn = event.target;
+    var newVal = (btn.textContent.trim() === '—');
+    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).withFailureHandler(function(){}).updateUserOptIn(email, key, newVal);
+  }
+
+  function runMigraUtenti() {
+    if (!hasGAS()) return;
+    if (!confirm('Esegui migrazione one-shot da MailingList + ContactsMatrix → Utenti?\nIdempotente, salta utenti già presenti.')) return;
+    var out = $('utentiResult');
+    out.innerHTML = '<span style="color:#666">Migrazione in corso (può richiedere 30-60 sec)…</span>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Migrazione completata. Importati: ' + esc(r.totale||0) +
+            ' (MailingList: '+esc(r.importati.dalMailingList||0)+', Matrix: '+esc(r.importati.daContactsMatrix||0)+', Admin: '+esc(r.importati.daAdminSeed||0)+')</span>';
+          reloadUtentiTable();
+        } else { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc((r&&r.error)||'')+'</span>'; }
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .migraUtentiDaTutto();
+  }
+</script>

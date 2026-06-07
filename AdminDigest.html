@@ -1,0 +1,254 @@
+<script>
+  // ==========================================================
+  // Newsletter/Digest admin panel JS
+  // Extracted from Index.html → LR-1 modularization
+  // ==========================================================
+  function testDigestEmail(){
+    if (!hasGAS()) return;
+    // v4.21 — Chiedi email destinatario per il test newsletter generalista
+    var emailDest = prompt('Inserisci l\'email destinatario per il test newsletter (lettori):', 's.straccini@gmail.com');
+    if (!emailDest || emailDest.indexOf('@') < 0) return;
+    if (!confirm('Genera newsletter generalista e invia a ' + emailDest + '.\nQuesto e il digest per i LETTORI (non profilati).\nProcedere?')) return;
+    $('adminStatus').textContent = 'Generazione + invio a ' + emailDest + ' in corso (15-25s)…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          $('adminStatus').textContent = 'Newsletter inviata a ' + (r.emailSent || emailDest);
+          showToast && showToast('Newsletter test inviata a ' + (r.emailSent || emailDest), 'ok');
+        } else {
+          $('adminStatus').textContent = 'errore: ' + (r && r.error || '');
+          alert('Errore: ' + (r && r.error || 'sconosciuto'));
+        }
+      })
+      .withFailureHandler(function(e){ alert('Errore di rete: '+e); $('adminStatus').textContent='errore'; })
+      .testInviaDigestGeneralista(emailDest, (window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  function renderDigestList(res){
+    var wrap = $('digestList'); if (!wrap) return;
+    if (!res || !res.ok) { wrap.innerHTML = '<div class="empty-state sm">Impossibile caricare l\'elenco digest.</div>'; return; }
+    if (!res.items || !res.items.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna newsletter ancora creata.</div>'; return; }
+    var html = '';
+    res.items.forEach(function(it){
+      var stato = it.stato || '';
+      var isInviato = (stato === 'inviato' || stato === 'inviata');
+      // Pulsante azione principale: Anteprima se bozza/in_attesa, riepilogo invio se inviato
+      // v4.21 — Fix: onclick diretto
+      var actPrimary = (stato === 'bozza' || stato === 'in_attesa_approvazione')
+        ? ('<button class="btn btn-secondary btn-sm" onclick="OC.openPreview(\''+esc(it.id)+'\')" title="Apri l\'anteprima di questa newsletter">Anteprima</button>')
+        : (isInviato ? '<span class="muted">Destinatari: '+(it.destinatari||0)+'</span>' : '');
+      // Pulsante elimina: solo se NON inviato (sicurezza: bozze inviate non si toccano)
+      // v4.21 — Fix: onclick diretto al posto di data-action (non c'era event delegation)
+      var actDelete = isInviato ? ''
+        : '<button class="btn btn-danger btn-sm" onclick="OC.deleteDigest(\''+esc(it.id)+'\')" title="Elimina definitivamente questa bozza" aria-label="Elimina bozza">&#10005;&nbsp;Elimina</button>';
+      // v4.21 — Data newsletter in evidenza
+      var dataLabel = it.data ? '<span style="color:var(--ink-2);font-weight:600">' + esc(it.data) + '</span> &middot; ' : '';
+      html += ''
+        + '<div class="digest-row">'
+        +   '<div style="flex:1;min-width:0"><b>'+esc(it.soggetto||'(senza soggetto)')+'</b><br>'
+        +     '<small class="muted">' + dataLabel + esc(it.id)+' &middot; '+esc(it.autore||'')+'</small>'
+        +   '</div>'
+        +   '<span class="status '+esc(stato)+'">'+esc(stato.replace(/_/g,' '))+'</span>'
+        +   '<div class="digest-row-actions">'+actPrimary+actDelete+'</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function deleteDigest(id){
+    if (!hasGAS()) return;
+    if (!id) return;
+    if (!confirm('Eliminare definitivamente la bozza ' + id + '?\n\nL\'azione non è reversibile.')) return;
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || !r.ok) { alert('Errore eliminazione: '+(r && r.error || 'sconosciuto')); return; }
+        showToast && showToast('Bozza ' + id + ' eliminata', 'ok');
+        // Refresh elenco
+        google.script.run
+          .withSuccessHandler(renderDigestList)
+          .withFailureHandler(function(err){ console.error('reload digestList:', err); })
+          .adminGetDigestList({token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
+      })
+      .withFailureHandler(function(e){ alert('Errore di rete: '+e); })
+      .adminDeleteDigestDraft(id, (window.OC_SESSION && window.OC_SESSION.token) || null);
+  }
+
+  function checkTelegram(){
+    if (!hasGAS()) return;
+    $('telegramStatus').textContent = 'Verifica in corso…';
+    google.script.run
+      .withSuccessHandler(function(res){
+        var el = $('telegramStatus');
+        if (!el) return;
+        if (!res || !res.ok) { el.innerHTML = '<span style="color:var(--danger)">⚠️ Accesso negato</span>'; return; }
+        var ok = res.hasToken && res.hasChat;
+        el.innerHTML = ok
+          ? '<span style="color:var(--success)">✓ Configurato (token+chat_id presenti)</span>'
+          : '<span style="color:var(--danger)">✗ Mancano: '+(res.hasToken?'':'token ')+(res.hasChat?'':'chat_id')+'</span>';
+      })
+      .withFailureHandler(function(err){ $('telegramStatus').textContent = 'Errore: '+err; })
+      .getTelegramConfigStatus();
+  }
+
+  function testTelegram(){
+    if (!hasGAS()) return;
+    if (!confirm('Invio messaggio di test Telegram all\'admin. Procedere?')) return;
+    google.script.run
+      .withSuccessHandler(function(r){
+        alert(r && r.ok ? '✓ Messaggio Telegram inviato.' : '✗ Errore: '+(r && (r.error||r.code)||'sconosciuto'));
+      })
+      .withFailureHandler(function(e){ alert('Errore: '+e); })
+      .telegramTest();
+  }
+
+  // v4.20 — Test digest su email admin
+  function testDigestAdmin(){
+    if (!hasGAS()) return;
+    if (!confirm('Inviare una copia di test del digest alla tua email admin?')) return;
+    showToast('Invio test in corso…', 'ok');
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) showToast('Test inviato a ' + (r.emailSent || 'admin'), 'ok');
+        else showToast('Errore: ' + (r && r.error || 'sconosciuto'), 'err');
+      })
+      .withFailureHandler(function(e){ showToast('Errore: ' + e, 'err'); })
+      .testDigestInviaAdmin((window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  // v4.20 — Cron coorti dry-run
+  function _dryRunCoorti() {
+    if (!hasGAS()) return;
+    showToast('Dry-run coorti in corso (nessuna email inviata)...', 'ok');
+    var out = document.getElementById('cronCoortiResult');
+    if (out) out.textContent = 'Esecuzione dry-run...';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (out) out.textContent = r && r.ok ? 'Dry-run OK: ' + (r.generalisti_inviati||0) + ' generalisti, ' + (r.leadCaldi_inviati||0) + ' lead' : 'Errore: ' + (r&&r.error||'?');
+      })
+      .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
+      .sendDigestAuto2coorti({dryRun:true, token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
+  }
+
+  function _eseguiCoorti() {
+    if (!hasGAS()) return;
+    if (!confirm('Inviare il digest a 2 coorti ORA? (Generalisti + Lead personalizzati)')) return;
+    showToast('Invio coorti in corso...', 'ok');
+    var out = document.getElementById('cronCoortiResult');
+    if (out) out.textContent = 'Invio in corso...';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (out) out.textContent = r && r.ok ? 'Inviato: ' + (r.generalisti_inviati||0) + ' gen + ' + (r.leadCaldi_inviati||0) + ' lead' : 'Errore: ' + (r&&r.error||'?');
+      })
+      .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
+      .sendDigestAuto2coorti({token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
+  }
+
+  // v4.20 — Anteprima per destinatario
+  function _previewForEmail() {
+    var email = (document.getElementById('previewEmail') || {}).value || '';
+    var out = document.getElementById('previewForEmailResult');
+    var frame = document.getElementById('previewForEmailFrame');
+    if (!email || email.indexOf('@') < 0) { if (out) out.textContent = 'Inserisci un email valida'; return; }
+    if (out) out.textContent = 'Caricamento anteprima...';
+    if (frame) frame.style.display = 'none';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r || !r.ok) { if (out) out.textContent = 'Errore: ' + (r&&r.error||'non trovato'); return; }
+        if (out) out.textContent = 'Coorte: ' + (r.coorte||'?') + ' · Layout: ' + (r.layout||'?');
+        if (frame && r.html) { frame.srcdoc = r.html; frame.style.display = 'block'; }
+      })
+      .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
+      .previewDigestPerEmail(email);
+  }
+
+  // v4.20 — Email agenti stats
+  function _loadAgentStats() {
+    var out = document.getElementById('agentStatsResult');
+    if (out) out.textContent = 'Caricamento...';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r) { if (out) out.textContent = 'Nessun dato'; return; }
+        var html = '';
+        if (r.byAgent) {
+          Object.keys(r.byAgent).forEach(function(id) {
+            var a = r.byAgent[id];
+            html += '<div style="margin:4px 0">AG' + id + ': ' + (a.sent||0) + ' inviati, ' + (a.failed||0) + ' errori' + (a.lastSent ? ' · ultimo: ' + a.lastSent : '') + '</div>';
+          });
+        }
+        if (out) out.innerHTML = html || 'Nessun invio registrato';
+      })
+      .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
+      .getAgentEmailStats();
+  }
+
+  function _sendAgentForced() {
+    if (!confirm('Forzare invio email agenti ORA? (solo admin)')) return;
+    showToast('Invio agenti in corso...', 'ok');
+    google.script.run
+      .withSuccessHandler(function(r) { showToast(r && r.ok ? 'Invio completato' : 'Errore: ' + (r&&r.error||'?'), r&&r.ok?'ok':'err'); })
+      .withFailureHandler(function(e) { showToast('Errore: ' + e, 'err'); })
+      .sendAgentEmails();
+  }
+
+  function generaDigest(){
+    if (!hasGAS()) return;
+    $('adminStatus').textContent = 'Generazione bozza…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || !r.ok) { alert('Errore: '+(r && r.error || 'sconosciuto')); $('adminStatus').textContent='errore'; return; }
+        $('adminStatus').textContent = 'Bozza creata: '+r.id;
+        if (r.counts) {
+          $('adminLastBandi').textContent   = (r.counts.bandiUrgenti||0) + (r.counts.bandiRecenti||0);
+          $('adminLastNews').textContent    = r.counts.news    || 0;
+          $('adminLastPodcast').textContent = r.counts.podcast || 0;
+        }
+        loadAdminPanel();
+        openPreview(r.id);
+      })
+      .withFailureHandler(function(e){ alert('Errore: '+e); $('adminStatus').textContent='errore'; })
+      .adminGenerateDigestDraft({token: (window.OC_SESSION && window.OC_SESSION.token) || null});
+  }
+
+  function openPreview(draftId){
+    if (!hasGAS()) return;
+    $('adminStatus').textContent = 'Caricamento anteprima…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || !r.ok) { alert('Errore anteprima: '+(r&&r.error||'')); return; }
+        $('previewWrap').hidden = false;
+        $('previewWrap').dataset.draftId = r.id;
+        $('previewInfo').innerHTML = '<b>'+esc(r.soggetto)+'</b> · ID: <code>'+esc(r.id)+'</code>';
+        var frame = $('previewFrame');
+        var doc = frame.contentDocument || frame.contentWindow.document;
+        doc.open(); doc.write(r.html); doc.close();
+        $('adminStatus').textContent = 'anteprima pronta';
+        $('previewWrap').scrollIntoView({behavior:'smooth', block:'start'});
+      })
+      .withFailureHandler(function(e){ alert('Errore: '+e); })
+      .adminPreviewNewsletterHtml(draftId, (window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  function richiediAutorizzazione(){
+    if (!hasGAS()) return;
+    var draftId = $('previewWrap').dataset.draftId;
+    if (!draftId) return;
+    if (!confirm('Inviare richiesta di autorizzazione via Telegram?\nRiceverai un link per confermare l\'invio effettivo.')) return;
+    $('adminStatus').textContent = 'Invio notifica Telegram…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || !r.ok) { alert('Errore: '+(r&&r.error||'')); return; }
+        var tg = r.telegram || {};
+        if (tg.ok) {
+          alert('✓ Notifica Telegram inviata.\nControlla il bot per ricevere il link di autorizzazione invio.');
+        } else {
+          alert('⚠️ Notifica Telegram non inviata ('+(tg.error||tg.code||'errore')+').\nUsa il link diretto:\n'+r.approveUrl);
+        }
+        $('adminStatus').textContent = 'in attesa autorizzazione';
+        loadAdminPanel();
+      })
+      .withFailureHandler(function(e){ alert('Errore: '+e); })
+      .adminRequestSendAuthorization(draftId, (window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  function chiudiAnteprima(){ $('previewWrap').hidden = true; }
+</script>
