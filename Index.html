@@ -5219,7 +5219,204 @@
       .testMatrixTagger();
   }
 
-  // E.quater+cinque) DIGEST SEGMENTATO — extracted to DigestSegmentato.html (LR-1)
+  // ==========================================================
+  // E.quater) DIGEST SEGMENTATO (Sprint 1.3 D2.3 - 2026-05-01)
+  // ==========================================================
+  function generaQueueAll(){
+    if (!hasGAS()) return;
+    if (!confirm('Genera bozze digest personalizzate per TUTTI i compilatori Matrix con email opt-in?\n(idempotente: salta utenti con bozze recenti)')) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Generazione in corso…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.error) { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(r.error)+'</span>'; return; }
+        out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Generati: '+esc(r.generati||0)+' · skipped: '+esc(r.skipped||0)+' · errori: '+esc(r.errori||0)+' (su '+esc(r.totale||0)+' totali)</span>';
+        reloadQueue();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .generateDigestQueueAll({token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
+  }
+
+  function testDigestSegmentato(){
+    if (!hasGAS()) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Test su ultimo responseId in ResponsesMatrix…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.error) { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(r.error)+'</span>'; return; }
+        var msg = '<span style="color:var(--amb-2,#10916D)">✓ Bozza generata (dry-run)</span>';
+        if (r.generate && r.generate.top3Dims) msg += '<div style="font-size:11px;color:#666;margin-top:2px">Top 3 dim: '+esc(r.generate.top3Dims.join(', '))+' · contenuti: '+esc(r.generate.contentCounts.bandi||0)+' bandi · '+esc(r.generate.contentCounts.news||0)+' news · '+esc(r.generate.contentCounts.podcast||0)+' podcast</div>';
+        out.innerHTML = msg;
+        reloadQueue();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .testGenerateDigestSegmentato((window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  // v4.21 — Test digest Matrix per email specifica
+  function testDigestMatrixPerEmail(){
+    if (!hasGAS()) return;
+    var emailInput = $('matrixTestEmail');
+    var email = (emailInput && emailInput.value || '').trim().toLowerCase();
+    if (!email || email.indexOf('@') < 0) { alert('Inserisci un indirizzo email valido di un compilatore Matrix.'); return; }
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Ricerca profilo Matrix per ' + esc(email) + '…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.error) { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(r.error)+'</span>'; return; }
+        var msg = '<span style="color:var(--amb-2,#10916D)">✓ Digest generato per '+esc(email)+'</span>';
+        if (r.top3Dims) msg += '<div style="font-size:11px;color:#666;margin-top:4px"><b>Dimensioni selezionate:</b> '+esc(r.top3Dims.join(', '))+'</div>';
+        if (r.contentCounts) msg += '<div style="font-size:11px;color:#666">Contenuti: '+esc(r.contentCounts.bandi||0)+' bandi · '+esc(r.contentCounts.news||0)+' news · '+esc(r.contentCounts.podcast||0)+' podcast</div>';
+        if (r.queueId) msg += '<div style="font-size:11px;color:var(--accent);margin-top:2px">Bozza in coda: '+esc(r.queueId)+' — premi "Aggiorna coda" per vederla.</div>';
+        out.innerHTML = msg;
+        reloadQueue();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .testDigestMatrixForEmail(email, (window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  function inviaTuttiPending(){
+    if (!hasGAS()) return;
+    if (!confirm('Inviare TUTTE le bozze digest in stato "draft" della queue?\nDestinatari: i singoli compilatori Matrix.')) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Invio in corso…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.error) { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(r.error)+'</span>'; return; }
+        out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Inviati: '+esc(r.sent||0)+' / '+esc(r.total||0)+' · errori: '+esc((r.errors||[]).length)+'</span>';
+        reloadQueue();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .sendAllPendingDigest((window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  function reloadQueue(){
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(r){
+        var wrap = $('digestQueueWrap');
+        if (!wrap) return;
+        var items = (r && r.items) || [];
+        if (!items.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna bozza in queue.</div>'; return; }
+        // v4.21 — Tabella coda con email, interessi, stato
+        var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--accent-soft,#F0E6E4)">'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851);font-weight:700">Email destinatario</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Interessi (dimensioni)</th>'
+          + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Stato</th>'
+          + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Data</th>'
+          + '</tr></thead><tbody>';
+        // v4.21 — Mappa dimensioni per label leggibili
+        var _dimLabels = {D1:'Identita',D2:'Patrimonio',D3:'Spazi',D4:'Educazione',D5:'Servizi',D6:'Digitale',D7:'Accessibilita',D8:'Audience',D9:'Governance',D10:'Welfare'};
+        items.forEach(function(it){
+          var statusColor = it.Status === 'sent' ? 'var(--amb-2,#10916D)' : (it.Status === 'draft' ? 'var(--accent,#935851)' : 'var(--danger,#C2410C)');
+          // Estrai dimensioni dalla nota (formato: "top3=D7,D9,D10 · museo=...")
+          var dims = '';
+          var noteStr = String(it.Note || '');
+          var topMatch = noteStr.match(/top3=([A-Z0-9,]+)/i);
+          if (topMatch) {
+            dims = topMatch[1].split(',').map(function(d) {
+              d = d.trim();
+              return '<span style="display:inline-block;background:rgba(147,88,81,.1);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:10px;margin:1px 2px">' + esc(_dimLabels[d] || d) + '</span>';
+            }).join('');
+          }
+          var museoMatch = noteStr.match(/museo=(.+)/);
+          var museo = museoMatch ? museoMatch[1].trim() : '';
+          html += '<tr>'
+            + '<td style="padding:6px;border-bottom:1px solid #eee"><div>'+esc(it.Email||'')+'</div>' + (museo ? '<div style="font-size:10px;color:var(--ink-3)">'+esc(museo)+'</div>' : '') + '</td>'
+            + '<td style="padding:6px;border-bottom:1px solid #eee">' + (dims || '<span style="color:#999;font-size:11px">—</span>') + '</td>'
+            + '<td style="padding:6px;border-bottom:1px solid #eee;text-align:center;color:'+statusColor+';font-weight:600">'+esc(it.Status||'')+'</td>'
+            + '<td style="padding:6px;border-bottom:1px solid #eee;color:#666;font-size:11px">'+esc(String(it.GeneratedAt||'').substring(0,16).replace('T',' '))+'</td>'
+            + '</tr>';
+        });
+        html += '</tbody></table>';
+        wrap.innerHTML = html;
+      })
+      .withFailureHandler(function(e){ console.error('reloadQueue:', e); })
+      .adminGetDigestQueue({});
+  }
+
+  // ==========================================================
+  // E.cinque) CRON DIGEST WEEKLY (Sprint 1.3 D2.4 - 2026-05-01)
+  // ==========================================================
+  function loadCronStatus(){
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(function(s){
+        var txt = $('cronStatusText'), last = $('cronLastRun');
+        if (!txt) return;
+        if (s && s.active) {
+          txt.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Attivo</span> · martedì ore '+esc(s.hour||'?')+':00';
+        } else {
+          txt.innerHTML = '<span style="color:var(--danger,#C2410C)">✗ Non attivo</span> · clicca "Attiva cron" per installare';
+        }
+        if (last) {
+          if (s && s.lastRunHumanIt) {
+            var lr = s.lastResult || {};
+            var sg = (lr.segmentati && lr.segmentati.generati) || 0;
+            var ge = (lr.generalista && lr.generalista.ok) ? 1 : 0;
+            last.innerHTML = 'Ultima esecuzione: <b>'+esc(s.lastRunHumanIt)+'</b> · '+sg+' segmentati + '+ge+' generalista';
+          } else {
+            last.textContent = 'Mai eseguito.';
+          }
+        }
+      })
+      .withFailureHandler(function(e){ console.error('loadCronStatus:', e); })
+      .getMatrixDigestTriggerStatus();
+  }
+
+  function setupCronDigest(){
+    if (!hasGAS()) return;
+    if (!confirm('Attivare il cron weekly (martedì 06:00)?\nGenera automaticamente le bozze digest senza inviarle.\nL\'invio resta manuale.')) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Installazione trigger…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Cron attivato. Trigger ID: '+esc(r.triggerId||'')+'</span>';
+          loadCronStatus();
+        } else { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; }
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .setupMatrixDigestTrigger();
+  }
+
+  function removeCronDigest(){
+    if (!hasGAS()) return;
+    if (!confirm('Disattivare il cron weekly?\nDovrai generare le bozze manualmente ogni settimana.')) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Rimozione trigger…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Cron disattivato. Rimossi '+esc(r.removed||0)+' trigger.</span>';
+          loadCronStatus();
+        } else { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc((r&&r.error)||'sconosciuto')+'</span>'; }
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .removeMatrixDigestTrigger();
+  }
+
+  function testCronManual(){
+    if (!hasGAS()) return;
+    if (!confirm('Esegui MANUALMENTE il cron weekly (per test)?\nGenererà bozze segmentate + generalista + notifica Telegram (se configurata).\nNON invierà email ai destinatari.')) return;
+    var out = $('digestSegmResult');
+    out.innerHTML = '<span style="color:#666">Esecuzione cron in corso (può richiedere fino a 2 minuti)…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.errori && r.errori.length) {
+          out.innerHTML = '<span style="color:var(--accent,#935851)">⚠ Eseguito con errori ('+r.errori.length+'): '+esc(r.errori.join(' · '))+'</span>';
+        } else {
+          var sg = (r && r.segmentati && r.segmentati.generati) || 0;
+          var ge = (r && r.generalista && r.generalista.ok) ? 'ok' : 'no';
+          var tg = (r && r.telegram && r.telegram.ok) ? 'ok' : 'no';
+          out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Cron eseguito. Segmentati: '+sg+' bozze · Generalista: '+ge+' · Telegram: '+tg+' · durata '+esc(r&&r.durataSec||0)+'s</span>';
+        }
+        loadCronStatus();
+        reloadQueue();
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .testCronGenerateDigestWeekly();
+  }
 
   // ==========================================================
   // F) PAGINA IMPOSTAZIONI (Sprint 1.3 D2.5 - 2026-05-01)
@@ -5342,7 +5539,369 @@
       .getFontiBandi();
   }
 
-  // v4.22 — MATRICE FONTI + API + MODALE — extracted to AdminFonti.html (LR-1)
+  // ============================================================================
+  // v4.22 — MATRICE FONTI + API + MODALE
+  // ============================================================================
+
+  var _FM_SEMAFORO = {
+    ok:       { dot:'#10B981', label:'OK' },
+    stantia:  { dot:'#F59E0B', label:'Stantia' },
+    fail:     { dot:'#F97316', label:'Fail' },
+    silente:  { dot:'#EF4444', label:'Silente' },
+    mai:      { dot:'#9CA3AF', label:'Mai' },
+    agente:   { dot:'#3B82F6', label:'Agente' }
+  };
+
+  var _FM_API_SEMAFORO = {
+    operativa:   { dot:'#10B981', label:'Operativa' },
+    in_sviluppo: { dot:'#F59E0B', label:'In sviluppo' },
+    bloccata:    { dot:'#EF4444', label:'Bloccata' }
+  };
+
+  function _fmDot(color, title) {
+    return '<svg width="12" height="12" style="vertical-align:middle" title="'+esc(title)+'"><circle cx="6" cy="6" r="5" fill="'+color+'"/></svg>';
+  }
+
+  function _fmBadge(text, bg, color) {
+    return '<span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:'+bg+';color:'+color+';margin-left:4px;vertical-align:middle;letter-spacing:.03em">'+esc(text)+'</span>';
+  }
+
+  function _fmTimeAgo(dateStr) {
+    if (!dateStr) return '—';
+    var d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '—';
+    var diff = (Date.now() - d.getTime()) / 1000;
+    if (diff < 3600) return Math.round(diff/60) + 'min fa';
+    if (diff < 86400) return Math.round(diff/3600) + 'h fa';
+    if (diff < 2592000) return Math.round(diff/86400) + 'gg fa';
+    return d.toLocaleDateString('it-IT');
+  }
+
+  function _reloadFontiMatrix() {
+    if (!hasGAS()) return;
+    var wrap = $('fontiMatrixTable');
+    if (wrap) wrap.innerHTML = '<div class="empty-state sm">Caricamento...</div>';
+    var filtro = {
+      tipo: ($('fmFiltroContenitore')||{}).value || '',
+      stato: ($('fmFiltroStato')||{}).value || '',
+      q: ($('fmRicerca')||{}).value || ''
+    };
+    // Load classiche + agenti in parallelo
+    var classiche = null, agenti = null;
+    var render = function() {
+      if (classiche === null || agenti === null) return;
+      _renderFontiMatrix(classiche, agenti, filtro);
+    };
+    google.script.run.withSuccessHandler(function(r) {
+      classiche = (r && r.ok) ? r.fonti : [];
+      // Update counters
+      var ctr = $('fmCounters');
+      if (ctr && r && r.ok) {
+        var tot = r.totale || 0;
+        var att = classiche.filter(function(f){return f.attiva;}).length;
+        var err = classiche.filter(function(f){var s=f.stato||'';return s==='fail'||s==='silente';}).length;
+        ctr.textContent = tot+' fonti · '+att+' attive · '+err+' in errore';
+      }
+      render();
+    }).withFailureHandler(function(e) {
+      if (wrap) wrap.innerHTML = '<div class="empty-state sm">Errore: '+esc(e)+'</div>';
+    }).getFontiUnified(filtro.tipo ? {tipo:filtro.tipo, stato:filtro.stato||undefined, q:filtro.q||undefined} : {stato:filtro.stato||undefined, q:filtro.q||undefined});
+
+    google.script.run.withSuccessHandler(function(r) {
+      agenti = (r && r.ok) ? r.fonti : [];
+      render();
+    }).withFailureHandler(function() { agenti = []; render(); }).getAgentFontiForMatrix();
+
+    // Load API section
+    _loadApiSection();
+  }
+
+  function _renderFontiMatrix(fontiClassiche, fontiAgenti, filtro) {
+    var wrap = $('fontiMatrixTable');
+    if (!wrap) return;
+
+    // Filter agenti if contenitore filter is set
+    if (filtro && filtro.tipo) {
+      fontiAgenti = fontiAgenti.filter(function(a) {
+        if (filtro.tipo === 'bandi') return a.alimentaBandi;
+        if (filtro.tipo === 'news') return a.alimentaNews;
+        return false;
+      });
+    }
+
+    if (!fontiClassiche.length && !fontiAgenti.length) {
+      wrap.innerHTML = '<div class="empty-state sm">Nessuna fonte trovata con i filtri selezionati.</div>';
+      return;
+    }
+
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--accent-soft,#F0E6E4)">'
+      + '<th style="padding:6px;border-bottom:2px solid var(--accent);width:30px" title="Stato">St.</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:2px solid var(--accent)">Nome</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:2px solid var(--accent);width:180px">URL</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:2px solid var(--accent);width:50px">Bandi</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:2px solid var(--accent);width:50px">News</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:2px solid var(--accent);width:50px">Podcast</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:2px solid var(--accent);width:50px">Video</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:2px solid var(--accent);width:60px">Agenti</th>'
+      + '<th style="text-align:right;padding:6px;border-bottom:2px solid var(--accent);width:70px">Record</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:2px solid var(--accent);width:90px">Ultimo prelievo</th>'
+      + '<th style="padding:6px;border-bottom:2px solid var(--accent);width:70px">Azioni</th>'
+      + '</tr></thead><tbody>';
+
+    // Classic fonti
+    fontiClassiche.forEach(function(f) {
+      var sem = _FM_SEMAFORO[f.stato] || _FM_SEMAFORO[_fuStatoLabel(f)] || _FM_SEMAFORO.mai;
+      var stato = f.stato || _fuStatoLabel(f) || 'mai';
+      sem = _FM_SEMAFORO[stato] || _FM_SEMAFORO.mai;
+      var tipoBadge = _fmBadge(f.tipoFonte || f.tipo || 'RSS', 'rgba(0,0,0,.06)', '#555');
+      var urlShort = String(f.url||'').replace(/^https?:\/\/(www\.)?/,'').substring(0,35);
+      var isBandi = (f._tipo === 'bandi');
+      var isNews = (f._tipo === 'news');
+      var isPodcast = (f._tipo === 'podcast');
+      var isVideo = (f._tipo === 'video');
+      var chk = function(v) { return v ? '<span style="color:var(--amb-2,#10916D);font-weight:700">&#10003;</span>' : '<span style="color:#ccc">—</span>'; };
+      html += '<tr style="border-bottom:1px solid #eee">'
+        + '<td style="padding:5px;text-align:center">'+_fmDot(sem.dot, sem.label)+'</td>'
+        + '<td style="padding:5px">'+esc(f.nome||'')+tipoBadge+'</td>'
+        + '<td style="padding:5px;font-size:11px"><a href="'+esc(f.url||'')+'" target="_blank" rel="noopener" style="color:var(--amb-5);text-decoration:none" title="'+esc(f.url||'')+'">'+esc(urlShort)+(urlShort.length<String(f.url||'').length?'...':'')+'</a></td>'
+        + '<td style="padding:5px;text-align:center">'+chk(isBandi)+'</td>'
+        + '<td style="padding:5px;text-align:center">'+chk(isNews)+'</td>'
+        + '<td style="padding:5px;text-align:center">'+chk(isPodcast)+'</td>'
+        + '<td style="padding:5px;text-align:center">'+chk(isVideo)+'</td>'
+        + '<td style="padding:5px;text-align:center;color:#ccc">—</td>'
+        + '<td style="padding:5px;text-align:right;font-weight:600">'+((f.recordTotali||0)>0?f.recordTotali:'—')+'</td>'
+        + '<td style="padding:5px;font-size:11px;color:var(--ink-2)" title="'+(f.ultimaScan?'Ultima scan: '+f.ultimaScan:'')+'">'+_fmTimeAgo(f.ultimoPrelievoReale)+'</td>'
+        + '<td style="padding:5px">'
+          + '<button onclick="OC._toggleFonte(\''+esc(f._tipo)+'\',\''+esc(f.id)+'\',' + (!f.attiva) + ')" style="font-size:10px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;background:none;cursor:pointer;color:'+(f.attiva?'var(--danger)':'var(--amb-2)')+'" title="'+(f.attiva?'Disattiva':'Attiva')+'">'+(f.attiva?'Off':'On')+'</button> '
+          + '<button onclick="OC._deleteFonte(\''+esc(f._tipo)+'\',\''+esc(f.id)+'\')" style="font-size:10px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;background:none;cursor:pointer;color:var(--danger)" title="Elimina">&#10005;</button>'
+        + '</td></tr>';
+    });
+
+    // Separator + agent fonti
+    if (fontiAgenti.length > 0) {
+      html += '<tr><td colspan="11" style="padding:10px 5px;text-align:center;font-size:11px;color:var(--ink-3);border-bottom:1px solid var(--rule);letter-spacing:.05em">── Fonti Agenti AI (read-only) ──</td></tr>';
+      fontiAgenti.forEach(function(a) {
+        var sem = _FM_SEMAFORO.agente;
+        var badge = _fmBadge(a.codice, 'rgba(59,130,246,.12)', '#3B82F6');
+        var chk = function(v) { return v ? '<span style="color:var(--amb-2);font-weight:700">&#10003;</span>' : '<span style="color:#ccc">—</span>'; };
+        html += '<tr style="border-bottom:1px solid #eee;background:rgba(59,130,246,.02)">'
+          + '<td style="padding:5px;text-align:center">'+_fmDot(sem.dot, sem.label)+'</td>'
+          + '<td style="padding:5px">'+esc(a.nome)+badge+'</td>'
+          + '<td style="padding:5px;font-size:11px;color:var(--ink-3)">'+esc(a.url)+'</td>'
+          + '<td style="padding:5px;text-align:center">'+chk(a.alimentaBandi)+'</td>'
+          + '<td style="padding:5px;text-align:center">'+chk(a.alimentaNews)+'</td>'
+          + '<td style="padding:5px;text-align:center">'+chk(a.alimentaPodcast)+'</td>'
+          + '<td style="padding:5px;text-align:center">'+chk(a.alimentaVideo)+'</td>'
+          + '<td style="padding:5px;text-align:center;font-weight:600;color:var(--amb-5)">'+esc(a.codice)+'</td>'
+          + '<td style="padding:5px;text-align:right;color:#ccc">—</td>'
+          + '<td style="padding:5px;color:#ccc">—</td>'
+          + '<td style="padding:5px"></td></tr>';
+      });
+    }
+
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+
+  function _fuStatoLabel(f) {
+    if (f.failConsec >= 3) return 'silente';
+    if (f.failConsec >= 1) return 'fail';
+    if (!f.ultimaScan) return 'mai';
+    var hours = (Date.now() - new Date(f.ultimaScan).getTime()) / 3600000;
+    if (f.ultimoEsito === 'OK' && hours < 36) return 'ok';
+    return 'stantia';
+  }
+
+  function _loadApiSection() {
+    if (!hasGAS()) return;
+    google.script.run.withSuccessHandler(function(r) {
+      if (!r || !r.ok) return;
+      var ctr = $('fmApiCounters');
+      if (ctr) ctr.textContent = r.contatori.totale+' API · '+r.contatori.operative+' operative · '+r.contatori.inSviluppo+' in sviluppo · '+r.contatori.bloccate+' bloccate';
+      _renderApiCards(r.apis);
+    }).withFailureHandler(function(){}).getApiStrutturateStatus((window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  function _renderApiCards(apis) {
+    var wrap = $('fontiApiCards');
+    if (!wrap || !apis) return;
+    if (!apis.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna API configurata.</div>'; return; }
+    var html = '';
+    apis.forEach(function(api) {
+      var sem = _FM_API_SEMAFORO[api.stato] || _FM_API_SEMAFORO.bloccata;
+      var dotHtml = _fmDot(sem.dot, sem.label);
+      var detailId = 'api-detail-' + api.id;
+      html += '<div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:16px;position:relative">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">'
+        + '<div style="flex:1;min-width:200px">'
+          + '<div style="font-size:14px;font-weight:600;color:var(--ink)">'+dotHtml+' '+esc(api.nome)+'</div>'
+          + '<div style="font-size:11px;color:var(--ink-3);margin-top:4px;font-family:monospace">'+esc(api.endpoint)+'</div>'
+          + '<div style="font-size:12px;color:var(--ink-2);margin-top:6px">Alimenta: <b>→ '+esc(api.alimenta)+'</b></div>'
+        + '</div>'
+        + '<div style="text-align:right;min-width:140px">'
+          + '<div style="font-size:12px;color:var(--ink-2)"><b>'+api.recordTotali+'</b> record totali · <b>'+api.record30gg+'</b> ultimi 30gg</div>'
+          + '<div style="font-size:11px;color:var(--ink-3);margin-top:2px">Ultimo: '+_fmTimeAgo(api.ultimoPrelievo)+'</div>'
+        + '</div></div>';
+      if (api.motivoBlocco) {
+        html += '<div style="margin-top:8px;padding:8px 10px;background:rgba(239,68,68,.04);border-radius:6px;font-size:12px;color:var(--danger,#C2410C)"><b>Stato:</b> '+esc(api.motivoBlocco)+'</div>';
+      }
+      html += '<div style="margin-top:10px;display:flex;gap:8px">'
+        + '<button class="btn btn-secondary" onclick="OC._testApiConnessione(\''+esc(api.id)+'\')" style="font-size:11px;padding:4px 10px">Testa connessione</button>'
+        + '<button class="btn btn-secondary" onclick="var d=document.getElementById(\''+detailId+'\');d.hidden=!d.hidden" style="font-size:11px;padding:4px 10px">Dettagli</button>'
+        + '<span id="api-test-'+esc(api.id)+'" style="font-size:11px;color:var(--ink-3)"></span>'
+        + '</div>';
+      html += '<div id="'+detailId+'" hidden style="margin-top:10px;padding:10px;background:var(--surface-2);border-radius:6px;font-size:12px;color:var(--ink-2)">'
+        + '<div><b>Formato:</b> '+esc(api.formato)+'</div>'
+        + '<div><b>Autenticazione:</b> '+esc(api.auth)+'</div>'
+        + '<div><b>Limiti rate:</b> '+esc(api.limiteRate)+'</div>'
+        + '<div style="margin-top:4px"><b>Mappatura campi:</b> '+esc(api.mappaCampi)+'</div>'
+        + '</div>';
+      html += '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function _openAddFonteModal() {
+    var ov = document.getElementById('oc-addfonte-overlay');
+    if (ov) { ov.hidden = false; ov.style.display = 'flex'; }
+  }
+  function _closeAddFonteModal() {
+    var ov = document.getElementById('oc-addfonte-overlay');
+    if (ov) { ov.hidden = true; ov.style.display = 'none'; }
+    var r = $('afResult'); if (r) r.textContent = '';
+  }
+
+  function _submitAddFonte() {
+    if (!hasGAS()) return;
+    var nome = ($('afNome')||{}).value || '';
+    var url = ($('afUrl')||{}).value || '';
+    var tipoFonte = ($('afTipoFonte')||{}).value || 'RSS';
+    var checks = document.querySelectorAll('.af-alimenta:checked');
+    var tipi = [];
+    for (var i = 0; i < checks.length; i++) tipi.push(checks[i].value);
+    var out = $('afResult');
+
+    if (!nome.trim()) { if(out) out.innerHTML='<span style="color:var(--danger)">Nome obbligatorio</span>'; return; }
+    if (!url.trim()) { if(out) out.innerHTML='<span style="color:var(--danger)">URL obbligatorio</span>'; return; }
+    if (!tipi.length) { if(out) out.innerHTML='<span style="color:var(--danger)">Seleziona almeno un contenitore</span>'; return; }
+
+    if(out) out.innerHTML='<span style="color:var(--ink-3)">Salvataggio...</span>';
+    var done = 0, total = tipi.length, errors = [];
+    tipi.forEach(function(tipo) {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          done++;
+          if (!r || !r.ok) errors.push(tipo + ': ' + (r&&r.error||'errore'));
+          if (done === total) {
+            if (errors.length) { if(out) out.innerHTML='<span style="color:var(--danger)">Errori: '+esc(errors.join(', '))+'</span>'; }
+            else {
+              if(out) out.innerHTML='<span style="color:var(--amb-2)">Fonte aggiunta a '+total+' contenitor'+(total>1?'i':'e')+'</span>';
+              setTimeout(function(){ _closeAddFonteModal(); _reloadFontiMatrix(); }, 1200);
+            }
+          }
+        })
+        .withFailureHandler(function(e) { done++; errors.push(tipo+': '+e); if(done===total && out) out.innerHTML='<span style="color:var(--danger)">'+esc(errors.join(', '))+'</span>'; })
+        .addFonteUnificataV2({
+          tipo: tipo, nome: nome.trim(), url: url.trim(), tipoFonte: tipoFonte,
+          tag: ($('afTag')||{}).value || '', categoria: ($('afCategoria')||{}).value || '',
+          priorita: Number(($('afPriorita')||{}).value) || 2,
+          enteDefault: ($('afEnte')||{}).value || '', livello: ($('afLivello')||{}).value || ''
+        });
+    });
+  }
+
+  function _toggleFonte(tipo, id, newState) {
+    if (!hasGAS()) return;
+    google.script.run.withSuccessHandler(function(r) {
+      if (r && r.ok) _reloadFontiMatrix();
+      else showToast && showToast((r&&r.error)||'Errore','err');
+    }).withFailureHandler(function(e){ showToast && showToast('Errore: '+e,'err'); }).toggleFonteUnified(tipo, id, newState);
+  }
+
+  function _deleteFonte(tipo, id) {
+    if (!hasGAS()) return;
+    if (!confirm('Eliminare definitivamente questa fonte?')) return;
+    google.script.run.withSuccessHandler(function(r) {
+      if (r && r.ok) { _reloadFontiMatrix(); showToast && showToast('Fonte eliminata','ok'); }
+      else showToast && showToast((r&&r.error)||'Errore','err');
+    }).withFailureHandler(function(e){ showToast && showToast('Errore: '+e,'err'); }).deleteFonteUnified(tipo, id);
+  }
+
+  function _scanNews() {
+    if (!hasGAS()) return;
+    var out = $('fmScanResult');
+    if(out) out.innerHTML='<span style="color:var(--ink-3)">Scan news in corso (30-90s)...</span>';
+    google.script.run.withSuccessHandler(function(n){
+      if(out) out.innerHTML='<span style="color:var(--amb-2)">Scan completato: '+(n||0)+' nuovi</span>';
+      _reloadFontiMatrix();
+    }).withFailureHandler(function(e){ if(out) out.innerHTML='<span style="color:var(--danger)">Errore: '+esc(e)+'</span>'; }).scanSources();
+  }
+
+  function _scanBandi() {
+    if (!hasGAS()) return;
+    var out = $('fmScanResult');
+    if(out) out.innerHTML='<span style="color:var(--ink-3)">Scan bandi in corso (60-180s)...</span>';
+    google.script.run.withSuccessHandler(function(r){
+      if(out) out.innerHTML='<span style="color:var(--amb-2)">Scan bandi completato</span>';
+      _reloadFontiMatrix();
+    }).withFailureHandler(function(e){ if(out) out.innerHTML='<span style="color:var(--danger)">Errore: '+esc(e)+'</span>'; }).scanBandiAutomatico();
+  }
+
+  function _scanPodcast() {
+    if (!hasGAS()) return;
+    var out = $('fmScanResult');
+    if(out) out.innerHTML='<span style="color:var(--ink-3)">Scan podcast/video in corso (30-90s)...</span>';
+    google.script.run.withSuccessHandler(function(n){
+      if(out) out.innerHTML='<span style="color:var(--amb-2)">Scan completato: '+(n||0)+' nuovi episodi</span>';
+      _reloadFontiMatrix();
+    }).withFailureHandler(function(e){ if(out) out.innerHTML='<span style="color:var(--danger)">Errore: '+esc(e)+'</span>'; }).scanPodcast();
+  }
+
+  function _runAuditFonti() {
+    if (!hasGAS()) return;
+    var out = $('fmDiagContent');
+    if(out) out.textContent='Audit in corso...';
+    google.script.run.withSuccessHandler(function(r){
+      if(!out) return;
+      if(!r||!r.ok) { out.textContent='Errore audit'; return; }
+      var h='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">';
+      if(r.kpi) {
+        h+='<div><b>'+r.kpi.totali+'</b> fonti totali</div>';
+        h+='<div><b>'+r.kpi.attive+'</b> attive</div>';
+        h+='<div><b>'+r.kpi.silenti+'</b> silenti</div>';
+        h+='<div><b>'+r.kpi.bandiTotali+'</b> bandi totali</div>';
+      }
+      h+='</div>';
+      if(r.raccomandazioni && r.raccomandazioni.length) {
+        h+='<div style="margin-top:8px">';
+        r.raccomandazioni.forEach(function(rc) {
+          var col = rc.livello==='critico'?'var(--danger)':rc.livello==='warning'?'#F59E0B':'var(--ink-3)';
+          h+='<div style="padding:4px 0;color:'+col+';font-size:12px">'+esc(rc.testo)+'</div>';
+        });
+        h+='</div>';
+      }
+      out.innerHTML=h;
+    }).withFailureHandler(function(e){ if(out) out.textContent='Errore: '+e; }).getFontiDiagnostics();
+  }
+
+  function _testApiConnessione(apiId) {
+    if (!hasGAS()) return;
+    var out = document.getElementById('api-test-'+apiId);
+    if(out) out.innerHTML='<span style="color:var(--ink-3)">Test in corso...</span>';
+    google.script.run.withSuccessHandler(function(r){
+      if(!out) return;
+      if(r && r.ok) {
+        out.innerHTML='<span style="color:var(--amb-2)">HTTP '+r.httpStatus+' · '+r.responseTime+' · '+r.contentLength+' byte</span>';
+      } else {
+        out.innerHTML='<span style="color:var(--danger)">HTTP '+(r?r.httpStatus:'?')+' · '+(r?r.error:'errore')+'</span>';
+      }
+    }).withFailureHandler(function(e){ if(out) out.innerHTML='<span style="color:var(--danger)">Errore: '+esc(e)+'</span>'; }).testApiConnessione(apiId, (window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  // Backward-compat aliases
+  var reloadFontiUnified = _reloadFontiMatrix;
+  function toggleFonteU(src, tipo, id, attiva) { _toggleFonte(tipo, id, attiva); }
+  function deleteFonteU(src, tipo, id, nome) { _deleteFonte(tipo, id); }
 
 
   function showAddBandiForm() {
@@ -5651,7 +6210,99 @@
       .statoLoginPubblico();
   }
 
-  // F.bis) GESTIONE UTENTI — extracted to AdminUtenti.html (LR-1)
+  // ==========================================================
+  // F.bis) GESTIONE UTENTI (Sprint 1.4 - 2026-05-01)
+  // ==========================================================
+  function reloadUtentiTable() {
+    if (!hasGAS()) return;
+    var stato = ($('utentiFiltroStato')||{}).value || '';
+    var ruolo = ($('utentiFiltroRuolo')||{}).value || '';
+    var wrap = $('utentiTable');
+    if (wrap) wrap.innerHTML = '<div class="empty-state sm">Caricamento…</div>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && !r.ok && r.error) {
+          if (wrap) wrap.innerHTML = '<div style="color:var(--danger,#C2410C);padding:12px;background:#FFF5F5;border:1px solid #FFCCCC;border-radius:6px">⚠️ <b>Errore:</b> ' + esc(r.error) + '</div>';
+          return;
+        }
+        var items = (r && r.items) || [];
+        renderUtentiTable(wrap, items);
+        updateUtentiStats(items);
+        if (r && r.info && wrap) {
+          var infoEl = document.createElement('div');
+          infoEl.style.cssText = 'color:var(--danger,#C2410C);font-size:11px;margin-top:8px;padding:8px;background:#FFF5F5;border:1px solid #FFCCCC;border-radius:4px;word-break:break-all';
+          infoEl.innerHTML = '<b>DEBUG:</b> ' + esc(r.info);
+          wrap.appendChild(infoEl);
+        }
+      })
+      .withFailureHandler(function(e) {
+        if (wrap) wrap.innerHTML = '<div style="color:var(--danger,#C2410C);padding:12px;background:#FFF5F5;border:1px solid #FFCCCC;border-radius:6px">⚠️ <b>Errore GAS:</b> ' + esc(String(e)) + '</div>';
+      })
+      .getAllUtenti({ statoFilter: stato || null, ruoloFilter: ruolo || null, token: (window.OC_SESSION && window.OC_SESSION.token) || null });
+  }
+
+  function updateUtentiStats(items) {
+    if ($('statUtTot'))     $('statUtTot').textContent = items.length;
+    if ($('statUtPending')) $('statUtPending').textContent = items.filter(function(u){return u.Stato==='pending';}).length;
+    if ($('statUtAttivi'))  $('statUtAttivi').textContent = items.filter(function(u){return u.Stato==='attivo';}).length;
+    if ($('statUtAdmin'))   $('statUtAdmin').textContent = items.filter(function(u){return u.Ruolo==='admin';}).length;
+  }
+
+  function renderUtentiTable(wrap, items) {
+    if (!wrap) return;
+    if (!items.length) { wrap.innerHTML = '<div class="empty-state sm">Nessun utente. Esegui "Migrazione one-shot" per importare da MailingList+ContactsMatrix.</div>'; return; }
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--accent-soft,#F0E6E4)">'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Email</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Nome</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Ruolo</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851)">Stato</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Digest</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Bandi</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Matrix</th>'
+      + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851);width:240px">Azioni</th>'
+      + '</tr></thead><tbody>';
+    // v4.21 — Super admin: solo s.straccini@gmail.com puo modificare admin
+    var currentEmail = (window.OC_SESSION && window.OC_SESSION.email) || '';
+    var isSuperAdmin = (currentEmail.toLowerCase() === 's.straccini@gmail.com');
+    items.forEach(function(u) {
+      var isAdmin = (u.Ruolo === 'admin');
+      var isSuperAdminRow = (String(u.Email||'').toLowerCase() === 's.straccini@gmail.com');
+      var statoCol = u.Stato === 'attivo' ? 'var(--amb-2,#10916D)' : (u.Stato === 'pending' ? 'var(--accent,#935851)' : (u.Stato === 'sospeso' ? '#999' : 'var(--danger,#C2410C)'));
+      var ruoloCol = isAdmin ? 'var(--amb-1,#7C3AED)' : (u.Ruolo === 'editor' ? 'var(--amb-5,#0E7490)' : '#666');
+      function chk(v) { return (v===true||v==='TRUE'||v===1) ? '✓' : '—'; }
+      function chkColor(v) { return (v===true||v==='TRUE'||v===1) ? 'var(--amb-2,#10916D)' : '#999'; }
+      // v4.21 — Admin protetti: il super_admin puo modificare gli admin, gli altri admin no
+      var adminProtected = isAdmin && !isSuperAdmin;
+      var superProtected = isSuperAdminRow; // il super admin non si puo eliminare
+      var disabledAttr = adminProtected ? ' disabled title="Amministratore protetto — solo il super-admin puo modificare"' : '';
+      var adminBadge = isSuperAdminRow ? ' <span style="font-size:9px;color:var(--amb-1);font-weight:700;font-family:sans-serif">SUPER ADMIN</span>'
+        : (isAdmin ? ' <span style="font-size:9px;color:var(--amb-1);font-weight:700;font-family:sans-serif">ADMIN</span>' : '');
+      html += '<tr' + (isAdmin ? ' style="background:rgba(124,58,237,.04)"' : '') + '>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;font-family:monospace;font-size:11px">'+esc(u.Email||'') + adminBadge + '</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee">'+esc(u.Nome||'')+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee">'
+          + '<select class="u-ruolo" data-email="'+esc(u.Email)+'" data-orig="'+esc(u.Ruolo||'')+'" onchange="OC.userRowChanged(\''+esc(u.Email)+'\')" style="font-size:11px;padding:2px 4px;font-weight:600;color:'+ruoloCol+'"' + disabledAttr + '>'
+            + ['admin','editor','lettore','ospite'].map(function(r){ return '<option value="'+r+'"'+(u.Ruolo===r?' selected':'')+'>'+r+'</option>'; }).join('')
+          + '</select></td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee">'
+          + '<select class="u-stato" data-email="'+esc(u.Email)+'" data-orig="'+esc(u.Stato||'')+'" onchange="OC.userRowChanged(\''+esc(u.Email)+'\')" style="font-size:11px;padding:2px 4px;font-weight:600;color:'+statoCol+'"' + disabledAttr + '>'
+            + ['pending','attivo','sospeso','rifiutato'].map(function(s){ return '<option value="'+s+'"'+(u.Stato===s?' selected':'')+'>'+s+'</option>'; }).join('')
+          + '</select></td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInDigest)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'digest\')" title="Clicca per toggle">'+chk(u.OptInDigest)+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInBandi)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'bandi\')" title="Clicca per toggle">'+chk(u.OptInBandi)+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInMatrix)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'matrix\')" title="Clicca per toggle">'+chk(u.OptInMatrix)+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee">'
+          + (superProtected
+            ? '<span style="font-size:10px;color:var(--amb-1);font-style:italic;font-weight:600">Super admin</span>'
+            : (adminProtected
+              ? '<span style="font-size:10px;color:var(--ink-3);font-style:italic">Protetto</span>'
+              : '<button class="btn btn-secondary u-save" data-email="'+esc(u.Email)+'" onclick="OC.salvaUtente(\''+esc(u.Email)+'\')" style="display:none;font-size:10px;padding:3px 8px;margin-right:4px;background:var(--amb-2,#10916D);color:#fff;font-weight:600">Salva</button>'
+                + '<button class="btn btn-secondary" onclick="OC.eliminaUtente(\''+esc(u.Email)+'\')" style="font-size:10px;padding:3px 6px;color:var(--danger,#C2410C)">Elimina</button>'))
+        + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
 
   // ── v4.19.1 — Pannello moderazione segnalazioni ──
   function _loadSegCoda() {
@@ -5813,7 +6464,161 @@
       })[fnName]();
   }
 
-  // showInvitaUtenteForm..toggleOptIn — extracted to AdminUtenti.html (LR-1)
+  function showInvitaUtenteForm() {
+    var f = $('invitaUtenteForm');
+    if (f) f.style.display = (f.style.display === 'none' ? 'block' : 'none');
+  }
+
+  // v4.21.2 — Multi-invito con ruolo per ciascun utente
+  function addInvRow() {
+    var container = $('invRows');
+    if (!container) return;
+    var rowCount = container.querySelectorAll('.inv-row').length;
+    var row = document.createElement('div');
+    row.className = 'inv-row';
+    row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 130px 32px;gap:8px;align-items:end';
+    row.innerHTML = ''
+      + '<div><input type="email" class="inv-email" placeholder="email@museo.it" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>'
+      + '<div><input type="text" class="inv-nome" placeholder="Nome Cognome" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"/></div>'
+      + '<div><select class="inv-ruolo" style="width:100%;padding:8px;border:1px solid #D0D0D0;border-radius:4px;font-size:13px"><option value="lettore">Lettore</option><option value="editor">Redattore</option><option value="admin">Admin</option><option value="ospite">Ospite</option></select></div>'
+      + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger,#C2410C);font-size:18px;cursor:pointer;padding:4px" title="Rimuovi riga">&times;</button>';
+    container.appendChild(row);
+  }
+
+  function invitaUtenti() {
+    if (!hasGAS()) return;
+    var rows = document.querySelectorAll('#invRows .inv-row');
+    var batch = [];
+    for (var i = 0; i < rows.length; i++) {
+      var emailEl = rows[i].querySelector('.inv-email');
+      var nomeEl = rows[i].querySelector('.inv-nome');
+      var ruoloEl = rows[i].querySelector('.inv-ruolo');
+      var email = (emailEl ? emailEl.value : '').trim();
+      if (!email) continue;
+      batch.push({
+        email: email,
+        nome: (nomeEl ? nomeEl.value : '').trim(),
+        ruolo: (ruoloEl ? ruoloEl.value : 'lettore')
+      });
+    }
+    if (!batch.length) { $('invResult').innerHTML = '<span style="color:var(--danger)">Inserisci almeno un\'email.</span>'; return; }
+    var out = $('invResult');
+    out.innerHTML = '<span style="color:#666">Invio inviti in corso (' + batch.length + ')…</span>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok && r.batch) {
+          var msgs = [];
+          r.results.forEach(function(res) {
+            if (res.ok) msgs.push('<span style="color:var(--amb-2)">✓ ' + esc(res.email) + ' (' + esc(res.ruolo) + ') — invito inviato</span>');
+            else msgs.push('<span style="color:var(--danger)">✗ ' + esc(res.email||'') + ' — ' + esc(res.error||'') + '</span>');
+          });
+          out.innerHTML = msgs.join('<br>');
+          // Pulisci righe extra, mantieni solo la prima
+          var container = $('invRows');
+          var allRows = container.querySelectorAll('.inv-row');
+          for (var ri = allRows.length - 1; ri > 0; ri--) allRows[ri].remove();
+          var firstEmail = container.querySelector('.inv-email');
+          var firstName = container.querySelector('.inv-nome');
+          if (firstEmail) firstEmail.value = '';
+          if (firstName) firstName.value = '';
+          reloadUtentiTable();
+        } else if (r && r.ok) {
+          out.innerHTML = '<span style="color:var(--amb-2)">✓ Invito inviato a ' + esc(r.email) + ' (stato: pending)</span>';
+          var firstEmail = document.querySelector('#invRows .inv-email');
+          var firstName = document.querySelector('#invRows .inv-nome');
+          if (firstEmail) firstEmail.value = '';
+          if (firstName) firstName.value = '';
+          reloadUtentiTable();
+        } else {
+          out.innerHTML = '<span style="color:var(--danger)">Errore: ' + esc((r&&r.error)||'sconosciuto') + '</span>';
+        }
+      })
+      .withFailureHandler(function(e) { out.innerHTML = '<span style="color:var(--danger)">Errore: ' + esc(e) + '</span>'; })
+      .invitaNuovoUtente(batch.length === 1
+        ? { email: batch[0].email, nome: batch[0].nome, ruolo: batch[0].ruolo, token: (window.OC_SESSION&&window.OC_SESSION.token)||null }
+        : { batch: batch, token: (window.OC_SESSION&&window.OC_SESSION.token)||null }
+      );
+  }
+
+  function approvaUtente(email) {
+    if (!hasGAS()) return;
+    var ruolo = prompt('Ruolo da assegnare a ' + email + ':\n- admin\n- editor\n- lettore (default)', 'lettore');
+    if (!ruolo) return;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) { reloadUtentiTable(); $('utentiResult').innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Utente approvato come '+esc(r.ruolo)+'</span>'; }
+        else { $('utentiResult').innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc((r&&r.error)||'')+'</span>'; }
+      })
+      .withFailureHandler(function(e){ $('utentiResult').innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .approveUser(email, ruolo.trim());
+  }
+
+  function rifiutaUtente(email) {
+    if (!hasGAS()) return;
+    if (!confirm('Rifiutare la richiesta di ' + email + '?')) return;
+    google.script.run
+      .withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); })
+      .withFailureHandler(function(){})
+      .rejectUser(email, 'Rifiutato da admin');
+  }
+
+  function sospendiUtente(email) {
+    if (!hasGAS()) return;
+    if (!confirm('Sospendere l\'utente ' + email + '?')) return;
+    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).withFailureHandler(function(){}).suspendUser(email);
+  }
+
+  function eliminaUtente(email) {
+    if (!hasGAS()) return;
+    if (!confirm('Eliminare DEFINITIVAMENTE ' + email + '?')) return;
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) { if (typeof showToast==='function') showToast('Utente eliminato','ok'); reloadUtentiTable(); }
+        else { if (typeof showToast==='function') showToast((r&&r.error)||'Errore','err'); }
+      })
+      .withFailureHandler(function(e){ if (typeof showToast==='function') showToast('Errore: '+e,'err'); })
+      .deleteUser(email, (window.OC_SESSION && window.OC_SESSION.token) || null);
+  }
+
+  function cambiaRuolo(email, ruolo) {
+    if (!hasGAS()) return;
+    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).withFailureHandler(function(){}).updateUserRuolo(email, ruolo);
+  }
+
+  // v4.20 — Modello "menu Stato+Ruolo + Salva per riga"
+  function userRowChanged(email) {
+    var st = document.querySelector('.u-stato[data-email="'+email+'"]');
+    var ru = document.querySelector('.u-ruolo[data-email="'+email+'"]');
+    var sv = document.querySelector('.u-save[data-email="'+email+'"]');
+    if (!st || !ru || !sv) return;
+    var changed = (st.value !== st.getAttribute('data-orig')) || (ru.value !== ru.getAttribute('data-orig'));
+    sv.style.display = changed ? '' : 'none';
+  }
+
+  function salvaUtente(email) {
+    if (!hasGAS()) return;
+    var st = document.querySelector('.u-stato[data-email="'+email+'"]');
+    var ru = document.querySelector('.u-ruolo[data-email="'+email+'"]');
+    if (!st || !ru) return;
+    var stato = st.value, ruolo = ru.value, oldStato = st.getAttribute('data-orig');
+    if (!confirm('Salvare le modifiche per ' + email + ' ?\nStato: ' + stato + '\nRuolo: ' + ruolo)) return;
+    var sv = document.querySelector('.u-save[data-email="'+email+'"]');
+    if (sv) { sv.disabled = true; sv.textContent = '…'; }
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) { if (typeof showToast==='function') showToast('Salvato','ok'); reloadUtentiTable(); }
+        else { if (typeof showToast==='function') showToast((r&&r.error)||'Errore','err'); if (sv){ sv.disabled=false; sv.textContent='💾 Salva'; } }
+      })
+      .withFailureHandler(function(e){ if (typeof showToast==='function') showToast('Errore: '+e,'err'); if (sv){ sv.disabled=false; sv.textContent='💾 Salva'; } })
+      .saveUserStatoRuolo(email, stato, ruolo, oldStato, (window.OC_SESSION && window.OC_SESSION.token) || null);
+  }
+
+  function toggleOptIn(email, key) {
+    if (!hasGAS()) return;
+    var btn = event.target;
+    var newVal = (btn.textContent.trim() === '—');
+    google.script.run.withSuccessHandler(function(r){ if (r && r.ok) reloadUtentiTable(); }).withFailureHandler(function(){}).updateUserOptIn(email, key, newVal);
+  }
 
   // ==========================================================
   // F.ter) ARCHIVIAZIONE/CANCELLAZIONE CARD (Sprint 1.4 D2.5+ - 2026-05-01)
@@ -5940,7 +6745,22 @@
       .autoDeleteAllVeryOld(n);
   }
 
-  // runMigraUtenti — extracted to AdminUtenti.html (LR-1)
+  function runMigraUtenti() {
+    if (!hasGAS()) return;
+    if (!confirm('Esegui migrazione one-shot da MailingList + ContactsMatrix → Utenti?\nIdempotente, salta utenti già presenti.')) return;
+    var out = $('utentiResult');
+    out.innerHTML = '<span style="color:#666">Migrazione in corso (può richiedere 30-60 sec)…</span>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Migrazione completata. Importati: ' + esc(r.totale||0) +
+            ' (MailingList: '+esc(r.importati.dalMailingList||0)+', Matrix: '+esc(r.importati.daContactsMatrix||0)+', Admin: '+esc(r.importati.daAdminSeed||0)+')</span>';
+          reloadUtentiTable();
+        } else { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc((r&&r.error)||'')+'</span>'; }
+      })
+      .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
+      .migraUtentiDaTutto();
+  }
 
   // Sprint 2-5 finalize (2026-05-11) — Setup one-click v4.18
 
@@ -6200,7 +7020,254 @@
       .scanPodcast();
   }
 
-  // testDigestEmail..chiudiAnteprima — extracted to AdminDigest.html (LR-1)
+  function testDigestEmail(){
+    if (!hasGAS()) return;
+    // v4.21 — Chiedi email destinatario per il test newsletter generalista
+    var emailDest = prompt('Inserisci l\'email destinatario per il test newsletter (lettori):', 's.straccini@gmail.com');
+    if (!emailDest || emailDest.indexOf('@') < 0) return;
+    if (!confirm('Genera newsletter generalista e invia a ' + emailDest + '.\nQuesto e il digest per i LETTORI (non profilati).\nProcedere?')) return;
+    $('adminStatus').textContent = 'Generazione + invio a ' + emailDest + ' in corso (15-25s)…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          $('adminStatus').textContent = 'Newsletter inviata a ' + (r.emailSent || emailDest);
+          showToast && showToast('Newsletter test inviata a ' + (r.emailSent || emailDest), 'ok');
+        } else {
+          $('adminStatus').textContent = 'errore: ' + (r && r.error || '');
+          alert('Errore: ' + (r && r.error || 'sconosciuto'));
+        }
+      })
+      .withFailureHandler(function(e){ alert('Errore di rete: '+e); $('adminStatus').textContent='errore'; })
+      .testInviaDigestGeneralista(emailDest, (window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  function renderDigestList(res){
+    var wrap = $('digestList'); if (!wrap) return;
+    if (!res || !res.ok) { wrap.innerHTML = '<div class="empty-state sm">Impossibile caricare l\'elenco digest.</div>'; return; }
+    if (!res.items || !res.items.length) { wrap.innerHTML = '<div class="empty-state sm">Nessuna newsletter ancora creata.</div>'; return; }
+    var html = '';
+    res.items.forEach(function(it){
+      var stato = it.stato || '';
+      var isInviato = (stato === 'inviato' || stato === 'inviata');
+      // Pulsante azione principale: Anteprima se bozza/in_attesa, riepilogo invio se inviato
+      // v4.21 — Fix: onclick diretto
+      var actPrimary = (stato === 'bozza' || stato === 'in_attesa_approvazione')
+        ? ('<button class="btn btn-secondary btn-sm" onclick="OC.openPreview(\''+esc(it.id)+'\')" title="Apri l\'anteprima di questa newsletter">Anteprima</button>')
+        : (isInviato ? '<span class="muted">Destinatari: '+(it.destinatari||0)+'</span>' : '');
+      // Pulsante elimina: solo se NON inviato (sicurezza: bozze inviate non si toccano)
+      // v4.21 — Fix: onclick diretto al posto di data-action (non c'era event delegation)
+      var actDelete = isInviato ? ''
+        : '<button class="btn btn-danger btn-sm" onclick="OC.deleteDigest(\''+esc(it.id)+'\')" title="Elimina definitivamente questa bozza" aria-label="Elimina bozza">&#10005;&nbsp;Elimina</button>';
+      // v4.21 — Data newsletter in evidenza
+      var dataLabel = it.data ? '<span style="color:var(--ink-2);font-weight:600">' + esc(it.data) + '</span> &middot; ' : '';
+      html += ''
+        + '<div class="digest-row">'
+        +   '<div style="flex:1;min-width:0"><b>'+esc(it.soggetto||'(senza soggetto)')+'</b><br>'
+        +     '<small class="muted">' + dataLabel + esc(it.id)+' &middot; '+esc(it.autore||'')+'</small>'
+        +   '</div>'
+        +   '<span class="status '+esc(stato)+'">'+esc(stato.replace(/_/g,' '))+'</span>'
+        +   '<div class="digest-row-actions">'+actPrimary+actDelete+'</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function deleteDigest(id){
+    if (!hasGAS()) return;
+    if (!id) return;
+    if (!confirm('Eliminare definitivamente la bozza ' + id + '?\n\nL\'azione non è reversibile.')) return;
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || !r.ok) { alert('Errore eliminazione: '+(r && r.error || 'sconosciuto')); return; }
+        showToast && showToast('Bozza ' + id + ' eliminata', 'ok');
+        // Refresh elenco
+        google.script.run
+          .withSuccessHandler(renderDigestList)
+          .withFailureHandler(function(err){ console.error('reload digestList:', err); })
+          .adminGetDigestList({token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
+      })
+      .withFailureHandler(function(e){ alert('Errore di rete: '+e); })
+      .adminDeleteDigestDraft(id, (window.OC_SESSION && window.OC_SESSION.token) || null);
+  }
+
+  function checkTelegram(){
+    if (!hasGAS()) return;
+    $('telegramStatus').textContent = 'Verifica in corso…';
+    google.script.run
+      .withSuccessHandler(function(res){
+        var el = $('telegramStatus');
+        if (!el) return;
+        if (!res || !res.ok) { el.innerHTML = '<span style="color:var(--danger)">⚠️ Accesso negato</span>'; return; }
+        var ok = res.hasToken && res.hasChat;
+        el.innerHTML = ok
+          ? '<span style="color:var(--success)">✓ Configurato (token+chat_id presenti)</span>'
+          : '<span style="color:var(--danger)">✗ Mancano: '+(res.hasToken?'':'token ')+(res.hasChat?'':'chat_id')+'</span>';
+      })
+      .withFailureHandler(function(err){ $('telegramStatus').textContent = 'Errore: '+err; })
+      .getTelegramConfigStatus();
+  }
+
+  function testTelegram(){
+    if (!hasGAS()) return;
+    if (!confirm('Invio messaggio di test Telegram all\'admin. Procedere?')) return;
+    google.script.run
+      .withSuccessHandler(function(r){
+        alert(r && r.ok ? '✓ Messaggio Telegram inviato.' : '✗ Errore: '+(r && (r.error||r.code)||'sconosciuto'));
+      })
+      .withFailureHandler(function(e){ alert('Errore: '+e); })
+      .telegramTest();
+  }
+
+  // v4.20 — Test digest su email admin
+  function testDigestAdmin(){
+    if (!hasGAS()) return;
+    if (!confirm('Inviare una copia di test del digest alla tua email admin?')) return;
+    showToast('Invio test in corso…', 'ok');
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) showToast('Test inviato a ' + (r.emailSent || 'admin'), 'ok');
+        else showToast('Errore: ' + (r && r.error || 'sconosciuto'), 'err');
+      })
+      .withFailureHandler(function(e){ showToast('Errore: ' + e, 'err'); })
+      .testDigestInviaAdmin((window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  // v4.20 — Cron coorti dry-run
+  function _dryRunCoorti() {
+    if (!hasGAS()) return;
+    showToast('Dry-run coorti in corso (nessuna email inviata)...', 'ok');
+    var out = document.getElementById('cronCoortiResult');
+    if (out) out.textContent = 'Esecuzione dry-run...';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (out) out.textContent = r && r.ok ? 'Dry-run OK: ' + (r.generalisti_inviati||0) + ' generalisti, ' + (r.leadCaldi_inviati||0) + ' lead' : 'Errore: ' + (r&&r.error||'?');
+      })
+      .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
+      .sendDigestAuto2coorti({dryRun:true, token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
+  }
+
+  function _eseguiCoorti() {
+    if (!hasGAS()) return;
+    if (!confirm('Inviare il digest a 2 coorti ORA? (Generalisti + Lead personalizzati)')) return;
+    showToast('Invio coorti in corso...', 'ok');
+    var out = document.getElementById('cronCoortiResult');
+    if (out) out.textContent = 'Invio in corso...';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (out) out.textContent = r && r.ok ? 'Inviato: ' + (r.generalisti_inviati||0) + ' gen + ' + (r.leadCaldi_inviati||0) + ' lead' : 'Errore: ' + (r&&r.error||'?');
+      })
+      .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
+      .sendDigestAuto2coorti({token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
+  }
+
+  // v4.20 — Anteprima per destinatario
+  function _previewForEmail() {
+    var email = (document.getElementById('previewEmail') || {}).value || '';
+    var out = document.getElementById('previewForEmailResult');
+    var frame = document.getElementById('previewForEmailFrame');
+    if (!email || email.indexOf('@') < 0) { if (out) out.textContent = 'Inserisci un email valida'; return; }
+    if (out) out.textContent = 'Caricamento anteprima...';
+    if (frame) frame.style.display = 'none';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r || !r.ok) { if (out) out.textContent = 'Errore: ' + (r&&r.error||'non trovato'); return; }
+        if (out) out.textContent = 'Coorte: ' + (r.coorte||'?') + ' · Layout: ' + (r.layout||'?');
+        if (frame && r.html) { frame.srcdoc = r.html; frame.style.display = 'block'; }
+      })
+      .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
+      .previewDigestPerEmail(email);
+  }
+
+  // v4.20 — Email agenti stats
+  function _loadAgentStats() {
+    var out = document.getElementById('agentStatsResult');
+    if (out) out.textContent = 'Caricamento...';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r) { if (out) out.textContent = 'Nessun dato'; return; }
+        var html = '';
+        if (r.byAgent) {
+          Object.keys(r.byAgent).forEach(function(id) {
+            var a = r.byAgent[id];
+            html += '<div style="margin:4px 0">AG' + id + ': ' + (a.sent||0) + ' inviati, ' + (a.failed||0) + ' errori' + (a.lastSent ? ' · ultimo: ' + a.lastSent : '') + '</div>';
+          });
+        }
+        if (out) out.innerHTML = html || 'Nessun invio registrato';
+      })
+      .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
+      .getAgentEmailStats();
+  }
+
+  function _sendAgentForced() {
+    if (!confirm('Forzare invio email agenti ORA? (solo admin)')) return;
+    showToast('Invio agenti in corso...', 'ok');
+    google.script.run
+      .withSuccessHandler(function(r) { showToast(r && r.ok ? 'Invio completato' : 'Errore: ' + (r&&r.error||'?'), r&&r.ok?'ok':'err'); })
+      .withFailureHandler(function(e) { showToast('Errore: ' + e, 'err'); })
+      .sendAgentEmails();
+  }
+
+  function generaDigest(){
+    if (!hasGAS()) return;
+    $('adminStatus').textContent = 'Generazione bozza…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || !r.ok) { alert('Errore: '+(r && r.error || 'sconosciuto')); $('adminStatus').textContent='errore'; return; }
+        $('adminStatus').textContent = 'Bozza creata: '+r.id;
+        if (r.counts) {
+          $('adminLastBandi').textContent   = (r.counts.bandiUrgenti||0) + (r.counts.bandiRecenti||0);
+          $('adminLastNews').textContent    = r.counts.news    || 0;
+          $('adminLastPodcast').textContent = r.counts.podcast || 0;
+        }
+        loadAdminPanel();
+        openPreview(r.id);
+      })
+      .withFailureHandler(function(e){ alert('Errore: '+e); $('adminStatus').textContent='errore'; })
+      .adminGenerateDigestDraft({token: (window.OC_SESSION && window.OC_SESSION.token) || null});
+  }
+
+  function openPreview(draftId){
+    if (!hasGAS()) return;
+    $('adminStatus').textContent = 'Caricamento anteprima…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || !r.ok) { alert('Errore anteprima: '+(r&&r.error||'')); return; }
+        $('previewWrap').hidden = false;
+        $('previewWrap').dataset.draftId = r.id;
+        $('previewInfo').innerHTML = '<b>'+esc(r.soggetto)+'</b> · ID: <code>'+esc(r.id)+'</code>';
+        var frame = $('previewFrame');
+        var doc = frame.contentDocument || frame.contentWindow.document;
+        doc.open(); doc.write(r.html); doc.close();
+        $('adminStatus').textContent = 'anteprima pronta';
+        $('previewWrap').scrollIntoView({behavior:'smooth', block:'start'});
+      })
+      .withFailureHandler(function(e){ alert('Errore: '+e); })
+      .adminPreviewNewsletterHtml(draftId, (window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  function richiediAutorizzazione(){
+    if (!hasGAS()) return;
+    var draftId = $('previewWrap').dataset.draftId;
+    if (!draftId) return;
+    if (!confirm('Inviare richiesta di autorizzazione via Telegram?\nRiceverai un link per confermare l\'invio effettivo.')) return;
+    $('adminStatus').textContent = 'Invio notifica Telegram…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || !r.ok) { alert('Errore: '+(r&&r.error||'')); return; }
+        var tg = r.telegram || {};
+        if (tg.ok) {
+          alert('✓ Notifica Telegram inviata.\nControlla il bot per ricevere il link di autorizzazione invio.');
+        } else {
+          alert('⚠️ Notifica Telegram non inviata ('+(tg.error||tg.code||'errore')+').\nUsa il link diretto:\n'+r.approveUrl);
+        }
+        $('adminStatus').textContent = 'in attesa autorizzazione';
+        loadAdminPanel();
+      })
+      .withFailureHandler(function(e){ alert('Errore: '+e); })
+      .adminRequestSendAuthorization(draftId, (window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  function chiudiAnteprima(){ $('previewWrap').hidden = true; }
 
   // ==========================================================
   // F.quattro) ARCHIVIO / CESTINO / AZIONI RECORD
@@ -10725,12 +11792,6 @@
   };
 })();
 </script>
-
-<!-- LR-1: Admin JS modules extracted from Index.html -->
-<?!= include('DigestSegmentato') ?>
-<?!= include('AdminFonti') ?>
-<?!= include('AdminUtenti') ?>
-<?!= include('AdminDigest') ?>
 
 </body>
 </html>
