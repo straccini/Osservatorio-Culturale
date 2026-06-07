@@ -52,10 +52,22 @@ function buildNewsletterHtml_(draft) {
   parts.push('<div style="font-size:22px;font-weight:700;margin-top:6px;">' + _h_(draft.soggetto||'Digest') + '</div>');
   parts.push('</td></tr>');
 
-  // Intro
-  parts.push('<tr><td style="padding:20px 28px 4px 28px;">');
-  parts.push('<p style="margin:0;font-size:14px;line-height:1.55;color:#3A3A3C;">Una selezione dei bandi in scadenza, delle ultime notizie e dei podcast più recenti del settore culturale e creativo. Clicca su ogni elemento per approfondire.</p>');
-  parts.push('</td></tr>');
+  // v4.22 E1 — Editoriale settimanale (se approvato, sostituisce l'intro generica)
+  var _editoriale = null;
+  try { if (typeof getEditorialeCorrente === 'function') _editoriale = getEditorialeCorrente(); } catch(_){}
+  if (_editoriale && _editoriale.testo) {
+    parts.push('<tr><td style="padding:20px 28px 4px 28px;">');
+    parts.push('<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8B3A1F;font-weight:700;margin-bottom:8px;">Editoriale</div>');
+    parts.push('<div style="font-size:16px;font-weight:700;color:#1D1D1F;margin-bottom:10px;">' + _h_(_editoriale.titolo) + '</div>');
+    parts.push('<p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C;">' + _h_(_editoriale.testo).replace(/\n/g, '<br>') + '</p>');
+    parts.push('<div style="margin-top:14px;border-bottom:1px solid #E5E5E7;padding-bottom:6px"></div>');
+    parts.push('</td></tr>');
+  } else {
+    // Intro generica (fallback se nessun editoriale approvato)
+    parts.push('<tr><td style="padding:20px 28px 4px 28px;">');
+    parts.push('<p style="margin:0;font-size:14px;line-height:1.55;color:#3A3A3C;">Una selezione dei bandi in scadenza, delle ultime notizie e dei podcast piu recenti del settore culturale e creativo. Clicca su ogni elemento per approfondire.</p>');
+    parts.push('</td></tr>');
+  }
 
   // Bandi urgenti
   var urg = (draft.bandiUrgenti || []);

@@ -192,6 +192,17 @@ function buildDigestHTML(items, dest, readerUrl) {
     }).join('');
     sectionsHTML+=`<tr><td style="padding:24px 0 12px"><div style="display:flex;align-items:center"><div style="width:4px;height:18px;background:${color};border-radius:2px;margin-right:10px;display:inline-block"></div><span style="font-size:12px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.06em">${label}</span><span style="font-size:12px;color:#aaa;margin-left:8px">${grouped[a].length} item</span></div></td></tr><table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e8e5e0">${itemsHTML}</table>`;
   }
+  // v4.22 E1 — Editoriale settimanale (hook additivo, try-catch per sicurezza)
+  let editorialeBlock = '';
+  try {
+    const _ed = (typeof getEditorialeCorrente === 'function') ? getEditorialeCorrente() : null;
+    if (_ed && _ed.testo) {
+      const _edTesto = String(_ed.testo).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+      const _edTitolo = String(_ed.titolo||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      editorialeBlock = `<tr><td style="padding:20px 36px 4px"><div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8B3A1F;font-weight:700;margin-bottom:8px">Editoriale</div><div style="font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:10px">${_edTitolo}</div><p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C">${_edTesto}</p><div style="margin-top:14px;border-bottom:1px solid #e8e5e0"></div></td></tr>`;
+    }
+  } catch(_edErr) { Logger.log('[DigestService] editoriale hook err: ' + _edErr.message); }
+
   const readerBtn = readerUrl ? `<tr><td style="padding:16px 36px 8px"><div style="background:linear-gradient(135deg,#0F2744,#185FA5);border-radius:10px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px"><div><div style="font-size:13px;font-weight:600;color:#fff">Ciao${nomeDestinatario?' '+nomeDestinatario:''}!</div><div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px">Seleziona gli articoli che ti interessano e scarica il tuo PDF personalizzato.</div></div><a href="${readerUrl}" style="display:inline-block;background:#B8902A;color:#fff;text-decoration:none;padding:9px 18px;border-radius:7px;font-size:12px;font-weight:700;white-space:nowrap">Apri il tuo digest &rarr;</a></div></td></tr>` : '';
   // v4.18.54 — Footer unsubscribe (link cancellazione iscrizione)
   const unsubFooter = (dest && (dest.Email || dest.email) && typeof _digestUnsubFooter_ === 'function')
@@ -199,7 +210,7 @@ function buildDigestHTML(items, dest, readerUrl) {
     : '';
   // v4.20 — CTA Candidature Capitale della Cultura
   const capitaleCta = (typeof _digestCapitaleCta_ === 'function') ? _digestCapitaleCta_(readerUrl || '') : '';
-  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Digest</title></head><body style="margin:0;padding:0;background:#f5f3ee;font-family:-apple-system,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f5f3ee" style="padding:28px 0"><tr><td align="center"><table width="620" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e8e5e0"><tr><td style="background:#1a1a1a;padding:28px 36px 24px"><div style="font-family:Georgia,serif;font-style:italic;font-size:24px;font-weight:500;color:#E89B7C;letter-spacing:.01em">Sinopia</div><div style="font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#bbb;margin-top:6px">Osservatorio Culturale &middot; Digest del ${formatDate(new Date())}</div></td></tr>${readerBtn}<tr><td style="padding:4px 36px 36px"><table width="100%" cellpadding="0" cellspacing="0">${sectionsHTML}</table>${capitaleCta}</td></tr><tr><td style="border-top:1px solid #eee">${unsubFooter}</td></tr></table></td></tr></table></body></html>`;
+  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Digest</title></head><body style="margin:0;padding:0;background:#f5f3ee;font-family:-apple-system,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f5f3ee" style="padding:28px 0"><tr><td align="center"><table width="620" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e8e5e0"><tr><td style="background:#1a1a1a;padding:28px 36px 24px"><div style="font-family:Georgia,serif;font-style:italic;font-size:24px;font-weight:500;color:#E89B7C;letter-spacing:.01em">Sinopia</div><div style="font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#bbb;margin-top:6px">Osservatorio Culturale &middot; Digest del ${formatDate(new Date())}</div></td></tr>${editorialeBlock}${readerBtn}<tr><td style="padding:4px 36px 36px"><table width="100%" cellpadding="0" cellspacing="0">${sectionsHTML}</table>${capitaleCta}</td></tr><tr><td style="border-top:1px solid #eee">${unsubFooter}</td></tr></table></td></tr></table></body></html>`;
 }
 
 /**

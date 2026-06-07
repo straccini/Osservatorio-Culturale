@@ -380,5 +380,41 @@ function disablePublicLanding() {
 }
 
 // ============================================================================
+// E1 — EDITORIALE SETTIMANALE "CAPO REDATTORE" (v4.22)
+// ============================================================================
+
+/** Nome foglio per le bozze editoriali */
+var OC_EDITORIALI_SHEET = 'Editoriali';
+
+/** Headers del foglio Editoriali */
+var OC_EDITORIALI_HEADERS = [
+  'id','settimana','data_generazione','titolo','testo',
+  'pilastri_json','stato','approvato_da','data_approvazione','note'
+];
+
+/** Fonti considerate autorevoli — il brief dà peso a contenuti da queste fonti */
+var OC_FONTI_AUTOREVOLI = [
+  'symbola', 'fitzcarraldo', 'federculture',
+  'icom', 'icom italia', 'nemo',
+  'mic', 'ministero della cultura',
+  'fondazione cariplo', 'compagnia di san paolo',
+  'artribune', 'il giornale dell\'arte',
+  'museumnext', 'aib'
+];
+
+/** Parametri editoriale */
+var OC_EDITORIALE_CONFIG = {
+  MIN_PAROLE: 250,
+  MAX_PAROLE: 400,
+  FINESTRA_SETTIMANA_GG: 7,     // contenuti degli ultimi 7 giorni
+  FINESTRA_MEDIA_SETTIMANE: 4,  // media di confronto per delta trend
+  MAX_ENTITA_BRIEF: 10,         // top entità per il brief
+  MAX_NORME_BRIEF: 5,
+  MAX_STUDI_BRIEF: 5,
+  MAX_DINAMICO_BRIEF: 4,
+  MAX_NEWS_AUTOREVOLI_BRIEF: 6
+};
+
+// ============================================================================
 // FINE Constants.gs
 // ============================================================================

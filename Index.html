@@ -1525,6 +1525,26 @@
         </div>
       </div>
 
+      <!-- ===== 0. EDITORIALE SETTIMANALE ===== -->
+      <div class="admin-card" style="margin-bottom:16px;border-left:4px solid #8B3A1F">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <h3 style="margin:0;font-size:15px;color:#8B3A1F">Editoriale settimanale</h3>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-secondary" onclick="OC._loadEditoriale()" style="font-size:11px;padding:5px 10px">Aggiorna</button>
+            <button class="btn btn-primary" onclick="OC._generaEditoriale()" style="font-size:11px;padding:5px 10px;background:#8B3A1F">Genera nuovo</button>
+          </div>
+        </div>
+        <p class="hint" style="margin:6px 0 10px">L'editoriale apre la newsletter. Viene generato dal Knowledge Layer (entita/temi caldi + norme + studi + podcast). Approvalo prima dell'invio del digest.</p>
+        <div id="editorialePreview" style="min-height:40px">
+          <div class="empty-state sm">Premi "Aggiorna" per caricare l'editoriale corrente.</div>
+        </div>
+        <div id="editorialeActions" hidden style="margin-top:10px;display:flex;gap:8px;align-items:center">
+          <button class="btn btn-primary" id="editorialeApprovaBtn" onclick="OC._approvaEditoriale()" style="font-size:12px;padding:7px 16px;background:var(--amb-2,#10916D)">Approva editoriale</button>
+          <button class="btn btn-secondary" onclick="OC._generaEditoriale()" style="font-size:12px;padding:7px 12px">Rigenera</button>
+          <span id="editorialeStatus" style="font-size:12px;color:var(--ink-3)"></span>
+        </div>
+      </div>
+
       <!-- ===== 1. AZIONI RAPIDE ===== -->
       <div class="admin-card" style="margin-bottom:16px;border-left:4px solid var(--amb-3,#3C6A95)">
         <h3 style="margin-top:0;font-size:15px">Azioni rapide</h3>
@@ -7044,6 +7064,86 @@
       .testInviaDigestGeneralista(emailDest, (window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
+  // ── v4.22 E1 — Editoriale settimanale admin ──
+  function _loadEditoriale() {
+    if (!hasGAS()) return;
+    var wrap = $('editorialePreview');
+    var acts = $('editorialeActions');
+    if (wrap) wrap.innerHTML = '<span class="muted">Caricamento...</span>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r || !r.ok || !r.editoriale) {
+          if (wrap) wrap.innerHTML = '<div class="empty-state sm">Nessun editoriale generato. Premi "Genera nuovo".</div>';
+          if (acts) acts.hidden = true;
+          return;
+        }
+        var ed = r.editoriale;
+        var stato = String(ed.stato || 'bozza');
+        var statoColor = stato === 'approvato' ? 'var(--amb-2,#10916D)' : (stato === 'bozza' ? '#8B3A1F' : 'var(--ink-3)');
+        var statoLabel = stato === 'approvato' ? 'APPROVATO' : (stato === 'bozza' ? 'BOZZA — da approvare' : stato.toUpperCase());
+        if (wrap) {
+          wrap.innerHTML = ''
+            + '<div style="background:var(--surface-2);border:1px solid var(--rule);border-radius:10px;padding:16px">'
+            + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+            + '<span style="font-size:11px;font-weight:700;color:' + statoColor + ';text-transform:uppercase;letter-spacing:.06em">' + esc(statoLabel) + '</span>'
+            + '<span style="font-size:11px;color:var(--ink-3)">' + esc(String(ed.settimana || '')) + ' · ' + esc(String(ed.data_generazione || '').substring(0, 10)) + '</span>'
+            + '</div>'
+            + '<div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px">' + esc(String(ed.titolo || '')) + '</div>'
+            + '<div style="font-size:13.5px;line-height:1.65;color:var(--ink-2);white-space:pre-line">' + esc(String(ed.testo || '')) + '</div>'
+            + '</div>';
+        }
+        if (acts) {
+          acts.hidden = (stato === 'approvato');
+          var btn = $('editorialeApprovaBtn');
+          if (btn) btn.disabled = (stato === 'approvato');
+        }
+        var st = $('editorialeStatus');
+        if (st && stato === 'approvato') st.textContent = 'Approvato da ' + esc(String(ed.approvato_da || '')) + ' il ' + esc(String(ed.data_approvazione || '').substring(0, 10));
+      })
+      .withFailureHandler(function(e) {
+        if (wrap) wrap.innerHTML = '<span style="color:var(--danger)">Errore: ' + esc(e) + '</span>';
+      })
+      .getEditoriale();
+  }
+
+  function _generaEditoriale() {
+    if (!hasGAS()) return;
+    if (!confirm('Generare un nuovo editoriale settimanale?\nIl sistema analizzerà le entità/temi caldi, norme, studi e news autorevoli della settimana e produrrà un testo di 250-400 parole.')) return;
+    var wrap = $('editorialePreview');
+    if (wrap) wrap.innerHTML = '<span class="muted">Generazione in corso (15-30s)... Il Knowledge Layer sta analizzando i contenuti della settimana.</span>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          showToast && showToast('Editoriale generato: "' + (r.titolo || '') + '" (' + (r.parole || 0) + ' parole)', 'ok');
+          _loadEditoriale();
+        } else {
+          if (wrap) wrap.innerHTML = '<span style="color:var(--danger)">Errore: ' + esc((r && r.error) || 'sconosciuto') + '</span>';
+        }
+      })
+      .withFailureHandler(function(e) {
+        if (wrap) wrap.innerHTML = '<span style="color:var(--danger)">Errore: ' + esc(e) + '</span>';
+      })
+      .editorialeGenera();
+  }
+
+  function _approvaEditoriale() {
+    if (!hasGAS()) return;
+    if (!confirm('Approvare l\'editoriale? Verrà anteposto come introduzione nella prossima newsletter.')) return;
+    var st = $('editorialeStatus');
+    if (st) st.textContent = 'Approvazione...';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          showToast && showToast('Editoriale approvato!', 'ok');
+          _loadEditoriale();
+        } else {
+          if (st) st.textContent = 'Errore: ' + ((r && r.error) || 'sconosciuto');
+        }
+      })
+      .withFailureHandler(function(e) { if (st) st.textContent = 'Errore: ' + e; })
+      .editorialeApprova((window.OC_SESSION && window.OC_SESSION.token) || null);
+  }
+
   function renderDigestList(res){
     var wrap = $('digestList'); if (!wrap) return;
     if (!res || !res.ok) { wrap.innerHTML = '<div class="empty-state sm">Impossibile caricare l\'elenco digest.</div>'; return; }
@@ -11000,6 +11100,10 @@
     uploadTsv: uploadTsv,
     reloadFontiStats: reloadFontiStats,
     testDigestEmail: testDigestEmail,
+    // v4.22 E1 — Editoriale settimanale
+    _loadEditoriale: _loadEditoriale,
+    _generaEditoriale: _generaEditoriale,
+    _approvaEditoriale: _approvaEditoriale,
     // Sprint 1.3 D2.1+D2.2 - Tagging Matrix admin
     setupMatrixCols: setupMatrixCols,
     tagMatrixBatch: tagMatrixBatch,
