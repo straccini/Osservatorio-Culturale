@@ -10,13 +10,14 @@ const GIORNI_ALERT     = parseInt(PROPS.getProperty('GIORNI_SCADENZA_ALERT') || 
 // SHEET_ID mantenuto come fallback per ambienti standalone
 const SHEET_ID = PROPS.getProperty('SHEET_ID') || '';
 
+// v4.22 PERF — Singleton: evita openById ripetuti nella stessa esecuzione GAS
+var _mainSS_cached_ = null;
 function getMainSS() {
-  // In web app getActiveSpreadsheet() ritorna null - serve sempre SHEET_ID
-  if (SHEET_ID) return SpreadsheetApp.openById(SHEET_ID);
-  // Fallback bound: recupera ID dal file padre
+  if (_mainSS_cached_) return _mainSS_cached_;
+  if (SHEET_ID) { _mainSS_cached_ = SpreadsheetApp.openById(SHEET_ID); return _mainSS_cached_; }
   try {
     const parents = DriveApp.getFileById(ScriptApp.getScriptId()).getParents();
-    if (parents.hasNext()) return SpreadsheetApp.open(parents.next());
+    if (parents.hasNext()) { _mainSS_cached_ = SpreadsheetApp.open(parents.next()); return _mainSS_cached_; }
   } catch(e) {}
   throw new Error('Aggiungi SHEET_ID nelle Script Properties del progetto');
 }

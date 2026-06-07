@@ -10,6 +10,10 @@
  * ============================================================
  */
 
+// v4.22 PERF — timezone hoisted (evita 1 service call per riga bando)
+var _UB_TZ_ = null;
+function _ubTz_() { if (!_UB_TZ_) { try { _UB_TZ_ = Session.getScriptTimeZone(); } catch(_){} _UB_TZ_ = _UB_TZ_ || 'Europe/Rome'; } return _UB_TZ_; }
+
 // ------------------------------------------------------------
 //  1) Ultimi bandi monitorati (card Home)
 // ------------------------------------------------------------
@@ -446,7 +450,7 @@ function _radarBandiRows_(sh) {
 }
 
 function _mapBando_(x) {
-  var tz = Session.getScriptTimeZone() || 'Europe/Rome';
+  var tz = _ubTz_();
   var scadFmt = '';
   if (x.scadenza instanceof Date && !isNaN(x.scadenza.getTime())) {
     scadFmt = Utilities.formatDate(x.scadenza, tz, 'd MMM yyyy');
@@ -485,7 +489,7 @@ function _findCol_(head, names) {
 
 function _fmtBreveUB_(v) {
   if (v instanceof Date) {
-    return Utilities.formatDate(v, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+    return Utilities.formatDate(v, _ubTz_(), 'dd/MM/yyyy');
   }
   return v ? String(v) : '';
 }
@@ -539,7 +543,7 @@ function getNormeList(limit) {
       link        : String(r[3]||''),
       ambito      : String(r[4]||'0'),
       descrizione : String(r[5]||''),
-      dataAggiunta: r[6] ? Utilities.formatDate(new Date(r[6]), Session.getScriptTimeZone(), 'yyyy-MM-dd') : '',
+      dataAggiunta: r[6] ? Utilities.formatDate(new Date(r[6]), _ubTz_(), 'yyyy-MM-dd') : '',
       stato       : String(r[7]||'attivo')
     });
   });

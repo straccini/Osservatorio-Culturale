@@ -70,17 +70,15 @@ function getPodcastRecenti(limit) {
  * @return {Object} payload home (vedi contratto sotto)
  */
 function getHomepageDataV42() {
-  // v4.18.60 — Cache 30min per evitare 3+ full-sheet scan ad ogni caricamento
-  var HP_CACHE_KEY = 'oc_homepage_cache_v1';
-  var HP_CACHE_TTL = 30 * 60 * 1000; // 30 minuti
+  // v4.22 PERF — CacheService (100KB, TTL nativo) al posto di PropertiesService (9KB, TTL manuale)
+  var HP_CACHE_KEY = 'oc_hp_v2';
+  var HP_CACHE_TTL_SEC = 1800; // 30 minuti
   try {
-    var cached = PropertiesService.getScriptProperties().getProperty(HP_CACHE_KEY);
+    var cached = CacheService.getScriptCache().get(HP_CACHE_KEY);
     if (cached) {
       var c = JSON.parse(cached);
-      if (c._expiresAt && c._expiresAt > Date.now()) {
-        c._fromCache = true;
-        return c;
-      }
+      c._fromCache = true;
+      return c;
     }
   } catch(_) { /* cache miss, procedi normalmente */ }
 
@@ -300,24 +298,13 @@ function getHomepageDataV42() {
     badges:          badges
   };
 
-  // v4.18.60 — Salva in cache solo dati leggeri (badges, stats, ambiti counts)
-  // Il payload completo (con array news/bandi) supera 9KB PropertiesService.
-  // Cachiamo solo la struttura senza gli array di contenuti.
+  // v4.22 PERF — CacheService supporta fino a 100KB: cachiamo il payload completo
   try {
-    var cachePayload = {
-      _expiresAt: Date.now() + HP_CACHE_TTL,
-      dataOggi: result.dataOggi,
-      ultimaScansione: result.ultimaScansione,
-      nuoviOggi: result.nuoviOggi,
-      scanner: result.scanner,
-      badges: result.badges,
-      ambiti: result.ambiti,
-      bandiUrgenti: result.bandiUrgenti.slice(0, 4),  // max 4 urgenti
-      news: result.news,       // solo top 5, gia slice
-      podcast: result.podcast  // solo top 3, gia slice
-    };
-    PropertiesService.getScriptProperties().setProperty(HP_CACHE_KEY, JSON.stringify(cachePayload));
-  } catch(_) { /* quota superata, skip cache */ }
+    var cacheJson = JSON.stringify(result);
+    if (cacheJson.length < 95000) { // margine sicurezza sotto i 100KB
+      CacheService.getScriptCache().put(HP_CACHE_KEY, cacheJson, HP_CACHE_TTL_SEC);
+    }
+  } catch(_) { /* cache write fail, non bloccante */ }
 
   return result;
 }

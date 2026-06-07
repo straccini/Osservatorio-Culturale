@@ -247,12 +247,14 @@ function _ambFor_(id) {
   return OC_AMB_COLORS_[k] || { bg:'#F2F2F4', fg:'#5A5A5E', label:'Osservatorio' };
 }
 
+// v4.22 CLEANUP — Allineato con Matrix_digest._h_ (aggiunto single-quote escape)
 function _h_(s) {
   return String(s || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function _trunc_(s, n) {

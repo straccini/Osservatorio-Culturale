@@ -9483,7 +9483,8 @@
     openGuida:   openGuida,
     closeGuida:  closeGuida,
     showToast:   showToast,
-    openUrl:     function(url){ if (url) window.open(url,'_blank','noopener'); },
+    // v4.22 SEC — safeUrl: blocca javascript: e data: URI scheme
+    openUrl:     function(url){ if (url && /^https?:\/\//i.test(String(url).trim())) window.open(url,'_blank','noopener'); },
     setupLibri: function(){
       if (!hasGAS()) return;
       var btn = document.querySelector('.lb-setup-btn');

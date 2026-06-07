@@ -1,0 +1,76 @@
+<h2>L1 · Knowledge Layer — il fondamento</h2>
+<p class="subtitle">Trasforma i contenuti che gli agenti <b>già raccolgono</b> in conoscenza strutturata — entità (persone, strutture) e temi, accumulati nel tempo. Da qui emergono trend e opinion leader. È il pezzo che oggi non esiste.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Dove si inserisce L1 nel sistema</div>
+  <div class="mockup-body">
+    <div style="display:flex;gap:10px;align-items:stretch;flex-wrap:wrap">
+
+      <div style="flex:1;min-width:200px;border:1px solid rgba(128,128,128,.35);border-radius:10px;padding:14px;opacity:.78">
+        <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.7;margin-bottom:6px">Raccolta · esiste</div>
+        <div style="font-weight:700;margin-bottom:8px">Agenti &amp; API</div>
+        <div style="font-size:13px;line-height:1.5">AG1-AG6 · bandi regionali · SEAS<br>API: TED, CORDIS, OpenCoesione<br><span style="opacity:.7">→ bandi, news, norme, podcast, video</span></div>
+      </div>
+
+      <div style="display:flex;align-items:center;font-size:22px;opacity:.5">→</div>
+
+      <div style="flex:1.2;min-width:220px;border:2px solid #6B5C9A;background:rgba(107,92,154,.10);border-radius:10px;padding:14px">
+        <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6B5C9A;font-weight:700;margin-bottom:6px">Conoscenza · L1 — da costruire</div>
+        <div style="font-weight:700;margin-bottom:8px">Estrazione entità + temi</div>
+        <div style="font-size:13px;line-height:1.5">Claude legge ogni contenuto →<br>estrae <b>persone, strutture, temi</b><br>→ normalizza e deduplica i nomi<br>→ salva con <b>data</b> di occorrenza</div>
+        <div style="font-size:12px;margin-top:8px;opacity:.85">📄 nuovi fogli: <b>Entita</b> · <b>Temi</b> · <b>Occorrenze</b></div>
+      </div>
+
+      <div style="display:flex;align-items:center;font-size:22px;opacity:.5">→</div>
+
+      <div style="flex:1;min-width:200px;border:1px solid rgba(128,128,128,.35);border-radius:10px;padding:14px;opacity:.78">
+        <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.7;margin-bottom:6px">Intelligence · dopo</div>
+        <div style="font-weight:700;margin-bottom:8px">Trend &amp; Opinion leader</div>
+        <div style="font-size:13px;line-height:1.5">L2 · temi emergenti, momentum<br>L3 · autorevolezza + grafo relazioni<br><span style="opacity:.7">"chi fa tendenza" in IT/EU</span></div>
+      </div>
+
+    </div>
+    <div style="margin-top:12px;font-size:12.5px;opacity:.75;text-align:center">Il principio: <b>una sola estrazione</b> alimenta sia i trend sia la mappa degli opinion leader.</div>
+  </div>
+</div>
+
+<h3>Quali entità deve estrarre il knowledge layer?</h3>
+<p class="subtitle">Selezione multipla (clicca per scegliere/deselezionare). Le prime tre sono il cuore della tua visione; le ultime due sono opzionali e si possono aggiungere dopo.</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="persone" onclick="toggleSelect(this)">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>Persone ★</h3>
+      <p>Direttori, curatori, studiosi, relatori, autori → la base degli <b>opinion leader / influencer / studiosi</b> che fanno tendenza.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="strutture" onclick="toggleSelect(this)">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Strutture / Organizzazioni ★</h3>
+      <p>Musei, fondazioni, università, enti, reti (ICOM, NEMO…) → "chi conta" tra le istituzioni.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="temi" onclick="toggleSelect(this)">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>Temi / Topic ★</h3>
+      <p>Argomenti ricorrenti (AI nei musei, accessibilità cognitiva, welfare culturale…) → la materia prima dei <b>trend</b>.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="luoghi" onclick="toggleSelect(this)">
+    <div class="letter">4</div>
+    <div class="content">
+      <h3>Luoghi (opzionale)</h3>
+      <p>Città, regioni, paesi → utile per leggere i trend su base geografica IT/EU.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="progetti" onclick="toggleSelect(this)">
+    <div class="letter">5</div>
+    <div class="content">
+      <h3>Progetti / Iniziative (opzionale)</h3>
+      <p>Mostre, programmi, progetti finanziati → collega bandi ↔ realizzazioni ↔ persone.</p>
+    </div>
+  </div>
+</div>

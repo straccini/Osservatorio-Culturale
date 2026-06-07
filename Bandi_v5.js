@@ -435,18 +435,7 @@ function isBandiV5Active() {
   } catch(e) { return false; }
 }
 
-/**
- * Imposta la flag di switchover a Bandi v5.
- */
-function enableBandiV5() {
-  PropertiesService.getScriptProperties().setProperty(BANDI_V5_FLAG_PROP, 'true');
-  Logger.log('Flag USE_BANDI_V5 = true');
-}
-
-function disableBandiV5() {
-  PropertiesService.getScriptProperties().setProperty(BANDI_V5_FLAG_PROP, 'false');
-  Logger.log('Flag USE_BANDI_V5 = false (rollback a Scannerbandi v4)');
-}
+// v4.22 CLEANUP — enableBandiV5/disableBandiV5 duplicati rimossi (versione canonica a riga ~1964)
 
 /**
  * Restituisce la versione attuale del modulo Bandi v5.
