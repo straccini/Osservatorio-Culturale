@@ -70,6 +70,7 @@ function getPodcastRecenti(limit) {
  * @return {Object} payload home (vedi contratto sotto)
  */
 function getHomepageDataV42() {
+  if (typeof _initLegacyConsts_ === 'function') _initLegacyConsts_();
   // v4.22 PERF — CacheService (100KB, TTL nativo) al posto di PropertiesService (9KB, TTL manuale)
   var HP_CACHE_KEY = 'oc_hp_v2';
   var HP_CACHE_TTL_SEC = 1800; // 30 minuti
@@ -711,6 +712,8 @@ function settoreToAmbitoId_(settore, titolo, ente) {
  * @return {Object} { homepage, ultimiBandi, video, libri, social, capitali }
  */
 function getHomePayload() {
+  // v4.22 — Init config per esecuzioni google.script.run (non passano da doGet/doPost)
+  if (typeof _initLegacyConsts_ === 'function') _initLegacyConsts_();
   var result = {};
 
   // 1) Homepage principale (news, bandi urgenti, badges, ambiti, stats)

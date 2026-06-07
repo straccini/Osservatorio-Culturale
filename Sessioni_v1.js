@@ -238,6 +238,8 @@ function validaSessione(token) {
  * @return {Object} { session:{ok,valid,livello,email,...}, loginEnabled:bool, user:{ruolo,nome,...} }
  */
 function initSession(token, adminToken) {
+  // v4.22 — Init config per esecuzioni google.script.run
+  if (typeof _initLegacyConsts_ === 'function') _initLegacyConsts_();
   var result = { session: null, loginEnabled: false, user: null };
 
   // 1) Valida sessione
