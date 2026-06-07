@@ -133,8 +133,7 @@ function kb_recordEntities_(entitaArray, meta){
 }
 
 // --- Vista admin --------------------------------------------------------------
-function kb_getTopEntita_(tipo, limite, token){
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token || null)) return { ok: false, error: 'forbidden' };
+function _kb_topEntitaCore_(tipo, limite){
   limite = limite || 50;
   var sh = _kb_ss_().getSheetByName(OC_KB_SHEETS.entita);
   if (!sh || sh.getLastRow() < 2) return { ok: true, entita: [] };
@@ -151,6 +150,11 @@ function kb_getTopEntita_(tipo, limite, token){
   }
   out.sort(function(a, b){ return b.score - a.score; });
   return { ok: true, entita: out.slice(0, limite) };
+}
+// gate admin (token-based, per il deploy "Chiunque")
+function kb_getTopEntita_(tipo, limite, token){
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token || null)) return { ok: false, error: 'forbidden' };
+  return _kb_topEntitaCore_(tipo, limite);
 }
 // endpoint pubblico per il frontend admin
 function getTopEntita(opts){ opts = opts || {}; return kb_getTopEntita_(opts.tipo || null, opts.limite || 50, opts.token || null); }
@@ -200,7 +204,7 @@ function _test_kb_record_(){
   Logger.log('TUTTI OK');
 }
 function _test_kb_top_(){
-  var r = kb_getTopEntita_(null, 10, null); // eseguito da editor = admin
+  var r = _kb_topEntitaCore_(null, 10); // testa la logica di lettura senza il gate admin (in editor non c'è token)
   _assert_(r.ok === true, 'ok');
   _assert_(Array.isArray(r.entita), 'array');
   Logger.log(JSON.stringify(r.entita.slice(0, 5)));
