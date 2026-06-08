@@ -19,18 +19,49 @@ MiC (Comunicati, Musei) · ICOM Italia · Federculture · MAB Italia · AMACI ·
 
 ---
 
-## B. PERSONE / opinion leader — DA TROVARE INSIEME
-> Silvano fornisce i nomi; per ciascuno verifico se ha un feed (→ Aggiungi fonte) o se va in Rilancio manuale.
+## B. PERSONE / opinion leader — TROVATE (ricerca web 2026-06-08, con fonti)
+> Quasi tutti sono raggiungibili solo via **LinkedIn** (chiuso → **rilancio manuale**). I pochi con feed reale → **aggiungi fonte**. Gli URL LinkedIn vanno confermati a vista (omonimie); per il rilancio manuale conta comunque l'URL del singolo post.
 
-| # | Nome | Ruolo / perché | Piattaforma | Feed trovato (URL) | Stato | Origine |
-|---|---|---|---|---|---|---|
-| 1 | _(da inserire)_ | | | | da verificare | online |
-| 2 | | | | | | |
-| 3 | | | | | | |
-| 4 | | | | | | |
-| 5 | | | | | | |
+### B.1 — Firme/curatori "Io sono Cultura" (Symbola) 2023-2025
+| Nome | Ruolo | Online | Stato proposto |
+|---|---|---|---|
+| Ermete Realacci | Presidente Symbola | LinkedIn | rilancio manuale |
+| Domenico Sturabotti | Direttore Symbola (regia rapporto) | LinkedIn | rilancio manuale |
+| Annalisa Cicerchia | Economista cultura, comitato scientifico | accademica | rilancio manuale |
+| Catterina Seia | Cultural Welfare Center | LinkedIn | rilancio manuale |
+| Alessio Re | Fondazione Santagata (economia cultura) | LinkedIn | rilancio manuale |
+| Ugo Bacchella · Luca Dal Pozzolo | Fondazione Fitzcarraldo | LinkedIn | rilancio manuale |
 
-**Stato possibili:** `da verificare` · `feed ok → aggiunta a SocialFonti` · `senza feed → rilancio manuale`.
+### B.2 — Federculture (convegni + Rapporto, 2024-2025)
+| Nome | Ruolo | Online | Stato |
+|---|---|---|---|
+| Andrea Cancellato | Presidente Federculture | LinkedIn + autore Artribune | feed via Artribune / manuale |
+| Francesco Spano | Direttore Federculture | — | manuale |
+| Alberto Bonisoli | Ufficio Studi Federculture (ex Ministro) | LinkedIn | manuale |
+| Daniela Picconi | VP Federculture | — | manuale |
+| Patrizia Asproni | Fondazione Cariplo | LinkedIn | manuale |
+| Davide Usai | DG FAI | LinkedIn | manuale |
+
+### B.3 — Firme "La Domenica" Sole 24 Ore
+| Nome | Ruolo | Online | Stato |
+|---|---|---|---|
+| Marco Carminati | Resp. pagine arte Domenica | pagina-autore Sole24 | feed da verificare |
+| Stefano Salis | Responsabile Domenica | LinkedIn + pagina-autore | feed da verificare |
+| Fulvio Irace | Architettura (dal 1986) | pagina-autore | feed da verificare |
+| Lina Bolzoni | Letteratura | pagina-autore | feed da verificare |
+| Ada Masoero | Arte/mostre | — | manuale |
+
+### B.4 — Professori (beni culturali / management cultura) su LinkedIn
+| Nome | Univ. | Online | Stato |
+|---|---|---|---|
+| **Ludovico Solima** | Vanvitelli/Suor Orsola — museum management | LinkedIn + blog WordPress | **feed ok → aggiungi fonte** |
+| Michele Trimarchi | Catanzaro/IUAV — cultural economics | LinkedIn + Tafter | feed (Tafter) / manuale |
+| Stefano Monti | Gregoriana — Monti&Taft | LinkedIn + Tafter | feed (Tafter) / manuale |
+| Franco Broccardi | Bergamo — economia/fisco cultura | LinkedIn (molto attivo) | manuale |
+| Pier Luigi Sacco | IULM — cultura e benessere | LinkedIn | manuale |
+| Nicolette Mandarano | IULM — musei e digitale | LinkedIn | manuale |
+
+**Legenda:** `feed ok → aggiungi fonte` (RSS reale) · `feed da verificare` (probabile RSS pagina-autore/blog) · `rilancio manuale` (solo LinkedIn/social chiuso).
 
 ---
 
