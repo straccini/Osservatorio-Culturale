@@ -63,6 +63,16 @@ MiC (Comunicati, Musei) · ICOM Italia · Federculture · MAB Italia · AMACI ·
 
 **Legenda:** `feed ok → aggiungi fonte` (RSS reale) · `feed da verificare` (probabile RSS pagina-autore/blog) · `rilancio manuale` (solo LinkedIn/social chiuso).
 
+### ✅ Feed verificati con fetch reali (2026-06-08)
+| Candidato | Esito | Azione |
+|---|---|---|
+| **Ludovico Solima** — `https://opzionecultura.wordpress.com/feed/` | ✅ VALIDO (RSS, in target, bassa cadenza) | **Aggiungi fonte** (tipo `persona`) |
+| Tafter (Trimarchi/Monti) | ❌ dominio storico offline; `tafterjournal.it` dirottato a **spam casinò** | NON usare → rilancio manuale |
+| Sole 24 Ore — firme Domenica | ❌ nessun feed per-autore (solo categoria `ilsole24ore.com/rss/cultura.xml`, già fonte SW35) | rilancio manuale |
+| Artribune / Cancellato | ❌ feed fermo al 2015 | rilancio manuale |
+
+**Conclusione:** per gli opinion leader individuali i feed automatici quasi non esistono → il **rilancio manuale** è il meccanismo principale del social wall. Unico feed-persona utile finora: **Solima**.
+
 ---
 
 ## C. Account Sinopia (futuri)
