@@ -78,25 +78,62 @@
     </div>
   </div>
 
-  <!-- ===== HOME CAROSELLO (v4.20 — singola slide compatta) ===== -->
-  <section class="home-carosello" id="homeCarosello" aria-label="Servizi Duemilamusei in evidenza" style="margin:36px 0 36px;border-radius:14px;overflow:hidden;border:1px solid var(--rule,#E5E5E7);background:var(--paper,#fff)">
+  <!-- ===== HOME CAROSELLO (v4.22 — 3 slide scorrevoli + PSPP) ===== -->
+  <section class="home-carosello" id="homeCarosello" aria-label="Servizi Duemilamusei in evidenza" style="margin:36px 0 36px;border-radius:14px;overflow:hidden;border:1px solid var(--rule,#E5E5E7);background:var(--paper,#fff);position:relative">
+    <div id="carSlider" style="display:flex;transition:transform .5s ease;width:300%">
 
-      <!-- Slide unica: MUSEMU MATRIX -->
-      <article style="background:var(--surface,#F7F7F8);padding:28px 36px;display:grid;grid-template-columns:1.5fr 1fr;gap:32px;align-items:center;min-height:200px">
+      <!-- SLIDE 1: MUSEMU MATRIX -->
+      <article style="width:33.333%;flex-shrink:0;background:var(--surface,#F7F7F8);padding:28px 36px;display:grid;grid-template-columns:1.5fr 1fr;gap:32px;align-items:center;min-height:200px">
         <div>
           <div style="font-family:var(--font-ui);font-size:11px;color:var(--accent,#935851);letter-spacing:.18em;text-transform:uppercase;font-weight:600;margin-bottom:10px">MuseMu Matrix &middot; Strumento gratuito</div>
           <h2 style="font-family:var(--font-display);font-size:1.6rem;line-height:1.15;margin:0 0 10px;color:var(--ink);font-weight:600;letter-spacing:-0.025em">Valuta il tuo museo. <em style="color:var(--accent,#935851);font-weight:500;font-style:normal">Cresci con dati.</em></h2>
-          <p style="font-family:var(--font-display);font-size:13px;line-height:1.55;color:var(--ink-3);max-width:540px;margin:0 0 14px">Autovalutazione su 10 dimensioni in 5-10 minuti. Anonima per scelta, GDPR-compliant. Ricevi un report grafico con il profilo del museo e le 3 opportunita prioritarie.</p>
-          <button class="btn btn-primary" type="button" data-page="matrix" style="background:var(--ink,#101010);color:#fff;border:none;padding:11px 22px;border-radius:999px;font-family:var(--font-ui);font-size:13px;font-weight:500;cursor:pointer;letter-spacing:-0.005em">Inizia la valutazione gratuita &rarr;</button>
-          <div style="font-size:11px;color:var(--ink-3);margin-top:6px">Nessuna registrazione &middot; Anonimo &middot; ~10 min</div>
+          <p style="font-size:13px;line-height:1.55;color:var(--ink-3);max-width:540px;margin:0 0 14px">Autovalutazione su 10 dimensioni in 5-10 minuti. Ricevi un report grafico con il profilo del museo e le 3 opportunita prioritarie.</p>
+          <button class="btn btn-primary" type="button" data-page="matrix" style="background:var(--ink,#101010);color:#fff;border:none;padding:11px 22px;border-radius:999px;font-size:13px;font-weight:500;cursor:pointer">Inizia la valutazione &rarr;</button>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="padding:10px 14px;background:var(--paper,#fff);border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border:1px solid var(--ink,#101010);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink,#101010)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></div><div><div style="font-size:12px;font-weight:600;color:var(--ink)">Diagnosi 10 dimensioni</div><div style="font-size:11px;color:var(--ink-3)">Modello Henkel + Musei Sensibili</div></div></div>
-          <div style="padding:10px 14px;background:var(--paper,#fff);border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border:1px solid var(--ink,#101010);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink,#101010)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M6 16v4M10 12v8M14 8v12M18 4v16"/></svg></div><div><div style="font-size:12px;font-weight:600;color:var(--ink)">Report grafico + PDF</div><div style="font-size:11px;color:var(--ink-3)">Radar chart + benchmark settore</div></div></div>
-          <div style="padding:10px 14px;background:var(--paper,#fff);border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border:1px solid var(--ink,#101010);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink,#101010)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div><div><div style="font-size:12px;font-weight:600;color:var(--ink)">3 opportunita prioritarie</div><div style="font-size:11px;color:var(--ink-3)">Servizi Duemilamusei pertinenti</div></div></div>
+          <div style="padding:10px 14px;background:var(--paper,#fff);border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border:1px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></div><div><div style="font-size:12px;font-weight:600;color:var(--ink)">Diagnosi 10 dimensioni</div><div style="font-size:11px;color:var(--ink-3)">Modello Henkel + Musei Sensibili</div></div></div>
+          <div style="padding:10px 14px;background:var(--paper,#fff);border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border:1px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.5"><path d="M3 20h18M6 16v4M10 12v8M14 8v12M18 4v16"/></svg></div><div><div style="font-size:12px;font-weight:600;color:var(--ink)">Report grafico + PDF</div><div style="font-size:11px;color:var(--ink-3)">Radar chart + benchmark settore</div></div></div>
+          <div style="padding:10px 14px;background:var(--paper,#fff);border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border:1px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div><div><div style="font-size:12px;font-weight:600;color:var(--ink)">3 opportunita prioritarie</div><div style="font-size:11px;color:var(--ink-3)">Servizi Duemilamusei pertinenti</div></div></div>
         </div>
       </article>
 
+      <!-- SLIDE 2: PARTENARIATO SPECIALE PUBBLICO PRIVATO -->
+      <article style="width:33.333%;flex-shrink:0;background:linear-gradient(135deg,#1A1815 0%,#2E2520 100%);padding:28px 36px;display:grid;grid-template-columns:1.5fr 1fr;gap:32px;align-items:center;min-height:200px;color:#fff">
+        <div>
+          <div style="font-size:11px;color:var(--accent,#935851);letter-spacing:.18em;text-transform:uppercase;font-weight:600;margin-bottom:10px">Consulenza strategica &middot; PSPP</div>
+          <h2 style="font-family:var(--font-display);font-size:1.5rem;line-height:1.15;margin:0 0 10px;color:#fff;font-weight:600;letter-spacing:-0.025em">Partenariato Speciale <em style="color:var(--accent,#935851);font-weight:500;font-style:normal">Pubblico Privato</em></h2>
+          <p style="font-size:13px;line-height:1.6;color:rgba(255,255,255,.8);max-width:540px;margin:0 0 14px">Lo strumento amministrativo che consente a Comuni, fondazioni e soggetti privati di co-gestire luoghi della cultura e sistemi di sviluppo a base culturale e turistica. Un modello di governance innovativo per valorizzare il patrimonio attraverso la collaborazione strutturata tra pubblico e privato.</p>
+          <button type="button" onclick="OC.prenotaConsulenza(event,'pspp')" style="background:var(--accent,#935851);color:#fff;border:none;padding:11px 22px;border-radius:999px;font-size:13px;font-weight:500;cursor:pointer">Prenota una consulenza &rarr;</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="padding:10px 14px;background:rgba(255,255,255,.08);border-radius:10px;border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border:1px solid rgba(255,255,255,.3);border-radius:50%;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div><div><div style="font-size:12px;font-weight:600;color:#fff">Art. 151 Codice Contratti</div><div style="font-size:11px;color:rgba(255,255,255,.6)">Framework normativo e procedure</div></div></div>
+          <div style="padding:10px 14px;background:rgba(255,255,255,.08);border-radius:10px;border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border:1px solid rgba(255,255,255,.3);border-radius:50%;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div style="font-size:12px;font-weight:600;color:#fff">Governance condivisa</div><div style="font-size:11px;color:rgba(255,255,255,.6)">Modelli di co-gestione culturale</div></div></div>
+          <div style="padding:10px 14px;background:rgba(255,255,255,.08);border-radius:10px;border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border:1px solid rgba(255,255,255,.3);border-radius:50%;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></div><div><div style="font-size:12px;font-weight:600;color:#fff">Analisi di fattibilita</div><div style="font-size:11px;color:rgba(255,255,255,.6)">Valutazione preliminare gratuita</div></div></div>
+        </div>
+      </article>
+
+      <!-- SLIDE 3: CONSULENZA GRATUITA -->
+      <article style="width:33.333%;flex-shrink:0;background:linear-gradient(135deg,#F1E6D6 0%,#E8DCC8 100%);padding:28px 36px;display:grid;grid-template-columns:1.5fr 1fr;gap:32px;align-items:center;min-height:200px">
+        <div>
+          <div style="font-size:11px;color:var(--accent,#935851);letter-spacing:.18em;text-transform:uppercase;font-weight:600;margin-bottom:10px">Duemilamusei &middot; Per chi gestisce la cultura</div>
+          <h2 style="font-family:var(--font-display);font-size:1.5rem;line-height:1.15;margin:0 0 10px;color:var(--ink);font-weight:600;letter-spacing:-0.025em">Consulenza gratuita <em style="color:var(--accent,#935851);font-weight:500;font-style:normal">per il tuo museo</em></h2>
+          <p style="font-size:13px;line-height:1.6;color:var(--ink-3);max-width:540px;margin:0 0 14px">Prenota una call di 30 minuti con i nostri consulenti. Analizziamo insieme bandi disponibili, strategie di sviluppo, accessibilita e innovazione digitale per la tua struttura culturale.</p>
+          <button type="button" onclick="OC.prenotaConsulenza(event,'generica')" style="background:var(--accent,#935851);color:#fff;border:none;padding:11px 22px;border-radius:999px;font-size:13px;font-weight:500;cursor:pointer">Prenota la tua call gratuita &rarr;</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="padding:10px 14px;background:rgba(255,255,255,.7);border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border:1px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><div><div style="font-size:12px;font-weight:600;color:var(--ink)">30 minuti gratuiti</div><div style="font-size:11px;color:var(--ink-3)">Nessun impegno, nessun costo</div></div></div>
+          <div style="padding:10px 14px;background:rgba(255,255,255,.7);border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border:1px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div><div style="font-size:12px;font-weight:600;color:var(--ink)">Analisi personalizzata</div><div style="font-size:11px;color:var(--ink-3)">Bandi, strategie, innovazione</div></div></div>
+          <div style="padding:10px 14px;background:rgba(255,255,255,.7);border-radius:10px;border:1px solid var(--rule);display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border:1px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg></div><div><div style="font-size:12px;font-weight:600;color:var(--ink)">Team multidisciplinare</div><div style="font-size:11px;color:var(--ink-3)">Progettisti, museologi, digitale</div></div></div>
+        </div>
+      </article>
+
+    </div>
+    <!-- Indicatori + frecce -->
+    <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:2">
+      <button onclick="OC._carGo(0)" class="car-dot car-dot-active" style="width:8px;height:8px;border-radius:50%;border:none;background:var(--accent,#935851);cursor:pointer;padding:0;opacity:1"></button>
+      <button onclick="OC._carGo(1)" class="car-dot" style="width:8px;height:8px;border-radius:50%;border:none;background:var(--ink-3,#999);cursor:pointer;padding:0;opacity:.4"></button>
+      <button onclick="OC._carGo(2)" class="car-dot" style="width:8px;height:8px;border-radius:50%;border:none;background:var(--ink-3,#999);cursor:pointer;padding:0;opacity:.4"></button>
+    </div>
   </section>
 
   <!-- ===== BANDI IN EVIDENZA + NEWS (griglia 2 colonne) ===== -->
@@ -131,8 +168,8 @@
 
   <!-- v4.22 — Capitali spostato in fondo alla home (fix 5) -->
 
-  <!-- ===== PODCAST + VIDEO — v4.22 nascosti dalla home (fix 6, accessibili da sidebar) ===== -->
-  <div hidden class="home-pv-grid" style="margin-top:44px">
+  <!-- ===== PODCAST + VIDEO — v4.22 rimossi dalla home (accessibili da sidebar) ===== -->
+  <div class="home-pv-grid" style="display:none!important">
     <div class="home-pv-col">
       <div class="section-head">
         <div class="left"><h2 class="section-title">Podcast</h2></div>
@@ -171,11 +208,11 @@
     </div>
   </div>
 
-  <!-- ===== ESPLORA PER AMBITO — v4.22 nascosto (già in sidebar a discesa) ===== -->
-  <div hidden class="section-head" style="margin-top:44px">
+  <!-- ===== ESPLORA PER AMBITO — v4.22 rimosso dalla home (già in sidebar) ===== -->
+  <div class="section-head" style="display:none!important">
     <div class="left"><h2 class="section-title">Esplora per <em>ambito</em></h2></div>
   </div>
-  <div hidden class="home-ambiti-chips" id="homeAmbiti">
+  <div class="home-ambiti-chips" id="homeAmbiti" style="display:none!important">
     <a href="#" class="hamb-chip a1" data-page="ambito" data-ambito="1" style="--amb:var(--amb-1)">
       <span class="hamb-num">01</span>
       <span class="hamb-name">Identit&agrave; e narrazione</span>
@@ -220,8 +257,8 @@
     </div>
   </div>
 
-  <!-- ===== NEWSLETTER FOOTER CTA — sfondo ink (v4.19.1) ===== -->
-  <div id="homeNlFooter" class="home-nl-footer" style="background:var(--ink,#1A1815);color:#fff" hidden>
+  <!-- ===== NEWSLETTER FOOTER CTA — v4.22 rimosso dalla home (registrazione via sidebar/login) ===== -->
+  <div id="homeNlFooter" class="home-nl-footer" style="display:none!important">
     <div style="font-family:var(--font-display);font-size:1.25rem;font-weight:600;color:#fff">Non perdere nessuna opportunita</div>
     <p style="font-size:14px;color:rgba(255,255,255,.85);margin:6px 0 16px;line-height:1.55">Attiva il tuo profilo &mdash; informazione mirata sui tuoi interessi e i bandi giusti per te.</p>
     <div id="homeNlForm" style="display:flex;gap:8px;flex-wrap:wrap">
