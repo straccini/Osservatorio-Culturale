@@ -1653,8 +1653,10 @@ function fetchAndCacheSocialWall() {
       });
     } catch(err){}
   }
+  // v-socialwall — includi i rilanci manuali curati (qualsiasi piattaforma, anche X/IG/LinkedIn)
+  try { if (typeof _sw_manualPosts_ === 'function') { _sw_manualPosts_().forEach(function(p){ posts.push(p); }); } } catch(eSw){}
   posts.sort((a,b)=>new Date(b.dataISO)-new Date(a.dataISO));
-  const result={posts:posts.slice(0,12),updatedAt:new Date().toISOString()};
+  const result={posts:posts.slice(0,16),updatedAt:new Date().toISOString()};
   try{const p=PropertiesService.getScriptProperties();p.setProperty('SW_CACHE',JSON.stringify(result));p.setProperty('SW_CACHE_TIME',Date.now().toString());}catch(e){}
   return result;
 }
