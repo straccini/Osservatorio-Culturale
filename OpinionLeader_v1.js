@@ -147,7 +147,7 @@ function _leader_calcola_(opts) {
       contentEntities[cId].push(eId);
 
       // Conta fonti autorevoli per persona
-      if (persone[eId] && occVals[or][iFa]) {
+      if (persone[eId] && (occVals[or][iFa] === true || String(occVals[or][iFa]).toUpperCase() === 'TRUE')) {
         fontiAutoMap[eId] = (fontiAutoMap[eId] || 0) + 1;
       }
     }

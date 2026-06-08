@@ -399,7 +399,8 @@ var OC_FONTI_AUTOREVOLI = [
   'mic', 'ministero della cultura',
   'fondazione cariplo', 'compagnia di san paolo',
   'artribune', 'il giornale dell\'arte',
-  'museumnext', 'aib'
+  'museumnext', 'aib',
+  'treccani', 'iccd'
 ];
 
 /** Parametri editoriale */

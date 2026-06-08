@@ -10,8 +10,8 @@ var OC_KB_SHEETS = { entita: 'Entita', occorrenze: 'Occorrenze' };
 var OC_KB_TIPI   = ['persona', 'struttura', 'tema', 'progetto'];
 var OC_KB_PESI   = { occ: 40, fonti: 25, recency: 20, ambiti: 15 };
 var OC_KB_BOOST_AUTOREVOLE = 1.15;
-// chiavi normalizzate (parziali) delle fonti autorevoli del settore
-var OC_FONTI_AUTOREVOLI = ['symbola', 'fitzcarraldo', 'federculture', 'icom', 'nemo', 'mic', 'treccani', 'iccd'];
+// OC_FONTI_AUTOREVOLI: dichiarata UNA sola volta in Constants.js (single source of truth).
+// Non ridichiararla qui: in GAS i .js condividono lo scope globale → la doppia "var" causava collisione (vinceva l'ultimo file caricato).
 var OC_KB_BACKFILL_CAP = 80; // record per esecuzione del backfill (Task 7)
 
 var OC_KB_ENTITA_HEADER = ['id','chiave','nome_canonico','tipo','alias_json','ambiti_json',
