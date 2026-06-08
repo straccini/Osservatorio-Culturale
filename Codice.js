@@ -1443,14 +1443,20 @@ function getBandiRadar() {
     if(dataRil instanceof Date&&!isNaN(dataRil)) dataStr=Utilities.formatDate(dataRil,'Europe/Rome','yyyy-MM-dd');
     else if(typeof dataRil==='string') dataStr=dataRil;
     const g=k=>row[(C[k]||COL[k])-1];
-    // v4.22 — Filtro scaduti: nessun bando con scadenza passata
+    // v4.22 — Filtro scaduti: NESSUN bando con scadenza passata (credibilità)
+    // Controlla sia scadenzaStr (formato yyyy-MM-dd) sia la cella raw originale
+    var _scaduto = false;
+    var _oggi = new Date(); _oggi.setHours(0,0,0,0);
     if (scadenzaStr) {
-      var _dtCheck = new Date(scadenzaStr);
-      if (!isNaN(_dtCheck.getTime())) {
-        var _oggi = new Date(); _oggi.setHours(0,0,0,0);
-        if (_dtCheck.getTime() < _oggi.getTime()) return; // SCADUTO → skip
-      }
+      var _dtCheck = new Date(scadenzaStr + 'T00:00:00');
+      if (!isNaN(_dtCheck.getTime()) && _dtCheck.getTime() < _oggi.getTime()) _scaduto = true;
     }
+    // Fallback: controlla anche la cella raw (potrebbe essere Date object)
+    if (!_scaduto && scadenza instanceof Date && !isNaN(scadenza.getTime())) {
+      if (scadenza.getTime() < _oggi.getTime()) _scaduto = true;
+    }
+    if (_scaduto) return; // SCADUTO → skip
+
     // Filtro archiviati
     var _sr = String(g('STATO_RECORD')||'').toLowerCase();
     if (_sr === 'archiviato') return;

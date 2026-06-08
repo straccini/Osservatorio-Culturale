@@ -7515,11 +7515,24 @@
                 + '</div>';
               msg.hidden = false;
             }
-            // Chiudi overlay e ricarica: hydrate legge il token da localStorage
+            // Chiudi overlay e ricarica pagina completa
+            // GAS sandbox: window.location.reload() non funziona sempre.
+            // Strategia: prova reload, fallback con replace, fallback con parent.
             setTimeout(function() {
               try { var ov = document.getElementById('oc-regform-overlay'); if (ov) ov.remove(); } catch(_){}
               try { var gg = document.getElementById('oc-guest-gate'); if (gg) gg.remove(); } catch(_){}
-              window.location.reload();
+              try {
+                // Metodo 1: replace forza il browser a ricaricare
+                var url = window.location.href.split('?')[0].split('#')[0];
+                window.top.location.replace(url);
+              } catch(_) {
+                try { window.top.location.reload(true); } catch(_2) {
+                  try { window.location.reload(true); } catch(_3) {
+                    // Ultimo fallback: mostra messaggio
+                    if (msg) msg.innerHTML = '<div style="text-align:center;font-size:14px;color:var(--amb-2)">Accesso riuscito! <a href="javascript:void(0)" onclick="window.location.reload()" style="color:var(--accent);font-weight:600">Clicca qui per entrare</a></div>';
+                  }
+                }
+              }
             }, 600);
           } else if (r && r.ok && r.message === 'magic_link_inviato') {
             // Utente normale: magic link inviato via email
@@ -7720,7 +7733,8 @@
     var topCta = document.getElementById('topbarNlCta');
     var footCta = document.getElementById('homeNlFooter');
     if (topCta) { topCta.hidden = !!subscribed || !isAnon; topCta.style.display = (!subscribed && isAnon) ? '' : 'none'; }
-    if (footCta) { footCta.hidden = !!subscribed; footCta.style.display = subscribed ? 'none' : ''; }
+    // v4.22 — Footer NL rimosso dalla home (registrazione via login/sidebar)
+    if (footCta) { footCta.hidden = true; footCta.style.display = 'none'; }
   }
 
   // ----------------------------------------------------------
