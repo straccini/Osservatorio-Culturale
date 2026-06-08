@@ -1525,61 +1525,305 @@
         </div>
       </div>
 
-      <!-- ===== 0. EDITORIALE SETTIMANALE ===== -->
-      <div class="admin-card" style="margin-bottom:16px;border-left:4px solid #8B3A1F">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-          <h3 style="margin:0;font-size:15px;color:#8B3A1F">Editoriale settimanale</h3>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-secondary" onclick="OC._loadEditoriale()" style="font-size:11px;padding:5px 10px">Aggiorna</button>
-            <button class="btn btn-primary" onclick="OC._generaEditoriale()" style="font-size:11px;padding:5px 10px;background:#8B3A1F">Genera nuovo</button>
+      <!-- ===== DIGEST TABS ===== -->
+      <div style="display:flex;gap:2px;margin-bottom:18px;border-bottom:2px solid var(--rule)">
+        <button class="digest-tab active" data-digest-tab="approfondimento" onclick="OC._switchDigestTab('approfondimento')" style="padding:10px 18px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:3px solid var(--accent,#935851);color:var(--accent,#935851);cursor:pointer;transition:all .2s">Approfondimento</button>
+        <button class="digest-tab" data-digest-tab="lettori" onclick="OC._switchDigestTab('lettori')" style="padding:10px 18px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:3px solid transparent;color:#888;cursor:pointer;transition:all .2s">Newsletter lettori</button>
+        <button class="digest-tab" data-digest-tab="profilati" onclick="OC._switchDigestTab('profilati')" style="padding:10px 18px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:3px solid transparent;color:#888;cursor:pointer;transition:all .2s">Digest profilati</button>
+      </div>
+
+      <!-- ========== TAB 1: APPROFONDIMENTO ========== -->
+      <div class="digest-tab-content" data-digest-content="approfondimento">
+        <div class="admin-card" style="margin-bottom:16px;border-left:4px solid #8B3A1F">
+
+          <!-- Stato corrente -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;margin-bottom:8px">
+              <span style="background:#8B3A1F;color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">i</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Stato corrente</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">L'editoriale apre la newsletter. Viene generato dal Knowledge Layer (entita/temi caldi + norme + studi + podcast).</p>
+            <div id="editorialePreview" style="min-height:40px;margin-left:32px">
+              <div class="empty-state sm">Premi "Aggiorna" per caricare l'editoriale corrente.</div>
+            </div>
+            <div style="margin-left:32px;margin-top:8px">
+              <button class="btn btn-secondary" onclick="OC._loadEditoriale()" style="font-size:11px;padding:5px 10px">Aggiorna</button>
+            </div>
           </div>
-        </div>
-        <p class="hint" style="margin:6px 0 10px">L'editoriale apre la newsletter. Viene generato dal Knowledge Layer (entita/temi caldi + norme + studi + podcast). Approvalo prima dell'invio del digest.</p>
-        <div id="editorialePreview" style="min-height:40px">
-          <div class="empty-state sm">Premi "Aggiorna" per caricare l'editoriale corrente.</div>
-        </div>
-        <div id="editorialeActions" hidden style="margin-top:10px;display:flex;gap:8px;align-items:center">
-          <button class="btn btn-primary" id="editorialeApprovaBtn" onclick="OC._approvaEditoriale()" style="font-size:12px;padding:7px 16px;background:var(--amb-2,#10916D)">Approva editoriale</button>
-          <button class="btn btn-secondary" onclick="OC._generaEditoriale()" style="font-size:12px;padding:7px 12px">Rigenera</button>
-          <span id="editorialeStatus" style="font-size:12px;color:var(--ink-3)"></span>
+
+          <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
+
+          <!-- Step 1 — Genera -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;margin-bottom:6px">
+              <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">1</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Genera</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Genera un nuovo approfondimento settimanale basato sui contenuti recenti.</p>
+            <div style="margin-left:32px;display:flex;justify-content:flex-end">
+              <button class="btn btn-primary" onclick="OC._generaEditoriale()" style="font-size:12px;padding:7px 14px;background:#8B3A1F">Genera approfondimento</button>
+            </div>
+          </div>
+
+          <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
+
+          <!-- Step 2 — Revisiona -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;margin-bottom:6px">
+              <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">2</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Revisiona</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Verifica il testo generato. Se necessario, rigenera con il pulsante sopra.</p>
+            <div id="editorialeActions" hidden style="margin-left:32px;margin-top:6px;display:flex;gap:8px;align-items:center">
+              <button class="btn btn-secondary" onclick="OC._generaEditoriale()" style="font-size:12px;padding:7px 12px">Rigenera</button>
+              <span id="editorialeStatus" style="font-size:12px;color:var(--ink-3)"></span>
+            </div>
+          </div>
+
+          <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
+
+          <!-- Step 3 — Approva -->
+          <div style="margin-bottom:8px">
+            <div style="display:flex;align-items:center;margin-bottom:6px">
+              <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">3</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Approva</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Approva l'approfondimento corrente per includerlo nella prossima newsletter.</p>
+            <div style="margin-left:32px;display:flex;justify-content:flex-end">
+              <button class="btn btn-primary" id="editorialeApprovaBtn" onclick="OC._approvaEditoriale()" style="font-size:12px;padding:7px 16px;background:var(--amb-2,#10916D)">Approva editoriale</button>
+            </div>
+          </div>
+
+          <div style="margin-left:32px;margin-top:12px;padding:8px 12px;background:var(--surface-2);border-radius:6px;font-size:12px;color:var(--ink-3)">
+            <b>Nota:</b> L'approfondimento approvato viene anteposto automaticamente alla newsletter.
+          </div>
+
         </div>
       </div>
 
-      <!-- ===== 1. AZIONI RAPIDE ===== -->
-      <div class="admin-card" style="margin-bottom:16px;border-left:4px solid var(--amb-3,#3C6A95)">
-        <h3 style="margin-top:0;font-size:15px">Azioni rapide</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-          <button class="btn btn-primary" data-action="generaDigest" style="padding:8px 16px;font-size:13px" title="Crea bozza newsletter con bandi, news e podcast recenti">Prepara newsletter</button>
-          <button class="btn btn-secondary" onclick="OC.testDigestEmail()" style="padding:8px 16px;font-size:13px" title="Invia copia di test newsletter generalista a un indirizzo email">Test newsletter</button>
-          <button class="btn btn-primary" data-action="generaQueueAll" style="padding:8px 16px;font-size:13px;background:var(--accent,#935851)" title="Genera email personalizzate per i compilatori Matrix (top 3 gap + contenuti)">Genera digest Matrix</button>
-          <button class="btn btn-warning" data-action="inviaTuttiPending" style="padding:8px 16px;font-size:13px" title="Spedisce tutte le bozze draft. Controlla quota email prima.">Invia bozze pending</button>
+      <!-- ========== TAB 2: NEWSLETTER LETTORI ========== -->
+      <div class="digest-tab-content" data-digest-content="lettori" hidden>
+        <div class="admin-card" style="margin-bottom:16px;border-left:4px solid var(--amb-3,#3C6A95)">
+
+          <!-- Step 1 — Prepara bozza -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;margin-bottom:6px">
+              <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">1</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Prepara bozza</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Crea la bozza della newsletter con bandi, news e podcast recenti.</p>
+            <div class="admin-counts" style="margin:0 0 10px 32px">
+              <span><b id="adminLastBandi">—</b> bandi</span>
+              <span><b id="adminLastNews">—</b> news</span>
+              <span><b id="adminLastPodcast">—</b> podcast</span>
+            </div>
+            <div style="margin-left:32px;display:flex;justify-content:flex-end">
+              <button class="btn btn-primary" data-action="generaDigest" style="padding:8px 16px;font-size:13px" title="Crea bozza newsletter con bandi, news e podcast recenti">Prepara newsletter</button>
+            </div>
+          </div>
+
+          <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
+
+          <!-- Step 2 — Verifica duplicati -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;margin-bottom:6px">
+              <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">2</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Verifica duplicati</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Controlla che non ci siano contenuti duplicati rispetto ai digest precedenti.</p>
+            <div id="dedupResult" style="margin-left:32px;font-size:12px;color:var(--ink-3);min-height:16px"></div>
+          </div>
+
+          <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
+
+          <!-- Step 3 — Anteprima -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;margin-bottom:6px">
+              <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">3</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Anteprima</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Visualizza l'anteprima della newsletter prima dell'invio.</p>
+            <div class="admin-card" id="previewWrap" hidden style="margin:0 0 0 32px;border:none;padding:0">
+              <div id="previewInfo" style="font-size:12px;color:var(--ink-3);margin-bottom:8px"></div>
+              <iframe id="previewFrame" class="preview-iframe" sandbox="allow-same-origin"></iframe>
+              <div style="display:flex;gap:8px;margin-top:10px">
+                <button class="btn btn-secondary" data-action="chiudiAnteprima" style="font-size:12px">Chiudi anteprima</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
+
+          <!-- Step 4 — Test -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;margin-bottom:6px">
+              <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">4</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Test</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Invia una copia di test a un indirizzo email specifico.</p>
+            <div style="margin-left:32px;display:flex;justify-content:flex-end">
+              <button class="btn btn-secondary" onclick="OC.testDigestEmail()" style="padding:8px 16px;font-size:13px" title="Invia copia di test newsletter generalista a un indirizzo email">Invia test</button>
+            </div>
+          </div>
+
+          <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
+
+          <!-- Step 5 — Invio -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;margin-bottom:6px">
+              <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">5</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Invio</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Richiedi l'autorizzazione per l'invio definitivo tramite Telegram.</p>
+            <div style="margin-left:32px;display:flex;justify-content:flex-end">
+              <button class="btn btn-warning" data-action="richiediAutorizzazione" style="font-size:12px;padding:8px 16px" title="Invia richiesta di autorizzazione invio al bot Telegram">Richiedi autorizzazione invio</button>
+            </div>
+          </div>
+
+          <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
+
+          <!-- Storico -->
+          <div>
+            <div style="display:flex;align-items:center;margin-bottom:8px">
+              <span style="background:var(--ink-3);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">S</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Storico invii</span>
+            </div>
+            <div id="digestList" style="margin-left:32px">
+              <div class="empty-state sm">Caricamento…</div>
+            </div>
+          </div>
+
         </div>
-        <div class="admin-counts">
-          <span><b id="adminLastBandi">—</b> bandi</span>
-          <span><b id="adminLastNews">—</b> news</span>
-          <span><b id="adminLastPodcast">—</b> podcast</span>
+
+        <!-- Automazione newsletter -->
+        <div class="admin-card" style="margin-bottom:16px">
+          <h3 style="margin-top:0;font-size:15px">Automazione newsletter</h3>
+          <p class="hint" style="margin-bottom:10px">Invio automatico settimanale. Richiede bot Telegram configurato per le autorizzazioni.</p>
+          <div style="background:var(--surface-2);border-radius:8px;padding:12px 14px">
+            <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:4px">Newsletter (Coorte A+B)</div>
+            <div id="cronCoortiStatus" style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:4px">Invio automatico ogni <b>lunedi alle 07:00</b></div>
+            <div style="font-size:12px;color:var(--ink-2);margin-bottom:6px">Include generalisti + lead personalizzati.</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+              <button class="btn btn-secondary" onclick="OC._dryRunCoorti()" style="font-size:11px;padding:4px 10px" title="Simula invio senza inviare email">Dry-run</button>
+              <button class="btn btn-secondary" onclick="OC._eseguiCoorti()" style="font-size:11px;padding:4px 10px" title="Esegui invio reale a entrambe le coorti">Esegui invio</button>
+            </div>
+            <div id="cronCoortiResult" style="font-size:11px;color:var(--ink-3)">Gestito da: <code>sendDigestAuto2coorti</code></div>
+          </div>
+          <!-- Telegram -->
+          <div style="margin-top:12px;display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface-2);border-radius:8px">
+            <div style="flex:1">
+              <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Telegram bot</div>
+              <div id="telegramStatus" style="font-size:12px;color:var(--ink-2);margin-top:2px">Verifica in corso…</div>
+            </div>
+            <button class="btn btn-secondary" data-action="checkTelegram" style="font-size:11px;padding:4px 10px" title="Verifica che token e chat_id siano configurati">Verifica</button>
+            <button class="btn btn-secondary" data-action="testTelegram" style="font-size:11px;padding:4px 10px" title="Invia un messaggio di test al bot">Test</button>
+          </div>
         </div>
       </div>
 
-      <!-- ===== 2. CODA BOZZE MATRIX (profilati) ===== -->
-      <div class="admin-card" style="margin-bottom:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-          <h3 style="margin:0;font-size:15px">Digest Matrix <span style="font-size:12px;font-weight:400;color:var(--ink-3)">(utenti profilati)</span></h3>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-secondary" onclick="OC.reloadQueue()" style="font-size:11px;padding:5px 10px" title="Aggiorna la lista delle bozze dal server">Aggiorna coda</button>
+      <!-- ========== TAB 3: DIGEST PROFILATI ========== -->
+      <div class="digest-tab-content" data-digest-content="profilati" hidden>
+        <div class="admin-card" style="margin-bottom:16px;border-left:4px solid var(--accent,#935851)">
+
+          <!-- Info -->
+          <div style="margin-bottom:16px;padding:10px 14px;background:var(--surface-2);border-radius:6px">
+            <p style="font-size:13px;color:var(--ink-2);margin:0">Ogni utente profilato riceve un digest personalizzato basato sui <b>top 3 gap</b> (dimensioni con score &lt; 60). Per ogni dimensione vengono selezionati fino a 4 bandi + 3 news + 2 podcast.</p>
           </div>
+
+          <!-- Step 1 — Genera coda -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;margin-bottom:6px">
+              <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">1</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Genera coda</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Genera le bozze di digest personalizzato per tutti gli utenti con profilo Matrix.</p>
+            <div style="margin-left:32px;display:flex;justify-content:flex-end">
+              <button class="btn btn-primary" data-action="generaQueueAll" style="padding:8px 16px;font-size:13px;background:var(--accent,#935851)" title="Genera email personalizzate per i compilatori Matrix (top 3 gap + contenuti)">Genera digest per tutti i profilati</button>
+            </div>
+          </div>
+
+          <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
+
+          <!-- Step 2 — Verifica -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;margin-bottom:6px">
+              <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">2</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Verifica coda</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Visualizza lo stato delle bozze in coda: email, dimensioni, stato.</p>
+            <div style="margin-left:32px;display:flex;justify-content:flex-end;margin-bottom:10px">
+              <button class="btn btn-secondary" onclick="OC.reloadQueue()" style="font-size:11px;padding:5px 10px" title="Aggiorna la lista delle bozze dal server">Aggiorna coda</button>
+            </div>
+            <div id="digestQueueWrap" style="margin-left:32px">
+              <div class="empty-state sm">Premi 'Aggiorna coda' per caricare le bozze.</div>
+            </div>
+            <div id="digestSegmResult" style="margin-left:32px;margin-top:6px;font-size:12px;min-height:16px;color:var(--ink-3)"></div>
+          </div>
+
+          <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
+
+          <!-- Step 3 — Test -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;margin-bottom:6px">
+              <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">3</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Test profilo</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Genera una bozza di test per un profilo specifico o per l'ultimo compilatore.</p>
+            <div style="margin-left:32px;display:flex;gap:8px;margin-bottom:8px;align-items:center">
+              <input type="email" id="matrixTestEmail" placeholder="Email compilatore Matrix per test..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
+              <button class="btn btn-secondary" onclick="OC.testDigestMatrixPerEmail()" style="font-size:12px;padding:7px 14px" title="Genera bozza digest personalizzata per l'email indicata">Test su email</button>
+            </div>
+            <div style="margin-left:32px;display:flex;justify-content:flex-end">
+              <button class="btn btn-secondary" onclick="OC.testDigestSegmentato()" style="font-size:12px;padding:7px 14px" title="Genera bozza usando ultimo responseId in ResponsesMatrix">Test ultimo profilo</button>
+            </div>
+          </div>
+
+          <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
+
+          <!-- Step 4 — Invio -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;margin-bottom:6px">
+              <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">4</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Invio</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Invia tutti i digest in stato pending agli utenti profilati.</p>
+            <div style="margin-left:32px;display:flex;justify-content:flex-end">
+              <button class="btn btn-warning" data-action="inviaTuttiPending" style="padding:8px 16px;font-size:13px" title="Spedisce tutte le bozze draft. Controlla quota email prima.">Invia tutti i pending</button>
+            </div>
+          </div>
+
+          <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
+
+          <!-- Cron -->
+          <div>
+            <div style="display:flex;align-items:center;margin-bottom:8px">
+              <span style="background:var(--ink-3);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">C</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Automazione cron</span>
+            </div>
+            <div style="margin-left:32px;background:var(--surface-2);border-radius:8px;padding:12px 14px">
+              <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:4px">Digest Matrix (bozze)</div>
+              <div id="cronStatusText" style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:4px">Verifica in corso…</div>
+              <div id="cronLastRun" style="font-size:11px;color:var(--ink-3);margin-bottom:6px"></div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button class="btn btn-secondary" data-action="setupCronDigest" style="font-size:11px;padding:4px 10px" title="Attiva il cron automatico che genera bozze ogni martedi alle 06:00">Attiva</button>
+                <button class="btn btn-secondary" data-action="removeCronDigest" style="font-size:11px;padding:4px 10px" title="Disattiva il cron automatico">Stop</button>
+                <button class="btn btn-secondary" data-action="testCronManual" style="font-size:11px;padding:4px 10px" title="Esegui subito il cron come se fosse martedi 06:00 (per test)">Esegui ora</button>
+              </div>
+            </div>
+          </div>
+
         </div>
-        <p class="hint" style="margin:8px 0 10px">Ogni utente profilato riceve un digest personalizzato basato sui suoi <b>top 3 gap</b> (dimensioni con score &lt; 60). Per ogni dimensione vengono selezionati fino a 4 bandi + 3 news + 2 podcast.</p>
-        <!-- v4.21 — Test su email specifica -->
-        <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
-          <input type="email" id="matrixTestEmail" placeholder="Email compilatore Matrix per test..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
-          <button class="btn btn-secondary" onclick="OC.testDigestMatrixPerEmail()" style="font-size:12px;padding:7px 14px" title="Genera bozza digest personalizzata per l'email indicata">Test su email</button>
-          <button class="btn btn-secondary" onclick="OC.testDigestSegmentato()" style="font-size:12px;padding:7px 14px" title="Genera bozza usando ultimo responseId in ResponsesMatrix">Test ultimo profilo</button>
+
+        <!-- Email Agenti AI -->
+        <div class="admin-card" style="margin-bottom:16px;border-left:4px solid var(--amb-4,#9C6A36)">
+          <h3 style="margin-top:0;font-size:15px">Email Agenti AI <span style="font-size:12px;font-weight:400;color:var(--ink-3)">(musei profilati)</span></h3>
+          <p class="hint">Email tematiche giornaliere per i musei con profilo agente attivo. 5 agenti: Bandi, Norme, Innovazione, Comunita, Digital.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            <button class="btn btn-secondary" onclick="OC._loadAgentStats()" style="font-size:12px;padding:6px 12px">Statistiche invii</button>
+            <button class="btn btn-secondary" onclick="OC._sendAgentForced()" style="font-size:12px;padding:6px 12px" title="Forza invio email agenti ora (gated admin)">Invio forzato</button>
+          </div>
+          <div id="agentStatsResult" style="font-size:12px;color:var(--ink-3);min-height:16px"></div>
         </div>
-        <div id="digestQueueWrap" style="margin-top:10px">
-          <div class="empty-state sm">Premi 'Aggiorna coda' per caricare le bozze.</div>
-        </div>
-        <div id="digestSegmResult" style="margin-top:6px;font-size:12px;min-height:16px;color:var(--ink-3)"></div>
       </div>
 
       <!-- ===== ANTEPRIMA PER DESTINATARIO ===== -->
@@ -1592,75 +1836,6 @@
         </div>
         <div id="previewForEmailResult" style="font-size:12px;color:var(--ink-3);min-height:16px"></div>
         <iframe id="previewForEmailFrame" style="width:100%;min-height:400px;border:1px solid var(--rule);border-radius:6px;display:none" sandbox="allow-same-origin"></iframe>
-      </div>
-
-      <!-- ===== EMAIL AGENTI AI ===== -->
-      <div class="admin-card" style="margin-bottom:16px;border-left:4px solid var(--amb-4,#9C6A36)">
-        <h3 style="margin-top:0;font-size:15px">Email Agenti AI <span style="font-size:12px;font-weight:400;color:var(--ink-3)">(musei profilati)</span></h3>
-        <p class="hint">Email tematiche giornaliere per i musei con profilo agente attivo. 5 agenti: Bandi, Norme, Innovazione, Comunita, Digital.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-          <button class="btn btn-secondary" onclick="OC._loadAgentStats()" style="font-size:12px;padding:6px 12px">Statistiche invii</button>
-          <button class="btn btn-secondary" onclick="OC._sendAgentForced()" style="font-size:12px;padding:6px 12px" title="Forza invio email agenti ora (gated admin)">Invio forzato</button>
-        </div>
-        <div id="agentStatsResult" style="font-size:12px;color:var(--ink-3);min-height:16px"></div>
-      </div>
-
-      <!-- ===== 3. AUTOMAZIONE ===== -->
-      <div class="admin-card" style="margin-bottom:16px">
-        <h3 style="margin-top:0;font-size:15px">Automazione</h3>
-        <p class="hint" style="margin-bottom:10px">Il sistema gestisce due invii automatici. Ogni invio richiede che il bot Telegram sia configurato per le autorizzazioni.</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-          <!-- Cron newsletter -->
-          <div style="background:var(--surface-2);border-radius:8px;padding:12px 14px">
-            <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:4px">Newsletter (Coorte A+B)</div>
-            <div id="cronCoortiStatus" style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:4px">Invio automatico ogni <b>lunedi alle 07:00</b></div>
-            <div style="font-size:12px;color:var(--ink-2);margin-bottom:6px">Include generalisti + lead personalizzati.</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-              <button class="btn btn-secondary" onclick="OC._dryRunCoorti()" style="font-size:11px;padding:4px 10px" title="Simula invio senza inviare email">Dry-run</button>
-              <button class="btn btn-secondary" onclick="OC._eseguiCoorti()" style="font-size:11px;padding:4px 10px" title="Esegui invio reale a entrambe le coorti">Esegui invio</button>
-            </div>
-            <div id="cronCoortiResult" style="font-size:11px;color:var(--ink-3)">Gestito da: <code>sendDigestAuto2coorti</code></div>
-          </div>
-          <!-- Cron Matrix -->
-          <div style="background:var(--surface-2);border-radius:8px;padding:12px 14px">
-            <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:4px">Digest Matrix (bozze)</div>
-            <div id="cronStatusText" style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:4px">Verifica in corso…</div>
-            <div id="cronLastRun" style="font-size:11px;color:var(--ink-3);margin-bottom:6px"></div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
-              <button class="btn btn-secondary" data-action="setupCronDigest" style="font-size:11px;padding:4px 10px" title="Attiva il cron automatico che genera bozze ogni martedi alle 06:00">Attiva</button>
-              <button class="btn btn-secondary" data-action="removeCronDigest" style="font-size:11px;padding:4px 10px" title="Disattiva il cron automatico">Stop</button>
-              <button class="btn btn-secondary" data-action="testCronManual" style="font-size:11px;padding:4px 10px" title="Esegui subito il cron come se fosse martedi 06:00 (per test)">Esegui ora</button>
-            </div>
-          </div>
-        </div>
-        <!-- Telegram -->
-        <div style="margin-top:12px;display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface-2);border-radius:8px">
-          <div style="flex:1">
-            <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Telegram bot</div>
-            <div id="telegramStatus" style="font-size:12px;color:var(--ink-2);margin-top:2px">Verifica in corso…</div>
-          </div>
-          <button class="btn btn-secondary" data-action="checkTelegram" style="font-size:11px;padding:4px 10px" title="Verifica che token e chat_id siano configurati">Verifica</button>
-          <button class="btn btn-secondary" data-action="testTelegram" style="font-size:11px;padding:4px 10px" title="Invia un messaggio di test al bot">Test</button>
-        </div>
-      </div>
-
-      <!-- ===== 4. STORICO ===== -->
-      <div class="admin-card" style="margin-bottom:16px">
-        <h3 style="margin-top:0;font-size:15px">Storico invii</h3>
-        <div id="digestList">
-          <div class="empty-state sm">Caricamento…</div>
-        </div>
-      </div>
-
-      <!-- ===== 5. ANTEPRIMA (hidden) ===== -->
-      <div class="admin-card" id="previewWrap" hidden>
-        <h3 style="margin-top:0;font-size:15px">Anteprima</h3>
-        <div id="previewInfo" style="font-size:12px;color:var(--ink-3);margin-bottom:8px"></div>
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <button class="btn btn-warning" data-action="richiediAutorizzazione" style="font-size:12px" title="Invia richiesta di autorizzazione invio al bot Telegram">Autorizza invio</button>
-          <button class="btn btn-secondary" data-action="chiudiAnteprima" style="font-size:12px">Chiudi</button>
-        </div>
-        <iframe id="previewFrame" class="preview-iframe" sandbox="allow-same-origin"></iframe>
       </div>
     </section>
 
@@ -7073,6 +7248,17 @@
       .scanPodcast();
   }
 
+  function _switchDigestTab(tab) {
+    document.querySelectorAll('.digest-tab').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-digest-tab') === tab);
+      b.style.color = b.classList.contains('active') ? 'var(--accent,#935851)' : '#888';
+      b.style.borderBottomColor = b.classList.contains('active') ? 'var(--accent,#935851)' : 'transparent';
+    });
+    document.querySelectorAll('.digest-tab-content').forEach(function(d){
+      d.hidden = d.getAttribute('data-digest-content') !== tab;
+    });
+  }
+
   function testDigestEmail(){
     if (!hasGAS()) return;
     // v4.21 — Chiedi email destinatario per il test newsletter generalista
@@ -11155,6 +11341,7 @@
     reloadFontiStats: reloadFontiStats,
     testDigestEmail: testDigestEmail,
     // v4.22 E1 — Approfondimento della settimana
+    _switchDigestTab: _switchDigestTab,
     _loadEditoriale: _loadEditoriale,
     _generaEditoriale: _generaEditoriale,
     _approvaEditoriale: _approvaEditoriale,
