@@ -7703,28 +7703,33 @@
                 + '</div>';
               msg.hidden = false;
             }
-            // v4.22 — Login completato: aggiorna DOM in-place (GAS sandbox blocca reload/redirect)
-            if (msg) { msg.textContent = 'Accesso riuscito!'; msg.style.color = 'var(--amb-2,#10916D)'; }
+            // v4.22 — Login completato: form submit per ricaricare con ?t=TOKEN
+            // Questo è l'UNICO metodo affidabile in GAS sandbox: i form possono
+            // navigare il top frame (allow-forms è attivo nel sandbox GAS).
             setTimeout(function() {
-              // 1. Chiudi TUTTI gli overlay
-              ['oc-regform-overlay','oc-guest-gate','oc-newsletter-overlay','oc-reg-overlay','oc-gdpr-gate','oc-servizi-overlay'].forEach(function(id){
-                try { var el = document.getElementById(id); if (el) { el.hidden=true; el.style.display='none'; el.remove(); } } catch(_){}
-              });
-              // 2. Invalida tutte le cache dati
-              try { _cacheBandi=null;_cacheNews=null;_cachePodcast=null;_cacheVideo=null;_cacheLibri=null;_cacheArchivio=null;_cacheSocialWall=null;_cacheCapitali=null; } catch(_){}
-              // 3. Forza home page attiva
-              var allP = document.querySelectorAll('.page');
-              for (var pi=0; pi<allP.length; pi++) allP[pi].classList.remove('active');
-              var hp = document.getElementById('page-home');
-              if (hp) hp.classList.add('active');
-              // 4. Aggiorna sidebar e topbar
-              try { go('home'); } catch(_){}
-              // 5. Ricarica tutti i dati freschi con la nuova sessione
-              try { hydrate(); } catch(_){}
-              // 6. Toast benvenuto
-              setTimeout(function(){
-                try { showToast('Bentornato, ' + (r.nome || r.email.split('@')[0]) + '!', 'ok'); } catch(_){}
-              }, 800);
+              try {
+                var appUrl = window.GAS_URL || '';
+                if (!appUrl) {
+                  // Fallback: prendi dall'URL corrente
+                  try { appUrl = window.location.href.split('?')[0]; } catch(_){}
+                }
+                if (appUrl && r.token) {
+                  var form = document.createElement('form');
+                  form.method = 'GET';
+                  form.action = appUrl;
+                  form.target = '_top';
+                  var inp = document.createElement('input');
+                  inp.type = 'hidden';
+                  inp.name = 't';
+                  inp.value = r.token;
+                  form.appendChild(inp);
+                  document.body.appendChild(form);
+                  form.submit();
+                  return;
+                }
+              } catch(_) {}
+              // Fallback ultimo: messaggio con istruzioni
+              if (msg) msg.innerHTML = '<div style="text-align:center;padding:8px;font-size:14px;color:var(--amb-2)">Accesso riuscito! Ricarica la pagina (F5) per entrare.</div>';
             }, 300);
           } else if (r && r.ok && r.message === 'magic_link_inviato') {
             // Utente normale: magic link inviato via email
