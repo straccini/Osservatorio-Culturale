@@ -7703,33 +7703,28 @@
                 + '</div>';
               msg.hidden = false;
             }
-            // v4.22 — Login completato: form submit per ricaricare con ?t=TOKEN
-            // Questo è l'UNICO metodo affidabile in GAS sandbox: i form possono
-            // navigare il top frame (allow-forms è attivo nel sandbox GAS).
+            // v4.22 — Login completato: mostra link di accesso diretto.
+            // Il magic link funziona (come dall'email): doGet legge ?t=TOKEN e inietta la sessione.
+            // Costruiamo l'URL e lo mostriamo come link cliccabile + auto-click.
             setTimeout(function() {
-              try {
-                var appUrl = window.GAS_URL || '';
-                if (!appUrl) {
-                  // Fallback: prendi dall'URL corrente
-                  try { appUrl = window.location.href.split('?')[0]; } catch(_){}
-                }
-                if (appUrl && r.token) {
-                  var form = document.createElement('form');
-                  form.method = 'GET';
-                  form.action = appUrl;
-                  form.target = '_top';
-                  var inp = document.createElement('input');
-                  inp.type = 'hidden';
-                  inp.name = 't';
-                  inp.value = r.token;
-                  form.appendChild(inp);
-                  document.body.appendChild(form);
-                  form.submit();
-                  return;
-                }
-              } catch(_) {}
-              // Fallback ultimo: messaggio con istruzioni
-              if (msg) msg.innerHTML = '<div style="text-align:center;padding:8px;font-size:14px;color:var(--amb-2)">Accesso riuscito! Ricarica la pagina (F5) per entrare.</div>';
+              var appUrl = window.GAS_URL || '';
+              var magicUrl = appUrl + (appUrl.indexOf('?') >= 0 ? '&' : '?') + 't=' + encodeURIComponent(r.token);
+              // Mostra link cliccabile
+              if (msg) {
+                msg.innerHTML = '<div style="text-align:center;padding:12px 0">'
+                  + '<div style="font-size:16px;font-weight:600;color:var(--ink);margin-bottom:8px">Accesso verificato!</div>'
+                  + '<div style="font-size:13px;color:var(--ink-2);margin-bottom:14px">Bentornato, ' + esc(r.nome || r.email.split('@')[0]) + '</div>'
+                  + '<a id="oc-login-link" href="' + esc(magicUrl) + '" target="_top" style="display:inline-block;background:var(--accent,#935851);color:#fff;padding:12px 32px;border-radius:999px;font-size:14px;font-weight:600;text-decoration:none;font-family:inherit">Entra in Sinopia &rarr;</a>'
+                  + '<div style="font-size:11px;color:var(--ink-3);margin-top:10px">Clicca il bottone per accedere</div>'
+                  + '</div>';
+                msg.hidden = false;
+              }
+              // Chiudi l'overlay di registrazione ma lascia visibile il messaggio
+              try { var gg = document.getElementById('oc-guest-gate'); if (gg) gg.remove(); } catch(_){}
+              // Auto-click dopo 500ms
+              setTimeout(function() {
+                try { var link = document.getElementById('oc-login-link'); if (link) link.click(); } catch(_){}
+              }, 500);
             }, 300);
           } else if (r && r.ok && r.message === 'magic_link_inviato') {
             // Utente normale: magic link inviato via email
