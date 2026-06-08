@@ -98,8 +98,8 @@ var OC_AMBITI = [
 // VERSIONE WEBAPP
 // ============================================================================
 
-var OC_VERSION = 'v4.19.1';
-var OC_VERSION_DATE = '2026-06-01';
+var OC_VERSION = 'v4.22.0';
+var OC_VERSION_DATE = '2026-06-08';
 var OC_VERSION_NOTES = 'v4.19.1 — Nuove fonti generaliste cultura (Il Sole 24 Ore Cultura + Repubblica Cultura). Seed SW35/SW36 in SocialFonti + 2 righe in FONTI_NEWS_ISTITUZIONALI (priorita 2). Gate semantico passaFiltroCulturaMusei_ in scanSources: solo articoli musei/patrimonio/cultura dalle generaliste, off-topic scartati. Fonti istituzionali invariate. Monitoraggio via scanSources esistente (ogni 6h), nessun nuovo trigger. Da eseguire post-deploy: seedSocialFontiIstituzionali() + addFontiIstituzionali().';
 
 // ============================================================================

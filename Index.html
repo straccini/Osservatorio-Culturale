@@ -7515,25 +7515,24 @@
                 + '</div>';
               msg.hidden = false;
             }
-            // Chiudi overlay e ricarica pagina completa
-            // GAS sandbox: window.location.reload() non funziona sempre.
-            // Strategia: prova reload, fallback con replace, fallback con parent.
+            // v4.22 — Login completato: mostra conferma con bottone di accesso.
+            // GAS sandbox impedisce reload automatico affidabile.
+            // Soluzione definitiva: messaggio chiaro + bottone che forza il refresh.
             setTimeout(function() {
               try { var ov = document.getElementById('oc-regform-overlay'); if (ov) ov.remove(); } catch(_){}
               try { var gg = document.getElementById('oc-guest-gate'); if (gg) gg.remove(); } catch(_){}
-              try {
-                // Metodo 1: replace forza il browser a ricaricare
-                var url = window.location.href.split('?')[0].split('#')[0];
-                window.top.location.replace(url);
-              } catch(_) {
-                try { window.top.location.reload(true); } catch(_2) {
-                  try { window.location.reload(true); } catch(_3) {
-                    // Ultimo fallback: mostra messaggio
-                    if (msg) msg.innerHTML = '<div style="text-align:center;font-size:14px;color:var(--amb-2)">Accesso riuscito! <a href="javascript:void(0)" onclick="window.location.reload()" style="color:var(--accent);font-weight:600">Clicca qui per entrare</a></div>';
-                  }
-                }
-              }
-            }, 600);
+              // Sovrascrivi l'intero body con messaggio di accesso + auto-reload
+              document.body.innerHTML = ''
+                + '<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--paper,#fff);font-family:Inter,sans-serif;z-index:99999">'
+                + '<div style="text-align:center;max-width:400px;padding:40px">'
+                + '<div style="font-family:Georgia,serif;font-style:italic;font-size:32px;color:#8B3A1F;margin-bottom:8px">Sinopia</div>'
+                + '<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#999;margin-bottom:24px">Osservatorio Culturale</div>'
+                + '<div style="font-size:18px;font-weight:600;color:#1A1815;margin-bottom:8px">Bentornato, ' + esc(r.nome || r.email.split('@')[0]) + '</div>'
+                + '<div style="font-size:14px;color:#666;margin-bottom:24px">Accesso verificato. Clicca per entrare.</div>'
+                + '<button onclick="window.top.location.href=window.top.location.href.split(\'?\')[0]" style="background:#935851;color:#fff;border:none;padding:14px 36px;border-radius:999px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Entra in Sinopia &rarr;</button>'
+                + '<div style="margin-top:16px;font-size:11px;color:#999">Il token di sessione e stato salvato. La prossima volta l\'accesso sara automatico.</div>'
+                + '</div></div>';
+            }, 500);
           } else if (r && r.ok && r.message === 'magic_link_inviato') {
             // Utente normale: magic link inviato via email
             if (msg) {
