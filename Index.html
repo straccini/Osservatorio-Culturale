@@ -2992,6 +2992,27 @@
   }
 
   function renderHome(d){
+    // v4.22 E1 — Carica editoriale in home (box sotto hero)
+    try {
+      if (hasGAS() && typeof google !== 'undefined') {
+        google.script.run.withSuccessHandler(function(ed) {
+          var box = $('homeEditoriale');
+          if (!box || !ed) return;
+          var tit = $('homeEditTitolo');
+          var txt = $('homeEditTesto');
+          var cap = $('homeEditCapolettera');
+          if (tit) tit.textContent = ed.titolo || '';
+          // Tronca a 100 battute + "..."
+          var testoFull = String(ed.testo || '');
+          var testoTrunc = testoFull.length > 100 ? testoFull.substring(0, 100).replace(/\s+\S*$/, '') + '...' : testoFull;
+          if (txt) txt.textContent = testoTrunc;
+          // Capolettera: prima lettera del testo
+          if (cap && testoFull.length > 0) cap.textContent = testoFull.charAt(0).toUpperCase();
+          box.hidden = false;
+        }).withFailureHandler(function(){}).getEditorialeCorrente();
+      }
+    } catch(_){}
+
     var t=$('homeDataOggi'); if (t && d.dataOggi) t.textContent = d.dataOggi;
     // v5.0.5 — Saluto personalizzato basato sull'ora
     var greetEl = $('homeGreeting');
@@ -7470,35 +7491,29 @@
       google.script.run
         .withSuccessHandler(function(r) {
           if (r && r.ok && r.directLogin && r.token) {
-            // Admin/editor: login diretto (token restituito dal backend)
-            if (msg) { msg.textContent = 'Accesso riuscito!'; msg.style.color = 'var(--amb-2,#10916D)'; }
+            // Admin/editor: login diretto — salva token e ricarica pagina
+            // Il reload è necessario perché OC_SESSION viene iniettato server-side da doGet.
+            // Senza reload, la pagina è renderizzata come ospite e il DOM non si aggiorna.
             try { localStorage.setItem('oc_token', r.token); } catch(_){}
             try { localStorage.removeItem('oc_force_guest'); } catch(_){}
-            window.OC_SESSION = {
-              token: r.token, email: r.email, livello: r.livello,
-              permanente: !!r.permanente, matrixCompletato: !!r.matrixCompletato,
-              alreadyActive: true
-            };
-            var ruoloMap = { 3:'admin', 2:'editor' };
-            setUser({
-              ruolo: ruoloMap[r.livello] || r.ruolo || 'lettore',
-              nome: r.nome || r.email.split('@')[0],
-              email: r.email,
-              initials: (r.nome || r.email).substring(0,2).toUpperCase(),
-              isAdmin: r.livello >= 3,
-              isEditor: r.livello >= 2
-            });
+            // Mostra spinner di attesa
+            if (msg) {
+              msg.innerHTML = '<div style="text-align:center;padding:12px 0">'
+                + '<div style="display:inline-block;width:28px;height:28px;border:3px solid var(--rule);border-top-color:var(--accent,#935851);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:8px"></div>'
+                + '<style>@keyframes spin{to{transform:rotate(360deg)}}</style>'
+                + '<div style="font-size:14px;font-weight:600;color:var(--ink)">Accesso in corso...</div>'
+                + '<div style="font-size:12px;color:var(--ink-3);margin-top:4px">Bentornato, ' + esc(r.nome || r.email.split('@')[0]) + '</div>'
+                + '</div>';
+              msg.hidden = false;
+            }
+            // Chiudi overlay e ricarica con il token nell'URL (doGet lo inietta nella sessione)
             setTimeout(function() {
               var ov = document.getElementById('oc-regform-overlay'); if (ov) ov.remove();
               var gg = document.getElementById('oc-guest-gate'); if (gg) gg.remove();
-              var nlOv = document.getElementById('oc-newsletter-overlay'); if (nlOv) { nlOv.hidden=true; nlOv.style.display='none'; }
-              try { _cacheBandi=null;_cacheNews=null;_cachePodcast=null;_cacheVideo=null;_cacheLibri=null;_cacheArchivio=null; } catch(_){}
-              var allP = document.querySelectorAll('.page');
-              for (var pi=0; pi<allP.length; pi++) allP[pi].classList.remove('active');
-              var hp = document.getElementById('page-home'); if (hp) hp.classList.add('active');
-              go('home'); hydrate();
-              showToast('Bentornato, ' + (r.nome || r.email.split('@')[0]) + '!', 'ok');
-            }, 400);
+              // Ricarica pagina: doGet legge il token da localStorage via validaSessione
+              var baseUrl = window.GAS_URL || window.location.href.split('?')[0];
+              window.location.href = baseUrl + '?t=' + encodeURIComponent(r.token);
+            }, 800);
           } else if (r && r.ok && r.message === 'magic_link_inviato') {
             // Utente normale: magic link inviato via email
             if (msg) {
