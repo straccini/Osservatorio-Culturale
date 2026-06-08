@@ -3986,7 +3986,7 @@
 
     var html = '';
     if (urgenti.length) {
-      html += '<div class="section-divider urgent-divider"><span>&#9889; In scadenza entro 7 giorni</span></div>';
+      html += '<div style="background:linear-gradient(135deg,#C2410C,#DC6B20);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:700;margin:16px 0 12px;text-align:center;letter-spacing:.02em">&#9889; IN SCADENZA ENTRO 7 GIORNI</div>';
       urgenti.forEach(function(x){ html += _brRowHtml_(x.b); });
     }
     if (altri.length) {
@@ -7515,24 +7515,29 @@
                 + '</div>';
               msg.hidden = false;
             }
-            // v4.22 — Login completato: mostra conferma con bottone di accesso.
-            // GAS sandbox impedisce reload automatico affidabile.
-            // Soluzione definitiva: messaggio chiaro + bottone che forza il refresh.
+            // v4.22 — Login completato: aggiorna DOM in-place (GAS sandbox blocca reload/redirect)
+            if (msg) { msg.textContent = 'Accesso riuscito!'; msg.style.color = 'var(--amb-2,#10916D)'; }
             setTimeout(function() {
-              try { var ov = document.getElementById('oc-regform-overlay'); if (ov) ov.remove(); } catch(_){}
-              try { var gg = document.getElementById('oc-guest-gate'); if (gg) gg.remove(); } catch(_){}
-              // Sovrascrivi l'intero body con messaggio di accesso + auto-reload
-              document.body.innerHTML = ''
-                + '<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--paper,#fff);font-family:Inter,sans-serif;z-index:99999">'
-                + '<div style="text-align:center;max-width:400px;padding:40px">'
-                + '<div style="font-family:Georgia,serif;font-style:italic;font-size:32px;color:#8B3A1F;margin-bottom:8px">Sinopia</div>'
-                + '<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#999;margin-bottom:24px">Osservatorio Culturale</div>'
-                + '<div style="font-size:18px;font-weight:600;color:#1A1815;margin-bottom:8px">Bentornato, ' + esc(r.nome || r.email.split('@')[0]) + '</div>'
-                + '<div style="font-size:14px;color:#666;margin-bottom:24px">Accesso verificato. Clicca per entrare.</div>'
-                + '<button onclick="window.top.location.href=window.top.location.href.split(\'?\')[0]" style="background:#935851;color:#fff;border:none;padding:14px 36px;border-radius:999px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Entra in Sinopia &rarr;</button>'
-                + '<div style="margin-top:16px;font-size:11px;color:#999">Il token di sessione e stato salvato. La prossima volta l\'accesso sara automatico.</div>'
-                + '</div></div>';
-            }, 500);
+              // 1. Chiudi TUTTI gli overlay
+              ['oc-regform-overlay','oc-guest-gate','oc-newsletter-overlay','oc-reg-overlay','oc-gdpr-gate','oc-servizi-overlay'].forEach(function(id){
+                try { var el = document.getElementById(id); if (el) { el.hidden=true; el.style.display='none'; el.remove(); } } catch(_){}
+              });
+              // 2. Invalida tutte le cache dati
+              try { _cacheBandi=null;_cacheNews=null;_cachePodcast=null;_cacheVideo=null;_cacheLibri=null;_cacheArchivio=null;_cacheSocialWall=null;_cacheCapitali=null; } catch(_){}
+              // 3. Forza home page attiva
+              var allP = document.querySelectorAll('.page');
+              for (var pi=0; pi<allP.length; pi++) allP[pi].classList.remove('active');
+              var hp = document.getElementById('page-home');
+              if (hp) hp.classList.add('active');
+              // 4. Aggiorna sidebar e topbar
+              try { go('home'); } catch(_){}
+              // 5. Ricarica tutti i dati freschi con la nuova sessione
+              try { hydrate(); } catch(_){}
+              // 6. Toast benvenuto
+              setTimeout(function(){
+                try { showToast('Bentornato, ' + (r.nome || r.email.split('@')[0]) + '!', 'ok'); } catch(_){}
+              }, 800);
+            }, 300);
           } else if (r && r.ok && r.message === 'magic_link_inviato') {
             // Utente normale: magic link inviato via email
             if (msg) {

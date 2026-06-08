@@ -69,31 +69,42 @@ function buildNewsletterHtml_(draft) {
     parts.push('</td></tr>');
   }
 
+  // v4.22 — Dedup cross-sezione: nessun titolo duplicato nella newsletter
+  var _nlSeen = {};
+  function _nlDedup(items, keyFn) {
+    return (items || []).filter(function(it) {
+      var key = String(keyFn(it) || '').trim().toLowerCase().replace(/\s+/g,' ');
+      if (!key || _nlSeen[key]) return false;
+      _nlSeen[key] = true;
+      return true;
+    });
+  }
+
   // Bandi urgenti
-  var urg = (draft.bandiUrgenti || []);
+  var urg = _nlDedup(draft.bandiUrgenti, function(b){ return b.titolo||b.Titolo; });
   if (urg.length) {
-    parts.push(_nlSectionHeader_('🔥 Bandi in scadenza'));
+    parts.push(_nlSectionHeader_('Bandi in scadenza'));
     urg.forEach(function(b){ parts.push(_nlBandoCard_(b, /*urgent=*/true)); });
   }
 
-  // Bandi recenti
-  var rec = (draft.bandiRecenti || []);
+  // Bandi recenti (dedup anche vs urgenti)
+  var rec = _nlDedup(draft.bandiRecenti, function(b){ return b.titolo||b.Titolo; });
   if (rec.length) {
-    parts.push(_nlSectionHeader_('📌 Ultimi bandi monitorati'));
+    parts.push(_nlSectionHeader_('Ultimi bandi monitorati'));
     rec.forEach(function(b){ parts.push(_nlBandoCard_(b, /*urgent=*/false)); });
   }
 
-  // News
-  var news = (draft.news || []);
+  // News (dedup vs bandi)
+  var news = _nlDedup(draft.news, function(n){ return n.titolo||n.Titolo; });
   if (news.length) {
-    parts.push(_nlSectionHeader_('📰 Ultime notizie'));
+    parts.push(_nlSectionHeader_('Ultime notizie'));
     news.forEach(function(n){ parts.push(_nlNewsCard_(n)); });
   }
 
-  // Podcast
-  var pod = (draft.podcast || []);
+  // Podcast (dedup vs tutto)
+  var pod = _nlDedup(draft.podcast, function(p){ return p.titolo||p.Titolo; });
   if (pod.length) {
-    parts.push(_nlSectionHeader_('🎙️ Podcast'));
+    parts.push(_nlSectionHeader_('Podcast'));
     pod.forEach(function(p){ parts.push(_nlPodcastCard_(p)); });
   }
 

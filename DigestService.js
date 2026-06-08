@@ -179,8 +179,16 @@ function sendDigest(itemIds, bandiIds, podcastIds) {
 
 function buildDigestHTML(items, dest, readerUrl) {
   const nomeDestinatario = dest ? (dest.Nome||dest.Email) : '';
-  const grouped={1:[],2:[],3:[],4:[],5:[]};  // * FIX v4.3: aggiunto Ambito 5 "AI per la Cultura"
-  items.forEach(i=>{if(grouped[i.Ambito])grouped[i.Ambito].push(i);});
+  // v4.22 — Dedup per titolo: nessun contenuto duplicato nel digest
+  const _dsSeen = {};
+  const dedupItems = (items||[]).filter(function(i){
+    const key = String(i.Titolo||'').trim().toLowerCase().replace(/\s+/g,' ');
+    if (!key || _dsSeen[key]) return false;
+    _dsSeen[key] = true;
+    return true;
+  });
+  const grouped={1:[],2:[],3:[],4:[],5:[]};
+  dedupItems.forEach(i=>{if(grouped[i.Ambito])grouped[i.Ambito].push(i);});
   let sectionsHTML='';
   for(let a=1;a<=5;a++) {  // FIX v4.3: loop fino ad Ambito 5
     if(!grouped[a].length) continue;

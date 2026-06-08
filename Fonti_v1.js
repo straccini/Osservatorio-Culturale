@@ -66,7 +66,10 @@ var FU_SHEETS = {
   bandi:   'FontiBandi_v5',
   news:    'FontiNews',
   podcast: 'FontiPodcast',
-  video:   'FontiVideo'
+  video:   'FontiVideo',
+  libri:   'FontiLibri',        // v4.22 — aggiunto
+  norme:   'FontiNorme',        // v4.22 — aggiunto
+  social:  'FontiSocial'        // v4.22 — aggiunto
 };
 // NB: 'FontiFeed' NON va qui: ha schema a 20 colonne diverso da FU17, quindi
 // getFontiUnified/_fuRowToObj_ (indici FU17 fissi) lo leggerebbe corrotto.
@@ -77,7 +80,10 @@ var FU_TAGS_PER_TIPO = {
   bandi:   ['ministero','regione','ue','aggregatore','fondazione','rivista','associazione'],
   news:    ['istituzionale','editoriale','settoriale','rivista'],
   podcast: ['audio'],
-  video:   ['video']
+  video:   ['video'],
+  libri:   ['pubblicazione','manuale','ricerca'],
+  norme:   ['decreto','circolare','legge','regolamento','direttiva'],
+  social:  ['instagram','linkedin','facebook','twitter']
 };
 
 // Esiti scansione (uniformi tra moduli)
@@ -263,7 +269,19 @@ function addFonteUnificataV2(body) {
     var sh = getFonteSheet(tipo);
     if (!sh) return { ok: false, error: 'Foglio ' + FU_SHEETS[tipo] + ' non disponibile' };
 
-    var prefix = { bandi:'FB', news:'FN', podcast:'FP', video:'FV' }[tipo] || 'FF';
+    // v4.22 — Check duplicati: stessa URL nella stessa categoria
+    var urlNorm = String(body.url).trim().toLowerCase().replace(/\/+$/, '');
+    try {
+      var existVals = sh.getDataRange().getValues();
+      for (var dr = 1; dr < existVals.length; dr++) {
+        var existUrl = String(existVals[dr][FU_COL.URL - 1] || '').trim().toLowerCase().replace(/\/+$/, '');
+        if (existUrl === urlNorm) {
+          return { ok: false, error: 'Fonte gia presente in ' + tipo + ': ' + String(existVals[dr][FU_COL.NOME - 1] || '') };
+        }
+      }
+    } catch(_) {}
+
+    var prefix = { bandi:'FB', news:'FN', podcast:'FP', video:'FV', libri:'FL', norme:'FNR', social:'FS' }[tipo] || 'FF';
     var id = prefix + Date.now();
 
     var row = new Array(FU_HEADERS.length).fill('');
