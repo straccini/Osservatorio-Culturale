@@ -7703,23 +7703,26 @@
                 + '</div>';
               msg.hidden = false;
             }
-            // v4.22 — Login completato: apri magic link in nuovo tab (window.open funziona in GAS sandbox)
+            // v4.22 — Login completato: token salvato, l'utente ricarica la pagina.
+            // In GAS sandbox nessun metodo automatico di navigazione funziona.
+            // Chiudi tutti gli overlay e mostra un messaggio chiaro.
             setTimeout(function() {
-              var appUrl = window.GAS_URL || '';
-              var magicUrl = appUrl + (appUrl.indexOf('?') >= 0 ? '&' : '?') + 't=' + encodeURIComponent(r.token);
-              // Apri il magic link in un nuovo tab — doGet inietta la sessione
-              window.open(magicUrl, '_blank', 'noopener');
-              // Mostra messaggio nella pagina corrente
-              if (msg) {
-                msg.innerHTML = '<div style="text-align:center;padding:12px 0">'
-                  + '<div style="font-size:16px;font-weight:600;color:var(--amb-2,#10916D);margin-bottom:6px">Accesso riuscito!</div>'
-                  + '<div style="font-size:13px;color:var(--ink-2);margin-bottom:12px">Sinopia si e aperto in una <b>nuova scheda</b>.</div>'
-                  + '<div style="font-size:12px;color:var(--ink-3)">Se non si e aperto, <a href="' + esc(magicUrl) + '" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">clicca qui</a>.</div>'
-                  + '</div>';
-                msg.hidden = false;
-              }
-              // Chiudi overlay
-              try { var gg = document.getElementById('oc-guest-gate'); if (gg) gg.remove(); } catch(_){}
+              // Chiudi TUTTO
+              ['oc-regform-overlay','oc-guest-gate','oc-newsletter-overlay','oc-reg-overlay','oc-gdpr-gate','oc-servizi-overlay'].forEach(function(id){
+                try { var el = document.getElementById(id); if (el) { el.style.display='none'; el.remove(); } } catch(_){}
+              });
+              // Mostra pagina di conferma
+              document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#FAF7F2;font-family:Inter,sans-serif">'
+                + '<div style="text-align:center;max-width:420px;padding:40px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.08)">'
+                + '<div style="font-family:Georgia,serif;font-style:italic;font-size:32px;color:#8B3A1F;margin-bottom:4px">Sinopia</div>'
+                + '<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#999;margin-bottom:24px">Osservatorio Culturale</div>'
+                + '<div style="width:48px;height:48px;background:#10916D;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>'
+                + '<div style="font-size:18px;font-weight:600;color:#1A1815;margin-bottom:6px">Accesso confermato</div>'
+                + '<div style="font-size:14px;color:#666;margin-bottom:24px">Bentornato, <b>' + esc(r.nome || r.email.split('@')[0]) + '</b></div>'
+                + '<div style="font-size:13px;color:#888;margin-bottom:20px">Ricarica la pagina per accedere a Sinopia con il tuo profilo.</div>'
+                + '<button onclick="location.reload()" style="background:#935851;color:#fff;border:none;padding:14px 36px;border-radius:999px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px;width:100%">Ricarica e accedi &rarr;</button>'
+                + '<div style="font-size:11px;color:#bbb">Oppure premi F5 o Ctrl+R</div>'
+                + '</div></div>';
             }, 300);
           } else if (r && r.ok && r.message === 'magic_link_inviato') {
             // Utente normale: magic link inviato via email
