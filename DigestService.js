@@ -207,7 +207,7 @@ function buildDigestHTML(items, dest, readerUrl) {
     if (_ed && _ed.testo) {
       const _edTesto = String(_ed.testo).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
       const _edTitolo = String(_ed.titolo||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      editorialeBlock = `<tr><td style="padding:20px 36px 4px"><div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8B3A1F;font-weight:700;margin-bottom:8px">Editoriale</div><div style="font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:10px">${_edTitolo}</div><p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C">${_edTesto}</p><div style="margin-top:14px;border-bottom:1px solid #e8e5e0"></div></td></tr>`;
+      editorialeBlock = `<tr><td style="padding:20px 36px 4px"><div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8B3A1F;font-weight:700;margin-bottom:8px">Approfondimento della settimana</div><div style="font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:10px">${_edTitolo}</div><p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C">${_edTesto}</p><div style="margin-top:14px;border-bottom:1px solid #e8e5e0"></div></td></tr>`;
     }
   } catch(_edErr) { Logger.log('[DigestService] editoriale hook err: ' + _edErr.message); }
 

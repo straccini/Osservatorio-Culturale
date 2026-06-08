@@ -3013,8 +3013,10 @@
           var testoFull = String(ed.testo || '');
           var testoTrunc = testoFull.length > 100 ? testoFull.substring(0, 100).replace(/\s+\S*$/, '') + '...' : testoFull;
           if (txt) txt.textContent = testoTrunc;
-          // Capolettera: prima lettera del testo
-          if (cap && testoFull.length > 0) cap.textContent = testoFull.charAt(0).toUpperCase();
+          // Capolettera: prima lettera del titolo
+          if (cap && ed.titolo) cap.textContent = ed.titolo.charAt(0).toUpperCase();
+          // Salva testo completo per overlay
+          window._approfondimentoData = { titolo: ed.titolo, testo: testoFull };
           box.hidden = false;
         }).withFailureHandler(function(){}).getEditorialeCorrente();
       }
@@ -11152,10 +11154,24 @@
     uploadTsv: uploadTsv,
     reloadFontiStats: reloadFontiStats,
     testDigestEmail: testDigestEmail,
-    // v4.22 E1 — Editoriale settimanale
+    // v4.22 E1 — Approfondimento della settimana
     _loadEditoriale: _loadEditoriale,
     _generaEditoriale: _generaEditoriale,
     _approvaEditoriale: _approvaEditoriale,
+    _apriApprofondimento: function() {
+      var data = window._approfondimentoData;
+      if (!data || !data.testo) return;
+      var ov = document.getElementById('oc-approfondimento-overlay');
+      var tit = document.getElementById('approfTitolo');
+      var txt = document.getElementById('approfTesto');
+      if (tit) tit.textContent = data.titolo || '';
+      if (txt) txt.innerHTML = esc(data.testo).replace(/\n/g, '<br>');
+      if (ov) { ov.hidden = false; ov.style.display = 'flex'; }
+    },
+    _chiudiApprofondimento: function() {
+      var ov = document.getElementById('oc-approfondimento-overlay');
+      if (ov) { ov.hidden = true; ov.style.display = 'none'; }
+    },
     // Sprint 1.3 D2.1+D2.2 - Tagging Matrix admin
     setupMatrixCols: setupMatrixCols,
     tagMatrixBatch: tagMatrixBatch,

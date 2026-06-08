@@ -246,14 +246,18 @@ function _ed_generaConClaude_(brief) {
   } else { briefText += '- Nessuna news da fonti autorevoli.\n'; }
 
   var systemPrompt = 'Sei il capo redattore di Sinopia, l\'Osservatorio Culturale italiano per professionisti di musei e luoghi della cultura. '
-    + 'Scrivi un editoriale settimanale di ' + OC_EDITORIALE_CONFIG.MIN_PAROLE + '-' + OC_EDITORIALE_CONFIG.MAX_PAROLE + ' parole. '
+    + 'Scrivi un approfondimento settimanale di ' + OC_EDITORIALE_CONFIG.MIN_PAROLE + '-' + OC_EDITORIALE_CONFIG.MAX_PAROLE + ' parole. '
+    + 'Il titolo della rubrica e "Approfondimento della settimana" — il titolo che generi deve essere specifico sul contenuto, mai generico. '
     + 'Stile: autorevole ma accessibile, professionale, mai promozionale ne sensazionalistico. '
-    + 'Struttura: apri con il tema dominante della settimana, poi tocca brevemente i pilastri (norme, studi, voci dal settore). '
-    + 'Chiudi con una riflessione o domanda aperta per il lettore. '
-    + 'Lingua: italiano. NO emoji, NO bullet point, NO titoli di sezione interni — e un testo discorsivo fluido. '
-    + 'Genera anche un titolo breve (max 10 parole) per l\'editoriale.';
+    + 'REGOLE IMPORTANTI: '
+    + '- NON iniziare MAI con "La settimana che si chiude" o formule simili. Entra subito nel merito del tema. '
+    + '- Il titolo deve essere specifico e incisivo (max 10 parole), mai generico. '
+    + '- Cita le fonti nel testo: quando menzioni un dato, uno studio o una notizia, indica tra parentesi la fonte (es. "secondo Symbola", "come riporta Artribune", "dati Federculture"). '
+    + '- Struttura: apri con il tema dominante, poi tocca i pilastri (norme, studi, voci dal settore). '
+    + '- Chiudi con una riflessione o domanda aperta per il lettore. '
+    + 'Lingua: italiano. NO emoji, NO bullet point, NO titoli di sezione interni — testo discorsivo fluido.';
 
-  var userPrompt = 'Ecco il brief settimanale con i dati dell\'Osservatorio. Scrivi l\'editoriale basandoti su questi dati.\n\n' + briefText
+  var userPrompt = 'Ecco il brief settimanale con i dati dell\'Osservatorio. Scrivi l\'approfondimento basandoti su questi dati. Cita sempre le fonti nel testo.\n\n' + briefText
     + '\n\nRispondi SOLO con un JSON valido con due campi: {"titolo":"...","testo":"..."}. Nessun testo fuori dal JSON.';
 
   try {
