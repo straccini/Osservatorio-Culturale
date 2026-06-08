@@ -7503,7 +7503,9 @@
             // Senza reload, la pagina è renderizzata come ospite e il DOM non si aggiorna.
             try { localStorage.setItem('oc_token', r.token); } catch(_){}
             try { localStorage.removeItem('oc_force_guest'); } catch(_){}
-            // Mostra spinner di attesa
+            // Mostra spinner di attesa e ricarica la pagina
+            // Il reload è l'unico modo affidabile in GAS: doGet leggerà il token
+            // da localStorage via hydrate() → initSession() → validaSessione()
             if (msg) {
               msg.innerHTML = '<div style="text-align:center;padding:12px 0">'
                 + '<div style="display:inline-block;width:28px;height:28px;border:3px solid var(--rule);border-top-color:var(--accent,#935851);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:8px"></div>'
@@ -7513,14 +7515,12 @@
                 + '</div>';
               msg.hidden = false;
             }
-            // Chiudi overlay e ricarica con il token nell'URL (doGet lo inietta nella sessione)
+            // Chiudi overlay e ricarica: hydrate legge il token da localStorage
             setTimeout(function() {
-              var ov = document.getElementById('oc-regform-overlay'); if (ov) ov.remove();
-              var gg = document.getElementById('oc-guest-gate'); if (gg) gg.remove();
-              // Ricarica pagina: doGet legge il token da localStorage via validaSessione
-              var baseUrl = window.GAS_URL || window.location.href.split('?')[0];
-              window.location.href = baseUrl + '?t=' + encodeURIComponent(r.token);
-            }, 800);
+              try { var ov = document.getElementById('oc-regform-overlay'); if (ov) ov.remove(); } catch(_){}
+              try { var gg = document.getElementById('oc-guest-gate'); if (gg) gg.remove(); } catch(_){}
+              window.location.reload();
+            }, 600);
           } else if (r && r.ok && r.message === 'magic_link_inviato') {
             // Utente normale: magic link inviato via email
             if (msg) {

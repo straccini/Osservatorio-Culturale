@@ -1821,8 +1821,8 @@ function getBandiV5(limit) {
       var giorni = (scadDate && !isNaN(scadDate.getTime()))
         ? Math.round((scadDate.getTime() - oggi.getTime()) / 86400000) : null;
 
-      // Scarta scaduti da più di 30 gg
-      if (giorni !== null && giorni < -30) continue;
+      // v4.22 — Scarta TUTTI i bandi scaduti (credibilità: nessun bando scaduto visibile)
+      if (giorni !== null && giorni < 0) continue;
 
       var rawRil = row[COL_B.DATA_RILEVAMENTO - 1];
       out.push({

@@ -1443,6 +1443,18 @@ function getBandiRadar() {
     if(dataRil instanceof Date&&!isNaN(dataRil)) dataStr=Utilities.formatDate(dataRil,'Europe/Rome','yyyy-MM-dd');
     else if(typeof dataRil==='string') dataStr=dataRil;
     const g=k=>row[(C[k]||COL[k])-1];
+    // v4.22 — Filtro scaduti: nessun bando con scadenza passata
+    if (scadenzaStr) {
+      var _dtCheck = new Date(scadenzaStr);
+      if (!isNaN(_dtCheck.getTime())) {
+        var _oggi = new Date(); _oggi.setHours(0,0,0,0);
+        if (_dtCheck.getTime() < _oggi.getTime()) return; // SCADUTO → skip
+      }
+    }
+    // Filtro archiviati
+    var _sr = String(g('STATO_RECORD')||'').toLowerCase();
+    if (_sr === 'archiviato') return;
+
     bandi.push({
       id:'r'+(idx+2), rowIndex:idx+2,
       data:dataStr||new Date().toISOString().slice(0,10),
@@ -1455,10 +1467,10 @@ function getBandiRadar() {
       note:String(g('NOTE')||''), fonte:String(g('FONTE')||''),
       priorita:String(g('PRIORITA')||'blu'),
       nascosto:g('NASCOSTO')===true||g('NASCOSTO')==='SI'||g('NASCOSTO')==='TRUE',
-      statoRecord:String(g('STATO_RECORD')||'attivo'),  // *
-      urlEnte:String(g('URL_ENTE')||''),                // *
-      lettoBando:g('LETTO_BANDO')===true||g('LETTO_BANDO')==='TRUE', // * v3.1
-      ambito: parseInt(g('AMBITO'))||null,              // FIX Sprint 1.2: aggiunto ambito per filtro vista ambito
+      statoRecord:_sr||'attivo',
+      urlEnte:String(g('URL_ENTE')||''),
+      lettoBando:g('LETTO_BANDO')===true||g('LETTO_BANDO')==='TRUE',
+      ambito: parseInt(g('AMBITO'))||null,
     });
   });
   return bandi;
