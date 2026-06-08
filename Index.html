@@ -654,6 +654,26 @@
       <div class="filters filters-tools" style="display:none"></div>
       <!-- Admin tools social (centralizzati in Settings) -->
       <div id="socialAdminTools" class="admin-tools-inline" style="display:none"></div>
+      <!-- Rilancio manuale (solo admin/editor) -->
+      <div id="swRilancioBox" style="display:none;border:1px solid var(--line,#e7e0d4);border-radius:10px;padding:12px;margin:10px 0;background:var(--paper-2,#f7f4ee)">
+        <div style="font-weight:600;font-size:13px;margin-bottom:8px">Rilancia un post nel wall</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <input id="swrUrl" type="url" placeholder="URL del post (X, LinkedIn, Instagram, articolo…)" style="flex:1;min-width:240px;padding:7px 10px;font-size:13px;border:1px solid var(--line,#ddd);border-radius:6px">
+          <button class="btn btn-secondary" onclick="OC.rilancioPreview()" style="font-size:12px;padding:7px 12px">Anteprima</button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+          <input id="swrAutore" placeholder="Autore / testata" style="flex:1;min-width:160px;padding:7px 10px;font-size:13px;border:1px solid var(--line,#ddd);border-radius:6px">
+          <select id="swrTipo" style="padding:7px 10px;font-size:13px;border:1px solid var(--line,#ddd);border-radius:6px"><option value="persona">persona</option><option value="testata">testata</option><option value="sinopia">sinopia</option></select>
+          <input id="swrPiattaforma" placeholder="piattaforma" style="width:150px;padding:7px 10px;font-size:13px;border:1px solid var(--line,#ddd);border-radius:6px">
+        </div>
+        <input id="swrTitolo" placeholder="Titolo" style="width:100%;box-sizing:border-box;margin-top:6px;padding:7px 10px;font-size:13px;border:1px solid var(--line,#ddd);border-radius:6px">
+        <textarea id="swrEstratto" placeholder="Estratto (max 300)" rows="2" style="width:100%;box-sizing:border-box;margin-top:6px;padding:7px 10px;font-size:13px;border:1px solid var(--line,#ddd);border-radius:6px"></textarea>
+        <input id="swrImg" placeholder="URL immagine (opzionale)" style="width:100%;box-sizing:border-box;margin-top:6px;padding:7px 10px;font-size:13px;border:1px solid var(--line,#ddd);border-radius:6px">
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+          <button class="btn" onclick="OC.rilanciaPost()" style="font-size:12px;padding:7px 14px">Pubblica nel wall</button>
+          <span id="swrMsg" style="font-size:12px;color:var(--ink-2)"></span>
+        </div>
+      </div>
       <div id="socialWallList" aria-live="polite">
         <div class="sw-skeleton-grid">
           <div class="skeleton-card sw-skeleton-tile"></div>
@@ -2814,6 +2834,7 @@
   var _filterSocial = { tipo: 'tutti' };
 
   function loadSocialWall(force) {
+    try { swRilancioInit(); } catch(e){}
     if (!hasGAS()) return;
     if (_cacheSocialWall && !force) { renderSocialWall(_cacheSocialWall); return; }
     var list = $('socialWallList');
@@ -2823,6 +2844,36 @@
       .withSuccessHandler(function(r) { _cacheSocialWall = r || {posts:[]}; renderSocialWall(_cacheSocialWall); })
       .withFailureHandler(function(err) { console.error('getSocialWall', err); renderSocialWall({posts:[]}); })
       .getSocialWall();
+  }
+
+  // --- Rilancio manuale post nel Social Wall (admin/editor) ---
+  function _swToken_() { return (window.OC_SESSION && window.OC_SESSION.token) || null; }
+  function _swIsEditor_() { return ((window.OC_SESSION && window.OC_SESSION.livello) || 0) >= 2; }
+  function swRilancioInit() { var b = $('swRilancioBox'); if (b) b.style.display = _swIsEditor_() ? 'block' : 'none'; }
+  function rilancioPreview() {
+    var url = ($('swrUrl')||{}).value || ''; if (!url) { alert('Incolla un URL'); return; }
+    var m = $('swrMsg'); if (m) m.textContent = 'Anteprima in corso…';
+    google.script.run.withSuccessHandler(function(r){
+      if (r && r.ok && r.og) {
+        if ($('swrTitolo') && r.og.titolo) $('swrTitolo').value = r.og.titolo;
+        if ($('swrEstratto') && r.og.estratto) $('swrEstratto').value = (r.og.estratto||'').substring(0,300);
+        if ($('swrImg') && r.og.imgUrl) $('swrImg').value = r.og.imgUrl;
+        if (m) m.textContent = 'Anteprima caricata — controlla e pubblica.';
+      } else if (m) { m.textContent = (r && r.error) || 'Nessuna anteprima: compila a mano.'; }
+    }).withFailureHandler(function(e){ if (m) m.textContent = 'Errore: ' + (e.message||e); }).rilancioPreview(url);
+  }
+  function rilanciaPost() {
+    var body = { url:($('swrUrl')||{}).value||'', autore:($('swrAutore')||{}).value||'', tipo:($('swrTipo')||{}).value||'persona',
+      piattaforma:($('swrPiattaforma')||{}).value||'', titolo:($('swrTitolo')||{}).value||'', estratto:($('swrEstratto')||{}).value||'',
+      imgUrl:($('swrImg')||{}).value||'', token:_swToken_() };
+    if (!body.url && !body.titolo) { alert('Serve almeno URL o titolo'); return; }
+    var m = $('swrMsg'); if (m) m.textContent = 'Pubblico…';
+    google.script.run.withSuccessHandler(function(r){
+      if (r && r.ok) { if (m) m.textContent = 'Pubblicato ✓';
+        ['swrUrl','swrAutore','swrPiattaforma','swrTitolo','swrEstratto','swrImg'].forEach(function(id){ if($(id)) $(id).value=''; });
+        loadSocialWall(true);
+      } else if (m) { m.textContent = (r && r.error) || 'Errore.'; }
+    }).withFailureHandler(function(e){ if (m) m.textContent = 'Errore: ' + (e.message||e); }).rilanciaPost(body);
   }
 
   var _SW_COLORS = { istituzione:'var(--amb-2)', museo:'var(--amb-3)', fondazione:'var(--amb-4)', associazione:'var(--amb-1)', rivista:'var(--amb-5)', blog:'var(--ink-3)' };
@@ -11447,6 +11498,8 @@
     },
     // Sprint SW — Social Wall home + settings
     loadSocialWall: function(force){ loadSocialWall(!!force); },
+    rilancioPreview: function(){ rilancioPreview(); },
+    rilanciaPost: function(){ rilanciaPost(); },
     reloadSocialFonti: function(){
       if (!hasGAS()) return;
       var tbl = $('socialFontiTable');
