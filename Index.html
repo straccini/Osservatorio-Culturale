@@ -11490,8 +11490,16 @@
       var tit = document.getElementById('approfTitolo');
       var txt = document.getElementById('approfTesto');
       if (tit) tit.textContent = data.titolo || '';
-      if (txt) txt.innerHTML = esc(data.testo).replace(/\n/g, '<br>');
-      if (ov) { ov.hidden = false; ov.style.display = 'flex'; }
+      if (txt) {
+        var testoHtml = esc(data.testo).replace(/\n/g, '<br>');
+        if (testoHtml.length > 1) {
+          var prima = testoHtml.charAt(0);
+          var resto = testoHtml.substring(1);
+          testoHtml = '<span style="float:left;font-family:Georgia,serif;font-size:64px;font-weight:700;line-height:.8;color:#8B3A1F;margin:4px 10px 0 0;padding-top:4px">' + prima + '</span>' + resto;
+        }
+        txt.innerHTML = testoHtml;
+      }
+      if (ov) { ov.hidden = false; ov.style.display = 'block'; window.scrollTo(0,0); }
     },
     _chiudiApprofondimento: function() {
       var ov = document.getElementById('oc-approfondimento-overlay');
