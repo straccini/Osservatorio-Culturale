@@ -30,7 +30,7 @@
   --ink:#101010;
   --ink-2:#3A3A3C;
   --ink-3:#6E6E73;
-  --ink-4:#A1A1A6;
+  --ink-4:#74747A; /* WCAG AA: era #A1A1A6 (2.6:1, sotto soglia) -> 4.68:1 su bianco */
   --ink-5:#D2D2D7;
 
   --accent:#935851;      /* Terracotta Sinopia */
@@ -2425,6 +2425,9 @@ body.is-home-page .topbar-search{display:none}
 .br-a4 { background: #F5EDE0; color: var(--accent,#935851); }
 .br-a5 { background: #E3F0F2; color: var(--amb-5,#0E7490); }
 
+/* v4.22 WCAG — Contrasto migliorato per testo piccolo su amb-2 */
+.br-tema.br-a2, .sr-badge.a2, .hamb-chip.a2 .hamb-name { color: #0A6B4F; }
+
 /* Badge urgenza / nuovo */
 .br-badge-urgent {
   font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700;
@@ -2544,9 +2547,9 @@ body.is-home-page .topbar-search{display:none}
 }
 .br-act:active { transform: translateY(1px); }
 .br-act:focus-visible {
-  outline: none;
+  outline: 2px solid var(--accent,#935851); /* WCAG 2.4.7: focus visibile (era ring accent-soft ~1.1:1) */
+  outline-offset: 1px;
   border-color: var(--ink,#101010);
-  box-shadow: 0 0 0 3px var(--accent-soft,#F0E6E4);
 }
 
 /* Stati semantici — colore al hover */
@@ -2596,6 +2599,21 @@ body.is-home-page .topbar-search{display:none}
 }
 [data-theme="dark"] .br-act-read.is-done {
   border-color: #34D399; color: #34D399; background: rgba(16,145,109,.18);
+}
+
+/* v4.22 WCAG — Touch target minimo 44px per bottoni azione card */
+.br-act-read, .br-act-arch, .br-act-trash, .br-act-save, .br-act-save-on {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* v4.22 WCAG — Touch target minimo 44px per bottoni topbar */
+.topbar-user-btn, .topbar-search-btn, .topbar-darkmode-btn {
+  min-width: 44px;
+  min-height: 44px;
 }
 
 /* === FILTRI DUE LIVELLI === */
@@ -3119,8 +3137,9 @@ textarea:focus-visible {
 .btn:hover { transform: translateY(-1px); }
 .btn:active { transform: translateY(0); }
 .btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: 2px solid var(--accent); /* WCAG 2.4.7/1.4.11: ring visibile >=3:1 (era accent-soft ~1.1:1) */
+  outline-offset: 1px;
+  box-shadow: 0 0 0 4px var(--accent-soft);
 }
 .btn:disabled {
   opacity: 0.45;

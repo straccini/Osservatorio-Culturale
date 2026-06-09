@@ -2339,6 +2339,24 @@
   function ambLblFor(a){ var n=parseInt(a,10); return (n>=1&&n<=5)?('Ambito 0'+n+' · '+AMBITI[n].nome):''; }
   function trunc(s,n){ s=String(s||''); if(s.length<=n) return s; return s.substring(0,n-1).replace(/\s+\S*$/,'')+'…'; }
 
+  // v4.22 WCAG — Focus trap per modali accessibili
+  function _wcagFocusTrap_(overlayId, closeCallback) {
+    var ov = document.getElementById(overlayId);
+    if (!ov) return;
+    // ESC chiude
+    ov.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { e.preventDefault(); closeCallback(); return; }
+      // Tab trap
+      if (e.key === 'Tab') {
+        var focusable = ov.querySelectorAll('button,input,select,textarea,a[href],[tabindex]:not([tabindex="-1"])');
+        if (!focusable.length) return;
+        var first = focusable[0], last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+  }
+
   // v4.18.8 (2026-05-12) — helper di parsing per sort bandi
   // Estrae il numero da stringhe tipo "€ 250.000", "500000", "fino a 1.5 milioni" (best effort)
   function _parseImporto_(v){
@@ -3959,7 +3977,7 @@
     var salvato = !!b.salvato;
     var acts = _cardActionsHtml_('bando', id, salvato);
 
-    return '<div class="br-row' + (isUrgent ? ' br-urgent' : '') + '" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
+    return '<div class="br-row' + (isUrgent ? ' br-urgent' : '') + '" role="button" tabindex="0" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
       // — SINISTRA —
       + '<div class="br-left">'
       +   '<div class="br-tags">'
@@ -4135,7 +4153,7 @@
       ? '<a class="br-link" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Ascolta episodio">&#127911;&nbsp;Ascolta</a>'
       : '<span class="br-link br-link-nd">Nessun link</span>';
 
-    return '<div class="br-row pd-row' + (p.isRecente ? ' pd-recente' : '') + '" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
+    return '<div class="br-row pd-row' + (p.isRecente ? ' pd-recente' : '') + '" role="button" tabindex="0" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
       + '<div class="br-left">'
       +   '<div class="br-tags">'
       +     (showLabel ? '<span class="pd-show">' + esc(showLabel) + '</span>' : '')
@@ -4294,7 +4312,7 @@
       ? '<a class="br-link" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Leggi articolo su ' + esc(n.fonte||'fonte') + '">&#8599;&nbsp;Leggi</a>'
       : '<span class="br-link br-link-nd">Nessun link</span>';
 
-    return '<div class="br-row nr-row' + (n.isRecente ? ' nr-recente' : '') + '" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
+    return '<div class="br-row nr-row' + (n.isRecente ? ' nr-recente' : '') + '" role="button" tabindex="0" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
       // — SINISTRA —
       + '<div class="br-left">'
       +   '<div class="br-tags">'
@@ -4485,7 +4503,7 @@
       ? '<a class="br-link" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Guarda su YouTube">&#9654;&nbsp;Guarda</a>'
       : '<span class="br-link br-link-nd">Nessun link</span>';
 
-    return '<div class="br-row vd-row' + (v.isRecente ? ' vd-recente' : '') + '" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
+    return '<div class="br-row vd-row' + (v.isRecente ? ' vd-recente' : '') + '" role="button" tabindex="0" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
       + '<div class="br-left">'
       +   '<div class="br-tags">'
       +     (canaleLabel ? '<span class="vd-canale">' + esc(canaleLabel) + '</span>' : '')
@@ -4593,7 +4611,7 @@
       ? '<a class="br-link" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Vai alla scheda del libro">&#8599;&nbsp;Scheda</a>'
       : '<span class="br-link br-link-nd">Nessun link</span>';
 
-    return '<div class="br-row lb-row' + (b.isRecente ? ' lb-recente' : '') + '" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
+    return '<div class="br-row lb-row' + (b.isRecente ? ' lb-recente' : '') + '" role="button" tabindex="0" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
       + '<div class="br-left">'
       +   '<div class="br-tags">'
       +     (editLabel ? '<span class="lb-editore">' + esc(editLabel) + '</span>' : '')
@@ -7738,7 +7756,7 @@
     var overlay = document.createElement('div');
     overlay.id = 'oc-regform-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.6);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
-    overlay.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:460px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);padding:36px 32px;font-family:var(--font-ui,sans-serif);max-height:calc(100vh - 40px);overflow-y:auto">'
+    overlay.innerHTML = '<div role="dialog" aria-modal="true" aria-label="Accedi o registrati" style="background:#fff;border-radius:16px;max-width:460px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);padding:36px 32px;font-family:var(--font-ui,sans-serif);max-height:calc(100vh - 40px);overflow-y:auto">'
       // --- Sezione 1: Accesso (sempre visibile — backend controlla il ruolo) ---
       + '<div style="font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:4px">Accedi</div>'
           + '<p style="font-size:13px;color:var(--ink-2);line-height:1.5;margin:0 0 14px">Inserisci la tua email. Ti invieremo un link di accesso sicuro.</p>'
@@ -9097,7 +9115,7 @@
       ? '<h4 class="br-title"><a href="' + link + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none" onclick="event.stopPropagation()">' + titolo + '</a></h4>'
       : '<h4 class="br-title">' + titolo + '</h4>';
 
-    return '<div class="br-row ' + tipoCol + '-row" style="opacity:.85">'
+    return '<div class="br-row ' + tipoCol + '-row" role="button" tabindex="0" style="opacity:.85">'
       + '<div class="br-left">'
       +   '<div class="br-tags">'
       +     '<span class="' + tipoCol + '-' + (tipo==='bando'?'tag':'fonte') + '" style="font-size:10px">' + esc(tipoLbl) + '</span>'
@@ -9907,6 +9925,17 @@
     closeDetail: closeDetail,
     openGuida:   openGuida,
     closeGuida:  closeGuida,
+    // v4.22 WCAG — Keyboard handler: Enter/Space on [role=button][tabindex] triggers click
+    _wcagKeyHandler: (function(){
+      document.addEventListener('keydown', function(e) {
+        if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.hasAttribute('role') && e.target.getAttribute('role') === 'button' && e.target.hasAttribute('tabindex')) {
+          e.preventDefault();
+          e.target.click();
+        }
+      });
+      return true;
+    })(),
+
     // v4.22 — Carosello 3 slide
     _carGo: function(idx) {
       var slider = document.getElementById('carSlider');
@@ -11854,6 +11883,15 @@
       var ov = document.getElementById('oc-gdpr-gate');
       if (ov) { ov.hidden = false; ov.style.display = 'flex'; }
     }
+  });
+
+  // v4.22 WCAG — Wire focus traps to existing modals
+  document.addEventListener('DOMContentLoaded', function() {
+    _wcagFocusTrap_('oc-regform-overlay', function(){ var ov=document.getElementById('oc-regform-overlay'); if(ov)ov.remove(); });
+    _wcagFocusTrap_('oc-gdpr-gate', function(){}); // GDPR gate cannot be closed with ESC
+    _wcagFocusTrap_('oc-approfondimento-overlay', function(){ OC._chiudiApprofondimento(); });
+    _wcagFocusTrap_('oc-addfonte-overlay', function(){ OC._closeAddFonteModal(); });
+    _wcagFocusTrap_('oc-servizi-overlay', function(){ OC._chiudiServiziOverlay(); });
   });
 </script>
 
