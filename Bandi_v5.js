@@ -1915,6 +1915,10 @@ function getUltimiBandiV5(limit) {
       if (stato === 'archiviato') continue;
       // Escludi gli esiti/aggiudicazioni dalla home (sono nella pagina bandi, filtro "Esiti")
       if (String(row[COL_B.STATUS - 1] || '').toLowerCase() === 'esito') continue;
+      // v4.22 — Filtra bandi scaduti (NESSUN bando scaduto visibile)
+      var _rawScad = row[COL_B.SCADENZA - 1];
+      var _scadD = (_rawScad instanceof Date) ? _rawScad : (_rawScad ? new Date(_rawScad) : null);
+      if (_scadD && !isNaN(_scadD.getTime()) && _scadD.getTime() < oggi.getTime()) continue;
       var rawRil = row[COL_B.DATA_RILEVAMENTO - 1];
       var rilDate = (rawRil instanceof Date) ? rawRil : (rawRil ? new Date(rawRil) : new Date(0));
       items.push({ r: r, rilDate: rilDate });

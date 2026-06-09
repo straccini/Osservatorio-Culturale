@@ -76,6 +76,49 @@
 </head>
 <body>
 
+<!-- ===== BOOT SPLASH (v4.22.1) =====================================
+     Copre il breve "lampo" di caricamento client (parse HTML/CSS, FOUC)
+     con un overlay brandizzato Sinopia. NB: la pagina bianca *prima* che
+     l'HTML arrivi e' il cold-start di Google (vedi KeepWarm_v1.js): non e'
+     coperta da qui. Questo splash si auto-nasconde appena il DOM e' pronto.
+     SICUREZZA: oltre alla rimozione via JS c'e' un failsafe CSS che lo
+     dissolve a 6s a prescindere -> non puo' MAI restare bloccato sopra l'app. -->
+<style>
+  #appBootSplash{position:fixed;inset:0;z-index:100000;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:16px;background:#F7F4EE;
+    font-family:Georgia,'Times New Roman',serif;
+    animation:ocBootFailsafe .6s ease 6s forwards}
+  #appBootSplash.oc-hide{opacity:0;visibility:hidden;pointer-events:none;
+    transition:opacity .45s ease, visibility 0s linear .45s}
+  #appBootSplash .oc-boot-brand{font-style:italic;font-size:30px;color:#935851;letter-spacing:.01em;line-height:1}
+  #appBootSplash .oc-boot-sub{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#5C4332}
+  #appBootSplash .oc-boot-spin{width:26px;height:26px;border:2.5px solid rgba(147,88,81,.22);
+    border-top-color:#935851;border-radius:50%;animation:ocBootSpin .8s linear infinite}
+  @keyframes ocBootSpin{to{transform:rotate(360deg)}}
+  @keyframes ocBootFailsafe{to{opacity:0;visibility:hidden;pointer-events:none}}
+  @media (prefers-color-scheme:dark){#appBootSplash{background:#1A1815}#appBootSplash .oc-boot-sub{color:#C9B79E}}
+</style>
+<div id="appBootSplash" role="status" aria-label="Caricamento Sinopia">
+  <div class="oc-boot-brand">Sinopia</div>
+  <div class="oc-boot-spin"></div>
+  <div class="oc-boot-sub">Osservatorio Culturale</div>
+</div>
+<script>
+  (function(){
+    function ocHideBoot(){ var b=document.getElementById('appBootSplash'); if(b){ b.classList.add('oc-hide'); } }
+    // Nasconde appena il guscio e' parsato (DOMContentLoaded) + piccola attesa per il primo paint.
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(ocHideBoot, 350);
+    } else {
+      document.addEventListener('DOMContentLoaded', function(){ setTimeout(ocHideBoot, 350); });
+    }
+    window.addEventListener('load', ocHideBoot);
+    setTimeout(ocHideBoot, 5000); // failsafe JS (oltre al failsafe CSS a 6s)
+    window.ocHideBoot = ocHideBoot; // hydrate() puo' chiamarlo quando i dati sono pronti
+  })();
+</script>
+
 <!-- ===== TOAST CONTAINER ===== -->
 <div id="oc-toast-container" aria-live="polite" aria-atomic="false"></div>
 
@@ -4839,7 +4882,10 @@
   }
 
   function doLogout(){
-    if (confirm('Vuoi disconnetterti dall\'Osservatorio Culturale?')) {
+    // v4.22.3 — rimosso il confirm() NATIVO: creava attrito e (cosa importante)
+    // blocca l'automazione del browser. Logout immediato. Per ripristinare una
+    // conferma usare un modal in-app (non window.confirm).
+    if (true) {
       var token = '';
       try { token = localStorage.getItem('oc_token') || ''; } catch(_){}
       try { localStorage.removeItem('oc_token'); } catch(_){}
@@ -4852,6 +4898,16 @@
       var baseUrl = (typeof GAS_URL !== 'undefined' && GAS_URL) ? GAS_URL : window.location.href.split('?')[0];
       window.top.location.href = baseUrl;
     }
+  }
+
+  // v4.22.2 — Reload "sicuro" per la sandbox GAS. Nella IFRAME sandbox l'app vive
+  // in un URL googleusercontent TRANSITORIO: location.reload() lo ricarica e produce
+  // una PAGINA BIANCA. L'unica operazione cross-origin permessa sul top frame e'
+  // SETtare location.href (esattamente come fa gia' doLogout). Usato da tutti i
+  // reload dopo il login per evitare la pagina bianca al rientro.
+  function _reloadApp_(){
+    var baseUrl = (typeof GAS_URL !== 'undefined' && GAS_URL) ? GAS_URL : window.location.href.split('?')[0];
+    try { window.top.location.href = baseUrl; } catch(_) { location.reload(); }
   }
 
   // ==========================================================
@@ -7771,7 +7827,7 @@
                 + '<div style="font-size:18px;font-weight:600;color:#1A1815;margin-bottom:6px">Accesso confermato</div>'
                 + '<div style="font-size:14px;color:#666;margin-bottom:24px">Bentornato, <b>' + esc(r.nome || r.email.split('@')[0]) + '</b></div>'
                 + '<div style="font-size:13px;color:#888;margin-bottom:20px">Ricarica la pagina per accedere a Sinopia con il tuo profilo.</div>'
-                + '<button onclick="location.reload()" style="background:#935851;color:#fff;border:none;padding:14px 36px;border-radius:999px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px;width:100%">Ricarica e accedi &rarr;</button>'
+                + '<button onclick="window.location.reload(true)" style="background:#935851;color:#fff;border:none;padding:14px 36px;border-radius:999px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px;width:100%">Ricarica e accedi &rarr;</button>'
                 + '<div style="font-size:11px;color:#bbb">Oppure premi F5 o Ctrl+R</div>'
                 + '</div></div>';
             }, 300);
@@ -9799,6 +9855,7 @@
       }
     },
     doLogout: doLogout,
+    _reloadApp: function(){ _reloadApp_(); },
     doLogin: function(){ _openRegistrationModal_('login'); },
     toggleUserMenu: function() {
       var m = document.getElementById('topbarUserMenu');
@@ -11999,7 +12056,7 @@
         window.OC_SESSION={token:r.token,email:r.email,livello:r.livello,permanente:!!r.permanente};
         setTimeout(function(){
           var ov=document.getElementById('oc-regform-overlay');if(ov)ov.remove();
-          location.reload();
+          _reloadApp_();
         },500);
       } else {
         if(msg){msg.textContent=(r&&r.error==='email_non_registrata')?'Email non trovata. Prova a registrarti.':'Errore: '+((r&&r.error)||'sconosciuto');msg.style.color='#C2410C';}
@@ -12041,7 +12098,7 @@
         window.OC_SESSION={token:r.token,email:r.email,livello:r.livello,permanente:!!r.permanente};
         setTimeout(function(){
           var ov=document.getElementById('oc-regform-overlay');if(ov)ov.remove();
-          location.reload();
+          _reloadApp_();
         },500);
       }
     }).withFailureHandler(function(){}).loginConEmail(email);
