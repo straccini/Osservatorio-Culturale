@@ -72,7 +72,7 @@ function getPodcastRecenti(limit) {
 function getHomepageDataV42() {
   if (typeof _initLegacyConsts_ === 'function') _initLegacyConsts_();
   // v4.22 PERF — CacheService (100KB, TTL nativo) al posto di PropertiesService (9KB, TTL manuale)
-  var HP_CACHE_KEY = 'oc_hp_v4'; // v4.22.1 — bumped per forzare invalidazione
+  var HP_CACHE_KEY = 'oc_hp_v5'; // v4.22.2 — esclusi bandi senza scadenza
   var HP_CACHE_TTL_SEC = 1800; // 30 minuti
   try {
     var cached = CacheService.getScriptCache().get(HP_CACHE_KEY);

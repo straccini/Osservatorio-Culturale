@@ -120,6 +120,15 @@ function doGet(e) {
   _initLegacyConsts_(); // v4.22 PERF — lazy init delle costanti config
   var params = (e && e.parameter) || {};
 
+  // ---------- 0-warm) Keep-warm self-ping (?warm=1) — vedi KeepWarm_v1.js ----------
+  // Causa principale della "pagina bianca" all'avvio: Google deve caricare/compilare
+  // il progetto GAS in una nuova istanza V8 (cold start) prima di servire la pagina.
+  // Un ping periodico a ?warm=1 tiene calda l'istanza: risposta ultraleggera, NON
+  // assembla né trasferisce l'HTML. Non tocca il flusso di caricamento normale.
+  if (params.warm) {
+    return ContentService.createTextOutput('ok').setMimeType(ContentService.MimeType.TEXT);
+  }
+
   // v4.19.1 — Bootstrap check: se mancano le dipendenze critiche, pagina di errore
   var _bootErrors = [];
   if (!SHEET_ID) _bootErrors.push('SHEET_ID mancante nelle ScriptProperties');
@@ -1443,19 +1452,21 @@ function getBandiRadar() {
     if(dataRil instanceof Date&&!isNaN(dataRil)) dataStr=Utilities.formatDate(dataRil,'Europe/Rome','yyyy-MM-dd');
     else if(typeof dataRil==='string') dataStr=dataRil;
     const g=k=>row[(C[k]||COL[k])-1];
-    // v4.22 — Filtro scaduti: NESSUN bando con scadenza passata (credibilità)
-    // Controlla sia scadenzaStr (formato yyyy-MM-dd) sia la cella raw originale
-    var _scaduto = false;
+    // v4.22 — Filtro: escludi bandi scaduti E senza scadenza (solo scadenze future certe)
     var _oggi = new Date(); _oggi.setHours(0,0,0,0);
+    var _hasValidScad = false;
     if (scadenzaStr) {
       var _dtCheck = new Date(scadenzaStr + 'T00:00:00');
-      if (!isNaN(_dtCheck.getTime()) && _dtCheck.getTime() < _oggi.getTime()) _scaduto = true;
+      if (!isNaN(_dtCheck.getTime())) {
+        _hasValidScad = true;
+        if (_dtCheck.getTime() < _oggi.getTime()) return; // scaduto → skip
+      }
     }
-    // Fallback: controlla anche la cella raw (potrebbe essere Date object)
-    if (!_scaduto && scadenza instanceof Date && !isNaN(scadenza.getTime())) {
-      if (scadenza.getTime() < _oggi.getTime()) _scaduto = true;
+    if (!_hasValidScad && scadenza instanceof Date && !isNaN(scadenza.getTime())) {
+      _hasValidScad = true;
+      if (scadenza.getTime() < _oggi.getTime()) return; // scaduto → skip
     }
-    if (_scaduto) return; // SCADUTO → skip
+    if (!_hasValidScad) return; // senza scadenza → skip
 
     // Filtro archiviati
     var _sr = String(g('STATO_RECORD')||'').toLowerCase();
