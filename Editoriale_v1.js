@@ -133,10 +133,15 @@ function _ed_costruisciBrief_() {
       var vals = sh.getDataRange().getValues();
       var H = vals[0];
       var iDate = H.indexOf(dateCol);
+      // v4.22 fix: se la colonna data non esiste, prova varianti comuni
+      if (iDate < 0) iDate = H.indexOf('DataPubblicazione');
+      if (iDate < 0) iDate = H.indexOf('Data');
+      if (iDate < 0) iDate = H.indexOf('data');
+      if (iDate < 0) return []; // nessuna colonna data trovata → skip intero foglio
       var items = [];
       for (var ri = 1; ri < vals.length; ri++) {
         var dt = vals[ri][iDate] ? new Date(vals[ri][iDate]) : null;
-        if (!dt || dt < soglia) continue;
+        if (!dt || isNaN(dt.getTime()) || dt < soglia) continue;
         var obj = {};
         for (var ci = 0; ci < H.length; ci++) obj[String(H[ci])] = vals[ri][ci];
         obj._date = dt;
@@ -269,7 +274,7 @@ function _ed_generaConClaude_(brief) {
         'anthropic-version': '2023-06-01'
       },
       payload: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: (typeof OC_CLAUDE_MODEL !== 'undefined') ? OC_CLAUDE_MODEL : 'claude-haiku-4-5-20251001',
         max_tokens: 1200,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }]

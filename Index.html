@@ -7810,15 +7810,17 @@
                 + '</div>';
               msg.hidden = false;
             }
-            // v4.22 — Login completato: token salvato, l'utente ricarica la pagina.
-            // In GAS sandbox nessun metodo automatico di navigazione funziona.
-            // Chiudi tutti gli overlay e mostra un messaggio chiaro.
+            // v4.22.2 — Login completato: naviga al top frame con GAS_URL.
+            // location.reload() produce PAGINA BIANCA in GAS sandbox (URL transitorio).
+            // window.top.location.href = GAS_URL è l'unico metodo che funziona
+            // (già usato da doLogout). Salva GAS_URL prima di sovrascrivere il body.
+            var _savedGasUrl = (typeof GAS_URL !== 'undefined' && GAS_URL && GAS_URL !== 'GAS_URL_PLACEHOLDER') ? GAS_URL : '';
             setTimeout(function() {
               // Chiudi TUTTO
               ['oc-regform-overlay','oc-guest-gate','oc-newsletter-overlay','oc-reg-overlay','oc-gdpr-gate','oc-servizi-overlay'].forEach(function(id){
                 try { var el = document.getElementById(id); if (el) { el.style.display='none'; el.remove(); } } catch(_){}
               });
-              // Mostra pagina di conferma
+              // Mostra pagina di conferma con navigazione corretta
               document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#FAF7F2;font-family:Inter,sans-serif">'
                 + '<div style="text-align:center;max-width:420px;padding:40px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.08)">'
                 + '<div style="font-family:Georgia,serif;font-style:italic;font-size:32px;color:#8B3A1F;margin-bottom:4px">Sinopia</div>'
@@ -7826,9 +7828,9 @@
                 + '<div style="width:48px;height:48px;background:#10916D;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>'
                 + '<div style="font-size:18px;font-weight:600;color:#1A1815;margin-bottom:6px">Accesso confermato</div>'
                 + '<div style="font-size:14px;color:#666;margin-bottom:24px">Bentornato, <b>' + esc(r.nome || r.email.split('@')[0]) + '</b></div>'
-                + '<div style="font-size:13px;color:#888;margin-bottom:20px">Ricarica la pagina per accedere a Sinopia con il tuo profilo.</div>'
-                + '<button onclick="window.location.reload(true)" style="background:#935851;color:#fff;border:none;padding:14px 36px;border-radius:999px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px;width:100%">Ricarica e accedi &rarr;</button>'
-                + '<div style="font-size:11px;color:#bbb">Oppure premi F5 o Ctrl+R</div>'
+                + '<script>var _gasUrl="' + _savedGasUrl.replace(/"/g,'\\"') + '";<\/script>'
+                + '<button onclick="try{window.top.location.href=_gasUrl||window.location.href.split(\'?\')[0]}catch(_){location.reload()}" style="background:#935851;color:#fff;border:none;padding:14px 36px;border-radius:999px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px;width:100%">Entra in Sinopia &rarr;</button>'
+                + '<div style="font-size:11px;color:#bbb">Clicca per accedere con il tuo profilo</div>'
                 + '</div></div>';
             }, 300);
           } else if (r && r.ok && r.message === 'magic_link_inviato') {
@@ -9861,6 +9863,7 @@
       var m = document.getElementById('topbarUserMenu');
       if (!m) return;
       m.hidden = !m.hidden;
+      try { var _ub = document.getElementById('topbarUserBtn'); if (_ub) _ub.setAttribute('aria-expanded', String(!m.hidden)); } catch(_){} // WCAG 4.1.2
       if (!m.hidden) {
         setTimeout(function() {
           document.addEventListener('click', function _cl(e) {
@@ -11995,6 +11998,7 @@
     // Crea overlay login+registrazione
     var ov = document.createElement('div');
     ov.id = 'oc-regform-overlay';
+    ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label','Accedi o registrati'); // WCAG 4.1.2
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)';
     ov.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:440px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);position:relative;font-family:var(--font-ui,sans-serif);padding:32px 28px">'
       + '<button onclick="document.getElementById(\'oc-regform-overlay\').remove()" style="position:absolute;top:12px;right:12px;background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--ink-3)">&times;</button>'
@@ -12009,18 +12013,18 @@
       + '</div>'
       // Form login
       + '<div id="_gateLogin">'
-      + '<input type="email" id="_gateEmail" placeholder="La tua email" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px">'
+      + '<input type="email" id="_gateEmail" placeholder="La tua email" aria-label="Email" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px">'
       + '<button type="button" onclick="OC._gateDoLogin()" style="width:100%;background:var(--accent,#935851);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Accedi</button>'
       + '</div>'
       // Form registrazione (nascosto)
       + '<div id="_gateReg" hidden>'
-      + '<input type="text" id="_gateNome" placeholder="Nome" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px">'
-      + '<input type="text" id="_gateCognome" placeholder="Cognome" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px">'
-      + '<input type="email" id="_gateRegEmail" placeholder="Email" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px">'
+      + '<input type="text" id="_gateNome" placeholder="Nome" aria-label="Nome" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px">'
+      + '<input type="text" id="_gateCognome" placeholder="Cognome" aria-label="Cognome" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px">'
+      + '<input type="email" id="_gateRegEmail" placeholder="Email" aria-label="Email" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px">'
       + '<label style="display:flex;align-items:start;gap:6px;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="_gateGdpr" style="margin-top:3px"><span style="font-size:11px;color:var(--ink-3)">Acconsento al trattamento dei dati personali</span></label>'
       + '<button type="button" onclick="OC._gateDoReg()" style="width:100%;background:var(--accent,#935851);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Registrati</button>'
       + '</div>'
-      + '<div id="_gateMsg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>'
+      + '<div id="_gateMsg" role="alert" aria-live="assertive" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>'
       + '<button type="button" onclick="document.getElementById(\'oc-regform-overlay\').remove()" style="display:block;width:100%;margin-top:14px;background:transparent;border:none;color:var(--ink-3);font-size:12px;cursor:pointer">Continua senza accesso</button>'
       + '</div>';
     document.body.appendChild(ov);
