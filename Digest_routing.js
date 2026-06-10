@@ -528,8 +528,10 @@ function _escapeHtml_(s) {
  * @param {string} email
  * @return {Object} { ok, coorte, layout, html, subject }
  */
-function previewDigestPerEmail(email) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function previewDigestPerEmail(email, token) {
+  // v4.23 FIX — il gate richiedeva l'admin ma NON riceveva il token dal frontend:
+  // su deploy "Chiunque" senza token nessuno e admin -> tornava sempre 'forbidden'.
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token || null)) {
     return { ok:false, error:'forbidden' };
   }
   try {

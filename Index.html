@@ -1581,6 +1581,15 @@
         <button class="digest-tab" data-digest-tab="profilati" onclick="OC._switchDigestTab('profilati')" style="padding:10px 18px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:3px solid transparent;color:#888;cursor:pointer;transition:all .2s">Digest profilati</button>
       </div>
 
+      <!-- v4.23 — Legenda d'uso: chiarisce cosa fa ogni area e quali azioni inviano email REALI -->
+      <div style="background:var(--surface-2);border:1px solid var(--rule);border-radius:8px;padding:10px 14px;margin:-6px 0 18px;font-size:12px;color:var(--ink-2);line-height:1.6">
+        <b>Come si lavora qui:</b>
+        <b>1) Approfondimento</b> = l'editoriale che apre la newsletter (genera &rarr; revisiona &rarr; approva) &middot;
+        <b>2) Newsletter lettori</b> = il ciclo completo su cui lavorare: prepara &rarr; verifica &rarr; anteprima &rarr; <span style="color:var(--amb-2,#10916D);font-weight:700">test reale</span> &rarr; invio &middot;
+        <b>3) Digest profilati</b> = solo controllo e verifica a campione (i "test" creano <span style="color:#B45309;font-weight:700">bozze in coda</span>, nessun invio).
+        <br>Legenda azioni: <span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; invio reale</span> &middot; <span style="color:#B45309;font-weight:700">&#9679; crea bozza (nessun invio)</span> &middot; <span style="color:var(--amb-3,#3C6A95);font-weight:700">&#9679; solo anteprima</span>
+      </div>
+
       <!-- ========== TAB 1: APPROFONDIMENTO ========== -->
       <div class="digest-tab-content" data-digest-content="approfondimento">
         <div class="admin-card" style="margin-bottom:16px;border-left:4px solid #8B3A1F">
@@ -1709,9 +1718,9 @@
               <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">4</span>
               <span style="font-size:14px;font-weight:700;color:var(--ink)">Test</span>
             </div>
-            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Invia una copia di test a un indirizzo email specifico.</p>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px"><span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; Invio reale:</span> spedisce una copia vera della newsletter all'indirizzo che indichi (usa la tua email per verificarla nella casella).</p>
             <div style="margin-left:32px;display:flex;justify-content:flex-end">
-              <button class="btn btn-secondary" onclick="OC.testDigestEmail()" style="padding:8px 16px;font-size:13px" title="Invia copia di test newsletter generalista a un indirizzo email">Invia test</button>
+              <button class="btn btn-secondary" onclick="OC.testDigestEmail()" style="padding:8px 16px;font-size:13px;border-color:var(--amb-2,#10916D);color:var(--amb-2,#10916D)" title="Invia una copia REALE della newsletter lettori all'indirizzo indicato">Invia test reale (email)</button>
             </div>
           </div>
 
@@ -1817,13 +1826,13 @@
               <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">3</span>
               <span style="font-size:14px;font-weight:700;color:var(--ink)">Test profilo</span>
             </div>
-            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Genera una bozza di test per un profilo specifico o per l'ultimo compilatore.</p>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px"><span style="color:#B45309;font-weight:700">&#9679; Nessun invio:</span> genera una <b>bozza</b> che finisce nella coda (KPI "Bozze in coda"). L'invio reale avviene solo allo step 4. Per vedere il contenuto usa l'<b>Anteprima per email</b> in fondo alla pagina.</p>
             <div style="margin-left:32px;display:flex;gap:8px;margin-bottom:8px;align-items:center">
-              <input type="email" id="matrixTestEmail" placeholder="Email compilatore Matrix per test..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
-              <button class="btn btn-secondary" onclick="OC.testDigestMatrixPerEmail()" style="font-size:12px;padding:7px 14px" title="Genera bozza digest personalizzata per l'email indicata">Test su email</button>
+              <input type="email" id="matrixTestEmail" placeholder="Email compilatore Matrix..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
+              <button class="btn btn-secondary" onclick="OC.testDigestMatrixPerEmail()" style="font-size:12px;padding:7px 14px" title="Genera una BOZZA in coda per l'email indicata — nessuna email viene inviata">Genera bozza da email</button>
             </div>
             <div style="margin-left:32px;display:flex;justify-content:flex-end">
-              <button class="btn btn-secondary" onclick="OC.testDigestSegmentato()" style="font-size:12px;padding:7px 14px" title="Genera bozza usando ultimo responseId in ResponsesMatrix">Test ultimo profilo</button>
+              <button class="btn btn-secondary" onclick="OC.testDigestSegmentato()" style="font-size:12px;padding:7px 14px" title="Genera una BOZZA usando l'ultimo profilo Matrix — nessuna email viene inviata">Genera bozza ultimo profilo</button>
             </div>
           </div>
 
@@ -1877,8 +1886,8 @@
 
       <!-- ===== ANTEPRIMA PER DESTINATARIO ===== -->
       <div class="admin-card" style="margin-bottom:16px">
-        <h3 style="margin-top:0;font-size:15px">Anteprima digest per email</h3>
-        <p class="hint">Inserisci un'email per vedere cosa riceverebbe. Funziona per tutti i segmenti (lettore, profilato, Matrix).</p>
+        <h3 style="margin-top:0;font-size:15px">Anteprima digest per email <span style="font-size:11px;font-weight:600;color:var(--amb-3,#3C6A95)">&#9679; solo anteprima — nessun invio</span></h3>
+        <p class="hint">Inserisci un'email iscritta per vedere cosa riceverebbe (verifica a campione per tutti i segmenti: lettore, profilato, Matrix). Nessuna email viene spedita.</p>
         <div style="display:flex;gap:8px;margin-bottom:8px">
           <input type="email" id="previewEmail" placeholder="email@esempio.it" style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px"/>
           <button class="btn btn-secondary" onclick="OC._previewForEmail()" style="font-size:13px;padding:8px 14px">Anteprima</button>
@@ -7615,7 +7624,7 @@
         if (frame && r.html) { frame.srcdoc = r.html; frame.style.display = 'block'; }
       })
       .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
-      .previewDigestPerEmail(email);
+      .previewDigestPerEmail(email, (window.OC_SESSION && window.OC_SESSION.token) || null);
   }
 
   // v4.20 — Email agenti stats
