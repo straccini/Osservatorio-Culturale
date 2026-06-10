@@ -3647,6 +3647,7 @@ textarea:focus-visible {
 .topbar-user-btn:hover { background:var(--surface-raised,#EAE7E2); }
 .topbar-user-menu { position:absolute; right:0; top:calc(100% + 6px); background:#fff; border:1px solid var(--rule,#E5E5E7); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.12); min-width:180px; z-index:100; overflow:hidden; }
 .topbar-user-menu-item { display:block; width:100%; text-align:left; background:none; border:none; padding:10px 14px; font-size:13px; color:var(--ink); cursor:pointer; font-family:var(--font-ui); }
+.topbar-user-menu-item[hidden] { display:none; } /* v4.24.3 FIX — display:block sovrascriveva l'attributo hidden: "Accedi/Registrati" restava visibile anche da loggati (ed "Esci" da ospiti) */
 .topbar-user-menu-item:hover { background:var(--surface-2,#F5F3EE); }
 [data-theme="dark"] .topbar-user-btn { background:var(--surface-raised,#2a2520); border-color:var(--border,#3a352e); color:#fff; }
 [data-theme="dark"] .topbar-user-menu { background:#2a2520; border-color:#3a352e; }
