@@ -9,7 +9,7 @@ function _getConfig_() {
     CLAUDE_API_KEY:   p.CLAUDE_API_KEY || '',
     ADMIN_PWD:        p.ADMIN_PASSWORD || '',
     EDITOR_PWD:       p.EDITOR_PASSWORD || '',
-    TELEGRAM_TOKEN:   p.TELEGRAM_TOKEN || '',
+    TELEGRAM_TOKEN:   p.TELEGRAM_TOKEN || p.TELEGRAM_BOT_TOKEN || '',  // v4.23 FIX — unifica le 2 chiavi-token (TELEGRAM_TOKEN / TELEGRAM_BOT_TOKEN) usate dai 2 sottosistemi
     TELEGRAM_CHAT_ID: p.TELEGRAM_CHAT_ID || '',
     GIORNI_ALERT:     parseInt(p.GIORNI_SCADENZA_ALERT || '10'),
     SHEET_ID:         p.SHEET_ID || ''

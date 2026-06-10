@@ -84,7 +84,9 @@ function telegramNotifyAuthRequest_(obj) {
 // ================== LOW-LEVEL ==================
 
 function _tgToken_() {
-  return PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN') || '';
+  // v4.23 FIX — accetta ENTRAMBE le chiavi-token usate nel progetto, unificando i 2 sottosistemi Telegram.
+  var p = PropertiesService.getScriptProperties();
+  return p.getProperty('TELEGRAM_BOT_TOKEN') || p.getProperty('TELEGRAM_TOKEN') || '';
 }
 
 function _tgChat_() {
@@ -145,4 +147,33 @@ function setupTelegram() {
   Logger.log('Configurazione Telegram OK.');
   Logger.log('Status: ' + JSON.stringify(getTelegramConfigStatus()));
   return { ok: true };
+}
+
+/**
+ * v4.23 — DIAGNOSTICA UNICA TELEGRAM. Eseguire dall'editor GAS (Esegui -> diagnosiTelegram).
+ * Mostra quali chiavi ScriptProperties sono impostate e prova ENTRAMBI i mittenti:
+ *   - sendTelegram   -> alert bandi, recap scan, digest bozza, CRM, editoriale, ROC
+ *   - _tgSend_       -> "Richiedi autorizzazione invio" newsletter
+ * Se vedi 2 messaggi di test su Telegram, entrambi i collegamenti funzionano.
+ */
+function diagnosiTelegram() {
+  try { if (typeof _initLegacyConsts_ === 'function') _initLegacyConsts_(); } catch(_) {}
+  var p = PropertiesService.getScriptProperties();
+  var kTok  = p.getProperty('TELEGRAM_TOKEN')     || '';
+  var kBot  = p.getProperty('TELEGRAM_BOT_TOKEN') || '';
+  var kChat = p.getProperty('TELEGRAM_CHAT_ID')   || '';
+  function mask(s){ return s ? ('impostata (' + s.length + ' char, ...' + s.slice(-4) + ')') : 'NON impostata'; }
+  var report = {
+    TELEGRAM_TOKEN:     mask(kTok),
+    TELEGRAM_BOT_TOKEN: mask(kBot),
+    TELEGRAM_CHAT_ID:   mask(kChat),
+    tokenPresente:      (kTok || kBot) ? 'OK (almeno una chiave token c-e)' : 'MANCANTE (nessuna delle due chiavi-token)',
+    chatPresente:       kChat ? 'OK' : 'MANCANTE'
+  };
+  try { report.test_alert_bandi_digest = (typeof sendTelegram === 'function') ? sendTelegram('Diagnostica Telegram - mittente alert/bandi/digest (sendTelegram) OK') : 'sendTelegram assente'; }
+  catch(e){ report.test_alert_bandi_digest = { ok:false, error:e.message }; }
+  try { report.test_autorizzazione_newsletter = _tgSend_('Diagnostica Telegram - mittente autorizzazione newsletter (_tgSend_) OK'); }
+  catch(e){ report.test_autorizzazione_newsletter = { ok:false, error:e.message }; }
+  Logger.log(JSON.stringify(report, null, 2));
+  return report;
 }
