@@ -310,3 +310,55 @@ function _proGetResponseId_(email) {
   }
   return null;
 }
+
+/**
+ * v4.24 — Toggle rapido di un ambito dai chip dell'area. Accende/spegne tutte le dim dell'ambito.
+ * Richiede sessione valida (livello >= 1). Crea la riga profilo se assente (il toggle implica consenso esplicito).
+ */
+function setAmbitoInteresse(ambito, on, token) {
+  try {
+    var u = (typeof getRuoloCorrente === 'function') ? getRuoloCorrente(token || null, token || null) : null;
+    if (!u || !u.email || Number(u.livello) < 1) return { ok:false, error:'forbidden' };
+    var email = String(u.email).toLowerCase().trim();
+    var ss = getMainSS();
+    var sh = ss.getSheetByName(PROFILO_PRO_SHEET);
+    if (!sh) { ensureSheetProfiliPro_(); sh = ss.getSheetByName(PROFILO_PRO_SHEET); }
+    var data = sh.getDataRange().getValues();
+    var h = data[0];
+    var iEmail = h.indexOf('email'), iInt = h.indexOf('interessi_dimensioni'), iCons = h.indexOf('consenso_profilazione');
+    var ambDims = (typeof dimsFromAmbiti === 'function') ? dimsFromAmbiti([Number(ambito)]) : [];
+    if (!ambDims.length) return { ok:false, error:'ambito_non_valido' };
+    var rowIdx = -1;
+    for (var r = 1; r < data.length; r++) {
+      if (String(data[r][iEmail]).toLowerCase().trim() === email) { rowIdx = r; break; }
+    }
+    var cur = (rowIdx >= 0) ? String(data[rowIdx][iInt] || '').split(',').map(function(s){return s.trim();}).filter(Boolean) : [];
+    var set = cur.reduce(function(m,d){ m[d.toUpperCase()] = true; return m; }, {});
+    ambDims.forEach(function(d){ if (on) set[d.toUpperCase()] = true; else delete set[d.toUpperCase()]; });
+    var newCsv = Object.keys(set).join(',');
+    if (rowIdx >= 0) {
+      sh.getRange(rowIdx+1, iInt+1).setValue(newCsv);
+    } else {
+      var pid = Utilities.getUuid(); var now = new Date().toISOString();
+      var rowData = new Array(h.length).fill('');
+      rowData[h.indexOf('profileId')] = pid; rowData[iEmail] = email; rowData[iInt] = newCsv;
+      if (iCons >= 0) rowData[iCons] = true;
+      sh.appendRow(rowData);
+    }
+    if (typeof _proSyncOptIn_ === 'function') _proSyncOptIn_(email, newCsv);
+    return { ok:true, ambito:Number(ambito), on:!!on, ambiti:(typeof ambitiFromDims==='function'?ambitiFromDims(newCsv):[]) };
+  } catch(e) {
+    return { ok:false, error:e.message };
+  }
+}
+
+/** v4.24 — Ritorna gli ambiti di interesse correnti dell'utente (per i chip dell'area). */
+function getAmbitiInteresse(token) {
+  try {
+    var u = (typeof getRuoloCorrente === 'function') ? getRuoloCorrente(token || null, token || null) : null;
+    if (!u || !u.email) return { ok:true, ambiti:[] };
+    var ex = _proFindByEmail_(String(u.email).toLowerCase().trim());
+    var dims = ex ? (ex.interessi_dimensioni || '') : '';
+    return { ok:true, ambiti:(typeof ambitiFromDims==='function'?ambitiFromDims(dims):[]) };
+  } catch(e) { return { ok:false, error:e.message }; }
+}

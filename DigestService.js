@@ -177,7 +177,7 @@ function sendDigest(itemIds, bandiIds, podcastIds) {
   return { ok: false, deprecato: true };
 }
 
-function buildDigestHTML(items, dest, readerUrl) {
+function buildDigestHTML(items, dest, readerUrl, filterAmbiti) {
   const nomeDestinatario = dest ? (dest.Nome||dest.Email) : '';
   // v4.22 — Dedup per titolo: nessun contenuto duplicato nel digest
   const _dsSeen = {};
@@ -189,9 +189,14 @@ function buildDigestHTML(items, dest, readerUrl) {
   });
   const grouped={1:[],2:[],3:[],4:[],5:[]};
   dedupItems.forEach(i=>{if(grouped[i.Ambito])grouped[i.Ambito].push(i);});
+  // v4.24 — Filtro per ambiti scelti dal lettore (solo-ambiti, no Matrix). Vuoto/assente = tutti i 5.
+  var _ambitiSet = (Array.isArray(filterAmbiti) && filterAmbiti.length)
+    ? filterAmbiti.reduce(function(m,n){ m[Number(n)] = true; return m; }, {})
+    : null;
   let sectionsHTML='';
   for(let a=1;a<=5;a++) {  // FIX v4.3: loop fino ad Ambito 5
     if(!grouped[a].length) continue;
+    if(_ambitiSet && !_ambitiSet[a]) continue;   // v4.24 — salta ambiti non scelti
     const color=AMBITO_COLOR[a], label=AMBITO_LABEL[a];
     const itemsHTML=grouped[a].map(item=>{
       const tags=(item.TagAI||'').split(',').slice(0,3).map(t=>`<span style="font-size:11px;color:${color};background:${color}18;padding:2px 8px;border-radius:20px;border:1px solid ${color}28;display:inline-block;margin:0 4px 4px 0">${t.trim()}</span>`).join('');

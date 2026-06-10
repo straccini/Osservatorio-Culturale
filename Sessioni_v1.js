@@ -788,6 +788,13 @@ function getUserWorkspaceData(token) {
       }
     } catch(eD) { Logger.log('workspace digest: ' + eD.message); }
 
+    // v4.24 — Ambiti di interesse correnti (per prompt + chip nell'area)
+    try {
+      out.profilo = out.profilo || {};
+      var _ai = (typeof getAmbitiInteresse === 'function') ? getAmbitiInteresse(token) : null;
+      out.profilo.ambitiInteresse = (_ai && _ai.ok) ? _ai.ambiti : [];
+    } catch(eAI) { if (out.profilo) out.profilo.ambitiInteresse = []; }
+
     return out;
   } catch(e) {
     Logger.log('getUserWorkspaceData errore: ' + e.message);

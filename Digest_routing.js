@@ -169,6 +169,30 @@ function getDigestRecipientsByCohort() {
       }
     }
 
+    // v4.24 — Arricchisci i generalisti con gli ambiti di interesse (da ContactsMatrix.preferences_json.dimensioni)
+    try {
+      var shCpref = ss.getSheetByName('ContactsMatrix');
+      if (shCpref && shCpref.getLastRow() > 1) {
+        var cpVals = shCpref.getDataRange().getValues();
+        var cpH = cpVals[0];
+        var iCpEm = cpH.indexOf('email'), iCpPref = cpH.indexOf('preferences_json');
+        var prefByEmail = {};
+        if (iCpEm >= 0 && iCpPref >= 0) {
+          for (var rcp = 1; rcp < cpVals.length; rcp++) {
+            var emCp = String(cpVals[rcp][iCpEm] || '').trim().toLowerCase();
+            if (!emCp) continue;
+            var prefObj = {};
+            try { prefObj = cpVals[rcp][iCpPref] ? JSON.parse(cpVals[rcp][iCpPref]) : {}; } catch(_){}
+            if (prefObj && prefObj.dimensioni) prefByEmail[emCp] = prefObj.dimensioni;
+          }
+        }
+        generalisti.forEach(function(g){
+          var dimsG = prefByEmail[String(g.email).toLowerCase()];
+          g.ambiti = (dimsG && typeof ambitiFromDims === 'function') ? ambitiFromDims(dimsG) : [];
+        });
+      }
+    } catch(ePref) { Logger.log('coorte A ambiti enrich: ' + ePref.message); }
+
     var leadCaldi = Object.keys(coorteB).map(function(k){ return coorteB[k]; });
 
     return {
@@ -260,7 +284,7 @@ function sendDigestAuto2coorti(opts) {
           try { token = _getOrCreateToken(dest.email); } catch(_) {}
           var readerUrl = token ? (baseUrl + '?reader=1&t=' + token) : null;
           if (token) try { _saveDigestForToken(token, itemIds, [], []); } catch(_){}
-          var html = buildDigestHTML(items, { Nome: dest.nome, Email: dest.email }, readerUrl);
+          var html = buildDigestHTML(items, { Nome: dest.nome, Email: dest.email }, readerUrl, dest.ambiti || []);
           GmailApp.sendEmail(dest.email, subjGen, 'Visualizza in HTML.', {
             htmlBody: html,
             name: 'Sinopia · Osservatorio Culturale',
