@@ -10,7 +10,9 @@
 //   _toggleField, formatDate, _autoRegisterUser_, escTok_
 // ============================================================================
 
-function getMailingList() {
+// v4.23 — Dati grezzi mailing list. INTERNA (nessun gate): usata da doPost (già gated)
+// e da authenticate(). Non esporre direttamente al frontend.
+function _getMailingListData_() {
   var list = _sheetToObjects(SH.MAILING);
   list.forEach(function(m) {
     if (m.DataIscrizione instanceof Date) m.DataIscrizione = formatDate(m.DataIscrizione);
@@ -18,9 +20,17 @@ function getMailingList() {
   return {list: list};
 }
 
+// v4.23 SICUREZZA — Wrapper pubblico (google.script.run): SOLO editor/admin.
+// Prima un anonimo poteva scaricare tutte le email iscritte. Ora serve token.
+function getMailingList(token) {
+  if (!_requireAdminGSR_(token || null)) return { error: 'forbidden', list: [] };
+  return _getMailingListData_();
+}
+
 /** v4.20 — Riepilogo lettori registrati per pagina Compilatori e lettori */
-function getMailingListSummary() {
+function getMailingListSummary(token) {
   try {
+    if (!_requireAdminGSR_(token || null)) return { ok:false, error:'forbidden' }; // v4.23 SEC: era PII esposta a anonimi
     var sh = getMainSS().getSheetByName(SH.MAILING);
     if (!sh || sh.getLastRow() < 2) return { ok:true, destinatari:[] };
     var data = sh.getDataRange().getValues();

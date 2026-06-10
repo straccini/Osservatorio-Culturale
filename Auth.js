@@ -324,6 +324,7 @@ function _autoRegisterUser_(email, nome, source) {
         if (ruolo === 'ospite' || !ruolo) sh.getRange(i + 1, iRuolo + 1).setValue('lettore');
         if (nome && !rows[i][iNome]) sh.getRange(i + 1, iNome + 1).setValue(nome);
         Logger.log('[AUTH] Riattivato: ' + email + ' (era ' + stato + ')');
+        try { if (typeof _logConsenso_ === 'function') _logConsenso_(email, (source || 'registrazione') + '-reactivate'); } catch(_){} // v4.23 consenso
         return { ok: true, action: 'reactivated' };
       }
     }
@@ -337,6 +338,7 @@ function _autoRegisterUser_(email, nome, source) {
       nowIso, nowIso, source || 'auto', 'Registrazione via ' + (source || 'auto')
     ]);
     Logger.log('[AUTH] Registrato: ' + email + ' via ' + (source || 'auto'));
+    try { if (typeof _logConsenso_ === 'function') _logConsenso_(email, source || 'registrazione'); } catch(_){} // v4.23 consenso
     // v4.20 — Welcome email post-registrazione
     try { if (typeof sendWelcomeEmail === 'function') sendWelcomeEmail(email, nome || ''); } catch(_){}
     return { ok: true, action: 'created' };

@@ -120,12 +120,12 @@
 
     <!-- v5.1.7 — Pulsante utente unificato (login/logout) -->
     <div class="topbar-user-btn-wrap" style="position:relative">
-      <button class="topbar-user-btn" id="topbarUserBtn" onclick="OC.toggleUserMenu()" title="Account">
+      <button class="topbar-user-btn" id="topbarUserBtn" onclick="OC.toggleUserMenu()" title="Account" aria-haspopup="menu" aria-expanded="false">
         <span id="topbarUserBtnIcon">&#128100;</span>
         <span id="topbarUserBtnLabel">Ospite</span>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
-      <div id="topbarUserMenu" class="topbar-user-menu" hidden>
+      <div id="topbarUserMenu" class="topbar-user-menu" role="menu" hidden>
         <div id="topbarMenuRole" style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;padding:8px 14px 4px">visitatore</div>
         <button id="topbarMenuLogin" onclick="OC.doLogin();OC.toggleUserMenu();" class="topbar-user-menu-item">Accedi / Registrati</button>
         <button id="topbarMenuLogout" onclick="OC.doLogout()" class="topbar-user-menu-item" hidden>Esci</button>

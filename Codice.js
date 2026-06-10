@@ -607,7 +607,7 @@ function doPost(e) {
       case 'getHomepageData': return jsonOk(getHomepageData());
       case 'getMailing':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(getMailingList());
+        return jsonOk(_getMailingListData_()); // v4.23: doPost già gated per ruolo
       case 'getDigestLog':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
         return jsonOk(getDigestLog());
@@ -1254,7 +1254,7 @@ function authenticate(token) {
     const emailNorm = token.toLowerCase().trim();
     // Formato email minimo
     if (!emailNorm.includes('@') || emailNorm.length < 5) return null;
-    const list = getMailingList().list;
+    const list = _getMailingListData_().list; // v4.23: usa interna (getMailingList ora gated)
     const user = list.find(function(m) {
       return m.Email && m.Email.toLowerCase().trim() === emailNorm
              && (m.Attivo === true || m.Attivo === 'TRUE' || m.Attivo === 1);

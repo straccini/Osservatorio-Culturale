@@ -185,8 +185,10 @@ Score 1-5. Tipologia: ricerca|evento|caso|bando. Regione: se il contenuto riguar
 
 function saveItem(sh,item,fonte,ai) {
   const id='I'+Date.now()+'_'+Math.random().toString(36).substr(2,4);
-  sh.appendRow([id,fonte.Ambito,AMBITO_LABEL[fonte.Ambito]||'',fonte.Nome,item.url,item.titolo,item.estratto,ai.sommario,'',
-    (ai.tag||[]).join(', '),ai.score||3,ai.tipologia||'ricerca',formatDate(item.data),formatDate(new Date()),'',false,false,false,false,ai.regione||'']);  // * InclusiNelDigest=false; col 20=Regione
+  // v4.23 SICUREZZA — sanitizza i campi testuali da fonte esterna (RSS/AI) contro la formula injection
+  // quando il foglio viene aperto dal titolare (=IMPORTXML, ecc.). Numeri/date/booleani restano intatti.
+  sh.appendRow([id,fonte.Ambito,AMBITO_LABEL[fonte.Ambito]||'',_sanitizeForCell_(fonte.Nome),_sanitizeForCell_(item.url),_sanitizeForCell_(item.titolo),_sanitizeForCell_(item.estratto),_sanitizeForCell_(ai.sommario),'',
+    _sanitizeForCell_((ai.tag||[]).join(', ')),ai.score||3,_sanitizeForCell_(ai.tipologia||'ricerca'),formatDate(item.data),formatDate(new Date()),'',false,false,false,false,_sanitizeForCell_(ai.regione||'')]);  // * InclusiNelDigest=false; col 20=Regione
 }
 
 /**

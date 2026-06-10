@@ -101,6 +101,19 @@ function _crmFindRow_(sh, responseId) {
 // Se score >= soglia hot e mai notificato Telegram, manda notifica.
 // ============================================================================
 
+// v4.23 SICUREZZA — Gate per funzioni sensibili invocabili via google.script.run
+// su deploy ANONIMO. Ritorna true solo con token di sessione editor/admin (livello >= 2).
+function _requireAdminGSR_(token) {
+  try {
+    if (!token) return false;
+    if (typeof getRuoloCorrente === 'function') {
+      var u = getRuoloCorrente(token, token);
+      if (u && Number(u.livello) >= 2) return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
 function crm_recordEvent(responseId, evento, delta, meta) {
   try {
     if (!responseId) return { ok: false, error: 'responseId mancante' };
@@ -147,7 +160,7 @@ function crm_recordEvent(responseId, evento, delta, meta) {
     // Notifica Telegram se hot e non ancora notificato
     var curRow = sh.getRange(row, 1, 1, CRM_HEADERS.length).getValues()[0];
     if (Number(curRow[5]) >= CRM_SOGLIA_HOT && !curRow[12]) {
-      crm_notifyHotLead(responseId);
+      _crm_notifyHotLead_(responseId);
       sh.getRange(row, 13).setValue(now);
     }
 
@@ -190,6 +203,7 @@ function crm_getLeadScore(responseId) {
 function crm_listLeads(filtro) {
   try {
     filtro = filtro || {};
+    if (!_requireAdminGSR_(filtro.token || null)) return { ok:false, error:'forbidden' }; // v4.23 SEC: no PII a anonimi
     var sh = _crmGetSheet_();
     var vals = sh.getDataRange().getValues();
     var out = [];
@@ -213,7 +227,9 @@ function crm_listLeads(filtro) {
 // MAIN: crm_notifyHotLead(responseId) - notifica Telegram a Silvano
 // ============================================================================
 
-function crm_notifyHotLead(responseId) {
+// v4.23 — Interna (prefisso _): non più invocabile da google.script.run.
+// v4.23 PRIVACY — niente email/nome verso Telegram (server extra-UE): solo dati non identificativi.
+function _crm_notifyHotLead_(responseId) {
   try {
     var lead = crm_getLeadScore(responseId);
     if (!lead.ok || !lead.found) return { ok: false, error: 'lead non trovato' };
@@ -223,17 +239,16 @@ function crm_notifyHotLead(responseId) {
     msg += 'Score: *' + lead.score + ' pt* (' + lead.stato.toUpperCase() + ')\n';
     if (lead.museo)   msg += 'Museo: ' + lead.museo + '\n';
     if (lead.regione) msg += 'Regione: ' + lead.regione + '\n';
-    if (lead.email)   msg += 'Email: ' + lead.email + '\n';
-    if (lead.nome)    msg += 'Nome: ' + lead.nome + '\n';
+    msg += 'Rif. interno: ' + responseId + '\n'; // niente email/nome: aprire il CRM per il contatto
     msg += '\nUltimo evento: ' + (lead.ultimoEvento || '-') + '\n';
     msg += 'Eventi totali: ' + (lead.history ? lead.history.length : 0);
-    msg += '\n\n_Contattare entro 7 giorni se SQL, 3 giorni se HOT._';
+    msg += '\n\n_Apri il CRM per email/nome. Contattare entro 7gg se SQL, 3gg se HOT._';
 
     sendTelegram(msg);
-    Logger.log('crm_notifyHotLead: notifica inviata per ' + responseId);
+    Logger.log('_crm_notifyHotLead_: notifica inviata per ' + responseId);
     return { ok: true, responseId: responseId, score: lead.score };
   } catch(e) {
-    Logger.log('crm_notifyHotLead ERRORE: ' + e.message);
+    Logger.log('_crm_notifyHotLead_ ERRORE: ' + e.message);
     return { ok: false, error: e.message };
   }
 }
@@ -242,8 +257,9 @@ function crm_notifyHotLead(responseId) {
 // MAIN: crm_unsubscribe(email) - STOP totale + cancellazione 30gg
 // ============================================================================
 
-function crm_unsubscribe(email) {
+function crm_unsubscribe(email, token) {
   try {
+    if (!_requireAdminGSR_(token || null)) return { ok:false, error:'forbidden' }; // v4.23 SEC
     if (!email) return { ok: false, error: 'email mancante' };
     var sh = _crmGetSheet_();
     var vals = sh.getDataRange().getValues();
@@ -263,7 +279,7 @@ function crm_unsubscribe(email) {
         JSON.stringify({email: emailLow, ts: new Date().toISOString(), records: found})
       );
     } catch(e) {}
-    return { ok: true, email: emailLow, records: found, message: 'Cancellazione completa entro 30gg' };
+    return { ok: true, email: emailLow, records: found, message: 'Disiscritto (stato aggiornato). Per la cancellazione totale dei dati usa la funzione "Cancella i miei dati".' };
   } catch(e) { return { ok: false, error: e.message }; }
 }
 

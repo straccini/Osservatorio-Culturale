@@ -1266,6 +1266,14 @@ function _sendMagicLinkEmail_(email, magicUrl, source, permanente, scadenza) {
       + '</td></tr></table>'
       + '</body></html>';
 
+    // v4.23 PRODUZIONE — guardia quota: evita il throw silenzioso a quota esaurita
+    // (account Gmail consumer = 100 email/giorno). Se < 3 rimaste, non inviare.
+    try {
+      if (MailApp.getRemainingDailyQuota() < 3) {
+        Logger.log('_sendMagicLinkEmail_: quota email quasi esaurita, invio saltato per ' + email);
+        return { ok: false, error: 'quota_email' };
+      }
+    } catch(eQ) {}
     MailApp.sendEmail({
       to: email,
       subject: subj,

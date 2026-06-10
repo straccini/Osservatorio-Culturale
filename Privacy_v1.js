@@ -129,6 +129,9 @@ function utm_handleRedirect(eventQueryString) {
       if (p.length === 2) params[p[0]] = decodeURIComponent(p[1] || '');
     });
     var target = params.utm_target || '/';
+    // v4.23 SICUREZZA — accetta SOLO http(s): blocca open-redirect e XSS (javascript:/data:/break-out attributo).
+    if (!/^https?:\/\//i.test(target)) target = '/';
+    var safe = String(target).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     utm_logClick({
       utm_source:   params.utm_source,
       utm_campaign: params.utm_campaign,
@@ -136,8 +139,8 @@ function utm_handleRedirect(eventQueryString) {
       target_url:   target,
       response_id:  params.utm_rid
     });
-    var html = '<html><head><meta http-equiv="refresh" content="0;url=' + target + '"></head>'
-      + '<body>Redirect in corso... Se non vieni reindirizzato, <a href="' + target + '">clicca qui</a>.</body></html>';
+    var html = '<html><head><meta http-equiv="refresh" content="0;url=' + safe + '"></head>'
+      + '<body>Redirect in corso... Se non vieni reindirizzato, <a href="' + safe + '">clicca qui</a>.</body></html>';
     return HtmlService.createHtmlOutput(html);
   } catch(e) {
     return HtmlService.createHtmlOutput('Errore redirect: ' + e.message);
@@ -166,6 +169,18 @@ function _forgetHash_(s) {
   return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(s))
     .map(function(b){ b = (b<0)?b+256:b; var x = b.toString(16); return x.length===1?'0'+x:x; })
     .join('').substring(0, 16);
+}
+
+// v4.23 — Registro consensi (prova GDPR): foglio append-only ConsensiLog.
+// Registra data/ora + versione testo + sorgente del consenso. Idempotente sulla creazione foglio.
+function _logConsenso_(email, sorgente, versione) {
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName('ConsensiLog');
+    if (!sh) { sh = ss.insertSheet('ConsensiLog'); sh.appendRow(['timestamp','email','versione','sorgente']); sh.setFrozenRows(1); }
+    var ver = versione || (typeof OC_PRIVACY_VERSION !== 'undefined' ? OC_PRIVACY_VERSION : 'v1');
+    sh.appendRow([new Date().toISOString(), String(email || '').toLowerCase().trim(), ver, String(sorgente || '')]);
+  } catch (e) { Logger.log('_logConsenso_ err: ' + (e && e.message)); }
 }
 
 /**
@@ -220,6 +235,29 @@ function forgetMyData(identifier, token) {
     if (isEmail) {
       var n4 = purgeSheet('MailingList', 0);
       if (n4 > 0) deletedFrom.push('MailingList (' + n4 + ')');
+    }
+
+    // v4.23 — Cancellazione COMPLETA (diritto all'oblio): rimuove l'email da OGNI colonna
+    // degli altri fogli con dati personali. Robusto (match su qualsiasi colonna);
+    // no-op se il foglio non esiste. Prima restavano copie in questi fogli.
+    function purgeByEmailAnyCol(sheetName) {
+      var sh2 = ss.getSheetByName(sheetName);
+      if (!sh2 || sh2.getLastRow() < 2) return 0;
+      var v = sh2.getDataRange().getValues(), cnt = 0;
+      for (var rr = v.length - 1; rr >= 1; rr--) {
+        var hit = false;
+        for (var cc = 0; cc < v[rr].length; cc++) {
+          if (String(v[rr][cc]).toLowerCase().trim() === idLow) { hit = true; break; }
+        }
+        if (hit) { sh2.deleteRow(rr + 1); cnt++; }
+      }
+      return cnt;
+    }
+    if (isEmail) {
+      ['Utenti','Sessioni_v1','RichiestePrenotazione','SondaggiMirati','ProfiloAgenti','ProfiliPro','Segnalazioni','UnsubscribeLog'].forEach(function(nm){
+        var nn = purgeByEmailAnyCol(nm);
+        if (nn > 0) deletedFrom.push(nm + ' (' + nn + ')');
+      });
     }
 
     // Audit

@@ -2325,6 +2325,10 @@ body.is-home-page .topbar-search{display:none}
   .st-kpi-grid { grid-template-columns: repeat(2,1fr); }
   .st-info-grid { grid-template-columns: 1fr; }
 }
+/* v4.23.1 — su telefono nascondi la ricerca in topbar (cramped): in Home c'è la hero search */
+@media (max-width:640px){
+  .topbar-search{display:none}
+}
 
 /* === BANDO ROW (pagina bandi + ambito, full-width con pulsanti) === */
 #bandiList { margin-bottom: 64px; }
