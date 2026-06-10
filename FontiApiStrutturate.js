@@ -3,7 +3,7 @@
  *  FontiApiStrutturate.js — Parser per fonti strutturate (TED, PNRR, CKAN)
  * ============================================================================
  *  v4.18.69 (2026-05-24)
- *  Autore: Claude (Cowork) per Silvano Straccini / Duemilamusei
+ *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
  *
  *  Fase 1: RSS feeds + auto-retry fonti silenti
  *  Fase 2: OpenCoesione API + CKAN regionale (dati.gov.it, dati.puglia.it)

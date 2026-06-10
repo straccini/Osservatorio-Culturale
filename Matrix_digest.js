@@ -3,7 +3,7 @@
  *  Matrix_digest.gs — Digest segmentato per compilatori MuseMu Matrix
  * ============================================================================
  *  Sprint 1.3 D2.3 (2026-05-01)
- *  Autore: Silvano Straccini / Duemilamusei
+ *  Autore: Silvano Straccini / Sinopia
  *
  *  SCOPO
  *  -----

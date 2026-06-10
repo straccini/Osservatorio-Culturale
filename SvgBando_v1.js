@@ -3,7 +3,7 @@
  *  SvgBando_v1.gs — Template SVG card bandi auto-generate
  * ============================================================================
  *  Sprint 2 anticipato (2026-05-11) — blocco C2
- *  Autore: Claude (Cowork) per Silvano Straccini / Duemilamusei
+ *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
  *
  *  Scopo: generare SVG inline per le card bandi mostrate nel carosello hero
  *  della home (Sprint 2 home redesign). Branding Duemilamusei coerente,

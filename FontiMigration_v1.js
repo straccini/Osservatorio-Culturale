@@ -3,7 +3,7 @@
  *  FontiMigration_v1.gs — Script migrazione una-tantum verso schema unificato
  * ============================================================================
  *  Sprint 2 anticipato (2026-05-11) — blocco B2
- *  Autore: Claude (Cowork) per Silvano Straccini / Duemilamusei
+ *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
  *
  *  Scopo: portare i dati esistenti nei nuovi fogli schema unificato 14col
  *  senza perdere nulla. Esecuzione una-tantum da editor GAS dopo deploy.

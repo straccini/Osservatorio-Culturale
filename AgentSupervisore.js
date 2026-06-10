@@ -3,7 +3,7 @@
  *  AgentSupervisore.js — Supervisore Autonomo Sinopia (SAS)
  * ============================================================================
  *  v4.18.69 (2026-05-24)
- *  Autore: Claude (Cowork) per Silvano Straccini / Duemilamusei
+ *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
  *
  *  Agente supervisore che:
  *  1. Orchestra 4 agenti di manutenzione (MA1-MA4)

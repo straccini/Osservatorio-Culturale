@@ -3,7 +3,7 @@
  *  Fonti_v1.gs — Modulo unificato gestione fonti (bandi, news, podcast, video)
  * ============================================================================
  *  Sprint 2 anticipato (2026-05-11) — blocco B1
- *  Autore: Claude (Cowork) per Silvano Straccini / Duemilamusei
+ *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
  *
  *  Scopo: introdurre uno schema 18 colonne (FU17) identico per tutte le fonti, con
  *  helper unico per leggere/scrivere indipendentemente dal tipo.

@@ -8,7 +8,7 @@
 // Validazione URL bandi via HEAD check prima di salvare
 // Deduplica via fingerprint hash robusto
 // ----------------------------------------------------------------------------
-// Osservatorio Culturale - Duemilamusei / Silvano Straccini
+// Osservatorio Culturale - Sinopia / Silvano Straccini
 // Sprint Bandi v5.0 - 2026-05-04
 // ============================================================================
 

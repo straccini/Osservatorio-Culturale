@@ -3,7 +3,7 @@
  *  SeedFontiSpecializzateV2.gs — Fonti RSS specializzate + triage PNRR
  * ============================================================================
  *  v4.18.68 (2026-05-23)
- *  Autore: Claude (Cowork) per Silvano Straccini / Duemilamusei
+ *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
  *
  *  Funzioni:
  *    seedNuoveFontiSpecializzate()     — aggiunge fonti RSS cultura/territorio/turismo

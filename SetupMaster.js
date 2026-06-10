@@ -3,7 +3,7 @@
  *  SetupMaster.js — Setup Unificato Sinopia (v4.18.70)
  * ============================================================================
  *  2026-05-30
- *  Autore: Silvano Straccini / Duemilamusei
+ *  Autore: Silvano Straccini / Sinopia
  *
  *  SCOPO: Unico punto di ingresso per installare TUTTI i trigger del sistema.
  *  Sostituisce le 9+ funzioni di setup sparse nei vari file, eliminando

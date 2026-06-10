@@ -3,7 +3,7 @@
  *  ScannerRssSpecializzato.gs — Parser RSS + ingestione bandi regionali/nazionali
  * ============================================================================
  *  v4.18.68 (2026-05-23)
- *  Autore: Claude (Cowork) per Silvano Straccini / Duemilamusei
+ *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
  *
  *  Funzioni:
  *    scanFontiUnifiedRss()       — scansione batch fonti RSS da FontiBandi_v5

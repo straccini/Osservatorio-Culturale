@@ -3,7 +3,7 @@
  *  CRM_v1.gs — Lead scoring + CRM lite Duemilamusei
  * ============================================================================
  *  Sprint 4 (2026-05-11)
- *  Autore: Claude (Cowork) per Silvano Straccini / Duemilamusei
+ *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
  *
  *  Scopo: tracciare lead Matrix con scoring automatico secondo tabella decisa
  *  nel Piano di Sviluppo v4.14 -> v5.0 (Parte III).

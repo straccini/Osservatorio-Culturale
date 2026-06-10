@@ -1,6 +1,6 @@
 // ==================================================================
 // ScannerBandi.gs - Scanner automatico bandi e contenuti culturali
-// Osservatorio Culturale - Duemilamusei / Silvano Straccini
+// Osservatorio Culturale - Sinopia / Silvano Straccini
 // v4.0 - Riscrittura pulita - Aprile 2026
 // ==================================================================
 

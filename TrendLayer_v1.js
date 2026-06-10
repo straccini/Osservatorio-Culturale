@@ -3,7 +3,7 @@
  *  TrendLayer_v1.js — L2 Trend Intelligence
  * ============================================================================
  *  v4.22 (2026-06-07)
- *  Autore: Silvano Straccini / Duemilamusei + Claude
+ *  Autore: Silvano Straccini / Sinopia + Claude
  *
  *  SCOPO
  *  -----

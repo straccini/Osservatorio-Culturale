@@ -3,7 +3,7 @@
  *  Auth.gs — Autenticazione Google + Gestione Utenti unificata
  * ============================================================================
  *  Sprint 1.4 (2026-05-01)
- *  Autore: Silvano Straccini / Duemilamusei
+ *  Autore: Silvano Straccini / Sinopia
  *
  *  SCOPO
  *  -----

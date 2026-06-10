@@ -3,7 +3,7 @@
  *  Privacy_v1.gs — UTM tracking + Right-to-be-forgotten + Trasparenza
  * ============================================================================
  *  Sprint 4 (2026-05-11) — Sezioni S4.2, S4.3, S4.4
- *  Autore: Claude (Cowork) per Silvano Straccini / Duemilamusei
+ *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
  *
  *  Tre responsabilita' nel modulo:
  *

@@ -3,7 +3,7 @@
  *  Workflow_unified.gs — API unificata "leggi → memorizza → archivia"
  * ============================================================================
  *  Sprint 1.1 (INT-6 · 2026-04-29)
- *  Autore: Silvano Straccini / Duemilamusei
+ *  Autore: Silvano Straccini / Sinopia
  *
  *  SCOPO
  *  -----

@@ -3,7 +3,7 @@
  *  SistemaAgentiEsploratori.gs — SEAS (Sinopia Exploratory Agent System)
  * ============================================================================
  *  v4.18.68 (2026-05-23)
- *  Autore: Claude (Cowork) per Silvano Straccini / Duemilamusei
+ *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
  *
  *  Sistema multi-agente esplorativo che:
  *  1. Scopre nuove fonti potenziali (RSS/HTML) da URL seed

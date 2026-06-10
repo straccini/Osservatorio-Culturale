@@ -1,7 +1,7 @@
 // ============================================================================
 // DigestService.js — Gestione digest, token, invio email, filtri per ruolo
 // Estratto da Codice.js (Sprint 2 refactoring — 2026-05-26)
-// Osservatorio Culturale - Duemilamusei / Silvano Straccini
+// Osservatorio Culturale - Sinopia / Silvano Straccini
 // ============================================================================
 // Dipendenze (tutte globali in GAS, definite in altri file):
 //   getMainSS(), SH.MAILING, SH.ITEMS, SH.PODCAST, SH.LOG

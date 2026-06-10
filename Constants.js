@@ -3,7 +3,7 @@
  *  Constants.gs — Single Source of Truth per costanti condivise OC
  * ============================================================================
  *  Sprint 1.1 (INT-4 · 2026-04-29)
- *  Autore: Silvano Straccini / Duemilamusei
+ *  Autore: Silvano Straccini / Sinopia
  *
  *  Scopo: centralizzare in UN SOLO file tutte le costanti condivise tra
  *  backend GAS e frontend HTML. Sostituisce le 4 dichiarazioni duplicate

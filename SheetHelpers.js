@@ -1,7 +1,7 @@
 // ============================================================================
 // SheetHelpers.js — Helper generici per accesso fogli Google Sheets
 // Elimina boilerplate ripetuto 12+ volte in Codice.js
-// Osservatorio Culturale - Duemilamusei / Silvano Straccini
+// Osservatorio Culturale - Sinopia / Silvano Straccini
 // Sprint DRY Backend (2026-05-26)
 // ============================================================================
 // Dipendenze (globali GAS): getMainSS()

@@ -3,7 +3,7 @@
  *  Matrix_tagger.gs — Tagging contenuti OC con dimensioni MuseMu Matrix
  * ============================================================================
  *  Sprint 1.3 D2.1 + D2.2 (2026-05-01)
- *  Autore: Silvano Straccini / Duemilamusei
+ *  Autore: Silvano Straccini / Sinopia
  *
  *  SCOPO
  *  -----

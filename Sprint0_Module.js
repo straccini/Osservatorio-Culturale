@@ -3,7 +3,7 @@
  *  Sprint0_Module.gs
  * ============================================================================
  *
- *  Modulo unificato Sprint 0 — Osservatorio Culturale (Duemilamusei)
+ *  Modulo unificato Sprint 0 — Osservatorio Culturale (Sinopia)
  *  Da inserire come NUOVO FILE nel progetto GAS, AFFIANCO a Codice.gs.
  *  Tutto qui dentro è isolato dal resto: in caso di rollback basta cancellare
  *  questo file e ripristinare i 3 punti di chiamata in Codice.gs (vedi PATCH).
@@ -17,7 +17,7 @@
  *
  *  Versione: v4.6.0
  *  Data: 27 aprile 2026
- *  Autore: Silvano Straccini / Duemilamusei
+ *  Autore: Silvano Straccini / Sinopia
  *  Riferimento: Sprint0_Schede_Tecniche.md
  *
  * ============================================================================

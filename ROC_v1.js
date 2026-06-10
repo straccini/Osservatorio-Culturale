@@ -3,7 +3,7 @@
  *  ROC_v1.gs — Radar Opportunita Cultura
  * ============================================================================
  *  Sprint 5 (2026-05-11)
- *  Autore: Claude (Cowork) per Silvano Straccini / Duemilamusei
+ *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
  *
  *  Scopo: motore outbound bando-driven Duemilamusei. Affianca MuseMu Matrix
  *  (inbound) come secondo motore di acquisizione lead.

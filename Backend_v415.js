@@ -3,7 +3,7 @@
  *  Backend_v415.gs — Backend mancanti identificati in Sprint 1
  * ============================================================================
  *  Sprint 1 chiusura (2026-05-09)
- *  Autore: Silvano Straccini / Duemilamusei
+ *  Autore: Silvano Straccini / Sinopia
  *
  *  Scopo: implementare i 6 endpoint backend richiamati dal frontend ma
  *  finora non esistenti. Allineamento naming gia' fatto in Sprint 1

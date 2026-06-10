@@ -3,7 +3,7 @@
  *  CalendarioLS3.js — Candidature Speciali: outreach proattivo
  * ============================================================================
  *  v4.18.60 (2026-05-16)
- *  Autore: Silvano Straccini / Duemilamusei
+ *  Autore: Silvano Straccini / Sinopia
  *
  *  SCOPO
  *  -----

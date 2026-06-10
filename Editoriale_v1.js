@@ -3,7 +3,7 @@
  *  Editoriale_v1.js — E1 "Capo Redattore" — Editoriale settimanale
  * ============================================================================
  *  v4.22 (2026-06-07)
- *  Autore: Silvano Straccini / Duemilamusei + Claude
+ *  Autore: Silvano Straccini / Sinopia + Claude
  *
  *  SCOPO
  *  -----

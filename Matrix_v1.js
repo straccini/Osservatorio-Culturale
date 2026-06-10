@@ -3,7 +3,7 @@
  *  Matrix_v1.gs — Backend MuseMu Matrix per Osservatorio Culturale
  * ============================================================================
  *  Sprint 2 (2026-04-30)
- *  Autore: Silvano Straccini / Duemilamusei
+ *  Autore: Silvano Straccini / Sinopia
  *
  *  SCOPO
  *  -----

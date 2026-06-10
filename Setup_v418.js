@@ -3,7 +3,7 @@
  *  Setup_v418.gs — Wrapper one-click per setup post-deploy v4.18
  * ============================================================================
  *  Sprint 2-5 finalize (2026-05-11)
- *  Autore: Claude (Cowork) per Silvano Straccini / Duemilamusei
+ *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
  *
  *  Scopo: eseguire in cascata tutte le funzioni setup necessarie dopo il
  *  deploy v4.18.0 con un singolo punto di chiamata, sia da editor GAS che
