@@ -334,7 +334,7 @@ function loginConEmail(email) {
     var utente = (typeof getUtenteByEmail_ === 'function') ? getUtenteByEmail_(email) : null;
 
     // v4.20 — Admin/editor possono SEMPRE accedere via email (bypass flag login pubblico)
-    var isAdminEmail = false;
+    var isAdminEmail = false, isInAdminList = false, isInEditorList = false;
     try {
       // v4.22 SEC — Array split per evitare match per sottostringa (es. admin@x.com in superadmin@x.com)
       // v4.23 FIX — fallback: se OC_ADMIN_EMAILS non e impostata, usa l'admin di default (evita lockout).
@@ -342,9 +342,11 @@ function loginConEmail(email) {
       if (!adminCsv || !adminCsv.trim()) adminCsv = (typeof OC_ADMIN_DEFAULT_ !== 'undefined' ? OC_ADMIN_DEFAULT_ : 's.straccini@gmail.com');
       var adminArr = adminCsv.toLowerCase().split(',').map(function(e){ return e.trim(); });
       var editorArr = (PropertiesService.getScriptProperties().getProperty('OC_EDITOR_EMAILS') || '').toLowerCase().split(',').map(function(e){ return e.trim(); });
-      isAdminEmail = adminArr.indexOf(email) >= 0 || editorArr.indexOf(email) >= 0;
-      // v4.23 FIX — il super-admin non puo MAI restare bloccato fuori, a prescindere dalle property.
-      if (typeof OC_SUPER_ADMIN_EMAIL !== 'undefined' && email === String(OC_SUPER_ADMIN_EMAIL).toLowerCase().trim()) isAdminEmail = true;
+      // v4.23 FIX — il super-admin e SEMPRE in lista admin, a prescindere dalle property.
+      var _isSuper = (typeof OC_SUPER_ADMIN_EMAIL !== 'undefined' && email === String(OC_SUPER_ADMIN_EMAIL).toLowerCase().trim());
+      isInAdminList  = (adminArr.indexOf(email) >= 0) || _isSuper;
+      isInEditorList = editorArr.indexOf(email) >= 0;
+      isAdminEmail   = isInAdminList || isInEditorList;
     } catch(_){}
 
     // Fail-closed: login pubblico disabilitato blocca solo utenti NON admin/editor
@@ -369,6 +371,11 @@ function loginConEmail(email) {
     if (utente.ruolo === 'admin') livello = 3;
     else if (utente.ruolo === 'editor') livello = 2;
     else livello = 1;
+    // v4.23 FIX — l'appartenenza alle liste admin/editor (e il super-admin) PREVALE su un ruolo
+    // errato/obsoleto nel foglio Utenti. Senza questo, un super-admin con riga "lettore" otteneva
+    // livello 1 -> solo magic-link via email invece del login diretto (= "non mi fa loggare").
+    if (isInAdminList) livello = 3;
+    else if (isInEditorList && livello < 2) livello = 2;
 
     if (existing && !existing.revoked) {
       // Sessione esistente: aggiorna last_seen e livello
