@@ -337,9 +337,14 @@ function loginConEmail(email) {
     var isAdminEmail = false;
     try {
       // v4.22 SEC — Array split per evitare match per sottostringa (es. admin@x.com in superadmin@x.com)
-      var adminArr = (PropertiesService.getScriptProperties().getProperty('OC_ADMIN_EMAILS') || '').toLowerCase().split(',').map(function(e){ return e.trim(); });
+      // v4.23 FIX — fallback: se OC_ADMIN_EMAILS non e impostata, usa l'admin di default (evita lockout).
+      var adminCsv = PropertiesService.getScriptProperties().getProperty('OC_ADMIN_EMAILS');
+      if (!adminCsv || !adminCsv.trim()) adminCsv = (typeof OC_ADMIN_DEFAULT_ !== 'undefined' ? OC_ADMIN_DEFAULT_ : 's.straccini@gmail.com');
+      var adminArr = adminCsv.toLowerCase().split(',').map(function(e){ return e.trim(); });
       var editorArr = (PropertiesService.getScriptProperties().getProperty('OC_EDITOR_EMAILS') || '').toLowerCase().split(',').map(function(e){ return e.trim(); });
       isAdminEmail = adminArr.indexOf(email) >= 0 || editorArr.indexOf(email) >= 0;
+      // v4.23 FIX — il super-admin non puo MAI restare bloccato fuori, a prescindere dalle property.
+      if (typeof OC_SUPER_ADMIN_EMAIL !== 'undefined' && email === String(OC_SUPER_ADMIN_EMAIL).toLowerCase().trim()) isAdminEmail = true;
     } catch(_){}
 
     // Fail-closed: login pubblico disabilitato blocca solo utenti NON admin/editor
