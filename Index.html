@@ -4988,8 +4988,12 @@
   // una PAGINA BIANCA. L'unica operazione cross-origin permessa sul top frame e'
   // SETtare location.href (esattamente come fa gia' doLogout). Usato da tutti i
   // reload dopo il login per evitare la pagina bianca al rientro.
-  function _reloadApp_(){
+  function _reloadApp_(tok){
     var baseUrl = (typeof GAS_URL !== 'undefined' && GAS_URL) ? GAS_URL : window.location.href.split('?')[0];
+    // v4.24.4 — Con storage di terze parti bloccato (incognito e browser restrittivi) localStorage
+    // NON sopravvive al reload: il token va passato nell'URL (?t=) cosi doGet inietta la sessione
+    // server-side (stesso flusso del magic-link). Senza questo: "Accesso riuscito" ma resti Ospite.
+    if (tok) baseUrl += (baseUrl.indexOf('?') >= 0 ? '&' : '?') + 't=' + encodeURIComponent(tok);
     try { window.top.location.href = baseUrl; } catch(_) { location.reload(); }
   }
 
@@ -7898,6 +7902,8 @@
             // window.top.location.href = GAS_URL è l'unico metodo che funziona
             // (già usato da doLogout). Salva GAS_URL prima di sovrascrivere il body.
             var _savedGasUrl = (typeof GAS_URL !== 'undefined' && GAS_URL && GAS_URL !== 'GAS_URL_PLACEHOLDER') ? GAS_URL : '';
+            // v4.24.4 — Token nell'URL: la sessione sopravvive anche senza localStorage (incognito)
+            if (_savedGasUrl && r.token) _savedGasUrl += (_savedGasUrl.indexOf('?') >= 0 ? '&' : '?') + 't=' + encodeURIComponent(r.token);
             setTimeout(function() {
               // Chiudi TUTTO
               ['oc-regform-overlay','oc-guest-gate','oc-newsletter-overlay','oc-reg-overlay','oc-gdpr-gate','oc-servizi-overlay'].forEach(function(id){
@@ -12171,7 +12177,7 @@
         window.OC_SESSION={token:r.token,email:r.email,livello:r.livello,permanente:!!r.permanente};
         setTimeout(function(){
           var ov=document.getElementById('oc-regform-overlay');if(ov)ov.remove();
-          _reloadApp_();
+          _reloadApp_(r.token);
         },500);
       } else {
         if(msg){msg.textContent=(r&&r.error==='email_non_registrata')?'Email non trovata. Prova a registrarti.':'Errore: '+((r&&r.error)||'sconosciuto');msg.style.color='#C2410C';}
@@ -12213,7 +12219,7 @@
         window.OC_SESSION={token:r.token,email:r.email,livello:r.livello,permanente:!!r.permanente};
         setTimeout(function(){
           var ov=document.getElementById('oc-regform-overlay');if(ov)ov.remove();
-          _reloadApp_();
+          _reloadApp_(r.token);
         },500);
       }
     }).withFailureHandler(function(){}).loginConEmail(email);
