@@ -4978,8 +4978,18 @@
         try { google.script.run.invalidaSessione(token); } catch(_){}
       }
       window.OC_SESSION = {};
-      var baseUrl = (typeof GAS_URL !== 'undefined' && GAS_URL) ? GAS_URL : window.location.href.split('?')[0];
-      window.top.location.href = baseUrl;
+      // v4.24.5 — LOGOUT IN-PLACE: la sandbox anonima blocca la top-navigation (la riga
+      // window.top.location.href non aveva alcun effetto e il logout sembrava "morto").
+      // Si passa subito alla UI ospite, la navigazione resta solo come best-effort.
+      try { setUser({ ruolo:'guest', nome:'Ospite', initials:'·' }); } catch(_){}
+      try { var _w=document.getElementById('navItemWorkspace'); if(_w) _w.hidden=true; } catch(_){}
+      try { var _m=document.getElementById('topbarUserMenu'); if(_m) _m.hidden=true; } catch(_){}
+      try { go('home'); } catch(_){}
+      try { if (typeof showToast==='function') showToast('Sei uscito. A presto!', 'ok'); } catch(_){}
+      try {
+        var baseUrl = (typeof GAS_URL !== 'undefined' && GAS_URL) ? GAS_URL : '';
+        if (baseUrl) window.top.location.href = baseUrl;
+      } catch(_){}
     }
   }
 
@@ -4995,6 +5005,36 @@
     // server-side (stesso flusso del magic-link). Senza questo: "Accesso riuscito" ma resti Ospite.
     if (tok) baseUrl += (baseUrl.indexOf('?') >= 0 ? '&' : '?') + 't=' + encodeURIComponent(tok);
     try { window.top.location.href = baseUrl; } catch(_) { location.reload(); }
+  }
+
+  // v4.24.5 — LOGIN IN-PLACE. La sandbox GAS per accessi ANONIMI blocca la navigazione
+  // del top frame (window.top.location.href non ha effetto): il reload post-login non
+  // partiva mai -> "Accesso riuscito" ma si restava Ospite. Questo helper applica la
+  // sessione SENZA reload (stesso lavoro del boot: OC_SESSION + topbar + profilo via
+  // initSession), chiude i gate e tenta la navigazione solo come best-effort finale.
+  function _postLoginApply_(r){
+    if (!r || !r.token) return;
+    window.OC_SESSION = { token:r.token, email:r.email||'', livello:r.livello||1,
+      permanente:true, matrixCompletato:!!r.matrixCompletato };
+    try { localStorage.setItem('oc_token', r.token); } catch(_){}
+    try { localStorage.removeItem('oc_force_guest'); } catch(_){}
+    try { _updateTopbarFromSession_(window.OC_SESSION); } catch(_){}
+    try { var w=document.getElementById('navItemWorkspace'); if(w) w.hidden=false; } catch(_){}
+    try {
+      google.script.run.withSuccessHandler(function(rr){
+        try { if (rr && rr.user && rr.user.ruolo && rr.user.ruolo!=='guest' && rr.user.ruolo!=='anonimo') setUser(rr.user); } catch(_){}
+      }).withFailureHandler(function(){}).initSession(r.token, null);
+    } catch(_){}
+    ['oc-regform-overlay','oc-guest-gate','oc-newsletter-overlay','oc-reg-overlay','oc-gdpr-gate','oc-servizi-overlay'].forEach(function(id){
+      try { var el=document.getElementById(id); if(el){ el.style.display='none'; el.remove(); } } catch(_){}
+    });
+    try { if (typeof showToast==='function') showToast('Bentornato' + (r.nome ? ', ' + r.nome : '') + '!', 'ok'); } catch(_){}
+    try { go('home'); } catch(_){}
+    // Best-effort: reload pulito col token nell'URL (funziona solo dove la sandbox lo consente)
+    try {
+      var base = (typeof GAS_URL!=='undefined' && GAS_URL && GAS_URL!=='GAS_URL_PLACEHOLDER') ? GAS_URL : '';
+      if (base) window.top.location.href = base + (base.indexOf('?')>=0?'&':'?') + 't=' + encodeURIComponent(r.token);
+    } catch(_){}
   }
 
   // ==========================================================
@@ -7880,14 +7920,10 @@
       google.script.run
         .withSuccessHandler(function(r) {
           if (r && r.ok && r.directLogin && r.token) {
-            // Admin/editor: login diretto — salva token e ricarica pagina
-            // Il reload è necessario perché OC_SESSION viene iniettato server-side da doGet.
-            // Senza reload, la pagina è renderizzata come ospite e il DOM non si aggiorna.
-            try { localStorage.setItem('oc_token', r.token); } catch(_){}
-            try { localStorage.removeItem('oc_force_guest'); } catch(_){}
-            // Mostra spinner di attesa e ricarica la pagina
-            // Il reload è l'unico modo affidabile in GAS: doGet leggerà il token
-            // da localStorage via hydrate() → initSession() → validaSessione()
+            // v4.24.5 — login IN-PLACE: niente reload. La sandbox GAS per accessi anonimi
+            // BLOCCA la navigazione del top frame, quindi la vecchia pagina di conferma
+            // ("Entra in Sinopia") restava un vicolo cieco. _postLoginApply_ applica la
+            // sessione subito (OC_SESSION + topbar + profilo) e chiude i gate.
             if (msg) {
               msg.innerHTML = '<div style="text-align:center;padding:12px 0">'
                 + '<div style="display:inline-block;width:28px;height:28px;border:3px solid var(--rule);border-top-color:var(--accent,#935851);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:8px"></div>'
@@ -7897,31 +7933,7 @@
                 + '</div>';
               msg.hidden = false;
             }
-            // v4.22.2 — Login completato: naviga al top frame con GAS_URL.
-            // location.reload() produce PAGINA BIANCA in GAS sandbox (URL transitorio).
-            // window.top.location.href = GAS_URL è l'unico metodo che funziona
-            // (già usato da doLogout). Salva GAS_URL prima di sovrascrivere il body.
-            var _savedGasUrl = (typeof GAS_URL !== 'undefined' && GAS_URL && GAS_URL !== 'GAS_URL_PLACEHOLDER') ? GAS_URL : '';
-            // v4.24.4 — Token nell'URL: la sessione sopravvive anche senza localStorage (incognito)
-            if (_savedGasUrl && r.token) _savedGasUrl += (_savedGasUrl.indexOf('?') >= 0 ? '&' : '?') + 't=' + encodeURIComponent(r.token);
-            setTimeout(function() {
-              // Chiudi TUTTO
-              ['oc-regform-overlay','oc-guest-gate','oc-newsletter-overlay','oc-reg-overlay','oc-gdpr-gate','oc-servizi-overlay'].forEach(function(id){
-                try { var el = document.getElementById(id); if (el) { el.style.display='none'; el.remove(); } } catch(_){}
-              });
-              // Mostra pagina di conferma con navigazione corretta
-              document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#FAF7F2;font-family:Inter,sans-serif">'
-                + '<div style="text-align:center;max-width:420px;padding:40px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.08)">'
-                + '<div style="font-family:Georgia,serif;font-style:italic;font-size:32px;color:#8B3A1F;margin-bottom:4px">Sinopia</div>'
-                + '<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#999;margin-bottom:24px">Osservatorio Culturale</div>'
-                + '<div style="width:48px;height:48px;background:#10916D;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>'
-                + '<div style="font-size:18px;font-weight:600;color:#1A1815;margin-bottom:6px">Accesso confermato</div>'
-                + '<div style="font-size:14px;color:#666;margin-bottom:24px">Bentornato, <b>' + esc(r.nome || r.email.split('@')[0]) + '</b></div>'
-                + '<script>var _gasUrl="' + _savedGasUrl.replace(/"/g,'\\"') + '";<\/script>'
-                + '<button onclick="try{window.top.location.href=_gasUrl||window.location.href.split(\'?\')[0]}catch(_){location.reload()}" style="background:#935851;color:#fff;border:none;padding:14px 36px;border-radius:999px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px;width:100%">Entra in Sinopia &rarr;</button>'
-                + '<div style="font-size:11px;color:#bbb">Clicca per accedere con il tuo profilo</div>'
-                + '</div></div>';
-            }, 300);
+            setTimeout(function() { _postLoginApply_(r); }, 600);
           } else if (r && r.ok && r.message === 'magic_link_inviato') {
             // Utente normale: magic link inviato via email
             if (msg) {
@@ -12172,13 +12184,8 @@
     google.script.run.withSuccessHandler(function(r){
       if(r&&r.ok&&r.token){
         if(msg){msg.textContent='Accesso riuscito!';msg.style.color='#3F7A5E';}
-        try{localStorage.setItem('oc_token',r.token);}catch(_){}
-        try{localStorage.removeItem('oc_force_guest');}catch(_){}
-        window.OC_SESSION={token:r.token,email:r.email,livello:r.livello,permanente:!!r.permanente};
-        setTimeout(function(){
-          var ov=document.getElementById('oc-regform-overlay');if(ov)ov.remove();
-          _reloadApp_(r.token);
-        },500);
+        // v4.24.5 — login IN-PLACE (la top-navigation e bloccata dalla sandbox anonima)
+        setTimeout(function(){ _postLoginApply_(r); }, 400);
       } else {
         if(msg){msg.textContent=(r&&r.error==='email_non_registrata')?'Email non trovata. Prova a registrarti.':'Errore: '+((r&&r.error)||'sconosciuto');msg.style.color='#C2410C';}
       }
@@ -12214,13 +12221,8 @@
   OC._gateDoLoginWith = function(email) {
     google.script.run.withSuccessHandler(function(r){
       if(r&&r.ok&&r.token){
-        try{localStorage.setItem('oc_token',r.token);}catch(_){}
-        try{localStorage.removeItem('oc_force_guest');}catch(_){}
-        window.OC_SESSION={token:r.token,email:r.email,livello:r.livello,permanente:!!r.permanente};
-        setTimeout(function(){
-          var ov=document.getElementById('oc-regform-overlay');if(ov)ov.remove();
-          _reloadApp_(r.token);
-        },500);
+        // v4.24.5 — login IN-PLACE (la top-navigation e bloccata dalla sandbox anonima)
+        setTimeout(function(){ _postLoginApply_(r); }, 400);
       }
     }).withFailureHandler(function(){}).loginConEmail(email);
   };
@@ -12337,7 +12339,7 @@
             if(chip){chip.classList.add('selected');chip.style.borderColor='var(--accent,#935851)';chip.style.background='rgba(232,75,28,.06)';}
           });
         }
-      }).withFailureHandler(function(){}).getProfilo();
+      }).withFailureHandler(function(){}).getProfilo((window.OC_SESSION && window.OC_SESSION.token) || null);
     }).withFailureHandler(function(){}).getEnumProfilo();
   };
 
@@ -12426,7 +12428,8 @@
       q_visitatori: (document.getElementById('pro-q-visitatori')||{}).value||'',
       q_staff: (document.getElementById('pro-q-staff')||{}).value||'',
       q_ai: (document.getElementById('pro-q-ai')||{}).value||'',
-      q_accessibilita: (document.getElementById('pro-q-access')||{}).value||''
+      q_accessibilita: (document.getElementById('pro-q-access')||{}).value||'',
+      __token: (window.OC_SESSION && window.OC_SESSION.token) || null
     };
     var msg = document.getElementById('proSaveMsg');
     if(msg){msg.textContent='Salvataggio...';msg.style.color='var(--ink-3)';}

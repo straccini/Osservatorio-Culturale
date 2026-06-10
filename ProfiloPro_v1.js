@@ -86,16 +86,19 @@ function ensureSheetProfiliPro_() {
 // FUNZIONI PUBBLICHE
 // ============================================================================
 
-function getProfilo() {
-  var user = _proGetUser_();
+function getProfilo(token) {
+  var user = _proGetUser_(token);
   if (!user) return null;
   return _proFindByEmail_(user.email);
 }
 
 function saveProfilo(payload) {
-  var user = _proGetUser_();
-  if (!user) return { ok:false, error:'Accesso non autorizzato. Effettua il login.' };
   payload = payload || {};
+  // v4.24.6 — token di sessione dal frontend (deploy anonimo: niente Session.getActiveUser)
+  var _tok = payload.__token || null;
+  try { delete payload.__token; } catch(_){}
+  var user = _proGetUser_(_tok);
+  if (!user) return { ok:false, error:'Accesso non autorizzato. Effettua il login.' };
   var existing = _proFindByEmail_(user.email);
   if (!existing && payload.consenso_profilazione !== true) {
     return { ok:false, error:'Il consenso alla profilazione e necessario per salvare il profilo.' };
@@ -220,10 +223,13 @@ function getProfiloDashboard() {
 // FUNZIONI PRIVATE
 // ============================================================================
 
-function _proGetUser_() {
+function _proGetUser_(token) {
   if (typeof getRuoloCorrente !== 'function') return null;
   try {
-    var user = getRuoloCorrente();
+    // v4.24.6 — Con deploy ANONIMO Session.getActiveUser() e VUOTO: l'identita
+    // DEVE arrivare dal token di sessione passato dal frontend, altrimenti
+    // "Accesso non autorizzato" anche con sessione valida.
+    var user = getRuoloCorrente(token || null, token || null);
     if (!user || !user.email || (user.livello||0) < 1) return null;
     return user;
   } catch(e) { return null; }
