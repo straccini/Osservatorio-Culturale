@@ -25,5 +25,5 @@ function sendTelegram(message) {
 }
 
 function sendTestTelegram() {
-  return sendTelegram(`OK *Test OSSERVATORIO CULTURALE v3.0*\nData: ${formatDateIT(new Date())}\n_Duemilamusei_`);
+  return sendTelegram(`OK *Test OSSERVATORIO CULTURALE v3.0*\nData: ${formatDateIT(new Date())}\n_Sinopia_`);
 }

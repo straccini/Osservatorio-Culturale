@@ -92,7 +92,7 @@ function escTok_(s) {
 
 function _doGetLanding() {
   return HtmlService.createHtmlOutputFromFile('LandingPublic')
-    .setTitle('Sinopia \xb7 Osservatorio Culturale \xb7 Duemilamusei')
+    .setTitle('Sinopia \xb7 Osservatorio Culturale')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width,initial-scale=1');
 }
@@ -291,7 +291,7 @@ function doGet(e) {
   var t = HtmlService.createTemplateFromFile('Index');
 
   var page = t.evaluate()
-    .setTitle('Osservatorio Culturale · Duemilamusei')
+    .setTitle('Osservatorio Culturale · Sinopia')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
@@ -472,7 +472,7 @@ function renderLoginPage(auth) {
 + '<div class="b-right-content">'
 +   '<div class="b-right-eyebrow">Lettura del giorno</div>'
 +   '<h2 class="b-right-h2">Dieci dimensioni, una sola lente: per leggere l\'<em>identita culturale</em> di un\'istituzione.</h2>'
-+   '<p class="b-right-lead">Il framework MuseMu Matrix dell\'Osservatorio Culturale Duemilamusei. Riservato agli iscritti.</p>'
++   '<p class="b-right-lead">Il framework MuseMu Matrix dell\'Osservatorio Culturale Sinopia. Riservato agli iscritti.</p>'
 + '</div>'
 + '<div class="b-features">'
 +   '<div class="b-features-title">Cosa trovi nell\'area riservata</div>'
@@ -552,7 +552,7 @@ function _serveDigestReader(token) {
       + '<h2>Link non accessibile</h2>'
       + '<p>Il link del tuo digest personale non è più valido. I link hanno una durata di <strong>30 giorni</strong> e vengono rigenerati ad ogni nuovo invio.</p>'
       + '<div class="detail">Motivo tecnico: ' + motivo + '</div>'
-      + '<a class="btn" href="mailto:info@duemilamusei.it">Richiedi un nuovo digest</a>'
+      + '<a class="btn" href="mailto:info@sinopiaconsulting.it">Richiedi un nuovo digest</a>'
       + '</div></body></html>';
     var err = HtmlService.createHtmlOutput(errHtml);
     err.setTitle('Link non valido — Osservatorio Culturale');
@@ -2743,7 +2743,7 @@ function preparaBozzaDigestLunedi() {
     '─────────────────\n' +
     'Totale: *' + totale + '* contenuti\n\n' +
     '_Rivedi e invia dall\'Osservatorio → Email Digest_\n' +
-    '_Duemilamusei_';
+    '_Sinopia_';
   try { sendTelegram(msg); } catch(e) { Logger.log('TG bozza err: ' + e.message); }
 
   return { bandi: bandiSel.length, notizie: notizieCount, podcast: podCount, totale };
@@ -2806,7 +2806,7 @@ function lunediMattina() {
     (risultatoBandi.totalNuovi > 0 ? '📊 *' + risultatoBandi.totalNuovi + '* nuovi bandi\n' : '') +
     (nuoveNotizie > 0 ? '📰 *' + nuoveNotizie + '* nuove notizie RSS\n' : '') +
     (nuoviPod > 0 ? '🎙 *' + nuoviPod + '* nuovi episodi podcast\n' : '') +
-    '\n_Osservatorio Culturale · Duemilamusei_';
+    '\n_Osservatorio Culturale · Sinopia_';
   try { sendTelegram(msgScan); } catch(e) { Logger.log('TG scan recap: ' + e.message); }
 
   Logger.log('=== LUNEDI COMPLETATO ===');

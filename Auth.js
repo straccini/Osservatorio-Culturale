@@ -850,7 +850,7 @@ function _sendInviteEmail_(email, nome, ruolo, magicUrl) {
       // Footer
       + '<tr><td style="background:#F1E6D6;padding:18px 32px;border-top:1px solid #D4BFA0;text-align:center">'
       + '<div style="font-family:Arial,sans-serif;font-size:12px;color:#5C4332;line-height:1.5;font-weight:600">Il team di assistenza di Sinopia</div>'
-      + '<div style="font-family:Arial,sans-serif;font-size:11px;color:#8B5E2B;line-height:1.5;margin-top:4px">Sinopia &middot; Osservatorio Culturale<br>Il disegno preparatorio della cultura italiana<br>Un progetto Duemilamusei</div>'
+      + '<div style="font-family:Arial,sans-serif;font-size:11px;color:#8B5E2B;line-height:1.5;margin-top:4px">Sinopia &middot; Osservatorio Culturale<br>Il disegno preparatorio della cultura italiana<br>Un progetto Sinopia</div>'
       + '</td></tr>'
       + '</table>'
       + '</td></tr></table>'
@@ -1026,7 +1026,7 @@ function _sendWelcomeEmail_(email, ruolo) {
           '<p>Ruolo assegnato: <b>' + ruolo + '</b></p>' +
           (webUrl ? '<p style="text-align:center;margin:24px 0"><a href="' + webUrl + '" style="background:#0E7490;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600">Apri Osservatorio Culturale</a></p>' : '') +
           '<p>Da adesso puoi accedere al sistema con il tuo account Google.</p>' +
-          '<p>Cordialmente,<br>Silvano Straccini · Duemilamusei</p>' +
+          '<p>Cordialmente,<br>Silvano Straccini · Sinopia</p>' +
         '</div>' +
         '</div>',
       name: 'Osservatorio Culturale'

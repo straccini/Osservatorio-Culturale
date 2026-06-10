@@ -3246,7 +3246,7 @@ function digestBandiV5(n, toEmail) {
 
     var htmlBody = '<!DOCTYPE html><html><body style="margin:0;padding:0;background:#FAF8F4;font-family:Georgia,serif">'
       + '<div style="max-width:700px;margin:0 auto;padding:32px 16px">'
-      + '<p style="font-family:sans-serif;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#9A958B">Osservatorio Culturale · Duemilamusei</p>'
+      + '<p style="font-family:sans-serif;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#9A958B">Osservatorio Culturale · Sinopia</p>'
       + '<h1 style="font-size:36px;font-weight:500;letter-spacing:-0.02em;color:#1A1815;margin:0 0 4px">Radar <em>Bandi</em></h1>'
       + '<p style="font-size:14px;color:#6E6A62;margin:0 0 32px">' + ts + ' · ' + bandi.length + ' bandi monitorati</p>'
       + '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border-top:2px solid #1A1815">'

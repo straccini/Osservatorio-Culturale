@@ -413,7 +413,7 @@ function sendWeeklyAlert() {
   }).sort(function(a,b) { return new Date(a.scadenza) - new Date(b.scadenza); });
   var totValore = bandi.reduce(function(s,b) { return s + (b.importo||0); }, 0);
 
-  var msg = ' *RADAR BANDI - Lunedi ' + formatDateIT(oggi) + '*\n_Osservatorio Culturale . Duemilamusei_\n\n';
+  var msg = ' *RADAR BANDI - Lunedi ' + formatDateIT(oggi) + '*\n_Osservatorio Culturale . Sinopia_\n\n';
   msg += ' *Statistiche*\n Bandi attivi: *' + bandi.length + '*\n Valore totale: *' + (totValore > 0 ? 'EUR' + Math.round(totValore/1000) + 'k' : 'n.d.') + '*\n\n';
 
   if (inScadenza.length > 0) {
@@ -439,7 +439,7 @@ function sendWeeklyAlert() {
     });
     if (nuovi.length > 5) msg += '   _...e altri ' + (nuovi.length-5) + ' bandi_\n\n';
   }
-  msg += '_Osservatorio Culturale . Duemilamusei_';
+  msg += '_Osservatorio Culturale . Sinopia_';
   return sendTelegram(msg);
 }
 

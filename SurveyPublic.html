@@ -204,7 +204,7 @@ function renderQuestion(idx){
   var dimLabel = q.dimensionLabel || ('Dimensione '+(dimIdx+1));
 
   var h='<div class="sr-hero">'
-    +'<div class="sr-eyebrow">Duemilamusei &middot; MuseMu Matrix</div>'
+    +'<div class="sr-eyebrow">Sinopia &middot; MuseMu Matrix</div>'
     +'<div class="sr-title">'+esc(s.surveyTitle||'Autovalutazione')+'</div>'
     +'<div class="sr-sub">'+esc(s.surveySub||'Diagnosi rapida e riservata della maturita\' della tua struttura culturale.')+'</div>'
     +'<div class="sr-meta-row">'
@@ -269,7 +269,7 @@ function renderQuestion(idx){
   h+='<button class="sr-btn sr-btn-primary" id="sr-next" onclick="renderQuestion('+(idx+1)+')">'+nextLabel+'</button>';
   h+='</div></div>';
 
-  h+='<div class="sr-footer"><strong>Duemilamusei</strong> &middot; Compilazione anonima &middot; GDPR Reg. UE 2016/679</div>';
+  h+='<div class="sr-footer"><strong>Sinopia</strong> &middot; Compilazione anonima &middot; GDPR Reg. UE 2016/679</div>';
   $('sr-app').innerHTML=h;
   window.scrollTo({top:0, behavior:'smooth'});
 }
@@ -413,7 +413,7 @@ function renderReport(result){
   h+='<div class="sr-optin-privacy">Trattamento dati ex Reg. UE 2016/679. Cancellazione in qualsiasi momento.</div>';
   h+='</div>';
 
-  h+='<div class="sr-footer"><strong>Duemilamusei</strong> &middot; MuseMu Matrix v1.0 &middot; Fano (PU) &middot; Ispirato a Museum Matrix di Matthias Henkel</div>';
+  h+='<div class="sr-footer"><strong>Sinopia</strong> &middot; MuseMu Matrix v1.0 &middot; Fano (PU) &middot; Ispirato a Museum Matrix di Matthias Henkel</div>';
   $('sr-app').innerHTML=h;
   window.scrollTo({top:0, behavior:'smooth'});
 }
