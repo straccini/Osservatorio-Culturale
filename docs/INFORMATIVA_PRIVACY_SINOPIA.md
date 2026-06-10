@@ -5,7 +5,7 @@
 
 **Versione 1.0 — giugno 2026** · *(identificativo versione consenso: `v1.0-2026-06`)*
 
-> ⚠️ **NOTA PER SILVANO.** Dati legali di Sinopia Srl inseriti (§1). Restano da confermare solo i punti 🔎 (eventuale DPO, periodi di conservazione proposti, basi dei trasferimenti USA con i fornitori). Poi pubblica questa pagina su `https://www.duemilamusei.it/privacy` (URL già richiamato nell'app) e verificane l'apertura.
+> ⚠️ **NOTA PER SILVANO.** Dati legali di Sinopia Srl inseriti (§1). Restano da confermare solo i punti 🔎 (eventuale DPO, periodi di conservazione proposti, basi dei trasferimenti USA con i fornitori). Poi pubblica questa pagina su `https://www.sinopiaconsulting.it/privacy` (URL richiamato nell'app) e verificane l'apertura. **NB:** verifica se il tuo hosting risponde con o senza `www` e allinea il link se necessario.
 
 ---
 
@@ -127,5 +127,5 @@ Il Titolare si riserva di aggiornare la presente informativa. La versione vigent
 - [ ] Confermare l'eventuale nomina del DPO (§1).
 - [ ] Confermare i periodi di conservazione proposti (§4).
 - [ ] Confermare/aggiornare le basi dei trasferimenti USA con i fornitori (§5).
-- [ ] Pubblicare la pagina su `duemilamusei.it/privacy` e verificarne l'apertura da browser anonimo.
+- [ ] Pubblicare la pagina su `sinopiaconsulting.it/privacy` e verificarne l'apertura da browser anonimo.
 - [ ] (Consigliato) accettare/archiviare il *Data Processing Amendment* di Google e il *DPA* di Anthropic; predisporre il **registro dei trattamenti** (art. 30).
