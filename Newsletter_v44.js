@@ -117,7 +117,7 @@ function buildNewsletterHtml_(draft) {
 
   // Footer
   parts.push('<tr><td style="padding:16px 28px 28px 28px;border-top:1px solid #ECECEE;">');
-  parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;">Ricevi questa newsletter in quanto iscritto all\'Osservatorio Culturale. Per modificare le preferenze o cancellarti, rispondi a questo messaggio.</p>');
+  parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;">Ricevi questa newsletter in quanto iscritto all\'Osservatorio Culturale. Per modificare le preferenze o cancellarti, usa il link di disiscrizione in fondo.</p>');
   parts.push('</td></tr>');
 
   parts.push('</table></td></tr></table></body></html>');
@@ -168,10 +168,13 @@ function sendNewsletterEmail_(subject, html) {
   destinatari = Array.from(new Set(destinatari.map(function(e){ return e.toLowerCase().trim(); })));
   destinatari.forEach(function(email) {
     try {
+      // v4.23 GDPR — link di disiscrizione firmato per-destinatario (come i digest)
+      var htmlDest = html;
+      try { if (typeof _digestUnsubFooter_ === 'function') htmlDest = html.replace('</body>', _digestUnsubFooter_(email) + '</body>'); } catch(_uf){}
       MailApp.sendEmail({
         to:      email,
         subject: subject,
-        htmlBody: html,
+        htmlBody: htmlDest,
         name:    senderName,
         replyTo: sender
       });
