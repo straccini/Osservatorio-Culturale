@@ -3569,6 +3569,33 @@
       .getCurrentUser_v44(_admTok_());
   }
 
+  // v4.24.2 — Suggerimento autovalutazioni rapide in base agli ambiti confermati (funnel: profilo -> sondaggio mirato)
+  var _WS_SOND_AMB  = { gestione:[5], accessibilita:[2], digital:[5], audience:[1,4], turismo:[1,3], reti:[4,5] };
+  var _WS_SOND_NOMI = { gestione:'Gestione & organizzazione', accessibilita:'Accessibilità integrata', digital:'Digital, AI e tecnologia', audience:'Audience e welfare culturale', turismo:'Turismo culturale', reti:'Reti culturali e DCE' };
+  function _wsSondaggiNextHtml_(ambiti) {
+    ambiti = ambiti || [];
+    var fatti = window._wsSondFatti || {};
+    var sugg = [];
+    Object.keys(_WS_SOND_AMB).forEach(function(c){
+      var match = _WS_SOND_AMB[c].some(function(a){ return ambiti.indexOf(a) >= 0; });
+      if (match && !fatti[c]) sugg.push(c);
+    });
+    var h = '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px">';
+    h += '<div style="font-weight:700;font-size:14.5px;color:var(--ink)">Prossimo passo: <em style="color:var(--amb-2,#10916D)">autovalutazione rapida</em> <span style="font-weight:500;font-size:12px;color:var(--ink-3)">3 min · 6 domande</span></div>';
+    h += '<a href="#" onclick="OC.go(\'sondaggi-catalogo\');return false" style="font-size:12px;color:var(--accent,#935851);font-weight:600">Tutte le autovalutazioni &rarr;</a></div>';
+    if (sugg.length) {
+      h += '<div style="font-size:12.5px;color:var(--ink-2);line-height:1.5;margin-bottom:10px">Hai confermato i tuoi ambiti: in base a questi ti suggeriamo una diagnosi veloce su</div>';
+      h += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+      sugg.forEach(function(c){
+        h += '<button type="button" onclick="OC.openSondaggio(\'' + c + '\')" style="cursor:pointer;background:var(--amb-2,#10916D);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12.5px;font-weight:600;font-family:inherit">' + esc(_WS_SOND_NOMI[c] || c) + ' &rarr;</button>';
+      });
+      h += '</div>';
+    } else {
+      h += '<div style="font-size:12.5px;color:var(--ink-2);line-height:1.5">Hai già compilato le autovalutazioni dei tuoi ambiti — ottimo. Dal catalogo puoi ricompilarle o esplorare le altre.</div>';
+    }
+    return h;
+  }
+
   function renderWorkspacePage(data) {
     var wrap = $('wsContent'); if (!wrap) return;
     var p = data.profilo || {};
@@ -3606,6 +3633,14 @@
     });
     html += '</div>';
     html += '<div style="font-size:11px;color:var(--ink-3);margin-top:10px">Se hai completato il Matrix, resta prioritario il digest sui tuoi 3 gap.</div>';
+    html += '</div>';
+
+    // v4.24.2 — Card "prossimo passo": autovalutazione rapida proposta SOLO dopo la conferma degli ambiti
+    var _fattiMap = {};
+    (data.sondaggiCompilati || []).forEach(function(s){ if (s && s.codice) _fattiMap[s.codice] = true; });
+    window._wsSondFatti = _fattiMap;
+    html += '<div id="wsSondaggiNext" style="display:' + (_vuoto ? 'none' : 'block') + ';background:#fff;border:1px solid var(--rule,#E5E5E7);border-left:4px solid var(--amb-2,#10916D);border-radius:12px;padding:16px 20px;margin:0 0 22px">';
+    html += '<div id="wsSondaggiNextBody">' + _wsSondaggiNextHtml_(_ambSel) + '</div>';
     html += '</div>';
 
     // Sezione 1: Matrix
@@ -12231,7 +12266,16 @@
     }
     google.script.run
       .withSuccessHandler(function(r){
-        if (r && r.ok) { if (typeof showToast === 'function') showToast(on ? 'Ambito attivato' : 'Ambito disattivato', 'ok'); }
+        if (r && r.ok) {
+          if (typeof showToast === 'function') showToast(on ? 'Ambito attivato' : 'Ambito disattivato', 'ok');
+          // v4.24.2 — Aggiorna live la card "prossimo passo: autovalutazione rapida"
+          try {
+            var card = document.getElementById('wsSondaggiNext');
+            var body = document.getElementById('wsSondaggiNextBody');
+            if (card && r.ambiti) card.style.display = r.ambiti.length ? 'block' : 'none';
+            if (body && r.ambiti && typeof _wsSondaggiNextHtml_ === 'function') body.innerHTML = _wsSondaggiNextHtml_(r.ambiti);
+          } catch(_){}
+        }
         else if (typeof showToast === 'function') showToast('Errore: ' + ((r&&r.error)||'') , 'err');
       })
       .withFailureHandler(function(e){ if (typeof showToast === 'function') showToast('Errore di rete', 'err'); })
