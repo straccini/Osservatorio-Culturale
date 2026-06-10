@@ -169,28 +169,50 @@ function getDigestRecipientsByCohort() {
       }
     }
 
-    // v4.24 — Arricchisci i generalisti con gli ambiti di interesse (da ContactsMatrix.preferences_json.dimensioni)
+    // v4.24 — Arricchisci i generalisti con gli ambiti di interesse.
+    // Fonte PRIMARIA: foglio ProfiliPro (interessi_dimensioni, scritto da setAmbitoInteresse/saveProfilo,
+    // = ciò che il lettore sceglie nei chip dell'area). FALLBACK: ContactsMatrix.preferences_json.dimensioni.
     try {
-      var shCpref = ss.getSheetByName('ContactsMatrix');
-      if (shCpref && shCpref.getLastRow() > 1) {
-        var cpVals = shCpref.getDataRange().getValues();
-        var cpH = cpVals[0];
-        var iCpEm = cpH.indexOf('email'), iCpPref = cpH.indexOf('preferences_json');
-        var prefByEmail = {};
-        if (iCpEm >= 0 && iCpPref >= 0) {
-          for (var rcp = 1; rcp < cpVals.length; rcp++) {
-            var emCp = String(cpVals[rcp][iCpEm] || '').trim().toLowerCase();
-            if (!emCp) continue;
-            var prefObj = {};
-            try { prefObj = cpVals[rcp][iCpPref] ? JSON.parse(cpVals[rcp][iCpPref]) : {}; } catch(_){}
-            if (prefObj && prefObj.dimensioni) prefByEmail[emCp] = prefObj.dimensioni;
+      var dimsByEmail = {};
+      // 1) ProfiliPro (sorgente dei chip dell'area)
+      try {
+        var ppName = (typeof PROFILO_PRO_SHEET !== 'undefined') ? PROFILO_PRO_SHEET : 'ProfiliPro';
+        var shPP = ss.getSheetByName(ppName);
+        if (shPP && shPP.getLastRow() > 1) {
+          var ppVals = shPP.getDataRange().getValues();
+          var ppH = ppVals[0];
+          var iPpEm = ppH.indexOf('email'), iPpInt = ppH.indexOf('interessi_dimensioni');
+          if (iPpEm >= 0 && iPpInt >= 0) {
+            for (var rpp = 1; rpp < ppVals.length; rpp++) {
+              var emPp = String(ppVals[rpp][iPpEm] || '').trim().toLowerCase();
+              if (emPp && ppVals[rpp][iPpInt]) dimsByEmail[emPp] = ppVals[rpp][iPpInt];
+            }
           }
         }
-        generalisti.forEach(function(g){
-          var dimsG = prefByEmail[String(g.email).toLowerCase()];
-          g.ambiti = (dimsG && typeof ambitiFromDims === 'function') ? ambitiFromDims(dimsG) : [];
-        });
-      }
+      } catch(ePP) { Logger.log('enrich ProfiliPro: ' + ePP.message); }
+      // 2) ContactsMatrix (fallback, non sovrascrive ProfiliPro)
+      try {
+        var shCpref = ss.getSheetByName('ContactsMatrix');
+        if (shCpref && shCpref.getLastRow() > 1) {
+          var cpVals = shCpref.getDataRange().getValues();
+          var cpH = cpVals[0];
+          var iCpEm = cpH.indexOf('email'), iCpPref = cpH.indexOf('preferences_json');
+          if (iCpEm >= 0 && iCpPref >= 0) {
+            for (var rcp = 1; rcp < cpVals.length; rcp++) {
+              var emCp = String(cpVals[rcp][iCpEm] || '').trim().toLowerCase();
+              if (!emCp || dimsByEmail[emCp]) continue;
+              var prefObj = {};
+              try { prefObj = cpVals[rcp][iCpPref] ? JSON.parse(cpVals[rcp][iCpPref]) : {}; } catch(_){}
+              if (prefObj && prefObj.dimensioni) dimsByEmail[emCp] = (Array.isArray(prefObj.dimensioni) ? prefObj.dimensioni.join(',') : prefObj.dimensioni);
+            }
+          }
+        }
+      } catch(eCM) { Logger.log('enrich ContactsMatrix: ' + eCM.message); }
+      // 3) Applica agli ambiti del generalista
+      generalisti.forEach(function(g){
+        var dimsG = dimsByEmail[String(g.email).toLowerCase()];
+        g.ambiti = (dimsG && typeof ambitiFromDims === 'function') ? ambitiFromDims(dimsG) : [];
+      });
     } catch(ePref) { Logger.log('coorte A ambiti enrich: ' + ePref.message); }
 
     var leadCaldi = Object.keys(coorteB).map(function(k){ return coorteB[k]; });
