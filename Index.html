@@ -7708,12 +7708,17 @@
 
   function testTelegram(){
     if (!hasGAS()) return;
-    if (!confirm('Invio messaggio di test Telegram all\'admin. Procedere?')) return;
+    // v4.24.11 — niente confirm()/alert() nativi (congelano la sandbox); esito su #telegramStatus
+    var el = $('telegramStatus');
+    if (el) el.textContent = 'Invio messaggio di test…';
     google.script.run
       .withSuccessHandler(function(r){
-        alert(r && r.ok ? '✓ Messaggio Telegram inviato.' : '✗ Errore: '+(r && (r.error||r.code)||'sconosciuto'));
+        var msg = (r && r.ok) ? '<span style="color:var(--success)">✓ Messaggio di test inviato — controlla la chat del bot.</span>'
+                              : '<span style="color:var(--danger)">✗ Errore: '+esc((r && (r.error||r.code))||'sconosciuto')+'</span>';
+        if (el) el.innerHTML = msg;
+        showToast && showToast((r && r.ok) ? 'Telegram: test inviato' : 'Telegram: errore', (r && r.ok) ? 'ok' : 'err');
       })
-      .withFailureHandler(function(e){ alert('Errore: '+e); })
+      .withFailureHandler(function(e){ if (el) el.innerHTML = '<span style="color:var(--danger)">Errore: '+esc(e)+'</span>'; })
       .telegramTest();
   }
 

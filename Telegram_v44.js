@@ -24,7 +24,13 @@ var TG_API_BASE_ = 'https://api.telegram.org/bot';
 
 // ================== SETUP ==================
 
-function setTelegramConfig(botToken, chatId) {
+function setTelegramConfig(botToken, chatId, token) {
+  // v4.24.11 SEC — gate admin: senza, chiunque via google.script.run poteva dirottare
+  // le notifiche sul PROPRIO bot (exfiltration). Dall'editor GAS funziona comunque
+  // (token assente -> fallback Session = owner).
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
+    return { ok:false, error:'forbidden' };
+  }
   var p = PropertiesService.getScriptProperties();
   if (botToken) p.setProperty('TELEGRAM_BOT_TOKEN', String(botToken).trim());
   if (chatId)   p.setProperty('TELEGRAM_CHAT_ID',   String(chatId).trim());
