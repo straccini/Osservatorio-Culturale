@@ -64,6 +64,17 @@ function _renderApproveNewsletterPage_(draftId, token) {
       '<div class="ok">Questa newsletter è già stata inviata a ' + (draft.sentTo||0) + ' destinatari.</div>');
   }
 
+  // v4.24.13 FIX — Il vecchio <form action=""> faceva submit all'URL transitorio
+  // dell'iframe googleusercontent: confirm=1 NON tornava mai a doGet, l'invio non
+  // partiva e lo stato restava "in_attesa_approvazione" (= "si blocca").
+  // Un LINK ASSOLUTO con target="_top" naviga il top frame su /exec (consentito
+  // dalla sandbox con user-activation — stesso pattern del magic-link).
+  var _webUrl = '';
+  try { _webUrl = ScriptApp.getService().getUrl() || ''; } catch(eU) { _webUrl = ''; }
+  var _confirmUrl = _webUrl + '?approveNl=' + encodeURIComponent(draftId) +
+                    '&t=' + encodeURIComponent(token) + '&confirm=1';
+  var _confirmLink = '<a class="btn" target="_top" rel="noopener" href="' + _hEsc_(_confirmUrl) + '">✉️ Invia adesso</a>';
+
   // Pagina di conferma: richiede click per confermare (evita invio per preview)
   var cnf = (draft.bandiUrgenti||[]).length + (draft.bandiRecenti||[]).length;
   var body =
@@ -77,16 +88,8 @@ function _renderApproveNewsletterPage_(draftId, token) {
     '</div>' +
     '<p>Stai per autorizzare l\'invio della newsletter a tutti gli iscritti attivi della MailingList.</p>' +
     '<p class="meta">Richiesto da: ' + _hEsc_(draft.autore||'—') + ' · Approvato da: ' + _hEsc_(email || 'link Telegram autorizzato') + '</p>' +
-    '<form method="get" action="">' +
-      '<input type="hidden" name="approveNl" value="' + _hEsc_(draftId) + '">' +
-      '<input type="hidden" name="t" value="' + _hEsc_(token) + '">' +
-      '<input type="hidden" name="confirm" value="1">' +
-      '<button type="submit" class="btn">✉️ Invia adesso</button>' +
-    '</form>';
+    _confirmLink;
 
-  // Se confirm=1, esegui invio
-  var e = { parameter: { approveNl: draftId, t: token, confirm: '' } };
-  // NB: il parametro confirm viene letto dal chiamante; qui fungiamo solo da renderer.
   return _approvePage_(css, body);
 }
 

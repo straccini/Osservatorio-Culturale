@@ -127,6 +127,13 @@ function adminGenerateDigestDraft(opts) {
   opts = opts || {};
   var tk = opts.token || null;
   if (!_isCurrentUserAdmin_(tk)) return { ok:false, error:'forbidden' };
+  return _generateDigestDraftCore_(opts);
+}
+
+// v4.24.13 — Core SENZA gate: riusato dal trigger del lunedì (i trigger non hanno
+// contesto utente né token). Le funzioni pubbliche sopra/sotto mantengono il gate.
+function _generateDigestDraftCore_(opts) {
+  opts = opts || {};
   var maxBandi   = opts.maxBandi   || 8;
   var maxNews    = opts.maxNews    || 6;
   var maxPodcast = opts.maxPodcast || 3;
@@ -213,6 +220,11 @@ function adminPreviewNewsletterHtml(draftId, token) {
  */
 function adminRequestSendAuthorization(draftId, token) {
   if (!_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden' };
+  return _requestSendAuthorizationCore_(draftId);
+}
+
+// v4.24.13 — Core SENZA gate: riusato dal trigger del lunedì.
+function _requestSendAuthorizationCore_(draftId) {
   var draft = _loadDraft_(draftId);
   if (!draft) return { ok:false, error:'draft_not_found' };
 
@@ -287,6 +299,75 @@ function adminConfirmSendWithToken(draftId, authToken) {
   _updateLogRow_(draftId, { Stato:'inviato', Destinatari: res.count || 0 });
 
   return { ok:true, sent: res.count || 0, errors: res.errors || [] };
+}
+
+// ============================================================================
+// v4.24.13 — AUTOMAZIONE NEWSLETTER LUNEDI 09:00 (con autorizzazione Telegram)
+// Ogni lunedì ~09:00: prepara la bozza e invia la RICHIESTA DI AUTORIZZAZIONE
+// su Telegram. NESSUN invio automatico ai lettori: l'invio parte solo quando
+// l'admin apre il link dal bot e preme "Invia adesso".
+// Flag: ScriptProperty OC_NL_LUNEDI_AUTH ('true'/'false') + trigger installato.
+// ============================================================================
+
+var OC_NL_AUTO_FLAG_ = 'OC_NL_LUNEDI_AUTH';
+
+/** Handler del trigger (niente gate: i trigger non hanno contesto utente). */
+function weeklyNewsletterAuthRequest() {
+  try {
+    var gen = _generateDigestDraftCore_({ maxBandi: 8, maxNews: 6, maxPodcast: 3 });
+    if (!gen || !gen.ok) {
+      Logger.log('[weeklyNewsletterAuthRequest] generazione fallita: ' + ((gen && gen.error) || '?'));
+      try { if (typeof sendTelegram === 'function') sendTelegram('⚠️ Newsletter del lunedì: generazione bozza FALLITA (' + ((gen && gen.error) || 'errore') + '). Genera manualmente dalla pagina Digest.'); } catch(_){}
+      return { ok:false, error: (gen && gen.error) || 'draft_failed' };
+    }
+    var req = _requestSendAuthorizationCore_(gen.id);
+    Logger.log('[weeklyNewsletterAuthRequest] bozza ' + gen.id + ' -> telegram: ' + JSON.stringify(req && req.telegram));
+    return { ok:true, draftId: gen.id, telegram: (req && req.telegram), approveUrl: (req && req.approveUrl) };
+  } catch(e) {
+    Logger.log('[weeklyNewsletterAuthRequest] ERRORE: ' + e.message);
+    return { ok:false, error: e.message };
+  }
+}
+
+/** Attiva il flag: installa il trigger lunedì 09:00 e RIMUOVE i vecchi invii automatici senza autorizzazione. */
+function setupWeeklyNewsletterAuthTrigger(token) {
+  if (!_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden' };
+  var removed = [];
+  // Rimuove duplicati propri + gli invii automatici del lunedì SENZA autorizzazione (evita doppioni)
+  var DA_RIMUOVERE = { weeklyNewsletterAuthRequest:1, lunediMattina:1, sendDigestAuto:1, sendDigestAuto2coorti:1 };
+  ScriptApp.getProjectTriggers().forEach(function(t){
+    var fn = t.getHandlerFunction();
+    if (DA_RIMUOVERE[fn]) { removed.push(fn); ScriptApp.deleteTrigger(t); }
+  });
+  ScriptApp.newTrigger('weeklyNewsletterAuthRequest')
+    .timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(9).create();
+  PropertiesService.getScriptProperties().setProperty(OC_NL_AUTO_FLAG_, 'true');
+  return { ok:true, attivo:true, rimossi: removed,
+           nota: 'Ogni lunedì ~09:00 (finestra GAS 9-10): bozza + richiesta autorizzazione su Telegram. Nessun invio senza la tua conferma.' };
+}
+
+/** Disattiva il flag: rimuove il trigger. */
+function removeWeeklyNewsletterAuthTrigger(token) {
+  if (!_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden' };
+  var removed = 0;
+  ScriptApp.getProjectTriggers().forEach(function(t){
+    if (t.getHandlerFunction() === 'weeklyNewsletterAuthRequest') { removed++; ScriptApp.deleteTrigger(t); }
+  });
+  PropertiesService.getScriptProperties().setProperty(OC_NL_AUTO_FLAG_, 'false');
+  return { ok:true, attivo:false, rimossi: removed };
+}
+
+/** Stato del flag + trigger (per la UI). */
+function getWeeklyNewsletterAuthStatus(token) {
+  if (!_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden' };
+  var found = false;
+  try {
+    ScriptApp.getProjectTriggers().forEach(function(t){
+      if (t.getHandlerFunction() === 'weeklyNewsletterAuthRequest') found = true;
+    });
+  } catch(e) { return { ok:false, error: e.message }; }
+  return { ok:true, attivo: found,
+           flag: PropertiesService.getScriptProperties().getProperty(OC_NL_AUTO_FLAG_) === 'true' };
 }
 
 // v4.18.39 (audit 2026-05-14) — Rimosse 2 funzioni morte:

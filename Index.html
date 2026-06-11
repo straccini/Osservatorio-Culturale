@@ -1768,6 +1768,15 @@
             </div>
             <div id="cronCoortiResult" style="font-size:11px;color:var(--ink-3)">Gestito da: <code>sendDigestAuto2coorti</code></div>
           </div>
+          <!-- v4.24.13 — Lunedì 09:00 con autorizzazione Telegram -->
+          <div style="margin-top:12px;padding:10px 14px;background:var(--surface-2);border-radius:8px">
+            <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Newsletter lunedì 09:00 · sempre con autorizzazione Telegram</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+              <div id="nlAutoAuthStatus" style="flex:1;font-size:12px;color:var(--ink-2)">Verifica in corso…</div>
+              <button class="btn btn-secondary" data-action="nlAutoAuthOn" style="font-size:11px;padding:4px 10px" title="Ogni lunedì ~09:00: prepara la bozza e ti invia la richiesta di autorizzazione su Telegram. NESSUN invio senza la tua conferma. Disattiva l'eventuale invio automatico delle 07:00.">Attiva</button>
+              <button class="btn btn-secondary" data-action="nlAutoAuthOff" style="font-size:11px;padding:4px 10px">Disattiva</button>
+            </div>
+          </div>
           <!-- Telegram -->
           <div style="margin-top:12px;display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface-2);border-radius:8px">
             <div style="flex:1">
@@ -5083,6 +5092,7 @@
     if (!hasGAS()) return;
     if (typeof checkTelegram === 'function')  checkTelegram();
     if (typeof loadCronStatus === 'function') loadCronStatus();
+    if (typeof nlAutoAuthStatusLoad === 'function') nlAutoAuthStatusLoad(); // v4.24.13
     google.script.run
       .withSuccessHandler(renderDigestList)
       .withFailureHandler(function(err){ console.error(err); renderDigestList({ok:false,error:err}); })
@@ -7687,6 +7697,55 @@
       })
       .withFailureHandler(function(e){ alert('Errore di rete: '+e); })
       .adminDeleteDigestDraft(id, (window.OC_SESSION && window.OC_SESSION.token) || null);
+  }
+
+  // v4.24.13 — Automazione lunedì 09:00 con autorizzazione Telegram
+  function nlAutoAuthStatusLoad(){
+    if (!hasGAS()) return;
+    var el = $('nlAutoAuthStatus');
+    if (el) el.textContent = 'Verifica in corso…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!el) return;
+        if (!r || !r.ok) { el.innerHTML = '<span style="color:var(--danger)">⚠️ Stato non disponibile</span>'; return; }
+        el.innerHTML = r.attivo
+          ? '<span style="color:var(--success)">✓ Attiva — ogni lunedì ~09:00 prepara la bozza e ti chiede l\'autorizzazione su Telegram</span>'
+          : '<span style="color:var(--ink-3)">Non attiva — la newsletter del lunedì va preparata e autorizzata a mano</span>';
+      })
+      .withFailureHandler(function(e){ if (el) el.textContent = 'Errore: ' + e; })
+      .getWeeklyNewsletterAuthStatus(_tok_());
+  }
+  function nlAutoAuthOn(){
+    if (!hasGAS()) return;
+    var el = $('nlAutoAuthStatus');
+    if (el) el.textContent = 'Attivazione…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          showToast && showToast('Automazione lunedì 09:00 attivata', 'ok');
+          if (r.rimossi && r.rimossi.length && el) {
+            el.innerHTML = '<span style="color:var(--success)">✓ Attivata.</span> <span style="font-size:11px;color:var(--ink-3)">Disattivati i vecchi invii automatici: ' + esc(r.rimossi.join(', ')) + '</span>';
+            setTimeout(nlAutoAuthStatusLoad, 4000);
+          } else { nlAutoAuthStatusLoad(); }
+        } else {
+          showToast && showToast('Errore: ' + ((r && r.error) || 'sconosciuto'), 'err');
+          nlAutoAuthStatusLoad();
+        }
+      })
+      .withFailureHandler(function(e){ showToast && showToast('Errore: ' + e, 'err'); nlAutoAuthStatusLoad(); })
+      .setupWeeklyNewsletterAuthTrigger(_tok_());
+  }
+  function nlAutoAuthOff(){
+    if (!hasGAS()) return;
+    var el = $('nlAutoAuthStatus');
+    if (el) el.textContent = 'Disattivazione…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        showToast && showToast((r && r.ok) ? 'Automazione disattivata' : 'Errore: ' + ((r && r.error) || ''), (r && r.ok) ? 'ok' : 'err');
+        nlAutoAuthStatusLoad();
+      })
+      .withFailureHandler(function(e){ showToast && showToast('Errore: ' + e, 'err'); nlAutoAuthStatusLoad(); })
+      .removeWeeklyNewsletterAuthTrigger(_tok_());
   }
 
   function checkTelegram(){
@@ -11652,6 +11711,8 @@
     generaQueueAll: generaQueueAll,
     testDigestSegmentato: testDigestSegmentato,
     testDigestMatrixInvio: testDigestMatrixInvio,
+    nlAutoAuthOn: nlAutoAuthOn,
+    nlAutoAuthOff: nlAutoAuthOff,
     testDigestMatrixPerEmail: testDigestMatrixPerEmail,
     testDigestEmail: testDigestEmail,
     inviaTuttiPending: inviaTuttiPending,
