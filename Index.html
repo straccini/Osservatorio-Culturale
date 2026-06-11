@@ -7852,22 +7852,25 @@
   function richiediAutorizzazione(){
     if (!hasGAS()) return;
     var draftId = $('previewWrap').dataset.draftId;
-    if (!draftId) return;
-    if (!confirm('Inviare richiesta di autorizzazione via Telegram?\nRiceverai un link per confermare l\'invio effettivo.')) return;
+    if (!draftId) { showToast && showToast('Apri prima l\'anteprima di una bozza', 'err'); return; }
+    // v4.24.12 — niente confirm()/alert() nativi (congelano la sandbox); esito su toast + telegramStatus
     $('adminStatus').textContent = 'Invio notifica Telegram…';
+    var tgEl = $('telegramStatus');
     google.script.run
       .withSuccessHandler(function(r){
-        if (!r || !r.ok) { alert('Errore: '+(r&&r.error||'')); return; }
+        if (!r || !r.ok) { showToast && showToast('Errore: '+((r&&r.error)||'sconosciuto'), 'err'); $('adminStatus').textContent='errore'; return; }
         var tg = r.telegram || {};
         if (tg.ok) {
-          alert('✓ Notifica Telegram inviata.\nControlla il bot per ricevere il link di autorizzazione invio.');
+          showToast && showToast('Notifica Telegram inviata — controlla il bot', 'ok');
+          if (tgEl) tgEl.innerHTML = '<span style="color:var(--success)">✓ Richiesta di autorizzazione inviata su Telegram — apri il link dal bot per confermare l\'invio.</span>';
         } else {
-          alert('⚠️ Notifica Telegram non inviata ('+(tg.error||tg.code||'errore')+').\nUsa il link diretto:\n'+r.approveUrl);
+          showToast && showToast('Telegram non inviato ('+(tg.error||tg.code||'errore')+')', 'err');
+          if (tgEl && r.approveUrl) tgEl.innerHTML = '<span style="color:var(--danger)">⚠️ Telegram non inviato.</span> <a href="'+esc(r.approveUrl)+'" target="_blank" rel="noopener" style="font-weight:600">Usa il link diretto di autorizzazione →</a>';
         }
         $('adminStatus').textContent = 'in attesa autorizzazione';
         loadAdminPanel();
       })
-      .withFailureHandler(function(e){ alert('Errore: '+e); })
+      .withFailureHandler(function(e){ showToast && showToast('Errore: '+e, 'err'); $('adminStatus').textContent='errore'; })
       .adminRequestSendAuthorization(draftId, (window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
