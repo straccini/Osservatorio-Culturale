@@ -606,6 +606,62 @@ function testGenerateDigestSegmentato(token) {
 }
 
 /**
+ * v4.24.9 — TEST REALE digest Matrix/profilato: genera e INVIA SUBITO a emailDest.
+ * Non tocca la coda (save:false), nessuna bozza spuria. Se emailDest non ha una
+ * compilazione Matrix, usa come CAMPIONE l'ultima compilazione disponibile in
+ * ResponsesMatrix (segnalato nel risultato con campione:true).
+ * Soggetto prefissato [TEST] per distinguerlo dagli invii veri.
+ */
+function testInviaDigestMatrix(emailDest, token) {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_(token)) {
+    return { ok:false, error:'forbidden' };
+  }
+  emailDest = String(emailDest || '').trim().toLowerCase();
+  if (!emailDest || emailDest.indexOf('@') < 0) return { ok:false, error:'email_non_valida' };
+  try {
+    if (MailApp.getRemainingDailyQuota() < 3) return { ok:false, error:'quota_email_esaurita' };
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActive();
+    // 1) responseId della email (ContactsMatrix, piu recente)
+    var responseId = null, campione = false;
+    var shC = ss.getSheetByName(OC_MATRIX_CONTACTS_SHEET);
+    if (shC && shC.getLastRow() > 1) {
+      var cVals = shC.getDataRange().getValues();
+      var cH = cVals[0];
+      var iE = cH.indexOf('email'), iR = cH.indexOf('response_id');
+      if (iE >= 0 && iR >= 0) {
+        for (var r = cVals.length - 1; r >= 1; r--) {
+          if (String(cVals[r][iE] || '').trim().toLowerCase() === emailDest && cVals[r][iR]) {
+            responseId = String(cVals[r][iR]); break;
+          }
+        }
+      }
+    }
+    // 2) Fallback campione: ultima compilazione in ResponsesMatrix
+    if (!responseId) {
+      var rmSh = ss.getSheetByName(OC_MATRIX_RESPONSES_SHEET);
+      if (rmSh && rmSh.getLastRow() > 1) {
+        responseId = String(rmSh.getRange(rmSh.getLastRow(), 1).getValue() || '');
+        campione = !!responseId;
+      }
+    }
+    if (!responseId) return { ok:false, error:'nessuna_compilazione_matrix_disponibile' };
+    // 3) Genera (senza bozza) e invia
+    var res = generateDigestForUser(emailDest, responseId, { save:false });
+    if (!res || !res.ok || !res.html) return { ok:false, error: (res && res.error) || 'generazione_fallita' };
+    var subj = '[TEST] ' + (res.subject || 'Sinopia · Digest personalizzato');
+    GmailApp.sendEmail(emailDest, subj, 'Apri questa email in un client che supporta HTML.', {
+      htmlBody: res.html,
+      name: 'Sinopia · Osservatorio Culturale',
+      replyTo: Session.getEffectiveUser().getEmail()
+    });
+    Logger.log('[testInviaDigestMatrix] inviato a ' + emailDest + ' rid=' + responseId + (campione ? ' (campione)' : ''));
+    return { ok:true, emailSent: emailDest, responseId: responseId, campione: campione, top3Dims: res.top3Dims || [], contentCounts: res.contentCounts || {} };
+  } catch(e) {
+    return { ok:false, error: e.message };
+  }
+}
+
+/**
  * v4.21 — Test digest Matrix per un'email specifica.
  * Cerca il responseId associato all'email in ContactsMatrix, genera il digest e lo salva in coda.
  * Ritorna top3Dims + contentCounts per visualizzazione admin.

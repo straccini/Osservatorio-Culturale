@@ -319,6 +319,7 @@ function testInviaDigestGeneralista(emailDest, token) {
     // 1) Genera bozza usando il flusso normale
     Logger.log('--- 1. Generazione bozza ---');
     var draftRes = adminGenerateDigestDraft({
+      token: tk, // v4.24.10 FIX — senza token la catena interna falliva 'draft_failed: forbidden' su deploy anonimo
       maxBandi: 6,
       maxNews: 5,
       maxPodcast: 3,

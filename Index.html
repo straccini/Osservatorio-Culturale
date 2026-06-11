@@ -1719,8 +1719,9 @@
               <span style="font-size:14px;font-weight:700;color:var(--ink)">Test</span>
             </div>
             <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px"><span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; Invio reale:</span> spedisce una copia vera della newsletter all'indirizzo che indichi (usa la tua email per verificarla nella casella).</p>
-            <div style="margin-left:32px;display:flex;justify-content:flex-end">
-              <button class="btn btn-secondary" onclick="OC.testDigestEmail()" style="padding:8px 16px;font-size:13px;border-color:var(--amb-2,#10916D);color:var(--amb-2,#10916D)" title="Invia una copia REALE della newsletter lettori all'indirizzo indicato">Invia test reale (email)</button>
+            <div style="margin-left:32px;display:flex;gap:8px;align-items:center">
+              <input type="email" id="lettoriTestEmail" value="s.straccini@gmail.com" placeholder="Email per il test reale..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
+              <button class="btn btn-secondary" onclick="OC.testDigestEmail()" style="padding:8px 16px;font-size:13px;border-color:var(--amb-2,#10916D);color:var(--amb-2,#10916D);white-space:nowrap" title="Invia una copia REALE della newsletter lettori all'indirizzo indicato">Invia test reale (email)</button>
             </div>
           </div>
 
@@ -1833,6 +1834,11 @@
             </div>
             <div style="margin-left:32px;display:flex;justify-content:flex-end">
               <button class="btn btn-secondary" onclick="OC.testDigestSegmentato()" style="font-size:12px;padding:7px 14px" title="Genera una BOZZA usando l'ultimo profilo Matrix — nessuna email viene inviata">Genera bozza ultimo profilo</button>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:12px 0 8px 32px"><span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; Invio reale:</span> spedisce subito un digest profilato vero all'indirizzo indicato (usa la sua compilazione Matrix; se non ne ha, l'ultima disponibile come campione). Non tocca la coda.</p>
+            <div style="margin-left:32px;display:flex;gap:8px;align-items:center">
+              <input type="email" id="matrixSendTestEmail" placeholder="Email per il test reale..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
+              <button class="btn btn-secondary" onclick="OC.testDigestMatrixInvio()" style="padding:8px 16px;font-size:13px;border-color:var(--amb-2,#10916D);color:var(--amb-2,#10916D);white-space:nowrap" title="INVIA subito un digest profilato REALE all'indirizzo indicato">Invia test reale (email)</button>
             </div>
           </div>
 
@@ -5730,6 +5736,28 @@
       .testGenerateDigestSegmentato((window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
+  // v4.24.9 — INVIO REALE digest profilato a un'email specifica (non tocca la coda)
+  function testDigestMatrixInvio(){
+    if (!hasGAS()) return;
+    var email = String(((document.getElementById('matrixSendTestEmail')||{}).value) || '').trim();
+    var out = $('digestSegmResult');
+    if (!email || email.indexOf('@') < 0) { if (out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Inserisci una email valida.</span>'; return; }
+    if (out) out.innerHTML = '<span style="color:#666">Generazione + invio REALE a ' + esc(email) + ' (15-25s)…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          var extra = r.campione ? ' <span style="font-size:11px;color:var(--ink-3)">(campione: ultima compilazione Matrix disponibile)</span>' : '';
+          var dims = (r.top3Dims && r.top3Dims.length) ? ' <span style="font-size:11px;color:var(--ink-3)">· gap: ' + esc(r.top3Dims.join(', ')) + '</span>' : '';
+          if (out) out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Digest profilato inviato a ' + esc(r.emailSent) + '</span>' + extra + dims;
+          showToast && showToast('Digest profilato inviato a ' + r.emailSent, 'ok');
+        } else {
+          if (out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc((r && r.error) || 'sconosciuto') + '</span>';
+        }
+      })
+      .withFailureHandler(function(e){ if (out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc(e) + '</span>'; })
+      .testInviaDigestMatrix(email, (window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
   // v4.21 — Test digest Matrix per email specifica
   function testDigestMatrixPerEmail(){
     if (!hasGAS()) return;
@@ -7512,10 +7540,11 @@
 
   function testDigestEmail(){
     if (!hasGAS()) return;
-    // v4.21 — Chiedi email destinatario per il test newsletter generalista
-    var emailDest = prompt('Inserisci l\'email destinatario per il test newsletter (lettori):', 's.straccini@gmail.com');
-    if (!emailDest || emailDest.indexOf('@') < 0) return;
-    if (!confirm('Genera newsletter generalista e invia a ' + emailDest + '.\nQuesto e il digest per i LETTORI (non profilati).\nProcedere?')) return;
+    // v4.24.9 — Input inline al posto di prompt()/confirm(): i dialoghi nativi congelano
+    // la sandbox GAS sotto automazione e sono fuori dal design system.
+    var inp = document.getElementById('lettoriTestEmail');
+    var emailDest = String((inp && inp.value) || '').trim() || 's.straccini@gmail.com';
+    if (emailDest.indexOf('@') < 0) { if (typeof showToast === 'function') showToast('Email non valida', 'err'); return; }
     $('adminStatus').textContent = 'Generazione + invio a ' + emailDest + ' in corso (15-25s)…';
     google.script.run
       .withSuccessHandler(function(r){
@@ -7524,10 +7553,10 @@
           showToast && showToast('Newsletter test inviata a ' + (r.emailSent || emailDest), 'ok');
         } else {
           $('adminStatus').textContent = 'errore: ' + (r && r.error || '');
-          alert('Errore: ' + (r && r.error || 'sconosciuto'));
+          showToast && showToast('Errore: ' + (r && r.error || 'sconosciuto'), 'err');
         }
       })
-      .withFailureHandler(function(e){ alert('Errore di rete: '+e); $('adminStatus').textContent='errore'; })
+      .withFailureHandler(function(e){ showToast && showToast('Errore di rete: '+e, 'err'); $('adminStatus').textContent='errore'; })
       .testInviaDigestGeneralista(emailDest, (window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
@@ -11614,6 +11643,7 @@
     // Sprint 1.3 D2.3 - Digest segmentato admin
     generaQueueAll: generaQueueAll,
     testDigestSegmentato: testDigestSegmentato,
+    testDigestMatrixInvio: testDigestMatrixInvio,
     testDigestMatrixPerEmail: testDigestMatrixPerEmail,
     testDigestEmail: testDigestEmail,
     inviaTuttiPending: inviaTuttiPending,
