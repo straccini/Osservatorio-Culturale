@@ -283,22 +283,46 @@ function adminConfirmSendWithToken(draftId, authToken) {
   if (!draft.authToken || draft.authToken !== authToken) {
     return { ok:false, error:'invalid_token' };
   }
+  // v4.24.14 — Idempotente: il link puo essere caricato piu volte (prefetch/reload).
+  // Se gia inviata: NESSUN nuovo invio, ma ripara lo Storico se rimasto indietro.
   if (draft.stato === 'inviato') {
-    return { ok:false, error:'already_sent' };
+    try { _updateLogRow_(draftId, { Stato:'inviato', Destinatari: draft.sentTo || 0 }); } catch(_){}
+    return { ok:true, alreadySent:true, sent: draft.sentTo || 0, sentAt: draft.sentAt || '' };
+  }
+  // v4.24.14 — Lock anti doppio-click/doppia-GET concorrente
+  if (draft.stato === 'invio_in_corso') {
+    return { ok:false, error:'invio_in_corso' };
+  }
+  draft.stato = 'invio_in_corso';
+  try { PropertiesService.getScriptProperties().setProperty(OC_DRAFT_PROP_PFX_ + draftId, JSON.stringify(draft)); } catch(_){}
+
+  var html, res;
+  try {
+    html = buildNewsletterHtml_(draft);
+    res  = sendNewsletterEmail_(draft.soggetto, html);
+  } catch(eS) {
+    // Invio fallito: sblocca e riporta in attesa (il link resta riutilizzabile)
+    draft.stato = 'in_attesa_approvazione';
+    try { PropertiesService.getScriptProperties().setProperty(OC_DRAFT_PROP_PFX_ + draftId, JSON.stringify(draft)); } catch(_){}
+    return { ok:false, error:'invio_fallito: ' + eS.message };
   }
 
-  var html = buildNewsletterHtml_(draft);
-  var res  = sendNewsletterEmail_(draft.soggetto, html);
+  // v4.24.14 — Un problema di PERSISTENZA dello stato non deve mai mascherare
+  // un invio riuscito: si segnala come warning, non come errore.
+  var warn = [];
+  draft.stato  = 'inviato';
+  draft.sentAt = new Date().toISOString();
+  draft.sentTo = res.count || 0;
+  try {
+    PropertiesService.getScriptProperties().setProperty(OC_DRAFT_PROP_PFX_ + draftId, JSON.stringify(draft));
+  } catch(eP) { warn.push('stato bozza non salvato: ' + eP.message); }
+  try {
+    if (!_updateLogRow_(draftId, { Stato:'inviato', Destinatari: res.count || 0 })) {
+      warn.push('riga Storico non trovata (lo Storico potrebbe mostrare lo stato vecchio)');
+    }
+  } catch(eR) { warn.push('Storico non aggiornato: ' + eR.message); }
 
-  draft.stato    = 'inviato';
-  draft.sentAt   = new Date().toISOString();
-  draft.sentTo   = res.count || 0;
-  PropertiesService.getScriptProperties()
-    .setProperty(OC_DRAFT_PROP_PFX_ + draftId, JSON.stringify(draft));
-
-  _updateLogRow_(draftId, { Stato:'inviato', Destinatari: res.count || 0 });
-
-  return { ok:true, sent: res.count || 0, errors: res.errors || [] };
+  return { ok:true, sent: res.count || 0, errors: res.errors || [], warn: warn };
 }
 
 // ============================================================================
@@ -388,19 +412,31 @@ function _loadDraft_(id) {
 function _updateLogRow_(id, patch) {
   var sh = _getOrCreateSheet_(OC_NL_SHEET_, ['ID','Data','Soggetto','Destinatari','Stato','Autore','Token']);
   var vals = sh.getDataRange().getValues();
-  var header = vals[0];
+  // v4.24.14 FIX — il vecchio match esatto sull'header saltava la scrittura IN SILENZIO
+  // se l'intestazione differiva (spazi/maiuscole): l'email partiva ma lo Storico restava
+  // su bozza/in_attesa. Ora: match case-insensitive + auto-riparazione (colonna mancante
+  // viene aggiunta in coda) + log.
+  var header = vals[0].map(function(h){ return String(h || '').trim(); });
   var col = {};
-  header.forEach(function(h, idx){ col[h] = idx; });
+  header.forEach(function(h, idx){ col[h.toLowerCase()] = idx; });
+  Object.keys(patch).forEach(function(k){
+    if (col[k.toLowerCase()] == null) {
+      header.push(k);
+      var newIdx = header.length - 1;
+      sh.getRange(1, newIdx + 1).setValue(k);
+      col[k.toLowerCase()] = newIdx;
+      Logger.log('[_updateLogRow_] colonna mancante "' + k + '" aggiunta a ' + OC_NL_SHEET_);
+    }
+  });
   for (var i = vals.length-1; i >= 1; i--) {
-    if (String(vals[i][0]) === String(id)) {
+    if (String(vals[i][0]).trim() === String(id).trim()) {
       Object.keys(patch).forEach(function(k){
-        if (col[k] != null) {
-          sh.getRange(i+1, col[k]+1).setValue(patch[k]);
-        }
+        sh.getRange(i+1, col[k.toLowerCase()]+1).setValue(patch[k]);
       });
       return true;
     }
   }
+  Logger.log('[_updateLogRow_] riga NON trovata per id=' + id);
   return false;
 }
 

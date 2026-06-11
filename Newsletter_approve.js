@@ -105,6 +105,19 @@ function _executeApproveNewsletter_(draftId, token) {
             '.err{background:#FBECEC;color:#8B1E1E;padding:12px 14px;border-radius:8px;font-size:14px;}';
 
   var res = adminConfirmSendWithToken(draftId, token);
+  // v4.24.14 — Gia inviata (doppio caricamento del link): pagina amichevole, nessun nuovo invio
+  if (res && res.ok && res.alreadySent) {
+    return _approvePage_(css,
+      '<h1>Già inviata ✓</h1>' +
+      '<div class="ok">Questa newsletter risulta già inviata a <b>' + (res.sent || 0) + '</b> destinatari' +
+      (res.sentAt ? ' il ' + _hEsc_(String(res.sentAt).substring(0, 16).replace('T', ' ')) : '') +
+      '. Nessun nuovo invio è stato eseguito.</div>');
+  }
+  if (res && res.error === 'invio_in_corso') {
+    return _approvePage_(css,
+      '<h1>Invio in corso…</h1>' +
+      '<div class="box">La conferma è già stata ricevuta e l\'invio sta procedendo. Controlla lo Storico invii tra qualche istante.</div>');
+  }
   if (!res || !res.ok) {
     return _approvePage_(css,
       '<h1>Errore invio</h1>' +
@@ -114,7 +127,11 @@ function _executeApproveNewsletter_(draftId, token) {
   if (res.errors && res.errors.length) {
     msg += ' (' + res.errors.length + ' errori — vedi log)';
   }
-  return _approvePage_(css, '<h1>Invio completato</h1><div class="ok">' + msg + '</div>');
+  // v4.24.14 — Warning di persistenza visibili (invio riuscito, stato da sistemare)
+  var warnHtml = (res.warn && res.warn.length)
+    ? '<div class="err" style="margin-top:10px">⚠️ Nota: ' + _hEsc_(res.warn.join(' · ')) + '</div>'
+    : '';
+  return _approvePage_(css, '<h1>Invio completato</h1><div class="ok">' + msg + '</div>' + warnHtml);
 }
 
 function _approvePage_(css, inner) {
