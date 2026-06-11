@@ -2095,7 +2095,7 @@
               <div style="font-weight:600">Archivia bandi scaduti</div>
               <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Scadenza superata da 30+ giorni</div>
             </button>
-            <button class="btn btn-secondary" onclick="if(confirm('Esportare tutti i record archiviati in CSV?'))google.script.run.withSuccessHandler(function(r){if(r&&r.ok)window.open(r.url||r.viewUrl,'_blank');else showToast(r&&r.error||'Errore','err')}).withFailureHandler(function(e){showToast(e,'err')}).exportArchivio()" style="text-align:left;padding:10px 14px;font-size:12px" title="Genera CSV con tutti i record archiviati e apri il download">
+            <button class="btn btn-secondary" onclick="if(confirm('Esportare tutti i record archiviati in CSV?'))google.script.run.withSuccessHandler(function(r){if(r&&r.ok)window.open(r.url||r.viewUrl,'_blank');else showToast(r&&r.error||'Errore','err')}).withFailureHandler(function(e){showToast(e,'err')}).exportArchivio(window._tok_&&window._tok_())" style="text-align:left;padding:10px 14px;font-size:12px" title="Genera CSV con tutti i record archiviati e apri il download">
               <div style="font-weight:600">Esporta archivio CSV</div>
               <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Download di tutti gli archiviati</div>
             </button>
@@ -3595,6 +3595,8 @@
     }
     return h;
   }
+  // v4.24.7 — export globale: OC.toggleAmbitoInteresse vive nell'altra IIFE
+  window._wsSondaggiNextHtml_ = _wsSondaggiNextHtml_;
 
   function renderWorkspacePage(data) {
     var wrap = $('wsContent'); if (!wrap) return;
@@ -4998,6 +5000,17 @@
   // una PAGINA BIANCA. L'unica operazione cross-origin permessa sul top frame e'
   // SETtare location.href (esattamente come fa gia' doLogout). Usato da tutti i
   // reload dopo il login per evitare la pagina bianca al rientro.
+  // v4.24.8 — Token di sessione per le chiamate admin via google.script.run.
+  // Su deploy ANONIMO il server non ha identita (Session vuota): OGNI endpoint admin
+  // deve ricevere il token. Helper unico, esportato su window per gli onclick inline.
+  function _tok_(){
+    if (window.OC_SESSION && window.OC_SESSION.token) return window.OC_SESSION.token;
+    try { var t = localStorage.getItem('oc_token'); if (t) return t; } catch(_){}
+    try { if (typeof _admTok_ === 'function') return _admTok_() || null; } catch(_){}
+    return null;
+  }
+  window._tok_ = _tok_;
+
   function _reloadApp_(tok){
     var baseUrl = (typeof GAS_URL !== 'undefined' && GAS_URL) ? GAS_URL : window.location.href.split('?')[0];
     // v4.24.4 — Con storage di terze parti bloccato (incognito e browser restrittivi) localStorage
@@ -5036,6 +5049,10 @@
       if (base) window.top.location.href = base + (base.indexOf('?')>=0?'&':'?') + 't=' + encodeURIComponent(r.token);
     } catch(_){}
   }
+  // v4.24.7 — FIX SCOPE: i gate handler (OC._gateDoLogin/_gateDoLoginWith) vivono in un'ALTRA
+  // IIFE (12015+): senza export globale la chiamata a _postLoginApply_ era un ReferenceError
+  // silenzioso dentro il setTimeout -> "Accesso riuscito!" ma overlay fermo e niente sessione.
+  window._postLoginApply_ = _postLoginApply_;
 
   // ==========================================================
   // E) PANNELLO ADMIN
@@ -5581,7 +5598,7 @@
       .withFailureHandler(function(err){
         wrap.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore call: ' + esc(err && err.message ? err.message : String(err)) + '</span>';
       })
-      .getFontiV5List();
+      .getFontiV5List(_tok_());
   }
 
   // ==========================================================
@@ -5986,7 +6003,7 @@
     google.script.run.withSuccessHandler(function(r){
       var el = document.getElementById('sysRiepTelegram');
       if (el) el.textContent = (r && r.hasToken && r.hasChat) ? 'Configurato' : 'Non configurato';
-    }).withFailureHandler(function(){}).getTelegramConfigStatus();
+    }).withFailureHandler(function(){}).getTelegramConfigStatus(_tok_());
   }
 
   function reloadFontiBandiTable() {
@@ -6619,7 +6636,7 @@
         else showToast((r && r.error) || 'Errore', 'err');
       })
       .withFailureHandler(function(err) { showToast('Errore: ' + err, 'err'); })
-      .abilitaLoginPubblico();
+      .abilitaLoginPubblico(_tok_());
   }
   function _disabilitaLoginPubblico() {
     google.script.run
@@ -6628,7 +6645,7 @@
         else showToast((r && r.error) || 'Errore', 'err');
       })
       .withFailureHandler(function(err) { showToast('Errore: ' + err, 'err'); })
-      .disabilitaLoginPubblico();
+      .disabilitaLoginPubblico(_tok_());
   }
 
   function loadSettingsConfig() {
@@ -6641,7 +6658,7 @@
         else el.innerHTML = '<span style="color:var(--danger,#C2410C)">✗ Mancano: '+(r&&r.hasToken?'':'token ')+(r&&r.hasChat?'':'chat_id')+'</span>';
       })
       .withFailureHandler(function(){})
-      .getTelegramConfigStatus();
+      .getTelegramConfigStatus(_tok_());
     google.script.run
       .withSuccessHandler(function(s) {
         var el = $('settingsCronStatus');
@@ -7657,7 +7674,7 @@
           : '<span style="color:var(--danger)">✗ Mancano: '+(res.hasToken?'':'token ')+(res.hasChat?'':'chat_id')+'</span>';
       })
       .withFailureHandler(function(err){ $('telegramStatus').textContent = 'Errore: '+err; })
-      .getTelegramConfigStatus();
+      .getTelegramConfigStatus(_tok_());
   }
 
   function testTelegram(){
@@ -8786,7 +8803,7 @@
         if (el('statAG3')) el('statAG3').textContent = (fp[3]||0) + ' fonti';
         if (el('statAG4')) el('statAG4').textContent = (fp[4]||0) + ' fonti';
         if (el('statAG5')) el('statAG5').textContent = (fp[5]||0) + ' fonti';
-      }).withFailureHandler(function(){}).diagnosticaAgenti();
+      }).withFailureHandler(function(){}).diagnosticaAgenti(_tok_());
 
       // Matrix compilazioni
       google.script.run.withSuccessHandler(function(r){
@@ -9804,7 +9821,7 @@
         out.style.color = 'var(--danger,#C2410C)';
         out.textContent = '✗ Errore di rete: ' + (err && err.message || err);
       })
-      .migrateAllSheetsToFU17({ dryRun: dryRun });
+      .migrateAllSheetsToFU17({ dryRun: dryRun }, _tok_());
   }
 
   // v4.18.42 (2026-05-15) — Helper privato: quality check bandi
@@ -9871,7 +9888,7 @@
         out.style.color = 'var(--danger,#C2410C)';
         out.textContent = '✗ Errore di rete: ' + (err && err.message || err);
       })
-      .qualityCheckBandi({ action: action });
+      .qualityCheckBandi({ action: action }, _tok_());
   }
 
   // v4.18.41 (2026-05-15) — Helper privato: chiama dedupTuttiIFogli e mostra report a video
@@ -10652,7 +10669,7 @@
           out.style.color = 'var(--danger,#C2410C)';
           out.textContent = '✗ Errore di rete: ' + (err && err.message || err);
         })
-        .testMagicLinkE2E({ email: em, dryRun: false, cleanup: true });
+        .testMagicLinkE2E({ email: em, dryRun: false, cleanup: true }, _tok_());
     },
     // v4.18.50 (2026-05-15) — Unificazione schema FU17
     fu17DryRun: function(){ _fu17Run_(true); },
@@ -10692,7 +10709,7 @@
         .withFailureHandler(function(err){
           if (out) { out.style.color = 'var(--danger,#C2410C)'; out.textContent = '✗ Errore: ' + (err && err.message || err); }
         })
-        .setupQualityCheckBandiTrigger();
+        .setupQualityCheckBandiTrigger(_tok_());
     },
     showQcLog: function(){
       var out = $('qcBandiReport');
@@ -10733,7 +10750,7 @@
         .withFailureHandler(function(err){
           if (out) { out.style.color = 'var(--danger,#C2410C)'; out.textContent = '✗ Errore: ' + (err && err.message || err); }
         })
-        .getQualityCheckLog({ limit: 20 });
+        .getQualityCheckLog({ limit: 20 }, _tok_());
     },
     // v4.18.41 (2026-05-15) — Dedup orchestrato su Items/Podcast/Pubblicazioni
     dedupTuttiDryRun: function(){ _dedupTuttiRun_(true); },
@@ -10865,7 +10882,7 @@
           window._OC_CONST.museiSensibiliUrl = r.museiSensibiliUrl || '';
         })
         .withFailureHandler(function(err){ if (st) st.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc(err && err.message ? err.message : err) + '</span>'; })
-        .getCommercialConfig();
+        .getCommercialConfig(_tok_());
     },
     saveCommercialConfig: function(){
       var calEl = $('cfgCalendarUrl');
@@ -10892,7 +10909,7 @@
           if (st) st.innerHTML = '✓ Salvato ' + new Date().toLocaleTimeString('it-IT');
         })
         .withFailureHandler(function(err){ showToast('Errore: '+(err&&err.message?err.message:err), 'err'); })
-        .saveCommercialConfig(payload);
+        .saveCommercialConfig(payload, _tok_());
     },
     // v4.18.17 F4 — Cross-reference news → bandi
     crossrefScan: function(){
@@ -10905,7 +10922,7 @@
           OC.crossrefReload();
         })
         .withFailureHandler(function(err){ showToast('Errore: '+(err&&err.message?err.message:err), 'err'); })
-        .scanCrossrefNewsBandi({ dryRun: false });
+        .scanCrossrefNewsBandi({ dryRun: false }, _tok_());
     },
     crossrefScanDry: function(){
       showToast('Anteprima in corso…', 'ok');
@@ -10920,7 +10937,7 @@
           alert(msg);
         })
         .withFailureHandler(function(err){ showToast('Errore: '+(err&&err.message?err.message:err), 'err'); })
-        .scanCrossrefNewsBandi({ dryRun: true });
+        .scanCrossrefNewsBandi({ dryRun: true }, _tok_());
     },
     crossrefReload: function(){
       var wrap = $('crossrefList'); var info = $('crossrefInfo');
@@ -10951,7 +10968,7 @@
           wrap.innerHTML = html;
         })
         .withFailureHandler(function(err){ wrap.innerHTML = '<div style="padding:16px;color:var(--danger,#C2410C)">Errore: ' + esc(err && err.message ? err.message : String(err)) + '</div>'; })
-        .getCrossrefCandidates({ stato: 'pending', limit: 50 });
+        .getCrossrefCandidates({ stato: 'pending', limit: 50 }, _tok_());
     },
     crossrefApprove: function(id){
       if (!id) return;
@@ -10964,7 +10981,7 @@
           _invalidateCache('bando');
         })
         .withFailureHandler(function(err){ showToast('Errore: '+(err&&err.message?err.message:err), 'err'); })
-        .approveCrossrefCandidate(id);
+        .approveCrossrefCandidate(id, _tok_());
     },
     crossrefReject: function(id){
       if (!id) return;
@@ -10977,7 +10994,7 @@
           OC.crossrefReload();
         })
         .withFailureHandler(function(err){ showToast('Errore: '+(err&&err.message?err.message:err), 'err'); })
-        .rejectCrossrefCandidate(id, nota);
+        .rejectCrossrefCandidate(id, nota, _tok_());
     },
     // v4.18.31 — Handler OC.addFonteUnificata RIMOSSO (leggeva campi della card admin eliminata).
     //            Resta attivo il mapping in OC a riga successiva del file che usa la
@@ -10994,7 +11011,7 @@
           loadF2State(); // ricarica anche stats + tabella
         })
         .withFailureHandler(function(err){ showToast('Errore: '+(err&&err.message?err.message:err), 'err'); })
-        .riprovaFonteV5(id);
+        .riprovaFonteV5(id, _tok_());
     },
     f2Toggle: function(id, attiva){
       if (!id) return;
@@ -11005,7 +11022,7 @@
           loadF2State();
         })
         .withFailureHandler(function(err){ showToast('Errore: '+(err&&err.message?err.message:err), 'err'); })
-        .setFonteV5Attiva(id, !!attiva);
+        .setFonteV5Attiva(id, !!attiva, _tok_());
     },
 
     // ============================================================
@@ -11088,7 +11105,7 @@
           showToast('Inviati: ' + r.inviati + '/5 · Saltati: ' + r.saltati + ' · Errori: ' + r.errori, 'ok');
         })
         .withFailureHandler(function(err){ showToast('Errore: ' + (err && err.message ? err.message : err), 'err'); })
-        .testEmailAgentiAdmin();
+        .testEmailAgentiAdmin(_tok_());
     },
     agPopolaProfilo: function(){
       if (!confirm('Popolare ProfiloAgenti dai compilatori Matrix?\n\nIdempotente: aggiorna i profili esistenti, non duplica.')) return;
@@ -11100,7 +11117,7 @@
           OC.agRefresh();
         })
         .withFailureHandler(function(err){ showToast('Errore: ' + (err && err.message ? err.message : err), 'err'); })
-        .popolaProfiloAgentiDaMatrix();
+        .popolaProfiloAgentiDaMatrix(_tok_());
     },
     agLoadProfili: function(){
       var wrap = $('agProfiliTable'); if (!wrap) return;
@@ -11272,7 +11289,7 @@
             lab += '<span style="color:' + (liOk ? 'var(--amb-2,#10916D)' : 'var(--danger,#C2410C)') + '">LI ' + (liOk ? '✓' : '✗') + '</span>';
             var k = $('socKpiCreds'); if (k) k.innerHTML = lab;
           }
-        }).withFailureHandler(function(){}).getSocialCredentialsStatus();
+        }).withFailureHandler(function(){}).getSocialCredentialsStatus(_tok_());
       // Carica lista
       var filterEl = $('socFilterStato');
       var stato = filterEl ? filterEl.value : 'draft';
@@ -11287,7 +11304,7 @@
             if ($('socKpiDraft'))     $('socKpiDraft').textContent     = c.draft;
             if ($('socKpiApproved'))  $('socKpiApproved').textContent  = c.approved + c.scheduled;
             if ($('socKpiPublished')) $('socKpiPublished').textContent = c.published;
-          }).getSocialQueueList('');
+          }).getSocialQueueList('', _tok_());
 
           var items = r.items || [];
           if (!items.length) {
@@ -11301,7 +11318,7 @@
           wrap.innerHTML = html;
         })
         .withFailureHandler(function(err){ wrap.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore di rete: ' + esc(err && err.message || err) + '</span>'; })
-        .getSocialQueueList(stato);
+        .getSocialQueueList(stato, _tok_());
     },
     _socRowHtml: function(p){
       var statoColor = { draft:'var(--accent,#935851)', approved:'var(--amb-2,#10916D)', scheduled:'#1A237E', published:'#0097A7', rejected:'var(--danger,#C2410C)' };
@@ -11371,7 +11388,7 @@
           OC.socRefresh();
         })
         .withFailureHandler(function(err){ showToast('Errore: ' + (err && err.message || err), 'err'); })
-        .generateNextSocialDraft({ force: true });
+        .generateNextSocialDraft({ force: true }, _tok_());
     },
     socSetupAll: function(){
       if (!confirm('Eseguire setup completo Coda Social?\n\n• setupSocialQueue (crea foglio se mancante)\n• setupSocialTrigger (installa cron daily 09:00)\n• setupSocialCredentials (crea ScriptProperties placeholder)\n\nIdempotente: rieseguibile senza side-effects.')) return;
@@ -11390,13 +11407,13 @@
                   OC.socRefresh();
                 })
                 .withFailureHandler(function(e){ showToast('Errore creds: ' + (e && e.message || e), 'err'); })
-                .setupSocialCredentials();
+                .setupSocialCredentials(_tok_());
             })
             .withFailureHandler(function(e){ showToast('Errore trigger: ' + (e && e.message || e), 'err'); })
-            .setupSocialTrigger();
+            .setupSocialTrigger(_tok_());
         })
         .withFailureHandler(function(e){ showToast('Errore queue: ' + (e && e.message || e), 'err'); })
-        .setupSocialQueue();
+        .setupSocialQueue(_tok_());
     },
     socialApprove: function(id){
       if (!confirm('Approvare questo post?\n\nUna volta approvato sarà in stato "approved" e pronto per la pubblicazione (attivabile dopo apertura profili).')) return;
@@ -11431,7 +11448,7 @@
           OC.socRefresh();
         })
         .withFailureHandler(function(e){ showToast('Errore: ' + (e && e.message || e), 'err'); })
-        .regenerateSocialPost(id);
+        .regenerateSocialPost(id, _tok_());
     },
     socialEdit: function(id){
       // Recupera dati del post dalla lista corrente
@@ -11449,7 +11466,7 @@
           var ov = $('socEditOverlay'); if (ov) ov.style.display = 'flex';
         })
         .withFailureHandler(function(e){ showToast('Errore: ' + (e && e.message || e), 'err'); })
-        .getSocialQueueList('');
+        .getSocialQueueList('', _tok_());
     },
     socialCloseEdit: function(){
       var ov = $('socEditOverlay'); if (ov) ov.style.display = 'none';
@@ -11474,7 +11491,7 @@
           OC.socRefresh();
         })
         .withFailureHandler(function(e){ showToast('Errore: ' + (e && e.message || e), 'err'); })
-        .updateSocialPost(body);
+        .updateSocialPost(body, _tok_());
     },
     // v4.18.14 F2.2 — Cleanup bandi scaduti >30gg
     f2Cleanup: function(){
@@ -11506,7 +11523,7 @@
           showToast(r.duplicati_trovati + ' duplicati trovati', r.duplicati_trovati > 0 ? 'warn' : 'ok');
         })
         .withFailureHandler(function(err){ showToast('Errore: '+(err&&err.message?err.message:err), 'err'); })
-        .dedupItemsByFingerprint({ dryRun: true });
+        .dedupItemsByFingerprint({ dryRun: true }, _tok_());
     },
     // v4.18.16 G — Dedup duplicati foglio Items: azione reale
     f2DedupItems: function(){
@@ -11519,7 +11536,7 @@
           _invalidateCache('news'); // invalida cache così al prossimo accesso News ricarica fresco
         })
         .withFailureHandler(function(err){ showToast('Errore: '+(err&&err.message?err.message:err), 'err'); })
-        .dedupItemsByFingerprint({ dryRun: false });
+        .dedupItemsByFingerprint({ dryRun: false }, _tok_());
     },
     exportBandiCSV: function(){
       var list = _cacheBandi || [];

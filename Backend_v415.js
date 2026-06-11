@@ -265,8 +265,8 @@ function escapeHtml_(s) {
 // Crea file CSV in Drive e ritorna URL diretto al download.
 // ============================================================================
 
-function exportArchivio() {
-  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) {
+function exportArchivio(token) {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_(token)) {
     return { ok: false, error: 'forbidden' };
   }
   try {
@@ -344,8 +344,8 @@ function exportArchivio() {
 // AZIONE DISTRUTTIVA — il client deve sempre chiedere conferma multipla.
 // ============================================================================
 
-function emptyTrash(opts) {
-  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) {
+function emptyTrash(opts, token) {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_(token || (opts && opts.token))) {
     return { ok: false, error: 'forbidden' };
   }
   try {

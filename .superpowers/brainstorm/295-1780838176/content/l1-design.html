@@ -1,0 +1,65 @@
+<h2>L1 · Design del Knowledge Layer</h2>
+<p class="subtitle">Decisioni: entità <b>Persone · Strutture · Temi · Progetti</b> · estrazione <b>integrata nello scanner + backfill</b> · opinion leader <b>dai contenuti</b> ora (persona-centriche in L3/L4) · nomi uniti con <b>chiave normalizzata + alias + merge admin</b>.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Il flusso (additivo: non stravolge gli scanner)</div>
+  <div class="mockup-body">
+    <div style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;font-size:12.5px">
+      <div style="flex:1;min-width:150px;border:1px solid rgba(128,128,128,.35);border-radius:8px;padding:10px"><b>1. Scanner</b><br>estrae il contenuto<br><span style="opacity:.7">(come oggi)</span></div>
+      <div style="display:flex;align-items:center;opacity:.5">→</div>
+      <div style="flex:1.1;min-width:160px;border:2px solid #6B5C9A;background:rgba(107,92,154,.10);border-radius:8px;padding:10px"><b>2. Stessa chiamata Claude</b><br>estrae <b>anche le entità</b><br><span style="opacity:.7">persone, strutture, temi, progetti</span></div>
+      <div style="display:flex;align-items:center;opacity:.5">→</div>
+      <div style="flex:1;min-width:150px;border:1px solid rgba(128,128,128,.35);border-radius:8px;padding:10px"><b>3. Normalizza</b><br>chiave + alias<br><span style="opacity:.7">"ICOM" = "ICOM Italia"</span></div>
+      <div style="display:flex;align-items:center;opacity:.5">→</div>
+      <div style="flex:1.1;min-width:160px;border:1px solid rgba(128,128,128,.35);border-radius:8px;padding:10px"><b>4. Scrive</b><br>upsert <b>Entita</b> + append <b>Occorrenza</b> (con data)</div>
+    </div>
+    <div style="margin-top:10px;padding:8px 10px;border:1px dashed rgba(128,128,128,.5);border-radius:8px;font-size:12.5px"><b>+ Backfill una-tantum</b> → ripassa lo storico (AgentScanResults, Items, Bandi_v5) per popolare subito Entita/Occorrenze.</div>
+  </div>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Foglio · Entita (una riga per entità unica)</div>
+    <div class="mockup-body" style="font-size:12px;line-height:1.7">
+      <code>id</code> · <code>nome_canonico</code> · <code>tipo</code> (persona/struttura/tema/progetto)<br>
+      <code>alias[]</code> · <code>ambiti</code> (1-5) · <code>n_occorrenze</code><br>
+      <code>prima_data</code> · <code>ultima_data</code> · <code>n_fonti</code><br>
+      <code>score_autorevolezza</code> · <code>stato</code> (auto/confermato/unito)
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">Foglio · Occorrenze (una riga per menzione)</div>
+    <div class="mockup-body" style="font-size:12px;line-height:1.7">
+      <code>id</code> · <code>entita_id</code> → Entita<br>
+      <code>contenuto_id</code> · <code>tipo_contenuto</code> (bando/news/norma/podcast/video)<br>
+      <code>data</code> · <code>ambito</code> · <code>fonte</code><br>
+      <span style="opacity:.7">È la serie storica: da qui nascono trend (L2) e autorevolezza (L3).</span>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons" style="margin-top:6px">
+  <div class="pros"><h4>Dentro L1 (ora)</h4><ul>
+    <li>Estrazione entità integrata + backfill storico</li>
+    <li>Normalizzazione + alias + merge admin</li>
+    <li>Accumulo con date (Occorrenze) + conteggi base + score autorevolezza semplice</li>
+    <li>Vista admin minima "Entità" (top per occorrenze/recenza) per vederlo funzionare</li>
+  </ul></div>
+  <div class="cons"><h4>Fuori (rimandato)</h4><ul>
+    <li>Algoritmi di trend / momentum → <b>L2</b></li>
+    <li>Ranking + grafo relazioni opinion leader → <b>L3</b></li>
+    <li>Fonti persona-centriche / social wall → <b>L3/L4</b></li>
+  </ul></div>
+</div>
+
+<h3 style="margin-top:18px">Approvi questo design di L1?</h3>
+<div class="options">
+  <div class="option" data-choice="approva" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content"><h3>Approva → scrivo la specifica</h3><p>Lo trasformo nel documento di specifica e poi nel piano di implementazione.</p></div>
+  </div>
+  <div class="option" data-choice="modifica" onclick="toggleSelect(this)">
+    <div class="letter">✎</div>
+    <div class="content"><h3>Voglio modificare qualcosa</h3><p>Dimmi cosa nel terminale (entità, schema, scoring, scope) e rivedo.</p></div>
+  </div>
+</div>

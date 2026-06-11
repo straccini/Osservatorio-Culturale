@@ -309,13 +309,13 @@ function isPublicLoginEnabled_() {
 }
 
 /** Toggle admin-only per il login pubblico */
-function abilitaLoginPubblico() {
-  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+function abilitaLoginPubblico(token) {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden' };
   PropertiesService.getScriptProperties().setProperty('OC_PUBLIC_LOGIN_ENABLED', 'true');
   return { ok:true, enabled:true };
 }
-function disabilitaLoginPubblico() {
-  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+function disabilitaLoginPubblico(token) {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden' };
   PropertiesService.getScriptProperties().setProperty('OC_PUBLIC_LOGIN_ENABLED', 'false');
   return { ok:true, enabled:false };
 }
@@ -984,8 +984,8 @@ function setupSessioniSheet() {
  *   - cleanup   : revoca sessione test alla fine (default true)
  * @return {Object} report con esiti step-by-step
  */
-function testMagicLinkE2E(opts) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function testMagicLinkE2E(opts, token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token || (opts && opts.token))) {
     return { ok:false, error:'forbidden' };
   }
   opts = opts || {};

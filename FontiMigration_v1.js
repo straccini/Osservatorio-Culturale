@@ -361,8 +361,8 @@ function migratePodcastToFU17(opts) {
  * @param {Object} [opts] {dryRun: bool}
  * @return {Object} {ok, bandiV5, podcast, fontiNews_check, fontiVideo_check}
  */
-function migrateAllSheetsToFU17(opts) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function migrateAllSheetsToFU17(opts, token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token || (opts && opts.token))) {
     return { ok:false, error:'forbidden' };
   }
   opts = opts || {};

@@ -1,0 +1,42 @@
+<h2>L1 · Come estrarre le entità — quando e dove</h2>
+<p class="subtitle">Entità scelte: <b>Persone · Strutture · Temi · Progetti</b>. La domanda ora è <i>quando</i> il sistema le estrae. Conta perché tocca <b>costo Claude</b>, <b>freschezza</b> del dato e rischio di <b>arretrato</b> (lo stesso problema che oggi affligge il tagging Matrix).</p>
+
+<div class="options">
+  <div class="option" data-choice="integrata" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Integrata nello scanner + backfill ★ consigliata</h3>
+      <p>Le entità si estraggono nella <b>stessa chiamata Claude</b> che gli agenti già fanno per ogni contenuto. Una volta sola, sullo storico, un recupero "una-tantum".</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pro</h4><ul><li>Costo aggiuntivo quasi nullo (riusa la chiamata che già avviene)</li><li>Sempre aggiornato, <b>niente arretrato</b> ricorrente</li></ul></div>
+        <div class="cons"><h4>Contro</h4><ul><li>Tocca i 3 punti di estrazione esistenti (agenti, news, bandi)</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="batch" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Pass separato a lotti</h3>
+      <p>Un job periodico ri-legge i contenuti già salvati ed estrae le entità in un modulo isolato.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pro</h4><ul><li>Isolato: non tocca gli scanner esistenti</li><li>Ritmo e costo sotto controllo</li></ul></div>
+        <div class="cons"><h4>Contro</h4><ul><li>Seconda chiamata Claude = <b>costa di più</b></li><li>Rischio <b>arretrato</b> (come Matrix_tagger oggi)</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="ibrida" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Ibrida</h3>
+      <p>Integrata per i contenuti nuovi (come A) <b>più</b> un job di ri-elaborazione che gira quando cambi la logica di estrazione.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pro</h4><ul><li>Aggiornato <b>e</b> ri-processabile a piacere</li></ul></div>
+        <div class="cons"><h4>Contro</h4><ul><li>Due componenti da mantenere (più complessità ora)</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:14px">La mia raccomandazione: <b>A</b>. L'estrazione "piggyback" sulla chiamata Claude esistente costa pochissimo e non genera arretrato; il backfill una-tantum popola subito lo storico. La C si può sempre adottare dopo, se servirà ri-processare.</p>

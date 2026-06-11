@@ -428,8 +428,8 @@ function setupAgentiCompleto() {
  *
  * @return {Object} { fonti_per_agente, trigger_attivi, risultati_recenti, profilo_musei }
  */
-function diagnosticaAgenti() {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function diagnosticaAgenti(token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
     return { ok:false, error:'forbidden' };
   }
   var out = { ok:true, timestamp:new Date().toISOString() };
@@ -580,8 +580,8 @@ function diagnosticaAgenti() {
  *
  * @return {Object} { ok, destinatario, inviati, saltati, errori, dettagli }
  */
-function testEmailAgentiAdmin() {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function testEmailAgentiAdmin(token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
     return { ok:false, error:'forbidden' };
   }
   var report = { ok:true, inviati: 0, saltati: 0, errori: 0, dettagli: [] };
@@ -744,8 +744,8 @@ function _profilaUtenteInAgenti_(email, opts) {
  *
  * @return {Object} { ok, processati, profilati, skipped, errori, dettagli[] }
  */
-function popolaProfiloAgentiDaMatrix() {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function popolaProfiloAgentiDaMatrix(token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
     return { ok:false, error:'forbidden' };
   }
   var report = { ok:true, processati:0, profilati:0, skipped:0, errori:0, dettagli:[] };

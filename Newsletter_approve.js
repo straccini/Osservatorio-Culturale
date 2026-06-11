@@ -36,21 +36,11 @@ function _renderApproveNewsletterPage_(draftId, token) {
             '.ok{background:#E8F5EE;color:#1B7A3E;padding:12px 14px;border-radius:8px;}' +
             '.meta{font-size:12px;color:#8A8A8E;margin-top:14px;}';
 
-  // Verifica admin
-  var admins;
-  try { admins = _getAdminSet_(); } catch(e) { admins = { 's.straccini@gmail.com': true }; }
-  var isAdmin = email && (admins[email.toLowerCase()] === true);
-
-  if (!email) {
-    return _approvePage_(css,
-      '<h1>Accesso richiesto</h1>' +
-      '<p>Per autorizzare l\'invio della newsletter devi essere connesso con un account Google amministratore.</p>');
-  }
-  if (!isAdmin) {
-    return _approvePage_(css,
-      '<h1>Permesso negato</h1>' +
-      '<div class="err">L\'utente <b>' + _hEsc_(email) + '</b> non è amministratore dell\'Osservatorio Culturale.</div>');
-  }
+  // v4.24.8 — NIENTE gate su Session.getActiveUser(): su deploy ANONIMO e' SEMPRE vuoto
+  // e bloccava chiunque ("Accesso richiesto"), admin compreso. L'autorizzazione e' il
+  // possesso dell'authToken segreto per-bozza (inviato solo in chat Telegram admin),
+  // verificato sotto — stesso pattern magic-link del resto dell'app.
+  // email resta solo a scopo display ("Approvato da"), se per caso disponibile.
 
   // Carica draft
   var draft = null;
@@ -86,7 +76,7 @@ function _renderApproveNewsletterPage_(draftId, token) {
         ((draft.podcast||[]).length) + ' podcast' +
     '</div>' +
     '<p>Stai per autorizzare l\'invio della newsletter a tutti gli iscritti attivi della MailingList.</p>' +
-    '<p class="meta">Richiesto da: ' + _hEsc_(draft.autore||'—') + ' · Approvato da: ' + _hEsc_(email) + '</p>' +
+    '<p class="meta">Richiesto da: ' + _hEsc_(draft.autore||'—') + ' · Approvato da: ' + _hEsc_(email || 'link Telegram autorizzato') + '</p>' +
     '<form method="get" action="">' +
       '<input type="hidden" name="approveNl" value="' + _hEsc_(draftId) + '">' +
       '<input type="hidden" name="t" value="' + _hEsc_(token) + '">' +

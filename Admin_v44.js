@@ -262,7 +262,10 @@ function adminRequestSendAuthorization(draftId, token) {
  * manualmente). Se il token coincide con quello della bozza, esegue l'invio.
  */
 function adminConfirmSendWithToken(draftId, authToken) {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+  // v4.24.8 — Rimosso _isCurrentUserAdmin_() senza token: su deploy ANONIMO falliva SEMPRE
+  // (Session vuota) e uccideva l'approvazione via link Telegram. L'autorizzazione e' il
+  // match dell'authToken segreto per-bozza (verificato sotto), generato da
+  // adminRequestSendAuthorization e recapitato solo alla chat Telegram dell'admin.
   var draft = _loadDraft_(draftId);
   if (!draft) return { ok:false, error:'draft_not_found' };
   if (!draft.authToken || draft.authToken !== authToken) {

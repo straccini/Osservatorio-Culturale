@@ -50,8 +50,8 @@ var CR_KEYWORDS = [
  *
  * Idempotente: una news già marcata come candidata non viene duplicata.
  */
-function scanCrossrefNewsBandi(opts) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+function scanCrossrefNewsBandi(opts, token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token || (opts && opts.token))) return { ok:false, error:'forbidden' };
   opts = opts || {};
   var limit = Number(opts.limit) || 0;
   var dryRun = !!opts.dryRun;
@@ -165,8 +165,8 @@ function scanCrossrefNewsBandi(opts) {
  * Ritorna le candidate (pending di default) per il pannello admin di approvazione.
  * @param {Object} opts — { stato:string (default 'pending'), limit:int (default 50) }
  */
-function getCrossrefCandidates(opts) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+function getCrossrefCandidates(opts, token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token || (opts && opts.token))) return { ok:false, error:'forbidden' };
   opts = opts || {};
   var statoFilter = opts.stato || 'pending';
   var limit = Number(opts.limit) || 50;
@@ -210,8 +210,8 @@ function getCrossrefCandidates(opts) {
  * Marca candidate come approved e crea voce in Bandi_v5 con stato 'candidato'
  * (da rifinire manualmente da Silvano nel foglio: scadenza, importo, ente).
  */
-function approveCrossrefCandidate(id) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+function approveCrossrefCandidate(id, token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden' };
   if (!id) return { ok:false, error:'id mancante' };
 
   try {
@@ -258,8 +258,8 @@ function approveCrossrefCandidate(id) {
 // ENDPOINT: rejectCrossrefCandidate(id, nota) — scarta candidate (no bando)
 // ============================================================================
 
-function rejectCrossrefCandidate(id, nota) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+function rejectCrossrefCandidate(id, nota, token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden' };
   if (!id) return { ok:false, error:'id mancante' };
 
   try {

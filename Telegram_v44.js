@@ -31,8 +31,8 @@ function setTelegramConfig(botToken, chatId) {
   return { ok:true, configured: !!(_tgToken_() && _tgChat_()) };
 }
 
-function getTelegramConfigStatus() {
-  if (!_isCurrentUserAdmin_()) return { ok:false, error:'forbidden' };
+function getTelegramConfigStatus(token) {
+  if (!_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden' };
   return {
     ok:        true,
     hasToken:  !!_tgToken_(),

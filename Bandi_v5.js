@@ -2118,8 +2118,8 @@ function _fontiV5HeaderMap_(headerRow) {
   return map;
 }
 
-function getFontiV5List() {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function getFontiV5List(token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
     return { ok:false, error:'forbidden' };
   }
   try {
@@ -2222,8 +2222,8 @@ function getFontiV5List() {
  * v4.18.10 — Attiva/disattiva una fonte FontiBandi_v5.
  * Param: fonteId (string), attiva (bool)
  */
-function setFonteV5Attiva(fonteId, attiva) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function setFonteV5Attiva(fonteId, attiva, token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
     return { ok:false, error:'forbidden' };
   }
   try {
@@ -2335,8 +2335,8 @@ function _purgeBandiArchiviatiVecchi_(gg) {
  *
  * Idempotente: righe già Archiviato vengono saltate dal conteggio.
  */
-function dedupItemsByFingerprint(opts) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function dedupItemsByFingerprint(opts, token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token || (opts && opts.token))) {
     return { ok:false, error:'forbidden' };
   }
   opts = opts || {};
@@ -2592,8 +2592,8 @@ function dedupTuttiIFogli(opts) {
  * @param {Object} opts {action: 'audit'|'fix-dup'|'fix-tematiche', dryRun: bool}
  * @return {Object} { ok, duplicati, scadenze, tematiche, fixApplied? }
  */
-function qualityCheckBandi(opts) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function qualityCheckBandi(opts, token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token || (opts && opts.token))) {
     return { ok:false, error:'forbidden' };
   }
   opts = opts || {};
@@ -2902,8 +2902,8 @@ function _appendQualityCheckLog_(r) {
  *
  * Da chiamare UNA volta dall'editor GAS o dal pannello admin.
  */
-function setupQualityCheckBandiTrigger() {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function setupQualityCheckBandiTrigger(token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
     return { ok:false, error:'forbidden' };
   }
   try {
@@ -2937,8 +2937,8 @@ function qualityCheckBandiAutoDaily() {
  * @param {Object} opts {limit: int (default 20)}
  * @return {Object} {ok, rows: [{timestamp, source, dup_gruppi, dup_archiviati, tem_ambiti_assegnati, tem_diversi, scad_sospette, duration_ms}]}
  */
-function getQualityCheckLog(opts) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function getQualityCheckLog(opts, token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token || (opts && opts.token))) {
     return { ok:false, error:'forbidden' };
   }
   opts = opts || {};
@@ -3101,8 +3101,8 @@ function getNotificheRiepilogo() {
  * v4.18.10 — Reset fail counter di una fonte (per ripristinarla da silente).
  * Non rilancia subito lo scan (lo farà il prossimo trigger Lun/Mer/Ven).
  */
-function riprovaFonteV5(fonteId) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function riprovaFonteV5(fonteId, token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
     return { ok:false, error:'forbidden' };
   }
   try {

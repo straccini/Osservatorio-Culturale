@@ -108,8 +108,8 @@ var SOCIAL_ROTATION_MEMORY = 3;
 // SETUP
 // ============================================================================
 
-function setupSocialQueue() {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function setupSocialQueue(token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
     return { ok:false, error:'forbidden' };
   }
   var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
@@ -127,8 +127,8 @@ function setupSocialQueue() {
   return { ok:true, action:'created' };
 }
 
-function setupSocialTrigger() {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function setupSocialTrigger(token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
     return { ok:false, error:'forbidden' };
   }
   // Rimuovi trigger esistenti
@@ -160,9 +160,9 @@ function setupSocialTrigger() {
  * @param {Object} [opts] {force: bool} se true, salta il check 2-day cooldown
  * @return {Object} { ok, draft?, motivo? }
  */
-function generateNextSocialDraft(opts) {
+function generateNextSocialDraft(opts, token) {
   opts = opts || {};
-  var isManual = !!opts.force || (typeof _isCurrentUserAdmin_ === 'function' && _isCurrentUserAdmin_());
+  var isManual = !!opts.force || (typeof _isCurrentUserAdmin_ === 'function' && _isCurrentUserAdmin_(token || opts.token));
 
   try {
     // 1. Cooldown 2gg (skippa se chiamato manualmente)
@@ -573,9 +573,9 @@ function _sendSocialAlert_(draftId, news) {
 // ENDPOINT ADMIN (chiamabili da UI o editor GAS)
 // ============================================================================
 
-function getSocialQueueList(filterStato) {
+function getSocialQueueList(filterStato, token) {
   try {
-    if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+    if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
       return { ok:false, error:'forbidden' };
     }
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
@@ -644,9 +644,9 @@ function _updateSocialStato_(draftId, nuovoStato, nota) {
   } catch(e) { return { ok:false, error: e.message }; }
 }
 
-function updateSocialPost(body) {
+function updateSocialPost(body, token) {
   try {
-    if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+    if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token || (body && body.__token))) {
       return { ok:false, error:'forbidden' };
     }
     body = body || {};
@@ -680,9 +680,9 @@ function updateSocialPost(body) {
   } catch(e) { return { ok:false, error: e.message }; }
 }
 
-function regenerateSocialPost(draftId) {
+function regenerateSocialPost(draftId, token) {
   try {
-    if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+    if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
       return { ok:false, error:'forbidden' };
     }
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
@@ -753,8 +753,8 @@ function regenerateSocialPost(draftId) {
  *   LI_ORG_URN              — urn:li:organization:XXXXXX (vuoto)
  *   LI_ACCESS_TOKEN         — token OAuth con w_organization_social (vuoto)
  */
-function setupSocialCredentials() {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function setupSocialCredentials(token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
     return { ok:false, error:'forbidden' };
   }
   var props = PropertiesService.getScriptProperties();
@@ -790,8 +790,8 @@ function setupSocialCredentials() {
  * Ritorna lo stato delle credenziali social (per UI admin).
  * Mai mostra i token completi, solo lunghezza e presenza.
  */
-function getSocialCredentialsStatus() {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_()) {
+function getSocialCredentialsStatus(token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
     return { ok:false, error:'forbidden' };
   }
   var props = PropertiesService.getScriptProperties();
