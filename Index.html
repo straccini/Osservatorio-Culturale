@@ -12302,6 +12302,14 @@
         if(msg){msg.textContent='Accesso riuscito!';msg.style.color='#3F7A5E';}
         // v4.24.5 — login IN-PLACE (la top-navigation e bloccata dalla sandbox anonima)
         setTimeout(function(){ _postLoginApply_(r); }, 400);
+      } else if(r&&r.ok&&r.message==='magic_link_inviato'){
+        // v4.24.17 FIX — per i LETTORI il server invia un magic-link via email (niente token):
+        // questo caso finiva nel ramo errore ("Errore: sconosciuto") mentre l'email era
+        // partita davvero -> il lettore riprovava e riceveva un altro link, in loop.
+        if(msg){
+          msg.innerHTML='✉️ <b>Ti abbiamo inviato il link di accesso via email.</b><br>Apri la casella di <b>'+email.replace(/</g,'&lt;')+'</b> (controlla anche lo spam) e clicca il link per entrare — senza password.';
+          msg.style.color='#3F7A5E';
+        }
       } else {
         // v4.24.15 — messaggi comprensibili al posto dei codici grezzi (es. "login_disabilitato")
         var _emap = {
@@ -12343,12 +12351,24 @@
   };
 
   OC._gateDoLoginWith = function(email) {
+    var msg = document.getElementById('_gateMsg');
     google.script.run.withSuccessHandler(function(r){
       if(r&&r.ok&&r.token){
         // v4.24.5 — login IN-PLACE (la top-navigation e bloccata dalla sandbox anonima)
         setTimeout(function(){ _postLoginApply_(r); }, 400);
+      } else if(r&&r.ok&&r.message==='magic_link_inviato'){
+        // v4.24.17 FIX — i nuovi LETTORI dopo la registrazione ricevono il magic-link via
+        // email: prima questo caso restava muto su "Accesso in corso..." per sempre.
+        if(msg){
+          msg.innerHTML='✅ <b>Registrazione completata!</b><br>✉️ Ti abbiamo inviato il link di accesso via email a <b>'+String(email).replace(/</g,'&lt;')+'</b>: aprilo (controlla anche lo spam) e clicca per entrare — senza password.';
+          msg.style.color='#3F7A5E';
+        }
+      } else {
+        if(msg){msg.textContent='Registrazione riuscita, ma accesso non completato: usa la scheda "Accedi" per ricevere il link via email.';msg.style.color='#C2410C';}
       }
-    }).withFailureHandler(function(){}).loginConEmail(email);
+    }).withFailureHandler(function(){
+      if(msg){msg.textContent='Errore di connessione: riprova dalla scheda "Accedi".';msg.style.color='#C2410C';}
+    }).loginConEmail(email);
   };
 
   // --- Profilo: pagina autonoma ---
