@@ -2102,19 +2102,19 @@
           <h3>Manutenzione dati</h3>
           <p class="hint">Operazioni di manutenzione. L'archiviazione e la pulizia girano automaticamente ogni notte (supervisore 04:30). Usa questi bottoni solo per esecuzioni immediate.</p>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:10px 0">
-            <button class="btn btn-secondary" data-action="runAutoArchive" style="text-align:left;padding:10px 14px;font-size:12px" title="Archivia bandi/news/podcast piu vecchi di 30 giorni">
+            <button class="btn btn-secondary" data-action="runAutoArchive" style="display:block;white-space:normal;min-width:0;border-radius:10px;text-align:left;padding:10px 14px;font-size:12px" title="Archivia bandi/news/podcast piu vecchi di 30 giorni">
               <div style="font-weight:600">Archivia vecchi (30gg)</div>
               <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Gia automatico nel supervisore</div>
             </button>
-            <button class="btn btn-secondary" onclick="if(confirm('Archiviare i bandi con scadenza superata?'))google.script.run.withSuccessHandler(function(r){showToast(r&&r.ok?'Archiviati: '+(r.archiviati||0):'Errore','ok')}).withFailureHandler(function(e){showToast(e,'err')}).cleanupBandiV5Scaduti(30)" style="text-align:left;padding:10px 14px;font-size:12px" title="Archivia bandi la cui scadenza e superata da 30+ giorni">
+            <button class="btn btn-secondary" onclick="if(confirm('Archiviare i bandi con scadenza superata?'))google.script.run.withSuccessHandler(function(r){showToast(r&&r.ok?'Archiviati: '+(r.archiviati||0):'Errore','ok')}).withFailureHandler(function(e){showToast(e,'err')}).cleanupBandiV5Scaduti(30)" style="display:block;white-space:normal;min-width:0;border-radius:10px;text-align:left;padding:10px 14px;font-size:12px" title="Archivia bandi la cui scadenza e superata da 30+ giorni">
               <div style="font-weight:600">Archivia bandi scaduti</div>
               <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Scadenza superata da 30+ giorni</div>
             </button>
-            <button class="btn btn-secondary" onclick="if(confirm('Esportare tutti i record archiviati in CSV?'))google.script.run.withSuccessHandler(function(r){if(r&&r.ok)window.open(r.url||r.viewUrl,'_blank');else showToast(r&&r.error||'Errore','err')}).withFailureHandler(function(e){showToast(e,'err')}).exportArchivio(window._tok_&&window._tok_())" style="text-align:left;padding:10px 14px;font-size:12px" title="Genera CSV con tutti i record archiviati e apri il download">
+            <button class="btn btn-secondary" onclick="if(confirm('Esportare tutti i record archiviati in CSV?'))google.script.run.withSuccessHandler(function(r){if(r&&r.ok)window.open(r.url||r.viewUrl,'_blank');else showToast(r&&r.error||'Errore','err')}).withFailureHandler(function(e){showToast(e,'err')}).exportArchivio(window._tok_&&window._tok_())" style="display:block;white-space:normal;min-width:0;border-radius:10px;text-align:left;padding:10px 14px;font-size:12px" title="Genera CSV con tutti i record archiviati e apri il download">
               <div style="font-weight:600">Esporta archivio CSV</div>
               <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Download di tutti gli archiviati</div>
             </button>
-            <button class="btn btn-secondary" data-action="runAutoDelete" style="text-align:left;padding:10px 14px;font-size:12px;color:var(--danger,#C2410C)" title="Elimina definitivamente record archiviati da piu di 12 mesi. Irreversibile.">
+            <button class="btn btn-secondary" data-action="runAutoDelete" style="display:block;white-space:normal;min-width:0;border-radius:10px;text-align:left;padding:10px 14px;font-size:12px;color:var(--danger,#C2410C)" title="Elimina definitivamente record archiviati da piu di 12 mesi. Irreversibile.">
               <div style="font-weight:600">Elimina archiviati vecchi</div>
               <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Solo archiviati >12 mesi (admin)</div>
             </button>
