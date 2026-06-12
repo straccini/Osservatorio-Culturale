@@ -12303,7 +12303,15 @@
         // v4.24.5 — login IN-PLACE (la top-navigation e bloccata dalla sandbox anonima)
         setTimeout(function(){ _postLoginApply_(r); }, 400);
       } else {
-        if(msg){msg.textContent=(r&&r.error==='email_non_registrata')?'Email non trovata. Prova a registrarti.':'Errore: '+((r&&r.error)||'sconosciuto');msg.style.color='#C2410C';}
+        // v4.24.15 — messaggi comprensibili al posto dei codici grezzi (es. "login_disabilitato")
+        var _emap = {
+          email_non_registrata: 'Email non trovata. Prova a registrarti (scheda "Registrati").',
+          login_disabilitato: 'Gli accessi sono momentaneamente sospesi. Riprova tra poco oppure scrivi a info@sinopiaconsulting.it.',
+          account_non_attivo: 'Account non ancora attivo: controlla la tua email (anche lo spam) per il link di conferma.',
+          email_non_valida: 'Formato email non valido.',
+          quota_email: 'Invio email momentaneamente non disponibile. Riprova più tardi.'
+        };
+        if(msg){msg.textContent=_emap[(r&&r.error)||'']||('Errore: '+((r&&r.error)||'sconosciuto'));msg.style.color='#C2410C';}
       }
     }).withFailureHandler(function(e){
       if(msg){msg.textContent='Errore di connessione';msg.style.color='#C2410C';}
