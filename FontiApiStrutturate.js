@@ -510,7 +510,7 @@ var FAS_API_REGISTRY = [
     auth: 'Nessuna (open data)',
     alimenta: 'Bandi',
     stato: 'in_sviluppo',
-    motivoBlocco: 'Portali estesi: Puglia, Marche, Emilia-Romagna, Toscana + dati.gov.it (5 totali). Filtro rilevanza calibrato. In test produzione.',
+    motivoBlocco: 'Copertura nazionale completa: 20 regioni + ANAC + dati.gov.it (22 portali totali). Portali non raggiungibili saltati silenziosamente. Filtro rilevanza permissivo (tutti i risultati accettati se query contiene cultura/turismo).',
     limiteRate: 'Variabile per portale',
     mappaCampi: 'title->Titolo, organization->Ente, notes->SommarioAI, resources[0].url->Link'
   }
@@ -809,37 +809,42 @@ var FAS_OPENCOESIONE = {
   perPagina: 20
 };
 
+// Tutti i portali open data regionali italiani (CKAN o compatibile).
+// I portali non raggiungibili vengono saltati silenziosamente (HTTP != 200 → continue).
 var FAS_CKAN_PORTALS = [
-  {
-    nome: 'dati.gov.it — Open Data PA',
-    base: 'https://www.dati.gov.it/opendata/api/3/action',
-    query: 'bandi cultura musei patrimonio',
-    ambito: 1, livello: 'Nazionale', regione: ''
-  },
-  {
-    nome: 'Puglia Open Data',
-    base: 'https://dati.puglia.it/ckan/api/3/action',
-    query: 'bandi cultura turismo musei',
-    ambito: 1, livello: 'Regionale', regione: 'Puglia'
-  },
-  {
-    nome: 'Marche Open Data',
-    base: 'https://dati.marche.it/api/3/action',
-    query: 'bandi cultura patrimonio',
-    ambito: 1, livello: 'Regionale', regione: 'Marche'
-  },
-  {
-    nome: 'Emilia-Romagna Open Data',
-    base: 'https://opendata.emilia-romagna.it/api/3/action',
-    query: 'bandi cultura turismo patrimonio',
-    ambito: 1, livello: 'Regionale', regione: 'Emilia-Romagna'
-  },
-  {
-    nome: 'Toscana Open Data',
-    base: 'https://dati.toscana.it/api/3/action',
-    query: 'bandi cultura musei patrimonio',
-    ambito: 1, livello: 'Regionale', regione: 'Toscana'
-  }
+  // ── NAZIONALE ──────────────────────────────────────────────────────────
+  { nome: 'dati.gov.it — Open Data PA',     base: 'https://www.dati.gov.it/opendata/api/3/action',          query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Nazionale', regione: '' },
+  { nome: 'ANAC — Anticorruzione',           base: 'https://dati.anticorruzione.it/opendata/api/3/action',   query: 'cultura musei patrimonio beni culturali', ambito: 1, livello: 'Nazionale', regione: '' },
+
+  // ── NORD-OVEST ─────────────────────────────────────────────────────────
+  { nome: 'Valle d\'Aosta Open Data',        base: 'https://dati.regione.vda.it/api/3/action',               query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Valle d\'Aosta' },
+  { nome: 'Piemonte Open Data',              base: 'https://www.dati.piemonte.it/opendata/api/3/action',     query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Piemonte' },
+  { nome: 'Lombardia Open Data',             base: 'https://www.dati.lombardia.it/api/3/action',             query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Lombardia' },
+  { nome: 'Liguria Open Data',               base: 'https://dati.regione.liguria.it/api/3/action',           query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Liguria' },
+
+  // ── NORD-EST ───────────────────────────────────────────────────────────
+  { nome: 'Trentino-AA Open Data',           base: 'https://dati.trentino.it/api/3/action',                  query: 'bandi cultura patrimonio musei',       ambito: 1, livello: 'Regionale', regione: 'Trentino-AA' },
+  { nome: 'Veneto Open Data',                base: 'https://dati.veneto.it/api/3/action',                    query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Veneto' },
+  { nome: 'Friuli-VG Open Data',             base: 'https://www.dati.friuliveneziagiulia.it/api/3/action',   query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Friuli-VG' },
+  { nome: 'Emilia-Romagna Open Data',        base: 'https://opendata.emilia-romagna.it/api/3/action',        query: 'bandi cultura turismo patrimonio',     ambito: 1, livello: 'Regionale', regione: 'Emilia-Romagna' },
+
+  // ── CENTRO ─────────────────────────────────────────────────────────────
+  { nome: 'Toscana Open Data',               base: 'https://dati.toscana.it/api/3/action',                   query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Toscana' },
+  { nome: 'Umbria Open Data',                base: 'https://dati.regione.umbria.it/opendata/api/3/action',   query: 'bandi cultura patrimonio musei',       ambito: 1, livello: 'Regionale', regione: 'Umbria' },
+  { nome: 'Marche Open Data',                base: 'https://dati.marche.it/api/3/action',                    query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Marche' },
+  { nome: 'Lazio Open Data',                 base: 'https://dati.lazio.it/opendata/api/3/action',            query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Lazio' },
+
+  // ── SUD ────────────────────────────────────────────────────────────────
+  { nome: 'Abruzzo Open Data',               base: 'https://opendata.regione.abruzzo.it/api/3/action',       query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Abruzzo' },
+  { nome: 'Molise Open Data',                base: 'https://dati.regione.molise.it/api/3/action',            query: 'bandi cultura',                        ambito: 1, livello: 'Regionale', regione: 'Molise' },
+  { nome: 'Campania Open Data',              base: 'https://opendata.regione.campania.it/api/3/action',      query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Campania' },
+  { nome: 'Puglia Open Data',                base: 'https://dati.puglia.it/ckan/api/3/action',               query: 'bandi cultura turismo musei',          ambito: 1, livello: 'Regionale', regione: 'Puglia' },
+  { nome: 'Basilicata Open Data',            base: 'https://dati.regione.basilicata.it/api/3/action',        query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Basilicata' },
+  { nome: 'Calabria Open Data',              base: 'https://dati.regione.calabria.it/api/3/action',          query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Calabria' },
+
+  // ── ISOLE ──────────────────────────────────────────────────────────────
+  { nome: 'Sicilia Open Data',               base: 'https://dati.regione.sicilia.it/ckan/api/3/action',      query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Sicilia' },
+  { nome: 'Sardegna Open Data',              base: 'https://opendata.sardegnacatalogo.it/api/3/action',       query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Sardegna' }
 ];
 
 // ============================================================================
