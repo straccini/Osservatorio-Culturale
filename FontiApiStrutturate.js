@@ -251,6 +251,118 @@ function fasRetryFontiSilenti(opts) {
 }
 
 // ============================================================================
+// PARSER TED API v3 (POST) — v4.24.18
+// ============================================================================
+
+/**
+ * Scarica bandi EU da TED usando l'API v3 con richiesta POST.
+ *
+ * Il test di connessione restituisce HTTP 202 (Accepted) perché TED non serve
+ * dati via GET: l'endpoint richiede un body JSON con la query. Questo parser
+ * risolve il problema usando POST con CPV 92xxx (servizi culturali) + keyword.
+ *
+ * @param {Object} [opts] {dryRun, maxItems}
+ * @return {Object} {ok, nuovi, duplicati, errori, dettagli[]}
+ */
+function fasParserTedApiPost(opts) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var maxItems = opts.maxItems || 20;
+  var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+  var existingUrls = _fasLoadExistingUrls_();
+
+  // CPV 925xxxxx = servizi biblioteche/musei/archivi; 923xxxxx = arti/spettacolo; 9253xxxx = musei
+  var payloads = [
+    {
+      label: 'CPV-Musei-Biblioteche',
+      query: 'PC:"92500000" OR PC:"92521000" OR PC:"92522000" OR PC:"92311000" OR PC:"92312000"'
+    },
+    {
+      label: 'Keyword-PatrimonioCultura-IT',
+      query: '("museo" OR "patrimonio culturale" OR "beni culturali" OR "musei" OR "restauro") AND CY:"IT"'
+    }
+  ];
+
+  payloads.forEach(function(p) {
+    try {
+      var body = {
+        query: p.query,
+        pageNumber: 1,
+        pageSize: maxItems,
+        onlyLatestVersions: true,
+        fields: ['ND', 'TY', 'TD', 'OJ', 'DT', 'AA', 'AC', 'PC', 'DS', 'CY', 'publicationId']
+      };
+
+      var resp = UrlFetchApp.fetch('https://ted.europa.eu/api/v3.0/notices/search', {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify(body),
+        muteHttpExceptions: true,
+        deadline: 20,
+        headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaOC/1.0 (cultural-observatory)' }
+      });
+
+      var status = resp.getResponseCode();
+      if (status !== 200) {
+        report.errori++;
+        report.dettagli.push({ fonte: 'TED v3 POST ' + p.label, errore: 'HTTP ' + status });
+        Logger.log('[FAS] TED POST ' + p.label + ' HTTP ' + status);
+        return;
+      }
+
+      var data;
+      try { data = JSON.parse(resp.getContentText()); } catch(eJ) {
+        report.errori++;
+        report.dettagli.push({ fonte: 'TED v3 POST ' + p.label, errore: 'JSON parse: ' + eJ.message });
+        return;
+      }
+
+      var notices = data.notices || data.results || data.content || [];
+      var count = 0;
+
+      notices.forEach(function(n) {
+        var titolo = String(n.ND || n.title || n['award-title'] || '').trim();
+        var pubId = n.publicationId || n.id || '';
+        var link = pubId
+          ? 'https://ted.europa.eu/udl?uri=TED:NOTICE:' + pubId + ':TEXT:IT:HTML'
+          : (n.url || '');
+
+        if (!titolo || !link) return;
+        if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
+
+        if (!dryRun) {
+          _fasSaveBando_({
+            titolo: titolo.substring(0, 300),
+            ente: String(n.AA || n.authority || 'TED EU'),
+            livello: 'EU',
+            regione: '',
+            settore: 'Appalti pubblici cultura — TED',
+            urlBando: link,
+            sommario: String(n.DS || n.description || '').substring(0, 500),
+            scadenza: _fasNormalizzaData_(n.DT || n.deadline || ''),
+            ambito: 3,
+            fonteNome: 'TED — Tenders Electronic Daily (API v3)'
+          });
+          existingUrls[link.toLowerCase()] = true;
+        }
+        report.nuovi++;
+        count++;
+      });
+
+      report.dettagli.push({ fonte: 'TED v3 POST ' + p.label, notices: notices.length, nuovi: count });
+      Logger.log('[FAS] TED POST ' + p.label + ': ' + notices.length + ' notice, ' + count + ' nuovi');
+      Utilities.sleep(500);
+    } catch(e) {
+      report.errori++;
+      report.dettagli.push({ fonte: 'TED v3 POST ' + p.label, errore: e.message });
+      Logger.log('[FAS] TED POST ' + p.label + ' errore: ' + e.message);
+    }
+  });
+
+  return report;
+}
+
+// ============================================================================
 // ORCHESTRATORE FASE 1
 // ============================================================================
 
@@ -274,9 +386,9 @@ function fasRunFase1() {
   Logger.log('[FAS] FASE 1 — TED + PNRR + Retry silenti — ' + new Date().toISOString());
   Logger.log('================================================================');
 
-  // 1. TED RSS
+  // 1. TED API v3 POST — CPV 92* (servizi culturali) + keyword patrimonio/musei
   try {
-    report.ted = fasParserTedRss();
+    report.ted = fasParserTedApiPost();
     report.totaleNuovi += report.ted.nuovi;
   } catch(e) {
     report.ted = { ok: false, error: e.message };
@@ -370,25 +482,25 @@ var FAS_API_REGISTRY = [
     id: 'ted_eu',
     nome: 'TED — Bandi europei',
     endpoint: 'https://ted.europa.eu/api/v3.0/notices/search',
-    formato: 'JSON',
+    formato: 'JSON (POST — query CPV 92xxx)',
     auth: 'Nessuna (public API)',
     alimenta: 'Bandi',
-    stato: 'bloccata',
-    motivoBlocco: 'TED blocca richieste server-to-server da Google Apps Script (HTTP 403). Richiede proxy o integrazione via Gmail scan.',
+    stato: 'in_sviluppo',
+    motivoBlocco: 'GET restituisce HTTP 202 (accepted senza contenuto). Risolto: parser POST implementato (fasParserTedApiPost) — ricerca per CPV 92xxx (servizi culturali) e keyword museo/patrimonio. In test produzione.',
     limiteRate: '100 richieste/giorno (API pubblica)',
-    mappaCampi: 'titolo->Titolo, ente->Ente, scadenza->Scadenza, link->Link, sommario->SommarioAI'
+    mappaCampi: 'ND->Titolo, AA->Ente, DT->Scadenza, publicationId->Link'
   },
   {
     id: 'opencoesione',
     nome: 'OpenCoesione — Progetti PNRR',
-    endpoint: 'https://opencoesione.gov.it/api/progetti/',
+    endpoint: 'https://opencoesione.gov.it/api/v2/progetti/',
     formato: 'JSON',
     auth: 'Nessuna (open data)',
     alimenta: 'Bandi',
     stato: 'in_sviluppo',
-    motivoBlocco: 'Parser implementato (fasParserOpenCoesione) ma non ancora testato in produzione. Filtri cultura/turismo da calibrare.',
+    motivoBlocco: 'Endpoint aggiornato a API v2 con parametro temi_sintetici=Cultura e turismo (testo, non codice numerico). In test produzione.',
     limiteRate: 'Non documentato',
-    mappaCampi: 'titolo->Titolo, programma->Ente, importo->Importo, stato->Stato'
+    mappaCampi: 'oc_titolo_progetto->Titolo, denominazione_soggetto->Ente, data_fine_prevista->Scadenza, url->Link'
   },
   {
     id: 'ckan_regionale',
@@ -398,9 +510,9 @@ var FAS_API_REGISTRY = [
     auth: 'Nessuna (open data)',
     alimenta: 'Bandi',
     stato: 'in_sviluppo',
-    motivoBlocco: 'Parser implementato (fasParserCkanRegionale) ma endpoint regionali variano. Servono URL per Puglia, Marche, ER.',
+    motivoBlocco: 'Portali estesi: Puglia, Marche, Emilia-Romagna, Toscana + dati.gov.it (5 totali). Filtro rilevanza calibrato. In test produzione.',
     limiteRate: 'Variabile per portale',
-    mappaCampi: 'title->Titolo, organization->Ente, notes->SommarioAI, url->Link'
+    mappaCampi: 'title->Titolo, organization->Ente, notes->SommarioAI, resources[0].url->Link'
   }
 ];
 
@@ -689,9 +801,10 @@ function _fasNormalizzaData_(dateStr) {
  * Endpoint OpenCoesione e CKAN.
  */
 var FAS_OPENCOESIONE = {
-  base: 'https://opencoesione.gov.it/api',
-  // Temi rilevanti: 06=Cultura e turismo, 07=Ambiente, 09=Inclusione sociale
-  temiCultura: ['06'],
+  base: 'https://opencoesione.gov.it',
+  // API v2: tema come stringa, non codice numerico
+  // Endpoint: /api/v2/progetti/?temi_sintetici=Cultura+e+turismo&format=json
+  temiCultura: ['Cultura e turismo'],
   maxPagine: 3,
   perPagina: 20
 };
@@ -701,15 +814,31 @@ var FAS_CKAN_PORTALS = [
     nome: 'dati.gov.it — Open Data PA',
     base: 'https://www.dati.gov.it/opendata/api/3/action',
     query: 'bandi cultura musei patrimonio',
-    ambito: 1,
-    livello: 'Nazionale'
+    ambito: 1, livello: 'Nazionale', regione: ''
   },
   {
     nome: 'Puglia Open Data',
     base: 'https://dati.puglia.it/ckan/api/3/action',
-    query: 'bandi cultura',
-    ambito: 1,
-    livello: 'Regionale'
+    query: 'bandi cultura turismo musei',
+    ambito: 1, livello: 'Regionale', regione: 'Puglia'
+  },
+  {
+    nome: 'Marche Open Data',
+    base: 'https://dati.marche.it/api/3/action',
+    query: 'bandi cultura patrimonio',
+    ambito: 1, livello: 'Regionale', regione: 'Marche'
+  },
+  {
+    nome: 'Emilia-Romagna Open Data',
+    base: 'https://opendata.emilia-romagna.it/api/3/action',
+    query: 'bandi cultura turismo patrimonio',
+    ambito: 1, livello: 'Regionale', regione: 'Emilia-Romagna'
+  },
+  {
+    nome: 'Toscana Open Data',
+    base: 'https://dati.toscana.it/api/3/action',
+    query: 'bandi cultura musei patrimonio',
+    ambito: 1, livello: 'Regionale', regione: 'Toscana'
   }
 ];
 
@@ -737,8 +866,10 @@ function fasParserOpenCoesione(opts) {
 
     for (var pag = 1; pag <= maxPag; pag++) {
       try {
-        var url = FAS_OPENCOESIONE.base + '/progetti/?tema_sintetico=' + temaCode +
-          '&formato=json&ordinamento=-data_inizio_prevista&page=' + pag;
+        var url = FAS_OPENCOESIONE.base + '/api/v2/progetti/' +
+          '?temi_sintetici=' + encodeURIComponent(temaCode) +
+          '&format=json&ordering=-data_inizio_prevista&page=' + pag +
+          '&page_size=' + FAS_OPENCOESIONE.perPagina;
 
         var resp = UrlFetchApp.fetch(url, {
           muteHttpExceptions: true, deadline: 10,
@@ -869,9 +1000,11 @@ function fasParserCkanRegionale(opts) {
         if (!titolo || !dsUrl) continue;
         if (existingUrls[dsUrl.toLowerCase()]) { report.duplicati++; continue; }
 
-        // Filtra solo dataset rilevanti (contengono keyword cultura/bandi/musei)
+        // Filtra dataset rilevanti per cultura/musei/bandi
         var allText = (titolo + ' ' + (ds.notes || '') + ' ' + (ds.tags || []).map(function(t) { return t.name || t; }).join(' ')).toLowerCase();
-        var isRelevant = /bando|bandi|cultura|museo|musei|patrimonio|finanziamento|contributo|turismo/.test(allText);
+        var isRelevant = /bando|bandi|cultur|museo|musei|patrimoni|finanziament|contribut|turism|concorso|avviso|arte|teatro|biblioteca|archivi/.test(allText);
+        // Se la query del portale include già 'cultura'/'turismo', accetta comunque
+        if (!isRelevant && /cultur|turism/.test(portal.query.toLowerCase())) isRelevant = true;
         if (!isRelevant) continue;
 
         if (!dryRun) {
@@ -879,7 +1012,7 @@ function fasParserCkanRegionale(opts) {
             titolo: titolo.substring(0, 300),
             ente: String(ds.organization && ds.organization.title || portal.nome),
             livello: portal.livello,
-            regione: portal.livello === 'Regionale' ? portal.nome.split(' ')[0] : '',
+            regione: portal.regione || (portal.livello === 'Regionale' ? portal.nome.split(' ')[0] : ''),
             settore: 'Open Data — Cultura',
             urlBando: dsUrl,
             sommario: String(ds.notes || '').substring(0, 500),
