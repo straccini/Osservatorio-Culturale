@@ -269,6 +269,44 @@ function contaBandiContenitori() {
   return out;
 }
 
+/**
+ * ONE-SHOT (2026-06-14) — elimina i fogli MORTI del dominio bandi/fonti,
+ * autorizzati esplicitamente da Silvano:
+ *   • 'Bandi'      — contenitore bandi LEGACY (3 righe). Letto solo da getBandi()
+ *                    (Codice.js:1584), esposto come action=getBandi mai chiamata
+ *                    dal frontend; getBandi() degrada a {bandi:[]} se il foglio
+ *                    manca → nessun crash. Nome confondibile con Bandi_v5.
+ *   • '_OLD_Fonti' — vecchio foglio fonti NEWS (RSS) gia' deprecato da
+ *                    deprecaFontiLegacy() (FontiFeed.js); la cancellazione manuale
+ *                    e' il passo finale previsto dal codice stesso.
+ *
+ * SICUREZZA: allowlist esplicita ai 2 soli nomi (NON tocca Bandi_v5, FontiBandi_v5
+ * o altro). Logga intestazioni + dump completo PRIMA di cancellare (traccia).
+ * IRREVERSIBILE: i fogli vengono rimossi (recuperabili solo da cronologia GSheet).
+ */
+function cleanupFogliMortiBandi() {
+  var ALLOW = ['Bandi', '_OLD_Fonti'];
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var report = { ok: true, eliminati: [], assenti: [] };
+  Logger.log('=== CLEANUP FOGLI MORTI BANDI/FONTI — avvio ===');
+  ALLOW.forEach(function(nome) {
+    var sh = ss.getSheetByName(nome);
+    if (!sh) { report.assenti.push(nome); Logger.log('  "' + nome + '" assente → skip'); return; }
+    var nRows = Math.max(0, sh.getLastRow());
+    var nCols = Math.max(0, sh.getLastColumn());
+    var head = (nRows >= 1 && nCols >= 1) ? sh.getRange(1, 1, 1, nCols).getValues()[0] : [];
+    Logger.log('  TRACCIA "' + nome + '": ' + Math.max(0, nRows - 1) + ' righe dati · intestazioni: ' + JSON.stringify(head));
+    if (nRows > 1 && nRows <= 12) {
+      Logger.log('  DUMP "' + nome + '": ' + JSON.stringify(sh.getDataRange().getValues()));
+    }
+    ss.deleteSheet(sh);
+    report.eliminati.push({ nome: nome, righeDati: Math.max(0, nRows - 1) });
+    Logger.log('  ✗ ELIMINATO "' + nome + '"');
+  });
+  Logger.log('=== CLEANUP completato: ' + JSON.stringify(report) + ' ===');
+  return report;
+}
+
 // Legge un foglio e restituisce le righe come oggetti {Header: valore}.
 function _bcSheetObjs_(name) {
   var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
