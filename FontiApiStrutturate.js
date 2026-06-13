@@ -2,7 +2,7 @@
  * ============================================================================
  *  FontiApiStrutturate.js — Parser per fonti strutturate (TED, PNRR, CKAN)
  * ============================================================================
- *  v4.18.69 (2026-05-24)
+ *  v4.18.70 (2026-06-13)
  *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
  *
  *  Fase 1: RSS feeds + auto-retry fonti silenti
@@ -272,14 +272,15 @@ function fasParserTedApiPost(opts) {
   var existingUrls = _fasLoadExistingUrls_();
 
   // CPV 925xxxxx = servizi biblioteche/musei/archivi; 923xxxxx = arti/spettacolo; 9253xxxx = musei
+  // v4.24.18 FIX: sintassi TED v3 expert query — PC IN (...) e page/limit al posto di pageNumber/pageSize
   var payloads = [
     {
       label: 'CPV-Musei-Biblioteche',
-      query: 'PC:"92500000" OR PC:"92521000" OR PC:"92522000" OR PC:"92311000" OR PC:"92312000"'
+      query: 'PC IN (92500000, 92521000, 92522000, 92311000, 92312000)'
     },
     {
-      label: 'Keyword-PatrimonioCultura-IT',
-      query: '("museo" OR "patrimonio culturale" OR "beni culturali" OR "musei" OR "restauro") AND CY:"IT"'
+      label: 'CPV-Patrimonio-Culturale',
+      query: 'PC IN (92000000, 92400000, 92700000, 92710000, 92720000)'
     }
   ];
 
@@ -287,13 +288,12 @@ function fasParserTedApiPost(opts) {
     try {
       var body = {
         query: p.query,
-        pageNumber: 1,
-        pageSize: maxItems,
-        onlyLatestVersions: true,
+        page: 1,
+        limit: maxItems,
         fields: ['ND', 'TY', 'TD', 'OJ', 'DT', 'AA', 'AC', 'PC', 'DS', 'CY', 'publicationId']
       };
 
-      var resp = UrlFetchApp.fetch('https://ted.europa.eu/api/v3.0/notices/search', {
+      var resp = UrlFetchApp.fetch('https://api.ted.europa.eu/v3/notices/search', {
         method: 'post',
         contentType: 'application/json',
         payload: JSON.stringify(body),
@@ -481,12 +481,12 @@ var FAS_API_REGISTRY = [
   {
     id: 'ted_eu',
     nome: 'TED — Bandi europei',
-    endpoint: 'https://ted.europa.eu/api/v3.0/notices/search',
+    endpoint: 'https://api.ted.europa.eu/v3/notices/search',
     formato: 'JSON (POST — query CPV 92xxx)',
     auth: 'Nessuna (public API)',
     alimenta: 'Bandi',
-    stato: 'in_sviluppo',
-    motivoBlocco: 'GET restituisce HTTP 202 (accepted senza contenuto). Risolto: parser POST implementato (fasParserTedApiPost) — ricerca per CPV 92xxx (servizi culturali) e keyword museo/patrimonio. In test produzione.',
+    stato: 'operativa',
+    motivoBlocco: '',
     limiteRate: '100 richieste/giorno (API pubblica)',
     mappaCampi: 'ND->Titolo, AA->Ente, DT->Scadenza, publicationId->Link'
   },
@@ -1607,6 +1607,89 @@ function fasDeprecaFontiIrrecuperabili(opts) {
 /**
  * Report completo fonti: attive, silenti, deprecate, per tipo.
  */
+// ============================================================================
+// FUNZIONI DI TEST RAPIDO — solo HTTP, nessuna scrittura su sheet
+// ============================================================================
+
+/** Test TED API v3 POST — verifica raggiungibilità e struttura risposta */
+function testTedApiQuick() {
+  Logger.log('[TEST] TED API v3 POST — avvio');
+  try {
+    // v4.24.18 FIX: sintassi corretta TED v3 expert query (PC IN, page/limit)
+    var body = {
+      query: 'PC IN (92521000, 92500000)',
+      page: 1, limit: 3,
+      fields: ['ND','TY','OJ','DT','CY']
+    };
+    var resp = UrlFetchApp.fetch('https://api.ted.europa.eu/v3/notices/search', {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(body),
+      muteHttpExceptions: true,
+      deadline: 15,
+      headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaOC/1.0 (s.straccini@gmail.com)' }
+    });
+    var status = resp.getResponseCode();
+    var body200 = resp.getContentText().substring(0, 400);
+    Logger.log('[TEST] TED status: ' + status);
+    Logger.log('[TEST] TED body: ' + body200);
+  } catch(e) {
+    Logger.log('[TEST] TED eccezione: ' + e.message);
+  }
+  Logger.log('[TEST] TED — fine');
+}
+
+/** Test OpenCoesione API v2 — verifica raggiungibilità e struttura risposta */
+function testOpenCogSioneQuick() {
+  Logger.log('[TEST] OpenCoesione v2 — avvio');
+  try {
+    var url = 'https://opencoesione.gov.it/api/v2/progetti/' +
+      '?temi_sintetici=' + encodeURIComponent('Cultura e turismo') +
+      '&format=json&ordering=-data_inizio_prevista&page=1&page_size=3';
+    var resp = UrlFetchApp.fetch(url, {
+      muteHttpExceptions: true,
+      deadline: 15,
+      headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaOC/1.0' }
+    });
+    var status = resp.getResponseCode();
+    var body = resp.getContentText().substring(0, 400);
+    Logger.log('[TEST] OpenCoesione status: ' + status);
+    Logger.log('[TEST] OpenCoesione body: ' + body);
+  } catch(e) {
+    Logger.log('[TEST] OpenCoesione eccezione: ' + e.message);
+  }
+  Logger.log('[TEST] OpenCoesione — fine');
+}
+
+/** Test CKAN Puglia — verifica raggiungibilità e struttura risposta */
+function testCkanQuick() {
+  Logger.log('[TEST] CKAN Puglia — avvio');
+  try {
+    var url = 'https://dati.puglia.it/ckan/api/3/action/package_search' +
+      '?q=bandi+cultura+turismo+musei&rows=3&sort=metadata_modified+desc';
+    var resp = UrlFetchApp.fetch(url, {
+      muteHttpExceptions: true,
+      deadline: 15,
+      headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaOC/1.0' }
+    });
+    var status = resp.getResponseCode();
+    var body = resp.getContentText().substring(0, 400);
+    Logger.log('[TEST] CKAN Puglia status: ' + status);
+    Logger.log('[TEST] CKAN Puglia body: ' + body);
+  } catch(e) {
+    Logger.log('[TEST] CKAN Puglia eccezione: ' + e.message);
+  }
+  Logger.log('[TEST] CKAN Puglia — fine');
+}
+
+/** Esegue i 3 test rapidi in sequenza */
+function testTutteLeApi() {
+  testTedApiQuick();
+  testOpenCogSioneQuick();
+  testCkanQuick();
+  Logger.log('[TEST] COMPLETATO — vedi righe sopra per risultati');
+}
+
 function fasReportFontiCompleto() {
   var out = { ok: true, timestamp: new Date().toISOString(), fogli: {} };
   try {
