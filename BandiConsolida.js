@@ -285,7 +285,10 @@ function contaBandiContenitori() {
  * IRREVERSIBILE: i fogli vengono rimossi (recuperabili solo da cronologia GSheet).
  */
 function cleanupFogliMortiBandi() {
-  var ALLOW = ['Bandi', '_OLD_Fonti'];
+  // 2026-06-14 (2a passata): '_RADAR_BANDI_LEGACY_' — archivio bandi pre-migrazione
+  // v5 (128 righe). Fallback di getSheetRadar() RIMOSSO contestualmente (Codice.js).
+  // 'Bandi' e '_OLD_Fonti' gia' eliminati nella 1a passata (qui risulterebbero assenti).
+  var ALLOW = ['_RADAR_BANDI_LEGACY_'];
   var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
   var report = { ok: true, eliminati: [], assenti: [] };
   Logger.log('=== CLEANUP FOGLI MORTI BANDI/FONTI — avvio ===');
