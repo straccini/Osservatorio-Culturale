@@ -290,6 +290,25 @@ function setupMasterDiagnostica() {
   };
 }
 
+/**
+ * CHIRURGICO (2026-06-14) — installa SOLO il trigger giornaliero di fasRunCompleto
+ * (fonti API strutturate: TED + OpenCoesione + CKAN + BDNCP sotto-soglia), senza
+ * toccare gli altri 18 trigger attivi (NON usa setupMasterTriggers che invece
+ * cancellerebbe gli "extra" legittimi come keepWarmPing/apiScanTutto/ecc.).
+ * Idempotente: rimuove eventuali trigger fasRunCompleto duplicati e ne crea uno
+ * solo, daily ~05:00 (allineato allo schedule master).
+ */
+function installFasRunCompletoTrigger() {
+  var rimossi = 0;
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    if (t.getHandlerFunction() === 'fasRunCompleto') { ScriptApp.deleteTrigger(t); rimossi++; }
+  });
+  ScriptApp.newTrigger('fasRunCompleto').timeBased().atHour(5).everyDays(1).create();
+  var msg = 'Trigger fasRunCompleto installato (daily ~05:00). Duplicati rimossi: ' + rimossi + '.';
+  Logger.log('[TRIGGER] ' + msg);
+  return { ok: true, rimossiDuplicati: rimossi, creato: 'fasRunCompleto daily@05', nota: msg };
+}
+
 // ============================================================================
 // SETUP MASTER FOGLI — crea struttura dati completa
 // ============================================================================
