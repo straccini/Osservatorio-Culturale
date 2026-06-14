@@ -513,6 +513,18 @@ var FAS_API_REGISTRY = [
     motivoBlocco: 'Copertura nazionale completa: 20 regioni + ANAC + dati.gov.it (22 portali totali). Portali non raggiungibili saltati silenziosamente. Filtro rilevanza permissivo (tutti i risultati accettati se query contiene cultura/turismo).',
     limiteRate: 'Variabile per portale',
     mappaCampi: 'title->Titolo, organization->Ente, notes->SommarioAI, resources[0].url->Link'
+  },
+  {
+    id: 'bdncp_pubblicita',
+    nome: 'BDNCP — Pubblicità Legale ANAC (sotto-soglia)',
+    endpoint: 'https://pubblicitalegale.anticorruzione.it/api/v0/avvisi',
+    formato: 'JSON (GET — keywords cultura, codiceScheda=2,4)',
+    auth: 'Nessuna (pubblica)',
+    alimenta: 'Bandi',
+    stato: 'operativa',
+    motivoBlocco: '',
+    limiteRate: 'Non documentato (cortesia 300ms/keyword)',
+    mappaCampi: 'metadata.descrizione->Titolo, soggetti_sa[0].denominazione->Ente, dataScadenza->Scadenza, documenti_di_gara_link->Link'
   }
 ];
 
@@ -1044,6 +1056,146 @@ function fasParserCkanRegionale(opts) {
 }
 
 // ============================================================================
+// PARSER BDNCP — Pubblicità Legale ANAC (bandi APERTI, anche SOTTO-SOGLIA)
+// ============================================================================
+
+/**
+ * Monitora i bandi/avvisi di indizione APERTI pubblicati sulla BDNCP — Piattaforma
+ * di Pubblicità a Valore Legale ANAC (obbligatoria dal 2024 per TUTTE le gare,
+ * incl. sotto-soglia che TED non copre). Copre il buco lasciato da TED (solo
+ * sopra-soglia UE).
+ *
+ * API (reverse-engineered dalla SPA, raggiungibile server-side, niente WAF):
+ *   GET /api/v0/avvisi?dataPubblicazioneStart=DD/MM/YYYY&dataPubblicazioneEnd=...
+ *       &page=&size=&codiceScheda=2,4&keywords=<termine>
+ *   codiceScheda 2,4 = "bandi e avvisi di indizione". Filtro testuale via keywords
+ *   (il param cpv non filtra lato API → usiamo le keyword culturali, piu' efficaci).
+ *
+ * @param {Object} [opts] {dryRun, giorni (default 7), sizePerKw (default 50)}
+ * @return {Object} {ok, nuovi, duplicati, errori, dettagli[]}
+ */
+var FAS_BDNCP_BASE = 'https://pubblicitalegale.anticorruzione.it/api/v0/avvisi';
+var FAS_BDNCP_KEYWORDS = [
+  'museo', 'musei', 'biblioteca', 'patrimonio culturale', 'beni culturali',
+  'archivio', 'restauro', 'archeolog', 'teatro', 'mostra', 'allestimento',
+  'valorizzazione culturale'
+];
+
+function fasParserBdncpCultura(opts) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var giorni = opts.giorni || 7;
+  var sizePerKw = opts.sizePerKw || 50;
+  var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+  var existingUrls = _fasLoadExistingUrls_();
+  var visti = {}; // dedup per idAvviso tra keyword diverse
+
+  var tz = Session.getScriptTimeZone() || 'Europe/Rome';
+  var oggi = new Date();
+  var start = new Date(oggi.getTime() - giorni * 86400000);
+  var dStart = Utilities.formatDate(start, tz, 'dd/MM/yyyy');
+  var dEnd = Utilities.formatDate(oggi, tz, 'dd/MM/yyyy');
+
+  FAS_BDNCP_KEYWORDS.forEach(function(kw) {
+    try {
+      var url = FAS_BDNCP_BASE +
+        '?dataPubblicazioneStart=' + encodeURIComponent(dStart) +
+        '&dataPubblicazioneEnd=' + encodeURIComponent(dEnd) +
+        '&page=0&size=' + sizePerKw + '&codiceScheda=2,4' +
+        '&keywords=' + encodeURIComponent(kw);
+
+      var resp = UrlFetchApp.fetch(url, {
+        muteHttpExceptions: true, deadline: 20,
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (compatible; SinopiaOC/1.0; cultural-observatory)',
+          'Referer': 'https://pubblicitalegale.anticorruzione.it/ricerca-avanzata'
+        }
+      });
+      if (resp.getResponseCode() !== 200) {
+        report.errori++;
+        report.dettagli.push({ kw: kw, errore: 'HTTP ' + resp.getResponseCode() });
+        return;
+      }
+      var data;
+      try { data = JSON.parse(resp.getContentText()); } catch(eJ) {
+        report.errori++; report.dettagli.push({ kw: kw, errore: 'JSON parse' }); return;
+      }
+      var content = data.content || [];
+      var nuoviKw = 0;
+
+      content.forEach(function(av) {
+        var id = av.idAvviso || '';
+        if (id && visti[id]) return; // gia' preso da un'altra keyword
+        if (id) visti[id] = true;
+
+        var info = _fasBdncpEstrai_(av);
+        if (!info.titolo) return;
+
+        var link = info.docLink ||
+          (id ? 'https://pubblicitalegale.anticorruzione.it/bandi/' + id : '');
+        if (!link) return;
+        if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
+
+        if (!dryRun) {
+          _fasSaveBando_({
+            titolo: info.titolo.substring(0, 300),
+            ente: info.ente || 'BDNCP',
+            livello: 'Nazionale',
+            regione: '',
+            settore: 'Appalto cultura (sotto-soglia) — BDNCP/ANAC',
+            urlBando: link,
+            sommario: info.titolo.substring(0, 500),
+            scadenza: _fasNormalizzaData_(av.dataScadenza || ''),
+            ambito: 3,
+            fonteNome: 'BDNCP — Pubblicità Legale ANAC'
+          });
+          existingUrls[link.toLowerCase()] = true;
+        }
+        report.nuovi++; nuoviKw++;
+      });
+
+      report.dettagli.push({ kw: kw, totali: data.totalElements, nuovi: nuoviKw });
+      Logger.log('[FAS] BDNCP "' + kw + '": ' + (data.totalElements||0) + ' totali, ' + nuoviKw + ' nuovi');
+      Utilities.sleep(300);
+    } catch(e) {
+      report.errori++;
+      report.dettagli.push({ kw: kw, errore: e.message });
+      Logger.log('[FAS] BDNCP "' + kw + '" errore: ' + e.message);
+    }
+  });
+
+  Logger.log('[FAS] BDNCP totale: ' + report.nuovi + ' nuovi, ' + report.duplicati + ' dup, ' + report.errori + ' errori');
+  return report;
+}
+
+/**
+ * @private Estrae titolo/ente/link documenti dalla struttura annidata di un avviso BDNCP.
+ * descrizione → template[0].template.metadata.descrizione
+ * committente → section con fields.soggetti_sa[].denominazione_amministrazione
+ * link docs   → section con fields.documenti_di_gara_link
+ */
+function _fasBdncpEstrai_(av) {
+  var out = { titolo: '', ente: '', docLink: '' };
+  try {
+    var tpl = av.template && av.template[0] && av.template[0].template;
+    if (!tpl) return out;
+    if (tpl.metadata && tpl.metadata.descrizione) out.titolo = String(tpl.metadata.descrizione);
+    var sections = tpl.sections || [];
+    sections.forEach(function(s) {
+      var f = s.fields || {};
+      if (!out.ente && f.soggetti_sa && f.soggetti_sa.length) {
+        out.ente = String(f.soggetti_sa[0].denominazione_amministrazione || '');
+      }
+      if (!out.docLink && f.documenti_di_gara_link) {
+        out.docLink = String(f.documenti_di_gara_link);
+      }
+    });
+  } catch(_) {}
+  return out;
+}
+
+// ============================================================================
 // ORCHESTRATORE FASE 2
 // ============================================================================
 
@@ -1057,12 +1209,13 @@ function fasRunFase2() {
     timestamp: new Date().toISOString(),
     openCoesione: null,
     ckan: null,
+    bdncp: null,
     totaleNuovi: 0,
     durataMs: 0
   };
 
   Logger.log('================================================================');
-  Logger.log('[FAS] FASE 2 — OpenCoesione + CKAN — ' + new Date().toISOString());
+  Logger.log('[FAS] FASE 2 — OpenCoesione + CKAN + BDNCP — ' + new Date().toISOString());
   Logger.log('================================================================');
 
   // 1. OpenCoesione API
@@ -1083,6 +1236,15 @@ function fasRunFase2() {
     Logger.log('[FAS] CKAN ERRORE: ' + e.message);
   }
 
+  // 3. BDNCP Pubblicità Legale ANAC — bandi aperti sotto-soglia cultura
+  try {
+    report.bdncp = fasParserBdncpCultura();
+    report.totaleNuovi += report.bdncp.nuovi;
+  } catch(e) {
+    report.bdncp = { ok: false, error: e.message };
+    Logger.log('[FAS] BDNCP ERRORE: ' + e.message);
+  }
+
   report.durataMs = Date.now() - t0;
   Logger.log('[FAS] Fase 2 completata: ' + report.totaleNuovi + ' nuovi (' + report.durataMs + 'ms)');
   Logger.log('================================================================');
@@ -1093,7 +1255,8 @@ function fasRunFase2() {
       if (typeof _tgSend_ === 'function') {
         _tgSend_('📡 *Fonti Strutturate Fase 2*\n\n' +
           'OpenCoesione: ' + (report.openCoesione ? report.openCoesione.nuovi : 0) + ' nuovi\n' +
-          'CKAN regionali: ' + (report.ckan ? report.ckan.nuovi : 0) + ' nuovi');
+          'CKAN regionali: ' + (report.ckan ? report.ckan.nuovi : 0) + ' nuovi\n' +
+          'BDNCP sotto-soglia: ' + (report.bdncp ? report.bdncp.nuovi : 0) + ' nuovi');
       }
     } catch(_){}
   }
