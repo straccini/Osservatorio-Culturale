@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sinopia — Digest</title>
+</head>
+<body style="margin:0;padding:0;background:#F5F3EE;-webkit-text-size-adjust:100%;">
+
+<span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;mso-hide:all;">{{PREHEADER}}</span>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F5F3EE" style="background:#F5F3EE;">
+<tr><td align="center" style="padding:28px 12px;">
+
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#FFFFFF;border:1px solid #E8E5E0;border-radius:16px;overflow:hidden;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+    <!-- TESTATA -->
+    <tr><td style="background:#FBF7F3;padding:22px 32px 0;">
+      <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#A89E97;">Osservatorio Culturale</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:2px;"><tr>
+        <td style="vertical-align:bottom;"><span style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:32px;color:#935851;">Sinopia</span></td>
+        <td align="right" style="vertical-align:bottom;"><span style="font-size:11.5px;color:#7A746E;">Digest n. {{NUMERO}} &middot; {{DATA}}</span></td>
+      </tr></table>
+    </td></tr>
+    <!-- firma grafica (PNG ospitata, alt + fallback bg) -->
+    <tr><td style="background:#FBF7F3;padding:8px 0 0;line-height:0;">
+      <img src="{{FIRMA_TOP_URL}}" width="600" alt="" style="display:block;width:100%;max-width:600px;height:auto;border:0;background:#FBF7F3;">
+    </td></tr>
+
+    <!-- BANDI IN SCADENZA -->
+    <tr><td style="padding:20px 32px 6px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E7D6D1;border-top:3px solid #935851;">
+        <tr><td style="padding:13px 18px 2px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#935851;font-weight:bold;">Bandi in scadenza questa settimana</td></tr>
+        <tr><td style="padding:2px 18px 14px;">
+          <!-- {{BANDI_ROWS}} — ripeti per ogni bando:
+          <div style="padding:10px 0;border-bottom:1px solid #F0EBE8;">
+            <div style="font-size:14px;font-weight:bold;color:#1A1A1A;line-height:1.35;">{{TITOLO}}</div>
+            <div style="font-size:12px;color:#7A746E;margin-top:3px;">{{ENTE}}
+              <span style="font-size:11px;font-weight:bold;color:#A32D2D;background:#FCEBEB;padding:2px 8px;border-radius:20px;margin-left:6px;">&#9888; {{GIORNI}} giorni</span></div>
+          </div> -->
+          {{BANDI_ROWS}}
+          <div style="padding-top:11px;"><a href="{{BANDI_TUTTI_URL}}" style="font-size:12px;font-weight:bold;color:#935851;text-decoration:none;">Vedi tutti i bandi cultura &rarr;</a></div>
+        </td></tr>
+      </table>
+    </td></tr>
+
+    <!-- EDITORIALE CON COVER -->
+    <tr><td style="padding:18px 32px 4px;">
+      <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#935851;font-weight:bold;margin-bottom:10px;">Approfondimento della settimana</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EADFDA;border-radius:10px;overflow:hidden;">
+        <tr><td style="line-height:0;"><img src="{{COVER_URL}}" width="568" alt="" style="display:block;width:100%;height:auto;border:0;background:#F3E7E1;"></td></tr>
+        <tr><td style="padding:14px 18px 16px;">
+          <div style="font-family:Georgia,serif;font-size:18px;color:#1A1A1A;line-height:1.3;margin-bottom:7px;">{{ED_TITOLO}}</div>
+          <div style="font-size:13.5px;color:#4A4A4A;line-height:1.65;">{{ED_TESTO}}</div>
+          <div style="font-size:10.5px;color:#A89E97;margin-top:9px;font-style:italic;">{{ED_COVER_CREDIT}}</div>
+        </td></tr>
+      </table>
+    </td></tr>
+
+    <!-- SEZIONI PER AMBITO — {{SEZIONI}} : ripeti il blocco per ogni ambito con contenuti.
+         Esempio (Ambito 3 — Programma, colore #3C6A95):
+    <tr><td style="padding:20px 32px 0;">
+      <div style="margin-bottom:8px;">
+        <span style="display:inline-block;width:4px;height:15px;background:#3C6A95;vertical-align:middle;margin-right:9px;"></span>
+        <span style="font-size:12px;font-weight:bold;color:#3C6A95;text-transform:uppercase;letter-spacing:.05em;vertical-align:middle;">Programma, mostre e collezioni</span>
+      </div>
+      ── header immagine opzionale (CC0, con attribuzione) ──
+      <img src="{{SEZ_IMG_URL}}" width="568" alt="" style="display:block;width:100%;height:auto;border-radius:8px;background:#D9C7BE;">
+      <div style="font-size:10.5px;color:#A89E97;font-style:italic;padding:5px 2px 0;">{{SEZ_IMG_CREDIT}}</div>
+      ── articolo (ripetibile) ──
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #EFEBE6;"><tr><td style="padding:12px 0;">
+        <div style="margin-bottom:5px;">
+          <span style="font-size:10.5px;font-weight:bold;color:#3C6A95;background:#E1ECF5;padding:2px 8px;border-radius:20px;text-transform:uppercase;">{{TIPOLOGIA}}</span>
+          <span style="font-size:11px;color:#999;margin-left:7px;">{{FONTE}} &middot; {{DATA_ART}}</span>
+        </div>
+        <div style="font-size:15px;font-weight:bold;color:#1A1A1A;line-height:1.35;margin-bottom:5px;">
+          <a href="{{ART_URL}}" style="color:#1A1A1A;text-decoration:none;">{{ART_TITOLO}}</a></div>
+        <div style="font-size:13px;color:#5A5A5A;line-height:1.6;margin-bottom:8px;">{{ART_SOMMARIO}}</div>
+        <a href="{{ART_URL}}" style="font-size:12px;font-weight:bold;color:#3C6A95;text-decoration:none;">&#8599; Leggi</a>
+      </td></tr></table>
+    </td></tr>
+    -->
+    {{SEZIONI}}
+
+    <!-- CANDIDATURE (modulo moderno) -->
+    <tr><td style="padding:20px 32px 6px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F6EEE9;border-radius:14px;overflow:hidden;"><tr>
+        <td width="92" style="vertical-align:middle;line-height:0;"><img src="{{FIRMA_SMALL_URL}}" width="92" alt="" style="display:block;width:92px;height:auto;border:0;background:#F6EEE9;"></td>
+        <td style="vertical-align:middle;padding:16px 22px 16px 4px;">
+          <div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#935851;font-weight:bold;margin-bottom:4px;">Speciale candidature</div>
+          <div style="font-family:Georgia,serif;font-size:17px;color:#1A1A1A;line-height:1.3;margin-bottom:5px;">Capitale della Cultura: il tuo territorio puo&#768; candidarsi</div>
+          <div style="font-size:12.5px;color:#6A645E;line-height:1.5;margin-bottom:12px;">Scadenze, percorsi e requisiti per le candidature italiane ed europee.</div>
+          <a href="{{CAPITALI_URL}}" style="display:inline-block;background:#935851;color:#FFFFFF;text-decoration:none;padding:9px 20px;border-radius:999px;font-size:12.5px;font-weight:bold;">Scopri di piu&#768; &rarr;</a>
+        </td>
+      </tr></table>
+    </td></tr>
+
+    <!-- FOOTER BOOKEND -->
+    <tr><td style="line-height:0;padding-top:14px;background:#FBF7F3;">
+      <img src="{{FIRMA_BOTTOM_URL}}" width="600" alt="" style="display:block;width:100%;max-width:600px;height:auto;border:0;background:#FBF7F3;">
+    </td></tr>
+    <tr><td style="background:#FBF7F3;padding:6px 32px 22px;text-align:center;">
+      <div style="font-family:Georgia,serif;font-style:italic;font-size:18px;color:#935851;margin-bottom:6px;">Sinopia</div>
+      <div style="font-size:11px;color:#9A958E;line-height:1.7;">
+        Osservatorio Culturale &middot; segnali per chi progetta cultura<br>
+        Immagini: collezioni museali ad accesso aperto (CC0) &middot; cover: illustrazione generata<br>
+        <a href="{{PREF_URL}}" style="color:#7A746E;text-decoration:underline;">Gestisci preferenze</a> &nbsp;&middot;&nbsp;
+        <a href="{{UNSUB_URL}}" style="color:#7A746E;text-decoration:underline;">Disiscriviti</a>
+      </div>
+    </td></tr>
+
+  </table>
+
+</td></tr>
+</table>
+</body>
+</html>

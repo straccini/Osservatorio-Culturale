@@ -8,3 +8,4 @@ backup-*/**
 *.bak
 ~$*.docx
 tools/**
+docs/**
