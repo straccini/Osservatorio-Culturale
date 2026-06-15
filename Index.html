@@ -1166,8 +1166,8 @@
     <section class="page" id="page-chisiamo">
       <div class="page-head">
         <div class="page-eyebrow" style="color:var(--accent,#935851)">Osservatorio Culturale &middot; Sinopia &middot; Chi siamo</div>
-        <h1 class="page-title">Una rete di esperti per la <em>cultura italiana</em></h1>
-        <p class="page-sub">
+        <h1 class="page-title" id="cs-titolo">Una rete di esperti per la <em>cultura italiana</em></h1>
+        <p class="page-sub" id="cs-sottotitolo">
           Siamo un team di progettisti culturali, esperti di tecnologie inclusive, ricercatori
           e consulenti museali. Affianchiamo musei, comuni, fondazioni ed enti culturali &mdash; sia pubblici
           sia privati &mdash; nella progettazione, nelle candidature a bandi e nello sviluppo di nuove
@@ -1181,14 +1181,14 @@
         <div style="font-family:var(--font-display);font-size:60px;line-height:.85;color:var(--accent,#935851);opacity:.85;flex-shrink:0;font-style:italic">S</div>
         <div>
           <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#935851);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Perch&eacute; Sinopia</div>
-          <h2 style="font-family:var(--font-display);font-size:1.4rem;line-height:1.2;margin:0 0 10px;color:var(--ink,#101010);font-weight:500"><em>Sinopia</em> &mdash; il disegno che precede l&rsquo;affresco.</h2>
-          <p style="font-family:var(--font-display);font-size:14.5px;line-height:1.6;color:#5C4332;margin:0 0 8px">
+          <h2 id="cs-sinopia-titolo" style="font-family:var(--font-display);font-size:1.4rem;line-height:1.2;margin:0 0 10px;color:var(--ink,#101010);font-weight:500"><em>Sinopia</em> &mdash; il disegno che precede l&rsquo;affresco.</h2>
+          <p id="cs-sinopia-p1" style="font-family:var(--font-display);font-size:14.5px;line-height:1.6;color:#5C4332;margin:0 0 8px">
             La <b>sinopia</b> &egrave; il disegno preparatorio in terra rossa che gli artisti del Medioevo
             e del Rinascimento tracciavano sull&rsquo;intonaco grezzo, prima di stendere lo strato finale
             dell&rsquo;affresco. Era il momento in cui l&rsquo;opera prendeva forma: lo schema invisibile su
             cui poi sarebbe nato il colore.
           </p>
-          <p style="font-family:var(--font-display);font-size:14.5px;line-height:1.6;color:#5C4332;margin:0">
+          <p id="cs-sinopia-p2" style="font-family:var(--font-display);font-size:14.5px;line-height:1.6;color:#5C4332;margin:0">
             Abbiamo scelto questo nome per il nostro osservatorio perch&eacute; descrive esattamente
             il nostro lavoro: <b>tracciare in anticipo le linee del cambiamento culturale</b> &mdash; bandi,
             nuove pratiche, idee, normative &mdash; molto prima che diventino visibili a tutti. Sinopia raccoglie,
@@ -1203,8 +1203,8 @@
         <span aria-hidden="true" style="align-self:stretch;background:linear-gradient(180deg,var(--accent,#935851) 0%,var(--amb-2,#10916D) 50%,var(--amb-3,#2563EB) 100%);border-radius:2px"></span>
         <div>
           <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--link,var(--accent,#935851));letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Manifesto operativo</div>
-          <h2 style="font-family:var(--font-display);font-size:1.5rem;line-height:1.2;margin:0 0 12px;color:var(--ink);font-weight:500">Il museo come <em>presidio identitario</em>, non come contenitore.</h2>
-          <p style="font-family:var(--font-display);font-size:15px;line-height:1.65;color:var(--ink-2);margin:0">
+          <h2 id="cs-manifesto-titolo" style="font-family:var(--font-display);font-size:1.5rem;line-height:1.2;margin:0 0 12px;color:var(--ink);font-weight:500">Il museo come <em>presidio identitario</em>, non come contenitore.</h2>
+          <p id="cs-manifesto-p" style="font-family:var(--font-display);font-size:15px;line-height:1.65;color:var(--ink-2);margin:0">
             Crediamo nel modello dei <b>Musei Sensibili</b>: luoghi della cultura che sanno ascoltare le proprie
             comunit&agrave;, accogliere ogni pubblico senza barriere, valorizzare il patrimonio attraverso
             linguaggi contemporanei e tecnologie inclusive. Ogni progetto integra simultaneamente sei assi:
@@ -1929,7 +1929,44 @@
         <span style="width:1px;height:18px;background:var(--rule,#E5E5E7);margin:0 4px 6px"></span>
         <button class="settings-tab" data-tab="sistema" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Sistema</button>
         <button class="settings-tab" data-tab="config" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Configurazione</button>
+        <button class="settings-tab" data-tab="chisiamo" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Chi siamo</button>
         <button class="settings-tab" data-tab="backup" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Archivio</button>
+      </div>
+
+      <!-- TAB CHI SIAMO — editor testi pagina pubblica (v5.3) -->
+      <div class="settings-tab-content" data-tab-content="chisiamo" hidden>
+        <div class="admin-card">
+          <h3 style="margin:0 0 4px;font-size:15px">Testi pagina &ldquo;Chi siamo&rdquo;</h3>
+          <p style="font-size:12.5px;color:var(--ink-3);margin:0 0 14px;line-height:1.5">
+            Modifica i testi principali della pagina pubblica. &Egrave; ammesso markup leggero
+            (<code>&lt;em&gt;corsivo&lt;/em&gt;</code>, <code>&lt;b&gt;grassetto&lt;/b&gt;</code>).
+            Lascia un campo vuoto per mantenere il testo predefinito.
+          </p>
+
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin:10px 0 4px">Titolo (H1)</label>
+          <input id="csEdTitolo" type="text" style="width:100%;padding:8px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px;box-sizing:border-box"/>
+
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin:10px 0 4px">Sottotitolo</label>
+          <textarea id="csEdSottotitolo" rows="3" style="width:100%;padding:8px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px;box-sizing:border-box;resize:vertical"></textarea>
+
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin:14px 0 4px">&ldquo;Perch&eacute; Sinopia&rdquo; &mdash; titolo</label>
+          <input id="csEdSinopiaTit" type="text" style="width:100%;padding:8px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px;box-sizing:border-box"/>
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin:10px 0 4px">&ldquo;Perch&eacute; Sinopia&rdquo; &mdash; paragrafo 1</label>
+          <textarea id="csEdSinopiaP1" rows="3" style="width:100%;padding:8px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px;box-sizing:border-box;resize:vertical"></textarea>
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin:10px 0 4px">&ldquo;Perch&eacute; Sinopia&rdquo; &mdash; paragrafo 2</label>
+          <textarea id="csEdSinopiaP2" rows="3" style="width:100%;padding:8px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px;box-sizing:border-box;resize:vertical"></textarea>
+
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin:14px 0 4px">&ldquo;Manifesto operativo&rdquo; &mdash; titolo</label>
+          <input id="csEdManifTit" type="text" style="width:100%;padding:8px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px;box-sizing:border-box"/>
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin:10px 0 4px">&ldquo;Manifesto operativo&rdquo; &mdash; paragrafo</label>
+          <textarea id="csEdManifP" rows="4" style="width:100%;padding:8px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px;box-sizing:border-box;resize:vertical"></textarea>
+
+          <div style="display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="OC.saveChiSiamo()" style="font-size:13px;padding:8px 18px">Salva testi</button>
+            <button class="btn btn-secondary" onclick="if(confirm('Ripristinare i testi predefiniti?'))OC.resetChiSiamo()" style="font-size:12px;padding:8px 14px">Ripristina default</button>
+            <span id="csEdResult" style="font-size:12.5px;margin-left:6px"></span>
+          </div>
+        </div>
       </div>
 
       <!-- TAB TUTTE LE FONTI (v4.22 — matrice 11-col + modale + API) -->
@@ -2432,6 +2469,7 @@
       }
     }
 
+    if (page==='chisiamo') loadChiSiamoContent();
     if (page==='bandi')    loadBandiList(false);
     if (page==='news')     loadNewsList(false);
     if (page==='podcast')  loadPodcastList(false);
@@ -3210,6 +3248,55 @@
       })
       .withFailureHandler(function(e){ if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(String(e))+'</span>'; })
       .addNorma({ titolo:titolo.trim(), fonte:fonte.trim(), link:link.trim(), ambito:ambito, descrizione:desc.trim() });
+  }
+
+  // v5.3 — Chi siamo: testi editabili da Impostazioni
+  var _CS_RENDER_MAP = { titolo:'cs-titolo', sottotitolo:'cs-sottotitolo', sinopiaTitolo:'cs-sinopia-titolo',
+    sinopiaP1:'cs-sinopia-p1', sinopiaP2:'cs-sinopia-p2', manifestoTitolo:'cs-manifesto-titolo', manifestoP:'cs-manifesto-p' };
+  var _CS_FORM_MAP = { titolo:'csEdTitolo', sottotitolo:'csEdSottotitolo', sinopiaTitolo:'csEdSinopiaTit',
+    sinopiaP1:'csEdSinopiaP1', sinopiaP2:'csEdSinopiaP2', manifestoTitolo:'csEdManifTit', manifestoP:'csEdManifP' };
+
+  // Carica i testi salvati e li applica alla pagina Chi siamo (se assenti → resta il default HTML)
+  function loadChiSiamoContent(){
+    if (!hasGAS()) return;
+    google.script.run.withSuccessHandler(function(c){
+      if (!c) return;
+      Object.keys(_CS_RENDER_MAP).forEach(function(k){
+        if (c[k] != null && String(c[k]).trim() !== '') { var el=$(_CS_RENDER_MAP[k]); if (el) el.innerHTML = c[k]; }
+      });
+      // popola anche il form editor in Impostazioni, se presente
+      Object.keys(_CS_FORM_MAP).forEach(function(k){ var el=$(_CS_FORM_MAP[k]); if (el && c[k]!=null) el.value=c[k]; });
+    }).getChiSiamoContent();
+  }
+
+  // Salva i testi (admin) dalla scheda Impostazioni → Chi siamo
+  function saveChiSiamo(){
+    if (!hasGAS()) return;
+    var tok=''; try { tok = sessionStorage.getItem('oc_admin_token') || ''; } catch(_){}
+    var payload = {};
+    Object.keys(_CS_FORM_MAP).forEach(function(k){ payload[k] = (($(_CS_FORM_MAP[k])||{}).value || '').trim(); });
+    var out = $('csEdResult'); if(out) out.innerHTML = '<span style="color:#666">Salvataggio…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) { if(out) out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Salvato. Apri la pagina "Chi siamo" per vedere le modifiche.</span>'; }
+        else { if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">'+(r&&r.error||'Errore')+(r&&r.error==='forbidden'?' (serve login admin)':'')+'</span>'; }
+      })
+      .withFailureHandler(function(e){ if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(String(e))+'</span>'; })
+      .saveChiSiamoContent(payload, tok);
+  }
+
+  // Ripristina i testi di default (rimuove l'override)
+  function resetChiSiamo(){
+    if (!hasGAS()) return;
+    var tok=''; try { tok = sessionStorage.getItem('oc_admin_token') || ''; } catch(_){}
+    var out = $('csEdResult'); if(out) out.innerHTML = '<span style="color:#666">Ripristino…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) { if(out) out.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Testi di default ripristinati. Ricarica la pagina Chi siamo.</span>'; }
+        else { if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">'+(r&&r.error||'Errore')+'</span>'; }
+      })
+      .withFailureHandler(function(e){ if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(String(e))+'</span>'; })
+      .resetChiSiamoContent(tok);
   }
 
   // v4.5.1 — A1 Loader pagina Ambito
@@ -5966,6 +6053,7 @@
     if (tabName === 'backup') _loadBackupTab_();
     if (tabName === 'digest') { /* azioni via data-action, nessun autoload */ }
     if (tabName === 'segnalazioni') _loadSegCoda();
+    if (tabName === 'chisiamo') loadChiSiamoContent(); // popola il form coi testi salvati
   }
 
   function _loadGestioneDatiTab_() {
@@ -10189,6 +10277,8 @@
     setupNorme: setupNorme,
     saveLibroSettings: saveLibroSettings,
     saveNormaSettings: saveNormaSettings,
+    saveChiSiamo: saveChiSiamo,
+    resetChiSiamo: resetChiSiamo,
     // v4.18.14 — Campanella con pannello dropdown riepilogo
     openNotifiche: function(){
       var panel = $('notifPanel');
