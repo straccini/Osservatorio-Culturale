@@ -369,9 +369,11 @@ function _galSaveBando_(b) {
       String(b.ente || ''),
       'Locale', // livello
       String(b.regione || ''),
-      'Bandi GAL', // settore
-      b.scadenza || '', '', '', '',
-      'GAL', // scanner
+      'Bandi GAL', // settore (col 8 = Settore)
+      // v5.4 FIX — allineamento colonne: Soggetti(9), Importo(10), Cofin(11), Scadenza(12).
+      // Prima la scadenza finiva in Soggetti(9) e la colonna Scadenza restava vuota → "Data n.d.".
+      '', '', '', b.scadenza || '',
+      'GAL', // scanner (col 13 = FonteID)
       String(b.fonteNome || ''),
       String(b.urlBando || ''),
       '', '', '',
