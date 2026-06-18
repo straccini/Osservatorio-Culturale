@@ -2081,6 +2081,30 @@ function fasRipristinaFontiCulturaApplica() {
 }
 
 /**
+ * ONE-SHOT — aggiunge ANAI (Associazione Nazionale Archivistica Italiana) come fonte News.
+ * Feed verificato live (2026-06-19): https://anai.org/feed/ — RSS 2.0, contenuti giugno 2026,
+ * pubblica anche le news MAB. Usa addFonteUnificataV2 (gestisce dedup per URL → idempotente).
+ *
+ * @return {Object} risultato di addFonteUnificataV2
+ */
+function fasAggiungiFonteANAI() {
+  if (typeof addFonteUnificataV2 !== 'function') {
+    return { ok: false, error: 'addFonteUnificataV2 non disponibile (Fonti_v1.js)' };
+  }
+  return addFonteUnificataV2({
+    tipo: 'news',
+    nome: 'ANAI - Notizie e Bandi',
+    url: 'https://anai.org/feed/',
+    tipoFonte: 'RSS',
+    tag: 'istituzionale',
+    categoria: 'cultura',
+    priorita: 2,
+    enteDefault: 'ANAI - Associazione Nazionale Archivistica Italiana',
+    livello: 'Nazionale'
+  });
+}
+
+/**
  * Report completo fonti: attive, silenti, deprecate, per tipo.
  */
 // ============================================================================
