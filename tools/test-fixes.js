@@ -274,6 +274,27 @@ ok(isScaduta('abc') === false, 'T9.6 malformata → non scaduta');
 ok(isScaduta('2099-13-99') === false, 'T9.7 data impossibile → non scaduta (no crash)');
 
 // ============================================================================
+// TEST 10 — FAS_CKAN_CULTURA_RX  (gate cultura CKAN, casi reali della verifica live)
+// ============================================================================
+const CRX = ctx.FAS_CKAN_CULTURA_RX;
+ok(CRX && typeof CRX.test === 'function', 'T10.0 FAS_CKAN_CULTURA_RX è una RegExp utilizzabile');
+const cgate = (s) => CRX.test(String(s).toLowerCase());
+// Reali da dati.gov.it / Toscana → ACCETTA
+ok(cgate("Opere d'Arte conservate nei Musei del Comune di Milano"), 'T10.1 opere d arte/musei → accetta');
+ok(cgate('Reperti Archeologici classificati nei Musei'), 'T10.2 archeologici/musei → accetta');
+ok(cgate('Patrimonio Culturale - Comune di Muro Leccese'), 'T10.3 patrimonio culturale → accetta');
+ok(cgate('Regione Toscana - eventi sistema cultura'), 'T10.4 "cultura" scema (stem cultur) → accetta');
+ok(cgate('Musei emiliano-romagnoli'), 'T10.5 musei → accetta');
+ok(cgate('Vetrina Toscana ristoranti e botteghe — cultura enogastronomica'), 'T10.6 gastronomia/cultur (dominio Sinopia) → accetta');
+// Non-cultura → SCARTA
+ok(!cgate('Bando contributi per agricoltura biologica'), 'T10.7 bando agricoltura → scarta');
+ok(!cgate('Raccolta e smaltimento rifiuti urbani'), 'T10.8 rifiuti → scarta');
+ok(!cgate('Anagrafe della popolazione residente'), 'T10.9 anagrafe → scarta');
+// Edge: \barte\b non deve matchare "parte"
+ok(!cgate('parte seconda del capitolato di gara'), 'T10.10 "parte" NON deve matchare \\barte\\b');
+ok(cgate("esposizione di opere d'arte contemporanea"), 'T10.11 "arte" come parola → accetta');
+
+// ============================================================================
 // RISULTATI
 // ============================================================================
 console.log('\n══════════ TEST FIX 2026-06-18 ══════════');

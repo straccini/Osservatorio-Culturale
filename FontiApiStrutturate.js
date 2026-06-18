@@ -978,18 +978,25 @@ function fasParserOpenCoesione(opts) {
 // PARSER CKAN REGIONALE
 // ============================================================================
 
+// Gate cultura CKAN — i dataset open-data sono indicizzati su titolo/note/tag e la query
+// di portale ('bandi cultura musei...') è OR → CKAN può restituire dataset che matchano solo
+// 'bandi'. Si richiede un termine realmente culturale nel testo del dataset. Stem 'cultur'
+// (matcha cultura/culturale/culturali), '\barte\b' con confine di parola (evita "parte"),
+// e termini del dominio Sinopia (gastronomia, borghi).
+var FAS_CKAN_CULTURA_RX = /cultur|mus(eo|ei|eal)|bibliotec|archiv|patrimonio|monument|restaur|archeolog|teatr|spettacol|mostr|\barte\b|beni cultural|gastronom|borg|heritage/i;
+
 /**
  * Cerca dataset bandi/cultura sui portali CKAN regionali e nazionali.
  * CKAN API: package_search?q=bandi+cultura&rows=20
  *
  * @param {Object} [opts] {dryRun, maxPerPortale}
- * @return {Object} {ok, nuovi, duplicati, errori, dettagli[]}
+ * @return {Object} {ok, nuovi, duplicati, scartati, errori, dettagli[]}
  */
 function fasParserCkanRegionale(opts) {
   opts = opts || {};
   var dryRun = !!opts.dryRun;
   var maxPerPortale = opts.maxPerPortale || 20;
-  var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+  var report = { ok: true, nuovi: 0, duplicati: 0, scartati: 0, errori: 0, dettagli: [] };
 
   var existingUrls = _fasLoadExistingUrls_();
 
@@ -1040,12 +1047,11 @@ function fasParserCkanRegionale(opts) {
         if (!titolo || !dsUrl) continue;
         if (existingUrls[dsUrl.toLowerCase()]) { report.duplicati++; continue; }
 
-        // Filtra dataset rilevanti per cultura/musei/bandi
+        // GATE CULTURA — richiede un termine realmente culturale in titolo/note/tag del dataset.
+        // (rimosso il vecchio bypass "se la query del portale contiene cultura accetta tutto",
+        //  che disattivava il filtro: ogni query di portale contiene 'cultura').
         var allText = (titolo + ' ' + (ds.notes || '') + ' ' + (ds.tags || []).map(function(t) { return t.name || t; }).join(' ')).toLowerCase();
-        var isRelevant = /bando|bandi|cultur|museo|musei|patrimoni|finanziament|contribut|turism|concorso|avviso|arte|teatro|biblioteca|archivi/.test(allText);
-        // Se la query del portale include già 'cultura'/'turismo', accetta comunque
-        if (!isRelevant && /cultur|turism/.test(portal.query.toLowerCase())) isRelevant = true;
-        if (!isRelevant) continue;
+        if (!FAS_CKAN_CULTURA_RX.test(allText)) { report.scartati++; continue; }
 
         if (!dryRun) {
           _fasSaveBando_({
@@ -1074,7 +1080,7 @@ function fasParserCkanRegionale(opts) {
     }
   }
 
-  Logger.log('[FAS] CKAN totale: ' + report.nuovi + ' nuovi, ' + report.duplicati + ' dup');
+  Logger.log('[FAS] CKAN totale: ' + report.nuovi + ' nuovi, ' + report.duplicati + ' dup, ' + report.scartati + ' scartati (non-cultura)');
   return report;
 }
 
