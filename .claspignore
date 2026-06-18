@@ -9,3 +9,7 @@ backup-*/**
 ~$*.docx
 tools/**
 docs/**
+.superpowers/**
+**/.superpowers/**
+.gstack/**
+.vscode/**
