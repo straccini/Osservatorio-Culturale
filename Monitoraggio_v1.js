@@ -34,7 +34,7 @@ function getStatoFontiDashboard(opts) {
   var out = {
     ok: true, generatedAt: new Date().toISOString(), giorni: giorni,
     categorie: [], scan: null, api: [], ckanPortali: [], agenti: [],
-    healthScore: null, errori: []
+    alert: [], ultimaScansione: null, healthScore: null, errori: []
   };
 
   // 1) Categorie feed (bandi/news/podcast/video) da getFontiCounters
@@ -98,6 +98,35 @@ function getStatoFontiDashboard(opts) {
     out.categorie.forEach(function(c) { tot += c.attive; sil += c.silenti; });
     out.healthScore = tot > 0 ? Math.round(((tot - sil) / tot) * 100) : null;
   } catch (e) { out.errori.push('health: ' + e.message); }
+
+  // 7) Fonti problematiche (silenti/in errore) + ultima scansione globale (da getFontiUnified)
+  try {
+    if (typeof getFontiUnified === 'function') {
+      var fu = getFontiUnified();
+      if (fu && fu.ok && fu.fonti && fu.fonti.length) {
+        var ultima = null;
+        fu.fonti.forEach(function(f) {
+          var us = f.ultimaScan ? new Date(f.ultimaScan) : null;
+          if (us && !isNaN(us.getTime()) && (!ultima || us > ultima)) ultima = us;
+          var fc = Number(f.failConsec) || 0;
+          var esito = String(f.ultimoEsito || '').toUpperCase();
+          var attiva = (f.attiva === true || f.attiva === 'TRUE' || f.attiva === 1 || String(f.attiva).toLowerCase() === 'true');
+          // Problema = fonte attiva con fallimenti consecutivi o ultimo esito non-OK
+          if (attiva && (fc >= 1 || (esito && esito !== 'OK'))) {
+            out.alert.push({
+              nome: String(f.nome || f.id || ''),
+              tipo: String(f.tipo || ''),
+              esito: String(f.ultimoEsito || ''),
+              failConsec: fc
+            });
+          }
+        });
+        out.ultimaScansione = ultima ? ultima.toISOString() : null;
+        out.alert.sort(function(a, b) { return b.failConsec - a.failConsec; });
+        if (out.alert.length > 25) out.alert = out.alert.slice(0, 25);
+      }
+    }
+  } catch (e) { out.errori.push('alert: ' + e.message); }
 
   return out;
 }
@@ -171,6 +200,34 @@ function _monScanRisultati_(giorni) {
  *   ultimi30gg
  * }
  */
+/**
+ * @private Riempie i mesi mancanti in una serie [{month:'yyyy-MM', count}] ordinata,
+ * inserendo count=0 per i mesi senza registrazioni, e calcola la cumulata.
+ * @return {Array} [{month, count, cumulative}]
+ */
+function _monRiempiMesi_(serie) {
+  if (!serie || !serie.length) return [];
+  var idx = {};
+  serie.forEach(function(s) { idx[s.month] = s.count; });
+  function toNum(m) { var p = String(m).split('-'); return parseInt(p[0], 10) * 12 + (parseInt(p[1], 10) - 1); }
+  function toStr(n) { var y = Math.floor(n / 12); var mo = (n % 12) + 1; return y + '-' + String(mo).padStart(2, '0'); }
+  var start = toNum(serie[0].month);
+  var end = toNum(serie[serie.length - 1].month);
+  if (isNaN(start) || isNaN(end) || end < start) {
+    // fallback: cumulata semplice senza riempimento
+    var cumF = 0;
+    return serie.map(function(s) { cumF += s.count; return { month: s.month, count: s.count, cumulative: cumF }; });
+  }
+  var out = [], cum = 0;
+  for (var n = start; n <= end; n++) {
+    var k = toStr(n);
+    var c = idx[k] || 0;
+    cum += c;
+    out.push({ month: k, count: c, cumulative: cum });
+  }
+  return out;
+}
+
 function getUtenteGrowth() {
   try {
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
@@ -209,10 +266,11 @@ function getUtenteGrowth() {
     });
 
     var sorted = Object.keys(byMonth).sort();
-    var cum = 0;
-    var serie = sorted.map(function(m) { cum += byMonth[m]; return { month: m, count: byMonth[m], cumulative: cum }; });
+    var serie0 = sorted.map(function(m) { return { month: m, count: byMonth[m] }; });
+    var serie = _monRiempiMesi_(serie0); // riempie i mesi intermedi senza registrazioni (count 0)
+    var totale = serie.length ? serie[serie.length - 1].cumulative : 0;
 
-    return { ok: true, totalUsers: cum, byMonth: serie, ultimi30gg: ultimi30gg };
+    return { ok: true, totalUsers: totale, byMonth: serie, ultimi30gg: ultimi30gg };
   } catch (e) {
     return { ok: false, error: e.message, totalUsers: 0, byMonth: [], ultimi30gg: 0 };
   }

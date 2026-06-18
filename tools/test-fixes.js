@@ -329,6 +329,12 @@ vm.runInContext(`
     video:{totale:3,attive:0,ok:0,silenti:0}
   } }; };
   OC_AGENTI = [{id:'AG1',nome:'Bandi',ambiti:[1],scanFrequenza:'6h'},{codice:'AG2',nomeBreve:'Normativa',ambiti:[5]}];
+  getFontiUnified = function(){ return { ok:true, fonti: [
+    { id:'F1', nome:'RSS A', tipo:'news', attiva:true, ultimaScan:'2026-06-10T00:00:00Z', ultimoEsito:'OK', failConsec:0 },
+    { id:'F2', nome:'RSS B', tipo:'news', attiva:true, ultimaScan:'2026-06-12T00:00:00Z', ultimoEsito:'HTTP_ERR', failConsec:3 },
+    { id:'F3', nome:'Pod C', tipo:'podcast', attiva:true, ultimaScan:'2026-06-15T00:00:00Z', ultimoEsito:'EMPTY', failConsec:1 },
+    { id:'F4', nome:'Off D', tipo:'bandi', attiva:false, ultimaScan:'2026-01-01T00:00:00Z', ultimoEsito:'DISABLED', failConsec:5 }
+  ] }; };
 `, ctx);
 
 const dash = ctx.getStatoFontiDashboard({ giorni: 10 });
@@ -340,6 +346,10 @@ eq(dash.healthScore, 90, 'T11.9 healthScore = (30 attive - 3 silenti)/30 = 90%')
 ok(dash.api.length >= 1 && dash.ckanPortali.length >= 1, 'T11.10 API e portali CKAN presenti dal registry reale');
 eq(dash.agenti.length, 2, 'T11.11 agenti mappati (id|codice, nome|nomeBreve)');
 eq(dash.agenti[1].id, 'AG2', 'T11.12 fallback codice→id');
+// Alert: solo fonti ATTIVE con fail/esito non-OK (F2,F3); F1 OK e F4 non-attiva esclusi
+eq(dash.alert.length, 2, 'T11.13 2 fonti in alert (attive con problemi)');
+eq(dash.alert[0].nome, 'RSS B', 'T11.14 alert ordinato per failConsec desc (F2 prima)');
+ok(String(dash.ultimaScansione).indexOf('2026-06-15') >= 0, 'T11.15 ultimaScansione = max ultimaScan (F3)');
 
 // ============================================================================
 // TEST 12 — getUtenteGrowth (dedup per email, serie mensile cumulativa)
@@ -352,15 +362,18 @@ const sessSheet = fakeSheet([
   sessRow('2', 'b@x.it', new Date('2026-01-20')),
   sessRow('3', 'a@x.it', new Date('2026-02-10')), // stessa email a → conta una volta, mese più antico (gen)
   sessRow('4', 'c@x.it', new Date('2026-02-05')),
-  sessRow('5', '', new Date('2026-03-01'))         // email vuota → ignorata
+  sessRow('5', '', new Date('2026-03-01')),        // email vuota → ignorata
+  sessRow('6', 'd@x.it', new Date('2026-04-12'))   // aprile → crea un buco a marzo
 ]);
 ctx.__MON_SS__ = { getSheetByName: (n) => (n === 'Sessioni_v1' ? sessSheet : null) };
 const growth = ctx.getUtenteGrowth();
 ok(growth && growth.ok, 'T12.0 getUtenteGrowth ok');
-eq(growth.totalUsers, 3, 'T12.1 3 utenti unici (a,b,c; email vuota ignorata)');
-eq(growth.byMonth.length, 2, 'T12.2 2 mesi (gen, feb)');
+eq(growth.totalUsers, 4, 'T12.1 4 utenti unici (a,b,c,d; email vuota ignorata)');
+eq(growth.byMonth.length, 4, 'T12.2 4 mesi (gen,feb,mar,apr) — marzo riempito');
 eq(growth.byMonth[0], { month: '2026-01', count: 2, cumulative: 2 }, 'T12.3 gennaio: a+b, cum 2');
 eq(growth.byMonth[1], { month: '2026-02', count: 1, cumulative: 3 }, 'T12.4 febbraio: c, cum 3 (a non ricontato)');
+eq(growth.byMonth[2], { month: '2026-03', count: 0, cumulative: 3 }, 'T12.5 marzo: buco riempito (0, cum invariata)');
+eq(growth.byMonth[3], { month: '2026-04', count: 1, cumulative: 4 }, 'T12.6 aprile: d, cum 4');
 
 // ============================================================================
 // RISULTATI
