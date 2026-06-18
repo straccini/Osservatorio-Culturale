@@ -1144,12 +1144,24 @@ function _fasProvinciaRegione_(prov) {
   return FAS_PROVINCE_REGIONE[String(prov).toUpperCase().replace(/\s+/g, ' ').trim()] || '';
 }
 
+/**
+ * @private true se la data (yyyy-mm-dd) è valida ED è strettamente nel passato (scaduta).
+ * Date vuote/malformate → false (nel dubbio si tiene il bando).
+ */
+function _fasIsScaduta_(iso) {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}/.test(String(iso))) return false;
+  var d = new Date(String(iso).slice(0, 10) + 'T23:59:59');
+  if (isNaN(d.getTime())) return false;
+  var oggi = new Date(); oggi.setHours(0, 0, 0, 0);
+  return d < oggi;
+}
+
 function fasParserBdncpCultura(opts) {
   opts = opts || {};
   var dryRun = !!opts.dryRun;
   var giorni = opts.giorni || 7;
   var sizePerKw = opts.sizePerKw || 50;
-  var report = { ok: true, nuovi: 0, duplicati: 0, scartati: 0, errori: 0, dettagli: [] };
+  var report = { ok: true, nuovi: 0, duplicati: 0, scartati: 0, scaduti: 0, errori: 0, dettagli: [] };
   var existingUrls = _fasLoadExistingUrls_();
   var visti = {}; // dedup per idAvviso tra keyword diverse
 
@@ -1205,6 +1217,10 @@ function fasParserBdncpCultura(opts) {
         if (!link) return;
         if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
 
+        // La query full-text non ha filtro data → scarta i bandi già scaduti (importarli è inutile).
+        var scadIso = info.scadenza || _fasNormalizzaData_(av.dataScadenza || '');
+        if (_fasIsScaduta_(scadIso)) { report.scaduti++; return; }
+
         if (!dryRun) {
           _fasSaveBando_({
             titolo: info.titolo.substring(0, 300),
@@ -1216,7 +1232,7 @@ function fasParserBdncpCultura(opts) {
             settore: info.cpv || 'Appalto cultura — BDNCP/ANAC',
             urlBando: link,
             sommario: (info.titolo + (info.importo ? ' — EUR ' + info.importo : '')).substring(0, 500),
-            scadenza: info.scadenza || _fasNormalizzaData_(av.dataScadenza || ''),
+            scadenza: scadIso,
             ambito: 3,
             fonteNome: 'BDNCP — Pubblicità Legale ANAC',
             cpv: info.cpv || ''
@@ -1236,7 +1252,7 @@ function fasParserBdncpCultura(opts) {
     }
   });
 
-  Logger.log('[FAS] BDNCP totale: ' + report.nuovi + ' nuovi, ' + report.duplicati + ' dup, ' + report.scartati + ' scartati (gate non-cultura), ' + report.errori + ' errori');
+  Logger.log('[FAS] BDNCP totale: ' + report.nuovi + ' nuovi, ' + report.duplicati + ' dup, ' + report.scartati + ' scartati (non-cultura), ' + report.scaduti + ' scaduti, ' + report.errori + ' errori');
   return report;
 }
 

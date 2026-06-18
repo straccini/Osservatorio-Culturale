@@ -261,6 +261,19 @@ eq(captured[8], '', 'T8.5 Soggetti vuoto se non passato (backward-compat)');
 eq(captured[9], '', 'T8.6 Importo vuoto se non passato (backward-compat)');
 
 // ============================================================================
+// TEST 9 — _fasIsScaduta_  (skip bandi con scadenza passata)
+// ============================================================================
+const isScaduta = ctx._fasIsScaduta_;
+ok(typeof isScaduta === 'function', 'T9.0 _fasIsScaduta_ è definita');
+ok(isScaduta('2020-01-01') === true, 'T9.1 data passata → scaduta');
+ok(isScaduta('2099-12-31') === false, 'T9.2 data futura → non scaduta');
+ok(isScaduta('2020-07-12T13:00:00Z') === true, 'T9.3 ISO con orario passato → scaduta');
+ok(isScaduta('') === false, 'T9.4 vuoto → non scaduta (nel dubbio si tiene)');
+ok(isScaduta(null) === false, 'T9.5 null → non scaduta');
+ok(isScaduta('abc') === false, 'T9.6 malformata → non scaduta');
+ok(isScaduta('2099-13-99') === false, 'T9.7 data impossibile → non scaduta (no crash)');
+
+// ============================================================================
 // RISULTATI
 // ============================================================================
 console.log('\n══════════ TEST FIX 2026-06-18 ══════════');
