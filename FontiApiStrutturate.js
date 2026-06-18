@@ -2105,6 +2105,66 @@ function fasAggiungiFonteANAI() {
 }
 
 /**
+ * ONE-SHOT — aggiunge le categorie extra di IndiceBandi (feed Drupal verificati 2026-06-19):
+ *   term/26 = Turismo · term/30 = Associazioni ed enti del terzo settore.
+ * Idempotente (dedup per URL in addFonteUnificataV2).
+ */
+function fasAggiungiFontiIndiceBandi() {
+  if (typeof addFonteUnificataV2 !== 'function') {
+    return { ok: false, error: 'addFonteUnificataV2 non disponibile (Fonti_v1.js)' };
+  }
+  var fonti = [
+    { nome: 'IndiceBandi - Turismo', url: 'https://www.indicebandi.it/it/taxonomy/term/26/feed' },
+    { nome: 'IndiceBandi - Terzo settore', url: 'https://www.indicebandi.it/it/taxonomy/term/30/feed' }
+  ];
+  var risultati = fonti.map(function(f) {
+    return addFonteUnificataV2({
+      tipo: 'bandi', nome: f.nome, url: f.url, tipoFonte: 'RSS',
+      tag: 'settoriale', categoria: 'cultura', priorita: 2,
+      enteDefault: 'IndiceBandi', livello: 'Nazionale'
+    });
+  });
+  return { ok: true, risultati: risultati };
+}
+
+/**
+ * DIAGNOSTICA (read-only) — elenca le fonti SILENTI (inattive o con >=3 fallimenti),
+ * escluse le DEPRECATED, dai 4 fogli fonti. Per pianificare un recupero mirato.
+ * @return {Object} {ok, totale, fonti:[{nome, sheet, url, attiva, fail, esito, errore}]}
+ */
+function fasListaFontiSilenti() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var out = { ok: true, totale: 0, fonti: [] };
+  ['FontiBandi_v5', 'FontiNews', 'FontiPodcast', 'FontiVideo'].forEach(function(shName) {
+    var sh = ss.getSheetByName(shName);
+    if (!sh || sh.getLastRow() < 2) return;
+    var vals = sh.getDataRange().getValues();
+    var H = vals[0];
+    var iNome = H.indexOf('Nome'), iUrl = H.indexOf('URL'), iAtt = H.indexOf('Attiva'),
+        iFail = H.indexOf('FailConsecutivi'), iEsito = H.indexOf('UltimoEsito'), iErr = H.indexOf('UltimoErrore');
+    for (var r = 1; r < vals.length; r++) {
+      if (!vals[r][0]) continue;
+      var att = vals[r][iAtt] === true || String(vals[r][iAtt]).toUpperCase() === 'TRUE';
+      var fail = Number(iFail >= 0 ? vals[r][iFail] : 0) || 0;
+      var esito = String(iEsito >= 0 ? vals[r][iEsito] : '');
+      if (esito === 'DEPRECATED') continue;
+      if (!att || fail >= 3) {
+        out.totale++;
+        if (out.fonti.length < 120) out.fonti.push({
+          nome: String(iNome >= 0 ? vals[r][iNome] : '').slice(0, 60),
+          sheet: shName,
+          url: String(iUrl >= 0 ? vals[r][iUrl] : '').slice(0, 90),
+          attiva: att, fail: fail, esito: esito,
+          errore: String(iErr >= 0 ? vals[r][iErr] : '').slice(0, 70)
+        });
+      }
+    }
+  });
+  Logger.log('[FAS] Fonti silenti (escluse deprecate): ' + out.totale);
+  return out;
+}
+
+/**
  * Report completo fonti: attive, silenti, deprecate, per tipo.
  */
 // ============================================================================

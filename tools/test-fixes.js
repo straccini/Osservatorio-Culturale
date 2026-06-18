@@ -414,6 +414,26 @@ ok(!('Il Giornale delle Fondazioni' in ctx.FAS_FONTI_RIPRISTINO), 'T13.10 Giorna
 ok(!('Regione Sardegna - Cultura' in ctx.FAS_FONTI_RIPRISTINO), 'T13.11 Sardegna (JS Coveo) NON in mappa');
 
 // ============================================================================
+// TEST 14 — fasListaFontiSilenti (inattive o fail>=3, escluse deprecate)
+// ============================================================================
+const LHDR = ['ID','Nome','URL','Tipo','Attiva','FailConsecutivi','UltimoEsito','UltimoErrore'];
+const lSheet = fakeSheet([
+  LHDR,
+  ['1','Attiva OK','http://a','RSS',true,0,'OK',''],           // attiva ok → NO
+  ['2','Inattiva','http://b','RSS',false,0,'',''],             // inattiva → SI
+  ['3','Fallita','http://c','RSS',true,4,'HTTP_ERR','err'],    // fail>=3 → SI
+  ['4','Deprecata','http://d','RSS',false,9,'DEPRECATED',''],  // deprecata → esclusa
+  ['5','Fail bassa','http://e','RSS',true,1,'EMPTY','']        // attiva, fail<3 → NO
+]);
+ctx.__MON_SS__ = { getSheetByName: (n) => (n === 'FontiNews' ? lSheet : null) };
+vm.runInContext('getMainSS = function(){ return __MON_SS__; };', ctx);
+const sil = ctx.fasListaFontiSilenti();
+ok(sil && sil.ok, 'T14.0 fasListaFontiSilenti ok');
+eq(sil.totale, 2, 'T14.1 2 silenti (Inattiva + Fallita); esclude attiva-ok, deprecata, fail<3');
+eq(sil.fonti.map(f => f.nome).sort(), ['Fallita', 'Inattiva'], 'T14.2 nomi corretti');
+ok(sil.fonti.every(f => f.esito !== 'DEPRECATED'), 'T14.3 nessuna deprecata in lista');
+
+// ============================================================================
 // RISULTATI
 // ============================================================================
 console.log('\n══════════ TEST FIX 2026-06-18 ══════════');
