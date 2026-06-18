@@ -1998,6 +1998,88 @@ function fasDeprecaFontiDryRun() {
   return fasDeprecaFontiIrrecuperabili({ dryRun: true });
 }
 
+// ============================================================================
+// RIPRISTINO FONTI CULTURA — URL/feed corretti (ricerca verificata 2026-06-19)
+// ============================================================================
+// Mappa nome-fonte → {url, tipo, nota}. URL verificati live (contenuti giugno 2026).
+// 13 fonti recuperate; 2 restano deprecate (non incluse qui):
+//   - "Il Giornale delle Fondazioni": testata CHIUSA (non pubblica più) + sito irraggiungibile
+//   - "Regione Sardegna - Cultura": listato bandi dietro motore JS (Coveo), nessun RSS
+var FAS_FONTI_RIPRISTINO = {
+  'Italia Domani - PNRR':            { url: 'https://www.italiadomani.gov.it/content/sogei-ng/it/it/feed-rss.news_feed_rss.xml', tipo: 'RSS', nota: 'feed news PNRR (403 era solo sul layer HTML)' },
+  'Fondazione Cariplo - Cultura':    { url: 'https://www.fondazionecariplo.it/feed/', tipo: 'RSS', nota: 'feed WordPress sito-wide, filtrare cultura' },
+  'ICOM Italia - Opportunità':       { url: 'https://www.icom-italia.org/feed/', tipo: 'RSS', nota: 'feed generale attivo (giu 2026)' },
+  'Federculture - Bandi':            { url: 'https://www.federculture.it/feed/', tipo: 'RSS', nota: 'pubblica i Bollettino Bandi' },
+  'Fondazione Symbola - Bandi':      { url: 'https://symbola.net/feed/', tipo: 'RSS', nota: 'feed generale (feed eventi dedicato e morto)' },
+  'Fondazione Symbola - Notizie':    { url: 'https://symbola.net/tipologia/news/feed/', tipo: 'RSS', nota: 'feed tassonomia News' },
+  'Fondazione Fitzcarraldo':         { url: 'https://www.fitzcarraldo.it/feed/', tipo: 'RSS', nota: '' },
+  'NEMO - European Museum Network':  { url: 'https://www.ne-mo.org/news-events/', tipo: 'HTML', nota: 'nessun RSS (sito custom): scrape HTML del listing' },
+  'MuseumNext - Opportunities':      { url: 'https://www.museumnext.com/feed/', tipo: 'RSS', nota: '' },
+  'ANCI - Bandi e Opportunita':      { url: 'https://www.anci.it/feed/', tipo: 'RSS', nota: 'feed generale, filtrare bandi' },
+  'Regione Puglia - Bandi':          { url: 'https://www.regione.puglia.it/feed-bandi-regione-puglia?p_p_id=com_liferay_asset_publisher_web_portlet_AssetPublisherPortlet_INSTANCE_zY8SiKCyhUKl&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=getRSS&p_p_cacheability=cacheLevelPage', tipo: 'RSS', nota: 'feed bandi nuovo portale Liferay, filtrare cultura' },
+  'IndiceBandi - Cultura':           { url: 'https://www.indicebandi.it/it/taxonomy/term/5/feed', tipo: 'RSS', nota: 'gia pre-filtrato cultura (Drupal taxonomy)' },
+  'MAB Italia - Bandi':              { url: 'https://anai.org/feed/', tipo: 'RSS', nota: 'PROXY ANAI: MAB non ha feed proprio, ANAI pubblica le news MAB' }
+};
+
+function _fasNormNome_(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Ripristina le fonti cultura deprecate con URL/feed corretti (vedi FAS_FONTI_RIPRISTINO).
+ * Cerca per Nome (accent/case-insensitive) nei fogli FontiBandi_v5/News/Podcast/Video,
+ * aggiorna URL+Tipo, riattiva (Attiva=true, FailConsecutivi=0, UltimoEsito='RESTORED').
+ *
+ * @param {boolean} [dryRun=true] anteprima senza scrivere.
+ * @return {Object} {ok, dryRun, aggiornate, nonTrovate[], dettagli[]}
+ */
+function fasRipristinaFontiCultura(dryRun) {
+  if (dryRun === undefined) dryRun = true;
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var report = { ok: true, dryRun: dryRun, aggiornate: 0, nonTrovate: [], dettagli: [] };
+
+  // Indice normalizzato della mappa
+  var mapNorm = {};
+  Object.keys(FAS_FONTI_RIPRISTINO).forEach(function(k) { mapNorm[_fasNormNome_(k)] = { key: k, val: FAS_FONTI_RIPRISTINO[k] }; });
+  var trovati = {};
+
+  ['FontiBandi_v5', 'FontiNews', 'FontiPodcast', 'FontiVideo'].forEach(function(shName) {
+    var sh = ss.getSheetByName(shName);
+    if (!sh || sh.getLastRow() < 2) return;
+    var vals = sh.getDataRange().getValues();
+    var H = vals[0];
+    var iNome = H.indexOf('Nome'), iUrl = H.indexOf('URL'), iTipo = H.indexOf('Tipo'),
+        iAtt = H.indexOf('Attiva'), iFail = H.indexOf('FailConsecutivi'),
+        iEsito = H.indexOf('UltimoEsito'), iErr = H.indexOf('UltimoErrore');
+    if (iNome < 0 || iUrl < 0) return;
+    for (var r = 1; r < vals.length; r++) {
+      var hit = mapNorm[_fasNormNome_(vals[r][iNome])];
+      if (!hit) continue;
+      trovati[hit.key] = true;
+      var m = hit.val;
+      if (!dryRun) {
+        sh.getRange(r + 1, iUrl + 1).setValue(m.url);
+        if (iTipo >= 0 && m.tipo) sh.getRange(r + 1, iTipo + 1).setValue(m.tipo);
+        if (iAtt >= 0) sh.getRange(r + 1, iAtt + 1).setValue(true);
+        if (iFail >= 0) sh.getRange(r + 1, iFail + 1).setValue(0);
+        if (iEsito >= 0) sh.getRange(r + 1, iEsito + 1).setValue('RESTORED');
+        if (iErr >= 0) sh.getRange(r + 1, iErr + 1).setValue('[RESTORED ' + new Date().toISOString().slice(0, 10) + '] ' + (m.nota || 'URL aggiornato'));
+      }
+      report.aggiornate++;
+      report.dettagli.push({ nome: String(vals[r][iNome] || ''), sheet: shName, nuovoUrl: m.url, tipo: m.tipo || '' });
+    }
+  });
+
+  Object.keys(FAS_FONTI_RIPRISTINO).forEach(function(k) { if (!trovati[k]) report.nonTrovate.push(k); });
+  Logger.log('[FAS] Ripristino fonti cultura: ' + report.aggiornate + ' aggiornate' + (dryRun ? ' (DRY-RUN, nulla scritto)' : '') + ', non trovate nei fogli: ' + report.nonTrovate.length);
+  return report;
+}
+
+/** Wrapper APPLICA (scrive davvero) — il pulsante Esegui non passa argomenti. */
+function fasRipristinaFontiCulturaApplica() {
+  return fasRipristinaFontiCultura(false);
+}
+
 /**
  * Report completo fonti: attive, silenti, deprecate, per tipo.
  */

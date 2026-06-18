@@ -376,6 +376,44 @@ eq(growth.byMonth[2], { month: '2026-03', count: 0, cumulative: 3 }, 'T12.5 marz
 eq(growth.byMonth[3], { month: '2026-04', count: 1, cumulative: 4 }, 'T12.6 aprile: d, cum 4');
 
 // ============================================================================
+// TEST 13 — fasRipristinaFontiCultura (URL feed corretti, match accent-insensitive)
+// ============================================================================
+const RHDR = ['ID','Nome','URL','Tipo','Attiva','FailConsecutivi','UltimoEsito','UltimoErrore'];
+function rRow(id,nome,url){ return [id,nome,url,'RSS',false,5,'DEPRECATED','old err']; }
+function fakeWSheet(rows){ const w=[]; return { _w:w, getLastRow:()=>rows.length, getDataRange:()=>({getValues:()=>rows.map(r=>r.slice())}), getRange:(rr,cc)=>({setValue:(v)=>w.push({row:rr,col:cc,val:v})}) }; }
+
+const norm = ctx._fasNormNome_;
+ok(typeof norm === 'function', 'T13.0 _fasNormNome_ definita');
+eq(norm('ICOM Italia - Opportunità'), 'icom italia - opportunita', 'T13.1 normalizza accenti+case');
+
+const newsSheet = fakeWSheet([
+  RHDR,
+  rRow('1','ICOM Italia - Opportunità','http://old1'),     // accentato → deve matchare
+  rRow('2','anci - bandi e opportunita','http://old2'),     // minuscolo → deve matchare
+  rRow('3','Fonte Random Non In Mappa','http://x')          // non in mappa → ignorata
+]);
+ctx.__MON_SS__ = { getSheetByName: (n) => (n === 'FontiNews' ? newsSheet : null) };
+vm.runInContext('getMainSS = function(){ return __MON_SS__; };', ctx);
+
+// Dry-run: non scrive
+const rip0 = ctx.fasRipristinaFontiCultura(true);
+ok(rip0.ok && rip0.dryRun === true, 'T13.2 dry-run flag');
+eq(rip0.aggiornate, 2, 'T13.3 dry-run trova 2 fonti (ICOM accentato + ANCI minuscolo)');
+eq(newsSheet._w.length, 0, 'T13.4 dry-run NON scrive');
+
+// Apply: scrive URL/Tipo/Attiva
+const rip = ctx.fasRipristinaFontiCultura(false);
+eq(rip.aggiornate, 2, 'T13.5 apply: 2 aggiornate');
+const urlICOM = ctx.FAS_FONTI_RIPRISTINO['ICOM Italia - Opportunità'].url;
+ok(newsSheet._w.some(w => w.val === urlICOM), 'T13.6 scrive il feed URL corretto di ICOM');
+ok(newsSheet._w.some(w => w.val === true), 'T13.7 riattiva (Attiva=true)');
+ok(newsSheet._w.some(w => w.val === 'RESTORED'), 'T13.8 UltimoEsito=RESTORED');
+ok(rip.nonTrovate.indexOf('Regione Puglia - Bandi') >= 0, 'T13.9 nonTrovate elenca le fonti non presenti nel foglio');
+// Le 2 fonti non recuperabili NON devono essere nella mappa
+ok(!('Il Giornale delle Fondazioni' in ctx.FAS_FONTI_RIPRISTINO), 'T13.10 Giornale Fondazioni (chiuso) NON in mappa');
+ok(!('Regione Sardegna - Cultura' in ctx.FAS_FONTI_RIPRISTINO), 'T13.11 Sardegna (JS Coveo) NON in mappa');
+
+// ============================================================================
 // RISULTATI
 // ============================================================================
 console.log('\n══════════ TEST FIX 2026-06-18 ══════════');
