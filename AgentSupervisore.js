@@ -313,6 +313,20 @@ function sasRunWeekly() {
     Logger.log('[SAS] MA4 ERRORE: ' + e.message);
   }
 
+  // ── Bonifica bandi BDNCP non-cultura (safety net settimanale, dopo gli aggiornamenti) ──
+  try {
+    if (typeof cleanupBandiNonCulturaBdncp === 'function') {
+      var bon = cleanupBandiNonCulturaBdncp(false); // applica (archivia i non-cultura)
+      if (bon && bon.ok) {
+        report.azioni.push('Bonifica BDNCP: ' + bon.nonCultura + ' non-cultura archiviati (su ' + bon.esaminatiBdncp + ' esaminati)');
+        Logger.log('[SAS] Bonifica BDNCP: ' + bon.nonCultura + '/' + bon.esaminatiBdncp + ' archiviati');
+      }
+    }
+  } catch(e) {
+    report.errori.push('Bonifica: ' + e.message);
+    Logger.log('[SAS] Bonifica ERRORE: ' + e.message);
+  }
+
   // ── KPI settimanali ──
   try {
     report.kpi = _sasCalcolaKPI_();

@@ -1307,6 +1307,19 @@ function cleanupBandiNonCulturaBdncpApplica() {
 }
 
 /**
+ * Wrapper GATED per il pulsante "Bonifica" del cruscotto Salute (chiamato da frontend).
+ * Archivia i bandi BDNCP non-cultura. Richiede admin (modifica dati).
+ * @param {string} [token] token admin (sessionStorage oc_admin_token)
+ * @return {Object} report di cleanupBandiNonCulturaBdncp, oppure {ok:false,error:'forbidden'}
+ */
+function bonificaFontiNonCultura(token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
+    return { ok: false, error: 'forbidden' };
+  }
+  return cleanupBandiNonCulturaBdncp(false);
+}
+
+/**
  * DIAGNOSTICA (read-only) — scansiona TUTTI i bandi attivi (qualsiasi fonte) e applica
  * il gate cultura su Titolo+Settore. Riporta quanti record NON contengono un termine
  * culturale e da QUALE FonteNome provengono. Serve a capire se i bandi non-cultura visti

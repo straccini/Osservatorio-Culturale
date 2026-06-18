@@ -1954,7 +1954,11 @@
         <div class="admin-card" style="margin-bottom:14px">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
             <h3 style="margin:0;font-size:15px">Salute fonti &mdash; cruscotto monitoraggio</h3>
-            <button class="btn btn-secondary" onclick="OC.loadStatoFonti()" style="font-size:12px;padding:6px 12px">&#8635; Aggiorna</button>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <span id="bonificaResult" style="font-size:12px"></span>
+              <button class="btn btn-secondary" onclick="OC.bonificaFonti()" style="font-size:12px;padding:6px 12px" title="Archivia i bandi BDNCP non-cultura (reversibile)">Bonifica</button>
+              <button class="btn btn-secondary" onclick="OC.loadStatoFonti()" style="font-size:12px;padding:6px 12px">&#8635; Aggiorna</button>
+            </div>
           </div>
           <p style="font-size:12.5px;color:var(--ink-3);margin:8px 0 0;line-height:1.5">Stato di salute delle fonti per categoria, risultati delle scansioni degli ultimi 10 giorni, e fonti interpellate anche dagli agenti AI.</p>
         </div>
@@ -3336,6 +3340,26 @@
       .withSuccessHandler(function(d){ _renderStatoFonti(d); })
       .withFailureHandler(function(e){ if(body) body.innerHTML = '<div class="empty-state sm">Errore: '+esc(String(e))+'</div>'; })
       .getStatoFontiDashboard({ giorni: 10 });
+  }
+
+  // v5.4 — Bonifica manuale fonti non-cultura (pulsante cruscotto Salute)
+  function bonificaFonti(){
+    if (!hasGAS()) return;
+    if (!confirm('Archiviare i bandi BDNCP non-cultura? L\'operazione è reversibile (StatoRecord=archiviato).')) return;
+    var out = $('bonificaResult');
+    if (out) out.innerHTML = '<span style="color:#666">Bonifica in corso…</span>';
+    var tok=''; try { tok = sessionStorage.getItem('oc_admin_token') || ''; } catch(_){}
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok){
+          if (out) out.innerHTML = '<span style="color:var(--amb-2,#10916D)">&#10003; '+(r.nonCultura||0)+' archiviati (su '+(r.esaminatiBdncp||0)+')</span>';
+          loadStatoFonti();
+        } else {
+          if (out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">'+esc(r&&r.error||'Errore')+(r&&r.error==='forbidden'?' (serve login admin)':'')+'</span>';
+        }
+      })
+      .withFailureHandler(function(e){ if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(String(e))+'</span>'; })
+      .bonificaFontiNonCultura(tok);
   }
 
   function _renderStatoFonti(d){
@@ -10474,6 +10498,7 @@
     saveChiSiamo: saveChiSiamo,
     resetChiSiamo: resetChiSiamo,
     loadStatoFonti: loadStatoFonti,
+    bonificaFonti: bonificaFonti,
     // v4.18.14 — Campanella con pannello dropdown riepilogo
     openNotifiche: function(){
       var panel = $('notifPanel');
