@@ -19,7 +19,10 @@ const logs = [];
 const realGlobals = {
   Logger: { log: (m) => logs.push(String(m)) },
   Session: { getScriptTimeZone: () => 'Europe/Rome' },
-  Utilities: { formatDate: () => '01/01/2026' },
+  Utilities: { formatDate: (d, tz, fmt) => {
+    const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+    return String(fmt).replace('yyyy', y).replace('MM', m).replace('dd', day);
+  } },
   console, JSON, Math, Date, RegExp, Number, String, Array, Object, Boolean,
   isNaN, parseInt, parseFloat, encodeURIComponent, decodeURIComponent
 };
@@ -32,7 +35,7 @@ vm.createContext(ctx);
 
 // Carica i file reali (solo dichiarazioni + literal al top-level → load sicuro)
 try {
-  vm.runInContext(read('FontiApiStrutturate.js') + '\n' + read('UltimiBandi.js') + '\n' + read('Newsletter_v44.js'), ctx);
+  vm.runInContext(read('FontiApiStrutturate.js') + '\n' + read('UltimiBandi.js') + '\n' + read('Newsletter_v44.js') + '\n' + read('Monitoraggio_v1.js'), ctx);
 } catch (e) {
   console.error('LOAD FAILED:', e.message);
   process.exit(2);
@@ -293,6 +296,71 @@ ok(!cgate('Anagrafe della popolazione residente'), 'T10.9 anagrafe → scarta');
 // Edge: \barte\b non deve matchare "parte"
 ok(!cgate('parte seconda del capitolato di gara'), 'T10.10 "parte" NON deve matchare \\barte\\b');
 ok(cgate("esposizione di opere d'arte contemporanea"), 'T10.11 "arte" come parola → accetta');
+
+// ============================================================================
+// TEST 11 — getStatoFontiDashboard + _monSemaforoCat_ + _monScanRisultati_
+// ============================================================================
+// Semaforo categoria
+const sem = ctx._monSemaforoCat_;
+ok(typeof sem === 'function', 'T11.0 _monSemaforoCat_ definita');
+eq(sem({ attive: 20, silenti: 0 }), 'verde', 'T11.1 nessuna silente → verde');
+eq(sem({ attive: 8, silenti: 1 }), 'giallo', 'T11.2 poche silenti → giallo');
+eq(sem({ attive: 2, silenti: 2 }), 'rosso', 'T11.3 silenti >= metà → rosso');
+eq(sem({ attive: 0, silenti: 0 }), 'rosso', 'T11.4 nessuna attiva → rosso');
+
+// Mock getter + fogli per la dashboard
+const recent = new Date(Date.now() - 2 * 86400000);
+const old = new Date(Date.now() - 100 * 86400000);
+function fakeSheet(rows) {
+  return { getLastRow: () => rows.length, getDataRange: () => ({ getValues: () => rows.map(r => r.slice()) }) };
+}
+const monSheets = {
+  'Bandi_v5': fakeSheet([['ID', 'DataRilevamento'], ['B1', recent], ['B2', recent], ['B3', old]]),
+  'Items':    fakeSheet([['ID', 'DataAcquisizione'], ['N1', recent], ['N2', recent], ['N3', recent]]),
+  'Podcast':  fakeSheet([['ID', 'DataRilevamento'], ['P1', recent], ['VID1', recent], ['P2', old]])
+};
+ctx.__MON_SS__ = { getSheetByName: (n) => monSheets[n] || null };
+vm.runInContext(`
+  getMainSS = function(){ return __MON_SS__; };
+  getFontiCounters = function(){ return { ok:true, counters: {
+    bandi:{totale:10,attive:8,ok:7,silenti:1},
+    news:{totale:20,attive:20,ok:18,silenti:0},
+    podcast:{totale:5,attive:2,ok:1,silenti:2},
+    video:{totale:3,attive:0,ok:0,silenti:0}
+  } }; };
+  OC_AGENTI = [{id:'AG1',nome:'Bandi',ambiti:[1],scanFrequenza:'6h'},{codice:'AG2',nomeBreve:'Normativa',ambiti:[5]}];
+`, ctx);
+
+const dash = ctx.getStatoFontiDashboard({ giorni: 10 });
+ok(dash && dash.ok, 'T11.5 dashboard ok');
+eq(dash.categorie.length, 4, 'T11.6 4 categorie (bandi/news/podcast/video)');
+eq(dash.categorie.map(c => c.semaforo), ['giallo', 'verde', 'rosso', 'rosso'], 'T11.7 semafori per categoria');
+eq(dash.scan, { bandi: 2, news: 3, podcast: 1, video: 1, totale: 7 }, 'T11.8 scan ultimi 10gg (B2,N3,P1,VID1; esclusi i vecchi)');
+eq(dash.healthScore, 90, 'T11.9 healthScore = (30 attive - 3 silenti)/30 = 90%');
+ok(dash.api.length >= 1 && dash.ckanPortali.length >= 1, 'T11.10 API e portali CKAN presenti dal registry reale');
+eq(dash.agenti.length, 2, 'T11.11 agenti mappati (id|codice, nome|nomeBreve)');
+eq(dash.agenti[1].id, 'AG2', 'T11.12 fallback codice→id');
+
+// ============================================================================
+// TEST 12 — getUtenteGrowth (dedup per email, serie mensile cumulativa)
+// ============================================================================
+const SHDR = ['id', 'email', 'token', 'livello', 'scadenza', 'source', 'matrix_completato', 'created_at', 'last_seen', 'revoked'];
+function sessRow(id, email, created) { const r = new Array(10).fill(''); r[0] = id; r[1] = email; r[7] = created; return r; }
+const sessSheet = fakeSheet([
+  SHDR,
+  sessRow('1', 'a@x.it', new Date('2026-01-15')),
+  sessRow('2', 'b@x.it', new Date('2026-01-20')),
+  sessRow('3', 'a@x.it', new Date('2026-02-10')), // stessa email a → conta una volta, mese più antico (gen)
+  sessRow('4', 'c@x.it', new Date('2026-02-05')),
+  sessRow('5', '', new Date('2026-03-01'))         // email vuota → ignorata
+]);
+ctx.__MON_SS__ = { getSheetByName: (n) => (n === 'Sessioni_v1' ? sessSheet : null) };
+const growth = ctx.getUtenteGrowth();
+ok(growth && growth.ok, 'T12.0 getUtenteGrowth ok');
+eq(growth.totalUsers, 3, 'T12.1 3 utenti unici (a,b,c; email vuota ignorata)');
+eq(growth.byMonth.length, 2, 'T12.2 2 mesi (gen, feb)');
+eq(growth.byMonth[0], { month: '2026-01', count: 2, cumulative: 2 }, 'T12.3 gennaio: a+b, cum 2');
+eq(growth.byMonth[1], { month: '2026-02', count: 1, cumulative: 3 }, 'T12.4 febbraio: c, cum 3 (a non ricontato)');
 
 // ============================================================================
 // RISULTATI
