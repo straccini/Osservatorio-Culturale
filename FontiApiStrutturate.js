@@ -1990,6 +1990,15 @@ function fasDeprecaFontiIrrecuperabili(opts) {
 }
 
 /**
+ * Wrapper DRY-RUN di fasDeprecaFontiIrrecuperabili — ri-testa le fonti silenti (>=3 fail)
+ * e riporta cosa verrebbe RECUPERATO vs DEPRECATO, SENZA scrivere nulla.
+ * Eseguire questo PRIMA dell'apply (fasDeprecaFontiIrrecuperabili senza argomenti).
+ */
+function fasDeprecaFontiDryRun() {
+  return fasDeprecaFontiIrrecuperabili({ dryRun: true });
+}
+
+/**
  * Report completo fonti: attive, silenti, deprecate, per tipo.
  */
 // ============================================================================
