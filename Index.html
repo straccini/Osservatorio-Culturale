@@ -37,6 +37,9 @@
   <!-- ===== Design System Editoriale Museale v4.12 ===== -->
   <?!= include('Styles'); ?>
 
+  <!-- Chart.js (v5.4 — grafici statistiche, es. crescita utenti). Defer: non blocca il render. -->
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
   <!-- Stili supplementari Index.html — solo componenti NON coperti da Stiles.html v4.12 -->
   <style>
   /* Logout button sidebar */
@@ -1936,6 +1939,7 @@
       <!-- v4.20 — Tab finali -->
       <div style="display:flex;gap:2px;margin-bottom:18px;border-bottom:2px solid var(--rule,#E5E5E7);flex-wrap:wrap;align-items:end">
         <button class="settings-tab active" data-tab="tutti" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:var(--amb-5,#0E7490);border-bottom:3px solid var(--amb-5,#0E7490);margin-bottom:-2px;cursor:pointer">Fonti</button>
+        <button class="settings-tab" data-tab="salute" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Salute</button>
         <button class="settings-tab" data-tab="utenti" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Utenti</button>
         <button class="settings-tab" data-tab="segnalazioni" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Segnalazioni</button>
         <span style="width:1px;height:18px;background:var(--rule,#E5E5E7);margin:0 4px 6px"></span>
@@ -1943,6 +1947,18 @@
         <button class="settings-tab" data-tab="config" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Configurazione</button>
         <button class="settings-tab" data-tab="chisiamo" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Chi siamo</button>
         <button class="settings-tab" data-tab="backup" style="background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer">Archivio</button>
+      </div>
+
+      <!-- TAB SALUTE FONTI — cruscotto monitoraggio (v5.4) -->
+      <div class="settings-tab-content" data-tab-content="salute" hidden>
+        <div class="admin-card" style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <h3 style="margin:0;font-size:15px">Salute fonti &mdash; cruscotto monitoraggio</h3>
+            <button class="btn btn-secondary" onclick="OC.loadStatoFonti()" style="font-size:12px;padding:6px 12px">&#8635; Aggiorna</button>
+          </div>
+          <p style="font-size:12.5px;color:var(--ink-3);margin:8px 0 0;line-height:1.5">Stato di salute delle fonti per categoria, risultati delle scansioni degli ultimi 10 giorni, e fonti interpellate anche dagli agenti AI.</p>
+        </div>
+        <div id="statoFontiBody"><div class="empty-state sm">Caricamento cruscotto&hellip;</div></div>
       </div>
 
       <!-- TAB CHI SIAMO — editor testi pagina pubblica (v5.3) -->
@@ -3309,6 +3325,111 @@
       })
       .withFailureHandler(function(e){ if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(String(e))+'</span>'; })
       .resetChiSiamoContent(tok);
+  }
+
+  // v5.4 — Cruscotto "Salute fonti" (Impostazioni → tab Salute)
+  function loadStatoFonti(){
+    if (!hasGAS()) return;
+    var body = $('statoFontiBody');
+    if (body) body.innerHTML = '<div class="empty-state sm">Caricamento cruscotto…</div>';
+    google.script.run
+      .withSuccessHandler(function(d){ _renderStatoFonti(d); })
+      .withFailureHandler(function(e){ if(body) body.innerHTML = '<div class="empty-state sm">Errore: '+esc(String(e))+'</div>'; })
+      .getStatoFontiDashboard({ giorni: 10 });
+  }
+
+  function _renderStatoFonti(d){
+    var body = $('statoFontiBody'); if (!body) return;
+    if (!d || !d.ok){ body.innerHTML = '<div class="empty-state sm">Dati non disponibili.</div>'; return; }
+    var SEM = { verde:'#10916D', giallo:'#C9A227', rosso:'#C2410C' };
+    var LBL = { bandi:'Bandi', news:'News', podcast:'Podcast', video:'Video' };
+    var sc = d.scan || {};
+    var hs = (d.healthScore != null) ? d.healthScore : null;
+    var hsColor = (hs == null) ? '#888' : (hs >= 80 ? SEM.verde : (hs >= 50 ? SEM.giallo : SEM.rosso));
+    var h = '';
+
+    // KPI: health score + raccolti negli ultimi N giorni
+    h += '<div class="admin-card" style="margin-bottom:14px"><div class="st-kpi-grid">'
+      + '<div class="st-kpi-card"><b class="st-kpi-val" style="color:'+hsColor+'">'+(hs!=null?hs+'%':'—')+'</b><span class="st-kpi-label">Health fonti</span></div>'
+      + '<div class="st-kpi-card"><b class="st-kpi-val">'+(sc.totale||0)+'</b><span class="st-kpi-label">Raccolti ultimi '+(d.giorni||10)+'gg</span></div>'
+      + '<div class="st-kpi-card"><b class="st-kpi-val">'+(sc.bandi||0)+'</b><span class="st-kpi-label">Bandi '+(d.giorni||10)+'gg</span></div>'
+      + '<div class="st-kpi-card"><b class="st-kpi-val">'+(sc.news||0)+'</b><span class="st-kpi-label">News '+(d.giorni||10)+'gg</span></div>'
+      + '<div class="st-kpi-card"><b class="st-kpi-val">'+((sc.podcast||0)+(sc.video||0))+'</b><span class="st-kpi-label">Podcast+Video '+(d.giorni||10)+'gg</span></div>'
+      + '</div></div>';
+
+    // Salute per categoria
+    h += '<div class="admin-card" style="margin-bottom:14px"><h3 style="margin:0 0 10px;font-size:14px">Fonti per categoria</h3>';
+    if (d.categorie && d.categorie.length){
+      h += '<table style="width:100%;border-collapse:collapse;font-size:12.5px"><tr style="text-align:left;color:var(--ink-3)"><th style="padding:6px 8px">Categoria</th><th>Stato</th><th>Totali</th><th>Attive</th><th>OK</th><th>Silenti</th></tr>';
+      d.categorie.forEach(function(c){
+        var col = SEM[c.semaforo] || '#888';
+        h += '<tr style="border-top:1px solid var(--rule,#eee)">'
+          + '<td style="padding:6px 8px;font-weight:600">'+esc(LBL[c.categoria]||c.categoria)+'</td>'
+          + '<td><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+col+';margin-right:5px"></span>'+esc(c.semaforo)+'</td>'
+          + '<td>'+c.totale+'</td><td>'+c.attive+'</td><td>'+c.ok+'</td>'
+          + '<td style="color:'+(c.silenti>0?SEM.rosso:'inherit')+'">'+c.silenti+'</td></tr>';
+      });
+      h += '</table>';
+    } else h += '<div class="empty-state sm">Nessun dato categoria.</div>';
+    h += '</div>';
+
+    // API strutturate
+    h += '<div class="admin-card" style="margin-bottom:14px"><h3 style="margin:0 0 10px;font-size:14px">API strutturate (bandi)</h3>';
+    if (d.api && d.api.length){
+      h += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+      d.api.forEach(function(a){
+        var st = String(a.stato||'').toLowerCase();
+        var col = st.indexOf('operativ')>=0 ? SEM.verde : (st.indexOf('svilupp')>=0 ? SEM.giallo : SEM.rosso);
+        h += '<span style="font-size:12px;padding:4px 10px;border-radius:14px;background:'+col+'18;color:'+col+';border:1px solid '+col+'40">'+esc(a.nome||a.id)+' · '+esc(a.stato||'n/d')+'</span>';
+      });
+      h += '</div>';
+    } else h += '<div class="empty-state sm">—</div>';
+    h += '</div>';
+
+    // Portali CKAN
+    h += '<div class="admin-card" style="margin-bottom:14px"><h3 style="margin:0 0 6px;font-size:14px">Portali open data CKAN <span style="color:var(--ink-3);font-weight:400">('+(d.ckanPortali?d.ckanPortali.length:0)+')</span></h3>';
+    if (d.ckanPortali && d.ckanPortali.length){
+      h += '<div style="font-size:12px;color:var(--ink-2);line-height:1.7">'+d.ckanPortali.map(function(p){ return esc(p.nome); }).join(' · ')+'</div>';
+    } else h += '<div class="empty-state sm">—</div>';
+    h += '</div>';
+
+    // Agenti AI
+    h += '<div class="admin-card"><h3 style="margin:0 0 10px;font-size:14px">Agenti AI &mdash; fonti interpellate</h3>';
+    if (d.agenti && d.agenti.length){
+      h += '<table style="width:100%;border-collapse:collapse;font-size:12.5px"><tr style="text-align:left;color:var(--ink-3)"><th style="padding:6px 8px">Agente</th><th>Ambiti</th><th>Frequenza</th></tr>';
+      d.agenti.forEach(function(a){
+        h += '<tr style="border-top:1px solid var(--rule,#eee)"><td style="padding:6px 8px;font-weight:600">'+esc(a.id)+' · '+esc(a.nome)+'</td><td>'+esc((a.ambiti||[]).join(', '))+'</td><td>'+esc(a.scanFrequenza||'')+'</td></tr>';
+      });
+      h += '</table>';
+    } else h += '<div class="empty-state sm">—</div>';
+    h += '</div>';
+
+    if (d.errori && d.errori.length){
+      h += '<div style="font-size:11px;color:var(--ink-3);margin-top:8px">Note diagnostiche: '+esc(d.errori.join(' · '))+'</div>';
+    }
+
+    body.innerHTML = h;
+  }
+
+  // v5.4 — Grafico crescita utenti (pagina Statistiche). Fallback testuale se Chart.js non pronto.
+  function _renderUserGrowthChart_(byMonth){
+    var canvas = document.getElementById('statsUserGrowthChart');
+    var fb = document.getElementById('statsUserGrowthFallback');
+    if (!canvas) return;
+    if (!byMonth || !byMonth.length){ if(fb) fb.textContent = 'Nessun dato di registrazione disponibile.'; return; }
+    if (typeof Chart === 'undefined'){
+      if (fb) fb.textContent = byMonth.map(function(m){ return m.month+': '+m.cumulative; }).join('   ·   ');
+      return;
+    }
+    try { if (canvas._inst) canvas._inst.destroy(); } catch(_){}
+    canvas._inst = new Chart(canvas, {
+      type: 'line',
+      data: { labels: byMonth.map(function(m){ return m.month; }), datasets: [
+        { label:'Totale cumulativo', data: byMonth.map(function(m){ return m.cumulative; }), borderColor:'#3C6A95', backgroundColor:'rgba(60,106,149,0.10)', tension:0.3, fill:true, pointRadius:3 },
+        { label:'Nuovi nel mese', data: byMonth.map(function(m){ return m.count; }), borderColor:'#9C6A36', backgroundColor:'rgba(156,106,54,0.08)', tension:0.3, fill:false, pointRadius:2, borderDash:[5,4] }
+      ]},
+      options: { responsive:true, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }, plugins:{ legend:{ position:'top', labels:{ boxWidth:12, padding:12 } } } }
+    });
   }
 
   // v4.5.1 — A1 Loader pagina Ambito
@@ -6089,6 +6210,7 @@
     if (tabName === 'digest') { /* azioni via data-action, nessun autoload */ }
     if (tabName === 'segnalazioni') _loadSegCoda();
     if (tabName === 'chisiamo') loadChiSiamoContent(); // popola il form coi testi salvati
+    if (tabName === 'salute') loadStatoFonti();
   }
 
   function _loadGestioneDatiTab_() {
@@ -8937,6 +9059,13 @@
       + '<div class="st-kpi-card"><b class="st-kpi-val" id="statFontiAttive">--</b><span class="st-kpi-label">Fonti attive</span></div>'
       + '</div>';
 
+    // === SEZIONE 2bis: Crescita utenti registrati (grafico) ===
+    html += '<div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin:24px 0 12px">Crescita utenti registrati</div>';
+    html += '<div style="border:1px solid var(--rule,#E5E5E7);border-radius:10px;padding:16px;max-width:760px">'
+      + '<canvas id="statsUserGrowthChart"></canvas>'
+      + '<div id="statsUserGrowthFallback" style="font-size:12px;color:var(--ink-3);text-align:center;margin-top:8px"></div>'
+      + '</div>';
+
     // === SEZIONE 3: Distribuzione per ambito ===
     var perAmb = s.perAmbito || {};
     var maxAmb = Math.max.apply(null, [1].concat(Object.values ? Object.values(perAmb) : [perAmb[1]||0,perAmb[2]||0,perAmb[3]||0,perAmb[4]||0,perAmb[5]||0]));
@@ -9012,6 +9141,14 @@
         if (el('statSessioni')) el('statSessioni').textContent = (kpi.sessioniTotali || 0) + ' (+' + (kpi.sessioniNuove7gg || 0) + ')';
         if (el('statFontiAttive')) el('statFontiAttive').textContent = (kpi.fontiAttive || 0) + ' (' + (kpi.fontiSilenti || 0) + ' silenti)';
       }).withFailureHandler(function(){}).sasDiagnostica();
+
+      // Crescita utenti registrati (conteggio reale dedup + grafico andamento)
+      google.script.run.withSuccessHandler(function(r){
+        if (!r || !r.ok) return;
+        var elS = document.getElementById('statSessioni');
+        if (elS) elS.textContent = (r.totalUsers || 0) + ' (+' + (r.ultimi30gg || 0) + ' 30gg)';
+        _renderUserGrowthChart_(r.byMonth || []);
+      }).withFailureHandler(function(){}).getUtenteGrowth();
 
       // Agenti
       google.script.run.withSuccessHandler(function(r){
@@ -10314,6 +10451,7 @@
     saveNormaSettings: saveNormaSettings,
     saveChiSiamo: saveChiSiamo,
     resetChiSiamo: resetChiSiamo,
+    loadStatoFonti: loadStatoFonti,
     // v4.18.14 — Campanella con pannello dropdown riepilogo
     openNotifiche: function(){
       var panel = $('notifPanel');
