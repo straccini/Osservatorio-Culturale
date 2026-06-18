@@ -271,16 +271,15 @@ function fasParserTedApiPost(opts) {
   var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
   var existingUrls = _fasLoadExistingUrls_();
 
-  // CPV 925xxxxx = servizi biblioteche/musei/archivi; 923xxxxx = arti/spettacolo; 9253xxxx = musei
-  // v4.24.18 FIX: sintassi TED v3 expert query — PC IN (...) e page/limit al posto di pageNumber/pageSize
+  // v5.2 fix: TED v3 expert query — FT ~ "term" (full text), non PC IN (...) che da HTTP 400
   var payloads = [
     {
-      label: 'CPV-Musei-Biblioteche',
-      query: 'PC IN (92500000, 92521000, 92522000, 92311000, 92312000)'
+      label: 'Musei-Biblioteche-Archivi',
+      query: 'FT ~ "museum" OR FT ~ "biblioteca" OR FT ~ "archivio" OR FT ~ "museo"'
     },
     {
-      label: 'CPV-Patrimonio-Culturale',
-      query: 'PC IN (92000000, 92400000, 92700000, 92710000, 92720000)'
+      label: 'Patrimonio-Restauro-Spettacolo',
+      query: 'FT ~ "cultural heritage" OR FT ~ "restauro" OR FT ~ "patrimonio culturale" OR FT ~ "teatro"'
     }
   ];
 
@@ -288,9 +287,9 @@ function fasParserTedApiPost(opts) {
     try {
       var body = {
         query: p.query,
-        page: 1,
         limit: maxItems,
-        fields: ['ND', 'TY', 'TD', 'OJ', 'DT', 'AA', 'AC', 'PC', 'DS', 'CY', 'publicationId']
+        scope: 'ACTIVE',
+        fields: ['organisation-country-buyer', 'deadline-receipt-tender-date-lot', 'description-proc']
       };
 
       var resp = UrlFetchApp.fetch('https://api.ted.europa.eu/v3/notices/search', {
@@ -321,11 +320,19 @@ function fasParserTedApiPost(opts) {
       var count = 0;
 
       notices.forEach(function(n) {
-        var titolo = String(n.ND || n.title || n['award-title'] || '').trim();
-        var pubId = n.publicationId || n.id || '';
-        var link = pubId
-          ? 'https://ted.europa.eu/udl?uri=TED:NOTICE:' + pubId + ':TEXT:IT:HTML'
-          : (n.url || '');
+        // v5.2: parsing risposta TED v3 (publication-number + links)
+        var pubNumber = n['publication-number'] || n.publicationId || n.id || '';
+        var nLinks = n.links || {};
+        var htmlLinks = nLinks.html || {};
+        var link = htmlLinks.ITA || htmlLinks.ENG || '';
+        if (!link && pubNumber) link = 'https://ted.europa.eu/it/notice/-/detail/' + pubNumber;
+
+        // v5.3: titolo/sommario leggibili da description-proc (gestisce stringa o oggetto
+        // multilingua {ita|eng|...}); fallback al publication-number se assente.
+        var descTxt = _fasTedTesto_(n['description-proc']);
+        var titolo = descTxt ? descTxt.substring(0, 160) : pubNumber;
+        // scadenza dal termine ricezione offerte (può essere stringa/array/oggetto per lotto)
+        var scad = _fasNormalizzaData_(_fasTedTesto_(n['deadline-receipt-tender-date-lot']));
 
         if (!titolo || !link) return;
         if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
@@ -333,15 +340,15 @@ function fasParserTedApiPost(opts) {
         if (!dryRun) {
           _fasSaveBando_({
             titolo: titolo.substring(0, 300),
-            ente: String(n.AA || n.authority || 'TED EU'),
+            ente: String(n['organisation-country-buyer'] || 'TED EU'),
             livello: 'EU',
             regione: '',
             settore: 'Appalti pubblici cultura — TED',
             urlBando: link,
-            sommario: String(n.DS || n.description || '').substring(0, 500),
-            scadenza: _fasNormalizzaData_(n.DT || n.deadline || ''),
+            sommario: descTxt ? descTxt.substring(0, 500) : '',
+            scadenza: scad,
             ambito: 3,
-            fonteNome: 'TED — Tenders Electronic Daily (API v3)'
+            fonteNome: 'TED — FAS v3 (' + p.label + ')'
           });
           existingUrls[link.toLowerCase()] = true;
         }
@@ -786,6 +793,26 @@ function _fasStripHtml_(html) {
   return String(html).replace(/<[^>]*>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 }
 
+/**
+ * @private Estrae testo da un campo TED v3 che può essere stringa, array (per-lotto)
+ * o oggetto multilingua { ita|it|eng|en|... }. Ritorna stringa pulita ('' se vuoto).
+ */
+function _fasTedTesto_(v) {
+  if (v == null) return '';
+  if (typeof v === 'string') return v.replace(/\s+/g, ' ').trim();
+  if (Array.isArray(v)) {
+    for (var i = 0; i < v.length; i++) { var t = _fasTedTesto_(v[i]); if (t) return t; }
+    return '';
+  }
+  if (typeof v === 'object') {
+    var pref = v.ita || v.it || v.eng || v.en;
+    if (pref) return _fasTedTesto_(pref);
+    for (var k in v) { if (v[k]) { var tt = _fasTedTesto_(v[k]); if (tt) return tt; } }
+    return '';
+  }
+  return String(v).trim();
+}
+
 function _fasNormalizzaData_(dateStr) {
   if (!dateStr) return '';
   var s = String(dateStr).trim();
@@ -823,40 +850,25 @@ var FAS_OPENCOESIONE = {
 
 // Tutti i portali open data regionali italiani (CKAN o compatibile).
 // I portali non raggiungibili vengono saltati silenziosamente (HTTP != 200 → continue).
+// v5.2 audit 17/06/2026: solo portali CKAN che rispondono HTTP 200. Portali morti commentati.
 var FAS_CKAN_PORTALS = [
   // ── NAZIONALE ──────────────────────────────────────────────────────────
   { nome: 'dati.gov.it — Open Data PA',     base: 'https://www.dati.gov.it/opendata/api/3/action',          query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Nazionale', regione: '' },
-  { nome: 'ANAC — Anticorruzione',           base: 'https://dati.anticorruzione.it/opendata/api/3/action',   query: 'cultura musei patrimonio beni culturali', ambito: 1, livello: 'Nazionale', regione: '' },
 
-  // ── NORD-OVEST ─────────────────────────────────────────────────────────
-  { nome: 'Valle d\'Aosta Open Data',        base: 'https://dati.regione.vda.it/api/3/action',               query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Valle d\'Aosta' },
-  { nome: 'Piemonte Open Data',              base: 'https://www.dati.piemonte.it/opendata/api/3/action',     query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Piemonte' },
-  { nome: 'Lombardia Open Data',             base: 'https://www.dati.lombardia.it/api/3/action',             query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Lombardia' },
-  { nome: 'Liguria Open Data',               base: 'https://dati.regione.liguria.it/api/3/action',           query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Liguria' },
-
-  // ── NORD-EST ───────────────────────────────────────────────────────────
+  // ── REGIONALI FUNZIONANTI (HTTP 200 testati 17/06/2026) ────────────────
   { nome: 'Trentino-AA Open Data',           base: 'https://dati.trentino.it/api/3/action',                  query: 'bandi cultura patrimonio musei',       ambito: 1, livello: 'Regionale', regione: 'Trentino-AA' },
-  { nome: 'Veneto Open Data',                base: 'https://dati.veneto.it/api/3/action',                    query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Veneto' },
-  { nome: 'Friuli-VG Open Data',             base: 'https://www.dati.friuliveneziagiulia.it/api/3/action',   query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Friuli-VG' },
-  { nome: 'Emilia-Romagna Open Data',        base: 'https://opendata.emilia-romagna.it/api/3/action',        query: 'bandi cultura turismo patrimonio',     ambito: 1, livello: 'Regionale', regione: 'Emilia-Romagna' },
-
-  // ── CENTRO ─────────────────────────────────────────────────────────────
+  { nome: 'Emilia-Romagna Open Data',        base: 'https://dati.emilia-romagna.it/api/3/action',            query: 'bandi cultura turismo patrimonio',     ambito: 1, livello: 'Regionale', regione: 'Emilia-Romagna' },
   { nome: 'Toscana Open Data',               base: 'https://dati.toscana.it/api/3/action',                   query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Toscana' },
-  { nome: 'Umbria Open Data',                base: 'https://dati.regione.umbria.it/opendata/api/3/action',   query: 'bandi cultura patrimonio musei',       ambito: 1, livello: 'Regionale', regione: 'Umbria' },
-  { nome: 'Marche Open Data',                base: 'https://dati.marche.it/api/3/action',                    query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Marche' },
-  { nome: 'Lazio Open Data',                 base: 'https://dati.lazio.it/opendata/api/3/action',            query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Lazio' },
-
-  // ── SUD ────────────────────────────────────────────────────────────────
-  { nome: 'Abruzzo Open Data',               base: 'https://opendata.regione.abruzzo.it/api/3/action',       query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Abruzzo' },
-  { nome: 'Molise Open Data',                base: 'https://dati.regione.molise.it/api/3/action',            query: 'bandi cultura',                        ambito: 1, livello: 'Regionale', regione: 'Molise' },
-  { nome: 'Campania Open Data',              base: 'https://opendata.regione.campania.it/api/3/action',      query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Campania' },
-  { nome: 'Puglia Open Data',                base: 'https://dati.puglia.it/ckan/api/3/action',               query: 'bandi cultura turismo musei',          ambito: 1, livello: 'Regionale', regione: 'Puglia' },
-  { nome: 'Basilicata Open Data',            base: 'https://dati.regione.basilicata.it/api/3/action',        query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Basilicata' },
-  { nome: 'Calabria Open Data',              base: 'https://dati.regione.calabria.it/api/3/action',          query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Calabria' },
-
-  // ── ISOLE ──────────────────────────────────────────────────────────────
-  { nome: 'Sicilia Open Data',               base: 'https://dati.regione.sicilia.it/ckan/api/3/action',      query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Sicilia' },
-  { nome: 'Sardegna Open Data',              base: 'https://opendata.sardegnacatalogo.it/api/3/action',       query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Sardegna' }
+  { nome: 'Umbria Open Data',                base: 'https://dati.regione.umbria.it/api/3/action',            query: 'bandi cultura patrimonio musei',       ambito: 1, livello: 'Regionale', regione: 'Umbria' },
+  { nome: 'Lazio Open Data',                 base: 'https://dati.lazio.it/api/3/action',                     query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Lazio' },
+  { nome: 'Liguria Open Data',               base: 'https://dati.regione.liguria.it/api/3/action',           query: 'bandi cultura patrimonio',             ambito: 1, livello: 'Regionale', regione: 'Liguria' },
+  { nome: 'Campania Open Data',              base: 'https://dati.regione.campania.it/ckan/api/3/action',     query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Regionale', regione: 'Campania' },
+  // Sicilia: dati.regione.sicilia.it intermittente (unreachable da GAS, 17/06/2026)
+  { nome: 'Puglia Open Data',                base: 'https://dati.puglia.it/ckan/api/3/action',               query: 'bandi cultura turismo musei',          ambito: 1, livello: 'Regionale', regione: 'Puglia' }
+  // ── OFFLINE 17/06/2026 (migrati a DCAT-RDF, no API CKAN) ──────────────
+  // VdA DNS err | Piemonte 404 | Lombardia 404 | Veneto 404 | Friuli 404
+  // Marche DNS | Abruzzo unreachable | Molise DNS | Basilicata unreachable
+  // Calabria 404 | Sardegna DNS | ANAC non e CKAN (coperto da BDNCP)
 ];
 
 // ============================================================================
@@ -1074,19 +1086,28 @@ function fasParserCkanRegionale(opts) {
  * @param {Object} [opts] {dryRun, giorni (default 7), sizePerKw (default 50)}
  * @return {Object} {ok, nuovi, duplicati, errori, dettagli[]}
  */
-var FAS_BDNCP_BASE = 'https://pubblicitalegale.anticorruzione.it/api/v0/avvisi';
+// v5.2: endpoint full-text (struttura template con titolo, ente, CPV, importo)
+var FAS_BDNCP_BASE = 'https://pubblicitalegale.anticorruzione.it/api/v0/avvisi-full-text';
 var FAS_BDNCP_KEYWORDS = [
   'museo', 'musei', 'biblioteca', 'patrimonio culturale', 'beni culturali',
   'archivio', 'restauro', 'archeolog', 'teatro', 'mostra', 'allestimento',
   'valorizzazione culturale'
 ];
 
+// Gate di pertinenza culturale: la ricerca full-text BDNCP matcha la keyword OVUNQUE,
+// anche nel nome della stazione appaltante (es. "...PATRIMONIO SRL", "AZIENDA BENI COMUNI...").
+// Per accettare un bando il termine culturale deve comparire nel TITOLO o nella DESCRIZIONE
+// CPV (la classificazione reale del bando), non solo nel nome dell'ente.
+// Verificato live (18/06): su kw "patrimonio culturale" scarta il ~53% di falsi positivi
+// (gestione bar, assicurazioni, rifiuti, servizi cimiteriali) senza perdere i bandi veri.
+var FAS_BDNCP_CULTURA_RX = /mus(eo|ei|eal)|bibliotec|archiv|cultural|patrimonio|monument|restaur|archeolog|teatr|mostr|spettacol|allestiment|beni cultural/i;
+
 function fasParserBdncpCultura(opts) {
   opts = opts || {};
   var dryRun = !!opts.dryRun;
   var giorni = opts.giorni || 7;
   var sizePerKw = opts.sizePerKw || 50;
-  var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+  var report = { ok: true, nuovi: 0, duplicati: 0, scartati: 0, errori: 0, dettagli: [] };
   var existingUrls = _fasLoadExistingUrls_();
   var visti = {}; // dedup per idAvviso tra keyword diverse
 
@@ -1098,10 +1119,9 @@ function fasParserBdncpCultura(opts) {
 
   FAS_BDNCP_KEYWORDS.forEach(function(kw) {
     try {
+      // v5.2: endpoint full-text, codiceScheda=4 (Bandi), niente date (full-text cerca tutto)
       var url = FAS_BDNCP_BASE +
-        '?dataPubblicazioneStart=' + encodeURIComponent(dStart) +
-        '&dataPubblicazioneEnd=' + encodeURIComponent(dEnd) +
-        '&page=0&size=' + sizePerKw + '&codiceScheda=2,4' +
+        '?page=0&size=' + sizePerKw + '&codiceScheda=4' +
         '&keywords=' + encodeURIComponent(kw);
 
       var resp = UrlFetchApp.fetch(url, {
@@ -1132,6 +1152,12 @@ function fasParserBdncpCultura(opts) {
         var info = _fasBdncpEstrai_(av);
         if (!info.titolo) return;
 
+        // GATE PERTINENZA — il termine culturale deve essere nel titolo o nella descrizione
+        // CPV, non solo nel nome dell'ente (evita falsi positivi tipo "...PATRIMONIO SRL"
+        // con CPV rifiuti/cimiteriale/bar). Vedi FAS_BDNCP_CULTURA_RX.
+        var _blob = (info.titolo + ' ' + (info.cpv || '')).toLowerCase();
+        if (!FAS_BDNCP_CULTURA_RX.test(_blob)) { report.scartati++; return; }
+
         var link = info.docLink ||
           (id ? 'https://pubblicitalegale.anticorruzione.it/bandi/' + id : '');
         if (!link) return;
@@ -1142,13 +1168,14 @@ function fasParserBdncpCultura(opts) {
             titolo: info.titolo.substring(0, 300),
             ente: info.ente || 'BDNCP',
             livello: 'Nazionale',
-            regione: '',
-            settore: 'Appalto cultura (sotto-soglia) — BDNCP/ANAC',
+            regione: info.luogo || '',
+            settore: info.cpv || 'Appalto cultura — BDNCP/ANAC',
             urlBando: link,
-            sommario: info.titolo.substring(0, 500),
-            scadenza: _fasNormalizzaData_(av.dataScadenza || ''),
+            sommario: (info.titolo + (info.importo ? ' — EUR ' + info.importo : '')).substring(0, 500),
+            scadenza: info.scadenza || _fasNormalizzaData_(av.dataScadenza || ''),
             ambito: 3,
-            fonteNome: 'BDNCP — Pubblicità Legale ANAC'
+            fonteNome: 'BDNCP — Pubblicità Legale ANAC',
+            cpv: info.cpv || ''
           });
           existingUrls[link.toLowerCase()] = true;
         }
@@ -1165,8 +1192,42 @@ function fasParserBdncpCultura(opts) {
     }
   });
 
-  Logger.log('[FAS] BDNCP totale: ' + report.nuovi + ' nuovi, ' + report.duplicati + ' dup, ' + report.errori + ' errori');
+  Logger.log('[FAS] BDNCP totale: ' + report.nuovi + ' nuovi, ' + report.duplicati + ' dup, ' + report.scartati + ' scartati (gate non-cultura), ' + report.errori + ' errori');
   return report;
+}
+
+/**
+ * ONE-SHOT — Bonifica i bandi BDNCP già salvati che NON sono culturali (falsi positivi
+ * del full-text pre-gate: enti con "PATRIMONIO"/"BENI" nel nome ma CPV rifiuti/cimiteriale/
+ * bar/assicurazione/ecc.). Applica FAS_BDNCP_CULTURA_RX su Titolo + Settore(=descrizione CPV).
+ * Marca StatoRecord='archiviato' (REVERSIBILE — non distrugge nulla).
+ *
+ * @param {boolean} [dryRun=true] se true riporta SOLO cosa verrebbe archiviato, senza scrivere.
+ * @return {Object} {ok, dryRun, esaminatiBdncp, nonCultura, esempi[]}
+ */
+function cleanupBandiNonCulturaBdncp(dryRun) {
+  if (dryRun === undefined) dryRun = true;
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Bandi_v5');
+  if (!sh || sh.getLastRow() < 2) return { ok: false, error: 'Bandi_v5 vuoto o assente' };
+  var vals = sh.getDataRange().getValues();
+  var H = vals[0];
+  var iTit = H.indexOf('Titolo'), iSet = H.indexOf('Settore'),
+      iFon = H.indexOf('FonteNome'), iStato = H.indexOf('StatoRecord');
+  if (iTit < 0 || iFon < 0 || iStato < 0) return { ok: false, error: 'colonne Titolo/FonteNome/StatoRecord mancanti' };
+  var esaminati = 0, hit = 0, esempi = [];
+  for (var r = 1; r < vals.length; r++) {
+    if (!/BDNCP/i.test(String(vals[r][iFon] || ''))) continue;
+    if (String(vals[r][iStato] || '').toLowerCase() === 'archiviato') continue;
+    esaminati++;
+    var blob = (String(vals[r][iTit] || '') + ' ' + (iSet >= 0 ? String(vals[r][iSet] || '') : '')).toLowerCase();
+    if (FAS_BDNCP_CULTURA_RX.test(blob)) continue; // è cultura → tieni
+    hit++;
+    if (esempi.length < 15) esempi.push({ titolo: String(vals[r][iTit] || '').slice(0, 50), cpv: iSet >= 0 ? String(vals[r][iSet] || '').slice(0, 30) : '' });
+    if (!dryRun) sh.getRange(r + 1, iStato + 1).setValue('archiviato');
+  }
+  Logger.log('[BDNCP cleanup] BDNCP esaminati: ' + esaminati + ' | non-cultura: ' + hit + (dryRun ? ' (DRY-RUN, nulla scritto)' : ' → ARCHIVIATI'));
+  return { ok: true, dryRun: dryRun, esaminatiBdncp: esaminati, nonCultura: hit, esempi: esempi };
 }
 
 /**
@@ -1175,21 +1236,42 @@ function fasParserBdncpCultura(opts) {
  * committente → section con fields.soggetti_sa[].denominazione_amministrazione
  * link docs   → section con fields.documenti_di_gara_link
  */
+// v5.2: estrazione arricchita dalla struttura template BDNCP
 function _fasBdncpEstrai_(av) {
-  var out = { titolo: '', ente: '', docLink: '' };
+  var out = { titolo: '', ente: '', docLink: '', cpv: '', importo: '', luogo: '', scadenza: '' };
   try {
     var tpl = av.template && av.template[0] && av.template[0].template;
     if (!tpl) return out;
-    if (tpl.metadata && tpl.metadata.descrizione) out.titolo = String(tpl.metadata.descrizione);
+
+    // Titolo: preferisci metadata.titolo, fallback descrizione
+    if (tpl.metadata) {
+      out.titolo = String(tpl.metadata.titolo || tpl.metadata.descrizione || '');
+    }
+
+    // Scadenza dal livello superiore
+    out.scadenza = av.dataScadenza ? String(av.dataScadenza).substring(0, 10) : '';
+
     var sections = tpl.sections || [];
     sections.forEach(function(s) {
       var f = s.fields || {};
+      var items = s.items || [];
+
+      // SEZ. A — Committente
       if (!out.ente && f.soggetti_sa && f.soggetti_sa.length) {
-        out.ente = String(f.soggetti_sa[0].denominazione_amministrazione || '');
+        out.ente = String(f.soggetti_sa[0].denominazione_amministrazione || f.soggetti_sa[0].denominazione || '');
       }
+
+      // SEZ. B — Link gara
       if (!out.docLink && f.documenti_di_gara_link) {
         out.docLink = String(f.documenti_di_gara_link);
       }
+
+      // SEZ. C — Lotti: CPV, importo, luogo
+      items.forEach(function(item) {
+        if (!out.cpv && item.cpv) out.cpv = String(item.cpv);
+        if (!out.importo && item.valore_complessivo_stimato) out.importo = String(item.valore_complessivo_stimato);
+        if (!out.luogo && (item.luogo_nuts || item.luogo_istat)) out.luogo = String(item.luogo_nuts || item.luogo_istat || '');
+      });
     });
   } catch(_) {}
   return out;
@@ -1325,6 +1407,21 @@ function fasRunCompleto() {
   report.durataMs = Date.now() - t0;
   Logger.log('[FAS] Run completo: ' + report.totaleNuovi + ' nuovi totali (' + report.durataMs + 'ms)');
   Logger.log('================================================================');
+
+  // v5.2: Alert Telegram con riepilogo scan
+  try {
+    if (typeof sendTelegram === 'function') {
+      var errori = (report.fase1 && report.fase1.errori ? report.fase1.errori : 0) +
+                   (report.fase2 && report.fase2.errori ? report.fase2.errori : 0);
+      var icon = errori > 0 ? '⚠️' : (report.totaleNuovi > 0 ? '✅' : 'ℹ️');
+      var tgMsg = icon + ' *Scan fonti completato*\n\n' +
+        '📊 Nuovi bandi: *' + report.totaleNuovi + '*\n' +
+        '⏱ Durata: ' + Math.round(report.durataMs / 1000) + 's\n';
+      if (errori > 0) tgMsg += '❌ Errori: *' + errori + '*\n';
+      tgMsg += '\n_Sinopia · Osservatorio Culturale_';
+      sendTelegram(tgMsg);
+    }
+  } catch(e) { Logger.log('[FAS] Telegram alert err: ' + e.message); }
 
   return report;
 }

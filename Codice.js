@@ -2728,10 +2728,24 @@ function preparaBozzaDigestLunedi() {
     }
   }
 
-  const totale = bandiSel.length + notizieCount + podCount;
+  // --- 4. EDITORIA: ultime 5 pubblicazioni/podcast dalla ricerca ---
+  let editoriaCount = 0;
+  let editoriaItems = [];
+  try {
+    if (typeof getEditoria === 'function') {
+      const edData = getEditoria();
+      if (edData && edData.items) {
+        editoriaItems = edData.items.slice(0, 5);
+        editoriaCount = editoriaItems.length;
+      }
+    }
+  } catch(e) { Logger.log('Editoria per digest err: ' + e.message); }
+
+  const totale = bandiSel.length + notizieCount + podCount + editoriaCount;
   Logger.log('[BOZZA DIGEST LUN] Bandi: ' + bandiSel.length +
              ' | Notizie: ' + notizieCount +
              ' | Podcast: ' + podCount +
+             ' | Editoria: ' + editoriaCount +
              ' | TOTALE: ' + totale);
 
   // Telegram: bozza pronta
@@ -2740,13 +2754,14 @@ function preparaBozzaDigestLunedi() {
     '📊 *' + bandiSel.length + '* bandi\n' +
     '📰 *' + notizieCount + '* notizie\n' +
     '🎙 *' + podCount + '* podcast\n' +
+    '📄 *' + editoriaCount + '* dalla ricerca\n' +
     '─────────────────\n' +
     'Totale: *' + totale + '* contenuti\n\n' +
     '_Rivedi e invia dall\'Osservatorio → Email Digest_\n' +
     '_Sinopia_';
   try { sendTelegram(msg); } catch(e) { Logger.log('TG bozza err: ' + e.message); }
 
-  return { bandi: bandiSel.length, notizie: notizieCount, podcast: podCount, totale };
+  return { bandi: bandiSel.length, notizie: notizieCount, podcast: podCount, editoria: editoriaCount, editoriaItems: editoriaItems, totale };
 }
 
 

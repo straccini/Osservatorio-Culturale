@@ -322,6 +322,49 @@ function getLibriListV42(limit) {
 }
 
 // ------------------------------------------------------------
+//  5b) Editoria "Dalla ricerca" — pubblicazioni + podcast curati,
+//      normalizzati per il digest/newsletter (sezione "Dalla ricerca").
+//      Forma item: { tipo, fonte, url, titolo, autore, note }
+//      tipo ∈ 'pubblicazione' | 'podcast'
+// ------------------------------------------------------------
+function getEditoria(limit) {
+  var n = Number(limit) || 5;
+  var items = [];
+  try {
+    var libri = (typeof getLibriListV42 === 'function') ? getLibriListV42(n) : [];
+    libri.forEach(function(b){
+      items.push({
+        tipo  : 'pubblicazione',
+        titolo: String(b.titolo || ''),
+        autore: String(b.autore || ''),
+        fonte : String(b.editore || b.fonte || ''),
+        url   : String(b.link || ''),
+        note  : String(b.descrizione || ''),
+        _recente: !!b.isRecente
+      });
+    });
+  } catch(e) { Logger.log('getEditoria libri: ' + (e && e.message || e)); }
+  try {
+    var pod = (typeof getPodcastListV42 === 'function') ? getPodcastListV42(n) : [];
+    pod.forEach(function(p){
+      items.push({
+        tipo  : 'podcast',
+        titolo: String(p.titolo || ''),
+        autore: String(p.show || ''),
+        fonte : String(p.show || ''),
+        url   : String(p.link || ''),
+        note  : String(p.tematica || ''),
+        _recente: !!p.isRecente
+      });
+    });
+  } catch(e) { Logger.log('getEditoria podcast: ' + (e && e.message || e)); }
+  // Priorità ai contenuti recenti, poi taglia a n e rimuovi il flag interno
+  items.sort(function(a,b){ return (b._recente?1:0) - (a._recente?1:0); });
+  items = items.slice(0, n).map(function(x){ delete x._recente; return x; });
+  return { ok: true, items: items };
+}
+
+// ------------------------------------------------------------
 //  6) Elenco video YouTube (page-video) — dal foglio Podcast, ID=VID*
 // ------------------------------------------------------------
 function getVideoListV42(limit) {

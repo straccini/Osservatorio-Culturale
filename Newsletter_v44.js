@@ -108,6 +108,27 @@ function buildNewsletterHtml_(draft) {
     pod.forEach(function(p){ parts.push(_nlPodcastCard_(p)); });
   }
 
+  // Editoria — pubblicazioni e podcast dalla ricerca (foglio Editoria via getEditoria)
+  var editoria = draft.editoria || [];
+  if (editoria.length) {
+    parts.push(_nlSectionHeader_('Dalla ricerca'));
+    editoria.slice(0, 5).forEach(function(e) {
+      var icon = e.tipo === 'podcast' ? '🎙' : e.tipo === 'video' ? '🎬' : '📄';
+      var tipoLabel = e.tipo === 'podcast' ? 'Podcast' : e.tipo === 'video' ? 'Video' : 'Pubblicazione';
+      parts.push('<tr><td style="padding:8px 28px;">');
+      parts.push('<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>');
+      parts.push('<td style="vertical-align:top;width:28px;font-size:18px;padding-right:10px">' + icon + '</td>');
+      parts.push('<td style="vertical-align:top">');
+      parts.push('<div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#8A8A8E;margin-bottom:2px">' + _h_(tipoLabel) + ' · ' + _h_(e.fonte || '') + '</div>');
+      if (e.url) parts.push('<a href="' + _h_(e.url) + '" style="color:#1D1D1F;text-decoration:none;font-size:14px;font-weight:600;line-height:1.4">' + _h_(e.titolo || '') + '</a>');
+      else parts.push('<div style="font-size:14px;font-weight:600;color:#1D1D1F;line-height:1.4">' + _h_(e.titolo || '') + '</div>');
+      if (e.autore) parts.push('<div style="font-size:12px;color:#6E6E73;margin-top:2px">' + _h_(e.autore) + '</div>');
+      if (e.note) parts.push('<div style="font-size:12px;color:#8A8A8E;margin-top:4px;line-height:1.4">' + _h_(String(e.note).substring(0, 150)) + '</div>');
+      parts.push('</td></tr></table>');
+      parts.push('</td></tr>');
+    });
+  }
+
   // CTA
   if (webUrl) {
     parts.push('<tr><td style="padding:24px 28px;text-align:center;">');
