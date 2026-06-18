@@ -199,6 +199,68 @@ try { htmlEmpty = build({ soggetto: 'T', webUrl: '', bandiUrgenti: [], bandiRece
 ok(htmlEmpty.indexOf('Dalla ricerca') < 0, 'T5.7 editoria vuota → nessuna sezione orfana');
 
 // ============================================================================
+// TEST 6 — FAS_TED_CULTURA_RX  (gate pertinenza TED, bilingue IT/EN)
+// ============================================================================
+const TRX = ctx.FAS_TED_CULTURA_RX;
+ok(TRX && typeof TRX.test === 'function', 'T6.0 FAS_TED_CULTURA_RX è una RegExp utilizzabile');
+const tgate = (s) => TRX.test(String(s).toLowerCase());
+// Cultura (IT + EN) → ACCETTA
+ok(tgate('Museum services and conservation'), 'T6.1 EN museum → accetta');
+ok(tgate('Cultural heritage restoration works'), 'T6.2 EN cultural heritage/restoration → accetta');
+ok(tgate('Servizi di restauro affreschi'), 'T6.3 IT restauro → accetta');
+ok(tgate('Gestione teatro comunale'), 'T6.4 IT teatro → accetta');
+ok(tgate('Library and archive digitisation'), 'T6.5 EN library/archive → accetta');
+ok(tgate('Valorizzazione del patrimonio culturale'), 'T6.6 IT patrimonio culturale → accetta');
+// Non-cultura → SCARTA
+ok(!tgate('Waste management and disposal services'), 'T6.7 EN waste → scarta');
+ok(!tgate('Road construction and asphalt works'), 'T6.8 EN road construction → scarta');
+ok(!tgate('Servizio di assicurazione e brokeraggio'), 'T6.9 IT assicurazione → scarta');
+ok(!tgate('Insurance and financial advisory'), 'T6.10 EN insurance → scarta');
+// "restoration" (EN) deve matchare via /restor/, "ristorazione" (IT catering) NO
+ok(tgate('building restoration'), 'T6.11 EN restoration → accetta (/restor/)');
+ok(!tgate('servizio di ristorazione scolastica'), 'T6.12 IT ristorazione NON deve matchare');
+
+// ============================================================================
+// TEST 7 — _fasProvinciaRegione_  (mappa provincia → regione)
+// ============================================================================
+const pr = ctx._fasProvinciaRegione_;
+ok(typeof pr === 'function', 'T7.0 _fasProvinciaRegione_ è definita');
+eq(pr('Firenze'), 'Toscana', 'T7.1 Firenze → Toscana');
+eq(pr('Caserta'), 'Campania', 'T7.2 Caserta → Campania');
+eq(pr('Milano'), 'Lombardia', 'T7.3 Milano → Lombardia');
+eq(pr('Bari'), 'Puglia', 'T7.4 Bari → Puglia');
+eq(pr('Trieste'), 'Friuli-Venezia Giulia', 'T7.5 Trieste → FVG');
+eq(pr('Sassari'), 'Sardegna', 'T7.6 Sassari → Sardegna');
+eq(pr("Reggio nell'Emilia"), 'Emilia-Romagna', 'T7.7 variante Reggio Emilia');
+eq(pr('Reggio di Calabria'), 'Calabria', 'T7.8 variante Reggio Calabria');
+eq(pr('  trieste  '), 'Friuli-Venezia Giulia', 'T7.9 case+spazi normalizzati');
+eq(pr('Provincia Inesistente'), '', 'T7.10 non mappata → vuoto (fallback gestito nel save)');
+eq(pr(''), '', 'T7.11 vuoto → vuoto');
+
+// ============================================================================
+// TEST 8 — _fasSaveBando_  (scrittura Soggetti/Importo nelle colonne giuste)
+// ============================================================================
+// Ordine colonne appendRow: 0 ID,1 Fingerprint,2 DataRilevamento,3 Titolo,4 Ente,5 Livello,
+// 6 Regione,7 Settore,8 Soggetti,9 Importo,10 Cofin,11 Scadenza,...
+let captured = null;
+vm.runInContext('getMainSS = function(){ return { getSheetByName: function(){ return { appendRow: function(r){ __CAP__(r); } }; } }; };', ctx);
+ctx.__CAP__ = (r) => { captured = r; };
+
+const save = ctx._fasSaveBando_;
+ok(typeof save === 'function', 'T8.0 _fasSaveBando_ è definita');
+// Con soggetti + importo
+save({ titolo: 'X', ente: 'E', regione: 'Toscana', soggetti: 'Firenze', importo: 225948.4, settore: 'Servizi di musei' });
+ok(captured !== null, 'T8.1 appendRow chiamato');
+eq(captured[6], 'Toscana', 'T8.2 col Regione');
+eq(captured[8], 'Firenze', 'T8.3 col Soggetti popolata');
+eq(captured[9], 225948.4, 'T8.4 col Importo numerica popolata');
+// Backward-compat: parser che non passano soggetti/importo → ''
+captured = null;
+save({ titolo: 'Y', ente: 'E2' });
+eq(captured[8], '', 'T8.5 Soggetti vuoto se non passato (backward-compat)');
+eq(captured[9], '', 'T8.6 Importo vuoto se non passato (backward-compat)');
+
+// ============================================================================
 // RISULTATI
 // ============================================================================
 console.log('\n══════════ TEST FIX 2026-06-18 ══════════');

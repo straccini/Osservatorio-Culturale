@@ -264,11 +264,16 @@ function fasRetryFontiSilenti(opts) {
  * @param {Object} [opts] {dryRun, maxItems}
  * @return {Object} {ok, nuovi, duplicati, errori, dettagli[]}
  */
+// Gate pertinenza TED — bilingue IT/EN (le notice TED sono multilingua), allineato ai
+// termini delle query FT ~ "...". Usato per scartare i match full-text che non sono cultura
+// (termine presente solo nel nome del buyer). Applicato SOLO se la notice ha una descrizione.
+var FAS_TED_CULTURA_RX = /mus(eo|ei|eum)|bibliotec|librar|archiv|cultural|patrimonio|heritage|monument|restaur|restor|teatr|theat|archeolog|archaeolog|spettacol|exhibit|mostr|beni cultural/i;
+
 function fasParserTedApiPost(opts) {
   opts = opts || {};
   var dryRun = !!opts.dryRun;
   var maxItems = opts.maxItems || 20;
-  var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+  var report = { ok: true, nuovi: 0, duplicati: 0, scartati: 0, errori: 0, dettagli: [] };
   var existingUrls = _fasLoadExistingUrls_();
 
   // v5.2 fix: TED v3 expert query — FT ~ "term" (full text), non PC IN (...) che da HTTP 400
@@ -335,6 +340,12 @@ function fasParserTedApiPost(opts) {
         var scad = _fasNormalizzaData_(_fasTedTesto_(n['deadline-receipt-tender-date-lot']));
 
         if (!titolo || !link) return;
+        // GATE PERTINENZA (solo se c'è una descrizione): la query FT ~ "..." matcha il
+        // termine anche nel nome del buyer → scarta i non-cultura. Se manca la descrizione
+        // si tiene il record (si confida nella query), per non azzerare TED.
+        if (descTxt && !FAS_TED_CULTURA_RX.test((titolo + ' ' + descTxt).toLowerCase())) {
+          report.scartati++; return;
+        }
         if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
 
         if (!dryRun) {
@@ -732,8 +743,8 @@ function _fasSaveBando_(bando) {
       String(bando.livello || 'Vari'),   // Livello
       String(bando.regione || ''),       // Regione
       String(bando.settore || ''),       // Settore
-      '',                                // Soggetti
-      '',                                // Importo
+      String(bando.soggetti || ''),     // Soggetti (backward-compat: altri parser non lo passano → '')
+      (bando.importo != null && bando.importo !== '' ? bando.importo : ''), // Importo
       '',                                // Cofin
       bando.scadenza || '',              // Scadenza
       'FAS',                             // FonteID
@@ -1102,6 +1113,37 @@ var FAS_BDNCP_KEYWORDS = [
 // (gestione bar, assicurazioni, rifiuti, servizi cimiteriali) senza perdere i bandi veri.
 var FAS_BDNCP_CULTURA_RX = /mus(eo|ei|eal)|bibliotec|archiv|cultural|patrimonio|monument|restaur|archeolog|teatr|mostr|spettacol|allestiment|beni cultural/i;
 
+// Mappa nome-provincia → regione: il BDNCP riporta in luogo_nuts il nome della PROVINCIA
+// (es. "Firenze"), non la regione. La colonna Regione di Bandi_v5 alimenta i filtri regionali
+// della pagina Bandi → serve la regione vera ("Toscana"). Fallback: nome provincia se non mappata.
+var FAS_PROVINCE_REGIONE = {
+  'TORINO':'Piemonte','VERCELLI':'Piemonte','NOVARA':'Piemonte','CUNEO':'Piemonte','ASTI':'Piemonte','ALESSANDRIA':'Piemonte','BIELLA':'Piemonte','VERBANO-CUSIO-OSSOLA':'Piemonte','VERBANIA':'Piemonte',
+  'AOSTA':"Valle d'Aosta","VALLE D'AOSTA":"Valle d'Aosta",
+  'VARESE':'Lombardia','COMO':'Lombardia','SONDRIO':'Lombardia','MILANO':'Lombardia','BERGAMO':'Lombardia','BRESCIA':'Lombardia','PAVIA':'Lombardia','CREMONA':'Lombardia','MANTOVA':'Lombardia','LECCO':'Lombardia','LODI':'Lombardia','MONZA E DELLA BRIANZA':'Lombardia','MONZA E BRIANZA':'Lombardia',
+  'BOLZANO':'Trentino-Alto Adige','BOLZANO/BOZEN':'Trentino-Alto Adige','TRENTO':'Trentino-Alto Adige',
+  'VERONA':'Veneto','VICENZA':'Veneto','BELLUNO':'Veneto','TREVISO':'Veneto','VENEZIA':'Veneto','PADOVA':'Veneto','ROVIGO':'Veneto',
+  'UDINE':'Friuli-Venezia Giulia','GORIZIA':'Friuli-Venezia Giulia','TRIESTE':'Friuli-Venezia Giulia','PORDENONE':'Friuli-Venezia Giulia',
+  'IMPERIA':'Liguria','SAVONA':'Liguria','GENOVA':'Liguria','LA SPEZIA':'Liguria',
+  'PIACENZA':'Emilia-Romagna','PARMA':'Emilia-Romagna','REGGIO EMILIA':'Emilia-Romagna',"REGGIO NELL'EMILIA":'Emilia-Romagna','MODENA':'Emilia-Romagna','BOLOGNA':'Emilia-Romagna','FERRARA':'Emilia-Romagna','RAVENNA':'Emilia-Romagna','FORLI-CESENA':'Emilia-Romagna',"FORLI'-CESENA":'Emilia-Romagna','RIMINI':'Emilia-Romagna',
+  'MASSA-CARRARA':'Toscana','MASSA CARRARA':'Toscana','LUCCA':'Toscana','PISTOIA':'Toscana','FIRENZE':'Toscana','LIVORNO':'Toscana','PISA':'Toscana','AREZZO':'Toscana','SIENA':'Toscana','GROSSETO':'Toscana','PRATO':'Toscana',
+  'PERUGIA':'Umbria','TERNI':'Umbria',
+  'PESARO E URBINO':'Marche','ANCONA':'Marche','MACERATA':'Marche','ASCOLI PICENO':'Marche','FERMO':'Marche',
+  'VITERBO':'Lazio','RIETI':'Lazio','ROMA':'Lazio','LATINA':'Lazio','FROSINONE':'Lazio',
+  "L'AQUILA":'Abruzzo','TERAMO':'Abruzzo','PESCARA':'Abruzzo','CHIETI':'Abruzzo',
+  'CAMPOBASSO':'Molise','ISERNIA':'Molise',
+  'CASERTA':'Campania','BENEVENTO':'Campania','NAPOLI':'Campania','AVELLINO':'Campania','SALERNO':'Campania',
+  'FOGGIA':'Puglia','BARI':'Puglia','TARANTO':'Puglia','BRINDISI':'Puglia','LECCE':'Puglia','BARLETTA-ANDRIA-TRANI':'Puglia',
+  'POTENZA':'Basilicata','MATERA':'Basilicata',
+  'COSENZA':'Calabria','CATANZARO':'Calabria','REGGIO CALABRIA':'Calabria','REGGIO DI CALABRIA':'Calabria','CROTONE':'Calabria','VIBO VALENTIA':'Calabria',
+  'TRAPANI':'Sicilia','PALERMO':'Sicilia','MESSINA':'Sicilia','AGRIGENTO':'Sicilia','CALTANISSETTA':'Sicilia','ENNA':'Sicilia','CATANIA':'Sicilia','RAGUSA':'Sicilia','SIRACUSA':'Sicilia',
+  'SASSARI':'Sardegna','NUORO':'Sardegna','CAGLIARI':'Sardegna','ORISTANO':'Sardegna','SUD SARDEGNA':'Sardegna'
+};
+
+function _fasProvinciaRegione_(prov) {
+  if (!prov) return '';
+  return FAS_PROVINCE_REGIONE[String(prov).toUpperCase().replace(/\s+/g, ' ').trim()] || '';
+}
+
 function fasParserBdncpCultura(opts) {
   opts = opts || {};
   var dryRun = !!opts.dryRun;
@@ -1168,7 +1210,9 @@ function fasParserBdncpCultura(opts) {
             titolo: info.titolo.substring(0, 300),
             ente: info.ente || 'BDNCP',
             livello: 'Nazionale',
-            regione: info.luogo || '',
+            regione: _fasProvinciaRegione_(info.luogo) || info.luogo || '',
+            soggetti: info.luogo || '',
+            importo: (info.importo && !isNaN(Number(info.importo))) ? Number(info.importo) : (info.importo || ''),
             settore: info.cpv || 'Appalto cultura — BDNCP/ANAC',
             urlBando: link,
             sommario: (info.titolo + (info.importo ? ' — EUR ' + info.importo : '')).substring(0, 500),
