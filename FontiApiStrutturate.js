@@ -1307,6 +1307,42 @@ function cleanupBandiNonCulturaBdncpApplica() {
 }
 
 /**
+ * DIAGNOSTICA (read-only) — scansiona TUTTI i bandi attivi (qualsiasi fonte) e applica
+ * il gate cultura su Titolo+Settore. Riporta quanti record NON contengono un termine
+ * culturale e da QUALE FonteNome provengono. Serve a capire se i bandi non-cultura visti
+ * (es. cimiteri/rifiuti) arrivano da una fonte diversa da BDNCP. Non scrive nulla.
+ *
+ * @return {Object} {ok, attivi, nonCultura, perFonte:{<fonte>:n}, esempi[]}
+ */
+function diagBandiNonCulturaTutte() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Bandi_v5');
+  if (!sh || sh.getLastRow() < 2) return { ok: false, error: 'Bandi_v5 vuoto o assente' };
+  var vals = sh.getDataRange().getValues();
+  var H = vals[0];
+  var iTit = H.indexOf('Titolo'), iSet = H.indexOf('Settore'),
+      iFon = H.indexOf('FonteNome'), iStato = H.indexOf('StatoRecord');
+  if (iTit < 0) return { ok: false, error: 'colonna Titolo mancante' };
+  var attivi = 0, nonCult = 0, perFonte = {}, esempi = [];
+  for (var r = 1; r < vals.length; r++) {
+    if (iStato >= 0 && String(vals[r][iStato] || '').toLowerCase() === 'archiviato') continue;
+    attivi++;
+    var blob = (String(vals[r][iTit] || '') + ' ' + (iSet >= 0 ? String(vals[r][iSet] || '') : '')).toLowerCase();
+    if (FAS_BDNCP_CULTURA_RX.test(blob)) continue; // ha un termine cultura → ok
+    nonCult++;
+    var fonte = iFon >= 0 ? String(vals[r][iFon] || '(vuota)') : '(vuota)';
+    perFonte[fonte] = (perFonte[fonte] || 0) + 1;
+    if (esempi.length < 20) esempi.push({
+      fonte: fonte.slice(0, 32),
+      titolo: String(vals[r][iTit] || '').slice(0, 45),
+      settore: iSet >= 0 ? String(vals[r][iSet] || '').slice(0, 30) : ''
+    });
+  }
+  Logger.log('[DIAG non-cultura] attivi: ' + attivi + ' | non-cultura: ' + nonCult + ' | per fonte: ' + JSON.stringify(perFonte));
+  return { ok: true, attivi: attivi, nonCultura: nonCult, perFonte: perFonte, esempi: esempi };
+}
+
+/**
  * @private Estrae titolo/ente/link documenti dalla struttura annidata di un avviso BDNCP.
  * descrizione → template[0].template.metadata.descrizione
  * committente → section con fields.soggetti_sa[].denominazione_amministrazione
