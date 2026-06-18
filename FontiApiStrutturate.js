@@ -1297,6 +1297,16 @@ function cleanupBandiNonCulturaBdncp(dryRun) {
 }
 
 /**
+ * Wrapper di comodo — esegue la bonifica IN MODALITÀ APPLICA (archivia davvero).
+ * Serve perché il pulsante "Esegui" dell'editor GAS non permette di passare argomenti:
+ *   - cleanupBandiNonCulturaBdncp        → dry-run (anteprima, non scrive)
+ *   - cleanupBandiNonCulturaBdncpApplica → archivia i non-cultura (reversibile)
+ */
+function cleanupBandiNonCulturaBdncpApplica() {
+  return cleanupBandiNonCulturaBdncp(false);
+}
+
+/**
  * @private Estrae titolo/ente/link documenti dalla struttura annidata di un avviso BDNCP.
  * descrizione → template[0].template.metadata.descrizione
  * committente → section con fields.soggetti_sa[].denominazione_amministrazione
