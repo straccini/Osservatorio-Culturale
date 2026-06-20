@@ -2161,6 +2161,11 @@ function fasListaFontiSilenti() {
     }
   });
   Logger.log('[FAS] Fonti silenti (escluse deprecate): ' + out.totale);
+  // Log riga per riga così la lista compare nel log dell'editor (il return non e' visibile li')
+  out.fonti.forEach(function(f) {
+    Logger.log('[SILENTE] ' + f.nome + ' | ' + f.sheet + ' | esito=' + (f.esito || '-') +
+               ' | fail=' + f.fail + ' | attiva=' + f.attiva + ' | ' + f.url);
+  });
   return out;
 }
 
