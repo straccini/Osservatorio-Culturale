@@ -2001,10 +2001,13 @@ function fasDeprecaFontiDryRun() {
 // ============================================================================
 // RIPRISTINO FONTI CULTURA — URL/feed corretti (ricerca verificata 2026-06-19)
 // ============================================================================
-// Mappa nome-fonte → {url, tipo, nota}. URL verificati live (contenuti giugno 2026).
-// 13 fonti recuperate; 2 restano deprecate (non incluse qui):
-//   - "Il Giornale delle Fondazioni": testata CHIUSA (non pubblica più) + sito irraggiungibile
-//   - "Regione Sardegna - Cultura": listato bandi dietro motore JS (Coveo), nessun RSS
+// Mappa nome-fonte → {url, tipo, nota}. URL verificati live (giugno 2026).
+// 32 fonti recuperate (13 batch-1 + 19 batch-2). Restano deprecate/non monitorabili:
+//   - feed disabilitati/paywall: Apollo, Touring Club, FAI, Il Giornale dell'Arte
+//   - SPA/JS o domini morti: Musei Italiani, We Are Museums, AI4Culture, PugliaPromozione, museumsandaging
+//   - bloccate Cloudflare/anti-bot: FISH, Europeana Pro
+//   - chiuse: Il Giornale delle Fondazioni; JS-Coveo: Regione Sardegna - Cultura
+//   - API gia coperte dai parser FAS: TED, BDNCP, ANAC, OpenCUP, EU Funding, opendata regionali
 var FAS_FONTI_RIPRISTINO = {
   'Italia Domani - PNRR':            { url: 'https://www.italiadomani.gov.it/content/sogei-ng/it/it/feed-rss.news_feed_rss.xml', tipo: 'RSS', nota: 'feed news PNRR (403 era solo sul layer HTML)' },
   'Fondazione Cariplo - Cultura':    { url: 'https://www.fondazionecariplo.it/feed/', tipo: 'RSS', nota: 'feed WordPress sito-wide, filtrare cultura' },
@@ -2018,7 +2021,32 @@ var FAS_FONTI_RIPRISTINO = {
   'ANCI - Bandi e Opportunita':      { url: 'https://www.anci.it/feed/', tipo: 'RSS', nota: 'feed generale, filtrare bandi' },
   'Regione Puglia - Bandi':          { url: 'https://www.regione.puglia.it/feed-bandi-regione-puglia?p_p_id=com_liferay_asset_publisher_web_portlet_AssetPublisherPortlet_INSTANCE_zY8SiKCyhUKl&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=getRSS&p_p_cacheability=cacheLevelPage', tipo: 'RSS', nota: 'feed bandi nuovo portale Liferay, filtrare cultura' },
   'IndiceBandi - Cultura':           { url: 'https://www.indicebandi.it/it/taxonomy/term/5/feed', tipo: 'RSS', nota: 'gia pre-filtrato cultura (Drupal taxonomy)' },
-  'MAB Italia - Bandi':              { url: 'https://anai.org/feed/', tipo: 'RSS', nota: 'PROXY ANAI: MAB non ha feed proprio, ANAI pubblica le news MAB' }
+  'MAB Italia - Bandi':              { url: 'https://anai.org/feed/', tipo: 'RSS', nota: 'PROXY ANAI: MAB non ha feed proprio, ANAI pubblica le news MAB' },
+
+  // ── BATCH 2 (ricerca verificata 2026-06-20) — recupero fonti silenti ──
+  // Riviste d'arte (bot-blocking o URL feed cambiato)
+  'Artribune':                       { url: 'https://www.artribune.com/feed/', tipo: 'RSS', nota: 'feed ok (era bot-blocking)' },
+  'Artribune - Bandi':               { url: 'https://www.artribune.com/tag/bandi/feed/', tipo: 'RSS', nota: 'feed tag bandi (lento per natura)' },
+  'Finestre sull\'Arte':             { url: 'https://www.finestresullarte.info/finestresullarte.xml', tipo: 'RSS', nota: 'URL feed corretto (era /feed 404)' },
+  'Flash Art Italia':                { url: 'https://flash---art.it/feed/', tipo: 'RSS', nota: 'feed WordPress (era pagina HTML)' },
+  'ArtsLife':                        { url: 'https://www.artslife.com/feed/', tipo: 'RSS', nota: 'feed ok (era bot-blocking)' },
+  'The Art Newspaper':               { url: 'https://www.theartnewspaper.com/rss.xml', tipo: 'RSS', nota: 'URL feed corretto (era /feed 404)' },
+  'Patrimonio Culturale ER':         { url: 'https://patrimonioculturale.regione.emilia-romagna.it/rss.xml', tipo: 'RSS', nota: 'path Plone corretto (.xml)' },
+  'Wikimedia Italia - Musei':        { url: 'https://www.wikimedia.it/feed/', tipo: 'RSS', nota: 'feed news (era pagina bando)' },
+  // MiC + organi periferici (migrati a *.cultura.gov.it)
+  'SMN - Sistema Museale Nazionale': { url: 'https://musei.cultura.gov.it/feed/', tipo: 'RSS', nota: 'dominio nuovo (beniculturali.it legacy morto)' },
+  'Soprintendenza Marche - Circolari': { url: 'https://sabapancona.cultura.gov.it/feed/', tipo: 'RSS', nota: 'SABAP Ancona-PU, dominio nuovo' },
+  'Soprintendenza Puglia - Circolari': { url: 'https://sabapba.cultura.gov.it/feed/', tipo: 'RSS', nota: 'SABAP Bari, dominio nuovo' },
+  'MiC - Bandi e Concorsi':          { url: 'https://cultura.gov.it/comunicati/bandi-e-concorsi', tipo: 'HTML', nota: 'CMS custom: scrape HTML (no RSS)' },
+  'MiC - Avvisi':                    { url: 'https://cultura.gov.it/comunicati/avvisi', tipo: 'HTML', nota: 'CMS custom: scrape HTML (no RSS)' },
+  'MiC - Decreti e Circolari':       { url: 'https://cultura.gov.it/comunicati/circolari', tipo: 'HTML', nota: 'URL corretto, scrape HTML' },
+  // Fondazioni + ministeri + europei
+  'Fondazione Compagnia di San Paolo': { url: 'https://www.compagniadisanpaolo.it/it/feed/', tipo: 'RSS', nota: 'feed generale, filtrare cultura' },
+  'Ministero del Turismo - Bandi':   { url: 'https://www.ministeroturismo.gov.it/feed/', tipo: 'RSS', nota: 'feed news, cattura avvisi finanziamento' },
+  'Europa Creativa - Desk Italia':   { url: 'https://europacreativa.cultura.gov.it/feed/', tipo: 'RSS', nota: 'Creative Europe IT (news+bandi)' },
+  // Accessibilita + internazionali
+  'ENS - Ente Nazionale Sordi':      { url: 'https://www.ens.it/feed/', tipo: 'RSS', nota: 'LIS/accessibilita (era /notizie/feed 404)' },
+  'NEMO Digital Updates':            { url: 'https://www.ne-mo.org/news', tipo: 'HTML', nota: 'NEMO non ha RSS: scrape /news' }
 };
 
 function _fasNormNome_(s) {
