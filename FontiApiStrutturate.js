@@ -2100,6 +2100,8 @@ function fasRipristinaFontiCultura(dryRun) {
 
   Object.keys(FAS_FONTI_RIPRISTINO).forEach(function(k) { if (!trovati[k]) report.nonTrovate.push(k); });
   Logger.log('[FAS] Ripristino fonti cultura: ' + report.aggiornate + ' aggiornate' + (dryRun ? ' (DRY-RUN, nulla scritto)' : '') + ', non trovate nei fogli: ' + report.nonTrovate.length);
+  report.dettagli.forEach(function(d) { Logger.log('[RIPRISTINO] ' + d.nome + ' | ' + d.sheet + ' -> ' + d.tipo + ' | ' + d.nuovoUrl); });
+  report.nonTrovate.forEach(function(n) { Logger.log('[NON TROVATA nei fogli] ' + n); });
   return report;
 }
 
