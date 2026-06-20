@@ -2199,6 +2199,112 @@ function fasListaFontiSilenti() {
   return out;
 }
 
+// ============================================================================
+// DEPRECAZIONE FONTI MORTE VERIFICATE (ricerca 2026-06-20) + DEDUP RIGHE
+// ============================================================================
+// Fonti accertate NON monitorabili (verificate 2+ volte): le marca DEPRECATED
+// così escono da "silenti". NON include le API gestite dai parser FAS (TED/BDNCP/...).
+var FAS_FONTI_MORTE = {
+  'Il Giornale dell\'Arte':              'CMS custom Allemandi senza feed RSS',
+  'Musei Italiani - News':               'dominio musei-italiani.org non piu attivo',
+  'Apollo Magazine':                     'feed RSS disabilitati (paywall WordPress)',
+  'Touring Club Italiano':               'SPA JavaScript senza feed RSS',
+  'FAI - Fondo Ambiente':                'CMS custom, nessun feed esposto',
+  'MiC Comunicati':                      'sottodominio comunicati.cultura.gov.it dismesso (coperto da MiC Bandi/Avvisi)',
+  'AMACI - Opportunità':                 'sito in ricostruzione, nessun feed',
+  'PugliaPromozione - Bandi':            'migrato a Liferay JS (aret.regione.puglia.it), nessun RSS',
+  'PUGLIAPROMOZIONE':                    'URL morto/duplicato (404)',
+  'Portale Operatori Turismo — Italia.it': 'nessun feed, ridondante con feed Min. Turismo',
+  'We Are Museums':                      'SPA React senza feed ne HTML scrapabile',
+  'MuseWeb':                             'sito di conferenza, nessun blog/feed attivo',
+  'AI4Culture (EU)':                     'progetto UE concluso 02/2025, sito JS-shell',
+  'Digital Heritage Lab UNESCO':         'pagina 404, nessun feed tematico UNESCO',
+  'Museum of the Future Blog':           'pagina /stories 404, nessun feed',
+  'Age-Friendly Museum Network':         'dominio museumsandaging.org inesistente (NXDOMAIN)',
+  'FISH - Superamento Handicap':         'feed dietro Cloudflare, scanner GAS bloccato (403)',
+  'Europeana Pro Blog':                  'dominio pro.europeana.eu anti-bot (403)',
+  'Il Giornale delle Fondazioni':        'testata chiusa, non pubblica piu (archivio statico)',
+  'Regione Sardegna - Cultura':          'listato bandi dietro motore JS (Coveo), nessun RSS'
+};
+
+/**
+ * Marca DEPRECATED le fonti accertate non monitorabili (FAS_FONTI_MORTE), con motivo.
+ * @param {boolean} [dryRun=true] anteprima senza scrivere.
+ */
+function fasDeprecaFontiMorteVerificate(dryRun) {
+  if (dryRun === undefined) dryRun = true;
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var report = { ok: true, dryRun: dryRun, deprecate: 0, nonTrovate: [], dettagli: [] };
+  var mapNorm = {};
+  Object.keys(FAS_FONTI_MORTE).forEach(function(k) { mapNorm[_fasNormNome_(k)] = { key: k, motivo: FAS_FONTI_MORTE[k] }; });
+  var trovati = {};
+  ['FontiBandi_v5', 'FontiNews', 'FontiPodcast', 'FontiVideo'].forEach(function(shName) {
+    var sh = ss.getSheetByName(shName);
+    if (!sh || sh.getLastRow() < 2) return;
+    var vals = sh.getDataRange().getValues();
+    var H = vals[0];
+    var iNome = H.indexOf('Nome'), iAtt = H.indexOf('Attiva'), iEsito = H.indexOf('UltimoEsito'), iErr = H.indexOf('UltimoErrore');
+    if (iNome < 0) return;
+    for (var r = 1; r < vals.length; r++) {
+      var hit = mapNorm[_fasNormNome_(vals[r][iNome])];
+      if (!hit) continue;
+      trovati[hit.key] = true;
+      if (!dryRun) {
+        if (iAtt >= 0) sh.getRange(r + 1, iAtt + 1).setValue(false);
+        if (iEsito >= 0) sh.getRange(r + 1, iEsito + 1).setValue('DEPRECATED');
+        if (iErr >= 0) sh.getRange(r + 1, iErr + 1).setValue('[DEPRECATA ' + new Date().toISOString().slice(0, 10) + '] ' + hit.motivo);
+      }
+      report.deprecate++;
+      report.dettagli.push({ nome: String(vals[r][iNome] || ''), sheet: shName, motivo: hit.motivo });
+    }
+  });
+  Object.keys(FAS_FONTI_MORTE).forEach(function(k) { if (!trovati[k]) report.nonTrovate.push(k); });
+  Logger.log('[FAS] Deprecazione fonti morte: ' + report.deprecate + (dryRun ? ' (DRY-RUN, nulla scritto)' : ' marcate DEPRECATED') + ', non trovate: ' + report.nonTrovate.length);
+  report.dettagli.forEach(function(d) { Logger.log('[DEPRECA] ' + d.nome + ' | ' + d.sheet + ' | ' + d.motivo); });
+  report.nonTrovate.forEach(function(n) { Logger.log('[NON TROVATA] ' + n); });
+  return report;
+}
+function fasDeprecaFontiMorteVerificateApplica() { return fasDeprecaFontiMorteVerificate(false); }
+
+/**
+ * Dedup righe doppie: nello STESSO foglio, righe con la stessa URL → tiene la prima,
+ * marca le successive DUPLICATE + Attiva=false (NON cancella, reversibile). Dedup solo
+ * intra-foglio (cross-foglio bandi/news puo' essere intenzionale → non toccato).
+ * @param {boolean} [dryRun=true] anteprima senza scrivere.
+ */
+function fasDedupFonti(dryRun) {
+  if (dryRun === undefined) dryRun = true;
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var report = { ok: true, dryRun: dryRun, duplicati: 0, dettagli: [] };
+  ['FontiBandi_v5', 'FontiNews', 'FontiPodcast', 'FontiVideo'].forEach(function(shName) {
+    var sh = ss.getSheetByName(shName);
+    if (!sh || sh.getLastRow() < 2) return;
+    var vals = sh.getDataRange().getValues();
+    var H = vals[0];
+    var iNome = H.indexOf('Nome'), iUrl = H.indexOf('URL'), iAtt = H.indexOf('Attiva'), iEsito = H.indexOf('UltimoEsito');
+    if (iUrl < 0) return;
+    var visti = {};
+    for (var r = 1; r < vals.length; r++) {
+      var url = String(vals[r][iUrl] || '').trim().toLowerCase().replace(/\/+$/, '');
+      if (!url) continue;
+      if (visti[url]) {
+        report.duplicati++;
+        report.dettagli.push({ nome: String(iNome >= 0 ? vals[r][iNome] : '') , sheet: shName, url: url.slice(0, 60), tenutaRiga: visti[url] });
+        if (!dryRun) {
+          if (iAtt >= 0) sh.getRange(r + 1, iAtt + 1).setValue(false);
+          if (iEsito >= 0) sh.getRange(r + 1, iEsito + 1).setValue('DUPLICATE');
+        }
+      } else {
+        visti[url] = r + 1;
+      }
+    }
+  });
+  Logger.log('[FAS] Dedup fonti: ' + report.duplicati + ' duplicati' + (dryRun ? ' (DRY-RUN, nulla scritto)' : ' marcati DUPLICATE/inattivi'));
+  report.dettagli.forEach(function(d) { Logger.log('[DUP] ' + d.nome + ' | ' + d.sheet + ' | ' + d.url + ' (tenuta riga ' + d.tenutaRiga + ')'); });
+  return report;
+}
+function fasDedupFontiApplica() { return fasDedupFonti(false); }
+
 /**
  * Report completo fonti: attive, silenti, deprecate, per tipo.
  */

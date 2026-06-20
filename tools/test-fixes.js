@@ -434,6 +434,42 @@ eq(sil.fonti.map(f => f.nome).sort(), ['Fallita', 'Inattiva'], 'T14.2 nomi corre
 ok(sil.fonti.every(f => f.esito !== 'DEPRECATED'), 'T14.3 nessuna deprecata in lista');
 
 // ============================================================================
+// TEST 15 — fasDeprecaFontiMorteVerificate (marca DEPRECATED i morti accertati)
+// ============================================================================
+const dHdr = ['ID','Nome','URL','Tipo','Attiva','FailConsecutivi','UltimoEsito','UltimoErrore'];
+const dSheet = fakeWSheet([
+  dHdr,
+  ['1','Apollo Magazine','http://a','RSS',true,2,'EMPTY',''],          // morta → DEPRECA
+  ['2','We Are Museums','http://b','HTML',true,1,'EMPTY',''],          // morta → DEPRECA
+  ['3','Fonte Viva Non In Lista','http://c','RSS',true,0,'OK','']      // non in lista → intatta
+]);
+ctx.__MON_SS__ = { getSheetByName: (n) => (n === 'FontiNews' ? dSheet : null) };
+vm.runInContext('getMainSS = function(){ return __MON_SS__; };', ctx);
+const depr = ctx.fasDeprecaFontiMorteVerificate(false);
+ok(depr.ok, 'T15.0 fasDeprecaFontiMorteVerificate ok');
+eq(depr.deprecate, 2, 'T15.1 2 fonti morte deprecate (Apollo + We Are Museums)');
+ok(dSheet._w.some(w => w.val === 'DEPRECATED'), 'T15.2 scrive UltimoEsito=DEPRECATED');
+ok(dSheet._w.some(w => w.val === false), 'T15.3 disattiva (Attiva=false)');
+ok(!('Fondazione Cariplo - Cultura' in ctx.FAS_FONTI_MORTE), 'T15.4 una fonte recuperata NON e nella lista morti');
+
+// ============================================================================
+// TEST 16 — fasDedupFonti (righe stessa URL nello stesso foglio)
+// ============================================================================
+const duHdr = ['ID','Nome','URL','Tipo','Attiva','FailConsecutivi','UltimoEsito','UltimoErrore'];
+const duSheet = fakeWSheet([
+  duHdr,
+  ['1','Fonte A','https://x.it/feed/','RSS',true,0,'OK',''],
+  ['2','Fonte A bis','https://x.it/feed','RSS',true,0,'OK',''],   // stessa URL (slash finale) → DUP
+  ['3','Fonte B','https://y.it/feed/','RSS',true,0,'OK','']        // url diversa → tenuta
+]);
+ctx.__MON_SS__ = { getSheetByName: (n) => (n === 'FontiBandi_v5' ? duSheet : null) };
+const dedup = ctx.fasDedupFonti(false);
+ok(dedup.ok, 'T16.0 fasDedupFonti ok');
+eq(dedup.duplicati, 1, 'T16.1 1 duplicato (URL normalizzata uguale, slash finale ignorato)');
+ok(duSheet._w.some(w => w.val === 'DUPLICATE'), 'T16.2 marca DUPLICATE');
+ok(duSheet._w.some(w => w.val === false), 'T16.3 disattiva il duplicato');
+
+// ============================================================================
 // RISULTATI
 // ============================================================================
 console.log('\n══════════ TEST FIX 2026-06-18 ══════════');
