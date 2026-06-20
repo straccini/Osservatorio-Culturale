@@ -2177,7 +2177,7 @@ function fasListaFontiSilenti() {
       var att = vals[r][iAtt] === true || String(vals[r][iAtt]).toUpperCase() === 'TRUE';
       var fail = Number(iFail >= 0 ? vals[r][iFail] : 0) || 0;
       var esito = String(iEsito >= 0 ? vals[r][iEsito] : '');
-      if (esito === 'DEPRECATED') continue;
+      if (esito === 'DEPRECATED' || esito === 'DUPLICATE') continue;
       if (!att || fail >= 3) {
         out.totale++;
         if (out.fonti.length < 120) out.fonti.push({
@@ -2402,7 +2402,7 @@ function fasReportFontiCompleto() {
       var head = vals[0];
       var iAtt = head.indexOf('Attiva'), iFail = head.indexOf('FailConsecutivi'),
           iEsito = head.indexOf('UltimoEsito');
-      var stats = { totale: 0, attive: 0, silenti: 0, deprecate: 0, ok: 0 };
+      var stats = { totale: 0, attive: 0, silenti: 0, deprecate: 0, duplicati: 0, ok: 0 };
       for (var r = 1; r < vals.length; r++) {
         if (!vals[r][0]) continue;
         stats.totale++;
@@ -2410,6 +2410,7 @@ function fasReportFontiCompleto() {
         var fail = Number(vals[r][iFail] || 0);
         var esito = String(vals[r][iEsito] || '');
         if (esito === 'DEPRECATED') stats.deprecate++;
+        else if (esito === 'DUPLICATE') stats.duplicati++;
         else if (!att || fail >= 3) stats.silenti++;
         else if (esito === 'OK' || esito === 'RECOVERED' || esito === 'RECOVERED_FASE3') stats.ok++;
         if (att) stats.attive++;
@@ -2417,13 +2418,14 @@ function fasReportFontiCompleto() {
       out.fogli[shName] = stats;
     });
     // Totali
-    out.totaleAttive = 0; out.totaleSilenti = 0; out.totaleDeprecate = 0;
+    out.totaleAttive = 0; out.totaleSilenti = 0; out.totaleDeprecate = 0; out.totaleDuplicati = 0;
     Object.keys(out.fogli).forEach(function(k) {
       out.totaleAttive += out.fogli[k].attive || 0;
       out.totaleSilenti += out.fogli[k].silenti || 0;
       out.totaleDeprecate += out.fogli[k].deprecate || 0;
+      out.totaleDuplicati += out.fogli[k].duplicati || 0;
     });
-    Logger.log('[FAS] Report fonti: attive=' + out.totaleAttive + ' silenti=' + out.totaleSilenti + ' deprecate=' + out.totaleDeprecate);
+    Logger.log('[FAS] Report fonti: attive=' + out.totaleAttive + ' silenti=' + out.totaleSilenti + ' deprecate=' + out.totaleDeprecate + ' duplicati=' + out.totaleDuplicati);
   } catch(e) { out.ok = false; out.error = e.message; }
   return out;
 }
