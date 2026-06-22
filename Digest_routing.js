@@ -149,6 +149,7 @@ function getDigestRecipientsByCohort() {
 
     // === E) Coorte A — MailingList ESCLUSI quelli già in B ===
     var generalisti = [];
+    var profilati = []; // Coorte C — lettori profilati (ProfiloPro) con interessi, non-Matrix
     var shM = ss.getSheetByName(SH.MAILING || 'MailingList');
     if (shM && shM.getLastRow() > 1) {
       var mVals = shM.getDataRange().getValues();
@@ -208,11 +209,17 @@ function getDigestRecipientsByCohort() {
           }
         }
       } catch(eCM) { Logger.log('enrich ContactsMatrix: ' + eCM.message); }
-      // 3) Applica agli ambiti del generalista
+      // 3) Applica gli ambiti e PROMUOVI a coorte C (profilati) i generalisti con interessi profilo
+      var _gen2 = [];
       generalisti.forEach(function(g){
         var dimsG = dimsByEmail[String(g.email).toLowerCase()];
         g.ambiti = (dimsG && typeof ambitiFromDims === 'function') ? ambitiFromDims(dimsG) : [];
+        if (dimsG && String(dimsG).trim()) {
+          profilati.push({ email: g.email, nome: g.nome, interessiDimensioni: String(dimsG), ambiti: g.ambiti });
+          allEmails[g.email] = 'C';
+        } else { _gen2.push(g); }
       });
+      generalisti = _gen2;
     } catch(ePref) { Logger.log('coorte A ambiti enrich: ' + ePref.message); }
 
     var leadCaldi = Object.keys(coorteB).map(function(k){ return coorteB[k]; });
@@ -221,9 +228,11 @@ function getDigestRecipientsByCohort() {
       ok: true,
       generalisti: generalisti,
       leadCaldi: leadCaldi,
+      profilati: profilati,
       counts: {
         generalisti: generalisti.length,
         leadCaldi: leadCaldi.length,
+        profilati: profilati.length,
         leadConMatrix: leadCaldi.filter(function(l){ return l.matrixCompletato && l.responseId; }).length,
         leadConTematica: leadCaldi.filter(function(l){ return l.tematica && !l.matrixCompletato; }).length,
         hotLeads: leadCaldi.filter(function(l){ return (l.leadScore || 0) >= 30; }).length
@@ -290,6 +299,9 @@ function sendDigestAuto2coorti(opts) {
       leadCaldi_personalizzati_matrix: 0,
       leadCaldi_tematici: 0,
       leadCaldi_fallback: 0,
+      profilati_inviati: 0,
+      profilati_errori: 0,
+      profilati_vuoti: 0,
       hot_alerts: 0
     };
 
@@ -386,6 +398,43 @@ function sendDigestAuto2coorti(opts) {
         } catch(e) {
           Logger.log('Errore invio lead ' + lead.email + ': ' + e.message);
           report.leadCaldi_errori++;
+        }
+      });
+    }
+
+    // 4b. INVIO COORTE C (lettori profilati ProfiloPro, non-Matrix) — digest segmentato sui loro interessi
+    if (!opts.onlyGeneralisti && !opts.onlyLead && rec.profilati && rec.profilati.length) {
+      rec.profilati.forEach(function(pf){
+        if (opts.dryRun) { report.profilati_inviati++; return; }
+        try {
+          if (_digestWasRecentlySent_(pf.email)) { Logger.log('[DIGEST] Skip (dedup): ' + pf.email); return; }
+          var resP = (typeof generateDigestForDims === 'function')
+            ? generateDigestForDims(pf.email, pf.interessiDimensioni, { save: false }) : null;
+          if (!resP || !resP.ok || !resP.html) {
+            // Fallback: nessun contenuto taggato sugli interessi → digest standard filtrato per ambito (come coorte A)
+            if (resP && resP.empty) report.profilati_vuoti++;
+            if (hasItems) {
+              try {
+                var htmlF = buildDigestHTML(items, { Nome: pf.nome, Email: pf.email }, null, pf.ambiti || []);
+                GmailApp.sendEmail(pf.email, subjGen, 'Visualizza in HTML.', { htmlBody: htmlF, name: 'Sinopia · Osservatorio Culturale', replyTo: Session.getEffectiveUser().getEmail() });
+                _digestMarkSent_(pf.email, 'profilato');
+                report.profilati_inviati++;
+              } catch(eF) { report.profilati_errori++; }
+            }
+            return;
+          }
+          GmailApp.sendEmail(pf.email, resP.subject, 'Visualizza in HTML.', {
+            htmlBody: resP.html,
+            name: 'Sinopia · Osservatorio Culturale',
+            replyTo: Session.getEffectiveUser().getEmail()
+          });
+          _digestMarkSent_(pf.email, 'profilato');
+          report.profilati_inviati++;
+          if (typeof crm_recordEvent === 'function') { try { crm_recordEvent(pf.email, 'digest_sent', 1, { cohort: 'C' }); } catch(_){} }
+          Utilities.sleep(300);
+        } catch(e) {
+          Logger.log('Errore invio profilato ' + pf.email + ': ' + e.message);
+          report.profilati_errori++;
         }
       });
     }

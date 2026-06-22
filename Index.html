@@ -7068,6 +7068,7 @@
       + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Digest</th>'
       + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Bandi</th>'
       + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)">Matrix</th>'
+      + '<th style="text-align:center;padding:6px;border-bottom:1px solid var(--accent,#935851)" title="Ha compilato Il mio profilo professionale">Profilo</th>'
       + '<th style="text-align:left;padding:6px;border-bottom:1px solid var(--accent,#935851);width:240px">Azioni</th>'
       + '</tr></thead><tbody>';
     // v4.21 — Super admin: solo s.straccini@gmail.com puo modificare admin
@@ -7100,6 +7101,7 @@
         + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInDigest)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'digest\')" title="Clicca per toggle">'+chk(u.OptInDigest)+'</td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInBandi)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'bandi\')" title="Clicca per toggle">'+chk(u.OptInBandi)+'</td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u.OptInMatrix)+';font-weight:700;cursor:pointer" onclick="OC.toggleOptIn(\''+esc(u.Email)+'\',\'matrix\')" title="Clicca per toggle">'+chk(u.OptInMatrix)+'</td>'
+        + '<td style="padding:5px;border-bottom:1px solid #eee;text-align:center;color:'+chkColor(u._hasProfilo)+';font-weight:700" title="Profilo professionale compilato (Il mio profilo)">'+chk(u._hasProfilo)+'</td>'
         + '<td style="padding:5px;border-bottom:1px solid #eee">'
           + (superProtected
             ? '<span style="font-size:10px;color:var(--amb-1);font-style:italic;font-weight:600">Super admin</span>'

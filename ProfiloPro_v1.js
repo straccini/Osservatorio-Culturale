@@ -86,6 +86,71 @@ function ensureSheetProfiliPro_() {
 // FUNZIONI PUBBLICHE
 // ============================================================================
 
+/**
+ * @private Lista dei lettori che hanno compilato il profilo professionale.
+ * Riga in ProfiliPro con email valorizzata. Usata da admin + digest dedicata.
+ * @return {Array} [{email, interessi:[], interessiCsv, consenso, completezza, ruolo, ente, area}]
+ */
+function _proListaProfilati_() {
+  var out = [];
+  try {
+    var ss = getMainSS();
+    var sh = ss.getSheetByName(PROFILO_PRO_SHEET);
+    if (!sh || sh.getLastRow() < 2) return out;
+    var vals = sh.getDataRange().getValues();
+    var H = vals[0];
+    var iEmail = H.indexOf('email'), iInt = H.indexOf('interessi_dimensioni'),
+        iCons = H.indexOf('consenso_profilazione'), iComp = H.indexOf('completezza'),
+        iRuolo = H.indexOf('ruolo_funzione'), iEnte = H.indexOf('tipo_ente'),
+        iArea = H.indexOf('area_geografica');
+    for (var r = 1; r < vals.length; r++) {
+      var email = String(vals[r][iEmail] || '').toLowerCase().trim();
+      if (!email) continue;
+      var intCsv = iInt >= 0 ? String(vals[r][iInt] || '') : '';
+      var interessi = intCsv.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+      out.push({
+        email: email,
+        interessi: interessi,
+        interessiCsv: interessi.join(','),
+        consenso: iCons >= 0 ? (vals[r][iCons] === true || String(vals[r][iCons]).toLowerCase() === 'true') : false,
+        completezza: iComp >= 0 ? (Number(vals[r][iComp]) || 0) : 0,
+        ruolo: iRuolo >= 0 ? String(vals[r][iRuolo] || '') : '',
+        ente: iEnte >= 0 ? String(vals[r][iEnte] || '') : '',
+        area: iArea >= 0 ? String(vals[r][iArea] || '') : ''
+      });
+    }
+  } catch (e) { Logger.log('_proListaProfilati_ err: ' + e.message); }
+  return out;
+}
+
+/**
+ * Mappa email→true dei lettori con profilo professionale (per la colonna admin).
+ * @return {Object} { '<email>': true }
+ */
+function proEmailsConProfilo() {
+  var m = {};
+  _proListaProfilati_().forEach(function(p){ m[p.email] = true; });
+  return m;
+}
+
+/**
+ * Lista profilati esposta al frontend admin (tab Utenti / cruscotto).
+ * @param {string} [token] token admin
+ * @return {Object} { ok, totale, conInteressi, items:[...] }
+ */
+function getProfiliProList(token) {
+  if (token !== undefined && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
+    return { ok: false, error: 'forbidden' };
+  }
+  var list = _proListaProfilati_();
+  return {
+    ok: true,
+    totale: list.length,
+    conInteressi: list.filter(function(p){ return p.interessi.length > 0; }).length,
+    items: list
+  };
+}
+
 function getProfilo(token) {
   var user = _proGetUser_(token);
   if (!user) return null;

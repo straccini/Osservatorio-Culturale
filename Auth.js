@@ -517,6 +517,13 @@ function getAllUtenti(opts) {
 
     if (opts.statoFilter) items = items.filter(function(o){ return String(o.Stato||'') === opts.statoFilter; });
     if (opts.ruoloFilter) items = items.filter(function(o){ return String(o.Ruolo||'') === opts.ruoloFilter; });
+    // v5.7 — flag _hasProfilo: l'utente ha compilato "Il mio profilo professionale" (foglio ProfiliPro)
+    try {
+      if (typeof proEmailsConProfilo === 'function') {
+        var _profMap = proEmailsConProfilo();
+        items.forEach(function(u){ u._hasProfilo = !!_profMap[String(u.Email||'').toLowerCase().trim()]; });
+      }
+    } catch(_eProf){}
     var result = { ok:true, items:items, _dbg:_dbg };
     if (infoMsg) result.info = infoMsg;
     return result;
