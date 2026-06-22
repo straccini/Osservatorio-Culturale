@@ -496,6 +496,26 @@ h4{font-size:1.0625rem}
 }
 [data-theme="dark"] .topbar{background:rgba(26,24,21,.92)}
 
+/* v5.6 — Leggibilità dark mode: card/form con background bianco fisso e select-filtro */
+[data-theme="dark"] #profiloProContent > div{
+  background:var(--surface,#141414) !important;
+  border-color:var(--rule,#27272A) !important;
+}
+[data-theme="dark"] #profiloProContent select,
+[data-theme="dark"] #profiloProContent input,
+[data-theme="dark"] #profiloProContent textarea{
+  background:#FFFFFF !important; color:#101010 !important; border-color:#D0D0D0 !important;
+}
+[data-theme="dark"] #profiloProContent select option{ background:#FFFFFF; color:#101010; }
+[data-theme="dark"] .filter-select{
+  background:var(--surface-2,#1F1F1F) !important;
+  color:var(--ink,#FAFAFA) !important;
+  border-color:var(--rule-2,#3F3F46) !important;
+}
+[data-theme="dark"] .filter-select option{ background:#1F1F1F; color:#FAFAFA; }
+/* input ricerca Bandi: sfondo bianco fisso → forza testo scuro leggibile in dark */
+[data-theme="dark"] #bandiSearch{ color:#101010 !important; }
+
 /* Hamburger mobile */
 .topbar-hamburger,.menu-btn{
   display:none; width:36px; height:36px;
