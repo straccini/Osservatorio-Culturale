@@ -19,6 +19,7 @@ const logs = [];
 const realGlobals = {
   Logger: { log: (m) => logs.push(String(m)) },
   Session: { getScriptTimeZone: () => 'Europe/Rome' },
+  ScriptApp: { getService: () => ({ getUrl: () => 'https://script.google.com/x/exec' }) },
   Utilities: { formatDate: (d, tz, fmt) => {
     const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
     return String(fmt).replace('yyyy', y).replace('MM', m).replace('dd', day);
@@ -181,7 +182,7 @@ let html = '';
 let buildErr = null;
 try {
   html = build({
-    soggetto: 'Test', webUrl: '',
+    soggetto: 'Test', webUrl: 'https://script.google.com/x/exec',
     bandiUrgenti: [], bandiRecenti: [], news: [], podcast: [],
     editoria: [
       { tipo: 'pubblicazione', titolo: 'Libro Test', autore: 'Aut', fonte: 'Editore', url: 'http://libro', note: 'nota libro' },
@@ -195,6 +196,10 @@ ok(html.indexOf('Dalla ricerca') >= 0, 'T5.3 contiene header sezione "Dalla rice
 ok(html.indexOf('Libro Test') >= 0, 'T5.4 renderizza titolo pubblicazione');
 ok(html.indexOf('Podcast Test') >= 0, 'T5.5 renderizza titolo podcast');
 ok(html.indexOf('http://libro') >= 0, 'T5.6 include il link della pubblicazione');
+// Invito a profilarsi (v5.5)
+ok(html.indexOf('Vuoi una newsletter') >= 0, 'T5.8 contiene l\'invito a profilarsi');
+ok(html.indexOf('goto=profilo-pro') >= 0, 'T5.9 deep-link a Il mio profilo');
+ok(html.indexOf('goto=matrix-landing') >= 0, 'T5.10 deep-link a MuseMu Matrix');
 
 // Editoria vuota → nessuna sezione "Dalla ricerca" (no header orfano)
 let htmlEmpty = '';

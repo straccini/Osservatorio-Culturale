@@ -136,6 +136,22 @@ function buildNewsletterHtml_(draft) {
     parts.push('</td></tr>');
   }
 
+  // v5.5 — Invito a profilarsi (newsletter generica → chi non si è profilato): newsletter su misura
+  if (webUrl) {
+    var _sepNl = (webUrl.indexOf('?') >= 0) ? '&' : '?';
+    var _urlProfilo = webUrl + _sepNl + 'goto=profilo-pro';
+    var _urlMatrix  = webUrl + _sepNl + 'goto=matrix-landing';
+    parts.push('<tr><td style="padding:4px 28px 22px 28px;">');
+    parts.push('<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FBF7EF;border:1px solid #E8DFC9;border-radius:10px;">');
+    parts.push('<tr><td style="padding:20px 22px;">');
+    parts.push('<div style="font-size:15px;font-weight:700;color:#1D1D1F;margin-bottom:6px;">Vuoi una newsletter più vicina alle tue aspettative?</div>');
+    parts.push('<p style="margin:0 0 14px;font-size:13px;line-height:1.55;color:#3A3A3C;">Compila il questionario e riceverai <b>gratuitamente</b> una selezione di contenuti su misura per il tuo profilo professionale e per il tuo museo.</p>');
+    parts.push('<a href="' + _h_(_urlProfilo) + '" style="display:inline-block;background:#935851;color:#FFFFFF;padding:10px 18px;border-radius:7px;text-decoration:none;font-size:13px;font-weight:600;margin:0 8px 8px 0;">Il mio profilo &rarr;</a>');
+    parts.push('<a href="' + _h_(_urlMatrix) + '" style="display:inline-block;background:#8E6E1F;color:#FFFFFF;padding:10px 18px;border-radius:7px;text-decoration:none;font-size:13px;font-weight:600;margin:0 0 8px 0;">Valuta il tuo museo &middot; MuseMu Matrix &rarr;</a>');
+    parts.push('</td></tr></table>');
+    parts.push('</td></tr>');
+  }
+
   // Footer
   parts.push('<tr><td style="padding:16px 28px 28px 28px;border-top:1px solid #ECECEE;">');
   parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;">Ricevi questa newsletter in quanto iscritto all\'Osservatorio Culturale. Per modificare le preferenze o cancellarti, usa il link di disiscrizione in fondo.</p>');
