@@ -8414,7 +8414,7 @@
               })
               .createSessione(email, 'registrazione');
           } else if (r && r.error === 'gia_registrato') {
-            if (msg) { msg.textContent = 'Questa email e gia registrata. Usa "Accedi" qui sopra.'; msg.style.color = 'var(--accent,#935851)'; }
+            if (msg) { msg.innerHTML = 'Sei gi&agrave; registrato con <b>' + String(email).replace(/</g,'&lt;') + '</b>. Usa &ldquo;Accedi&rdquo; qui sopra per entrare.'; msg.style.color = 'var(--accent,#935851)'; }
           } else {
             if (msg) { msg.textContent = (r && r.error) || 'Errore nella registrazione'; msg.style.color = 'var(--danger,#C2410C)'; }
           }
@@ -12663,6 +12663,10 @@
         if(msg){msg.textContent='Registrato! Accesso in corso...';msg.style.color='#3F7A5E';}
         // Dopo registrazione, prova login
         setTimeout(function(){ OC._gateDoLoginWith(email); },500);
+      } else if(r && r.error === 'gia_registrato'){
+        // Email già presente: segnala e procedi all'accesso (è già registrato con la sua mail)
+        if(msg){msg.innerHTML='Sei già registrato con <b>'+String(email).replace(/</g,'&lt;')+'</b>. Ti facciamo accedere…';msg.style.color='var(--ink-2)';}
+        setTimeout(function(){ OC._gateDoLoginWith(email); },600);
       } else {
         if(msg){msg.textContent=(r&&r.error)||'Errore registrazione';msg.style.color='#C2410C';}
       }
