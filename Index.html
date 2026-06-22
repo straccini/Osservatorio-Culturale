@@ -12839,7 +12839,7 @@
       return;
     }
     subSel.disabled = false;
-    subSel.style.color = 'var(--ink,#101010)';
+    subSel.style.color = ''; // azzera il color:#999 inline → eredita il colore normale (anche dark mode)
     subSel.add(new Option('Seleziona...', ''));
     subs.forEach(function(s) { subSel.add(new Option(s, s)); });
   }
