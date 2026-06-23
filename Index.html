@@ -1605,6 +1605,21 @@
         <br>Legenda azioni: <span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; invio reale</span> &middot; <span style="color:#B45309;font-weight:700">&#9679; crea bozza (nessun invio)</span> &middot; <span style="color:var(--amb-3,#3C6A95);font-weight:700">&#9679; solo anteprima</span>
       </div>
 
+      <!-- ===== INVIO SETTIMANALE (Opzione B: rivedi e invia) — tutte le coorti ===== -->
+      <div class="admin-card" style="margin-bottom:18px;border-left:4px solid var(--amb-2,#10916D)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+          <span style="font-size:15px;font-weight:700;color:var(--ink)">&#128235; Invio digest settimanale</span>
+          <span style="font-size:11px;color:var(--ink-3)">lettori + Matrix + profilati &mdash; in un colpo</span>
+        </div>
+        <p style="font-size:12px;color:var(--ink-3);margin:0 0 10px;line-height:1.6">Le bozze si generano in automatico <b>la domenica sera</b> (ricevi un avviso Telegram). Qui, <b>il luned&igrave;</b>, le rivedi nelle schede sotto e poi invii a tutte le coorti. <b>1)</b> premi <b>Anteprima destinatari</b> (non invia nulla) &middot; <b>2)</b> poi <b>Invia a tutti</b> (doppio clic di conferma).</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-secondary" onclick="OC.anteprimaInvioSettimanale()" style="font-size:13px;padding:8px 16px" title="Calcola quanti destinatari riceveranno, per coorte, senza inviare nulla (dry-run)">Anteprima destinatari</button>
+          <button class="btn btn-primary" id="btnInviaSettimanale" onclick="OC.inviaDigestSettimanale()" disabled style="font-size:13px;padding:8px 16px;background:var(--amb-2,#10916D);opacity:.5" title="Disponibile dopo l'anteprima">Invia a tutti</button>
+          <span id="invioSettimanaleStato" style="font-size:12px;color:var(--ink-3)"></span>
+        </div>
+        <div id="invioSettimanaleReport" style="margin-top:10px;font-size:12px;color:var(--ink-2);line-height:1.5"></div>
+      </div>
+
       <!-- ========== TAB 1: APPROFONDIMENTO ========== -->
       <div class="digest-tab-content" data-digest-content="approfondimento">
         <div class="admin-card" style="margin-bottom:16px;border-left:4px solid #8B3A1F">
@@ -7933,6 +7948,67 @@
       .testInviaDigestGeneralista(emailDest, (window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
+  // ── Opzione B — Invio digest settimanale a tutte le coorti (rivedi → invia) ──
+  var _invioSettArmato = false, _invioSettTimer = null, _invioSettTotale = 0;
+
+  function anteprimaInvioSettimanale(){
+    if (!hasGAS()) return;
+    var st = $('invioSettimanaleStato'), rep = $('invioSettimanaleReport');
+    st.textContent = 'Calcolo destinatari…'; rep.innerHTML = '';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || r.ok === false) { st.textContent = 'Errore: ' + (r && r.error || 'sconosciuto'); return; }
+        var g = r.generalisti_inviati||0, l = r.leadCaldi_inviati||0, p = r.profilati_inviati||0;
+        _invioSettTotale = g + l + p;
+        st.textContent = 'Anteprima pronta';
+        rep.innerHTML = '<b>Destinatari stimati:</b> ' + _invioSettTotale + ' totali &mdash; '
+          + g + ' lettori &middot; ' + l + ' Matrix/lead &middot; ' + p + ' profilati. <i>(nessuna email inviata)</i>';
+        var btn = $('btnInviaSettimanale'); btn.disabled = false; btn.style.opacity = '1';
+      })
+      .withFailureHandler(function(e){ st.textContent = 'Errore di rete: ' + e; })
+      .sendDigestAuto2coorti({ token: (window.OC_SESSION&&window.OC_SESSION.token)||null, dryRun: true });
+  }
+
+  function inviaDigestSettimanale(){
+    if (!hasGAS()) return;
+    var btn = $('btnInviaSettimanale'), st = $('invioSettimanaleStato');
+    // Doppio clic di conferma (i dialoghi nativi congelano la sandbox GAS)
+    if (!_invioSettArmato) {
+      _invioSettArmato = true;
+      btn.textContent = '⚠ Conferma: invia a ' + _invioSettTotale + ' — riclicca';
+      btn.style.background = 'var(--danger,#C2410C)';
+      if (_invioSettTimer) clearTimeout(_invioSettTimer);
+      _invioSettTimer = setTimeout(function(){
+        _invioSettArmato = false; btn.textContent = 'Invia a tutti'; btn.style.background = 'var(--amb-2,#10916D)';
+      }, 8000);
+      return;
+    }
+    _invioSettArmato = false; if (_invioSettTimer) clearTimeout(_invioSettTimer);
+    btn.disabled = true; btn.style.opacity = '.5'; btn.textContent = 'Invio in corso…';
+    st.textContent = 'Invio a tutte le coorti in corso (può richiedere 1-2 min)…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || r.ok === false) {
+          st.textContent = 'Errore: ' + (r && r.error || 'sconosciuto');
+          btn.textContent = 'Invia a tutti'; btn.disabled = false; btn.style.opacity = '1'; btn.style.background = 'var(--amb-2,#10916D)';
+          return;
+        }
+        var g = r.generalisti_inviati||0, l = r.leadCaldi_inviati||0, p = r.profilati_inviati||0;
+        var err = (r.generalisti_errori||0) + (r.leadCaldi_errori||0) + (r.profilati_errori||0);
+        st.textContent = '✓ Inviato';
+        $('invioSettimanaleReport').innerHTML = '<b style="color:var(--amb-2,#10916D)">✓ Digest settimanale inviato.</b> '
+          + g + ' lettori &middot; ' + l + ' Matrix/lead &middot; ' + p + ' profilati'
+          + (err ? (' &middot; <span style="color:var(--danger,#C2410C)">' + err + ' errori</span>') : '') + '.';
+        btn.textContent = 'Inviato ✓'; btn.style.background = 'var(--ink-3)';
+        showToast && showToast('Digest settimanale inviato a ' + (g+l+p) + ' destinatari', 'ok');
+      })
+      .withFailureHandler(function(e){
+        st.textContent = 'Errore di rete: ' + e;
+        btn.textContent = 'Invia a tutti'; btn.disabled = false; btn.style.opacity = '1'; btn.style.background = 'var(--amb-2,#10916D)';
+      })
+      .sendDigestAuto2coorti({ token: (window.OC_SESSION&&window.OC_SESSION.token)||null });
+  }
+
   // ── v4.22 E1 — Editoriale settimanale admin ──
   function _loadEditoriale() {
     if (!hasGAS()) return;
@@ -12064,6 +12140,8 @@
     uploadTsv: uploadTsv,
     reloadFontiStats: reloadFontiStats,
     testDigestEmail: testDigestEmail,
+    anteprimaInvioSettimanale: anteprimaInvioSettimanale,
+    inviaDigestSettimanale: inviaDigestSettimanale,
     // v4.22 E1 — Approfondimento della settimana
     _switchDigestTab: _switchDigestTab,
     _loadEditoriale: _loadEditoriale,
@@ -12105,6 +12183,8 @@
     nlAutoAuthOff: nlAutoAuthOff,
     testDigestMatrixPerEmail: testDigestMatrixPerEmail,
     testDigestEmail: testDigestEmail,
+    anteprimaInvioSettimanale: anteprimaInvioSettimanale,
+    inviaDigestSettimanale: inviaDigestSettimanale,
     inviaTuttiPending: inviaTuttiPending,
     reloadQueue: reloadQueue,
     // Sprint 1.3 D2.4 - Cron weekly admin

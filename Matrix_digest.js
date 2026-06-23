@@ -828,8 +828,10 @@ function testDigestMatrixForEmail(email, token) {
 // ============================================================================
 
 var OC_DIGEST_TRIGGER_HANDLER = 'cronGenerateDigestWeekly';
-var OC_DIGEST_TRIGGER_DAY = ScriptApp.WeekDay.TUESDAY;
-var OC_DIGEST_TRIGGER_HOUR = 6; // martedi 06:00
+// Opzione B (revisione prima dell'invio): bozze generate DOMENICA sera, l'admin
+// rivede e invia lunedi mattina dal pannello. Niente piu invio automatico.
+var OC_DIGEST_TRIGGER_DAY = ScriptApp.WeekDay.SUNDAY;
+var OC_DIGEST_TRIGGER_HOUR = 18; // domenica 18:00
 var OC_DIGEST_LAST_RUN_PROP = 'OC_DIGEST_LAST_RUN';
 var OC_DIGEST_LAST_RESULT_PROP = 'OC_DIGEST_LAST_RESULT';
 
@@ -893,11 +895,11 @@ function cronGenerateDigestWeekly() {
 
     // 3) Notifica Telegram all'admin
     Logger.log('[3/3] Notifica Telegram all\'admin...');
-    var msg = '*Digest weekly · bozze pronte*\n\n' +
+    var msg = '*Digest settimanale · bozze pronte (domenica sera)*\n\n' +
               '_' + Utilities.formatDate(startedAt, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm') + '_\n\n' +
               '*Segmentati Matrix:* ' + (report.segmentati ? (report.segmentati.generati||0) : 0) + ' bozze\n' +
               '*Generalista:* ' + (report.generalista && report.generalista.ok ? '1 bozza pronta' : 'errore') + '\n\n' +
-              'Apri il pannello admin per revisione e invio.';
+              '👉 *Lunedi mattina*: apri Impostazioni → Digest, rivedi l\'anteprima e premi *Invia digest settimanale* per spedire a tutti (lettori + Matrix + profilati).';
     try {
       if (typeof sendTelegram === 'function') {
         var tg = sendTelegram(msg);
@@ -944,18 +946,18 @@ function setupMatrixDigestTrigger() {
       }
     });
 
-    // Crea nuovo trigger weekly martedi 06:00
+    // Crea nuovo trigger weekly domenica 18:00 (Opzione B: bozze pronte per il lunedi)
     var trig = ScriptApp.newTrigger(OC_DIGEST_TRIGGER_HANDLER)
       .timeBased()
       .onWeekDay(OC_DIGEST_TRIGGER_DAY)
       .atHour(OC_DIGEST_TRIGGER_HOUR)
       .create();
 
-    Logger.log('Trigger creato: ' + OC_DIGEST_TRIGGER_HANDLER + ' martedi ' + OC_DIGEST_TRIGGER_HOUR + ':00. Rimossi precedenti: ' + removed);
+    Logger.log('Trigger creato: ' + OC_DIGEST_TRIGGER_HANDLER + ' domenica ' + OC_DIGEST_TRIGGER_HOUR + ':00. Rimossi precedenti: ' + removed);
     return {
       ok: true,
       triggerId: trig.getUniqueId(),
-      day: 'TUESDAY',
+      day: 'SUNDAY',
       hour: OC_DIGEST_TRIGGER_HOUR,
       removedOld: removed
     };

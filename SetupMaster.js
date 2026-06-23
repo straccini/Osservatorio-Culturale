@@ -24,9 +24,11 @@
  *      06:00  lunediMattina       — Scan completo fonti (solo lunedì)
  *      06:15  galRunOggi          — 10 GAL del giorno
  *
- *    MATTINA (digest + email)
- *      06:00  cronGenerateDigestWeekly — Matrix digest personalizzato (solo martedì)
- *      07:00  sendDigestAuto2coorti    — Digest 2 coorti A+B (solo lunedì)
+ *    DIGEST (Opzione B — revisione prima dell'invio)
+ *      DOM 18:00  cronGenerateDigestWeekly — genera bozze settimanali + Telegram
+ *      LUN (manuale)  sendDigestAuto2coorti — invio A+B+C dal pannello admin
+ *
+ *    MATTINA (email + scan)
  *      07:00  scanSources         — RSS news (mar+gio)
  *      07:30  scanPodcast         — Podcast+video (mar+gio)
  *      07:30  sendAgentEmails     — Check + invio email agenti
@@ -82,9 +84,15 @@ var OC_TRIGGER_SCHEDULE = [
   { fn: 'lunediMattina',               tipo: 'weekly',   giorno: ScriptApp.WeekDay.MONDAY, ora: 6, min: 0,  desc: 'Scan completo fonti lunedi' },
   { fn: 'galRunOggi',                   tipo: 'daily',    ora: 6,  min: 15,  desc: 'Monitor GAL (10/giorno)' },
 
-  // === MATTINA (digest + scan contenuti) ===
-  { fn: 'cronGenerateDigestWeekly',     tipo: 'weekly',   giorno: ScriptApp.WeekDay.TUESDAY, ora: 6, min: 0, desc: 'Matrix digest bozze (martedi)' },
-  { fn: 'sendDigestAuto2coorti',        tipo: 'weekly',   giorno: ScriptApp.WeekDay.MONDAY, ora: 7, min: 0,  desc: 'Digest 2 coorti (A+B) lunedi' },
+  // === DIGEST — Opzione B (revisione prima dell'invio) ===
+  // Domenica sera: genera TUTTE le bozze (generalista + Matrix) + Telegram all'admin.
+  { fn: 'cronGenerateDigestWeekly',     tipo: 'weekly',   giorno: ScriptApp.WeekDay.SUNDAY, ora: 18, min: 0, desc: 'Genera bozze digest settimanale (domenica) — rivedi e invia lunedi' },
+  // NB: sendDigestAuto2coorti NON e piu schedulato. L'invio a tutte le coorti
+  // (A lettori + B Matrix + C profilati) e MANUALE: l'admin lo lancia lunedi dal
+  // pannello Impostazioni → Digest (pulsante "Invia digest settimanale") dopo aver
+  // rivisto l'anteprima. Per tornare all'invio automatico, riaggiungere qui la riga.
+
+  // === MATTINA (scan contenuti) ===
   { fn: 'scanSourcesBisettimanale',     tipo: 'daily',    ora: 7,  min: 0,   desc: 'Scan RSS news (solo mar+gio)' },
   { fn: 'scanPodcastBisettimanale',     tipo: 'daily',    ora: 7,  min: 30,  desc: 'Scan podcast (solo mar+gio)' },
   { fn: 'sendAgentEmails',              tipo: 'daily',    ora: 7,  min: 30,  desc: 'Email agenti (check giorno interno)' },
