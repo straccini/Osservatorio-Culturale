@@ -254,7 +254,7 @@ function forgetMyData(identifier, token) {
       return cnt;
     }
     if (isEmail) {
-      ['Utenti','Sessioni_v1','RichiestePrenotazione','SondaggiMirati','ProfiloAgenti','ProfiliPro','Segnalazioni','UnsubscribeLog'].forEach(function(nm){
+      ['Utenti','Sessioni_v1','RichiestePrenotazione','SondaggiMirati','ProfiloAgenti','ProfiliPro','Segnalazioni','UnsubscribeLog','UtmLog'].forEach(function(nm){
         var nn = purgeByEmailAnyCol(nm);
         if (nn > 0) deletedFrom.push(nm + ' (' + nn + ')');
       });
@@ -284,6 +284,48 @@ function forgetMyData(identifier, token) {
     Logger.log('forgetMyData ERRORE: ' + e.message);
     return { ok: false, error: e.message };
   }
+}
+
+/**
+ * RETENTION (predisposizione scaling) — rimuove i contatti non più necessari: righe Utenti
+ * con Stato 'rifiutato' o 'sospeso' e iscrizione più vecchia di N mesi. NON tocca utenti
+ * attivi o pending. Dry-run di default, admin-gated. In fase di test va eseguita manualmente;
+ * in futuro può essere agganciata a un trigger periodico.
+ *
+ * @param {Object} [opts] {mesi:24, dryRun:true, token}
+ * @return {Object} {ok, dryRun, mesi, rimossi, esempi[]}
+ */
+function purgeContattiObsoleti(opts) {
+  opts = opts || {};
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(opts.token)) {
+    return { ok: false, error: 'forbidden' };
+  }
+  var mesi = Number(opts.mesi) || 24;
+  var dryRun = (opts.dryRun === undefined) ? true : !!opts.dryRun;
+  var soglia = new Date(Date.now() - mesi * 30 * 86400000);
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Utenti');
+  var report = { ok: true, dryRun: dryRun, mesi: mesi, rimossi: 0, esempi: [] };
+  if (!sh || sh.getLastRow() < 2) return report;
+  var vals = sh.getDataRange().getValues();
+  var H = vals[0];
+  var iEmail = H.indexOf('Email'), iStato = H.indexOf('Stato'), iData = H.indexOf('DataIscrizione');
+  var daRimuovere = [];
+  for (var r = 1; r < vals.length; r++) {
+    var stato = String(iStato >= 0 ? vals[r][iStato] : '').toLowerCase();
+    if (stato !== 'rifiutato' && stato !== 'sospeso') continue;
+    var raw = iData >= 0 ? vals[r][iData] : null;
+    var d = (raw instanceof Date) ? raw : (raw ? new Date(raw) : null);
+    if (!d || isNaN(d.getTime()) || d >= soglia) continue; // recente o data assente → non toccare
+    daRimuovere.push(r + 1);
+    if (report.esempi.length < 15) report.esempi.push({ email: String(iEmail >= 0 ? vals[r][iEmail] : '').slice(0, 40), stato: stato });
+  }
+  report.rimossi = daRimuovere.length;
+  if (!dryRun) {
+    daRimuovere.sort(function(a, b) { return b - a; }).forEach(function(row) { sh.deleteRow(row); });
+  }
+  Logger.log('[RETENTION] Contatti obsoleti (rifiutati/sospesi > ' + mesi + ' mesi): ' + report.rimossi + (dryRun ? ' (DRY-RUN)' : ' rimossi'));
+  return report;
 }
 
 // ============================================================================
