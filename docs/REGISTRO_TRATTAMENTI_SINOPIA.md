@@ -1,12 +1,12 @@
 # Registro delle attività di trattamento
 ### Sinopia · Osservatorio Culturale — ai sensi dell'art. 30 GDPR
 
-**Versione 1.0 — giugno 2026**
+**Versione 1.1 — giugno 2026** · coerente con l'informativa privacy in-app (pagina "Privacy & GDPR", giugno 2026)
 
-> ⚠️ **NOTA.** Bozza operativa predisposta per il pilota. Da validare/firmare dal Titolare. I campi 🔎 vanno confermati.
+> ⚠️ **NOTA.** Bozza operativa predisposta per la fase di **test/beta**. Da validare/firmare dal Titolare. I campi 🔎 vanno confermati.
 
 ## Titolare del trattamento
-**Sinopia S.r.l.** — Via del Raku 10, 06053 Deruta (PG), Italia · C.F./P.IVA 03766660546 · PEC sinopiaconsulting@pec.it · Contatto: info@sinopiaconsulting.it
+**Sinopia S.r.l.** — Via del Raku 10, 06053 Deruta (PG), Italia · C.F./P.IVA 03766660546 · PEC sinopiaconsulting@pec.it · Contatto: sinopiaconsulting@gmail.com
 *Responsabile della Protezione dei Dati (DPO):* 🔎 non nominato / [eventuale nominativo].
 
 ---
@@ -67,7 +67,8 @@
 - Accesso ai dati riservato al Titolare (account Google) e alle funzioni admin protette da token di sessione (livello editor/admin).
 - Funzioni che espongono dati personali (lista lead, mailing list) **non accessibili in forma anonima** (gate server-side, v4.23.0).
 - Notifiche esterne (Telegram) prive di email/nome (v4.23.0).
-- Diritto alla cancellazione esteso a tutti i fogli con dati personali (`forgetMyData`, v4.23.0).
+- Diritto alla cancellazione esteso a **tutti** i fogli con dati personali, incluso `UtmLog` (`forgetMyData`, v637).
+- **Minimizzazione/retention**: funzione `purgeContattiObsoleti()` (Privacy_v1.js) per la rimozione dei contatti rifiutati/sospesi oltre N mesi (in fase di test eseguita su iniziativa del Titolare; predisposta per trigger periodico al passaggio a regime).
 - Registro dei consensi con data/ora e versione del testo (`ConsensiLog`, v4.23.0).
 - Sanitizzazione anti-formula sui dati scritti nei fogli; validazione delle URL di redirect (anti open-redirect/XSS, v4.23.2).
 - Trasmissione in HTTPS; token di sessione generati con funzione crittografica (UUID).
@@ -75,7 +76,7 @@
 ---
 
 ## Diritti degli interessati
-Accesso, rettifica, cancellazione, limitazione, portabilità, opposizione, revoca del consenso. Esercizio: info@sinopiaconsulting.it, link di disiscrizione nelle email, funzione "Cancella i miei dati" in app. Reclamo: Garante (www.gpdp.it).
+Accesso, rettifica, cancellazione, limitazione, portabilità, opposizione, revoca del consenso. Esercizio: sinopiaconsulting@gmail.com, link di disiscrizione nelle email (interrompe le comunicazioni e disattiva il contatto; cancellazione completa su richiesta), funzione "Cancella i miei dati" in app. Reclamo: Garante (www.gpdp.it).
 
 ---
 

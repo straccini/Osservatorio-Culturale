@@ -16,6 +16,10 @@
 <meta property="og:image" content="https://app.sinopiaconsulting.it/og-cover.png">
 <meta property="og:locale" content="it_IT">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sinopia · Osservatorio Culturale">
+<meta name="twitter:description" content="News, bandi, podcast, video e libri della cultura italiana, aggiornati in tempo reale dall'AI scanner. Autovalutazione MuseMu Matrix gratuita.">
+<meta name="twitter:image" content="https://app.sinopiaconsulting.it/og-cover.png">
+<link rel="canonical" href="https://app.sinopiaconsulting.it/">
 
 <!-- JSON-LD structured data per Google -->
 <script type="application/ld+json">
@@ -35,6 +39,26 @@
   }
 }
 </script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Sinopia Srl",
+  "alternateName": "Sinopia Consulting",
+  "url": "https://sinopiaconsulting.it",
+  "email": "sinopiaconsulting@gmail.com",
+  "vatID": "IT03766660546",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Via del Raku 10",
+    "postalCode": "06053",
+    "addressLocality": "Deruta",
+    "addressRegion": "PG",
+    "addressCountry": "IT"
+  },
+  "sameAs": ["https://www.linkedin.com/company/sinopiaconsulting/"]
+}
+</script>
 
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
@@ -51,19 +75,30 @@
   .cta-wrap{margin:28px 0 18px;text-align:center}
   .cta{display:inline-block;background:#8B3A1F;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-family:-apple-system,'Segoe UI',Inter,sans-serif;font-size:15px;font-weight:600;letter-spacing:.02em;transition:background .15s;border:none;cursor:pointer}
   .cta:hover{background:#6B2A12}
-  .hint{font-family:-apple-system,'Segoe UI',Inter,sans-serif;font-size:11.5px;color:#8B5E2B;text-align:center;margin-top:10px}
+  .hint{font-family:-apple-system,'Segoe UI',Inter,sans-serif;font-size:12px;color:#6E4318;text-align:center;margin-top:10px}
   .footer{padding:18px 40px;border-top:1px solid #E5E1D8;background:#FBF7EE;text-align:center}
-  .footer-text{font-family:-apple-system,'Segoe UI',Inter,sans-serif;font-size:11.5px;color:#8B5E2B;line-height:1.6}
+  .footer-text{font-family:-apple-system,'Segoe UI',Inter,sans-serif;font-size:12px;color:#6E4318;line-height:1.6}
   .footer-text a{color:#8B3A1F;text-decoration:none;font-weight:600}
   .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:24px;padding-top:18px;border-top:1px solid #E5E1D8}
   .feat{font-family:-apple-system,'Segoe UI',Inter,sans-serif;font-size:11.5px;color:#5C4332;text-align:center}
   .feat-num{font-family:Georgia,serif;font-size:22px;font-weight:600;color:#8B3A1F;display:block;line-height:1;margin-bottom:4px}
+  .seo-content{margin-top:24px;padding-top:20px;border-top:1px solid #E5E1D8}
+  .seo-content h2{font-family:Georgia,serif;font-weight:500;font-size:18px;color:#3A2818;margin-bottom:10px}
+  .seo-content p{font-size:14px;color:#5C4332;margin-bottom:10px}
+  .seo-content ul{margin:0 0 4px;padding-left:18px}
+  .seo-content li{font-size:13.5px;color:#5C4332;margin-bottom:7px;line-height:1.5}
+  .seo-content strong{color:#3A2818;font-weight:600}
   @media(max-width:520px){
     .hero{padding:24px 24px}
     .body{padding:24px 24px}
     .footer{padding:14px 24px}
     .logo{font-size:36px}
     h1{font-size:20px}
+    .features{grid-template-columns:repeat(2,1fr);gap:14px 10px}
+    .feat-num{font-size:24px}
+  }
+  @media(max-width:360px){
+    .features{grid-template-columns:1fr}
   }
 </style>
 
@@ -77,12 +112,33 @@
     var qs = window.location.search || '';
     return WEBAPP_URL + qs;
   }
-  // Auto-redirect dopo 0.8s (dare tempo al motore di scansione di leggere meta tags)
-  setTimeout(function(){
-    // Non auto-redirect se l'utente arriva da bot SEO (User-Agent check non perfetto ma utile)
-    if (/bot|crawl|spider|index|search|google|bing|yandex/i.test(navigator.userAgent)) return;
-    window.location.replace(buildAppUrl());
-  }, 800);
+  // Apertura automatica dopo 5s, con countdown visibile e ANNULLAMENTO alla prima interazione
+  // (chi vuole leggere la pagina resta; i crawler SEO non vengono mai reindirizzati).
+  (function(){
+    var SECS = 5, left = SECS, timer = null, cancelled = false;
+    function isBot(){ return /bot|crawl|spider|index|search|google|bing|yandex|facebookexternalhit|linkedinbot|whatsapp/i.test(navigator.userAgent); }
+    function setHint(t){ var h = document.getElementById('autoHint'); if (h) h.textContent = t; }
+    function cancel(){
+      if (cancelled) return; cancelled = true;
+      if (timer) clearInterval(timer);
+      setHint('Resta pure su questa pagina. Premi “Entra in Sinopia” quando vuoi.');
+    }
+    function start(){
+      if (isBot()) { setHint(''); return; } // i bot restano sulla pagina: indicizzazione
+      setHint('Apertura automatica fra ' + left + 's — interagisci per restare sulla pagina.');
+      timer = setInterval(function(){
+        if (cancelled) return;
+        left--;
+        if (left <= 0) { clearInterval(timer); window.location.replace(buildAppUrl()); return; }
+        setHint('Apertura automatica fra ' + left + 's — interagisci per restare sulla pagina.');
+      }, 1000);
+      ['scroll','mousemove','touchstart','keydown','wheel','click'].forEach(function(ev){
+        window.addEventListener(ev, cancel, { once:true, passive:true });
+      });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+    else start();
+  })();
 </script>
 </head>
 <body>
@@ -100,7 +156,7 @@
 
     <div class="cta-wrap">
       <a href="#" id="ctaApp" class="cta" onclick="window.location.href=buildAppUrl();return false;">Entra in Sinopia &rarr;</a>
-      <div class="hint">Apertura automatica fra 0,8 secondi&hellip;</div>
+      <div class="hint" id="autoHint">Apertura automatica fra 5 secondi&hellip;</div>
     </div>
 
     <div class="features">
@@ -108,6 +164,17 @@
       <div class="feat"><span class="feat-num">280+</span>Bandi attivi cultura</div>
       <div class="feat"><span class="feat-num">10</span>Dimensioni MuseMu Matrix</div>
       <div class="feat"><span class="feat-num">25</span>Standard MiC SM-LUQV</div>
+    </div>
+
+    <div class="seo-content">
+      <h2>Cosa trovi su Sinopia</h2>
+      <p>Sinopia &egrave; l&rsquo;osservatorio sulla cultura italiana di <strong>Sinopia Consulting</strong> (Sinopia Srl, Deruta &ndash; PG). Tramite scanner basati su intelligenza artificiale aggrega in tempo reale opportunit&agrave; e contenuti per chi gestisce musei, fondazioni, comuni ed enti culturali.</p>
+      <ul>
+        <li><strong>Bandi e finanziamenti</strong> per la cultura (PNRR, fondi regionali ed europei), monitorati e filtrati per settore.</li>
+        <li><strong>News, podcast, video e pubblicazioni</strong> dagli ambiti strategici: identit&agrave; museale, inclusione e accessibilit&agrave;, programmi e collezioni, comunit&agrave; e welfare culturale, digitale e governance.</li>
+        <li><strong>MuseMu Matrix</strong>: autovalutazione gratuita della maturit&agrave; del museo su 10 dimensioni, con diagnosi immediata e roadmap di sviluppo.</li>
+        <li><strong>Consulenza</strong> per progettazione culturale, candidature a bandi, accessibilit&agrave; e innovazione museale.</li>
+      </ul>
     </div>
   </div>
 
