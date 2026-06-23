@@ -552,7 +552,7 @@ function _serveDigestReader(token) {
       + '<h2>Link non accessibile</h2>'
       + '<p>Il link del tuo digest personale non è più valido. I link hanno una durata di <strong>30 giorni</strong> e vengono rigenerati ad ogni nuovo invio.</p>'
       + '<div class="detail">Motivo tecnico: ' + motivo + '</div>'
-      + '<a class="btn" href="mailto:info@sinopiaconsulting.it">Richiedi un nuovo digest</a>'
+      + '<a class="btn" href="mailto:sinopiaconsulting@gmail.com">Richiedi un nuovo digest</a>'
       + '</div></body></html>';
     var err = HtmlService.createHtmlOutput(errHtml);
     err.setTitle('Link non valido — Osservatorio Culturale');

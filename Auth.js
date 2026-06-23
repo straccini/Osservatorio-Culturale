@@ -849,7 +849,7 @@ function _sendInviteEmail_(email, nome, ruolo, magicUrl) {
       + '<p style="font-size:12px;color:#8B5E2B;line-height:1.5;margin:0">'
       + 'L\'iscrizione e <b>completamente gratuita</b>, senza vincoli temporali. '
       + 'I tuoi dati sono trattati ai sensi del GDPR (Reg. UE 2016/679) esclusivamente per finalita informative. '
-      + 'Puoi richiedere la cancellazione del tuo account e dei tuoi dati in qualsiasi momento scrivendo a info@sinopiaconsulting.it.</p>'
+      + 'Puoi richiedere la cancellazione del tuo account e dei tuoi dati in qualsiasi momento scrivendo a sinopiaconsulting@gmail.com.</p>'
       + '</div>'
       // Link fallback
       + '<p style="font-size:11px;color:#8B5E2B;line-height:1.5;margin:20px 0 0;font-style:italic">Se il bottone non funziona, copia e incolla questo link nel browser:<br><span style="color:#5C4332;font-family:monospace;font-size:10px;word-break:break-all">' + magicUrl + '</span></p>'
