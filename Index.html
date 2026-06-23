@@ -1845,24 +1845,16 @@
 
           <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
 
-          <!-- Step 3 — Test -->
+          <!-- Step 3 — Prova di invio (un solo campo) -->
           <div style="margin-bottom:16px">
             <div style="display:flex;align-items:center;margin-bottom:6px">
               <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">3</span>
-              <span style="font-size:14px;font-weight:700;color:var(--ink)">Test profilo</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Prova di invio</span>
             </div>
-            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px"><span style="color:#B45309;font-weight:700">&#9679; Nessun invio:</span> genera una <b>bozza</b> che finisce nella coda (KPI "Bozze in coda"). L'invio reale avviene solo allo step 4. Per vedere il contenuto usa l'<b>Anteprima per email</b> in fondo alla pagina.</p>
-            <div style="margin-left:32px;display:flex;gap:8px;margin-bottom:8px;align-items:center">
-              <input type="email" id="matrixTestEmail" placeholder="Email compilatore Matrix..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
-              <button class="btn btn-secondary" onclick="OC.testDigestMatrixPerEmail()" style="font-size:12px;padding:7px 14px" title="Genera una BOZZA in coda per l'email indicata — nessuna email viene inviata">Genera bozza da email</button>
-            </div>
-            <div style="margin-left:32px;display:flex;justify-content:flex-end">
-              <button class="btn btn-secondary" onclick="OC.testDigestSegmentato()" style="font-size:12px;padding:7px 14px" title="Genera una BOZZA usando l'ultimo profilo Matrix — nessuna email viene inviata">Genera bozza ultimo profilo</button>
-            </div>
-            <p style="font-size:12px;color:var(--ink-3);margin:12px 0 8px 32px"><span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; Invio reale:</span> spedisce subito un digest profilato vero all'indirizzo indicato (usa la sua compilazione Matrix; se non ne ha, l'ultima disponibile come campione). Non tocca la coda.</p>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px"><span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; Invio reale:</span> indica un indirizzo (usa la <b>tua</b> email) e premi <b>Invia prova</b>: spedisce subito un digest profilato vero, per verificarlo in casella. Usa la compilazione Matrix dell'indirizzo; se non ne ha, l'ultima disponibile come campione. Non tocca la coda.</p>
             <div style="margin-left:32px;display:flex;gap:8px;align-items:center">
-              <input type="email" id="matrixSendTestEmail" placeholder="Email per il test reale..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
-              <button class="btn btn-secondary" onclick="OC.testDigestMatrixInvio()" style="padding:8px 16px;font-size:13px;border-color:var(--amb-2,#10916D);color:var(--amb-2,#10916D);white-space:nowrap" title="INVIA subito un digest profilato REALE all'indirizzo indicato">Invia test reale (email)</button>
+              <input type="email" id="matrixSendTestEmail" placeholder="La tua email di prova..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
+              <button class="btn btn-secondary" onclick="OC.testDigestMatrixInvio()" style="padding:8px 16px;font-size:13px;border-color:var(--amb-2,#10916D);color:var(--amb-2,#10916D);white-space:nowrap" title="Invia subito un digest profilato REALE all'indirizzo indicato">Invia prova</button>
             </div>
           </div>
 
