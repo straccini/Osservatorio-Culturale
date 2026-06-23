@@ -199,7 +199,7 @@
         </div>
         <label id="nlOptInGdprLabel" style="display:flex;align-items:start;gap:6px;margin-top:8px;cursor:pointer">
           <input type="checkbox" id="nlOptInGdpr" style="margin-top:3px" />
-          <span style="font-size:11px;color:var(--ink-3);line-height:1.4">Acconsento al trattamento dei dati per ricevere la newsletter. <a href="https://www.sinopiaconsulting.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#935851)">Privacy policy</a></span>
+          <span style="font-size:11px;color:var(--ink-3);line-height:1.4">Acconsento al trattamento dei dati per ricevere la newsletter. <a href="#" onclick="OC.go('privacy');return false" style="color:var(--accent,#935851)">Privacy policy</a></span>
         </label>
       </div>
       <div id="nlOptInSuccess" hidden style="text-align:center;padding:10px 0"><span style="color:var(--amb-2,#10916D);font-weight:600">Controlla la tua email per confermare.</span></div>
@@ -2380,41 +2380,47 @@
         <p class="page-sub">Informativa sul trattamento dei dati personali ai sensi del Regolamento (UE) 2016/679 (GDPR) e del D.Lgs. 196/2003 e s.m.i.</p>
       </div>
       <div style="max-width:760px;font-size:14px;line-height:1.7;color:var(--ink-2)">
-        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">1. Titolare del trattamento</h3>
-        <p style="margin:0 0 14px">Il Titolare del trattamento &egrave; <b>Sinopia Srl</b>, Via del Raku 10, 06053 Deruta (PG), Italia &mdash; C.F. e P.IVA 03766660546. Per qualsiasi richiesta relativa ai tuoi dati personali puoi scrivere a <a href="mailto:sinopiaconsulting@gmail.com" style="color:var(--accent,#935851)">sinopiaconsulting@gmail.com</a> &middot; PEC <a href="mailto:sinopiaconsulting@pec.it" style="color:var(--accent,#935851)">sinopiaconsulting@pec.it</a> &middot; <a href="https://www.sinopiaconsulting.it" target="_blank" rel="noopener" style="color:var(--accent,#935851)">www.sinopiaconsulting.it</a>.</p>
+        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">1. Natura del servizio</h3>
+        <p style="margin:0 0 14px">L&rsquo;<b>Osservatorio Culturale</b> di Sinopia &egrave; un servizio di <b>aggregazione automatica</b> di notizie, bandi, podcast, video e pubblicazioni del settore culturale, raccolti da <b>fonti pubbliche</b>. Le sintesi, i tag e le classificazioni dei contenuti sono <b>elaborati e automatizzati tramite sistemi di intelligenza artificiale (AI)</b> a partire da tali fonti pubbliche. Si tratta quindi di un servizio prevalentemente <b>informativo ed editoriale</b>: i dati personali raccolti dagli utenti sono <b>ridotti al minimo</b>.</p>
 
-        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">2. Quali dati raccogliamo</h3>
+        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">2. Titolare del trattamento</h3>
+        <p style="margin:0 0 14px">Il Titolare &egrave; <b>Sinopia Srl</b>, Via del Raku 10, 06053 Deruta (PG), Italia &mdash; C.F. e P.IVA 03766660546. Contatti: <a href="mailto:sinopiaconsulting@gmail.com" style="color:var(--accent,#935851)">sinopiaconsulting@gmail.com</a> &middot; PEC <a href="mailto:sinopiaconsulting@pec.it" style="color:var(--accent,#935851)">sinopiaconsulting@pec.it</a> &middot; <a href="https://www.sinopiaconsulting.it" target="_blank" rel="noopener" style="color:var(--accent,#935851)">www.sinopiaconsulting.it</a>. Il Titolare <b>non &egrave; tenuto</b> a designare un Responsabile della Protezione dei Dati (DPO), non ricorrendo i presupposti dell&rsquo;art. 37 GDPR (nessun trattamento su larga scala di categorie particolari di dati n&eacute; monitoraggio sistematico).</p>
+
+        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">3. Quali dati trattiamo (e quali no)</h3>
+        <p style="margin:0 0 8px">Trattiamo <b>solo i dati strettamente necessari</b>:</p>
+        <ul style="margin:0 0 10px;padding-left:20px">
+          <li><b>Nome, cognome ed email</b>, forniti al momento dell&rsquo;iscrizione, per inviarti le comunicazioni richieste.</li>
+          <li><i>Facoltativi</i>: se scegli di profilarti o di compilare l&rsquo;autovalutazione MuseMu Matrix, trattiamo le informazioni che inserisci (ambiti di interesse, dati della tua struttura) per personalizzare i contenuti.</li>
+          <li>Statistiche d&rsquo;uso in forma <b>anonima e aggregata</b>.</li>
+        </ul>
+        <p style="margin:0 0 14px"><b>Non raccogliamo dati sensibili</b> n&eacute; categorie particolari di dati ai sensi dell&rsquo;art. 9 GDPR (salute, opinioni, dati biometrici, ecc.). I dati richiesti sono sostanzialmente di contatto e, nel complesso, a basso impatto sulla riservatezza.</p>
+
+        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">4. Finalit&agrave; e base giuridica</h3>
         <ul style="margin:0 0 14px;padding-left:20px">
-          <li><b>Dati di registrazione</b>: nome ed email, forniti al momento dell&rsquo;iscrizione all&rsquo;Osservatorio o alla newsletter.</li>
-          <li><b>Profilo professionale</b> (facoltativo): area professionale, ruolo, tipo di organizzazione, area geografica, dimensione della struttura e ambiti di interesse.</li>
-          <li><b>Autovalutazione MuseMu Matrix</b> (facoltativa): risposte al questionario e dati relativi alla struttura culturale.</li>
-          <li><b>Dati di navigazione</b>: statistiche d&rsquo;uso in forma anonima e aggregata, per migliorare il servizio.</li>
+          <li><b>Invio di newsletter/digest</b> e <b>personalizzazione dei contenuti</b> in base agli interessi &mdash; base giuridica: <i>consenso</i> (art. 6.1.a), revocabile in ogni momento.</li>
+          <li><b>Erogazione dell&rsquo;autovalutazione</b> e relativo report &mdash; <i>esecuzione di un servizio richiesto</i> (art. 6.1.b).</li>
+          <li><b>Statistiche anonime</b> di utilizzo &mdash; <i>legittimo interesse</i> (art. 6.1.f) al miglioramento del servizio.</li>
         </ul>
 
-        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">3. Finalit&agrave; e base giuridica</h3>
-        <ul style="margin:0 0 14px;padding-left:20px">
-          <li><b>Invio di newsletter e digest</b> e <b>personalizzazione dei contenuti</b> in base al profilo e agli interessi &mdash; base giuridica: <i>consenso</i> (art. 6.1.a GDPR), revocabile in ogni momento.</li>
-          <li><b>Erogazione dell&rsquo;autovalutazione</b> e produzione del relativo report &mdash; base giuridica: <i>esecuzione di un servizio richiesto</i> (art. 6.1.b).</li>
-          <li><b>Statistiche aggregate</b> di utilizzo &mdash; base giuridica: <i>legittimo interesse</i> (art. 6.1.f) al miglioramento del servizio.</li>
-        </ul>
+        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">5. Intelligenza artificiale e contenuti automatizzati</h3>
+        <p style="margin:0 0 14px">I testi pubblicati (sintesi di bandi e notizie, tag, classificazioni) sono <b>generati automaticamente tramite AI</b> a partire da fonti pubbliche. L&rsquo;AI elabora i <b>contenuti editoriali</b>, <b>non i tuoi dati personali</b>: non viene effettuato alcun processo decisionale automatizzato che produca effetti giuridici o significativi sulla tua persona (art. 22 GDPR). La selezione dei contenuti che ricevi via email avviene in base agli interessi che hai dichiarato e si fonda sul tuo consenso.</p>
 
-        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">4. Conservazione</h3>
-        <p style="margin:0 0 14px">I dati sono conservati per il tempo necessario alle finalit&agrave; sopra indicate e comunque fino alla revoca del consenso o alla richiesta di cancellazione. Decorso tale termine i dati vengono rimossi o resi anonimi.</p>
+        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">6. Comunicazione e trasferimento dei dati</h3>
+        <p style="margin:0 0 14px">I tuoi dati <b>non sono comunicati, ceduti n&eacute; venduti a terzi</b> per alcuna finalit&agrave;. Sono trattati esclusivamente dal Titolare e conservati su infrastruttura tecnica (Google Workspace) <b>localizzata nell&rsquo;Unione Europea</b>, utilizzata come mero fornitore tecnico (responsabile del trattamento, art. 28) per la sola archiviazione e l&rsquo;invio delle email. <b>Non effettuiamo trasferimenti dei dati al di fuori dell&rsquo;UE/SEE.</b></p>
 
-        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">5. Destinatari e trasferimenti</h3>
-        <p style="margin:0 0 14px">I dati sono trattati tramite l&rsquo;infrastruttura <b>Google Workspace / Apps Script</b> (Google Ireland Ltd.), utilizzata come responsabile del trattamento per archiviazione e invio email, con eventuali trasferimenti extra-UE assistiti da garanzie adeguate (clausole contrattuali standard). Le statistiche aggregate sono raccolte tramite la piattaforma <b>Web Analytics Italia</b> (AgID). I dati non sono ceduti a terzi per finalit&agrave; commerciali.</p>
+        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">7. Conservazione</h3>
+        <p style="margin:0 0 14px">Conserviamo i dati per il <b>tempo minimo necessario</b> alle finalit&agrave; indicate. I dati di contatto restano attivi finch&eacute; desideri ricevere le comunicazioni: alla <b>disiscrizione</b> o alla <b>richiesta di cancellazione</b> vengono rimossi. Non conserviamo dati oltre il necessario.</p>
 
-        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">6. I tuoi diritti</h3>
-        <p style="margin:0 0 8px">Ai sensi degli artt. 15-22 GDPR hai diritto di: <b>accesso</b>, <b>rettifica</b>, <b>cancellazione</b> (diritto all&rsquo;oblio), <b>limitazione</b>, <b>portabilit&agrave;</b>, <b>opposizione</b> e <b>revoca del consenso</b>. Per esercitarli scrivi a <a href="mailto:sinopiaconsulting@gmail.com" style="color:var(--accent,#935851)">sinopiaconsulting@gmail.com</a>; risponderemo senza ingiustificato ritardo.</p>
-        <p style="margin:0 0 14px">Puoi inoltre disiscriverti dalle comunicazioni in ogni momento tramite il link presente in fondo a ogni email.</p>
+        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">8. I tuoi diritti</h3>
+        <p style="margin:0 0 8px">Ai sensi degli artt. 15-22 GDPR hai diritto di: <b>accesso</b>, <b>rettifica</b>, <b>cancellazione</b> (oblio), <b>limitazione</b>, <b>portabilit&agrave;</b>, <b>opposizione</b> e <b>revoca del consenso</b>. Per esercitarli scrivi a <a href="mailto:sinopiaconsulting@gmail.com" style="color:var(--accent,#935851)">sinopiaconsulting@gmail.com</a>; risponderemo senza ingiustificato ritardo. Puoi inoltre <b>disiscriverti</b> in ogni momento tramite il link in fondo a ogni email.</p>
 
-        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">7. Cookie e tecnologie simili</h3>
-        <p style="margin:0 0 14px">Utilizziamo cookie tecnici necessari al funzionamento (sessione, preferenze) e strumenti di statistica con IP anonimizzato. Non sono utilizzati cookie di profilazione pubblicitaria di terze parti.</p>
+        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">9. Cookie</h3>
+        <p style="margin:0 0 14px">Utilizziamo solo cookie tecnici necessari al funzionamento (sessione, preferenze) e statistiche con IP anonimizzato. <b>Nessun cookie di profilazione pubblicitaria di terze parti.</b></p>
 
-        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">8. Reclamo</h3>
-        <p style="margin:0 0 14px">Hai il diritto di proporre reclamo all&rsquo;Autorit&agrave; Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener" style="color:var(--accent,#935851)">garanteprivacy.it</a>).</p>
+        <h3 style="font-size:16px;color:var(--ink);margin:20px 0 6px">10. Reclamo</h3>
+        <p style="margin:0 0 14px">Hai diritto di proporre reclamo all&rsquo;Autorit&agrave; Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener" style="color:var(--accent,#935851)">garanteprivacy.it</a>).</p>
 
-        <p style="margin:22px 0 0;font-size:12px;color:var(--ink-3)">Ultimo aggiornamento: giugno 2026 &middot; Sinopia &mdash; Osservatorio Culturale</p>
+        <p style="margin:22px 0 0;font-size:12px;color:var(--ink-3)">Ultimo aggiornamento: giugno 2026 &middot; Sinopia Srl &mdash; Osservatorio Culturale</p>
       </div>
     </section>
 
@@ -8374,7 +8380,7 @@
       + '<p style="margin:0 0 6px"><b>Finalita:</b> I dati sono trattati esclusivamente per finalita informative e di personalizzazione dei contenuti dell\'Osservatorio Culturale Sinopia (bandi, news, podcast, report).</p>'
       + '<p style="margin:0 0 6px"><b>Nessun vincolo temporale:</b> L\'iscrizione e gratuita, senza obblighi ne scadenze. Puoi richiedere la cancellazione del tuo account e di tutti i dati in qualsiasi momento.</p>'
       + '<p style="margin:0 0 6px"><b>Diritti:</b> Hai diritto di accesso, rettifica, cancellazione, portabilita e opposizione al trattamento dei tuoi dati. Per esercitarli scrivi a <b>sinopiaconsulting@gmail.com</b>.</p>'
-      + '<p style="margin:0"><b>Titolare:</b> Sinopia Srl · <a href="https://www.sinopiaconsulting.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#935851)">Informativa completa</a></p>'
+      + '<p style="margin:0"><b>Titolare:</b> Sinopia Srl · <a href="#" onclick="OC.go(&quot;privacy&quot;);return false" style="color:var(--accent,#935851)">Informativa completa</a></p>'
       + '</div></div>'
       + '<button type="button" onclick="OC._submitRegForm()" style="width:100%;background:var(--accent,#935851);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Registrati gratis</button>'
       + '<div id="regFormMsg" style="text-align:center;margin-top:8px;font-size:13px" hidden></div>'
@@ -12443,7 +12449,7 @@
         <p style="margin:0 0 8px"><b>Finalita:</b> I tuoi dati sono trattati esclusivamente per finalita informative e di personalizzazione dei contenuti (bandi, news, podcast, report per il settore museale e culturale).</p>
         <p style="margin:0 0 8px"><b>Nessun vincolo:</b> L'iscrizione e gratuita, senza obblighi ne scadenze temporali. Puoi richiedere la cancellazione del tuo account e di tutti i dati in qualsiasi momento.</p>
         <p style="margin:0 0 8px"><b>Diritti:</b> Hai diritto di accesso, rettifica, cancellazione, portabilita e opposizione al trattamento dei tuoi dati ai sensi del GDPR (Reg. UE 2016/679).</p>
-        <p style="margin:0"><b>Contatti:</b> Per esercitare i tuoi diritti scrivi a <b>sinopiaconsulting@gmail.com</b> · <a href="https://www.sinopiaconsulting.it/privacy" target="_blank" rel="noopener" style="color:var(--accent,#935851)">Informativa completa</a></p>
+        <p style="margin:0"><b>Contatti:</b> Per esercitare i tuoi diritti scrivi a <b>sinopiaconsulting@gmail.com</b> · <a href="#" onclick="OC.go('privacy');return false" style="color:var(--accent,#935851)">Informativa completa</a></p>
       </div>
     </div>
 
