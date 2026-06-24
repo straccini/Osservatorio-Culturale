@@ -14,7 +14,7 @@
   <meta property="og:url" content="https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec">
   <meta property="og:site_name" content="Sinopia — Osservatorio Culturale">
   <meta property="og:locale" content="it_IT">
-  <meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='630' viewBox='0 0 1200 630'%3E%3Crect width='1200' height='630' fill='%23F7F4EE'/%3E%3Crect x='40' y='40' width='1120' height='550' rx='16' fill='%23935851'/%3E%3Ctext x='600' y='280' text-anchor='middle' font-family='Georgia,serif' font-size='72' font-weight='700' fill='white'%3ESinopia%3C/text%3E%3Ctext x='600' y='360' text-anchor='middle' font-family='sans-serif' font-size='28' fill='%23F7F4EE' opacity='.85'%3EOsservatorio Culturale%3C/text%3E%3Ctext x='600' y='420' text-anchor='middle' font-family='sans-serif' font-size='18' fill='%23F7F4EE' opacity='.65'%3EBandi · News · Podcast · Video · Libri per Musei e Cultura%3C/text%3E%3C/svg%3E">
+  <meta property="og:image" content="https://app.sinopiaconsulting.it/og-cover.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Sinopia — Osservatorio Culturale per musei e patrimonio">
@@ -23,7 +23,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Sinopia · Osservatorio Culturale">
   <meta name="twitter:description" content="Monitoraggio bandi, news, podcast, video e pubblicazioni per musei, patrimonio culturale e innovazione.">
-  <meta name="twitter:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='630' viewBox='0 0 1200 630'%3E%3Crect width='1200' height='630' fill='%23F7F4EE'/%3E%3Crect x='40' y='40' width='1120' height='550' rx='16' fill='%23935851'/%3E%3Ctext x='600' y='280' text-anchor='middle' font-family='Georgia,serif' font-size='72' font-weight='700' fill='white'%3ESinopia%3C/text%3E%3Ctext x='600' y='360' text-anchor='middle' font-family='sans-serif' font-size='28' fill='%23F7F4EE' opacity='.85'%3EOsservatorio Culturale%3C/text%3E%3C/svg%3E">
+  <meta name="twitter:image" content="https://app.sinopiaconsulting.it/og-cover.png">
   <meta name="twitter:image:alt" content="Sinopia — Osservatorio Culturale per musei e patrimonio">
 
   <!-- JSON-LD Structured Data (SEO) -->
@@ -34,10 +34,25 @@
       {
         "@type": "Organization",
         "@id": "https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec#organization",
-        "name": "Duemilamusei",
-        "alternateName": "Sinopia — Osservatorio Culturale",
+        "name": "Sinopia Srl",
+        "alternateName": "Sinopia Consulting",
+        "legalName": "Sinopia Srl",
         "description": "Consulenza strategica per musei, patrimonio culturale e innovazione digitale. Sviluppo progetti culturali con integrazione AI.",
         "url": "https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec",
+        "email": "sinopiaconsulting@gmail.com",
+        "vatID": "IT03766660546",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Via del Raku 10",
+          "postalCode": "06053",
+          "addressLocality": "Deruta",
+          "addressRegion": "PG",
+          "addressCountry": "IT"
+        },
+        "sameAs": [
+          "https://www.linkedin.com/company/sinopiaconsulting/",
+          "https://www.sinopiaconsulting.it"
+        ],
         "founder": {
           "@type": "Person",
           "name": "Silvano Straccini",
@@ -1691,6 +1706,7 @@
       <div style="display:flex;gap:2px;margin-bottom:18px;border-bottom:2px solid var(--rule)">
         <button class="digest-tab active" data-digest-tab="approfondimento" onclick="OC._switchDigestTab('approfondimento')" style="padding:10px 18px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:3px solid var(--accent,#935851);color:var(--accent,#935851);cursor:pointer;transition:all .2s">Approfondimento</button>
         <button class="digest-tab" data-digest-tab="lettori" onclick="OC._switchDigestTab('lettori')" style="padding:10px 18px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:3px solid transparent;color:#888;cursor:pointer;transition:all .2s">Newsletter lettori</button>
+        <button class="digest-tab" data-digest-tab="matrix" onclick="OC._switchDigestTab('matrix')" style="padding:10px 18px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:3px solid transparent;color:#888;cursor:pointer;transition:all .2s">Digest Matrix</button>
         <button class="digest-tab" data-digest-tab="profilati" onclick="OC._switchDigestTab('profilati')" style="padding:10px 18px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:3px solid transparent;color:#888;cursor:pointer;transition:all .2s">Digest profilati</button>
       </div>
 
@@ -1699,7 +1715,8 @@
         <b>Come si lavora qui:</b>
         <b>1) Approfondimento</b> = l'editoriale che apre la newsletter (genera &rarr; revisiona &rarr; approva) &middot;
         <b>2) Newsletter lettori</b> = il ciclo completo su cui lavorare: prepara &rarr; verifica &rarr; anteprima &rarr; <span style="color:var(--amb-2,#10916D);font-weight:700">test reale</span> &rarr; invio &middot;
-        <b>3) Digest profilati</b> = solo controllo e verifica a campione (i "test" creano <span style="color:#B45309;font-weight:700">bozze in coda</span>, nessun invio).
+        <b>3) Digest Matrix</b> = compilatori Matrix, digest sui <i>gap</i> (genera coda &rarr; verifica &rarr; prova &rarr; invio) &middot;
+        <b>4) Digest profilati</b> = lettori con profilo (senza Matrix), digest sui loro <i>interessi</i>; invio reale dal pulsante settimanale in alto, qui solo la prova.
         <br>Legenda azioni: <span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; invio reale</span> &middot; <span style="color:#B45309;font-weight:700">&#9679; crea bozza (nessun invio)</span> &middot; <span style="color:var(--amb-3,#3C6A95);font-weight:700">&#9679; solo anteprima</span>
       </div>
 
@@ -1918,12 +1935,12 @@
       </div>
 
       <!-- ========== TAB 3: DIGEST PROFILATI ========== -->
-      <div class="digest-tab-content" data-digest-content="profilati" hidden>
+      <div class="digest-tab-content" data-digest-content="matrix" hidden>
         <div class="admin-card" style="margin-bottom:16px;border-left:4px solid var(--accent,#935851)">
 
           <!-- Info -->
           <div style="margin-bottom:16px;padding:10px 14px;background:var(--surface-2);border-radius:6px">
-            <p style="font-size:13px;color:var(--ink-2);margin:0">Ogni utente profilato riceve un digest personalizzato basato sui <b>top 3 gap</b> (dimensioni con score &lt; 60). Per ogni dimensione vengono selezionati fino a 4 bandi + 3 news + 2 podcast.</p>
+            <p style="font-size:13px;color:var(--ink-2);margin:0">Ogni <b>compilatore Matrix</b> riceve un digest personalizzato basato sui <b>top 3 gap</b> (dimensioni con score &lt; 60). Per ogni dimensione vengono selezionati fino a 4 bandi + 3 news + 2 podcast.</p>
           </div>
 
           <!-- Step 1 — Genera coda -->
@@ -2016,6 +2033,30 @@
             <button class="btn btn-secondary" onclick="OC._sendAgentForced()" style="font-size:12px;padding:6px 12px" title="Forza invio email agenti ora (gated admin)">Invio forzato</button>
           </div>
           <div id="agentStatsResult" style="font-size:12px;color:var(--ink-3);min-height:16px"></div>
+        </div>
+      </div>
+
+      <!-- ========== TAB 4: DIGEST PROFILATI (ProfiloPro / interessi) ========== -->
+      <div class="digest-tab-content" data-digest-content="profilati" hidden>
+        <div class="admin-card" style="margin-bottom:16px;border-left:4px solid var(--amb-2,#10916D)">
+          <div style="margin-bottom:14px;padding:10px 14px;background:var(--surface-2);border-radius:6px">
+            <p style="font-size:13px;color:var(--ink-2);margin:0">I <b>lettori profilati</b> hanno compilato <i>Il mio profilo professionale</i> (senza Matrix) e ricevono un digest personalizzato sui <b>temi che hanno scelto</b>, con bandi + news + podcast per ciascun tema di interesse.</p>
+          </div>
+          <div style="margin-bottom:14px;padding:10px 14px;background:rgba(16,145,109,.08);border-left:3px solid var(--amb-2,#10916D);border-radius:6px">
+            <p style="font-size:12px;color:var(--ink-2);margin:0;line-height:1.6">L&rsquo;<b>invio reale</b> a tutti i profilati avviene con il digest settimanale (coorte C), dal pulsante <b>&ldquo;Invia digest settimanale&rdquo;</b> in cima a questa sezione. Qui sotto puoi fare una <b>prova</b>.</p>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;margin-bottom:6px">
+              <span style="background:var(--amb-2,#10916D);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">&#10003;</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Prova di invio</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px"><span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; Invio reale:</span> indica un indirizzo (usa la <b>tua</b> email) e premi <b>Invia prova profilato</b>. Usa gli interessi del profilo dell&rsquo;indirizzo; se non ne ha, usa D7/D8/D10 come campione.</p>
+            <div style="margin-left:32px;display:flex;gap:8px;align-items:center">
+              <input type="email" id="profilatoTestEmail" placeholder="La tua email di prova..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
+              <button class="btn btn-secondary" onclick="OC.testDigestProfilatoInvio()" style="padding:8px 16px;font-size:13px;border-color:var(--amb-2,#10916D);color:var(--amb-2,#10916D);white-space:nowrap" title="Invia subito un digest profilato (ProfiloPro) REALE all'indirizzo indicato">Invia prova profilato</button>
+            </div>
+            <div id="profilatoTestResult" style="margin-left:32px;margin-top:8px;font-size:12px;color:var(--ink-3);min-height:16px"></div>
+          </div>
         </div>
       </div>
 
@@ -8107,6 +8148,28 @@
       .sendDigestAuto2coorti({ token: (window.OC_SESSION&&window.OC_SESSION.token)||null });
   }
 
+  // ── Prova digest profilato (ProfiloPro / interessi) ──
+  function testDigestProfilatoInvio(){
+    if (!hasGAS()) return;
+    var inp = document.getElementById('profilatoTestEmail');
+    var dest = String((inp && inp.value) || '').trim();
+    var out = $('profilatoTestResult');
+    if (dest.indexOf('@') < 0) { if (out) out.textContent = 'Inserisci un indirizzo email valido.'; return; }
+    if (out) out.textContent = 'Generazione + invio digest profilato a ' + dest + ' in corso (15-25s)…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          if (out) out.innerHTML = '<b style="color:var(--amb-2,#10916D)">✓ Inviato</b> a ' + dest + ' &middot; interessi ' + (r.interessi||'—') + ' &middot; ' + (r.totale||0) + ' contenuti.';
+          showToast && showToast('Digest profilato di prova inviato a ' + dest, 'ok');
+        } else {
+          if (out) out.textContent = 'Errore: ' + (r && r.error || 'sconosciuto');
+          showToast && showToast('Errore: ' + (r && r.error || 'sconosciuto'), 'err');
+        }
+      })
+      .withFailureHandler(function(e){ if (out) out.textContent = 'Errore di rete: ' + e; })
+      .testDigestProfilatoUI(dest, (window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
   // ── v4.22 E1 — Editoriale settimanale admin ──
   function _loadEditoriale() {
     if (!hasGAS()) return;
@@ -12240,6 +12303,7 @@
     testDigestEmail: testDigestEmail,
     anteprimaInvioSettimanale: anteprimaInvioSettimanale,
     inviaDigestSettimanale: inviaDigestSettimanale,
+    testDigestProfilatoInvio: testDigestProfilatoInvio,
     // v4.22 E1 — Approfondimento della settimana
     _switchDigestTab: _switchDigestTab,
     _loadEditoriale: _loadEditoriale,
@@ -12283,6 +12347,7 @@
     testDigestEmail: testDigestEmail,
     anteprimaInvioSettimanale: anteprimaInvioSettimanale,
     inviaDigestSettimanale: inviaDigestSettimanale,
+    testDigestProfilatoInvio: testDigestProfilatoInvio,
     inviaTuttiPending: inviaTuttiPending,
     reloadQueue: reloadQueue,
     // Sprint 1.3 D2.4 - Cron weekly admin

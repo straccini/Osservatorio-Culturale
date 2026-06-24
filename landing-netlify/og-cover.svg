@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#F1E6D6"/>
+  <rect x="36" y="36" width="1128" height="558" rx="20" fill="#8B3A1F"/>
+  <text x="600" y="290" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="104" font-weight="600" fill="#FFFFFF">Sinopia</text>
+  <text x="600" y="356" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="30" letter-spacing="6" fill="#F1E6D6" opacity="0.9">OSSERVATORIO CULTURALE</text>
+  <line x1="430" y1="406" x2="770" y2="406" stroke="#F1E6D6" stroke-width="2" opacity="0.5"/>
+  <text x="600" y="462" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="26" fill="#F1E6D6" opacity="0.82">Bandi · News · Podcast · Video · Libri per Musei e Cultura</text>
+  <text x="600" y="512" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="20" fill="#F1E6D6" opacity="0.6">Autovalutazione MuseMu Matrix · Strumenti AI · Sinopia Consulting</text>
+</svg>

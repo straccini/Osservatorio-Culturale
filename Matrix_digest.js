@@ -260,6 +260,22 @@ function testDigestProfilato(email) {
 }
 
 /**
+ * Frontend-safe: invia un digest profilato (ProfiloPro) di PROVA all'email indicata.
+ * Admin-gated. Chiamabile via google.script.run dal pannello Impostazioni → Digest.
+ * @param {string} email
+ * @param {string} token  token di sessione admin
+ * @return {Object} { ok, inviato, interessi, totale } | { ok:false, error }
+ */
+function testDigestProfilatoUI(email, token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
+    return { ok: false, error: 'forbidden' };
+  }
+  var dest = String(email || '').trim();
+  if (dest.indexOf('@') < 0) return { ok: false, error: 'email non valida' };
+  return testDigestProfilato(dest);
+}
+
+/**
  * Bulk: per ogni email opt-in attiva in ContactsMatrix, genera bozza personalizzata.
  * Idempotente: salta gli utenti che hanno gia una bozza 'draft' in DigestQueue
  * generata negli ultimi 6 giorni (per evitare doppioni weekly).
