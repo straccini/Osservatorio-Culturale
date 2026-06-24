@@ -5,7 +5,7 @@
  *  Sprint 5 (2026-05-11)
  *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
  *
- *  Scopo: motore outbound bando-driven Duemilamusei. Affianca MuseMu Matrix
+ *  Scopo: motore outbound bando-driven Sinopia. Affianca MuseMu Matrix
  *  (inbound) come secondo motore di acquisizione lead.
  *
  *  Workflow operativo (decisione 2026-05-08):
@@ -18,13 +18,13 @@
  *    Step 7: follow-up automatico a 14gg
  *
  *  4 FILTRI TRIAGE (AND, confermati 2026-05-08):
- *    - Area Duemilamusei (match catalogo D4)
+ *    - Area Sinopia (match catalogo D4)
  *    - Importo >= 50.000 EUR
  *    - Scadenza >= 45 giorni
  *    - Perimetro >= regionale
  *
  *  Cap pre-progettazioni gratuite: 5-8/mese (capacita Silvano).
- *  Tono email: 'noi' Duemilamusei + firma personale Silvano.
+ *  Tono email: 'noi' Sinopia + firma personale Silvano.
  * ============================================================================
  */
 
@@ -42,7 +42,7 @@ var ROC_MUSEI_SHEET        = 'MuseiDB_v1';
 var ROC_IMPORTO_MIN        = 50000;     // EUR
 var ROC_SCADENZA_MIN_GG    = 45;
 var ROC_PERIMETRO_MIN      = ['regionale','interregionale','nazionale','europeo'];
-// Aree di interesse Duemilamusei (catalogo D4)
+// Aree di interesse Sinopia (catalogo D4)
 var ROC_AREE_VALIDE        = ['musealizzazione','accessibilita','digital','ai','governance','allestimento','formazione','audience'];
 
 // Cap pre-progettazioni gratuite mese
@@ -271,7 +271,7 @@ function roc_matchMusei(bandoId, opts) {
       else if (importoNum >= 50000 && importoNum < 200000 && vis < 30000) { score += 20; motivi.push('dimensione_piccola_match'); }
       else if (importoNum >= 200000 && importoNum < 500000) { score += 15; motivi.push('dimensione_media'); }
 
-      // Criterio 4: stato relazione Duemilamusei
+      // Criterio 4: stato relazione Sinopia
       if (rel === 'cliente') { score += 50; motivi.push('cliente_attivo'); }
       else if (rel === 'in_trattativa') { score += 35; motivi.push('in_trattativa'); }
       else if (rel === 'contattato') { score += 10; motivi.push('gia_contattato'); }
@@ -318,7 +318,7 @@ function _isRegioneConfinante_(r1, r2) {
 // STEP 4 — roc_buildEmailBatch(bandoId)
 // ----------------------------------------------------------------------------
 // Per ogni museo del match restituisce email personalizzata + meta.
-// Tono 'noi' Duemilamusei + firma Silvano Straccini.
+// Tono 'noi' Sinopia + firma Silvano Straccini.
 // ============================================================================
 
 function roc_buildEmailBatch(bandoId, opts) {
@@ -333,7 +333,7 @@ function roc_buildEmailBatch(bandoId, opts) {
       var subject = 'Bando ' + (bando.ente || '') + ' - opportunita per ' + (m.nome || 'il vostro museo');
       var body = '' +
         'Gentile direttore,\n\n' +
-        'mi chiamo Silvano Straccini, fondatore di Duemilamusei. Da oltre trent\'anni accompagniamo ' +
+        'mi chiamo Silvano Straccini, fondatore di Sinopia. Da oltre trent\'anni accompagniamo ' +
         'strutture culturali italiane in progetti di musealizzazione, accessibilita e governance ' +
         '— tra gli altri il Museo Nazionale Rossini, il Fellini Museum di Rimini, Pesaro Capitale ' +
         'Italiana della Cultura 2024.\n\n' +
@@ -345,12 +345,12 @@ function roc_buildEmailBatch(bandoId, opts) {
         'Se l\'opportunita vi interessa, vorremmo proporvi un\'analisi gratuita di pre-progettazione: ' +
         '1 ora di call con voi per inquadrare le esigenze del museo + un concept di 2-3 pagine con prima ' +
         'ipotesi di intervento, scopo dell\'iniziativa e stima massimale del progetto. Senza alcun impegno.\n\n' +
-        'Per dare un\'idea del nostro approccio, sul sito di Duemilamusei trovate il modello "Musei Sensibili" ' +
+        'Per dare un\'idea del nostro approccio, sul sito di Sinopia trovate il modello "Musei Sensibili" ' +
         'e l\'autovalutazione gratuita MuseMu Matrix.\n\n' +
         'Resto a disposizione per un\'introduzione, anche solo per esplorare.\n\n' +
         'Buona giornata,\n' +
         'Silvano Straccini\n' +
-        'Duemilamusei\n' +
+        'Sinopia\n' +
         'bandi@duemilamusei.it';
 
       return {
@@ -451,7 +451,7 @@ function roc_approveBatch(batchId, approverEmail) {
           try {
             MailApp.sendEmail({
               to: em.emailTo, subject: em.subject,
-              htmlBody: em.bodyHtml, name: 'Duemilamusei',
+              htmlBody: em.bodyHtml, name: 'Sinopia',
               replyTo: 'bandi@duemilamusei.it'
             });
             em.status = 'sent'; em.sentAt = new Date().toISOString();
@@ -650,7 +650,7 @@ function roc_importMuseiDB_fromString(opts) {
 }
 
 // ============================================================================
-// SEED — 20 musei pilota per test ROC (regioni target Duemilamusei)
+// SEED — 20 musei pilota per test ROC (regioni target Sinopia)
 // ============================================================================
 
 function roc_seedMuseiPilota() {
@@ -675,16 +675,16 @@ function roc_seedMuseiPilota() {
     ['m08','MUSE','Provincia Autonoma Trento','fondazione','Trentino-Alto Adige','TN','Trento','','oltre 500000','D6','','https://www.muse.it','','nessuna','','','Benchmark accessibilita',false,''],
     ['m09','Museo della Scienza','Comune di Milano','fondazione','Lombardia','MI','Milano','','oltre 500000','D6','','https://www.museoscienza.org','','nessuna','','','Benchmark digital',false,''],
     ['m10','Castello di Rivoli','Regione Piemonte','fondazione','Piemonte','TO','Rivoli','','100000-500000','D6','','https://www.castellodirivoli.org','','nessuna','','','Target arte contemporanea',false,''],
-    ['m11','Museo Civico di Recanati','Comune di Recanati','museo civico','Marche','MC','Recanati','','5000-20000','D6','','','','cliente_attivo','','','Gestione Duemilamusei 2017-2027',false,''],
+    ['m11','Museo Civico di Recanati','Comune di Recanati','museo civico','Marche','MC','Recanati','','5000-20000','D6','','','','cliente_attivo','','','Gestione Sinopia 2017-2027',false,''],
     ['m12','Museo dei Brettii','Comune di Cosenza','museo civico','Calabria','CS','Cosenza','','5000-20000','D6','','','','nessuna','','','Target Sud',false,''],
     ['m13','Pinacoteca di Brera','MiC','museo statale','Lombardia','MI','Milano','','oltre 500000','D6','','https://pinacotecabrera.org','','nessuna','','','Benchmark nazionale',false,''],
     ['m14','Museo Tattile Omero','Comune di Ancona','museo civico','Marche','AN','Ancona','','20000-100000','D6','','https://www.museoomero.it','','nessuna','','','Benchmark accessibilita sensoriale',false,''],
-    ['m15','Palazzo Buonaccorsi','Comune di Macerata','museo civico','Marche','MC','Macerata','','20000-100000','D6','','','','cliente_attivo','','','Gestione Duemilamusei 2018-2027',false,''],
+    ['m15','Palazzo Buonaccorsi','Comune di Macerata','museo civico','Marche','MC','Macerata','','20000-100000','D6','','','','cliente_attivo','','','Gestione Sinopia 2018-2027',false,''],
     ['m16','Museo della Carta','Comune di Fabriano','museo civico','Marche','AN','Fabriano','','5000-20000','D6','','','','nessuna','','','Target pilota Marche',false,''],
     ['m17','MART','Provincia Autonoma Trento','fondazione','Trentino-Alto Adige','TN','Rovereto','','100000-500000','D6','','https://www.mart.trento.it','','nessuna','','','Benchmark arte contemporanea',false,''],
     ['m18','Museo Civico Archeologico','Comune di Bologna','museo civico','Emilia-Romagna','BO','Bologna','','20000-100000','D6','','https://www.museibologna.it','','nessuna','','','Target ER',false,''],
     ['m19','Museo del Territorio','Comune di San Lorenzo in Campo','museo civico','Marche','PU','San Lorenzo in Campo','','meno di 5000','D6','','','','cliente_attivo','','','Fondato da Silvano Straccini',false,''],
-    ['m20','Museo Nazionale Rossini','Comune di Pesaro','museo statale','Marche','PU','Pesaro','','20000-100000','D6','','https://www.museonazionalerossini.it','','cliente_attivo','','','Progettazione Duemilamusei 2019',false,'']
+    ['m20','Museo Nazionale Rossini','Comune di Pesaro','museo statale','Marche','PU','Pesaro','','20000-100000','D6','','https://www.museonazionalerossini.it','','cliente_attivo','','','Progettazione Sinopia 2019',false,'']
   ];
 
   var inseriti = 0;

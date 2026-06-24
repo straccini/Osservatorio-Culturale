@@ -245,7 +245,7 @@ function _buildDigestProfiloHtml_(interessi, bandiByDim, newsByDim, podcastByDim
  * fallback D7,D8,D10). Da eseguire dall'editor per validare prima dell'invio reale.
  */
 function testDigestProfilato(email) {
-  var target = String(email || (function(){ try { return Session.getActiveUser().getEmail(); } catch(e){ return ''; } })() || 's.straccini@gmail.com').toLowerCase();
+  var target = String(email || (function(){ try { return Session.getActiveUser().getEmail(); } catch(e){ return ''; } })() || 'sinopiaconsulting@gmail.com').toLowerCase();
   var dims = '';
   try {
     var hit = ((typeof _proListaProfilati_ === 'function') ? _proListaProfilati_() : []).filter(function(p){ return p.email === target; })[0];
@@ -381,7 +381,7 @@ function sendQueuedDigest(queueId) {
         subject:  subj,
         htmlBody: html,
         name:     'Osservatorio Culturale · MuseMu Matrix',
-        replyTo:  's.straccini@gmail.com'
+        replyTo:  'sinopiaconsulting@gmail.com'
       });
       if (typeof _digestMarkSent_ === 'function') _digestMarkSent_(email, 'matrix');
       var nowIso = new Date().toISOString();
@@ -674,7 +674,7 @@ function _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcas
   if (typeof _digestUnsubFooter_ === 'function' && email) {
     parts.push(_digestUnsubFooter_(email, { style: 'matrix' }));
   }
-  parts.push('<p style="margin:8px 0 0;font-size:11px;color:#A8A8AA">Sinopia · Osservatorio Culturale · Fano (PU) · s.straccini@gmail.com</p>');
+  parts.push('<p style="margin:8px 0 0;font-size:11px;color:#A8A8AA">Sinopia · Osservatorio Culturale · Deruta (PG) · sinopiaconsulting@gmail.com</p>');
   parts.push('</td></tr>');
 
   parts.push('</table></td></tr></table></body></html>');
@@ -708,7 +708,7 @@ function _dsCard_(item, color, kind) {
 
 /**
  * Test rapido del digest segmentato con dati di esempio.
- * Genera bozza per s.straccini@gmail.com e usa l'ULTIMO responseId in
+ * Genera bozza per sinopiaconsulting@gmail.com e usa l'ULTIMO responseId in
  * ResponsesMatrix (utile dopo aver eseguito testMatrixModule).
  */
 function testGenerateDigestSegmentato(token) {
@@ -726,7 +726,7 @@ function testGenerateDigestSegmentato(token) {
   var lastRow = rmSh.getLastRow();
   var rid = String(rmSh.getRange(lastRow, 1).getValue());
   Logger.log('Uso responseId: ' + rid);
-  var res = generateDigestForUser('s.straccini@gmail.com', rid);
+  var res = generateDigestForUser('sinopiaconsulting@gmail.com', rid);
   Logger.log('Risultato generazione: ' + JSON.stringify(res, null, 2));
   if (!res.ok) return res;
 

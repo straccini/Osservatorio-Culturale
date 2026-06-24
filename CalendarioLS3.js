@@ -45,7 +45,7 @@ var LS3_CANDIDATURE = [
     requisiti: 'Bid-book pubblico. Comuni italiani senza vincoli dimensionali.',
     evidence: 'M6 (Pesaro CIC 2024 — DG, 1200 eventi, 50 comuni)',
     template_subject: 'Capitale Italiana della Cultura {anno} — il vostro Comune ci ha pensato?',
-    template_body: 'Gentile {nome},\n\nla scadenza per la candidatura a Capitale Italiana della Cultura {anno} si avvicina ({scadenza}).\n\nDuemilamusei ha diretto Pesaro Capitale Italiana della Cultura 2024 (oltre 1200 eventi in 50 comuni, grandi eventi internazionali). Offriamo supporto strategico gratuito per una prima valutazione di fattibilita.\n\nVuole esplorare questa opportunita per {comune}?\n\nCordiali saluti,\nSilvano Straccini\nDuemilamusei'
+    template_body: 'Gentile {nome},\n\nla scadenza per la candidatura a Capitale Italiana della Cultura {anno} si avvicina ({scadenza}).\n\nSinopia ha diretto Pesaro Capitale Italiana della Cultura 2024 (oltre 1200 eventi in 50 comuni, grandi eventi internazionali). Offriamo supporto strategico gratuito per una prima valutazione di fattibilita.\n\nVuole esplorare questa opportunita per {comune}?\n\nCordiali saluti,\nSilvano Straccini\nSinopia'
   },
   {
     id: 'cil', riconoscimento: 'Capitale Italiana del Libro',
@@ -54,7 +54,7 @@ var LS3_CANDIDATURE = [
     requisiti: 'Promozione lettura. Comuni italiani.',
     evidence: 'M6 + M4 (community engagement culturale)',
     template_subject: 'Capitale Italiana del Libro {anno} — una candidatura per {comune}?',
-    template_body: 'Gentile {nome},\n\nla candidatura a Capitale Italiana del Libro {anno} si apre a breve (scadenza: {scadenza}).\n\nDuemilamusei offre supporto alla redazione del dossier, forte dell\'esperienza nella direzione di Pesaro CIC 2024 e nella progettazione di palinsesti culturali partecipativi.\n\nPossiamo fissare una call esplorativa?\n\nCordiali saluti,\nSilvano Straccini'
+    template_body: 'Gentile {nome},\n\nla candidatura a Capitale Italiana del Libro {anno} si apre a breve (scadenza: {scadenza}).\n\nSinopia offre supporto alla redazione del dossier, forte dell\'esperienza nella direzione di Pesaro CIC 2024 e nella progettazione di palinsesti culturali partecipativi.\n\nPossiamo fissare una call esplorativa?\n\nCordiali saluti,\nSilvano Straccini'
   },
   {
     id: 'ciac', riconoscimento: 'Capitale Italiana Arte Contemporanea',
@@ -63,7 +63,7 @@ var LS3_CANDIDATURE = [
     requisiti: 'Target arte contemporanea. Cadenza da confermare.',
     evidence: 'M7 (Marina Abramovic, Ryuichi Sakamoto) + M8 (Castello di Rivoli network)',
     template_subject: 'Arte Contemporanea {anno} — il vostro territorio come candidato?',
-    template_body: 'Gentile {nome},\n\nil MiC ha lanciato la Capitale Italiana dell\'Arte Contemporanea. Con la nostra esperienza nella programmazione di grandi eventi internazionali (Marina Abramovic, Ryuichi Sakamoto a Pesaro 2024), possiamo supportare la costruzione di un dossier credibile.\n\nInteressa una valutazione preliminare per {comune}?\n\nSilvano Straccini — Duemilamusei'
+    template_body: 'Gentile {nome},\n\nil MiC ha lanciato la Capitale Italiana dell\'Arte Contemporanea. Con la nostra esperienza nella programmazione di grandi eventi internazionali (Marina Abramovic, Ryuichi Sakamoto a Pesaro 2024), possiamo supportare la costruzione di un dossier credibile.\n\nInteressa una valutazione preliminare per {comune}?\n\nSilvano Straccini — Sinopia'
   },
   {
     id: 'cig', riconoscimento: 'Capitale Italiana dei Giovani',
@@ -72,7 +72,7 @@ var LS3_CANDIDATURE = [
     requisiti: 'Target under 35.',
     evidence: 'M4 (welfare, partecipazione) + M5 (reti culturali)',
     template_subject: 'Capitale dei Giovani {anno} — {comune} potrebbe candidarsi',
-    template_body: 'Gentile {nome},\n\nla Capitale Italiana dei Giovani {anno} e un\'opportunita per comuni che investono su cultura, partecipazione e innovazione per gli under 35.\n\nDuemilamusei puo supportare la redazione del dossier con esperienza in audience development e progettazione partecipativa.\n\nVuole saperne di piu?\n\nSilvano Straccini'
+    template_body: 'Gentile {nome},\n\nla Capitale Italiana dei Giovani {anno} e un\'opportunita per comuni che investono su cultura, partecipazione e innovazione per gli under 35.\n\nSinopia puo supportare la redazione del dossier con esperienza in audience development e progettazione partecipativa.\n\nVuole saperne di piu?\n\nSilvano Straccini'
   },
   {
     id: 'ecoc', riconoscimento: 'Capitale Europea della Cultura',
@@ -81,7 +81,7 @@ var LS3_CANDIDATURE = [
     requisiti: 'Bid-book 4-5 anni prima. Italia 2033 (Urbino-Pesaro-Fano gia attivo).',
     evidence: 'M6 (Pesaro CIC + supporto Urbino-Pesaro-Fano ECoC 2033)',
     template_subject: 'Capitale Europea della Cultura — supporto strategico per la candidatura',
-    template_body: 'Gentile {nome},\n\nla prossima Capitale Europea della Cultura in Italia sara nel 2033. La preparazione inizia ora.\n\nDuemilamusei sta gia collaborando con la candidatura Urbino-Pesaro-Fano 2033. Offriamo supporto alla costruzione del bid-book e del programma culturale.\n\nPossiamo condividere la nostra esperienza?\n\nSilvano Straccini'
+    template_body: 'Gentile {nome},\n\nla prossima Capitale Europea della Cultura in Italia sara nel 2033. La preparazione inizia ora.\n\nSinopia sta gia collaborando con la candidatura Urbino-Pesaro-Fano 2033. Offriamo supporto alla costruzione del bid-book e del programma culturale.\n\nPossiamo condividere la nostra esperienza?\n\nSilvano Straccini'
   },
   {
     id: 'unesco_cc', riconoscimento: 'UNESCO Citta Creative',
@@ -90,7 +90,7 @@ var LS3_CANDIDATURE = [
     requisiti: '7 ambiti: artigianato, design, cinema, gastronomia, letteratura, musica, media arts.',
     evidence: 'M5 (DCE, reti) + M10 (marketing territoriale) + M8 (musealizzazione artigianato)',
     template_subject: 'UNESCO Citta Creative — {comune} nel network mondiale?',
-    template_body: 'Gentile {nome},\n\nil programma UNESCO Citta Creative accoglie candidature biennali (prossima: {anno}). I 7 ambiti (artigianato, design, gastronomia, musica...) offrono opportunita di posizionamento internazionale.\n\nDuemilamusei ha esperienza in progettazione di reti culturali e distretti creativi. Possiamo valutare insieme se {comune} ha i requisiti?\n\nSilvano Straccini'
+    template_body: 'Gentile {nome},\n\nil programma UNESCO Citta Creative accoglie candidature biennali (prossima: {anno}). I 7 ambiti (artigianato, design, gastronomia, musica...) offrono opportunita di posizionamento internazionale.\n\nSinopia ha esperienza in progettazione di reti culturali e distretti creativi. Possiamo valutare insieme se {comune} ha i requisiti?\n\nSilvano Straccini'
   }
 ];
 
@@ -360,8 +360,8 @@ function approveLS3Batch(opts) {
         to: email,
         subject: subject,
         body: body,
-        name: 'Silvano Straccini — Duemilamusei',
-        replyTo: 's.straccini@gmail.com'
+        name: 'Silvano Straccini — Sinopia',
+        replyTo: 'sinopiaconsulting@gmail.com'
       });
       shO.getRange(r + 1, iStato + 1).setValue('sent');
       shO.getRange(r + 1, iDataInvio + 1).setValue(new Date().toISOString());

@@ -10,3 +10,5 @@ _push.log
 oc-codebase-backup-*/
 
 # Nota: clasp usa il proprio .claspignore separato
+.netlify/
+landing-netlify/.netlify/

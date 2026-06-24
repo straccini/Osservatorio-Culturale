@@ -110,7 +110,7 @@ function _sendForAgent_(agenteId, opts) {
             subject: subject,
             htmlBody: html,
             name: 'Sinopia · Osservatorio Culturale',
-            replyTo: 's.straccini@gmail.com'
+            replyTo: 'sinopiaconsulting@gmail.com'
           });
 
           if (typeof _digestMarkSent_ === 'function') _digestMarkSent_(dest.email, 'agent_' + agent.codice);
@@ -245,7 +245,7 @@ function _buildAgentEmailHtml_(agent, items, dest, museo) {
   // CTA
   html += '<div style="text-align:center;margin:32px 0 16px;padding:20px;background:#F5F3EF;border-radius:8px;">';
   html += '<p style="font-size:14px;color:#3A3631;margin:0 0 12px;">' + (agent.ctaText || 'Vuoi saperne di piu?') + '</p>';
-  html += '<a href="mailto:s.straccini@gmail.com?subject=' + encodeURIComponent(agent.nomeBreve + ' - richiesta info') + '" style="display:inline-block;padding:10px 24px;background:' + headerColor + ';color:#fff;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;">Contattaci</a>';
+  html += '<a href="mailto:sinopiaconsulting@gmail.com?subject=' + encodeURIComponent(agent.nomeBreve + ' - richiesta info') + '" style="display:inline-block;padding:10px 24px;background:' + headerColor + ';color:#fff;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;">Contattaci</a>';
   html += '</div>';
 
   // Footer
@@ -298,7 +298,7 @@ function previewAgentEmail(agenteId, email) {
   var agent = getAgentConfig(agenteId || 1);
   if (!agent) return { ok: false, error: 'Agente non trovato' };
 
-  email = email || 's.straccini@gmail.com';
+  email = email || 'sinopiaconsulting@gmail.com';
   var relevant = getRelevantContent(email, agent.id, agent.maxContenuti || 10);
   if (!relevant.ok) return relevant;
 

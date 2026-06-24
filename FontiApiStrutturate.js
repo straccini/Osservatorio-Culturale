@@ -2328,7 +2328,7 @@ function testTedApiQuick() {
       payload: JSON.stringify(body),
       muteHttpExceptions: true,
       deadline: 15,
-      headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaOC/1.0 (s.straccini@gmail.com)' }
+      headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaOC/1.0 (sinopiaconsulting@gmail.com)' }
     });
     var status = resp.getResponseCode();
     var body200 = resp.getContentText().substring(0, 400);

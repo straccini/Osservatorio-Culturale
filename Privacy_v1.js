@@ -75,7 +75,7 @@ function utm_logClick(meta) {
       ridAnon,
       uaHash
     ]);
-    // Hook CRM: se il click ha response_id e content == servizio Duemilamusei, scoring +5
+    // Hook CRM: se il click ha response_id e content == servizio Sinopia, scoring +5
     if (meta.response_id && /servizio|service/i.test(String(meta.utm_content || ''))) {
       try {
         if (typeof crm_recordEvent === 'function') {

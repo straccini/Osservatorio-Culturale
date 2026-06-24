@@ -5,7 +5,7 @@
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
-**Owner**: Silvano Straccini · Duemilamusei
+**Owner**: Silvano Straccini · Sinopia
 
 ---
 
@@ -280,7 +280,7 @@ Tipi supportati: `'bando' | 'item' | 'news' | 'podcast' | 'libro'`.
 - `MatrixApp.html`: questionario adattivo 43 domande, 10 dimensioni, step intro→anagrafica→domande→sezione11→report
 - `Matrix_v1.js`: scoring server-side, profili P1-P5, top3 opportunità, PDF via DocumentApp, email via MailApp
 - `Matrix_schema.js`: schema OC_MATRIX_SCHEMA v1.0.2 embedded
-- Report finale: barplot dimensioni + top3 + servizi Duemilamusei + roadmap 3 fasi + sezione 12 opt-in
+- Report finale: barplot dimensioni + top3 + servizi Sinopia + roadmap 3 fasi + sezione 12 opt-in
 - Cross-link `mx-oc-link` → `OC.go()` per ambiti pertinenti (wired in Navigation.html)
 - `#page-matrix-landing`: pagina commerciale con CTA → `OC.go('matrix')`
 - Sidebar: "Valuta il tuo museo" (nav-item-matrix); HomeView: promo card con "Inizia ora" + "Scopri di più"

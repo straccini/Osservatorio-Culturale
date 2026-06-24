@@ -13,3 +13,5 @@ docs/**
 **/.superpowers/**
 .gstack/**
 .vscode/**
+.netlify/**
+**/.netlify/**

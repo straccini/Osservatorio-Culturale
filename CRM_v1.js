@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- *  CRM_v1.gs — Lead scoring + CRM lite Duemilamusei
+ *  CRM_v1.gs — Lead scoring + CRM lite Sinopia
  * ============================================================================
  *  Sprint 4 (2026-05-11)
  *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
@@ -13,7 +13,7 @@
  *    Opt-in follow-up consulenziale (sez. 12)    +30  -> SQL
  *    Opt-in digest tematico mensile              +5
  *    Apertura digest weekly (per ognuna)         +1
- *    Click su servizio Duemilamusei              +5   -> hot lead
+ *    Click su servizio Sinopia              +5   -> hot lead
  *    Compilazione ripetuta Matrix (>=3 mesi)     +15
  *    Rifiuto esplicito (unsubscribe)             STOP -> cancellazione 30gg
  *
@@ -307,7 +307,7 @@ function crm_onMatrixOptIn(responseId, email, nome, preferences) {
     var delta = 0;
     var ev = [];
     // v4.20.x — Riconosce le chiavi REALI del questionario (D12.1) oltre alle legacy.
-    // Interesse a bandi/avvisi = segnale consulenziale forte (core business Duemilamusei)
+    // Interesse a bandi/avvisi = segnale consulenziale forte (core business Sinopia)
     // -> lead caldo (+30) e alert Telegram. Interesse a contenuti -> +5.
     var BANDI_KEYS   = ['contatto_consulenziale','bandi_pnrr_mic','bandi_fondazioni',
                         'bandi_regionali','bandi_europei','avvisi_locali'];

@@ -246,7 +246,7 @@ function _renderUnsubscribePage_(email, success, errorMsg, details) {
       + '<div style="font-family:Arial,sans-serif;font-size:10.5px;letter-spacing:.20em;text-transform:uppercase;color:#5C4332;text-align:center;margin:0 0 32px">Osservatorio Culturale</div>'
       + '<h1 style="font-family:Georgia,serif;font-size:24px;font-weight:500;color:#A32D2D;line-height:1.3;margin:0 0 16px">Non è stato possibile completare la cancellazione</h1>'
       + '<p style="font-size:15px;line-height:1.6;color:#3A2818;margin:0 0 14px">' + _h_unsub_(errorMsg || 'Errore non specificato') + '</p>'
-      + '<p style="font-size:13px;line-height:1.6;color:#5C4332;margin:0 0 22px">Se il problema persiste, scrivi una email a <a href="mailto:s.straccini@gmail.com?subject=Disiscrizione%20Sinopia&body=Vorrei%20disiscrivermi%20dalla%20newsletter%20Sinopia" style="color:#8B3A1F">s.straccini@gmail.com</a> con oggetto "RIMUOVI" e ti rimuoveremo manualmente entro 48h.</p>'
+      + '<p style="font-size:13px;line-height:1.6;color:#5C4332;margin:0 0 22px">Se il problema persiste, scrivi una email a <a href="mailto:sinopiaconsulting@gmail.com?subject=Disiscrizione%20Sinopia&body=Vorrei%20disiscrivermi%20dalla%20newsletter%20Sinopia" style="color:#8B3A1F">sinopiaconsulting@gmail.com</a> con oggetto "RIMUOVI" e ti rimuoveremo manualmente entro 48h.</p>'
       + '<div style="text-align:center;margin:32px 0 0">'
       + '<a href="https://sinopia.netlify.app" style="display:inline-block;background:#5C4332;color:#FFFFFF;text-decoration:none;padding:12px 28px;border-radius:8px;font-family:Arial,sans-serif;font-size:14px;font-weight:600">Torna a Sinopia</a>'
       + '</div>';
@@ -312,7 +312,7 @@ function _sendUnsubscribeConfirmEmail_(email) {
     + '<p style="font-size:13.5px;line-height:1.6;color:#6B5418;margin:0 0 6px"><b>Hai cambiato idea?</b></p>'
     + '<p style="font-size:13px;line-height:1.6;color:#6B5418;margin:0">Puoi reiscriverti in qualsiasi momento dalla home di Sinopia o richiedendo una consulenza gratuita: <a href="' + _h_unsub_(appUrl) + '" style="color:#8B3A1F;font-weight:600">' + _h_unsub_(appUrl) + '</a></p>'
     + '</div>'
-    + '<p style="font-size:13px;line-height:1.6;color:#5C4332;margin:0">Grazie per averci dato fiducia.<br>Per qualsiasi domanda, scrivici a <a href="mailto:s.straccini@gmail.com" style="color:#8B3A1F">s.straccini@gmail.com</a>.</p>'
+    + '<p style="font-size:13px;line-height:1.6;color:#5C4332;margin:0">Grazie per averci dato fiducia.<br>Per qualsiasi domanda, scrivici a <a href="mailto:sinopiaconsulting@gmail.com" style="color:#8B3A1F">sinopiaconsulting@gmail.com</a>.</p>'
     + '<p style="font-size:13px;line-height:1.6;color:#3A2818;margin:18px 0 0;font-style:italic">Silvano Straccini<br>Sinopia · Osservatorio Culturale</p>'
     + '</td></tr>'
     // Footer

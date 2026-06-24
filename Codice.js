@@ -94,10 +94,7 @@ function _doGetLanding() {
   return HtmlService.createHtmlOutputFromFile('LandingPublic')
     .setTitle('Sinopia · Osservatorio Culturale — Piattaforma per Musei e Patrimonio Culturale')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .addMetaTag('viewport', 'width=device-width,initial-scale=1')
-    .addMetaTag('description', 'Sinopia è l\'osservatorio culturale per professionisti di musei e patrimonio: bandi, news, podcast, video, autovalutazione MuseMu Matrix e strumenti AI.')
-    .addMetaTag('robots', 'index, follow')
-    .addMetaTag('theme-color', '#935851');
+    .addMetaTag('viewport', 'width=device-width,initial-scale=1');
 }
 
 function _doGetSurvey(params) {
@@ -106,9 +103,7 @@ function _doGetSurvey(params) {
   return surveyTemplate.evaluate()
     .setTitle('Sondaggio MuseMu Matrix — Autovalutazione Musei')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .addMetaTag('viewport', 'width=device-width,initial-scale=1')
-    .addMetaTag('description', 'Questionario di autovalutazione per musei e spazi culturali. Analisi su 10 dimensioni: identità, accessibilità, collezioni, comunità, digitale e governance.')
-    .addMetaTag('robots', 'noindex, nofollow');
+    .addMetaTag('viewport', 'width=device-width,initial-scale=1');
 }
 
 function _doGetReader(params) {
@@ -186,9 +181,7 @@ function doGet(e) {
       return sondTemplate.evaluate()
         .setTitle('Autovalutazione Museale · Osservatorio Culturale Sinopia')
         .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-        .addMetaTag('viewport', 'width=device-width, initial-scale=1')
-        .addMetaTag('description', 'Autovalutazione museale MuseMu Matrix: analisi gratuita del tuo museo su 10 dimensioni chiave. Scopri punti di forza e opportunità di crescita.')
-        .addMetaTag('robots', 'noindex, nofollow');
+        .addMetaTag('viewport', 'width=device-width, initial-scale=1');
     } catch(eSond) { Logger.log('doGet sondaggio error: ' + eSond.message); }
   }
 
@@ -300,10 +293,6 @@ function doGet(e) {
   var page = t.evaluate()
     .setTitle('Osservatorio Culturale · Sinopia — Bandi, News e Risorse per Musei e Cultura')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
-    .addMetaTag('description', 'Osservatorio Culturale Sinopia: monitoraggio bandi, news, podcast, video e pubblicazioni per musei, patrimonio culturale e innovazione. Strumenti AI per professionisti della cultura.')
-    .addMetaTag('robots', 'index, follow')
-    .addMetaTag('author', 'Duemilamusei — Silvano Straccini')
-    .addMetaTag('theme-color', '#935851')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
   var url = ScriptApp.getService().getUrl();
@@ -378,8 +367,8 @@ function renderLoginPage(auth) {
   try { webUrl = ScriptApp.getService().getUrl() || ''; } catch(e) {}
   var statusMsg = ''; var statusType = '';
   if (stato === 'pending') { statusMsg = 'Richiesta in attesa di approvazione. Riceverai una email quando approvata.'; statusType = 'warn'; }
-  else if (stato === 'sospeso') { statusMsg = 'Account sospeso. Per riattivarlo scrivi a s.straccini@gmail.com.'; statusType = 'error'; }
-  else if (stato === 'rifiutato') { statusMsg = 'Richiesta non approvata. Per informazioni scrivi a s.straccini@gmail.com.'; statusType = 'error'; }
+  else if (stato === 'sospeso') { statusMsg = 'Account sospeso. Per riattivarlo scrivi a sinopiaconsulting@gmail.com.'; statusType = 'error'; }
+  else if (stato === 'rifiutato') { statusMsg = 'Richiesta non approvata. Per informazioni scrivi a sinopiaconsulting@gmail.com.'; statusType = 'error'; }
 
   return ''
 + '<!DOCTYPE html><html lang="it"><head><meta charset="utf-8">'

@@ -35,7 +35,7 @@ var OC_AGENTI = [
     maxContenuti: 10,
     promptSpecializzato: 'Sei esperto di finanziamenti pubblici per la cultura e i musei. Estrai SOLO bandi/avvisi/call pertinenti a: musei, cultura, beni culturali, progettazione culturale, progettazione museale, patrimonio culturale, allestimenti e musealizzazione, valorizzazione e accessibilita dei luoghi della cultura, digitalizzazione dei beni culturali, turismo culturale. SCARTA tutto il resto (agricoltura, industria, startup generiche, edilizia non culturale, ecc.). Per ogni bando rilevante riporta: titolo, ente, scadenza, importo, regione, url. Regioni prioritarie: Marche, Umbria, Puglia, Sardegna, Emilia-Romagna.',
     ctaText: 'Vuoi una pre-progettazione gratuita su questo bando?',
-    ctaUrl: 'mailto:s.straccini@gmail.com?subject=Pre-progettazione bando'
+    ctaUrl: 'mailto:sinopiaconsulting@gmail.com?subject=Pre-progettazione bando'
   },
   {
     id: 2,
