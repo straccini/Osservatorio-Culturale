@@ -12962,26 +12962,15 @@
       + '<button onclick="document.getElementById(\'oc-regform-overlay\').remove()" style="position:absolute;top:12px;right:12px;background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--ink-3)">&times;</button>'
       + '<div style="font-family:var(--font-display,Georgia,serif);font-style:italic;font-size:22px;color:var(--accent,#935851)">Sinopia</div>'
       + '<div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#5C4332;margin:4px 0 16px">Osservatorio Culturale</div>'
-      + '<h2 style="font-size:1.15rem;font-weight:500;color:var(--ink);margin:0 0 6px">Accedi o registrati</h2>'
-      + '<p style="font-size:13px;color:var(--ink-2);margin:0 0 18px;line-height:1.5">Per accedere al profilo, segnalare iniziative e ricevere contenuti personalizzati.</p>'
-      // Tab login / registrazione
-      + '<div id="_gateTabBar" style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid #E5E5E7">'
-      + '<button type="button" onclick="OC._gateTab(\'login\')" id="_gateTabLogin" style="flex:1;padding:8px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid var(--accent,#935851);color:var(--accent,#935851);margin-bottom:-2px">Accedi</button>'
-      + '<button type="button" onclick="OC._gateTab(\'reg\')" id="_gateTabReg" style="flex:1;padding:8px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:#888;margin-bottom:-2px">Registrati</button>'
-      + '</div>'
-      // Form login
-      + '<div id="_gateLogin">'
-      + '<input type="email" id="_gateEmail" placeholder="La tua email" aria-label="Email" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px">'
-      + '<button type="button" onclick="OC._gateDoLogin()" style="width:100%;background:var(--accent,#935851);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Accedi</button>'
-      + '</div>'
-      // Form registrazione (nascosto)
-      + '<div id="_gateReg" hidden>'
-      + '<input type="text" id="_gateNome" placeholder="Nome" aria-label="Nome" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px">'
-      + '<input type="text" id="_gateCognome" placeholder="Cognome" aria-label="Cognome" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px">'
-      + '<input type="email" id="_gateRegEmail" placeholder="Email" aria-label="Email" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px">'
-      + '<label style="display:flex;align-items:start;gap:6px;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="_gateGdpr" style="margin-top:3px"><span style="font-size:11px;color:var(--ink-3)">Acconsento al trattamento dei dati personali</span></label>'
-      + '<button type="button" onclick="OC._gateDoReg()" style="width:100%;background:var(--accent,#935851);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Registrati</button>'
-      + '</div>'
+      + '<h2 style="font-size:1.15rem;font-weight:500;color:var(--ink);margin:0 0 6px">Entra con la tua email</h2>'
+      + '<p style="font-size:13px;color:var(--ink-2);margin:0 0 16px;line-height:1.5">Ti inviamo un <b>link per entrare senza password</b>. Se &egrave; la prima volta, ti registri in automatico come lettore.</p>'
+      // v659 — Ingresso UNIFICATO (login = registrazione): un solo gesto, email + nome facoltativo.
+      // Predisposto per campi futuri (telefono / WhatsApp / Telegram): basta aggiungere input qui
+      // e passarli a loginConEmail/registraUtente.
+      + '<input type="email" id="_gateEmail" placeholder="La tua email" aria-label="Email" style="width:100%;padding:11px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px">'
+      + '<input type="text" id="_gateNome" placeholder="Nome (facoltativo)" aria-label="Nome" style="width:100%;padding:11px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px">'
+      + '<label style="display:flex;align-items:start;gap:7px;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="_gateGdpr" checked style="margin-top:3px"><span style="font-size:11px;color:var(--ink-3);line-height:1.5">Acconsento al trattamento dei dati. <a href="#" onclick="OC.go(\'privacy\');document.getElementById(\'oc-regform-overlay\').remove();return false" style="color:var(--accent,#935851)">Privacy</a></span></label>'
+      + '<button type="button" onclick="OC._gateDoLogin()" style="width:100%;background:var(--accent,#935851);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Entra &rarr;</button>'
       + '<div id="_gateMsg" role="alert" aria-live="assertive" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>'
       + '<button type="button" onclick="document.getElementById(\'oc-regform-overlay\').remove()" style="display:block;width:100%;margin-top:14px;background:transparent;border:none;color:var(--ink-3);font-size:12px;cursor:pointer">Continua senza accesso</button>'
       + '</div>';
@@ -13007,9 +12996,12 @@
 
   OC._gateDoLogin = function() {
     var email = (document.getElementById('_gateEmail')||{}).value||'';
+    var nome = (document.getElementById('_gateNome')||{}).value||'';
+    var gdpr = (document.getElementById('_gateGdpr')||{checked:true}).checked;
     var msg = document.getElementById('_gateMsg');
-    if(!email||email.indexOf('@')<0){if(msg)msg.textContent='Inserisci un email valida';return;}
-    if(msg){msg.textContent='Accesso in corso...';msg.style.color='var(--ink-2)';}
+    if(!email||email.indexOf('@')<0){if(msg){msg.textContent='Inserisci un\'email valida';msg.style.color='#C2410C';}return;}
+    if(!gdpr){if(msg){msg.textContent='Spunta il consenso per entrare.';msg.style.color='#C2410C';}return;}
+    if(msg){msg.textContent='Invio del link in corso...';msg.style.color='var(--ink-2)';}
     google.script.run.withSuccessHandler(function(r){
       if(r&&r.ok&&r.token){
         if(msg){msg.textContent='Accesso riuscito!';msg.style.color='#3F7A5E';}
@@ -13026,7 +13018,7 @@
       } else {
         // v4.24.15 — messaggi comprensibili al posto dei codici grezzi (es. "login_disabilitato")
         var _emap = {
-          email_non_registrata: 'Email non trovata. Prova a registrarti (scheda "Registrati").',
+          email_non_registrata: 'Non riusciamo a registrarti ora. Riprova tra poco o scrivi a sinopiaconsulting@gmail.com.',
           login_disabilitato: 'Gli accessi sono momentaneamente sospesi. Riprova tra poco oppure scrivi a sinopiaconsulting@gmail.com.',
           account_non_attivo: 'Account non ancora attivo: controlla la tua email (anche lo spam) per il link di conferma.',
           email_non_valida: 'Formato email non valido.',
@@ -13036,7 +13028,7 @@
       }
     }).withFailureHandler(function(e){
       if(msg){msg.textContent='Errore di connessione';msg.style.color='#C2410C';}
-    }).loginConEmail(email);
+    }).loginConEmail(email, nome);
   };
 
   OC._gateDoReg = function() {
