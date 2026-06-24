@@ -209,18 +209,25 @@ function getDigestRecipientsByCohort() {
           }
         }
       } catch(eCM) { Logger.log('enrich ContactsMatrix: ' + eCM.message); }
-      // 3) Applica gli ambiti e PROMUOVI a coorte C (profilati) i generalisti con interessi profilo
-      var _gen2 = [];
-      generalisti.forEach(function(g){
-        var dimsG = dimsByEmail[String(g.email).toLowerCase()];
-        g.ambiti = (dimsG && typeof ambitiFromDims === 'function') ? ambitiFromDims(dimsG) : [];
-        if (dimsG && String(dimsG).trim()) {
-          profilati.push({ email: g.email, nome: g.nome, interessiDimensioni: String(dimsG), ambiti: g.ambiti });
-          allEmails[g.email] = 'C';
-        } else { _gen2.push(g); }
+      // 3) Coorte C — PROFILATI: rilevati DIRETTAMENTE da chi ha interessi nel profilo
+      //    (dimsByEmail = ProfiliPro + fallback ContactsMatrix), NON solo da chi è in MailingList.
+      //    FIX v644: prima si promuovevano SOLO i generalisti (MailingList) con interessi →
+      //    i profilati non iscritti alla newsletter risultavano 0. I lead Matrix (B) hanno precedenza.
+      var nomeByEmail = {};
+      generalisti.forEach(function(g){ nomeByEmail[String(g.email).toLowerCase()] = g.nome || ''; });
+      Object.keys(dimsByEmail).forEach(function(em){
+        em = String(em || '').toLowerCase().trim();
+        var dims = dimsByEmail[em];
+        if (!em || !dims || !String(dims).trim()) return;
+        if (allEmails[em] === 'B') return;   // Matrix ha precedenza
+        if (allEmails[em] === 'C') return;   // già aggiunto
+        profilati.push({ email: em, nome: nomeByEmail[em] || '', interessiDimensioni: String(dims), ambiti: (typeof ambitiFromDims === 'function' ? ambitiFromDims(dims) : []) });
+        allEmails[em] = 'C';
       });
-      generalisti = _gen2;
-    } catch(ePref) { Logger.log('coorte A ambiti enrich: ' + ePref.message); }
+      // I generalisti restano SOLO gli iscritti MailingList senza interessi (non in B né C)
+      generalisti = generalisti.filter(function(g){ return allEmails[String(g.email).toLowerCase()] !== 'C'; });
+      generalisti.forEach(function(g){ if (!g.ambiti) g.ambiti = []; });
+    } catch(ePref) { Logger.log('coorte C profilati enrich: ' + ePref.message); }
 
     var leadCaldi = Object.keys(coorteB).map(function(k){ return coorteB[k]; });
 

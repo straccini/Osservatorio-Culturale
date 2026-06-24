@@ -1863,7 +1863,7 @@
               <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">4</span>
               <span style="font-size:14px;font-weight:700;color:var(--ink)">Test</span>
             </div>
-            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px"><span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; Invio reale:</span> spedisce una copia vera della newsletter all'indirizzo che indichi (usa la tua email per verificarla nella casella).</p>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px"><span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; Invio reale:</span> spedisce una copia vera della newsletter all'indirizzo che indichi (usa la tua email per verificarla nella casella). <i>Per la sola anteprima senza invio, usa &laquo;Anteprima per destinatario&raquo; in fondo alla pagina.</i></p>
             <div style="margin-left:32px;display:flex;gap:8px;align-items:center">
               <input type="email" id="lettoriTestEmail" value="s.straccini@gmail.com" placeholder="Email per il test reale..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
               <button class="btn btn-secondary" onclick="OC.testDigestEmail()" style="padding:8px 16px;font-size:13px;border-color:var(--amb-2,#10916D);color:var(--amb-2,#10916D);white-space:nowrap" title="Invia una copia REALE della newsletter lettori all'indirizzo indicato">Invia test reale (email)</button>
@@ -1981,7 +1981,7 @@
               <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">3</span>
               <span style="font-size:14px;font-weight:700;color:var(--ink)">Prova di invio</span>
             </div>
-            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px"><span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; Invio reale:</span> indica un indirizzo (usa la <b>tua</b> email) e premi <b>Invia prova</b>: spedisce subito un digest profilato vero, per verificarlo in casella. Usa la compilazione Matrix dell'indirizzo; se non ne ha, l'ultima disponibile come campione. Non tocca la coda.</p>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px"><span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; Invio reale:</span> indica un indirizzo (usa la <b>tua</b> email) e premi <b>Invia prova</b>: spedisce subito un digest <b>Matrix</b> vero (sui gap), per verificarlo in casella. Usa la compilazione Matrix dell'indirizzo; se non ne ha, l'ultima disponibile come campione. Non tocca la coda. <i>Per la sola anteprima senza invio, usa &laquo;Anteprima per destinatario&raquo; in fondo.</i></p>
             <div style="margin-left:32px;display:flex;gap:8px;align-items:center">
               <input type="email" id="matrixSendTestEmail" placeholder="La tua email di prova..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
               <button class="btn btn-secondary" onclick="OC.testDigestMatrixInvio()" style="padding:8px 16px;font-size:13px;border-color:var(--amb-2,#10916D);color:var(--amb-2,#10916D);white-space:nowrap" title="Invia subito un digest profilato REALE all'indirizzo indicato">Invia prova</button>
@@ -2045,12 +2045,16 @@
           <div style="margin-bottom:14px;padding:10px 14px;background:rgba(16,145,109,.08);border-left:3px solid var(--amb-2,#10916D);border-radius:6px">
             <p style="font-size:12px;color:var(--ink-2);margin:0;line-height:1.6">L&rsquo;<b>invio reale</b> a tutti i profilati avviene con il digest settimanale (coorte C), dal pulsante <b>&ldquo;Invia digest settimanale&rdquo;</b> in cima a questa sezione. Qui sotto puoi fare una <b>prova</b>.</p>
           </div>
+          <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-secondary" onclick="OC.verificaProfilati()" style="font-size:12px;padding:6px 12px" title="Conta i profili nel foglio ProfiliPro e quanti sono idonei al digest">&#128269; Verifica rilevamento profilati</button>
+            <span id="profilatiDiag" style="font-size:12px;color:var(--ink-3)">premi per contare i profilati nel foglio</span>
+          </div>
           <div>
             <div style="display:flex;align-items:center;margin-bottom:6px">
               <span style="background:var(--amb-2,#10916D);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">&#10003;</span>
-              <span style="font-size:14px;font-weight:700;color:var(--ink)">Prova di invio</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Prova di invio <span style="font-size:11px;font-weight:600;color:var(--amb-2,#10916D)">&#9679; invia un'email reale</span></span>
             </div>
-            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px"><span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; Invio reale:</span> indica un indirizzo (usa la <b>tua</b> email) e premi <b>Invia prova profilato</b>. Usa gli interessi del profilo dell&rsquo;indirizzo; se non ne ha, usa D7/D8/D10 come campione.</p>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px"><span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; Invio reale:</span> indica un indirizzo (usa la <b>tua</b> email) e premi <b>Invia prova profilato</b>. Usa gli interessi del profilo dell&rsquo;indirizzo; se non ne ha, usa D7/D8/D10 come campione. <i>Per la sola <b>anteprima</b> senza invio, usa &laquo;Anteprima per destinatario&raquo; in fondo alla pagina.</i></p>
             <div style="margin-left:32px;display:flex;gap:8px;align-items:center">
               <input type="email" id="profilatoTestEmail" placeholder="La tua email di prova..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
               <button class="btn btn-secondary" onclick="OC.testDigestProfilatoInvio()" style="padding:8px 16px;font-size:13px;border-color:var(--amb-2,#10916D);color:var(--amb-2,#10916D);white-space:nowrap" title="Invia subito un digest profilato (ProfiloPro) REALE all'indirizzo indicato">Invia prova profilato</button>
@@ -8170,6 +8174,25 @@
       .testDigestProfilatoUI(dest, (window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
+  // ── Diagnostico rilevamento profilati (perché 0?) ──
+  function verificaProfilati(){
+    if (!hasGAS()) return;
+    var out = $('profilatiDiag');
+    if (out) out.textContent = 'Conteggio…';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || r.ok === false) { if (out) out.textContent = 'Errore: ' + (r && r.error || 'sconosciuto'); return; }
+        if (!out) return;
+        if (!r.totale) {
+          out.innerHTML = '<b style="color:#B45309">0 profili</b> nel foglio ProfiliPro: nessuno ha ancora compilato &laquo;Il mio profilo&raquo;. Per provare, compila un profilo con interessi (oppure usa la prova qui sotto con D7/D8/D10).';
+        } else {
+          out.innerHTML = '<b style="color:var(--amb-2,#10916D)">' + r.totale + '</b> profili nel foglio &middot; <b>' + r.conInteressi + '</b> con interessi = idonei al digest profilato (coorte C).';
+        }
+      })
+      .withFailureHandler(function(e){ if (out) out.textContent = 'Errore di rete: ' + e; })
+      .getProfiliProList((window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
   // ── v4.22 E1 — Editoriale settimanale admin ──
   function _loadEditoriale() {
     if (!hasGAS()) return;
@@ -12304,6 +12327,7 @@
     anteprimaInvioSettimanale: anteprimaInvioSettimanale,
     inviaDigestSettimanale: inviaDigestSettimanale,
     testDigestProfilatoInvio: testDigestProfilatoInvio,
+    verificaProfilati: verificaProfilati,
     // v4.22 E1 — Approfondimento della settimana
     _switchDigestTab: _switchDigestTab,
     _loadEditoriale: _loadEditoriale,
@@ -12348,6 +12372,7 @@
     anteprimaInvioSettimanale: anteprimaInvioSettimanale,
     inviaDigestSettimanale: inviaDigestSettimanale,
     testDigestProfilatoInvio: testDigestProfilatoInvio,
+    verificaProfilati: verificaProfilati,
     inviaTuttiPending: inviaTuttiPending,
     reloadQueue: reloadQueue,
     // Sprint 1.3 D2.4 - Cron weekly admin
