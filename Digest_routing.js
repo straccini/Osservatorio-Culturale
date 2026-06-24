@@ -76,6 +76,11 @@ function getDigestRecipientsByCohort() {
         if (!em) continue;
         if (sVals[r][iRev] === true || String(sVals[r][iRev]).toLowerCase() === 'true') continue;
         if (coorteB[em]) continue; // già aggiunto da fonte precedente
+        // v652 FIX: SOLO i veri compilatori Matrix sono lead caldi (coorte B). Le sessioni
+        // di semplice login/registrazione/profilo (matrix_completato=false) NON sono lead →
+        // restano disponibili per A (generalisti) o C (profilati). Prima TUTTE le sessioni
+        // finivano in B → 0 lettori e 0 profilati (tutti "intrappolati" come Matrix/lead).
+        if (!(sVals[r][iMxC] === true || String(sVals[r][iMxC]).toLowerCase() === 'true')) continue;
         var _src = String(sVals[r][iSrc] || '');
         coorteB[em] = {
           email: em,
@@ -167,6 +172,26 @@ function getDigestRecipientsByCohort() {
           nome: String(mVals[rm][iNomeM] || '')
         });
         allEmails[emM] = 'A';
+      }
+    }
+
+    // v652 — Generalisti anche dagli UTENTI registrati con opt-in digest (non solo MailingList):
+    // i lettori che si registrano nell'app NON sono in MailingList → senza questo, dopo il fix
+    // della coorte B, resterebbero fuori da ogni coorte e non riceverebbero nulla.
+    var shU = ss.getSheetByName('Utenti');
+    if (shU && shU.getLastRow() > 1) {
+      var uVals = shU.getDataRange().getValues();
+      var uHead = uVals[0];
+      var iUEm = uHead.indexOf('Email'), iUNome = uHead.indexOf('Nome'),
+          iUStato = uHead.indexOf('Stato'), iUOpt = uHead.indexOf('OptInDigest');
+      for (var ru = 1; ru < uVals.length; ru++) {
+        var emU = String(uVals[ru][iUEm] || '').trim().toLowerCase();
+        if (!emU) continue;
+        if (String(uVals[ru][iUStato] || '').toLowerCase() !== 'attivo') continue;          // solo attivi
+        if (iUOpt >= 0 && !(uVals[ru][iUOpt] === true || String(uVals[ru][iUOpt]).toLowerCase() === 'true')) continue; // opt-in digest
+        if (allEmails[emU] === 'B' || allEmails[emU] === 'A') continue;                       // già assegnato
+        generalisti.push({ email: emU, nome: String(uVals[ru][iUNome] || '') });
+        allEmails[emU] = 'A';
       }
     }
 

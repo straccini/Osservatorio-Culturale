@@ -79,6 +79,7 @@ function buildSS(spec) {
   if (spec.cont) s['ContactsMatrix'] = new FakeSheet('ContactsMatrix', H.cont, spec.cont);
   if (spec.mail) s['MailingList'] = new FakeSheet('MailingList', H.mail, spec.mail);
   if (spec.prof) s['ProfiliPro'] = new FakeSheet('ProfiliPro', H.prof, spec.prof);
+  if (spec.utenti) s['Utenti'] = new FakeSheet('Utenti', ['Email', 'Nome', 'Ruolo', 'Stato', 'OptInDigest'], spec.utenti);
   if (spec.items) s['Items'] = new FakeSheet('Items', ['ID', 'InclusiNelDigest', 'Archiviato'], []);
   return new FakeSS(s);
 }
@@ -123,6 +124,16 @@ scenarioCohort('Disiscritto (Attivo=false)', { mail: [[T, '', false]] }, '— (n
 scenarioCohort('Interessi via ContactsMatrix (fallback)', { cont: [[T, 'R1', '{"dimensioni":["D9"]}']] }, 'C (profilato)');
 // 10. Prenotazione archiviata → esclusa
 scenarioCohort('Prenotazione archiviata', { pren: [[T, 'TEM1', 'Museo X', 'archiviato']] }, '— (nessuna)');
+// 11. Sessione di LOGIN (no matrix) + utente registrato opt-in → A  ← il bug "18 Matrix/lead"
+scenarioCohort('Login (no matrix) + utente opt-in', { sess: [[T, 'login', false, false]], utenti: [[T, 'Tester', 'lettore', 'attivo', true]] }, 'A (generalista)');
+// 12. Login (no matrix) + utente + profilo con interessi → C
+scenarioCohort('Login + utente + profilo interessi', { sess: [[T, 'login', false, false]], utenti: [[T, '', 'lettore', 'attivo', true]], prof: [[T, 'D7']] }, 'C (profilato)');
+// 13. Utente registrato attivo opt-in (no profilo, no matrix) → A
+scenarioCohort('Utente registrato opt-in (no profilo)', { utenti: [[T, '', 'lettore', 'attivo', true]] }, 'A (generalista)');
+// 14. Utente PENDING → nessuna coorte
+scenarioCohort('Utente pending', { utenti: [[T, '', 'lettore', 'pending', true]] }, '— (nessuna)');
+// 15. Compilatore Matrix anche registrato → resta B (precedenza)
+scenarioCohort('Matrix completato + utente registrato', { sess: [[T, 'matrix', true, false]], utenti: [[T, '', 'lettore', 'attivo', true]] }, 'B (Matrix/lead)');
 
 // ============================================================================
 // A) ESITO REGISTRAZIONE (_autoRegisterUser_ REALE) per ogni stato email
