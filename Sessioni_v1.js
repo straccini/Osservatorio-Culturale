@@ -360,7 +360,13 @@ function loginConEmail(email) {
       Logger.log('[AUTH] Auto-creato utente admin: ' + email);
     }
     if (!utente) return { ok:false, error:'email_non_registrata' };
-    if (utente.stato !== 'attivo' && !isAdminEmail) return { ok:false, error:'account_non_attivo', stato: utente.stato };
+    // LIGHT (v655): NON bloccare i PENDING. Ricevono comunque il magic-link e vengono attivati
+    // al primo click (validaSessione attiva i pending). Risolve il catch-22 per cui un lettore
+    // pending non poteva loggarsi → non riceveva il link → restava bloccato per sempre (es. santini).
+    // Restano bloccati SOLO sospesi e rifiutati.
+    if ((utente.stato === 'sospeso' || utente.stato === 'rifiutato') && !isAdminEmail) {
+      return { ok:false, error:'account_non_attivo', stato: utente.stato };
+    }
 
     // Crea o riusa sessione
     var sh = _getOrCreateSessioniSheet_();
