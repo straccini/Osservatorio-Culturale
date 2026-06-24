@@ -380,7 +380,7 @@ function requestAccess(body) {
     if (reg.error === 'account_sospeso')   return { error:'Account sospeso. Contatta l amministratore.' };
     if (!reg.ok) return { error: reg.error || 'registrazione fallita' };
     // accesso immediato: sessione + magic-link via email
-    try { if (typeof createSessione === 'function') createSessione(email, 'self_request'); } catch(eS) { Logger.log('requestAccess createSessione: ' + eS.message); }
+    try { if (typeof createSessione === 'function') createSessione(email, 'registrazione'); } catch(eS) { Logger.log('requestAccess createSessione: ' + eS.message); }
     return { ok:true, registered:true, email:email, message:'Registrato! Ti abbiamo inviato un link di accesso via email.' };
   } catch(e) {
     Logger.log('requestAccess errore: ' + e.message);

@@ -210,7 +210,7 @@ function saveProfilo(payload) {
     if (reg && reg.error === 'account_sospeso') return { ok:false, error:'Account sospeso.' };
     if (!reg || reg.ok !== true) return { ok:false, error:(reg && reg.error) || 'registrazione fallita' };
     try {
-      if (typeof createSessione === 'function') { var _sess = createSessione(em, 'profilo_pro'); magicLink = (_sess && _sess.magicLink) || null; }
+      if (typeof createSessione === 'function') { var _sess = createSessione(em, 'registrazione'); magicLink = (_sess && _sess.magicLink) || null; }
     } catch(eSess) { Logger.log('saveProfilo createSessione: ' + eSess.message); }
     user = { email: em, livello: 1 };
     autoReg = reg.action || 'created';
