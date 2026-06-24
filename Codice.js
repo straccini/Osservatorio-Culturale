@@ -92,18 +92,23 @@ function escTok_(s) {
 
 function _doGetLanding() {
   return HtmlService.createHtmlOutputFromFile('LandingPublic')
-    .setTitle('Sinopia \xb7 Osservatorio Culturale')
+    .setTitle('Sinopia · Osservatorio Culturale — Piattaforma per Musei e Patrimonio Culturale')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .addMetaTag('viewport', 'width=device-width,initial-scale=1');
+    .addMetaTag('viewport', 'width=device-width,initial-scale=1')
+    .addMetaTag('description', 'Sinopia è l\'osservatorio culturale per professionisti di musei e patrimonio: bandi, news, podcast, video, autovalutazione MuseMu Matrix e strumenti AI.')
+    .addMetaTag('robots', 'index, follow')
+    .addMetaTag('theme-color', '#935851');
 }
 
 function _doGetSurvey(params) {
   var surveyTemplate = HtmlService.createTemplateFromFile('SurveyPublic');
   surveyTemplate.surveyCode = String(params.survey).trim();
   return surveyTemplate.evaluate()
-    .setTitle('Sondaggio MuseMu Matrix')
+    .setTitle('Sondaggio MuseMu Matrix — Autovalutazione Musei')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .addMetaTag('viewport', 'width=device-width,initial-scale=1');
+    .addMetaTag('viewport', 'width=device-width,initial-scale=1')
+    .addMetaTag('description', 'Questionario di autovalutazione per musei e spazi culturali. Analisi su 10 dimensioni: identità, accessibilità, collezioni, comunità, digitale e governance.')
+    .addMetaTag('robots', 'noindex, nofollow');
 }
 
 function _doGetReader(params) {
@@ -179,9 +184,11 @@ function doGet(e) {
       var sondTemplate = HtmlService.createTemplateFromFile('Index');
       sondTemplate.sondaggioCodice = String(params.sondaggio).trim();
       return sondTemplate.evaluate()
-        .setTitle('Autovalutazione · Osservatorio Culturale')
+        .setTitle('Autovalutazione Museale · Osservatorio Culturale Sinopia')
         .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-        .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+        .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+        .addMetaTag('description', 'Autovalutazione museale MuseMu Matrix: analisi gratuita del tuo museo su 10 dimensioni chiave. Scopri punti di forza e opportunità di crescita.')
+        .addMetaTag('robots', 'noindex, nofollow');
     } catch(eSond) { Logger.log('doGet sondaggio error: ' + eSond.message); }
   }
 
@@ -291,8 +298,12 @@ function doGet(e) {
   var t = HtmlService.createTemplateFromFile('Index');
 
   var page = t.evaluate()
-    .setTitle('Osservatorio Culturale · Sinopia')
+    .setTitle('Osservatorio Culturale · Sinopia — Bandi, News e Risorse per Musei e Cultura')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .addMetaTag('description', 'Osservatorio Culturale Sinopia: monitoraggio bandi, news, podcast, video e pubblicazioni per musei, patrimonio culturale e innovazione. Strumenti AI per professionisti della cultura.')
+    .addMetaTag('robots', 'index, follow')
+    .addMetaTag('author', 'Duemilamusei — Silvano Straccini')
+    .addMetaTag('theme-color', '#935851')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
   var url = ScriptApp.getService().getUrl();
