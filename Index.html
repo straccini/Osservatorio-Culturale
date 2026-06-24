@@ -72,7 +72,13 @@
           "@type": "Country",
           "name": "Italia"
         },
-        "inLanguage": "it"
+        "inLanguage": "it",
+        "url": "https://sinopiaconsulting.it",
+        "sameAs": [
+          "https://www.linkedin.com/company/sinopiaconsulting/",
+          "https://sinopia.netlify.app/",
+          "https://sinopiaconsulting.it"
+        ]
       },
       {
         "@type": "WebApplication",
@@ -113,6 +119,19 @@
           {"@type": "Thing", "name": "Bandi e finanziamenti cultura"},
           {"@type": "Thing", "name": "Innovazione museale"},
           {"@type": "Thing", "name": "Accessibilità culturale"}
+        ]
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec#breadcrumb",
+        "itemListElement": [
+          {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://sinopia.netlify.app/"},
+          {"@type": "ListItem", "position": 2, "name": "Radar Bandi Cultura", "item": "https://sinopia.netlify.app/#bandi"},
+          {"@type": "ListItem", "position": 3, "name": "News Patrimonio Culturale", "item": "https://sinopia.netlify.app/#news"},
+          {"@type": "ListItem", "position": 4, "name": "Podcast Musei e Innovazione", "item": "https://sinopia.netlify.app/#podcast"},
+          {"@type": "ListItem", "position": 5, "name": "Video Cultura", "item": "https://sinopia.netlify.app/#video"},
+          {"@type": "ListItem", "position": 6, "name": "Pubblicazioni e Libri", "item": "https://sinopia.netlify.app/#libri"},
+          {"@type": "ListItem", "position": 7, "name": "MuseMu Matrix — Autovalutazione Musei", "item": "https://sinopia.netlify.app/#matrix"}
         ]
       }
     ]
@@ -8214,14 +8233,19 @@
       .withSuccessHandler(function(r){
         if (!r || r.ok === false) { if (out) out.textContent = 'Errore: ' + (r && r.error || 'sconosciuto'); return; }
         if (!out) return;
-        if (!r.totale) {
-          out.innerHTML = '<b style="color:#B45309">0 profili</b> nel foglio ProfiliPro: nessuno ha ancora compilato &laquo;Il mio profilo&raquo;. Per provare, compila un profilo con interessi (oppure usa la prova qui sotto con D7/D8/D10).';
-        } else {
-          out.innerHTML = '<b style="color:var(--amb-2,#10916D)">' + r.totale + '</b> profili nel foglio &middot; <b>' + r.conInteressi + '</b> con interessi = idonei al digest profilato (coorte C).';
+        if (!r.profiliFoglio) {
+          out.innerHTML = '<b style="color:#B45309">0 profili</b> nel foglio: nessuno ha ancora compilato &laquo;Il mio profilo&raquo; n&eacute; scelto ambiti. Per provare, compila un profilo con interessi (o usa la prova qui sotto con D7/D8/D10).';
+          return;
         }
+        var h = '<b style="color:var(--amb-2,#10916D)">' + r.profiliFoglio + '</b> profili nel foglio (' + r.profiliConInteressi + ' con interessi) &middot; digest <b>profilati (coorte C): ' + r.coorteC + '</b>.';
+        if (r.inMatrix > 0) {
+          h += ' <span style="color:#B45309"><b>' + r.inMatrix + '</b> di questi hanno fatto anche il <b>Matrix</b></span> &rarr; ricevono il digest <b>Matrix</b> (coorte B), non quello profilato: per questo possono risultare 0 tra i profilati pur avendo un profilo.';
+        }
+        h += '<br><span style="color:var(--ink-3)">Coorti digest totali: A lettori ' + r.coorteA + ' &middot; B Matrix/lead ' + r.coorteB + ' &middot; C profilati ' + r.coorteC + '.</span>';
+        out.innerHTML = h;
       })
       .withFailureHandler(function(e){ if (out) out.textContent = 'Errore di rete: ' + e; })
-      .getProfiliProList((window.OC_SESSION&&window.OC_SESSION.token)||null);
+      .getDiagnosiCoorti((window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
   // ── v4.22 E1 — Editoriale settimanale admin ──

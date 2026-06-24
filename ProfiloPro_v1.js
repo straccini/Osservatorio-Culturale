@@ -151,6 +151,39 @@ function getProfiliProList(token) {
   };
 }
 
+/**
+ * Diagnostico coorti digest: riconcilia i profili nel foglio con le coorti effettive.
+ * Spiega perché "profili nel foglio" può differire da "profilati nel digest": i
+ * compilatori Matrix hanno la PRECEDENZA → finiscono in coorte B, non C.
+ * @param {string} [token] admin
+ * @return {Object} { ok, profiliFoglio, profiliConInteressi, coorteA, coorteB, coorteC, inMatrix }
+ */
+function getDiagnosiCoorti(token) {
+  if (token !== undefined && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
+    return { ok: false, error: 'forbidden' };
+  }
+  var lista = _proListaProfilati_();
+  var totale = lista.length;
+  var conInteressi = lista.filter(function(p){ return p.interessi.length > 0; }).length;
+  var counts = {};
+  try {
+    if (typeof getDigestRecipientsByCohort === 'function') {
+      var rec = getDigestRecipientsByCohort();
+      if (rec && rec.counts) counts = rec.counts;
+    }
+  } catch (e) { Logger.log('getDiagnosiCoorti: ' + e.message); }
+  var coorteC = counts.profilati || 0;
+  return {
+    ok: true,
+    profiliFoglio: totale,
+    profiliConInteressi: conInteressi,
+    coorteA: counts.generalisti || 0,
+    coorteB: counts.leadCaldi || 0,
+    coorteC: coorteC,
+    inMatrix: Math.max(0, conInteressi - coorteC)
+  };
+}
+
 function getProfilo(token) {
   var user = _proGetUser_(token);
   if (!user) return null;
