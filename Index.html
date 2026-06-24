@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sinopia · Osservatorio Culturale</title>
+  <title>Osservatorio Culturale · Sinopia — Bandi, News e Risorse per Musei e Cultura</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23935851'/><text x='16' y='23' text-anchor='middle' font-family='Georgia,serif' font-size='22' font-weight='700' fill='white'>S</text></svg>">
   <link rel="canonical" href="https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec">
 
@@ -220,6 +220,37 @@
   <div class="oc-boot-spin"></div>
   <div class="oc-boot-sub">Osservatorio Culturale</div>
 </div>
+
+<!-- SEO: contenuto visibile ai crawler che non eseguono JS -->
+<noscript>
+<div style="max-width:800px;margin:40px auto;padding:24px;font-family:Georgia,serif;color:#3A2818;line-height:1.6">
+  <h1>Sinopia — Osservatorio Culturale per Musei e Patrimonio</h1>
+  <p>Sinopia è la piattaforma di monitoraggio in tempo reale di <strong>bandi, news, podcast, video e pubblicazioni</strong> per professionisti della cultura, musei e patrimonio culturale italiano. Utilizza scanner basati su intelligenza artificiale per aggregare contenuti da oltre 30 fonti istituzionali.</p>
+
+  <h2>Bandi e finanziamenti per la cultura</h2>
+  <p>Monitoraggio automatico di bandi <strong>PNRR, FESR, Creative Europe</strong> e fondi regionali dedicati a cultura, musei, patrimonio, turismo culturale e innovazione. Aggiornati ogni 6 ore, filtrati per settore: Musei, Biblioteche, Patrimonio, Spettacolo, Archeologia.</p>
+
+  <h2>News da fonti istituzionali</h2>
+  <p>Aggregazione da <strong>MiC, ICOM Italia, Federculture, Artribune, Symbola, Fitzcarraldo, MuseumNext</strong> e altre testate di riferimento per il patrimonio culturale italiano.</p>
+
+  <h2>MuseMu Matrix — Autovalutazione gratuita per musei</h2>
+  <p>Questionario di autovalutazione su <strong>10 dimensioni</strong>: identità e narrazione, inclusione e accessibilità (LIS, ETR, CAA, Braille), programma e collezioni, comunità e welfare culturale, digitale e governance. Report immediato con profilo P1-P5 e roadmap di sviluppo.</p>
+
+  <h2>5 ambiti tematici</h2>
+  <ul>
+    <li><strong>Identità e narrazione museale</strong> — branding, storytelling, posizionamento</li>
+    <li><strong>Inclusione e accessibilità</strong> — LIS, Braille, Easy to Read, barriere cognitive</li>
+    <li><strong>Programma, mostre e collezioni</strong> — gestione collezioni, politiche espositive</li>
+    <li><strong>Comunità e welfare culturale</strong> — co-progettazione, partecipazione, impatto sociale</li>
+    <li><strong>Digital, AI e governance</strong> — trasformazione digitale, modelli di gestione</li>
+  </ul>
+
+  <h2>Consulenza per musei</h2>
+  <p><strong>Sinopia Consulting</strong> (Sinopia Srl, Deruta — PG) offre consulenza strategica per progettazione culturale, candidature a bandi, accessibilità universale e innovazione museale. Fondatore: Silvano Straccini, progettista e manager culturale.</p>
+
+  <p><a href="https://app.sinopiaconsulting.it/">Accedi a Sinopia — Osservatorio Culturale</a></p>
+</div>
+</noscript>
 <script>
   (function(){
     function ocHideBoot(){ var b=document.getElementById('appBootSplash'); if(b){ b.classList.add('oc-hide'); } }
@@ -12591,10 +12622,10 @@
       <div style="font-size:11px;color:var(--ink-3);margin-top:4px;text-align:right"><span id="pro-note-count">0</span>/2000</div>
     </div>
 
-    <!-- I tuoi dati di contatto -->
-    <div style="background:#fff;border:1px solid var(--rule,#E5E5E7);border-radius:12px;padding:24px;margin-bottom:20px">
+    <!-- I tuoi dati di contatto (nascosto se gia loggato: l'email arriva dalla sessione) -->
+    <div id="pro-dati-section" style="background:#fff;border:1px solid var(--rule,#E5E5E7);border-radius:12px;padding:24px;margin-bottom:20px">
       <h3 style="font-size:15px;font-weight:600;color:var(--ink);margin:0 0 6px">I tuoi dati</h3>
-      <p style="font-size:13px;color:var(--ink-2);margin:0 0 14px;line-height:1.5">Per salvare il profilo e ricevere contenuti personalizzati.</p>
+      <p style="font-size:13px;color:var(--ink-2);margin:0 0 14px;line-height:1.5">Compilando qui ti registri e ricevi i contenuti personalizzati. Se hai gia un account, <b>accedi</b> e questo riquadro sparisce.</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
         <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Nome *</label><input id="pro-reg-nome" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" placeholder="Nome"></div>
         <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Cognome</label><input id="pro-reg-cognome" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" placeholder="Cognome"></div>
@@ -13105,6 +13136,12 @@
     var wrap = document.getElementById('profiloProContent');
     if (!wrap || wrap.dataset.loaded === '1') return;
     wrap.dataset.loaded = '1';
+    // Regola: se sei gia loggato l'email NON viene richiesta (sei gia nei lettori) → nascondi il blocco dati
+    try {
+      var _logged = !!(window.OC_SESSION && window.OC_SESSION.token && window.OC_SESSION.email);
+      var _dati = document.getElementById('pro-dati-section');
+      if (_dati) _dati.style.display = _logged ? 'none' : '';
+    } catch(_e){}
     if (typeof google==='undefined' || !google.script) return;
     google.script.run.withSuccessHandler(function(enums) {
       if (!enums) return;
@@ -13235,14 +13272,32 @@
       q_staff: (document.getElementById('pro-q-staff')||{}).value||'',
       q_ai: (document.getElementById('pro-q-ai')||{}).value||'',
       q_accessibilita: (document.getElementById('pro-q-access')||{}).value||'',
+      email: ((document.getElementById('pro-reg-email')||{}).value||'').trim(),
+      nome: (((document.getElementById('pro-reg-nome')||{}).value||'').trim() + ' ' + ((document.getElementById('pro-reg-cognome')||{}).value||'').trim()).trim(),
       __token: (window.OC_SESSION && window.OC_SESSION.token) || null
     };
     var msg = document.getElementById('proSaveMsg');
     if(msg){msg.textContent='Salvataggio...';msg.style.color='var(--ink-3)';}
     google.script.run.withSuccessHandler(function(r) {
-      if(r&&r.ok) { if(msg){msg.textContent='Profilo salvato!';msg.style.color='#3F7A5E';} }
-      else { if(msg){msg.textContent=(r&&r.error)||'Errore';msg.style.color='#C2410C';} }
-      setTimeout(function(){if(msg)msg.textContent='';},4000);
+      if (r && r.ok) {
+        if (msg) {
+          msg.style.color = '#3F7A5E';
+          if (r.autoRegistered) {
+            msg.innerHTML = '✓ Registrato e profilo salvato! Sei ora tra i <b>lettori profilati</b>.' + (r.magicLinkSent ? ' Ti abbiamo inviato un <b>link di accesso</b> via email.' : '');
+          } else {
+            msg.textContent = 'Profilo salvato! Sei tra i lettori profilati.';
+          }
+        }
+        if (typeof showToast === 'function') showToast('Profilo salvato — sei tra i profilati', 'ok');
+      } else {
+        var er = (r && r.error) || 'Errore';
+        var txt = er;
+        if (er === 'email_richiesta') txt = 'Inserisci la tua email per registrarti e salvare il profilo.';
+        else if (er === 'consenso_richiesto') txt = 'Spunta il consenso alla profilazione per salvare.';
+        else if (er === 'gia_registrato') txt = 'Questa email è già registrata: accedi (Accedi/Registrati in alto) per modificare il profilo.';
+        if (msg) { msg.textContent = txt; msg.style.color = '#C2410C'; }
+      }
+      setTimeout(function(){ if (msg && !(r && r.autoRegistered)) msg.textContent=''; }, 8000);
     }).withFailureHandler(function(e) {
       if(msg){msg.textContent='Errore: '+e;msg.style.color='#C2410C';}
     }).saveProfilo(payload);

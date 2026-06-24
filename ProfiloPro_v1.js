@@ -163,7 +163,25 @@ function saveProfilo(payload) {
   var _tok = payload.__token || null;
   try { delete payload.__token; } catch(_){}
   var user = _proGetUser_(_tok);
-  if (!user) return { ok:false, error:'Accesso non autorizzato. Effettua il login.' };
+  var autoReg = null, magicLink = null;
+  if (!user) {
+    // REGOLA: chi NON è loggato, compilando "Il mio profilo" si AUTO-REGISTRA alla lista
+    // lettori (email + consenso) e diventa profilato. Chi è già loggato salta questo blocco
+    // (usa la sessione, nessuna email richiesta).
+    var em = String(payload.email || '').toLowerCase().trim();
+    if (!em || em.indexOf('@') < 0) return { ok:false, error:'email_richiesta' };
+    if (payload.consenso_profilazione !== true) return { ok:false, error:'consenso_richiesto' };
+    var reg = (typeof _autoRegisterUser_ === 'function') ? _autoRegisterUser_(em, payload.nome || '', 'profilo_pro') : { ok:false, error:'no_autoreg' };
+    if (reg && reg.error === 'gia_registrato') return { ok:false, error:'gia_registrato' };
+    if (reg && reg.error === 'accesso_rifiutato') return { ok:false, error:'Accesso non consentito per questo indirizzo.' };
+    if (reg && reg.error === 'account_sospeso') return { ok:false, error:'Account sospeso.' };
+    if (!reg || reg.ok !== true) return { ok:false, error:(reg && reg.error) || 'registrazione fallita' };
+    try {
+      if (typeof createSessione === 'function') { var _sess = createSessione(em, 'profilo_pro'); magicLink = (_sess && _sess.magicLink) || null; }
+    } catch(eSess) { Logger.log('saveProfilo createSessione: ' + eSess.message); }
+    user = { email: em, livello: 1 };
+    autoReg = reg.action || 'created';
+  }
   var existing = _proFindByEmail_(user.email);
   if (!existing && payload.consenso_profilazione !== true) {
     return { ok:false, error:'Il consenso alla profilazione e necessario per salvare il profilo.' };
@@ -208,7 +226,8 @@ function saveProfilo(payload) {
       if (rid) crm_recordEvent(rid, 'profilo_salvato', isNew?10:2, {completezza:completezza});
     } catch(e){}
   }
-  return { ok:true, profileId:profileId, completezza:completezza, isNew:isNew };
+  return { ok:true, profileId:profileId, completezza:completezza, isNew:isNew,
+           autoRegistered: autoReg, email: user.email, magicLinkSent: !!magicLink };
 }
 
 function deleteProfilo() {
