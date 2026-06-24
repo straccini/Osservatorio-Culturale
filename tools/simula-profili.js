@@ -120,8 +120,10 @@ scenarioCohort('Prenotazione consulenza', { pren: [[T, 'TEM1', 'Museo X', 'nuovo
 scenarioCohort('Profilo senza interessi + newsletter', { prof: [[T, '']], mail: [[T, '', true]] }, 'A (generalista)');
 // 8. Disiscritto (MailingList Attivo=false)
 scenarioCohort('Disiscritto (Attivo=false)', { mail: [[T, '', false]] }, '— (nessuna)');
-// 9. Interessi solo da ContactsMatrix (fallback, non in Sessioni → non B)
-scenarioCohort('Interessi via ContactsMatrix (fallback)', { cont: [[T, 'R1', '{"dimensioni":["D9"]}']] }, 'C (profilato)');
+// 9. ContactsMatrix con response_id = Matrix completato → B (anche senza flag di sessione) [HARDENING v653]
+scenarioCohort('ContactsMatrix con response_id → B', { cont: [[T, 'R1', '{"dimensioni":["D9"]}']] }, 'B (Matrix/lead)');
+// 9b. ContactsMatrix con interessi MA senza response_id (non completato) → C (fallback interessi)
+scenarioCohort('ContactsMatrix interessi senza response_id → C', { cont: [[T, '', '{"dimensioni":["D9"]}']] }, 'C (profilato)');
 // 10. Prenotazione archiviata → esclusa
 scenarioCohort('Prenotazione archiviata', { pren: [[T, 'TEM1', 'Museo X', 'archiviato']] }, '— (nessuna)');
 // 11. Sessione di LOGIN (no matrix) + utente registrato opt-in → A  ← il bug "18 Matrix/lead"

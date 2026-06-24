@@ -130,18 +130,29 @@ function getDigestRecipientsByCohort() {
       }
     }
 
-    // === C) Per ogni lead in coorte B, recupera responseId da ContactsMatrix ===
+    // === C) ContactsMatrix: recupera responseId E aggiunge a coorte B i compilatori Matrix ===
+    // v653 HARDENING: la presenza in ContactsMatrix con response_id = Matrix COMPLETATO →
+    // garantisce la coorte B anche se la sessione non aveva matrix_completato (storici, sessioni
+    // scadute, source diversa). È il segnale Matrix più robusto del flag di sessione.
     var shC = ss.getSheetByName('ContactsMatrix');
     if (shC && shC.getLastRow() > 1) {
       var cVals = shC.getDataRange().getValues();
       var cHead = cVals[0];
       var iEmailC = cHead.indexOf('email'), iRespId = cHead.indexOf('response_id');
-      for (var rc = cVals.length - 1; rc >= 1; rc--) {
+      for (var rc = cVals.length - 1; rc >= 1; rc--) {   // dal basso = più recente prima
         var emC = String(cVals[rc][iEmailC] || '').trim().toLowerCase();
-        if (!emC || !coorteB[emC]) continue;
-        if (coorteB[emC].responseId) continue; // già impostato (prendiamo il più recente)
-        coorteB[emC].responseId = String(cVals[rc][iRespId] || '');
-        coorteB[emC].matrixCompletato = true;
+        if (!emC) continue;
+        var ridC = String(cVals[rc][iRespId] || '');
+        if (coorteB[emC]) {
+          if (!coorteB[emC].responseId && ridC) { coorteB[emC].responseId = ridC; coorteB[emC].matrixCompletato = true; }
+        } else if (ridC) {
+          // non era in B (sessione senza flag): è comunque un compilatore Matrix → aggiungilo
+          coorteB[emC] = {
+            email: emC, nome: '', source: 'matrix', segmento: _getDigestSegmento_('matrix'),
+            matrixCompletato: true, responseId: ridC, tematica: null, leadScore: 0
+          };
+          allEmails[emC] = 'B';
+        }
       }
     }
 
