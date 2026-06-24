@@ -359,7 +359,18 @@ function loginConEmail(email) {
       utente = { email: email, nome: email.split('@')[0], ruolo: 'admin', stato: 'attivo' };
       Logger.log('[AUTH] Auto-creato utente admin: ' + email);
     }
-    if (!utente) return { ok:false, error:'email_non_registrata' };
+    if (!utente) {
+      // LIGHT (v656): email NON registrata → auto-registra come lettore attivo e procedi.
+      // Un solo gesto per entrare/registrarsi: il magic-link conferma l'email. Coerente con
+      // newsletter e auto-registrazione profilo. (Resta gated dal flag login pubblico sopra.)
+      if (typeof _autoRegisterUser_ === 'function') {
+        var _reg = _autoRegisterUser_(email, '', 'login');
+        if (_reg && _reg.error === 'accesso_rifiutato') return { ok:false, error:'account_non_attivo', stato:'rifiutato' };
+        if (_reg && _reg.error === 'account_sospeso')  return { ok:false, error:'account_non_attivo', stato:'sospeso' };
+      }
+      utente = (typeof getUtenteByEmail_ === 'function') ? getUtenteByEmail_(email) : null;
+      if (!utente) utente = { email: email, nome: email.split('@')[0], ruolo: 'lettore', stato: 'attivo' };
+    }
     // LIGHT (v655): NON bloccare i PENDING. Ricevono comunque il magic-link e vengono attivati
     // al primo click (validaSessione attiva i pending). Risolve il catch-22 per cui un lettore
     // pending non poteva loggarsi → non riceveva il link → restava bloccato per sempre (es. santini).

@@ -369,50 +369,19 @@ function requestAccess(body) {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error:'email non valida' };
 
   var nome = String(body.nome || '').trim();
-  var motivo = String(body.motivo || '').trim();
 
   try {
-    var sh = _getOrCreateUtentiSheet_();
-    var rows = sh.getDataRange().getValues();
-    var headers = rows[0];
-    var iEmail = headers.indexOf('Email');
-    var iStato = headers.indexOf('Stato');
-
-    // Se gia esiste, aggiorna stato se rifiutato/sospeso, altrimenti messaggio
-    for (var i = 1; i < rows.length; i++) {
-      if (String(rows[i][iEmail] || '').toLowerCase().trim() === email) {
-        var stato = String(rows[i][iStato] || '');
-        if (stato === 'attivo')   return { ok:true, alreadyActive:true, email:email, message:'Sei gia attivo. Clicca ENTRA per accedere.' };
-        if (stato === 'pending')  return { ok:true, message:'Richiesta gia ricevuta, in attesa di approvazione.' };
-        if (stato === 'rifiutato') return { error:'Richiesta precedente rifiutata. Contatta l amministratore.' };
-        if (stato === 'sospeso')  return { error:'Account sospeso. Contatta l amministratore.' };
-      }
-    }
-
-    // Se admin auto-aggiunto
-    if ((typeof OC_ADMIN_EMAILS !== 'undefined') && OC_ADMIN_EMAILS.indexOf(email) >= 0) {
-      var idA = 'U' + Date.now() + Math.floor(Math.random()*1000);
-      var nowIsoA = new Date().toISOString();
-      sh.appendRow([
-        idA, email, nome || 'Admin', 'admin', 'attivo',
-        true, true, true,
-        nowIsoA, nowIsoA, 'admin_seed', 'admin auto-attivato'
-      ]);
-      return { ok:true, alreadyActive:true, email:email, message:'Admin riconosciuto. Clicca ENTRA.' };
-    }
-
-    var id = 'U' + Date.now() + Math.floor(Math.random()*1000);
-    var nowIso = new Date().toISOString();
-    sh.appendRow([
-      id, email, nome, 'ospite', 'pending',
-      false, false, false,
-      nowIso, '', 'self_request', motivo
-    ]);
-
-    // Notifica admin
-    _notifyAdminNewAccessRequest_(email, nome, motivo);
-
-    return { ok:true, message:'Richiesta inviata. Riceverai una mail quando verra approvata.' };
+    // LIGHT (v656): nessuna approvazione per i lettori. "Richiedi accesso" AUTO-REGISTRA come
+    // lettore ATTIVO (come newsletter/profilo) e invia subito un magic-link. Solo sospesi e
+    // rifiutati restano bloccati. L'eventuale ruolo elevato resta gestito dalle liste admin/editor.
+    var reg = (typeof _autoRegisterUser_ === 'function') ? _autoRegisterUser_(email, nome, 'self_request') : { ok:false, error:'no_autoreg' };
+    if (reg.error === 'gia_registrato')    return { ok:true, alreadyActive:true, email:email, message:'Sei gia attivo. Clicca ENTRA per accedere.' };
+    if (reg.error === 'accesso_rifiutato') return { error:'Richiesta precedente rifiutata. Contatta l amministratore.' };
+    if (reg.error === 'account_sospeso')   return { error:'Account sospeso. Contatta l amministratore.' };
+    if (!reg.ok) return { error: reg.error || 'registrazione fallita' };
+    // accesso immediato: sessione + magic-link via email
+    try { if (typeof createSessione === 'function') createSessione(email, 'self_request'); } catch(eS) { Logger.log('requestAccess createSessione: ' + eS.message); }
+    return { ok:true, registered:true, email:email, message:'Registrato! Ti abbiamo inviato un link di accesso via email.' };
   } catch(e) {
     Logger.log('requestAccess errore: ' + e.message);
     return { error: e.message };
