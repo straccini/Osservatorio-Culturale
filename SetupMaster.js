@@ -127,7 +127,8 @@ function scanSourcesBisettimanale() {
 function scanPodcastBisettimanale() {
   var day = new Date().getDay();
   if (day !== 2 && day !== 4) { Logger.log('[scanPodcastBisettimanale] Oggi non è mar/gio, skip'); return; }
-  return scanPodcast();
+  // v5.2 — Usa scanPodcastDiretto (legge dal foglio FontiPodcast) se disponibile
+  return (typeof scanPodcastDiretto === 'function') ? scanPodcastDiretto() : scanPodcast();
 }
 
 // ============================================================================

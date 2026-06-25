@@ -351,7 +351,7 @@ function doGet(e) {
     .replace(/OC_SESSION_PLACEHOLDER/g, injectedSession);
 
   return HtmlService.createHtmlOutput(html)
-    .setTitle('Sinopia · Osservatorio Culturale')
+    .setTitle('Osservatorio Culturale · Sinopia — Bandi, News e Risorse per Musei e Cultura')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
@@ -973,6 +973,27 @@ function _youtubeChannelToFeedUrl(input) {
   if (m) return 'https://www.youtube.com/feeds/videos.xml?playlist_id=' + m[1];
   m = url.match(/youtube\.com\/@([A-Za-z0-9_.-]+)/);
   if (m) {
+    // v5.2 — Priorità 1: YouTube Data API v3 (se chiave disponibile)
+    var ytApiKey = '';
+    try { ytApiKey = PropertiesService.getScriptProperties().getProperty('YOUTUBE_API_KEY') || ''; } catch(_){}
+    if (ytApiKey) {
+      try {
+        var apiResp = UrlFetchApp.fetch(
+          'https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q='
+          + encodeURIComponent('@' + m[1]) + '&key=' + ytApiKey,
+          { muteHttpExceptions: true, deadline: 10 }
+        );
+        if (apiResp.getResponseCode() === 200) {
+          var apiData = JSON.parse(apiResp.getContentText());
+          if (apiData.items && apiData.items[0]) {
+            var cid = (apiData.items[0].id && apiData.items[0].id.channelId)
+                   || (apiData.items[0].snippet && apiData.items[0].snippet.channelId);
+            if (cid) return 'https://www.youtube.com/feeds/videos.xml?channel_id=' + cid;
+          }
+        }
+      } catch(eApi) { Logger.log('_youtubeChannelToFeedUrl API v3: ' + eApi.message); }
+    }
+    // Priorità 2: scraping HTML (può essere bloccato da YouTube su IP Google)
     try {
       var resp = UrlFetchApp.fetch('https://www.youtube.com/@' + m[1], {
         muteHttpExceptions:true, followRedirects:true, deadline:10,
@@ -984,7 +1005,7 @@ function _youtubeChannelToFeedUrl(input) {
                       html.match(/channel\/(UC[A-Za-z0-9_-]+)/);
         if (idMatch) return 'https://www.youtube.com/feeds/videos.xml?channel_id=' + idMatch[1];
       }
-    } catch(e) { Logger.log('_youtubeChannelToFeedUrl errore @handle: ' + e.message); }
+    } catch(e) { Logger.log('_youtubeChannelToFeedUrl scraping @handle: ' + e.message); }
     return '';
   }
   return '';
@@ -1026,16 +1047,17 @@ function populaSeedVideoYoutubeMusei() {
   Logger.log('=== SEED VIDEO YOUTUBE MUSEI ITALIANI ===');
   _ensureFontiPodTipoContenuto_();
   var seed = [
-    { nome:'Pinacoteca di Brera',         channelUrl:'https://www.youtube.com/@pinacotecabrera',           tematica:'Musei & Patrimonio' },
-    { nome:'Gallerie degli Uffizi',       channelUrl:'https://www.youtube.com/@GallerieUffizi',           tematica:'Musei & Patrimonio' },
-    { nome:'MAXXI Museo',                 channelUrl:'https://www.youtube.com/@MuseoMAXXI',                tematica:'Arte Contemporanea' },
-    { nome:'Triennale Milano',            channelUrl:'https://www.youtube.com/@TriennaleMilano',           tematica:'Arte Contemporanea' },
-    { nome:'Museo Egizio Torino',         channelUrl:'https://www.youtube.com/@MuseoEgizioTorino',         tematica:'Musei & Patrimonio' },
-    { nome:'MART Rovereto',               channelUrl:'https://www.youtube.com/@MARTrovereto',              tematica:'Arte Contemporanea' },
-    { nome:'Fondazione Cariplo',          channelUrl:'https://www.youtube.com/@FondazioneCariplo',         tematica:'Politiche Culturali' },
-    { nome:'Ministero della Cultura',     channelUrl:'https://www.youtube.com/@MiCMinisterodellaCultura',  tematica:'Politiche Culturali' },
-    { nome:'ICOM Italia',                 channelUrl:'https://www.youtube.com/@ICOMItalia',                tematica:'Musei & Patrimonio' },
-    { nome:'Fondazione Sandretto',        channelUrl:'https://www.youtube.com/@FondazioneSandretto',       tematica:'Arte Contemporanea' }
+    // v5.2 — Channel ID diretti (verificati 2026-06-25), no scraping @handle
+    { nome:'Pinacoteca di Brera',         channelUrl:'https://www.youtube.com/channel/UCMjoBnR_-4w7rkInxAbXh1g', tematica:'Musei & Patrimonio' },
+    { nome:'Gallerie degli Uffizi',       channelUrl:'https://www.youtube.com/channel/UC9iTjM1LI5k60EhfTwNPO5w', tematica:'Musei & Patrimonio' },
+    { nome:'MAXXI Museo',                 channelUrl:'https://www.youtube.com/channel/UCtGzNQCNmlrYlBETdxR0i5g', tematica:'Arte Contemporanea' },
+    { nome:'Triennale Milano',            channelUrl:'https://www.youtube.com/channel/UCdmaHR0TTEvbfZkqRkenHOA', tematica:'Arte Contemporanea' },
+    { nome:'Museo Egizio Torino',         channelUrl:'https://www.youtube.com/channel/UCu0NN4cZekeB2KKha2XwYyQ', tematica:'Musei & Patrimonio' },
+    { nome:'MART Rovereto',               channelUrl:'https://www.youtube.com/channel/UCDbUkqY7UHYzrs7GbM5AmIQ', tematica:'Arte Contemporanea' },
+    { nome:'Fondazione Cariplo',          channelUrl:'https://www.youtube.com/channel/UChmCXueVERJHMUncOY12dsw', tematica:'Politiche Culturali' },
+    { nome:'Ministero della Cultura',     channelUrl:'https://www.youtube.com/channel/UC8F-Rl2Li93KYya-rAUn0UA', tematica:'Politiche Culturali' },
+    { nome:'ICOM Italia',                 channelUrl:'https://www.youtube.com/channel/UC_VRJw2GbXWUlzBp3ayAatg', tematica:'Musei & Patrimonio' },
+    { nome:'Fondazione Sandretto',        channelUrl:'https://www.youtube.com/channel/UCYrENk9lYuC3o91lF-gJPSw', tematica:'Arte Contemporanea' }
   ];
   var aggiunti = 0, errori = 0, skip = 0;
   seed.forEach(function(s) {
@@ -1066,18 +1088,23 @@ function seedFontiPodcastRSS() {
   ];
   _ensureFontiPodTipoContenuto_();
   var sh = _getFontiPodSheet();
-  var headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+  var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
   var iUrl = headers.indexOf('URL_RSS');
+  // Fallback: cerca varianti del nome colonna URL
+  if (iUrl < 0) iUrl = headers.indexOf('URL_Feed');
+  if (iUrl < 0) iUrl = headers.indexOf('URL');
+  if (iUrl < 0) iUrl = headers.indexOf('url');
+  if (iUrl < 0) { Logger.log('[seedFontiPodcastRSS] Colonna URL non trovata. Headers: ' + JSON.stringify(headers)); return { error: 'Colonna URL non trovata', headers: headers }; }
   var existing = new Set();
   if (sh.getLastRow() > 1) {
-    sh.getRange(2, iUrl+1, sh.getLastRow()-1, 1).getValues().forEach(function(r){
-      existing.add(String(r[0]||'').trim());
+    sh.getRange(2, iUrl + 1, sh.getLastRow() - 1, 1).getValues().forEach(function(r) {
+      existing.add(String(r[0] || '').trim());
     });
   }
   var aggiunti = 0, skip = 0;
   seed.forEach(function(s) {
     if (existing.has(s.url)) { skip++; return; }
-    var id = 'FP' + Date.now() + Math.floor(Math.random()*1000);
+    var id = 'FP' + Date.now() + Math.floor(Math.random() * 1000);
     sh.appendRow([id, s.nome, s.url, s.tematica, true, '', 0, 'audio']);
     existing.add(s.url);
     aggiunti++;
@@ -1095,8 +1122,11 @@ function seedFontiPodcastRSS() {
 function pulisciFontiPodcastBloccate() {
   var sh = _getFontiPodSheet();
   if (sh.getLastRow() < 2) { Logger.log('FontiPodcast vuoto'); return; }
-  var headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+  var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
   var iUrl = headers.indexOf('URL_RSS');
+  if (iUrl < 0) iUrl = headers.indexOf('URL_Feed');
+  if (iUrl < 0) iUrl = headers.indexOf('URL');
+  if (iUrl < 0) { Logger.log('[pulisciFontiPodcast] Colonna URL non trovata: ' + JSON.stringify(headers)); return { error: 'Colonna URL non trovata' }; }
   var BLOCKLIST = [
     'raiplaysound.it',          // RAI blocca IP Google
     'feeds.spreaker.com/user',  // formato user/* non risolve DNS da GAS
@@ -1119,6 +1149,108 @@ function pulisciFontiPodcastBloccate() {
 }
 
 // v4.22 — Moved to NewsScanner.js: scanVideoYoutube, _parseYoutubeAtom_, _xmlText_, scanPodcastDiretto, _parseRSSItems_
+
+/**
+ * v5.2 — Seed fonti podcast V2: fonti RSS culturali italiane ed europee verificate.
+ * Idempotente per URL. Da eseguire una volta da editor GAS.
+ */
+function seedFontiPodcastV2() {
+  Logger.log('=== SEED PODCAST V2 — FONTI CULTURALI ===');
+  _ensureFontiPodTipoContenuto_();
+  var seed = [
+    { nome:'Europeana Pro Blog',          url:'https://pro.europeana.eu/blog/rss.xml',            tematica:'Digitale & Patrimonio' },
+    { nome:'NEMO — European Museums',     url:'https://www.ne-mo.org/news/rss.xml',               tematica:'Musei & Patrimonio' },
+    { nome:'Culture Action Europe',       url:'https://cultureactioneurope.org/feed/',             tematica:'Politiche Culturali' },
+    { nome:'Tafter — Economia Cultura',   url:'https://www.tafter.it/feed/',                      tematica:'Gestione Culturale' },
+    { nome:'Museum-iD',                   url:'https://museum-id.com/feed/',                      tematica:'Innovazione Museale' },
+    { nome:'Il Giornale dell\'Arte',      url:'https://www.ilgiornaledellarte.com/feed/',          tematica:'Arte & Mostre' },
+    { nome:'MuseumNext',                  url:'https://www.museumnext.com/feed/',                  tematica:'Innovazione Museale' },
+    { nome:'Doppiozero — Critica',        url:'https://www.doppiozero.com/feed/',                  tematica:'Critica Culturale' },
+    { nome:'Artribune — News',            url:'https://www.artribune.com/feed/',                   tematica:'Arte Contemporanea' },
+    { nome:'Finestre sull\'Arte',         url:'https://www.finestresullarte.info/feed',            tematica:'Arte & Patrimonio' }
+  ];
+  var sh = _getFontiPodSheet();
+  var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  var iUrl = headers.indexOf('URL_RSS');
+  if (iUrl < 0) iUrl = headers.indexOf('URL_Feed');
+  if (iUrl < 0) iUrl = headers.indexOf('URL');
+  if (iUrl < 0) { Logger.log('[seedPodcastV2] Colonna URL non trovata: ' + JSON.stringify(headers)); return { error: 'Colonna URL non trovata' }; }
+  var existing = new Set();
+  if (sh.getLastRow() > 1) {
+    sh.getRange(2, iUrl + 1, sh.getLastRow() - 1, 1).getValues().forEach(function(r) {
+      existing.add(String(r[0] || '').trim());
+    });
+  }
+  var iNome = headers.indexOf('Nome');
+  var iTem  = headers.indexOf('Tematica');
+  var iAtt  = headers.indexOf('Attiva');
+  var iTipo = headers.indexOf('TipoContenuto');
+  var aggiunti = 0, skip = 0;
+  seed.forEach(function(s) {
+    if (existing.has(s.url)) { skip++; return; }
+    var row = new Array(headers.length).fill('');
+    row[headers.indexOf('ID')] = 'POD' + Date.now() + '_' + aggiunti;
+    row[iNome] = s.nome;
+    row[iUrl]  = s.url;
+    row[iTem]  = s.tematica;
+    row[iAtt]  = true;
+    if (iTipo >= 0) row[iTipo] = 'podcast';
+    sh.appendRow(row);
+    existing.add(s.url);
+    aggiunti++;
+    Logger.log('[seedPodcastV2] OK: ' + s.nome);
+    Utilities.sleep(100);
+  });
+  Logger.log('=== Seed V2 completato: ' + aggiunti + ' aggiunti, ' + skip + ' gia presenti ===');
+  return { ok: true, aggiunti: aggiunti, skip: skip };
+}
+
+/**
+ * v5.2 — Seed Social Wall V2: fonti RSS culturali europee per il Social Wall.
+ * Idempotente per URL. Da eseguire una volta da editor GAS.
+ */
+function seedSocialFontiV2() {
+  Logger.log('=== SEED SOCIAL FONTI V2 ===');
+  var ss = getMainSS();
+  var sh = ss.getSheetByName('SocialFonti');
+  if (!sh) { Logger.log('Foglio SocialFonti non trovato'); return { error: 'SocialFonti non trovato' }; }
+  var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  var iUrl = headers.indexOf('URL');
+  var existing = new Set();
+  if (sh.getLastRow() > 1) {
+    sh.getRange(2, iUrl + 1, sh.getLastRow() - 1, 1).getValues().forEach(function(r) {
+      existing.add(String(r[0] || '').trim());
+    });
+  }
+  var seed = [
+    { id:'SW40', nome:'Europeana Pro Blog',        url:'https://pro.europeana.eu/blog/rss.xml',        tipo:'istituzione', cat:'Digitale & Patrimonio',  av:'E' },
+    { id:'SW41', nome:'NEMO — Musei Europei',      url:'https://www.ne-mo.org/news/rss.xml',           tipo:'associazione', cat:'Musei & Patrimonio',    av:'N' },
+    { id:'SW42', nome:'Tafter',                    url:'https://www.tafter.it/feed/',                  tipo:'rivista',     cat:'Gestione Culturale',     av:'T' },
+    { id:'SW43', nome:'Museum-iD',                 url:'https://museum-id.com/feed/',                  tipo:'rivista',     cat:'Innovazione Museale',    av:'M' },
+    { id:'SW44', nome:'Culture Action Europe',     url:'https://cultureactioneurope.org/feed/',         tipo:'associazione', cat:'Politiche Culturali',   av:'C' },
+    { id:'SW45', nome:'Il Giornale dell\'Arte',    url:'https://www.ilgiornaledellarte.com/feed/',     tipo:'rivista',     cat:'Arte & Mostre',          av:'J' },
+    { id:'SW46', nome:'OCP Piemonte',              url:'https://www.ocp.piemonte.it/feed/',            tipo:'fondazione',  cat:'Governance & Cultura',   av:'O' },
+    { id:'SW47', nome:'Finestre sull\'Arte',       url:'https://www.finestresullarte.info/feed',       tipo:'rivista',     cat:'Arte & Patrimonio',      av:'F' }
+  ];
+  var aggiunti = 0, skip = 0;
+  seed.forEach(function(s) {
+    if (existing.has(s.url)) { skip++; return; }
+    var row = new Array(headers.length).fill('');
+    row[headers.indexOf('ID')]        = s.id;
+    row[headers.indexOf('Nome')]      = s.nome;
+    row[iUrl]                         = s.url;
+    row[headers.indexOf('Tipo')]      = s.tipo;
+    row[headers.indexOf('Categoria')] = s.cat;
+    row[headers.indexOf('Avatar')]    = s.av;
+    row[headers.indexOf('Attiva')]    = true;
+    sh.appendRow(row);
+    existing.add(s.url);
+    aggiunti++;
+    Logger.log('[seedSocialV2] OK: ' + s.nome);
+  });
+  Logger.log('=== Seed SW V2: ' + aggiunti + ' aggiunti, ' + skip + ' skip ===');
+  return { ok: true, aggiunti: aggiunti, skip: skip };
+}
 
 function getFontiStats() {
   var stats = {
@@ -1650,25 +1782,32 @@ function getSocialWall() {
 function fetchAndCacheSocialWall() {
   const fonti = getSocialFontiList().fonti.filter(f => f.Attiva);
   if (!fonti.length) return {posts:[], updatedAt:new Date().toISOString()};
-  const posts = [], cutoff = new Date(Date.now()-7*86400000);
-  for (const fonte of fonti.slice(0, 8)) {  // max 8 fonti per limitare i tempi
+  // v5.2 — Espansione: 12 fonti (era 8), cutoff 14gg (era 7), 24 post (era 16), dedup URL
+  const posts = [], cutoff = new Date(Date.now() - 14 * 86400000);
+  for (const fonte of fonti.slice(0, 12)) {
     try {
-      // * Timeout 5s per singola fonte RSS (UrlFetchApp default = 20s)
-      const rssItems = fetchRSS(fonte.URL, {muteHttpExceptions:true, followRedirects:true}).slice(0,4);
-      rssItems.forEach(item=>{
-        if(item.data<cutoff) return;
-        posts.push({fonte:fonte.Nome,tipo:String(fonte.Tipo||'blog'),categoria:String(fonte.Categoria||''),
-          avatar:String(fonte.Avatar||(fonte.Nome||'?').charAt(0).toUpperCase()),titolo:item.titolo,
-          estratto:(item.estratto||'').substring(0,220),url:item.url,imgUrl:item.imgUrl||'',
-          dataISO:item.data instanceof Date?item.data.toISOString():new Date().toISOString()});
+      const rssItems = fetchRSS(fonte.URL, {muteHttpExceptions:true, followRedirects:true}).slice(0, 3);
+      rssItems.forEach(item => {
+        if (item.data < cutoff) return;
+        posts.push({fonte:fonte.Nome, tipo:String(fonte.Tipo||'blog'), categoria:String(fonte.Categoria||''),
+          avatar:String(fonte.Avatar||(fonte.Nome||'?').charAt(0).toUpperCase()), titolo:item.titolo,
+          estratto:(item.estratto||'').substring(0,220), url:item.url, imgUrl:item.imgUrl||'',
+          dataISO:item.data instanceof Date ? item.data.toISOString() : new Date().toISOString()});
       });
-    } catch(err){}
+    } catch(err) { Logger.log('[SocialWall] fetch error: ' + (err.message || err)); }
   }
-  // v-socialwall — includi i rilanci manuali curati (qualsiasi piattaforma, anche X/IG/LinkedIn)
+  // Rilanci manuali curati (qualsiasi piattaforma, anche X/IG/LinkedIn)
   try { if (typeof _sw_manualPosts_ === 'function') { _sw_manualPosts_().forEach(function(p){ posts.push(p); }); } } catch(eSw){}
-  posts.sort((a,b)=>new Date(b.dataISO)-new Date(a.dataISO));
-  const result={posts:posts.slice(0,16),updatedAt:new Date().toISOString()};
-  try{const p=PropertiesService.getScriptProperties();p.setProperty('SW_CACHE',JSON.stringify(result));p.setProperty('SW_CACHE_TIME',Date.now().toString());}catch(e){}
+  posts.sort((a, b) => new Date(b.dataISO) - new Date(a.dataISO));
+  // Dedup per URL
+  var seen = {};
+  var deduped = posts.filter(function(p) {
+    if (!p.url || seen[p.url]) return false;
+    seen[p.url] = true;
+    return true;
+  });
+  const result = {posts: deduped.slice(0, 24), updatedAt: new Date().toISOString()};
+  try { const p = PropertiesService.getScriptProperties(); p.setProperty('SW_CACHE', JSON.stringify(result)); p.setProperty('SW_CACHE_TIME', Date.now().toString()); } catch(e){}
   return result;
 }
 
