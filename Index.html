@@ -207,6 +207,8 @@
 
   /* Responsive admin */
   @media (max-width:900px){.admin-grid{grid-template-columns:1fr}}
+  .scad-fascia{margin-bottom:24px}
+  .scad-red h3{color:#DC2626} .scad-orange h3{color:#D97706} .scad-yellow h3{color:#CA8A04} .scad-gray h3{color:var(--ink-3)} .scad-none h3{color:var(--ink-4)}
   </style>
 </head>
 <body>
@@ -292,7 +294,7 @@
      tenta un'azione protetta (★ salva,  scarica, apri workspace). 2 CTA: Matrix · Consulenza -->
 <div id="oc-reg-overlay" hidden style="position:fixed;inset:0;background:rgba(26,24,21,.55);z-index:9998;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)">
   <div role="dialog" aria-modal="true" aria-labelledby="ocRegTitle" style="background:#fff;border-radius:14px;max-width:520px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);position:relative;font-family:var(--font-ui,sans-serif);overflow:hidden">
-    <button onclick="OC.closeRegistrationModal()" aria-label="Chiudi" style="position:absolute;top:12px;right:12px;background:transparent;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;color:var(--ink-3,var(--ink-3,#6E6E73));font-size:22px;line-height:1">×</button>
+    <button onclick="OC.closeRegistrationModal()" aria-label="Chiudi" style="position:sticky;top:12px;right:12px;background:transparent;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;color:var(--ink-3,var(--ink-3,#6E6E73));font-size:22px;line-height:1">×</button>
 
     <div style="background:linear-gradient(135deg,#F1E6D6 0%,var(--surface,#F7F7F8) 100%);padding:24px 28px;border-bottom:1px solid var(--rule,#E5E5E7)">
       <div style="font-family:var(--font-display,Georgia,serif);font-style:italic;font-size:24px;color:var(--accent,#935851);line-height:1">Sinopia</div>
@@ -584,7 +586,7 @@
       <div class="bandi-search-bar" style="margin:14px 0 10px">
         <div style="position:relative;display:flex;align-items:center">
           <span aria-hidden="true" style="position:absolute;left:18px;font-size:18px;color:#9C8E76;pointer-events:none">⌕</span>
-          <input type="search" id="bandiSearch" placeholder="Cerca per titolo, ente, settore, regione o parola chiave…" oninput="OC.searchBandi(this.value)" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);outline:none;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
+          <input type="search" id="bandiSearch" aria-label="Cerca bandi" placeholder="Cerca per titolo, ente, settore, regione o parola chiave…" oninput="OC.searchBandi(this.value)" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
         </div>
       </div>
       <div class="filters filters-tools" id="bandiTools" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">
@@ -623,9 +625,24 @@
         </select>
         <button class="filter-chip" onclick="OC.exportBandiCSV()" title="Scarica i bandi filtrati in CSV" style="white-space:nowrap;padding:8px 14px">⤓&nbsp;Esporta CSV</button>
       </div>
+      <div class="filters" id="bandiViewToggle" style="margin-top:6px">
+        <button class="filter-chip active" data-view="lista">Lista</button>
+        <button class="filter-chip" data-view="scadenzario">Scadenzario</button>
+        <button class="filter-chip" data-view="regioni">Regioni</button>
+      </div>
+      <div class="filters" id="bandiSettoreFilters" style="margin-top:6px">
+        <button class="filter-chip active" data-settore="">Tutti i settori</button>
+        <button class="filter-chip" data-settore="musei">🏛 Musei</button>
+        <button class="filter-chip" data-settore="biblioteche">📚 Biblioteche</button>
+        <button class="filter-chip" data-settore="patrimonio">🏗 Patrimonio</button>
+        <button class="filter-chip" data-settore="spettacolo">🎭 Spettacolo</button>
+        <button class="filter-chip" data-settore="archeologia">⛏ Archeologia</button>
+      </div>
       <div id="bandiList" aria-live="polite">
         <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
+      <div id="bandiScadenzario" style="display:none"></div>
+      <div id="bandiRegioni" style="display:none"></div>
       <div class="empty-state" id="bandiEmpty" hidden>
         <svg class="empty-ill" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         Nessun bando corrisponde ai filtri.
@@ -645,7 +662,7 @@
       <div class="news-search-bar" style="margin:14px 0 10px">
         <div style="position:relative;display:flex;align-items:center">
           <span aria-hidden="true" style="position:absolute;left:18px;font-size:18px;color:#9C8E76;pointer-events:none">⌕</span>
-          <input type="search" id="newsSearch" placeholder="Cerca per titolo, fonte, tematica o parola chiave…" oninput="OC.searchNews(this.value)" title="Filtra le news in tempo reale per testo: cerca in titolo, fonte, settore e sommario" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);outline:none;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
+          <input type="search" id="newsSearch" aria-label="Cerca news" placeholder="Cerca per titolo, fonte, tematica o parola chiave…" oninput="OC.searchNews(this.value)" title="Filtra le news in tempo reale per testo: cerca in titolo, fonte, settore e sommario" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
         </div>
       </div>
       <div class="filters filters-tools" id="newsTools" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">
@@ -693,7 +710,7 @@
       <div class="podcast-search-bar" style="margin:14px 0 10px">
         <div style="position:relative;display:flex;align-items:center">
           <span aria-hidden="true" style="position:absolute;left:18px;font-size:18px;color:#9C8E76;pointer-events:none">⌕</span>
-          <input type="search" id="podcastSearch" placeholder="Cerca per titolo, show, autore o parola chiave…" oninput="OC.searchPodcast(this.value)" title="Filtra i podcast in tempo reale per testo" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);outline:none;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
+          <input type="search" id="podcastSearch" aria-label="Cerca podcast" placeholder="Cerca per titolo, show, autore o parola chiave…" oninput="OC.searchPodcast(this.value)" title="Filtra i podcast in tempo reale per testo" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
         </div>
       </div>
       <div class="filters filters-tools" id="podcastTools" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">
@@ -741,7 +758,7 @@
       <div class="video-search-bar" style="margin:14px 0 10px">
         <div style="position:relative;display:flex;align-items:center">
           <span aria-hidden="true" style="position:absolute;left:18px;font-size:18px;color:#9C8E76;pointer-events:none">⌕</span>
-          <input type="search" id="videoSearch" placeholder="Cerca per titolo, canale, tematica o parola chiave…" oninput="OC.searchVideo(this.value)" title="Filtra i video in tempo reale per testo" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);outline:none;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
+          <input type="search" id="videoSearch" aria-label="Cerca video" placeholder="Cerca per titolo, canale, tematica o parola chiave…" oninput="OC.searchVideo(this.value)" title="Filtra i video in tempo reale per testo" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
         </div>
       </div>
       <div class="filters filters-tools" id="videoTools" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">
@@ -789,7 +806,7 @@
       <div class="libri-search-bar" style="margin:14px 0 10px">
         <div style="position:relative;display:flex;align-items:center">
           <span aria-hidden="true" style="position:absolute;left:18px;font-size:18px;color:#9C8E76;pointer-events:none">⌕</span>
-          <input type="search" id="libriSearch" placeholder="Cerca per titolo, autore, editore o parola chiave…" oninput="OC.searchLibri(this.value)" title="Filtra le pubblicazioni in tempo reale per testo" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);outline:none;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
+          <input type="search" id="libriSearch" aria-label="Cerca libri" placeholder="Cerca per titolo, autore, editore o parola chiave…" oninput="OC.searchLibri(this.value)" title="Filtra le pubblicazioni in tempo reale per testo" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
         </div>
       </div>
       <div class="filters filters-tools" id="libriTools" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">
@@ -842,6 +859,25 @@
       <div class="empty-state" id="libriEmpty" hidden>Nessuna pubblicazione trovata.&nbsp;
         <button class="lb-setup-btn" onclick="OC.setupLibri()">Inizializza foglio con 10 titoli seed</button>
       </div>
+    </section>
+
+    <!-- ===== EDITORIA (v5.2) ===== -->
+    <section class="page" id="page-editoria">
+      <div class="page-head">
+        <div class="page-eyebrow">Osservatorio Culturale &middot; Editoria</div>
+        <h1 class="page-title">Editoria</h1>
+        <p class="page-sub" id="editoriaCount">Pubblicazioni, podcast e video dalla ricerca culturale</p>
+      </div>
+      <div class="filters" id="editoriaFilters">
+        <button class="filter-chip active" data-tipo="tutti">Tutti</button>
+        <button class="filter-chip" data-tipo="podcast">Podcast</button>
+        <button class="filter-chip" data-tipo="pubblicazione">Pubblicazioni</button>
+        <button class="filter-chip" data-tipo="video">Video</button>
+      </div>
+      <div id="editoriaList" class="content-list" aria-live="polite">
+        <div class="skeleton-block"></div>
+      </div>
+      <div id="editoriaEmpty" class="empty-state" style="display:none">Nessun contenuto editoriale disponibile.</div>
     </section>
 
     <!-- ===== PAGE NORME ===== -->
@@ -1061,17 +1097,17 @@
           <div style="background:#fff;border:1px solid var(--rule,var(--rule,#E5E5E7));border-radius:10px;padding:22px;border-top:3px solid var(--accent,#935851)">
             <div style="width:40px;height:40px;border:1.5px solid var(--accent,#935851);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#935851)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></div>
             <h3 style="font-size:16px;color:var(--accent,#935851);margin:0 0 8px">Diagnosi su 10 dimensioni</h3>
-            <p style="font-size:13px;color:#555;line-height:1.6;margin:0">Score 0-100 per ciascuna delle 10 dimensioni del modello (identità, patrimonio, spazi, programma, servizi, digital, accessibilità, audience, governance, welfare).</p>
+            <p style="font-size:13px;color:var(--ink-3);line-height:1.6;margin:0">Score 0-100 per ciascuna delle 10 dimensioni del modello (identità, patrimonio, spazi, programma, servizi, digital, accessibilità, audience, governance, welfare).</p>
           </div>
           <div style="background:#fff;border:1px solid var(--rule,var(--rule,#E5E5E7));border-radius:10px;padding:22px;border-top:3px solid var(--accent,#935851)">
             <div style="width:40px;height:40px;border:1.5px solid var(--accent,#935851);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#935851)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg></div>
             <h3 style="font-size:16px;color:var(--accent,#935851);margin:0 0 8px">Report PDF dettagliato</h3>
-            <p style="font-size:13px;color:#555;line-height:1.6;margin:0">Profilo identitario, mappatura per dimensione, top 3 opportunità prioritarie, raccomandazioni di intervento, roadmap a 3 fasi.</p>
+            <p style="font-size:13px;color:var(--ink-3);line-height:1.6;margin:0">Profilo identitario, mappatura per dimensione, top 3 opportunità prioritarie, raccomandazioni di intervento, roadmap a 3 fasi.</p>
           </div>
           <div style="background:#fff;border:1px solid var(--rule,var(--rule,#E5E5E7));border-radius:10px;padding:22px;border-top:3px solid var(--accent,#935851)">
             <div style="width:40px;height:40px;border:1.5px solid var(--accent,#935851);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#935851)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 0 0 1 1h3m10-11l2 2m-2-2v10a1 1 0 0 1-1 1h-3m-4 0v-6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v6"/></svg></div>
             <h3 style="font-size:16px;color:var(--accent,#935851);margin:0 0 8px">Roadmap personalizzata</h3>
-            <p style="font-size:13px;color:#555;line-height:1.6;margin:0">Percorso a 3 orizzonti temporali (0-6 / 6-18 / 18-36 mesi) coerente con il framework Musei Sensibili e con le risorse della tua struttura.</p>
+            <p style="font-size:13px;color:var(--ink-3);line-height:1.6;margin:0">Percorso a 3 orizzonti temporali (0-6 / 6-18 / 18-36 mesi) coerente con il framework Musei Sensibili e con le risorse della tua struttura.</p>
           </div>
         </div>
       </div>
@@ -1085,21 +1121,21 @@
             <div style="flex-shrink:0;width:36px;height:36px;background:var(--amb-5,#0E7490);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700">1</div>
             <div>
               <h4 style="font-size:14px;color:var(--ink-2,#3A3A3C);margin:0 0 4px">Compili il questionario</h4>
-              <p style="font-size:13px;color:#555;line-height:1.5;margin:0">Adattivo: salta ciò che non ti riguarda. ~10 minuti. Anonimo per default.</p>
+              <p style="font-size:13px;color:var(--ink-3);line-height:1.5;margin:0">Adattivo: salta ciò che non ti riguarda. ~10 minuti. Anonimo per default.</p>
             </div>
           </div>
           <div style="display:flex;gap:14px">
             <div style="flex-shrink:0;width:36px;height:36px;background:var(--accent,#935851);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700">2</div>
             <div>
               <h4 style="font-size:14px;color:var(--ink-2,#3A3A3C);margin:0 0 4px">Ricevi il report PDF</h4>
-              <p style="font-size:13px;color:#555;line-height:1.5;margin:0">Subito a video, opzionalmente per email. Condivisibile con il consiglio di amministrazione.</p>
+              <p style="font-size:13px;color:var(--ink-3);line-height:1.5;margin:0">Subito a video, opzionalmente per email. Condivisibile con il consiglio di amministrazione.</p>
             </div>
           </div>
           <div style="display:flex;gap:14px">
             <div style="flex-shrink:0;width:36px;height:36px;background:var(--ink-2,#3A3A3C);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700">3</div>
             <div>
               <h4 style="font-size:14px;color:var(--ink-2,#3A3A3C);margin:0 0 4px">Confronto opzionale</h4>
-              <p style="font-size:13px;color:#555;line-height:1.5;margin:0">Se vuoi, una conversazione di 30 minuti gratuita per leggere insieme i risultati. Senza impegno.</p>
+              <p style="font-size:13px;color:var(--ink-3);line-height:1.5;margin:0">Se vuoi, una conversazione di 30 minuti gratuita per leggere insieme i risultati. Senza impegno.</p>
             </div>
           </div>
         </div>
@@ -1109,8 +1145,8 @@
       <div style="margin:28px 0">
         <div style="font-size:12px;color:var(--accent,#935851);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Per chi è pensato</div>
         <h2 style="font-size:24px;color:var(--ink-2,#3A3A3C);margin:6px 0 14px">Direttori, conservatori, responsabili museali</h2>
-        <div style="background:#fff;border:1px solid #E5E5E5;border-radius:10px;padding:20px">
-          <ul style="list-style:none;padding:0;margin:0;color:#555;font-size:14px;line-height:1.9">
+        <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px">
+          <ul style="list-style:none;padding:0;margin:0;color:var(--ink-3);font-size:14px;line-height:1.9">
             <li>▸ <b>Musei civici</b> di piccola e media dimensione (5.000-100.000 visitatori/anno)</li>
             <li>▸ <b>Fondazioni museali</b> e <b>dimore storiche</b> aperte al pubblico</li>
             <li>▸ <b>Sistemi museali</b> e <b>reti territoriali</b> che vogliono mappare lo stato delle proprie sedi</li>
@@ -1125,26 +1161,26 @@
         <div style="font-size:12px;color:var(--accent,#935851);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Cosa misura il modello</div>
         <h2 style="font-size:24px;color:var(--ink-2,#3A3A3C);margin:6px 0 14px">10 dimensioni, 43 domande mirate</h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px">
-          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--amb-5,#0E7490);padding:12px 16px;border-radius:6px"><b style="color:var(--amb-5,#0E7490)">D1</b> Identità e marca · <span style="color:#666">posizionamento istituzionale</span></div>
-          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--amb-5,#0E7490);padding:12px 16px;border-radius:6px"><b style="color:var(--amb-5,#0E7490)">D2</b> Patrimonio e collezioni · <span style="color:#666">conservazione, ricerca, accessibilità</span></div>
-          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--amb-5,#0E7490);padding:12px 16px;border-radius:6px"><b style="color:var(--amb-5,#0E7490)">D3</b> Spazi e allestimenti · <span style="color:#666">facility e progetto espositivo</span></div>
-          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--amb-5,#0E7490);padding:12px 16px;border-radius:6px"><b style="color:var(--amb-5,#0E7490)">D4</b> Programma educativo · <span style="color:#666">mediazione, didattica, divulgazione</span></div>
-          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--amb-5,#0E7490);padding:12px 16px;border-radius:6px"><b style="color:var(--amb-5,#0E7490)">D5</b> Servizi al visitatore · <span style="color:#666">accoglienza, CRM, fidelizzazione</span></div>
-          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--accent,#935851);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#935851)">D6</b> Maturità digitale · <span style="color:#666">infrastruttura, dati, AI</span></div>
-          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--accent,#935851);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#935851)">D7</b> Accessibilità · <span style="color:#666">fisica, cognitiva, sensoriale, linguistica</span></div>
-          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--accent,#935851);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#935851)">D8</b> Audience engagement · <span style="color:#666">community, partecipazione, social</span></div>
-          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--accent,#935851);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#935851)">D9</b> Governance · <span style="color:#666">strategia, partnership, fundraising</span></div>
-          <div style="background:#fff;border:1px solid #E5E5E5;border-left:3px solid var(--accent,#935851);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#935851)">D10</b> Welfare culturale · <span style="color:#666">impatto sociale, pubblici fragili</span></div>
+          <div style="background:#fff;border:1px solid var(--rule);border-left:1px solid var(--rule);padding:12px 16px;border-radius:6px"><b style="color:var(--amb-5,#0E7490)">&#9679; D1</b> Identità e marca · <span style="color:var(--ink-3)">posizionamento istituzionale</span></div>
+          <div style="background:#fff;border:1px solid var(--rule);border-left:1px solid var(--rule);padding:12px 16px;border-radius:6px"><b style="color:var(--amb-5,#0E7490)">&#9679; D2</b> Patrimonio e collezioni · <span style="color:var(--ink-3)">conservazione, ricerca, accessibilità</span></div>
+          <div style="background:#fff;border:1px solid var(--rule);border-left:1px solid var(--rule);padding:12px 16px;border-radius:6px"><b style="color:var(--amb-5,#0E7490)">&#9679; D3</b> Spazi e allestimenti · <span style="color:var(--ink-3)">facility e progetto espositivo</span></div>
+          <div style="background:#fff;border:1px solid var(--rule);border-left:1px solid var(--rule);padding:12px 16px;border-radius:6px"><b style="color:var(--amb-5,#0E7490)">&#9679; D4</b> Programma educativo · <span style="color:var(--ink-3)">mediazione, didattica, divulgazione</span></div>
+          <div style="background:#fff;border:1px solid var(--rule);border-left:1px solid var(--rule);padding:12px 16px;border-radius:6px"><b style="color:var(--amb-5,#0E7490)">&#9679; D5</b> Servizi al visitatore · <span style="color:var(--ink-3)">accoglienza, CRM, fidelizzazione</span></div>
+          <div style="background:#fff;border:1px solid var(--rule);border-left:1px solid var(--rule);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#935851)">&#9679; D6</b> Maturità digitale · <span style="color:var(--ink-3)">infrastruttura, dati, AI</span></div>
+          <div style="background:#fff;border:1px solid var(--rule);border-left:1px solid var(--rule);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#935851)">&#9679; D7</b> Accessibilità · <span style="color:var(--ink-3)">fisica, cognitiva, sensoriale, linguistica</span></div>
+          <div style="background:#fff;border:1px solid var(--rule);border-left:1px solid var(--rule);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#935851)">&#9679; D8</b> Audience engagement · <span style="color:var(--ink-3)">community, partecipazione, social</span></div>
+          <div style="background:#fff;border:1px solid var(--rule);border-left:1px solid var(--rule);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#935851)">&#9679; D9</b> Governance · <span style="color:var(--ink-3)">strategia, partnership, fundraising</span></div>
+          <div style="background:#fff;border:1px solid var(--rule);border-left:1px solid var(--rule);padding:12px 16px;border-radius:6px"><b style="color:var(--accent,#935851)">&#9679; D10</b> Welfare culturale · <span style="color:var(--ink-3)">impatto sociale, pubblici fragili</span></div>
         </div>
-        <p style="font-size:12px;color:#888;margin-top:10px;font-style:italic">Le dimensioni 1-5 misurano i fondamentali tradizionali, le 6-10 i fattori di trasformazione contemporanea (Musei Sensibili).</p>
+        <p style="font-size:12px;color:var(--ink-4);margin-top:10px;font-style:italic">Le dimensioni 1-5 misurano i fondamentali tradizionali, le 6-10 i fattori di trasformazione contemporanea (Musei Sensibili).</p>
       </div>
 
       <!-- Trust signals -->
-      <div style="background:#fff;border:1px solid #E5E5E5;border-radius:12px;padding:28px;margin:28px 0">
+      <div style="background:#fff;border:1px solid var(--rule);border-radius:12px;padding:28px;margin:28px 0">
         <!-- TODO Chi siamo: profilo ed esperienza Sinopia da definire -->
         <div style="font-size:12px;color:var(--accent,#935851);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Chi siamo</div>
         <h3 style="font-size:18px;color:var(--ink-2,#3A3A3C);margin:6px 0 10px">Sinopia</h3>
-        <p style="font-size:13px;color:#555;line-height:1.6">Sezione in aggiornamento.</p>
+        <p style="font-size:13px;color:var(--ink-3);line-height:1.6">Sezione in aggiornamento.</p>
       </div>
 
       <!-- FAQ -->
@@ -1152,11 +1188,11 @@
         <div style="font-size:12px;color:var(--accent,#935851);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Domande frequenti</div>
         <h2 style="font-size:24px;color:var(--ink-2,#3A3A3C);margin:6px 0 14px">Quello che vorresti chiedere</h2>
         <div style="display:grid;grid-template-columns:1fr;gap:10px">
-          <details style="background:#fff;border:1px solid #E5E5E5;border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:var(--ink-2,#3A3A3C)">Quanto costa l'autovalutazione?</summary><p style="font-size:13px;color:#555;line-height:1.6;margin:10px 0 0">Il questionario, il report PDF e l'eventuale confronto di 30 minuti sono <b>completamente gratuiti</b>. A costo zero per la tua struttura. Eventuali approfondimenti consulenziali successivi sono a preventivo, su tua espressa richiesta.</p></details>
-          <details style="background:#fff;border:1px solid #E5E5E5;border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:var(--ink-2,#3A3A3C)">I miei dati saranno usati per altri scopi?</summary><p style="font-size:13px;color:#555;line-height:1.6;margin:10px 0 0">No. Le risposte sono <b>anonime per default</b>. Email e contatti vengono raccolti <b>solo se esprimi opt-in granulare</b> alla fine del questionario, conformemente al Reg. UE 2016/679 (GDPR). Il consenso è revocabile in ogni momento.</p></details>
-          <details style="background:#fff;border:1px solid #E5E5E5;border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:var(--ink-2,#3A3A3C)">Quanto è scientifico il modello?</summary><p style="font-size:13px;color:#555;line-height:1.6;margin:10px 0 0">Il modello MuseMu Matrix v1.0.2 è ispirato a <i>Museum Matrix</i> di Matthias Henkel, integrato con il framework <b>Musei Sensibili</b> e con un sistema di consistency check interni che riducono i bias di autovalutazione.</p></details>
-          <details style="background:#fff;border:1px solid #E5E5E5;border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:var(--ink-2,#3A3A3C)">Cosa succede dopo che ricevo il PDF?</summary><p style="font-size:13px;color:#555;line-height:1.6;margin:10px 0 0">Niente di automatico. Il PDF resta tuo e puoi usarlo come strumento interno (consiglio di amministrazione, pianificazione strategica, candidature a bandi). Se vuoi, puoi richiedere una conversazione gratuita di 30 minuti per leggerlo insieme. <b>Nessuna telefonata commerciale, nessuna newsletter non richiesta.</b></p></details>
-          <details style="background:#fff;border:1px solid #E5E5E5;border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:var(--ink-2,#3A3A3C)">Posso sospendere e riprendere il questionario?</summary><p style="font-size:13px;color:#555;line-height:1.6;margin:10px 0 0">Nella versione attuale (v1.0.2) il questionario va completato in un'unica sessione. La funzione di salvataggio intermedio è prevista per la v1.1 (rilascio Q3 2026).</p></details>
+          <details style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:var(--ink-2,#3A3A3C)">Quanto costa l'autovalutazione?</summary><p style="font-size:13px;color:var(--ink-3);line-height:1.6;margin:10px 0 0">Il questionario, il report PDF e l'eventuale confronto di 30 minuti sono <b>completamente gratuiti</b>. A costo zero per la tua struttura. Eventuali approfondimenti consulenziali successivi sono a preventivo, su tua espressa richiesta.</p></details>
+          <details style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:var(--ink-2,#3A3A3C)">I miei dati saranno usati per altri scopi?</summary><p style="font-size:13px;color:var(--ink-3);line-height:1.6;margin:10px 0 0">No. Le risposte sono <b>anonime per default</b>. Email e contatti vengono raccolti <b>solo se esprimi opt-in granulare</b> alla fine del questionario, conformemente al Reg. UE 2016/679 (GDPR). Il consenso è revocabile in ogni momento.</p></details>
+          <details style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:var(--ink-2,#3A3A3C)">Quanto è scientifico il modello?</summary><p style="font-size:13px;color:var(--ink-3);line-height:1.6;margin:10px 0 0">Il modello MuseMu Matrix v1.0.2 è ispirato a <i>Museum Matrix</i> di Matthias Henkel, integrato con il framework <b>Musei Sensibili</b> e con un sistema di consistency check interni che riducono i bias di autovalutazione.</p></details>
+          <details style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:var(--ink-2,#3A3A3C)">Cosa succede dopo che ricevo il PDF?</summary><p style="font-size:13px;color:var(--ink-3);line-height:1.6;margin:10px 0 0">Niente di automatico. Il PDF resta tuo e puoi usarlo come strumento interno (consiglio di amministrazione, pianificazione strategica, candidature a bandi). Se vuoi, puoi richiedere una conversazione gratuita di 30 minuti per leggerlo insieme. <b>Nessuna telefonata commerciale, nessuna newsletter non richiesta.</b></p></details>
+          <details style="background:#fff;border:1px solid var(--rule);border-radius:8px;padding:14px 18px"><summary style="cursor:pointer;font-weight:600;color:var(--ink-2,#3A3A3C)">Posso sospendere e riprendere il questionario?</summary><p style="font-size:13px;color:var(--ink-3);line-height:1.6;margin:10px 0 0">Nella versione attuale (v1.0.2) il questionario va completato in un'unica sessione. La funzione di salvataggio intermedio è prevista per la v1.1 (rilascio Q3 2026).</p></details>
         </div>
       </div>
 
@@ -2625,28 +2661,32 @@
       </div>
     </section>
 
-    <!-- ===== FOOTER GLOBALE (v5.7) ===== -->
-    <footer class="app-footer" style="border-top:1px solid var(--rule,#E5E5E7);margin-top:32px;padding:28px 36px 36px">
-      <div style="display:flex;flex-wrap:wrap;gap:28px 48px;align-items:flex-start;max-width:1100px">
-        <div style="min-width:200px">
-          <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--ink)">Sinopia</div>
-          <div style="font-size:12px;color:var(--ink-3);margin-top:4px;line-height:1.5">Osservatorio Culturale.<br>Consulenza per la cultura, i musei e i territori.</div>
+    <!-- ===== FOOTER GLOBALE (v5.8 — ridisegnato) ===== -->
+    <footer class="app-footer" style="border-top:1px solid var(--rule,#E5E5E7);margin-top:48px;padding:38px 36px 26px;background:var(--surface,#F7F7F8)">
+      <div style="max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;gap:32px 72px;align-items:flex-start">
+        <div style="flex:1 1 260px;max-width:340px">
+          <div style="font-family:var(--font-display);font-style:italic;font-size:25px;font-weight:600;color:var(--accent,#935851);line-height:1">Sinopia</div>
+          <div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-top:6px">Osservatorio Culturale</div>
+          <p style="font-size:12.5px;color:var(--ink-3);margin:13px 0 0;line-height:1.65;max-width:290px">Il disegno preparatorio della cultura italiana: bandi, news e strumenti per musei, fondazioni ed enti culturali.</p>
         </div>
         <div>
-          <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:10px">Sinopia</div>
-          <a href="#" onclick="OC.go('chisiamo');return false" style="display:block;font-size:13px;color:var(--ink-2);text-decoration:none;margin-bottom:7px">Chi siamo &middot; Team</a>
-          <a href="mailto:sinopiaconsulting@gmail.com" style="display:block;font-size:13px;color:var(--ink-2);text-decoration:none;margin-bottom:7px">Contatti</a>
-          <a href="#" onclick="OC.go('privacy');return false" style="display:block;font-size:13px;color:var(--ink-2);text-decoration:none">Privacy Policy &amp; GDPR</a>
+          <div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:13px">Esplora</div>
+          <a href="#" onclick="OC.go('chisiamo');return false" style="display:block;font-size:13px;color:var(--ink-2);text-decoration:none;margin-bottom:9px">Chi siamo</a>
+          <a href="#" onclick="OC.go('bandi');return false" style="display:block;font-size:13px;color:var(--ink-2);text-decoration:none;margin-bottom:9px">Radar bandi</a>
+          <a href="#" onclick="OC.go('privacy');return false" style="display:block;font-size:13px;color:var(--ink-2);text-decoration:none">Privacy &amp; GDPR</a>
         </div>
         <div>
-          <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:10px">Contatti</div>
-          <a href="mailto:sinopiaconsulting@gmail.com" style="display:block;font-size:13px;color:var(--ink-2);text-decoration:none;margin-bottom:7px">sinopiaconsulting@gmail.com</a>
-          <div style="display:flex;gap:10px;margin-top:10px">
-            <a href="https://www.linkedin.com/company/sinopiaconsulting/" target="_blank" rel="noopener" title="Sinopia su LinkedIn" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid var(--rule,#E5E5E7);border-radius:8px;color:var(--ink-2);text-decoration:none;font-weight:700;font-size:13px">in</a>
-          </div>
+          <div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:13px">Contatti</div>
+          <a href="mailto:sinopiaconsulting@gmail.com" style="display:block;font-size:13px;color:var(--ink-2);text-decoration:none;margin-bottom:11px">sinopiaconsulting@gmail.com</a>
+          <a href="https://www.linkedin.com/company/sinopiaconsulting/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);text-decoration:none">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:1px solid var(--rule,#E5E5E7);border-radius:7px;font-weight:600;font-size:12px">in</span>LinkedIn
+          </a>
         </div>
       </div>
-      <div style="margin-top:22px;font-size:11px;color:var(--ink-3)">&copy; <span id="footYear">2026</span> Sinopia Srl &middot; Osservatorio Culturale &middot; P.IVA 03766660546 &middot; <a href="#" onclick="OC.go('privacy');return false" style="color:var(--ink-3)">Privacy &amp; GDPR</a></div>
+      <div style="max-width:1080px;margin:26px auto 0;padding-top:16px;border-top:1px solid var(--rule,#E5E5E7);display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:space-between;font-size:11px;color:var(--ink-3)">
+        <span>&copy; <span id="footYear">2026</span> Sinopia Srl &middot; Deruta (PG) &middot; P.IVA 03766660546</span>
+        <a href="#" onclick="OC.go('privacy');return false" style="color:var(--ink-3);text-decoration:none">Informativa privacy &amp; GDPR</a>
+      </div>
     </footer>
 
     </div><!-- /.main-content -->
@@ -2661,7 +2701,7 @@
 
   var PAGE_TITLES = {
     home:'Home', chisiamo:'Chi siamo', privacy:'Privacy & GDPR', bandi:'Radar Bandi', news:'News & RSS', podcast:'Podcast', video:'Video & YouTube', libri:'Libri & Pubblicazioni',
-    norme:'Norme & Riferimenti', social:'Social Wall',
+    norme:'Norme & Riferimenti', social:'Social Wall', editoria:'Editoria',
     search:'Ricerca', stats:'Statistiche', ambito:'Ambito', digest:'Digest Reader',
     matrix:'Valuta il tuo museo', 'matrix-landing':'MuseMu Matrix',
     settings:'Impostazioni', archivio:'Archivio', cestino:'Cestino',
@@ -2740,7 +2780,7 @@
   // A) NAVIGAZIONE SPA
   // ==========================================================
   // Pagine accessibili a ospiti (livello 0) — tutto il resto richiede registrazione
-  var _GUEST_PAGES = { home:1, bandi:1, matrix:1, 'matrix-landing':1, 'sondaggi-catalogo':1, chisiamo:1, 'profilo-pro':1, privacy:1 };
+  var _GUEST_PAGES = { home:1, bandi:1, matrix:1, 'matrix-landing':1, 'sondaggi-catalogo':1, chisiamo:1, 'profilo-pro':1, privacy:1, news:1, podcast:1, video:1, social:1, editoria:1, capitali:1, norme:1, libri:1 };
 
   function go(page, ambito){
     // Gate ospite: se pagina protetta, mostra card registrazione
@@ -2784,6 +2824,7 @@
     if (page==='podcast')  loadPodcastList(false);
     if (page==='video')    loadVideoList(false);
     if (page==='libri')    loadLibriList(false);
+    if (page==='editoria') loadEditoria();
     if (page==='norme')    loadNormeList(false);
     if (page==='social')   loadSocialWall(false);
     // v4.19.1 — Pannello admin fuso in Impostazioni
@@ -3201,8 +3242,11 @@
 
   // Backward-compat aliases (referenced 60+ times across codebase)
   var _cacheBandi = null, _cacheNews = null, _cachePodcast = null;
+  var _bandiView = 'lista';
   var _cacheVideo = null;
   var _cacheLibri = null;
+  var _cacheEditoria = null;
+  var _filterEditoriaTipo = 'tutti';
   var _filterBandi   = _OC_DATA.bandi.filter;
   var _filterNews    = _OC_DATA.news.filter;
   var _filterPodcast = _OC_DATA.podcast.filter;
@@ -3211,6 +3255,17 @@
   var _cacheNorme    = null;
   var _filterNorme   = { preset: 'tutti', amb: 0 };
   var _trash = {};
+
+  // v5.2 — Filtri settore cultura (CPV-based)
+  var CPV_CULTURA_LABELS = {
+    musei: '🏛 Musei', biblioteche: '📚 Biblioteche', patrimonio: '🏗 Patrimonio',
+    spettacolo: '🎭 Spettacolo', archeologia: '⛏ Archeologia'
+  };
+  var CPV_CHIP_TO_BACKEND = {
+    musei: 'Musei', biblioteche: 'Biblioteche', patrimonio: 'Patrimonio',
+    spettacolo: 'Spettacolo', archeologia: 'Archeologia'
+  };
+  var _filterBandiSettore = '';
 
   /** Invalidate cache for a tipo — replaces 4 identical if/else chains */
   function _invalidateCache(tipo) {
@@ -4007,7 +4062,7 @@
   // Box compatto in home: una riga per candidatura con scadenza + urgenza
   function renderCapitaliHome(list) {
     var wrap = $('homeCapitaliList'); if (!wrap) return;
-    list = list || [];
+    list = (list || []).slice(0, 5);
     if (!list.length) {
       wrap.innerHTML = '<div style="padding:14px;text-align:center;color:var(--accent-hover,#7A4940);font-size:12.5px">Nessuna candidatura in elenco.</div>';
       return;
@@ -4022,8 +4077,8 @@
         ? (c.giorniResidui === 0 ? 'Oggi' : c.giorniResidui + ' giorni')
         : (c.giorniResidui != null && c.giorniResidui < 0 ? 'Scaduto' : 'Continuo');
       var border = (i === list.length - 1) ? 'none' : '1px solid rgba(217,200,150,.5)';
-      html += '<a href="#" data-page="capitali" style="display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;padding:11px 4px;border-bottom:' + border + ';text-decoration:none;color:inherit;transition:background .12s" onmouseover="this.style.background=\'rgba(255,255,255,.5)\'" onmouseout="this.style.background=\'transparent\'">'
-        +   '<span style="width:32px;height:32px;border:1.5px solid var(--accent,#935851);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-ui);font-size:11px;color:var(--accent,#935851);font-weight:700;flex-shrink:0;letter-spacing:.02em">' + esc(c.icona || (c.nome||'C').charAt(0)) + '</span>'
+      html += '<a href="#" data-page="capitali" style="display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;padding:8px 4px;border-bottom:' + border + ';text-decoration:none;color:inherit;transition:background .12s" onmouseover="this.style.background=\'rgba(255,255,255,.5)\'" onmouseout="this.style.background=\'transparent\'">'
+        +   '<span style="width:26px;height:26px;border:1.5px solid var(--accent,#935851);border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#935851);font-weight:700;flex-shrink:0;letter-spacing:.02em">' + esc(c.icona || (c.nome||'C').charAt(0)) + '</span>'
         +   '<div style="min-width:0">'
         +     '<div style="font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--ink-2,#3A3A3C);line-height:1.25">' + esc(c.nome) + '</div>'
         +     '<div style="font-family:var(--font-ui);font-size:11px;color:var(--accent-hover,#7A4940);letter-spacing:.04em;margin-top:2px">' + esc(c.promotore) + ' · target ' + esc(c.annoTarget) + '</div>'
@@ -4558,6 +4613,7 @@
   };
 
   function _cardActionsHtml_(tipo, id, salvato) {
+    if (typeof _ocLivello === 'function' && _ocLivello() < 1) return '';
     var cfg = _CARD_CFG[tipo] || _CARD_CFG.item;
     var wt = cfg.wfTipo, eid = esc(String(id));
     return '<div class="br-acts">'
@@ -4609,6 +4665,7 @@
       +     '<span class="br-tema' + temaCls + '">' + esc(temaLabel) + '</span>'
       +     (isUrgent ? '<span class="br-badge-urgent">&#9889;&nbsp;Urgente</span>' : '')
       +     (b.isRecente && !isUrgent ? '<span class="br-badge-new">Nuovo</span>' : '')
+      +     (b.settoreCultura ? '<span class="nr-fonte" style="font-size:11px">' + (CPV_CULTURA_LABELS[(b.settoreCultura||'').toLowerCase()] || b.settoreCultura) + '</span>' : '')
       +   '</div>'
       +   '<p class="br-title"' + (url ? ' onclick="OC.openUrl(\'' + esc(url) + '\')" title="Apri scheda ufficiale"' : '') + '>'
       +     esc(b.titolo || '(senza titolo)')
@@ -4899,6 +4956,11 @@
       if (_filterBandi.cpv && !_cpvCulturaMatch_(b, _filterBandi.cpv)) return;
       if (_filterBandi.regione && !_regioneMatch_(b, _filterBandi.regione)) return;
 
+      // v5.2 — Filtro settore cultura (chip bar)
+      if (_filterBandiSettore) {
+        if (!_cpvCulturaMatch_(b, _filterBandiSettore)) return;
+      }
+
       shown++;
       // Sezione urgenti solo se sort è default e preset compatibile
       if (sort === 'scadenza-asc' && isUrgent && (preset === 'tutti' || preset === 'urgenti10'))
@@ -4933,7 +4995,117 @@
     }
     wrap.innerHTML = html;
     // v4.18.9 — chip rimossi, i 2 select si auto-sincronizzano via stato HTML
+    // v5.2 — Settore chips: visibili solo per livello >= 1
+    var settoreBar = document.getElementById('bandiSettoreFilters');
+    if (settoreBar) settoreBar.style.display = (typeof _ocLivello === 'function' && _ocLivello() >= 1) ? '' : 'none';
   }
+  // ---- Scadenzario bandi — vista timeline per scadenza ----
+  function renderScadenzario(bandi) {
+    var el = document.getElementById('bandiScadenzario');
+    if (!el) return;
+    var oggi = new Date();
+    var fasce = [
+      { label: '\uD83D\uDD34 Scadenza entro 7 giorni', min: 0, max: 7, items: [], cls: 'scad-red' },
+      { label: '\uD83D\uDFE0 Scadenza entro 30 giorni', min: 8, max: 30, items: [], cls: 'scad-orange' },
+      { label: '\uD83D\uDFE1 Scadenza entro 90 giorni', min: 31, max: 90, items: [], cls: 'scad-yellow' },
+      { label: '\u26AA Scadenza oltre 90 giorni', min: 91, max: 9999, items: [], cls: 'scad-gray' },
+      { label: '\u2753 Senza scadenza', min: -1, max: -1, items: [], cls: 'scad-none' }
+    ];
+    (bandi || []).forEach(function(b) {
+      if (!b.scadenza) { fasce[4].items.push(b); return; }
+      var scad = new Date(b.scadenza);
+      if (isNaN(scad.getTime())) { fasce[4].items.push(b); return; }
+      var diff = Math.ceil((scad - oggi) / 86400000);
+      if (diff < 0) return; // scaduto
+      if (diff <= 7) fasce[0].items.push(b);
+      else if (diff <= 30) fasce[1].items.push(b);
+      else if (diff <= 90) fasce[2].items.push(b);
+      else fasce[3].items.push(b);
+    });
+    var html = '';
+    fasce.forEach(function(f) {
+      if (!f.items.length) return;
+      html += '<div class="scad-fascia ' + f.cls + '">';
+      html += '<h3 style="font-family:var(--font-serif);font-size:1.1rem;margin:0 0 12px;padding:8px 0;border-bottom:1px solid var(--rule)">' + f.label + ' <span style="color:var(--ink-3);font-size:0.85rem">(' + f.items.length + ')</span></h3>';
+      f.items.forEach(function(b) {
+        var scadStr = b.scadenza ? new Date(b.scadenza).toLocaleDateString('it-IT', {day:'numeric',month:'short',year:'numeric'}) : '\u2014';
+        html += '<div class="br-row" style="cursor:pointer" onclick="OC.openDetail(\'bando\',\'' + b.id + '\')">';
+        html += '<div class="br-left">';
+        html += '<div class="br-title" style="font-size:14px">' + (b.titolo || '') + '</div>';
+        html += '<span class="nr-fonte" style="font-size:11px">' + (b.ente || '') + '</span>';
+        html += '</div>';
+        html += '<div class="br-right" style="min-width:90px;text-align:right">';
+        html += '<span style="font-weight:600;font-size:13px;color:var(--ink-2)">' + scadStr + '</span>';
+        html += '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+    if (!html) html = '<p class="muted" style="text-align:center;padding:32px">Nessun bando con scadenza futura.</p>';
+    el.innerHTML = html;
+  }
+
+  // ---- Classifica Regioni bandi — vista aggregata per area geografica ----
+  function renderClassificaRegioni(bandi) {
+    var el = document.getElementById('bandiRegioni');
+    if (!el) return;
+    var regionCount = {};
+    (bandi || []).forEach(function(b) {
+      var regione = b.regione || b.localita || '';
+      if (!regione) return;
+      regione = regione.trim();
+      if (!regionCount[regione]) regionCount[regione] = 0;
+      regionCount[regione]++;
+    });
+    var sorted = Object.keys(regionCount).map(function(r) {
+      return { nome: r, count: regionCount[r] };
+    }).sort(function(a, b) { return b.count - a.count; });
+
+    if (!sorted.length) {
+      el.innerHTML = '<p class="muted" style="text-align:center;padding:32px">Nessun dato regionale disponibile nei bandi.</p>';
+      return;
+    }
+
+    var max = sorted[0].count;
+    var html = '<div style="padding:8px 0">';
+    html += '<h3 style="font-family:var(--font-serif);font-size:1.1rem;margin:0 0 16px;color:var(--ink)">Classifica per regione/area <span style="color:var(--ink-3);font-size:0.85rem">(' + sorted.length + ' aree)</span></h3>';
+    sorted.forEach(function(r, i) {
+      var pct = Math.round((r.count / max) * 100);
+      var barColor = i === 0 ? 'var(--accent)' : (i < 3 ? 'var(--accent-soft, #E8D5D2)' : 'var(--surface-2)');
+      var textColor = i === 0 ? 'var(--accent)' : 'var(--ink-2)';
+      html += '<div class="regione-row" style="display:flex;align-items:center;gap:12px;padding:8px 0;cursor:pointer;border-bottom:1px solid var(--rule)" onclick="_filterByRegione(\'' + r.nome.replace(/'/g, "\\'") + '\')">';
+      html += '<span style="min-width:160px;font-size:14px;font-weight:500;color:' + textColor + '">' + r.nome + '</span>';
+      html += '<div style="flex:1;height:20px;background:var(--surface-2);border-radius:4px;overflow:hidden">';
+      html += '<div style="width:' + pct + '%;height:100%;background:' + barColor + ';border-radius:4px;transition:width 0.3s ease-out"></div>';
+      html += '</div>';
+      html += '<span style="min-width:36px;text-align:right;font-weight:600;font-size:13px;color:' + textColor + '">' + r.count + '</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  function _filterByRegione(regione) {
+    _bandiView = 'lista';
+    document.querySelectorAll('#bandiViewToggle .filter-chip').forEach(function(c) {
+      c.classList.toggle('active', c.dataset.view === 'lista');
+    });
+    var listEl = document.getElementById('bandiList');
+    var scadEl = document.getElementById('bandiScadenzario');
+    var regEl = document.getElementById('bandiRegioni');
+    if (listEl) listEl.style.display = '';
+    if (scadEl) scadEl.style.display = 'none';
+    if (regEl) regEl.style.display = 'none';
+    if (_cacheBandi) {
+      var filtered = _cacheBandi.filter(function(b) {
+        return (b.regione || b.localita || '') === regione;
+      });
+      renderBandiList(filtered);
+      var count = document.getElementById('bandiCount');
+      if (count) count.textContent = filtered.length + ' bandi in ' + regione;
+    }
+  }
+
   // ---- News card — rivista digitale della cultura ----
   function _newsCardHtml_(n) {
     var ambN     = _ambNum_(n.ambito) || _ambNum_(n.settore) || 0;
@@ -5354,6 +5526,57 @@
     wrap.innerHTML = html;
     // chip rimossi: i select si auto-sincronizzano via HTML
   }
+
+  // ===== EDITORIA (v5.2) =====
+  function loadEditoria(force) {
+    if (_cacheEditoria && !force) { renderEditoriaList(_cacheEditoria); return; }
+    var el = $('editoriaList');
+    if (el) el.innerHTML = '<div class="skeleton-block"></div>';
+    google.script.run
+      .withSuccessHandler(function(data) { _cacheEditoria = data || []; renderEditoriaList(_cacheEditoria); })
+      .withFailureHandler(function(e) { if (el) el.innerHTML = '<p class="muted">Errore: ' + e.message + '</p>'; })
+      .getEditoria(200);
+  }
+
+  function renderEditoriaList(items) {
+    var el = $('editoriaList');
+    var emptyEl = $('editoriaEmpty');
+    var countEl = $('editoriaCount');
+    if (!el) return;
+    var filtered = items;
+    if (_filterEditoriaTipo !== 'tutti') {
+      filtered = items.filter(function(it) { return it.tipo === _filterEditoriaTipo; });
+    }
+    if (countEl) countEl.textContent = filtered.length + ' di ' + items.length + ' contenuti editoriali';
+    if (!filtered.length) { el.innerHTML = ''; if (emptyEl) emptyEl.style.display = 'block'; return; }
+    if (emptyEl) emptyEl.style.display = 'none';
+    var html = '';
+    filtered.forEach(function(it) {
+      var tipoLabel = it.tipo === 'podcast' ? '\uD83C\uDFA4' : it.tipo === 'video' ? '\uD83C\uDFAC' : '\uD83D\uDCC4';
+      var url = it.url || '';
+      html += '<div class="br-row" role="button" tabindex="0"' + (url ? ' onclick="if(event.target.tagName!==\'A\')OC.openUrl(\'' + esc(url) + '\')"' : '') + '>'
+        + '<div class="br-left">'
+        + '<span class="nr-fonte">' + tipoLabel + ' ' + esc(it.fonte || '') + '</span>'
+        + '<p class="br-title">' + esc(it.titolo || 'Senza titolo') + '</p>'
+        + '<div class="nr-data">' + esc(it.autore || '') + (it.note ? ' &mdash; ' + esc(it.note) : '') + '</div>'
+        + '</div>'
+        + '<div class="br-right">'
+        + (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="br-link">Leggi &#8599;</a>' : '')
+        + '</div>'
+        + '</div>';
+    });
+    el.innerHTML = html;
+  }
+
+  // Editoria filter chip handler
+  document.addEventListener('click', function(e) {
+    if (e.target.matches('#editoriaFilters .filter-chip')) {
+      _filterEditoriaTipo = e.target.dataset.tipo || 'tutti';
+      document.querySelectorAll('#editoriaFilters .filter-chip').forEach(function(c) { c.classList.remove('active'); });
+      e.target.classList.add('active');
+      renderEditoriaList(_cacheEditoria || []);
+    }
+  });
 
   // v4.5.1 + Sprint N7 — Render pagina Ambito ({ambitoId, news[], bandi[], podcast[], video[], libri[]})
   function renderAmbito(data){
@@ -10429,10 +10652,36 @@
     if (e.key==='Escape'){ var sb=$('sidebar'); if(sb) sb.classList.remove('open'); }
   });
 
+  document.addEventListener('click', function(e) {
+    if (e.target.matches('#bandiViewToggle .filter-chip')) {
+      _bandiView = e.target.dataset.view || 'lista';
+      document.querySelectorAll('#bandiViewToggle .filter-chip').forEach(function(c) { c.classList.remove('active'); });
+      e.target.classList.add('active');
+      var listEl = document.getElementById('bandiList');
+      var scadEl = document.getElementById('bandiScadenzario');
+      var regEl = document.getElementById('bandiRegioni');
+      if (_bandiView === 'scadenzario') {
+        if (listEl) listEl.style.display = 'none';
+        if (scadEl) scadEl.style.display = 'block';
+        if (regEl) regEl.style.display = 'none';
+        renderScadenzario(_cacheBandi);
+      } else if (_bandiView === 'regioni') {
+        if (listEl) listEl.style.display = 'none';
+        if (scadEl) scadEl.style.display = 'none';
+        if (regEl) regEl.style.display = 'block';
+        renderClassificaRegioni(_cacheBandi);
+      } else {
+        if (listEl) listEl.style.display = '';
+        if (scadEl) scadEl.style.display = 'none';
+        if (regEl) regEl.style.display = 'none';
+      }
+    }
+  });
+
   document.addEventListener('click', function(e){
     var chip = e.target.closest('.filter-chip');
     if (!chip) return;
-    var bar = chip.closest('#bandiFilters, #bandiTematicheFilters, #newsFilters, #newsTematicheFilters, #podcastFilters, #podcastTematicheFilters, #videoFilters, #videoTematicheFilters, #libriFilters, #libriTematicheFilters, #archivioFilters, #normeFilters, #socialFilters');
+    var bar = chip.closest('#bandiFilters, #bandiTematicheFilters, #bandiSettoreFilters, #newsFilters, #newsTematicheFilters, #podcastFilters, #podcastTematicheFilters, #videoFilters, #videoTematicheFilters, #libriFilters, #libriTematicheFilters, #archivioFilters, #normeFilters, #socialFilters');
     if (!bar) return;
     e.preventDefault();
     // Aggiorna stato visivo solo nella riga cliccata
@@ -10454,6 +10703,10 @@
     } else if (bar.id === 'bandiTematicheFilters') {
       // L2 tematica — non tocca L1
       _filterBandi.amb = parseInt(chip.getAttribute('data-amb'), 10) || 0;
+      if (_cacheBandi) renderBandiList(_cacheBandi);
+    } else if (bar.id === 'bandiSettoreFilters') {
+      // v5.2 — Settore cultura chip filter
+      _filterBandiSettore = chip.dataset.settore || '';
       if (_cacheBandi) renderBandiList(_cacheBandi);
     } else if (bar.id === 'newsFilters') {
       // L1 preset — resetta L2 a "Tutte"
