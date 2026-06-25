@@ -1862,10 +1862,23 @@
               <span style="background:var(--accent,#935851);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">2</span>
               <span style="font-size:14px;font-weight:700;color:var(--ink)">Revisiona</span>
             </div>
-            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Verifica il testo generato. Se necessario, rigenera con il pulsante sopra.</p>
-            <div id="editorialeActions" hidden style="margin-left:32px;margin-top:6px;display:flex;gap:8px;align-items:center">
-              <button class="btn btn-secondary" onclick="OC._generaEditoriale()" style="font-size:12px;padding:7px 12px">Rigenera</button>
-              <span id="editorialeStatus" style="font-size:12px;color:var(--ink-3)"></span>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Modifica o sostituisci il testo, aggiungi una firma (facoltativa) e una foto di apertura (facoltativa). Poi salva la revisione.</p>
+            <div id="editorialeActions" hidden style="margin-left:32px;margin-top:6px">
+              <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin:0 0 3px">Titolo</label>
+              <input id="editorialeTitoloEdit" type="text" style="width:100%;font-size:13px;padding:8px 10px;border:1px solid var(--rule-2,#D2D2D7);border-radius:7px;font-family:inherit;color:var(--ink);box-sizing:border-box;margin-bottom:8px" />
+              <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin:0 0 3px">Testo dell'approfondimento</label>
+              <textarea id="editorialeTestoEdit" rows="9" style="width:100%;font-size:13px;line-height:1.6;padding:10px 12px;border:1px solid var(--rule-2,#D2D2D7);border-radius:7px;font-family:inherit;resize:vertical;color:var(--ink);box-sizing:border-box;margin-bottom:8px"></textarea>
+              <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin:0 0 3px">Firma <span style="font-weight:400;color:var(--ink-3)">(facoltativa)</span></label>
+              <input id="editorialeFirma" type="text" placeholder="Es. Silvano Straccini &middot; Sinopia" style="width:100%;font-size:13px;padding:8px 10px;border:1px solid var(--rule-2,#D2D2D7);border-radius:7px;font-family:inherit;color:var(--ink);box-sizing:border-box;margin-bottom:8px" />
+              <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin:0 0 3px">Foto di apertura <span style="font-weight:400;color:var(--ink-3)">(facoltativa, in cima alla news)</span></label>
+              <input id="editorialeFoto" type="file" accept="image/*" onchange="OC._editorialeFotoSelez(this)" style="font-size:12px;margin-bottom:4px" />
+              <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px">Consigliata orizzontale, almeno 600px di larghezza. Viene ridimensionata a banner e ospitata su Drive (visibile anche nelle email).</div>
+              <div id="editorialeFotoPreview"></div>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
+                <button class="btn btn-primary" onclick="OC._salvaRevisioneEditoriale()" style="font-size:12px;padding:7px 14px;background:#8B3A1F">Salva revisione</button>
+                <button class="btn btn-secondary" onclick="OC._generaEditoriale()" style="font-size:12px;padding:7px 12px">Rigenera</button>
+                <span id="editorialeStatus" style="font-size:12px;color:var(--ink-3)"></span>
+              </div>
             </div>
           </div>
 
@@ -8497,12 +8510,25 @@
             + '</div>';
         }
         if (acts) {
-          acts.hidden = (stato === 'approvato');
+          acts.hidden = false; // campi revisione sempre disponibili quando c'e' un editoriale
           var btn = $('editorialeApprovaBtn');
           if (btn) btn.disabled = (stato === 'approvato');
         }
+        // popola i campi editabili della revisione
+        if ($('editorialeTitoloEdit')) $('editorialeTitoloEdit').value = String(ed.titolo || '');
+        if ($('editorialeTestoEdit'))  $('editorialeTestoEdit').value  = String(ed.testo || '');
+        if ($('editorialeFirma'))      $('editorialeFirma').value      = String(ed.firma || '');
+        window._editorialeFotoDataUrl = null;
+        window._editorialeFotoRemove = false;
+        var _fp = $('editorialeFotoPreview');
+        if (_fp) {
+          var _fu = String(ed.foto_url || ed.foto || '');
+          _fp.innerHTML = _fu
+            ? '<div style="margin-top:4px"><img src="' + esc(_fu) + '" alt="" style="max-width:100%;border-radius:8px;border:1px solid var(--rule)"/><div style="font-size:11px;color:var(--ink-3);margin-top:3px">Foto attuale &middot; <a href="#" onclick="OC._editorialeRimuoviFoto();return false" style="color:var(--danger,#B3261E)">Rimuovi</a></div></div>'
+            : '';
+        }
         var st = $('editorialeStatus');
-        if (st && stato === 'approvato') st.textContent = 'Approvato da ' + esc(String(ed.approvato_da || '')) + ' il ' + esc(String(ed.data_approvazione || '').substring(0, 10));
+        if (st) st.textContent = (stato === 'approvato') ? ('Approvato da ' + esc(String(ed.approvato_da || '')) + ' il ' + esc(String(ed.data_approvazione || '').substring(0, 10))) : '';
       })
       .withFailureHandler(function(e) {
         if (wrap) wrap.innerHTML = '<span style="color:var(--danger)">Errore: ' + esc(e) + '</span>';
@@ -8546,6 +8572,67 @@
       })
       .withFailureHandler(function(e) { if (st) st.textContent = 'Errore: ' + e; })
       .editorialeApprova((window.OC_SESSION && window.OC_SESSION.token) || null);
+  }
+
+  // Selezione foto di apertura: valida dimensione minima + ridimensiona a banner (max 600px) via canvas
+  function _editorialeFotoSelez(input) {
+    var f = input && input.files && input.files[0];
+    var prev = $('editorialeFotoPreview');
+    if (!f) return;
+    if (!/^image\//.test(f.type)) { showToast && showToast('Seleziona un file immagine.', 'err'); input.value = ''; return; }
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      var img = new Image();
+      img.onload = function() {
+        var W = img.naturalWidth, Hh = img.naturalHeight;
+        if (W < 600) {
+          if (prev) prev.innerHTML = '<div style="font-size:12px;color:var(--danger,#B3261E);margin-top:4px">Immagine troppo piccola (' + W + 'px). Serve almeno 600px di larghezza per il banner in cima.</div>';
+          window._editorialeFotoDataUrl = null; input.value = ''; return;
+        }
+        var scale = Math.min(1, 600 / W);
+        var cw = Math.round(W * scale), ch = Math.round(Hh * scale);
+        var cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+        cv.getContext('2d').drawImage(img, 0, 0, cw, ch);
+        window._editorialeFotoDataUrl = cv.toDataURL('image/jpeg', 0.82);
+        window._editorialeFotoRemove = false;
+        if (prev) prev.innerHTML = '<div style="margin-top:4px"><img src="' + window._editorialeFotoDataUrl + '" alt="" style="max-width:100%;border-radius:8px;border:1px solid var(--rule)"/><div style="font-size:11px;color:var(--amb-2,#10916D);margin-top:3px">Nuova foto pronta (' + cw + '&times;' + ch + '). Verra&agrave; caricata al salvataggio.</div></div>';
+      };
+      img.onerror = function() { if (prev) prev.innerHTML = '<div style="font-size:12px;color:var(--danger,#B3261E)">File immagine non valido.</div>'; };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(f);
+  }
+
+  function _editorialeRimuoviFoto() {
+    window._editorialeFotoRemove = true;
+    window._editorialeFotoDataUrl = null;
+    var prev = $('editorialeFotoPreview');
+    if (prev) prev.innerHTML = '<div style="font-size:12px;color:var(--ink-3);margin-top:4px">Foto rimossa (verra&agrave; eliminata al salvataggio).</div>';
+    var inp = $('editorialeFoto'); if (inp) inp.value = '';
+  }
+
+  function _salvaRevisioneEditoriale() {
+    if (!hasGAS()) return;
+    var titolo = ($('editorialeTitoloEdit') || {}).value || '';
+    var testo  = ($('editorialeTestoEdit') || {}).value || '';
+    var firma  = ($('editorialeFirma') || {}).value || '';
+    if (!String(testo).trim()) { showToast && showToast('Il testo non puo\' essere vuoto.', 'err'); return; }
+    var st = $('editorialeStatus'); if (st) st.textContent = 'Salvataggio...';
+    var payload = { titolo: titolo, testo: testo, firma: firma };
+    if (window._editorialeFotoDataUrl) payload.fotoDataUrl = window._editorialeFotoDataUrl;
+    else if (window._editorialeFotoRemove) payload.fotoRemove = true;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          showToast && showToast('Revisione salvata.', 'ok');
+          window._editorialeFotoDataUrl = null; window._editorialeFotoRemove = false;
+          _loadEditoriale();
+        } else {
+          if (st) st.textContent = 'Errore: ' + ((r && r.error) || 'sconosciuto');
+        }
+      })
+      .withFailureHandler(function(e) { if (st) st.textContent = 'Errore: ' + e; })
+      .editorialeSalvaRevisione(payload, (window.OC_SESSION && window.OC_SESSION.token) || null);
   }
 
   function renderDigestList(res){
@@ -12638,6 +12725,9 @@
     _loadEditoriale: _loadEditoriale,
     _generaEditoriale: _generaEditoriale,
     _approvaEditoriale: _approvaEditoriale,
+    _editorialeFotoSelez: _editorialeFotoSelez,
+    _editorialeRimuoviFoto: _editorialeRimuoviFoto,
+    _salvaRevisioneEditoriale: _salvaRevisioneEditoriale,
     _apriApprofondimento: function() {
       var data = window._approfondimentoData;
       if (!data || !data.testo) return;

@@ -417,7 +417,8 @@ var OC_EDITORIALI_SHEET = 'Editoriali';
 /** Headers del foglio Editoriali */
 var OC_EDITORIALI_HEADERS = [
   'id','settimana','data_generazione','titolo','testo',
-  'pilastri_json','stato','approvato_da','data_approvazione','note'
+  'pilastri_json','stato','approvato_da','data_approvazione','note',
+  'firma','foto_url'
 ];
 
 /** Fonti considerate autorevoli — il brief dà peso a contenuti da queste fonti */

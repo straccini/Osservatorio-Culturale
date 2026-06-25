@@ -328,7 +328,9 @@ function _ed_salvaBozza_(titolo, testo, brief) {
     'bozza',        // stato
     '',             // approvato_da
     '',             // data_approvazione
-    'Generato automaticamente'
+    'Generato automaticamente',
+    '',             // firma
+    ''              // foto_url
   ]);
 
   return { ok: true, id: id, settimana: settimana, titolo: titolo, parole: testo.split(/\s+/).length };
@@ -379,6 +381,8 @@ function getEditorialeCorrente() {
     var iTitolo = H.indexOf('titolo');
     var iTesto = H.indexOf('testo');
     var iSett = H.indexOf('settimana');
+    var iFirma = H.indexOf('firma');
+    var iFoto = H.indexOf('foto_url');
 
     // Cerca l'ultimo approvato (dal fondo)
     for (var r = vals.length - 1; r >= 1; r--) {
@@ -386,7 +390,9 @@ function getEditorialeCorrente() {
         return {
           titolo: String(vals[r][iTitolo] || ''),
           testo: String(vals[r][iTesto] || ''),
-          settimana: String(vals[r][iSett] || '')
+          settimana: String(vals[r][iSett] || ''),
+          firma: iFirma >= 0 ? String(vals[r][iFirma] || '') : '',
+          foto: iFoto >= 0 ? String(vals[r][iFoto] || '') : ''
         };
       }
     }
@@ -395,6 +401,92 @@ function getEditorialeCorrente() {
     Logger.log('[getEditorialeCorrente] err: ' + e.message);
     return null;
   }
+}
+
+// ============================================================================
+// REVISIONE MANUALE — modifica testo/titolo + firma + foto di apertura
+// Chiamata dal pannello admin (Impostazioni → Digest → Approfondimento → Revisiona).
+// Aggiorna l'ULTIMA riga del foglio (la bozza/approvato corrente).
+// ============================================================================
+
+/**
+ * Salva la revisione manuale dell'ultimo editoriale.
+ * @param {Object} payload {titolo?, testo?, firma?, fotoDataUrl?, fotoRemove?}
+ * @param {string} token sessione (per tracciare il revisore)
+ * @return {Object} {ok, fotoUrl?, error?}
+ */
+function editorialeSalvaRevisione(payload, token) {
+  try {
+    payload = payload || {};
+    var sh = _ed_ensureSheet_();
+    if (sh.getLastRow() < 2) return { ok: false, error: 'Nessun editoriale da revisionare. Genera prima una bozza.' };
+
+    var vals = sh.getDataRange().getValues();
+    var H = vals[0];
+    var r = vals.length - 1; // ultima riga = editoriale corrente
+
+    var iTit = H.indexOf('titolo');
+    var iTesto = H.indexOf('testo');
+    var iNote = H.indexOf('note');
+    var iFirma = H.indexOf('firma');
+    var iFoto = H.indexOf('foto_url');
+
+    // Fogli vecchi senza le colonne firma/foto_url → aggiungile in coda
+    if (iFirma === -1) { iFirma = H.length; sh.getRange(1, iFirma + 1).setValue('firma'); H.push('firma'); }
+    if (iFoto === -1)  { iFoto = H.length;  sh.getRange(1, iFoto + 1).setValue('foto_url'); H.push('foto_url'); }
+
+    if (typeof payload.titolo === 'string' && iTit >= 0) sh.getRange(r + 1, iTit + 1).setValue(payload.titolo);
+    if (typeof payload.testo === 'string' && iTesto >= 0) sh.getRange(r + 1, iTesto + 1).setValue(payload.testo);
+    if (typeof payload.firma === 'string') sh.getRange(r + 1, iFirma + 1).setValue(payload.firma);
+
+    var fotoUrl = null;
+    if (payload.fotoRemove) {
+      sh.getRange(r + 1, iFoto + 1).setValue('');
+      fotoUrl = '';
+    } else if (payload.fotoDataUrl) {
+      fotoUrl = _ed_uploadFoto_(payload.fotoDataUrl);
+      if (fotoUrl) sh.getRange(r + 1, iFoto + 1).setValue(fotoUrl);
+      else return { ok: false, error: 'Caricamento foto fallito (formato non valido?).' };
+    }
+
+    // Traccia il revisore nella colonna note
+    var who = '';
+    try { if (typeof getCurrentUserAuth === 'function') { var a = getCurrentUserAuth(token); who = (a && a.email) || ''; } } catch (_) {}
+    if (iNote >= 0 && who) {
+      sh.getRange(r + 1, iNote + 1).setValue('Revisionato da ' + who + ' il ' + new Date().toISOString().substring(0, 16).replace('T', ' '));
+    }
+
+    return { ok: true, fotoUrl: (fotoUrl !== null ? fotoUrl : (iFoto >= 0 ? String(vals[r][iFoto] || '') : '')) };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+/** Carica una foto (data URL) su Drive e ritorna un URL immagine pubblico per le email. */
+function _ed_uploadFoto_(dataUrl) {
+  try {
+    var m = String(dataUrl).match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,([\s\S]+)$/);
+    if (!m) return '';
+    var mime = m[1];
+    var bytes = Utilities.base64Decode(m[2]);
+    var ext = mime.indexOf('png') >= 0 ? 'png' : (mime.indexOf('webp') >= 0 ? 'webp' : 'jpg');
+    var blob = Utilities.newBlob(bytes, mime, 'editoriale_' + Date.now() + '.' + ext);
+    var folder = _ed_fotoFolder_();
+    var file = folder.createFile(blob);
+    try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (_) {}
+    // URL thumbnail Drive: formato affidabile per <img> in email (ridimensionato a 600px)
+    return 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w600';
+  } catch (e) {
+    Logger.log('[_ed_uploadFoto_] err: ' + e.message);
+    return '';
+  }
+}
+
+/** Cartella Drive dedicata alle foto degli editoriali (creata al bisogno). */
+function _ed_fotoFolder_() {
+  var name = 'OC_Editoriale_Foto';
+  var it = DriveApp.getFoldersByName(name);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(name);
 }
 
 /**
