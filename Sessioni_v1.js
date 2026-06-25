@@ -304,8 +304,12 @@ function disablePublicLogin() {
  * Flag assente o qualsiasi altro valore = CHIUSO.
  */
 function isPublicLoginEnabled_() {
-  try { return PropertiesService.getScriptProperties().getProperty('OC_PUBLIC_LOGIN_ENABLED') === 'true'; }
-  catch (e) { return false; }
+  // v660 — Modello light: login pubblico ATTIVO di default. Disattivo SOLO se la property
+  // è impostata esplicitamente a 'false' (kill-switch admin via disabilitaLoginPubblico).
+  try {
+    var v = PropertiesService.getScriptProperties().getProperty('OC_PUBLIC_LOGIN_ENABLED');
+    return v !== 'false';
+  } catch (e) { return true; }
 }
 
 /** Toggle admin-only per il login pubblico */
