@@ -204,7 +204,7 @@ function saveProfilo(payload) {
     var em = String(payload.email || '').toLowerCase().trim();
     if (!em || em.indexOf('@') < 0) return { ok:false, error:'email_richiesta' };
     if (payload.consenso_profilazione !== true) return { ok:false, error:'consenso_richiesto' };
-    var reg = (typeof _autoRegisterUser_ === 'function') ? _autoRegisterUser_(em, payload.nome || '', 'profilo_pro') : { ok:false, error:'no_autoreg' };
+    var reg = (typeof _autoRegisterUser_ === 'function') ? _autoRegisterUser_(em, payload.nome || '', 'profilo_pro', true) : { ok:false, error:'no_autoreg' };
     if (reg && reg.error === 'gia_registrato') return { ok:false, error:'gia_registrato' };
     if (reg && reg.error === 'accesso_rifiutato') return { ok:false, error:'Accesso non consentito per questo indirizzo.' };
     if (reg && reg.error === 'account_sospeso') return { ok:false, error:'Account sospeso.' };

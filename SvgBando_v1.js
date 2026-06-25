@@ -178,7 +178,7 @@ function renderSvgCardBando(bando) {
       '<g font-family="Inter, Arial, sans-serif" font-size="12" letter-spacing="2" fill="#9A958B">' +
         '<line x1="80" y1="755" x2="1360" y2="755" stroke="#D5D0C4" stroke-width="1"/>' +
         '<text x="80" y="780">SCOPRI IL BANDO COMPLETO SU OSSERVATORIO CULTURALE</text>' +
-        '<text x="1360" y="780" text-anchor="end">DUEMILAMUSEI.IT</text>' +
+        '<text x="1360" y="780" text-anchor="end">SINOPIACONSULTING.IT</text>' +
       '</g>' +
       '</svg>';
 

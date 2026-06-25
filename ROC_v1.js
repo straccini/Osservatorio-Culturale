@@ -351,7 +351,7 @@ function roc_buildEmailBatch(bandoId, opts) {
         'Buona giornata,\n' +
         'Silvano Straccini\n' +
         'Sinopia\n' +
-        'bandi@duemilamusei.it';
+        'sinopiaconsulting@gmail.com';
 
       return {
         museoId: m.id,
@@ -452,7 +452,7 @@ function roc_approveBatch(batchId, approverEmail) {
             MailApp.sendEmail({
               to: em.emailTo, subject: em.subject,
               htmlBody: em.bodyHtml, name: 'Sinopia',
-              replyTo: 'bandi@duemilamusei.it'
+              replyTo: 'sinopiaconsulting@gmail.com'
             });
             em.status = 'sent'; em.sentAt = new Date().toISOString();
             sent++;

@@ -289,7 +289,7 @@ function registraUtente(email, nome, source) {
   return _autoRegisterUser_(email, nome, source);
 }
 
-function _autoRegisterUser_(email, nome, source) {
+function _autoRegisterUser_(email, nome, source, skipWelcome) {
   email = String(email || '').toLowerCase().trim();
   if (!email || email.indexOf('@') < 0) return { ok: false, error: 'email non valida' };
 
@@ -339,8 +339,10 @@ function _autoRegisterUser_(email, nome, source) {
     ]);
     Logger.log('[AUTH] Registrato: ' + email + ' via ' + (source || 'auto'));
     try { if (typeof _logConsenso_ === 'function') _logConsenso_(email, source || 'registrazione'); } catch(_){} // v4.23 consenso
-    // v4.20 — Welcome email post-registrazione
-    try { if (typeof sendWelcomeEmail === 'function') sendWelcomeEmail(email, nome || ''); } catch(_){}
+    // v4.20 — Welcome email post-registrazione. v664: saltata se il flusso invia GIÀ il
+    // magic-link (login/registrazione/profilo/matrix) → l'email del magic-link è già di benvenuto
+    // (evita la doppia email). Resta attiva per i flussi senza magic-link (es. newsletter).
+    try { if (!skipWelcome && typeof sendWelcomeEmail === 'function') sendWelcomeEmail(email, nome || ''); } catch(_){}
     return { ok: true, action: 'created' };
   } catch(e) {
     Logger.log('[AUTH] _autoRegisterUser_ err: ' + e.message);
@@ -374,7 +376,7 @@ function requestAccess(body) {
     // LIGHT (v656): nessuna approvazione per i lettori. "Richiedi accesso" AUTO-REGISTRA come
     // lettore ATTIVO (come newsletter/profilo) e invia subito un magic-link. Solo sospesi e
     // rifiutati restano bloccati. L'eventuale ruolo elevato resta gestito dalle liste admin/editor.
-    var reg = (typeof _autoRegisterUser_ === 'function') ? _autoRegisterUser_(email, nome, 'self_request') : { ok:false, error:'no_autoreg' };
+    var reg = (typeof _autoRegisterUser_ === 'function') ? _autoRegisterUser_(email, nome, 'self_request', true) : { ok:false, error:'no_autoreg' };
     if (reg.error === 'gia_registrato')    return { ok:true, alreadyActive:true, email:email, message:'Sei gia attivo. Clicca ENTRA per accedere.' };
     if (reg.error === 'accesso_rifiutato') return { error:'Richiesta precedente rifiutata. Contatta l amministratore.' };
     if (reg.error === 'account_sospeso')   return { error:'Account sospeso. Contatta l amministratore.' };
@@ -844,6 +846,90 @@ function _sendInviteEmail_(email, nome, ruolo, magicUrl) {
   }
 }
 
+/**
+ * _sendEditorPromotionEmail_ — Notifica promozione a Redattore (v5.2)
+ * Invia email branded Sinopia all'utente promosso a editor.
+ */
+function _sendEditorPromotionEmail_(email, nome) {
+  try {
+    // Controllo quota giornaliera
+    var quota = MailApp.getRemainingDailyQuota();
+    if (quota < 3) {
+      Logger.log('[_sendEditorPromotionEmail_] Quota email insufficiente (' + quota + '), skip invio a ' + email);
+      return;
+    }
+
+    // Magic link
+    var magicUrl;
+    try {
+      magicUrl = createSessione(email, 'invito');
+    } catch(eMl) {
+      magicUrl = ScriptApp.getService().getUrl();
+    }
+
+    var greeting = nome ? ('Ciao ' + nome.split(' ')[0] + ',') : 'Ciao,';
+
+    var body = ''
+      + '<!doctype html><html><head><meta charset="utf-8"><title>Sinopia</title></head>'
+      + '<body style="margin:0;padding:0;background:#F1E6D6;font-family:Georgia,serif;color:#3A2818">'
+      + '<table width="100%" cellpadding="0" cellspacing="0" style="background:#F1E6D6;padding:32px 0">'
+      + '<tr><td align="center">'
+      + '<table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border:1px solid #D4BFA0;border-radius:12px;overflow:hidden">'
+      // Hero
+      + '<tr><td style="background:#F1E6D6;border-bottom:1px solid #D4BFA0;padding:28px 32px">'
+      + '<div style="font-family:Georgia,serif;font-style:italic;font-size:32px;font-weight:500;color:#8B3A1F;letter-spacing:.01em">Sinopia</div>'
+      + '<div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#5C4332;margin-top:4px">Osservatorio Culturale</div>'
+      + '</td></tr>'
+      // Body
+      + '<tr><td style="padding:32px">'
+      + '<h1 style="font-family:Georgia,serif;font-weight:500;font-size:22px;line-height:1.3;color:#3A2818;margin:0 0 18px">Sei diventato Redattore di Sinopia</h1>'
+      + '<p style="font-size:15px;line-height:1.6;color:#5C4332;margin:0 0 14px">' + greeting + '</p>'
+      + '<p style="font-size:15px;line-height:1.6;color:#5C4332;margin:0 0 14px">'
+      + 'Il tuo profilo su <b>Sinopia</b> e stato aggiornato: da oggi hai il ruolo di <b style="color:#8B3A1F">Redattore</b> dell\'Osservatorio Culturale.</p>'
+      + '<p style="font-size:15px;line-height:1.6;color:#5C4332;margin:0 0 14px">'
+      + 'Come Redattore puoi contribuire attivamente ai contenuti della piattaforma. Ecco cosa puoi fare:</p>'
+      + '<ul style="font-size:14px;color:#5C4332;line-height:1.7;margin:0 0 14px;padding-left:20px">'
+      + '<li><b>Segnalare eventi, bandi e iniziative</b> rilevanti per il settore culturale</li>'
+      + '<li><b>Proporre link a progetti</b> e buone pratiche da condividere con la community</li>'
+      + '<li><b>Aggiungere libri, podcast e video</b> alla biblioteca dell\'Osservatorio</li>'
+      + '<li><b>Modificare e aggiornare contenuti</b> esistenti per mantenerli attuali</li>'
+      + '</ul>'
+      + '<p style="font-size:14px;line-height:1.6;color:#5C4332;margin:0 0 24px">'
+      + 'Clicca il pulsante qui sotto per accedere a Sinopia con il tuo nuovo ruolo.</p>'
+      // CTA
+      + '<table cellpadding="0" cellspacing="0" style="margin:0 auto 26px"><tr><td style="background:#8B3A1F;border-radius:8px">'
+      + '<a href="' + magicUrl + '" style="display:inline-block;padding:14px 32px;color:#fff;text-decoration:none;font-family:Arial,sans-serif;font-size:15px;font-weight:600;letter-spacing:.02em">Accedi come Redattore &rarr;</a>'
+      + '</td></tr></table>'
+      // Privacy / GDPR
+      + '<div style="border-top:1px solid #E5E1D8;padding-top:14px;margin-top:8px">'
+      + '<p style="font-size:12px;color:#8B5E2B;line-height:1.5;margin:0">'
+      + 'I tuoi dati sono trattati ai sensi del GDPR (Reg. UE 2016/679) esclusivamente per finalita informative. '
+      + 'Puoi richiedere la cancellazione del tuo account e dei tuoi dati in qualsiasi momento scrivendo a sinopiaconsulting@gmail.com.</p>'
+      + '</div>'
+      // Link fallback
+      + '<p style="font-size:11px;color:#8B5E2B;line-height:1.5;margin:20px 0 0;font-style:italic">Se il bottone non funziona, copia e incolla questo link nel browser:<br><span style="color:#5C4332;font-family:monospace;font-size:10px;word-break:break-all">' + magicUrl + '</span></p>'
+      + '</td></tr>'
+      // Footer
+      + '<tr><td style="background:#F1E6D6;padding:18px 32px;border-top:1px solid #D4BFA0;text-align:center">'
+      + '<div style="font-family:Arial,sans-serif;font-size:12px;color:#5C4332;line-height:1.5;font-weight:600">Il team di assistenza di Sinopia</div>'
+      + '<div style="font-family:Arial,sans-serif;font-size:11px;color:#8B5E2B;line-height:1.5;margin-top:4px">Sinopia &middot; Osservatorio Culturale<br>Il disegno preparatorio della cultura italiana<br>Un progetto Sinopia</div>'
+      + '</td></tr>'
+      + '</table>'
+      + '</td></tr></table>'
+      + '</body></html>';
+
+    MailApp.sendEmail({
+      to: email,
+      subject: 'Sei diventato Redattore di Sinopia — Osservatorio Culturale',
+      htmlBody: body,
+      name: 'Sinopia — Osservatorio Culturale'
+    });
+    Logger.log('[_sendEditorPromotionEmail_] Email promozione editor inviata a ' + email);
+  } catch(e) {
+    Logger.log('[_sendEditorPromotionEmail_] Errore invio email: ' + e.message);
+  }
+}
+
 function rejectUser(email, motivo) {
   requireAuth(['admin']);
   return _setUserStato_(email, 'rifiutato', motivo);
@@ -928,6 +1014,19 @@ function saveUserStatoRuolo(email, stato, ruolo, oldStato, token) {
       var primaAttivazione = (stato === 'attivo' && String(oldStato || rows[i][iStato] || '').toLowerCase() !== 'attivo');
       if (primaAttivazione && iAppr >= 0 && !rows[i][iAppr]) {
         sh.getRange(i+1, iAppr+1).setValue(new Date().toISOString());
+      }
+      // v5.2 — Notifica promozione a editor
+      var wasEditor = (String(currentTargetRuolo || '').toLowerCase() === 'editor');
+      var promotedToEditor = (!wasEditor && ruolo === 'editor' && stato === 'attivo');
+      if (promotedToEditor) {
+        try {
+          var iNome = headers.indexOf('Nome');
+          var nomeUtente = iNome >= 0 ? String(rows[i][iNome] || '').trim() : '';
+          _sendEditorPromotionEmail_(email, nomeUtente);
+          Logger.log('[saveUserStatoRuolo] Email promozione editor inviata a ' + email);
+        } catch(eEd) {
+          Logger.log('[saveUserStatoRuolo] Errore email editor: ' + eEd.message);
+        }
       }
       return { ok:true, email: email, stato: stato, ruolo: ruolo };
     }

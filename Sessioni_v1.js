@@ -368,7 +368,7 @@ function loginConEmail(email, nome) {
       // Un solo gesto per entrare/registrarsi: il magic-link conferma l'email. Coerente con
       // newsletter e auto-registrazione profilo. (Resta gated dal flag login pubblico sopra.)
       if (typeof _autoRegisterUser_ === 'function') {
-        var _reg = _autoRegisterUser_(email, String(nome || '').trim(), 'login');
+        var _reg = _autoRegisterUser_(email, String(nome || '').trim(), 'login', true);
         if (_reg && _reg.error === 'accesso_rifiutato') return { ok:false, error:'account_non_attivo', stato:'rifiutato' };
         if (_reg && _reg.error === 'account_sospeso')  return { ok:false, error:'account_non_attivo', stato:'sospeso' };
       }
