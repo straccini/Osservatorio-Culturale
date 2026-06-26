@@ -54,7 +54,11 @@ function scanSources() {
       const rssUrl = fonte.RSSURL || fonte.URL;
       if (!rssUrl) { Logger.log('  ! URL mancante, saltata'); continue; }
       const items = fetchRSS(rssUrl, fonte);
-      if (!items.length) { Logger.log('  -> 0 item (feed vuoto o non valido)'); continue; }
+      if (!items.length) {
+        Logger.log('  -> 0 item (feed vuoto o non valido)');
+        try { updateFeedSourceStats('rss', fonte, 'EMPTY', 0, 'Feed vuoto o non valido (0 item)'); } catch(_e){}
+        continue;
+      }
       // v4.19.1 — Flag generalista: gate semantico per Sole/Repubblica
       const isGeneralista = FONTI_GENERALISTE.indexOf(fonte.Nome) !== -1;
       let nuovi = 0, scartati = 0;
@@ -78,6 +82,7 @@ function scanSources() {
       updateFeedSourceStats('rss', fonte, items.length>0?'OK':'EMPTY', items.length, '');
     } catch(err) {
       Logger.log('  ERR fonte "' + fonte.Nome + '": ' + err.message.substring(0,80));
+      try { updateFeedSourceStats('rss', fonte, 'ERROR', 0, err.message); } catch(_e){}
     }
   }
   return added;

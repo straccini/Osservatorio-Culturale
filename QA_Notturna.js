@@ -148,16 +148,78 @@ function _qaEsegui_() {
     });
   } catch (e) { rep.errori.push('Integrità: ' + e.message); }
 
-  // --- FASE 4c: ultimi esiti ScanLog ---
+  // --- FASE 4c: salute scansioni da FontiFeed ---
+  // NB: lo sheet 'ScanLog' e' DEPRECATO (nessun chiamante reale di _logScan_). Lo scanner
+  // attuale (NewsScanner.scanSources) scrive gli esiti nelle colonne di FontiFeed via
+  // updateFeedSourceStats: UltimaScan / UltimoEsito / NRecordTotali / FailConsecutivi.
   try {
-    var sl = getMainSS().getSheetByName('ScanLog');
-    if (sl && sl.getLastRow() >= 2) {
-      var lastN = Math.min(5, sl.getLastRow() - 1);
-      var vals = sl.getRange(sl.getLastRow() - lastN + 1, 1, lastN, Math.min(6, sl.getLastColumn())).getValues();
-      rep.scanlog = vals.map(function(row) { return row.map(function(c) { return String(c); }).join(' · '); });
-    }
-  } catch (e) { rep.errori.push('ScanLog: ' + e.message); }
+    rep.scanHealth = _qaScanHealthFontiFeed_();
+  } catch (e) { rep.errori.push('ScanHealth: ' + e.message); }
 
+  return rep;
+}
+
+/** Salute scansioni leggendo le colonne di stato di FontiFeed (sostituisce ScanLog deprecato). */
+function _qaScanHealthFontiFeed_() {
+  var sh = _qaSheet_('FontiFeed');
+  if (!sh || sh.getLastRow() < 2) return { feed: 0 };
+  var v = sh.getDataRange().getValues(); var h = v[0];
+  function c(n) { return h.indexOf(n); }
+  var iAtt = c('Attiva'), iScan = c('UltimaScan'), iEsito = c('UltimoEsito');
+  var now = Date.now(), tz = Session.getScriptTimeZone() || 'Europe/Rome';
+  var tot = 0, attive = 0, scan48 = 0, vuote = 0, errore = 0, ultimaScan = null, perEsito = {};
+  for (var r = 1; r < v.length; r++) {
+    if (!v[r][0]) continue;
+    tot++;
+    if (iAtt >= 0 && (v[r][iAtt] === true || String(v[r][iAtt]).toUpperCase() === 'TRUE')) attive++;
+    var es = String((iEsito >= 0 ? v[r][iEsito] : '') || '');
+    if (es) perEsito[es] = (perEsito[es] || 0) + 1;
+    if (es.toUpperCase().indexOf('EMPTY') === 0) vuote++;
+    if (es.toUpperCase().indexOf('ERROR') === 0) errore++;
+    var d = iScan >= 0 ? _qaParseDate_(v[r][iScan]) : null;
+    if (d) { if (!ultimaScan || d > ultimaScan) ultimaScan = d; if ((now - d.getTime()) / 3600000 <= 48) scan48++; }
+  }
+  return {
+    feed: tot, attive: attive, scanUlt48h: scan48, esitoEmpty: vuote, esitoError: errore,
+    ultimaScan: ultimaScan ? Utilities.formatDate(ultimaScan, tz, 'yyyy-MM-dd HH:mm') : null,
+    perEsito: perEsito
+  };
+}
+
+/**
+ * Diagnosi ON-DEMAND delle fonti RSS morte (NRecordTotali=0): fetcha davvero ogni feed
+ * (UrlFetchApp, lato GAS) e classifica il motivo. Lanciare da editor GAS quando serve.
+ * @param {number} maxFeed limite feed da analizzare (default 40)
+ */
+function qaDiagnosiFontiMorte(maxFeed) {
+  var sh = _qaSheet_('FontiFeed');
+  if (!sh || sh.getLastRow() < 2) return { ok: false, error: 'FontiFeed assente o vuoto' };
+  var v = sh.getDataRange().getValues(); var h = v[0];
+  function c(n) { return h.indexOf(n); }
+  var iNome = c('Nome'), iTipo = c('Tipo'), iUrl = c('URL_Feed'), iAtt = c('Attiva'), iTot = c('NRecordTotali');
+  var lim = Number(maxFeed) || 40, out = [], classi = {};
+  for (var r = 1; r < v.length && out.length < lim; r++) {
+    if (!v[r][0]) continue;
+    if (String(v[r][iTipo]).toLowerCase() !== 'rss') continue;
+    if (!(v[r][iAtt] === true || String(v[r][iAtt]).toUpperCase() === 'TRUE')) continue;
+    if (Number(v[r][iTot] || 0) > 0) continue; // solo le morte
+    var nome = String(v[r][iNome] || ''), url = String(v[r][iUrl] || ''), cls = '?', det = '';
+    try {
+      var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true, deadline: 8, headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Feedfetcher/4.0)' } });
+      var code = resp.getResponseCode();
+      if (code !== 200) { cls = 'HTTP ' + code; }
+      else {
+        var ct = resp.getContentText('UTF-8') || '';
+        if (ct.indexOf('<?xml') < 0 && ct.indexOf('<rss') < 0 && ct.indexOf('<feed') < 0) { cls = 'NON-RSS (HTML/blocco)'; det = ct.substring(0, 50).replace(/\s+/g, ' '); }
+        else { cls = 'RSS-OK-ma-vuoto'; det = 'feed valido, 0 record: rivedere parsing/filtro'; }
+      }
+    } catch (e) { cls = 'IRRAGGIUNGIBILE'; det = String(e.message).substring(0, 60); }
+    classi[cls] = (classi[cls] || 0) + 1;
+    out.push({ nome: nome, classe: cls, dettaglio: det, url: url });
+    Utilities.sleep(150);
+  }
+  var rep = { ok: true, analizzate: out.length, perClasse: classi, fonti: out };
+  Logger.log('qaDiagnosiFontiMorte: ' + JSON.stringify(rep, null, 2));
   return rep;
 }
 
@@ -271,7 +333,8 @@ function _qaEmailHtml_(rep) {
   var integr = (rep.integrita || []).map(function(i) {
     return '<span style="display:inline-block;margin:2px 6px 2px 0;padding:2px 8px;border-radius:10px;font-size:11px;background:' + (i.presente ? '#E5EFE7;color:#3F7A5E' : '#F8E0E0;color:#B3261E') + '">' + i.foglio + ': ' + (i.presente ? i.righe : 'ASSENTE') + '</span>';
   }).join('');
-  var scan = (rep.scanlog || []).map(function(s) { return '<div style="font-size:11px;color:#6E6A62;padding:2px 0">' + s.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</div>'; }).join('') || '<div style="font-size:12px;color:#999">nessun log</div>';
+  var sh2 = rep.scanHealth || {};
+  var scan = '<div style="font-size:12.5px;color:#3A3A3C;line-height:1.6">Feed: <b>' + (sh2.feed || 0) + '</b> (' + (sh2.attive || 0) + ' attivi) &middot; scansionati nelle ultime 48h: <b>' + (sh2.scanUlt48h || 0) + '</b> &middot; ultima scansione: <b>' + (sh2.ultimaScan || '—') + '</b><br>Esiti registrati &mdash; EMPTY: <b>' + (sh2.esitoEmpty || 0) + '</b> &middot; ERROR: <b>' + (sh2.esitoError || 0) + '</b></div>';
   var err = rep.errori.length
     ? '<div style="margin-top:14px;padding:10px 12px;background:#FDF3F3;border:1px solid #F3C9C9;border-radius:8px;font-size:12px;color:#B3261E"><b>Anomalie raccolte (' + rep.errori.length + '):</b><br>' + rep.errori.map(function(e) { return '&bull; ' + String(e).replace(/</g, '&lt;'); }).join('<br>') + '</div>'
     : '<div style="margin-top:14px;padding:10px 12px;background:#E5EFE7;border:1px solid #BBD9C4;border-radius:8px;font-size:12px;color:#3F7A5E">Nessuna anomalia raccolta.</div>';
@@ -290,7 +353,7 @@ function _qaEmailHtml_(rep) {
     + '<h3 style="font-size:13px;margin:16px 0 6px;color:#8B3A1F">Fonti</h3>'
     + '<div style="font-size:13px;color:#3A3A3C">Feed attivi: <b>' + feed + '</b> &middot; Fonti RSS a 0 record (candidate morte): <b>' + morte + '</b></div>'
     + '<h3 style="font-size:13px;margin:16px 0 6px;color:#8B3A1F">Integrità fogli</h3><div>' + integr + '</div>'
-    + '<h3 style="font-size:13px;margin:16px 0 6px;color:#8B3A1F">Ultime scansioni</h3>' + scan
+    + '<h3 style="font-size:13px;margin:16px 0 6px;color:#8B3A1F">Salute scansioni (FontiFeed)</h3>' + scan
     + err
     + '</div></div>';
 }
