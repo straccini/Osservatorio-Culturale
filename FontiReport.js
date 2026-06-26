@@ -204,6 +204,30 @@ function fontiAggiungiFeedVerificato(url, nome, ambito, gruppo) {
   } catch (e) { return { ok: false, error: e.message }; }
 }
 
+/**
+ * Batch curato: aggiunge le fonti RSS già verificate (discovery Via 1).
+ * Ogni candidato passa per il cancello fontiAggiungiFeedVerificato (ri-testa HTTP+RSS+dedup).
+ * I 403 dal mio fetch (Europeana Pro/Artslife) spesso passano dalla rete GAS: se falliscono,
+ * vengono saltati in sicurezza.
+ */
+function fontiAggiungiBatch() {
+  var candidati = [
+    { url: 'https://www.inexhibit.com/feed/',            nome: 'Inexhibit',             ambito: 1 }, // museografia/allestimenti
+    { url: 'https://www.europanostra.org/feed/',         nome: 'Europa Nostra',         ambito: 1 }, // patrimonio/heritage UE
+    { url: 'https://hyperallergic.com/feed/',            nome: 'Hyperallergic',         ambito: 3 }, // arte contemporanea
+    { url: 'https://www.digitalmeetsculture.net/feed/',  nome: 'Digital Meets Culture', ambito: 5 }, // digital heritage
+    { url: 'https://pro.europeana.eu/rss/news.rss',      nome: 'Europeana Pro',         ambito: 5 }, // (403 dal mio fetch: testare da GAS)
+    { url: 'https://www.artslife.com/feed/',             nome: 'Artslife',              ambito: 3 }  // (403 dal mio fetch: testare da GAS)
+  ];
+  var esiti = candidati.map(function(c) {
+    var r = fontiAggiungiFeedVerificato(c.url, c.nome, c.ambito, 'Discovery-curata 2026-06');
+    return { nome: c.nome, esito: r && r.ok ? 'AGGIUNTA' : ('saltata: ' + ((r && r.error) || '?')) };
+  });
+  var aggiunte = esiti.filter(function(e) { return e.esito === 'AGGIUNTA'; }).length;
+  Logger.log('fontiAggiungiBatch: ' + aggiunte + '/' + candidati.length + ' aggiunte\n' + JSON.stringify(esiti, null, 2));
+  return { ok: true, aggiunte: aggiunte, totale: candidati.length, esiti: esiti };
+}
+
 // ----------------------------------------------------------------------------
 // EMAIL
 // ----------------------------------------------------------------------------
