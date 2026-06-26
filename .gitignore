@@ -12,3 +12,6 @@ oc-codebase-backup-*/
 # Nota: clasp usa il proprio .claspignore separato
 .netlify/
 landing-netlify/.netlify/
+
+# Dipendenze Node installate al volo per i tool (es. docx per generare i Word)
+node_modules/
