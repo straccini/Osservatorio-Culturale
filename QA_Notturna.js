@@ -223,6 +223,65 @@ function qaDiagnosiFontiMorte(maxFeed) {
   return rep;
 }
 
+/**
+ * Applica i fix alle fonti morte: corregge gli URL recuperabili (testandoli live PRIMA di
+ * scrivere) e disattiva (Attiva=FALSE, reversibile) quelle morte/senza-RSS.
+ * Mappa curata dalla diagnosi del 2026-06-26.
+ * @param {boolean} dryRun se true (default) mostra solo il piano senza scrivere.
+ */
+function qaApplicaFixFonti(dryRun) {
+  if (dryRun === undefined) dryRun = true;
+  var sh = _qaSheet_('FontiFeed');
+  if (!sh || sh.getLastRow() < 2) return { ok: false, error: 'FontiFeed assente o vuoto' };
+  var v = sh.getDataRange().getValues(); var h = v[0];
+  function c(n) { return h.indexOf(n); }
+  var iNome = c('Nome'), iUrl = c('URL_Feed'), iAtt = c('Attiva'), iFail = c('FailConsecutivi'), iNote = c('Note');
+
+  // URL corretti VERIFICATI (Artribune/Exibart testati ok; Finestre/Arte.it dal feed-hub ufficiale)
+  var CORREZIONI = {
+    'Artribune Digit.': 'https://www.artribune.com/feed/',
+    'Exibart Mostre': 'https://www.exibart.com/feed/',
+    "Finestre sull'Arte": 'https://www.finestresullarte.info/finestresullarte.xml',
+    'Arte.it Mostre': 'https://www.arte.it/rss/feed_eventi.php?lang=it'
+  };
+  // Morte/senza-RSS/garbage → disattivazione reversibile
+  var DISATTIVA = ['Artribune Mostre', 'Artefatti', 'Flash Art', 'CCW Welfare Cult.', 'MiC Comunicati',
+    'ANCI Cultura', 'FAI - Fondo Ambiente', "Il Giornale dell'Arte", 'Il Giornale delle Fondazioni',
+    "L'Eurispes Cult.", 'MuseumNext Dig.', 'CORDIS Heritage', 'Itinerari Arte', 'ArtNews Exhib.',
+    'Artnet Exhib.', 'CoE Culture', 'FASI Europa Creat.', 'EuropaFacile Cult.', 'Patrimonio Culturale ER',
+    'Treccani Magazine', 'Apollo Magazine', 'Touring Club Italiano', 'Europeana Blog'];
+
+  var azioni = [];
+  for (var r = 1; r < v.length; r++) {
+    var nome = String(v[r][iNome] || ''); if (!nome) continue;
+    var rr = r + 1;
+    if (CORREZIONI[nome] !== undefined) {
+      var nuovo = CORREZIONI[nome], valido = false, motivo = '';
+      try {
+        var resp = UrlFetchApp.fetch(nuovo, { muteHttpExceptions: true, followRedirects: true, deadline: 8, headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Feedfetcher/4.0)' } });
+        if (resp.getResponseCode() === 200) {
+          var ct = resp.getContentText('UTF-8') || '';
+          valido = (ct.indexOf('<?xml') >= 0 || ct.indexOf('<rss') >= 0 || ct.indexOf('<feed') >= 0);
+          motivo = valido ? 'RSS valido' : '200 ma non-RSS';
+        } else motivo = 'HTTP ' + resp.getResponseCode();
+      } catch (e) { motivo = 'IRRAGGIUNGIBILE: ' + String(e.message).substring(0, 40); }
+      if (valido && !dryRun) {
+        sh.getRange(rr, iUrl + 1).setValue(nuovo);
+        if (iAtt >= 0) sh.getRange(rr, iAtt + 1).setValue(true);
+        if (iFail >= 0) sh.getRange(rr, iFail + 1).setValue(0);
+        if (iNote >= 0) sh.getRange(rr, iNote + 1).setValue('URL corretto QA 2026-06-26 (prec: ' + String(v[r][iUrl]).substring(0, 50) + ')');
+      }
+      azioni.push({ nome: nome, azione: valido ? 'CORREGGI' : 'SALTATO (test fallito)', nuovoUrl: nuovo, test: motivo });
+    } else if (DISATTIVA.indexOf(nome) >= 0) {
+      if (!dryRun && iAtt >= 0) sh.getRange(rr, iAtt + 1).setValue(false);
+      azioni.push({ nome: nome, azione: 'DISATTIVA', test: '' });
+    }
+  }
+  var rep = { ok: true, dryRun: dryRun, totAzioni: azioni.length, corretti: azioni.filter(function(a){return a.azione==='CORREGGI';}).length, disattivati: azioni.filter(function(a){return a.azione==='DISATTIVA';}).length, azioni: azioni };
+  Logger.log('qaApplicaFixFonti(dryRun=' + dryRun + '): ' + JSON.stringify(rep, null, 2));
+  return rep;
+}
+
 // ----------------------------------------------------------------------------
 // HELPER conteggi
 // ----------------------------------------------------------------------------
