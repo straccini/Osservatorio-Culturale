@@ -1117,7 +1117,10 @@ var FAS_BDNCP_KEYWORDS = [
 // CPV (la classificazione reale del bando), non solo nel nome dell'ente.
 // Verificato live (18/06): su kw "patrimonio culturale" scarta il ~53% di falsi positivi
 // (gestione bar, assicurazioni, rifiuti, servizi cimiteriali) senza perdere i bandi veri.
-var FAS_BDNCP_CULTURA_RX = /mus(eo|ei|eal)|bibliotec|archiv|cultural|patrimonio|monument|restaur|archeolog|teatr|mostr|spettacol|allestiment|beni cultural/i;
+// v4.28 — allargato ai temi Osservatorio mancanti: accessibilità (audioguide, LIS, braille,
+// audiodescrizione, CAA) + ecomusei/pinacoteche. Tutti termini inequivocabilmente culturali
+// → non reintroducono i falsi positivi (bar/rifiuti/cimiteriale) bloccati il 18/06.
+var FAS_BDNCP_CULTURA_RX = /mus(eo|ei|eal)|bibliotec|archiv|cultural|patrimonio|monument|restaur|archeolog|teatr|mostr|spettacol|allestiment|beni cultural|audioguid|audiodescriz|lingua dei segni|\bLIS\b|braille|comunicazione aumentativa|easy.to.read|pinacotec|antiquarium|ecomuseo/i;
 
 // Mappa nome-provincia → regione: il BDNCP riporta in luogo_nuts il nome della PROVINCIA
 // (es. "Firenze"), non la regione. La colonna Regione di Bandi_v5 alimenta i filtri regionali
