@@ -109,7 +109,7 @@ function _qaEsegui_() {
     fonti: null,
     conteggi: null,
     integrita: null,
-    scanlog: null,
+    scanHealth: null,
     errori: []
   };
 
@@ -249,22 +249,29 @@ function _qaParseDate_(v) {
   return isNaN(d.getTime()) ? null : d;
 }
 
+/** Prima data valida tra più colonne candidate, valutata PER RIGA (gestisce colonne vuote). */
+function _qaRowDate_(row, idxs) {
+  for (var k = 0; k < idxs.length; k++) {
+    if (idxs[k] < 0) continue;
+    var d = _qaParseDate_(row[idxs[k]]);
+    if (d) return d;
+  }
+  return null;
+}
+
 /** Conta righe totali + ultimi 7/30gg di un foglio, escludendo gli archiviati se indicato. */
 function _qaCount_(sh, dateCols, archiviatoCol) {
   if (!sh || sh.getLastRow() < 2) return { tot: 0, g7: 0, g30: 0 };
   var v = sh.getDataRange().getValues(); var h = v[0];
-  var iDate = -1;
-  for (var k = 0; k < dateCols.length && iDate < 0; k++) iDate = h.indexOf(dateCols[k]);
+  var idxs = dateCols.map(function(n) { return h.indexOf(n); });
   var iArch = archiviatoCol ? h.indexOf(archiviatoCol) : -1;
   var now = Date.now(), tot = 0, g7 = 0, g30 = 0;
   for (var r = 1; r < v.length; r++) {
     if (!v[r][0]) continue;
     if (iArch >= 0) { var a = v[r][iArch]; if (a === true || String(a).toLowerCase() === 'true' || String(a).toLowerCase() === 'archiviato') continue; }
     tot++;
-    if (iDate >= 0) {
-      var d = _qaParseDate_(v[r][iDate]);
-      if (d) { var gg = (now - d.getTime()) / 86400000; if (gg <= 7) g7++; if (gg <= 30) g30++; }
-    }
+    var d = _qaRowDate_(v[r], idxs);
+    if (d) { var gg = (now - d.getTime()) / 86400000; if (gg <= 7) g7++; if (gg <= 30) g30++; }
   }
   return { tot: tot, g7: g7, g30: g30 };
 }
@@ -274,7 +281,7 @@ function _qaCountPodcast_(soloVideo) {
   var sh = _qaSheet_(_qaName_('PODCAST', 'Podcast'));
   if (!sh || sh.getLastRow() < 2) return { tot: 0, g7: 0, g30: 0 };
   var v = sh.getDataRange().getValues(); var h = v[0];
-  var iDate = h.indexOf('DataPubblicazione'); if (iDate < 0) iDate = h.indexOf('DataRilevamento');
+  var idxs = ['DataPubblicazione', 'DataRilevamento', 'Data'].map(function(n) { return h.indexOf(n); });
   var iStato = h.indexOf('StatoRecord');
   var now = Date.now(), tot = 0, g7 = 0, g30 = 0;
   for (var r = 1; r < v.length; r++) {
@@ -283,7 +290,8 @@ function _qaCountPodcast_(soloVideo) {
     if (soloVideo !== isVid) continue;
     if (iStato >= 0 && String(v[r][iStato]).toLowerCase() === 'archiviato') continue;
     tot++;
-    if (iDate >= 0) { var d = _qaParseDate_(v[r][iDate]); if (d) { var gg = (now - d.getTime()) / 86400000; if (gg <= 7) g7++; if (gg <= 30) g30++; } }
+    var d = _qaRowDate_(v[r], idxs);
+    if (d) { var gg = (now - d.getTime()) / 86400000; if (gg <= 7) g7++; if (gg <= 30) g30++; }
   }
   return { tot: tot, g7: g7, g30: g30 };
 }
@@ -293,14 +301,15 @@ function _qaCountBandi_() {
   var sh = (typeof getSheetRadar === 'function') ? getSheetRadar() : null;
   if (!sh || sh.getLastRow() < 2) return { tot: 0, g7: 0, g30: 0 };
   var v = sh.getDataRange().getValues(); var h = v[0];
-  var iDate = h.indexOf('Data_Rilevamento'); if (iDate < 0) iDate = 0;
+  var idxs = ['Data_Rilevamento', 'DataRilevamento', 'Data'].map(function(n) { return h.indexOf(n); });
+  if (idxs.every(function(i) { return i < 0; })) idxs = [0]; // RADAR: col 1 = Data_Rilevamento
   var iStato = h.indexOf('StatoRecord');
   var now = Date.now(), tot = 0, g7 = 0, g30 = 0;
   for (var r = 1; r < v.length; r++) {
     if (!v[r][1] && !v[r][0]) continue; // titolo o data presenti
     if (iStato >= 0 && String(v[r][iStato]).toLowerCase() === 'archiviato') continue;
     tot++;
-    var d = _qaParseDate_(v[r][iDate]);
+    var d = _qaRowDate_(v[r], idxs);
     if (d) { var gg = (now - d.getTime()) / 86400000; if (gg <= 7) g7++; if (gg <= 30) g30++; }
   }
   return { tot: tot, g7: g7, g30: g30 };
