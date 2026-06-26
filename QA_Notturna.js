@@ -30,9 +30,44 @@ function qaNotturnaSetupTrigger() {
   ScriptApp.getProjectTriggers().forEach(function(t) {
     if (t.getHandlerFunction() === 'qaNotturnaGAS') { ScriptApp.deleteTrigger(t); trovati++; }
   });
-  ScriptApp.newTrigger('qaNotturnaGAS').timeBased().everyDays(1).atHour(QA_NOTTURNA_ORA).create();
+  try {
+    ScriptApp.newTrigger('qaNotturnaGAS').timeBased().everyDays(1).atHour(QA_NOTTURNA_ORA).create();
+  } catch (e) {
+    var tot = ScriptApp.getProjectTriggers().length;
+    Logger.log('qaNotturnaSetupTrigger ERRORE: ' + e.message + ' (trigger presenti: ' + tot + '/20). Esegui qaListaTrigger() e poi qaDeduplicaTrigger() per liberare slot.');
+    return { ok: false, error: e.message, triggerPresenti: tot, suggerimento: 'Esegui qaListaTrigger() poi qaDeduplicaTrigger() per liberare uno slot, quindi ripeti.' };
+  }
   Logger.log('qaNotturnaSetupTrigger: rimossi ' + trovati + ', creato trigger giornaliero alle ' + QA_NOTTURNA_ORA + ':00');
   return { ok: true, rimossi: trovati, ora: QA_NOTTURNA_ORA };
+}
+
+/** Diagnostico (sola lettura): elenca tutti i trigger del progetto. GAS ne consente max 20. */
+function qaListaTrigger() {
+  var ts = ScriptApp.getProjectTriggers();
+  var conteggio = {};
+  var lista = ts.map(function(t) {
+    var fn = t.getHandlerFunction();
+    conteggio[fn] = (conteggio[fn] || 0) + 1;
+    return { handler: fn, tipo: String(t.getEventType()), id: t.getUniqueId() };
+  });
+  var dup = Object.keys(conteggio).filter(function(k) { return conteggio[k] > 1; })
+    .map(function(k) { return k + ' ×' + conteggio[k]; });
+  var rep = { totale: ts.length, max: 20, duplicati: dup, perHandler: conteggio, trigger: lista };
+  Logger.log('qaListaTrigger: ' + JSON.stringify(rep, null, 2));
+  return rep;
+}
+
+/** Rimuove i trigger DUPLICATI (stesso handler più volte), tenendone uno per handler. Reversibile ricreando il trigger. */
+function qaDeduplicaTrigger() {
+  var visti = {}, rimossi = [];
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    var fn = t.getHandlerFunction();
+    if (visti[fn]) { ScriptApp.deleteTrigger(t); rimossi.push(fn); }
+    else { visti[fn] = true; }
+  });
+  var tot = ScriptApp.getProjectTriggers().length;
+  Logger.log('qaDeduplicaTrigger: rimossi ' + rimossi.length + ' duplicati → ora ' + tot + '/20. ' + JSON.stringify(rimossi));
+  return { ok: true, rimossi: rimossi, rimanenti: tot };
 }
 
 // ----------------------------------------------------------------------------
@@ -105,7 +140,7 @@ function _qaEsegui_() {
 
   // --- FASE base: integrità fogli chiave ---
   try {
-    var attesi = [_qaName_('ITEMS', 'Items'), _qaName_('PODCAST', 'Podcast'), _qaName_('LIBRI', 'Pubblicazioni'), _qaName_('FONTI', 'Fonti'), 'ScanLog'];
+    var attesi = [_qaName_('ITEMS', 'Items'), _qaName_('PODCAST', 'Podcast'), _qaName_('LIBRI', 'Pubblicazioni'), 'FontiFeed', 'ScanLog'];
     var ss = getMainSS();
     rep.integrita = attesi.map(function(n) {
       var sh = ss.getSheetByName(n);
@@ -136,9 +171,19 @@ function _qaName_(key, fallback) {
 function _qaSheet_(name) { try { return getMainSS().getSheetByName(name); } catch (_) { return null; } }
 
 function _qaParseDate_(v) {
-  if (v instanceof Date) return v;
-  if (!v) return null;
-  var d = new Date(v);
+  if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+  if (v === null || v === undefined || v === '') return null;
+  var s = String(v).trim();
+  // Formato italiano gg/mm/aaaa o gg-mm-aaaa: interpretato PRIMA di new Date (che userebbe mm/gg)
+  var m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if (m) {
+    var dd = +m[1], mm = +m[2], yy = +m[3]; if (yy < 100) yy += 2000;
+    if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+      var d2 = new Date(yy, mm - 1, dd);
+      if (!isNaN(d2.getTime())) return d2;
+    }
+  }
+  var d = new Date(s);
   return isNaN(d.getTime()) ? null : d;
 }
 
