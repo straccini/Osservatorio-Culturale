@@ -2803,6 +2803,19 @@
     if (!lvl && typeof _admTok_ === 'function' && _admTok_()) lvl = 3;
     if (!lvl) { try { if (localStorage.getItem('oc_token')) lvl = 1; } catch(_){} }
     if (lvl === 0 && !_GUEST_PAGES[page]) {
+      // H10-1: show a clear "Contenuto riservato" message in the page area, then open the registration modal
+      var pages = $$('.page');
+      for (var gi=0;gi<pages.length;gi++) pages[gi].classList.remove('active');
+      var gp = $('page-guest-locked');
+      if (!gp) {
+        gp = document.createElement('section');
+        gp.id = 'page-guest-locked';
+        gp.className = 'page';
+        var mainEl = document.querySelector('.main') || document.body;
+        mainEl.appendChild(gp);
+      }
+      gp.innerHTML = '<div class="empty-state" style="padding:48px;text-align:center"><h3 style="font-family:var(--font-serif);margin-bottom:12px">Contenuto riservato</h3><p class="muted">Registrati gratuitamente per accedere a questa sezione, salvare contenuti e ricevere il digest settimanale.</p><button class="btn btn-primary" onclick="OC.openRegistrationModal()" style="margin-top:16px">Registrati gratis</button></div>';
+      gp.classList.add('active');
       _showGuestGate_(page);
       return;
     }
@@ -3312,7 +3325,12 @@
         if (tipo === 'libri')   _cacheLibri   = d.cache;
         d.render(d.cache);
       })
-      .withFailureHandler(function(err) { _topbarDone(); console.error('[OC] ' + d.gas + ' FAIL:', err); d.render([]); })
+      .withFailureHandler(function(err) {
+        _topbarDone();
+        console.error('[OC] ' + d.gas + ' FAIL:', err);
+        var errEl = $(d.skeleton);
+        if (errEl) errEl.innerHTML = '<div class="empty-state"><p style="color:var(--danger)">Errore di caricamento</p><p class="muted">' + ((err && err.message) || 'Connessione non riuscita') + '</p><button class="btn btn-secondary" onclick="_loadList(\'' + tipo + '\',true)" style="margin-top:12px">Riprova</button></div>';
+      })
       [d.gas](d.gasLimit);
   }
 
@@ -5544,7 +5562,7 @@
     if (el) el.innerHTML = '<div class="skeleton-block"></div>';
     google.script.run
       .withSuccessHandler(function(data) { _cacheEditoria = data || []; renderEditoriaList(_cacheEditoria); })
-      .withFailureHandler(function(e) { if (el) el.innerHTML = '<p class="muted">Errore: ' + e.message + '</p>'; })
+      .withFailureHandler(function(e) { if (el) el.innerHTML = '<div class="empty-state"><p style="color:var(--danger)">Errore di caricamento</p><p class="muted">' + ((e && e.message) || 'Connessione non riuscita') + '</p><button class="btn btn-secondary" onclick="loadEditoria(true)" style="margin-top:12px">Riprova</button></div>'; })
       .getEditoria(200);
   }
 
@@ -10109,7 +10127,7 @@
     }
 
     if (!total) {
-      wrap.innerHTML = '<div class="sr-hint">Nessun risultato trovato. Prova con parole diverse o controlla la sezione dedicata.</div>';
+      wrap.innerHTML = '<div class="empty-state"><p>Nessun risultato per "<b>' + esc(q) + '</b>"</p><p class="muted">Prova con termini pi\u00f9 generici o controlla l\'ortografia.</p></div>';
       return;
     }
 

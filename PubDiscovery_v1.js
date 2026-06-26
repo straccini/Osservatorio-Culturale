@@ -21,6 +21,15 @@ var _PUB_MAILTO_ = 'sinopiaconsulting@gmail.com';
 var _PUB_SCORE_THRESHOLD_ = 45;
 var _PUB_LOG_PREFIX_ = '[PubDiscovery]';
 
+// Claude Haiku filter — optional relevance refinement step after keyword scoring.
+// Enable/disable via ScriptProperty PUB_CLAUDE_FILTER_ENABLED ('true'/'false').
+// Default: disabled (safe — won't break scan if API key is missing or rate limit is hit).
+var _PUB_CLAUDE_FILTER_DEFAULT_ = false;   // change to true to enable globally
+var _PUB_CLAUDE_SCORE_THRESHOLD_ = 60;     // Claude relevance score >= this passes
+var _PUB_CLAUDE_BATCH_SIZE_ = 20;          // send top N candidates to Claude
+var _PUB_CLAUDE_DAILY_CAP_ = 10;           // max filter calls per day (each = 1 batch)
+var _PUB_CLAUDE_CAP_PROP_ = 'PUB_CLAUDE_CALLS_';
+
 var _PUB_QUERIES_ = [
   { api: 'openlibrary',  q: 'museologia patrimonio culturale museo' },
   { api: 'openalex',     q: 'museum heritage digital AI Italy' },
@@ -148,6 +157,22 @@ function pubDiscoveryScan(opts) {
   }
   Logger.log(_PUB_LOG_PREFIX_ + ' After dedup: ' + newItems.length + ' new, ' + dupCount + ' duplicates skipped');
 
+  // Optional Claude Haiku relevance filter
+  // Reads PUB_CLAUDE_FILTER_ENABLED from ScriptProperties; falls back to _PUB_CLAUDE_FILTER_DEFAULT_.
+  var claudeFilterEnabled = _PUB_CLAUDE_FILTER_DEFAULT_;
+  try {
+    var cfeProp = PropertiesService.getScriptProperties().getProperty('PUB_CLAUDE_FILTER_ENABLED');
+    if (cfeProp !== null) claudeFilterEnabled = (cfeProp === 'true');
+  } catch(e) { /* ignore — ScriptProperties unavailable */ }
+
+  var claudeFiltered = 0;
+  if (claudeFilterEnabled && newItems.length > 0) {
+    var preFilter = newItems.length;
+    newItems = _pub_claudeFilter_(newItems);
+    claudeFiltered = preFilter - newItems.length;
+    Logger.log(_PUB_LOG_PREFIX_ + ' Claude filter: ' + preFilter + ' in → ' + newItems.length + ' out (' + claudeFiltered + ' filtered out)');
+  }
+
   // Write to sheet
   var written = 0;
   if (!dryRun && newItems.length > 0) {
@@ -166,6 +191,8 @@ function pubDiscoveryScan(opts) {
     totalFetched: allItems.length,
     aboveThreshold: scored.length,
     duplicates: dupCount,
+    claudeFilterEnabled: claudeFilterEnabled,
+    claudeFiltered: claudeFiltered,
     written: dryRun ? 0 : written,
     wouldWrite: dryRun ? newItems.length : 0,
     errors: errors,
@@ -722,6 +749,166 @@ function _pub_titleFingerprint_(title) {
   var words = clean.split(' ').filter(function(w) { return w.length > 1; });
   words.sort();
   return words.join('_');
+}
+
+// ---------------------------------------------------------------------------
+// Private: Claude Haiku relevance filter
+// ---------------------------------------------------------------------------
+
+/**
+ * Optional Claude Haiku filter. Takes up to _PUB_CLAUDE_BATCH_SIZE_ items
+ * (highest keyword score first), sends all titles+descriptions in ONE prompt,
+ * and returns only those whose Claude relevance score >= _PUB_CLAUDE_SCORE_THRESHOLD_.
+ *
+ * Graceful degradation: if CLAUDE_API_KEY is missing, daily cap is exceeded,
+ * or the API call fails, the function returns the input unchanged so the scan
+ * can continue with the keyword-scored list.
+ *
+ * @param {Array<Object>} items - Normalized, deduped items (all passing keyword threshold).
+ * @return {Array<Object>} Filtered items (unchanged if filter is skipped/fails).
+ */
+function _pub_claudeFilter_(items) {
+  // --- Guard: API key ---
+  var apiKey = '';
+  try { apiKey = (typeof _claudeKey_ === 'function') ? _claudeKey_() : ''; } catch(e) { apiKey = ''; }
+  if (!apiKey) {
+    Logger.log(_PUB_LOG_PREFIX_ + ' [Claude filter] SKIP — CLAUDE_API_KEY not set');
+    return items;
+  }
+
+  // --- Guard: daily cap (stored as "YYYY-MM-DD:count" in ScriptProperties) ---
+  var today = new Date();
+  var dateKey = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  var capPropKey = _PUB_CLAUDE_CAP_PROP_ + dateKey;
+  var callsToday = 0;
+  try {
+    callsToday = parseInt(PropertiesService.getScriptProperties().getProperty(capPropKey) || '0', 10);
+  } catch(e) { callsToday = 0; }
+
+  if (callsToday >= _PUB_CLAUDE_DAILY_CAP_) {
+    Logger.log(_PUB_LOG_PREFIX_ + ' [Claude filter] SKIP — daily cap reached (' + callsToday + '/' + _PUB_CLAUDE_DAILY_CAP_ + ')');
+    return items;
+  }
+
+  // --- Sort by keyword score desc, take top batch ---
+  var batch = items.slice().sort(function(a, b) { return b.score - a.score; });
+  batch = batch.slice(0, _PUB_CLAUDE_BATCH_SIZE_);
+
+  // Items outside the batch pass through automatically (already lower-scored)
+  var remainder = items.slice(_PUB_CLAUDE_BATCH_SIZE_);
+
+  // --- Build prompt ---
+  // One JSON array of {i, titolo, descrizione} → Claude returns [{i, score, reason}]
+  var inputArr = [];
+  for (var bi = 0; bi < batch.length; bi++) {
+    var it = batch[bi];
+    inputArr.push({
+      i: bi,
+      titolo: (it.titolo || '').substring(0, 200),
+      descrizione: (it.descrizione || '').substring(0, 300)
+    });
+  }
+
+  var systemPrompt = 'Sei un esperto di museologia e patrimonio culturale italiano. '
+    + 'Valuti la rilevanza di pubblicazioni accademiche e professionali per professionisti di musei, '
+    + 'con focus su: museologia, accessibilita, audience development, heritage digitale, '
+    + 'inclusione, patrimonio culturale, tecnologie per i musei.';
+
+  var userPrompt = 'Valuta la rilevanza di queste pubblicazioni per un osservatorio di cultura e musei.\n\n'
+    + 'Per ogni pubblicazione assegna:\n'
+    + '- score: intero 0-100 (0=irrilevante, 100=perfettamente pertinente)\n'
+    + '- reason: stringa breve (max 60 caratteri) che spiega il punteggio\n\n'
+    + 'Rispondi SOLO con un JSON array, nessun testo esterno:\n'
+    + '[{"i":0,"score":75,"reason":"..."},{"i":1,"score":30,"reason":"..."},...]\n\n'
+    + 'Input:\n' + JSON.stringify(inputArr);
+
+  // --- Call API ---
+  try {
+    Logger.log(_PUB_LOG_PREFIX_ + ' [Claude filter] Calling API — batch size: ' + batch.length);
+    var resp = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      payload: JSON.stringify({
+        model: OC_CLAUDE_MODEL,
+        max_tokens: 1200,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      }),
+      muteHttpExceptions: true,
+      deadline: 30
+    });
+
+    var code = resp.getResponseCode();
+
+    // Rate-limited: skip filter
+    if (code === 429) {
+      Logger.log(_PUB_LOG_PREFIX_ + ' [Claude filter] SKIP — HTTP 429 rate limit from Anthropic API');
+      return items;
+    }
+
+    if (code !== 200) {
+      Logger.log(_PUB_LOG_PREFIX_ + ' [Claude filter] SKIP — HTTP ' + code);
+      return items;
+    }
+
+    // Increment daily cap counter
+    try {
+      PropertiesService.getScriptProperties().setProperty(capPropKey, String(callsToday + 1));
+    } catch(e) { /* ignore */ }
+
+    // Parse response
+    var body = JSON.parse(resp.getContentText());
+    var text = (body.content && body.content[0] && body.content[0].text) || '[]';
+
+    // Extract JSON array (Claude sometimes wraps in markdown fences)
+    var m = text.match(/\[[\s\S]*\]/);
+    if (!m) {
+      Logger.log(_PUB_LOG_PREFIX_ + ' [Claude filter] Could not extract JSON array from response — using all batch items');
+      return items;
+    }
+
+    var results = JSON.parse(m[0]);
+
+    // Build score lookup {index -> claudeScore}
+    var scoreMap = {};
+    for (var ri = 0; ri < results.length; ri++) {
+      var r = results[ri];
+      if (typeof r.i !== 'undefined' && typeof r.score === 'number') {
+        scoreMap[r.i] = { score: r.score, reason: r.reason || '' };
+      }
+    }
+
+    // Filter batch: keep items whose Claude score >= threshold
+    var kept = [];
+    for (var ki = 0; ki < batch.length; ki++) {
+      var claudeResult = scoreMap[ki];
+      var claudeScore = claudeResult ? claudeResult.score : -1;
+      if (claudeScore < 0) {
+        // Claude didn't score this item — keep it (safe default)
+        Logger.log(_PUB_LOG_PREFIX_ + ' [Claude filter] Item ' + ki + ' not scored — keeping: "' + batch[ki].titolo + '"');
+        kept.push(batch[ki]);
+      } else if (claudeScore >= _PUB_CLAUDE_SCORE_THRESHOLD_) {
+        batch[ki].claudeScore = claudeScore;
+        batch[ki].claudeReason = claudeResult.reason;
+        kept.push(batch[ki]);
+        Logger.log(_PUB_LOG_PREFIX_ + ' [Claude filter] PASS ' + claudeScore + ' — "' + batch[ki].titolo + '" (' + claudeResult.reason + ')');
+      } else {
+        Logger.log(_PUB_LOG_PREFIX_ + ' [Claude filter] DROP ' + claudeScore + ' — "' + batch[ki].titolo + '" (' + claudeResult.reason + ')');
+      }
+    }
+
+    // Combine kept (from batch) + remainder (items beyond batch size, pass through)
+    Logger.log(_PUB_LOG_PREFIX_ + ' [Claude filter] Batch: ' + batch.length + ' in → ' + kept.length + ' kept; remainder (auto-pass): ' + remainder.length);
+    return kept.concat(remainder);
+
+  } catch (e) {
+    Logger.log(_PUB_LOG_PREFIX_ + ' [Claude filter] ERROR — ' + e.message + ' — returning all items unfiltered');
+    return items;
+  }
 }
 
 // ---------------------------------------------------------------------------

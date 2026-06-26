@@ -250,7 +250,12 @@ function doGet(e) {
       seedFontiNormativa:         seedFontiNormativa,
       seedFontiWelfare:           seedFontiWelfare,
       seedFontiDigital:           seedFontiDigital,
-      testAgentScan:              testAgentScan
+      testAgentScan:              testAgentScan,
+      apiScanEditoria:            typeof apiScanEditoria === 'function' ? apiScanEditoria : null,
+      pubDiscoveryTest:           typeof pubDiscoveryTest === 'function' ? pubDiscoveryTest : null,
+      pubDiscoveryScan:           typeof pubDiscoveryScan === 'function' ? pubDiscoveryScan : null,
+      pubDiscoveryStatus:         typeof pubDiscoveryStatus === 'function' ? pubDiscoveryStatus : null,
+      populaSeedVideoYoutubeMusei: typeof populaSeedVideoYoutubeMusei === 'function' ? populaSeedVideoYoutubeMusei : null
     };
     var fnName = params.fn || '';
     var fn = ALLOWED_FN[fnName];
