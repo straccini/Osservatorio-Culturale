@@ -282,6 +282,43 @@ function qaApplicaFixFonti(dryRun) {
   return rep;
 }
 
+/**
+ * Scova le fonti ATTIVE ma "silenti": producono ancora qualcosa (NRecordTotali>0) ma
+ * sono ferme — ultimo scan vuoto/errore, troppi fail consecutivi, o non scansionate da
+ * giorni. Sono le candidate da reindirizzare sul canale newsletter.
+ * (Le fonti a 0 record le gestisce qaDiagnosiFontiMorte.)
+ * @param {number} giorniStale soglia "non scansionata da N giorni" (default 14)
+ */
+function qaFontiSilenti(giorniStale) {
+  var sh = _qaSheet_('FontiFeed');
+  if (!sh || sh.getLastRow() < 2) return { ok: false, error: 'FontiFeed assente o vuoto' };
+  var v = sh.getDataRange().getValues(); var h = v[0];
+  function c(n) { return h.indexOf(n); }
+  var iNome = c('Nome'), iTipo = c('Tipo'), iAtt = c('Attiva'), iScan = c('UltimaScan'),
+      iEsito = c('UltimoEsito'), iTot = c('NRecordTotali'), iUlt = c('NRecordUltimo'), iFail = c('FailConsecutivi');
+  var stale = Number(giorniStale) || 14, now = Date.now(), silenti = [];
+  for (var r = 1; r < v.length; r++) {
+    if (!v[r][0]) continue;
+    if (!(v[r][iAtt] === true || String(v[r][iAtt]).toUpperCase() === 'TRUE')) continue; // solo attive
+    if (Number(v[r][iTot] || 0) === 0) continue; // le morte le gestisce qaDiagnosiFontiMorte
+    var esito = String(iEsito >= 0 ? v[r][iEsito] : '').toUpperCase();
+    var d = iScan >= 0 ? _qaParseDate_(v[r][iScan]) : null;
+    var gg = d ? Math.round((now - d.getTime()) / 86400000) : null;
+    var motivi = [];
+    if (esito.indexOf('EMPTY') === 0) motivi.push('ultimo scan vuoto');
+    if (esito.indexOf('ERROR') === 0) motivi.push('ultimo scan errore');
+    if (Number(v[r][iFail] || 0) >= 3) motivi.push('fail consecutivi ' + v[r][iFail]);
+    if (gg !== null && gg > stale) motivi.push('non scansionata da ' + gg + 'gg');
+    if (motivi.length) {
+      silenti.push({ nome: String(v[r][iNome] || ''), tipo: String(v[r][iTipo] || ''), recordTot: Number(v[r][iTot] || 0), ultimoEsito: String(v[r][iEsito] || ''), ggDaUltimaScan: gg, fail: Number(v[r][iFail] || 0), motivi: motivi });
+    }
+  }
+  silenti.sort(function(a, b) { return (b.ggDaUltimaScan || 0) - (a.ggDaUltimaScan || 0); });
+  var rep = { ok: true, sogliaGiorni: stale, totaleSilenti: silenti.length, fonti: silenti };
+  Logger.log('qaFontiSilenti: ' + JSON.stringify(rep, null, 2));
+  return rep;
+}
+
 // ----------------------------------------------------------------------------
 // HELPER conteggi
 // ----------------------------------------------------------------------------
