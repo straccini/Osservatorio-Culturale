@@ -56,3 +56,12 @@ function bandiPulisciVecchi(dryRun) {
   Logger.log('bandiPulisciVecchi(dryRun=' + dryRun + '): ' + JSON.stringify(rep, null, 2));
   return rep;
 }
+
+/**
+ * Applica davvero l'archiviazione degli scaduti (= bandiPulisciVecchi(false)).
+ * Lanciabile direttamente dal selettore funzioni dell'editor GAS (niente argomenti).
+ * Usare DOPO aver controllato l'anteprima con bandiPulisciVecchi().
+ */
+function bandiPulisciVecchiApplica() {
+  return bandiPulisciVecchi(false);
+}
