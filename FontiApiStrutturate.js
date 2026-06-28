@@ -528,7 +528,7 @@ var FAS_API_REGISTRY = [
     auth: 'Nessuna (open data)',
     alimenta: 'Bandi',
     stato: 'in_sviluppo',
-    motivoBlocco: 'Copertura nazionale completa: 20 regioni + ANAC + dati.gov.it (22 portali totali). Portali non raggiungibili saltati silenziosamente. Filtro rilevanza permissivo (tutti i risultati accettati se query contiene cultura/turismo).',
+    motivoBlocco: 'Copertura: 20 regioni + dati.gov.it. ANAC opendata ESCLUSO (dati.anticorruzione.it WAF-bloccato + dati storici): i bandi ANAC nuovi arrivano dalla BDNCP Pubblicità Legale (bdncp_pubblicita). Portali non raggiungibili saltati silenziosamente. Filtro rilevanza permissivo (cultura/turismo).',
     limiteRate: 'Variabile per portale',
     mappaCampi: 'title->Titolo, organization->Ente, notes->SommarioAI, resources[0].url->Link'
   },
