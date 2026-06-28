@@ -1410,6 +1410,78 @@ function _fasBdncpEstrai_(av) {
 // ============================================================================
 
 /**
+ * Parser Gazzetta Ufficiale 5ª Serie Speciale — Contratti Pubblici (sopra-soglia), filtrato cultura.
+ * RSS: https://www.gazzettaufficiale.it/rss/S5
+ *  - item <title> = ente; <description> = oggetto (spesso SINTETICO/generico, es. "Variante in
+ *    corso d'opera") → filtro FAS_BDNCP_CULTURA_RX su (ente + descrizione).
+ *  - LIMITE NOTO: descrizioni generiche → recall PARZIALE (cattura solo gli avvisi la cui
+ *    descrizione cita l'oggetto culturale). Recall pieno = fetch pagina avviso (N richieste,
+ *    rischio WAF/timeout) → escluso di proposito.
+ *  - <link> = pagina del singolo avviso (link specifico, ok per la regola #4).
+ *  - Gli item sono solo gli avvisi RECENTI (ultime gazzette) → intrinsecamente "nuovi": nessuna
+ *    scadenza nel feed, quindi non si filtra per data (non vengono archiviati da bandiPulisciVecchi).
+ *
+ * ⚠️ PREPARATO ma NON wirato ad alcun trigger / a fasRunFase2. Lanciare a mano: prima
+ *    fasParserGazzettaS5Test() (dry-run, non scrive), poi fasParserGazzettaS5() per importare.
+ *
+ * @param {Object} opts {dryRun}
+ */
+function fasParserGazzettaS5(opts) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var report = { ok: true, dryRun: dryRun, nuovi: 0, duplicati: 0, scartati: 0, errori: 0, esempi: [] };
+  var existingUrls = _fasLoadExistingUrls_();
+  try {
+    var resp = UrlFetchApp.fetch('https://www.gazzettaufficiale.it/rss/S5', {
+      muteHttpExceptions: true, followRedirects: true, deadline: 25,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaOC/1.0; cultural-observatory)', 'Accept': 'application/rss+xml,application/xml,text/xml' }
+    });
+    if (resp.getResponseCode() !== 200) {
+      report.ok = false; report.esempi.push({ errore: 'HTTP ' + resp.getResponseCode() });
+      Logger.log('[FAS] GU S5 HTTP ' + resp.getResponseCode()); return report;
+    }
+    var doc;
+    try { doc = XmlService.parse(resp.getContentText('UTF-8')); }
+    catch (e) { report.ok = false; report.errori++; report.esempi.push({ errore: 'XML parse: ' + e.message }); return report; }
+    var root = doc.getRootElement(), ns = root.getNamespace();
+    var channel = root.getChild('channel') || root.getChild('channel', ns);
+    var items = channel ? (channel.getChildren('item') || channel.getChildren('item', ns) || []) : [];
+    items.forEach(function (it) {
+      try {
+        function g(tag) { var el = it.getChild(tag) || it.getChild(tag, ns); return el ? String(el.getText() || '').trim() : ''; }
+        var ente = g('title'), descr = g('description'), link = g('link');
+        if (!link) return;
+        if (!FAS_BDNCP_CULTURA_RX.test((ente + ' ' + descr).toLowerCase())) { report.scartati++; return; }
+        if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
+        if (!dryRun) {
+          _fasSaveBando_({
+            titolo: String(descr || ente).substring(0, 300),
+            ente: ente.substring(0, 160),
+            livello: 'Nazionale',
+            settore: 'Contratto pubblico cultura — GU 5ª Serie',
+            urlBando: link,
+            sommario: descr.substring(0, 500),
+            ambito: 3,
+            fonteNome: 'Gazzetta Ufficiale 5ª Serie (Contratti)'
+          });
+          existingUrls[link.toLowerCase()] = true;
+        }
+        report.nuovi++;
+        if (report.esempi.length < 15) report.esempi.push({ ente: ente.substring(0, 60), oggetto: descr.substring(0, 90), link: link });
+      } catch (eI) { report.errori++; }
+    });
+    Logger.log('[FAS] GU S5: ' + items.length + ' item · ' + report.nuovi + ' cultura' + (dryRun ? ' (DRY-RUN)' : ' nuovi') + ' · ' + report.scartati + ' scartati · ' + report.duplicati + ' dup');
+  } catch (e) {
+    report.ok = false; report.errori++; report.esempi.push({ errore: e.message });
+    Logger.log('[FAS] GU S5 errore: ' + e.message);
+  }
+  return report;
+}
+
+/** Dry-run lanciabile dal selettore editor (non scrive nulla). */
+function fasParserGazzettaS5Test() { return fasParserGazzettaS5({ dryRun: true }); }
+
+/**
  * Esegue tutti i parser Fase 2: OpenCoesione + CKAN.
  */
 function fasRunFase2() {
