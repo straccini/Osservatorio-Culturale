@@ -1421,8 +1421,12 @@ function _fasBdncpEstrai_(av) {
  *  - Gli item sono solo gli avvisi RECENTI (ultime gazzette) → intrinsecamente "nuovi": nessuna
  *    scadenza nel feed, quindi non si filtra per data (non vengono archiviati da bandiPulisciVecchi).
  *
- * ⚠️ PREPARATO ma NON wirato ad alcun trigger / a fasRunFase2. Lanciare a mano: prima
- *    fasParserGazzettaS5Test() (dry-run, non scrive), poi fasParserGazzettaS5() per importare.
+ * ⛔ PARCHEGGIATO — valutato 2026-06-28, NON attivare. Il dry-run ha dato 6 item · 0 cultura:
+ *    l'RSS GU/S5 espone solo gli ultimissimi avvisi (volume irrisorio rispetto alle centinaia per
+ *    edizione) e con descrizioni spesso generiche → via RSS inadeguata. La copertura ANAC/contratti
+ *    cultura resta su fasParserBdncpCultura (BDNCP, attivo nel daily). Codice lasciato come
+ *    riferimento; NON wirato ad alcun trigger. Recall pieno = fetch pagina-avviso (rischio WAF/
+ *    timeout) → non vale il rapporto valore/rischio.
  *
  * @param {Object} opts {dryRun}
  */
