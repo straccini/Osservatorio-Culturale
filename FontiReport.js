@@ -229,14 +229,21 @@ function fontiAggiungiBatch() {
 }
 
 /**
- * Batch ISTITUZIONALI: feed RSS per-sezione verificati (additivo, pipeline news).
- * Regioni.it Cultura + Turismo (URL esatti estratti dall'indice ufficiale regioni.it/feed.php).
- * Ogni candidato passa per fontiAggiungiFeedVerificato (HTTP200 + RSS + dedup + audit).
+ * Batch ADDITIVI VERIFICATI (pipeline news): feed RSS controllati uno per uno (HTTP 200 + RSS
+ * valido) durante la verifica profonda del 2026-06-28. Tutti tematici/basso rumore.
+ *  - Regioni.it Cultura + Turismo (URL per-sezione dall'indice ufficiale regioni.it/feed.php)
+ *  - Riviste d'arte: Arte Magazine, Juliet, Espoarte (feed verificati validi)
+ * Ogni candidato ripassa per fontiAggiungiFeedVerificato (HTTP200 + RSS + dedup + audit).
+ * NB: esclusi di proposito (verifica): Gazzetta 5ª Serie (tutti i contratti = alto rumore, serve
+ * connettore bandi dedicato), Senato (403/WAF), SEDIA EU (richiede POST → test lato GAS).
  */
 function fontiAggiungiBatchIstituzionali() {
   var candidati = [
     { url: 'https://www.regioni.it/feed/news/cultura/', nome: 'Regioni.it — Cultura', ambito: 4 }, // comunità/territorio
-    { url: 'https://www.regioni.it/feed/news/turismo/', nome: 'Regioni.it — Turismo', ambito: 1 }  // identità/territorio
+    { url: 'https://www.regioni.it/feed/news/turismo/', nome: 'Regioni.it — Turismo', ambito: 1 }, // identità/territorio
+    { url: 'https://www.artemagazine.it/feed/',          nome: 'Arte Magazine',        ambito: 3 }, // mostre/musei
+    { url: 'https://www.juliet-artmagazine.com/feed/',   nome: 'Juliet Art Magazine',  ambito: 3 }, // arte contemporanea
+    { url: 'https://www.espoarte.net/feed/',             nome: 'Espoarte',             ambito: 3 }  // arte contemporanea
   ];
   var esiti = candidati.map(function(c) {
     var r = fontiAggiungiFeedVerificato(c.url, c.nome, c.ambito, 'Istituzionali-discovery 2026-06');
