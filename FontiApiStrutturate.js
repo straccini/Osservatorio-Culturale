@@ -1559,8 +1559,12 @@ function fasRunCompleto() {
 // ============================================================================
 
 /**
- * Parser ANAC OCDS — Contratti pubblici cultura/musei.
- * API: https://dati.anticorruzione.it/opendata/ocds_it
+ * @deprecated 2026-06-28 — NON usare per bandi nuovi. ANAC opendata (dati.anticorruzione.it)
+ * è WAF-bloccato (rifiuta le chiamate server-to-server: verificato HTTP 403) e fornisce solo
+ * dati STORICI (≤ set 2025), non bandi dal 01/06/2026 in avanti. Per l'ANAC dei bandi APERTI/
+ * nuovi usare fasParserBdncpCultura (BDNCP Pubblicità Legale). Già SKIP in FASE 2b dalla v4.20;
+ * lasciato solo per riferimento storico.
+ * Parser ANAC OCDS — Contratti pubblici cultura/musei. API: https://dati.anticorruzione.it/opendata/ocds_it
  */
 function fasParserAnac(opts) {
   opts = opts || {};

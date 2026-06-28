@@ -28,7 +28,7 @@ var FR_DEST_DEFAULT = 's.straccini@gmail.com';
 // Aggregatori critici da sorvegliare (#3). reachable = HTTP 2xx/3xx.
 var FR_AGGREGATORI = [
   { nome: 'TED — Tenders Electronic Daily (UE)', url: 'https://ted.europa.eu/en/', cat: 'bandi UE' },
-  { nome: 'ANAC / BDNCP (IT)', url: 'https://dati.anticorruzione.it/', cat: 'appalti IT' },
+  { nome: 'ANAC BDNCP — Pubblicità Legale (bandi aperti)', url: 'https://pubblicitalegale.anticorruzione.it/', cat: 'appalti IT' }, // NON dati.anticorruzione.it (opendata WAF-bloccato, storico → non usato)
   { nome: 'Creative Europe (UE)', url: 'https://culture.ec.europa.eu/creative-europe', cat: 'bandi cultura UE' },
   { nome: 'CORDIS (UE)', url: 'https://cordis.europa.eu/', cat: 'progetti UE' },
   { nome: 'EU Funding & Tenders Portal', url: 'https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/home', cat: 'bandi UE' },
