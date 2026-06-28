@@ -228,6 +228,25 @@ function fontiAggiungiBatch() {
   return { ok: true, aggiunte: aggiunte, totale: candidati.length, esiti: esiti };
 }
 
+/**
+ * Batch ISTITUZIONALI: feed RSS per-sezione verificati (additivo, pipeline news).
+ * Regioni.it Cultura + Turismo (URL esatti estratti dall'indice ufficiale regioni.it/feed.php).
+ * Ogni candidato passa per fontiAggiungiFeedVerificato (HTTP200 + RSS + dedup + audit).
+ */
+function fontiAggiungiBatchIstituzionali() {
+  var candidati = [
+    { url: 'https://www.regioni.it/feed/news/cultura/', nome: 'Regioni.it — Cultura', ambito: 4 }, // comunità/territorio
+    { url: 'https://www.regioni.it/feed/news/turismo/', nome: 'Regioni.it — Turismo', ambito: 1 }  // identità/territorio
+  ];
+  var esiti = candidati.map(function(c) {
+    var r = fontiAggiungiFeedVerificato(c.url, c.nome, c.ambito, 'Istituzionali-discovery 2026-06');
+    return { nome: c.nome, esito: r && r.ok ? 'AGGIUNTA' : ('saltata: ' + ((r && r.error) || '?')) };
+  });
+  var aggiunte = esiti.filter(function(e) { return e.esito === 'AGGIUNTA'; }).length;
+  Logger.log('fontiAggiungiBatchIstituzionali: ' + aggiunte + '/' + candidati.length + '\n' + JSON.stringify(esiti, null, 2));
+  return { ok: true, aggiunte: aggiunte, totale: candidati.length, esiti: esiti };
+}
+
 // ----------------------------------------------------------------------------
 // EMAIL
 // ----------------------------------------------------------------------------
