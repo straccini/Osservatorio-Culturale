@@ -1022,14 +1022,16 @@ function apiScanEditoria(opts) {
     Logger.log('apiScanEditoria Open Library errore: ' + e.message);
   }
 
-  // 7. Google Books (libri cultura, richiede API key)
-  try {
-    var gbooks = api_scanGoogleBooks_(opts, titoliEditoria);
-    report.googleBooks = gbooks;
-  } catch (e) {
-    report.googleBooks = { ok: false, errori: 1, dettagli: ['Errore: ' + e.message] };
-    Logger.log('apiScanEditoria Google Books errore: ' + e.message);
-  }
+  // 7. Google Books — DISABILITATO (quota GCP esaurita, progetto 624717413613)
+  // Riabilitare quando la quota viene aumentata o il progetto verificato.
+  // try {
+  //   var gbooks = api_scanGoogleBooks_(opts, titoliEditoria);
+  //   report.googleBooks = gbooks;
+  // } catch (e) {
+  //   report.googleBooks = { ok: false, errori: 1, dettagli: ['Errore: ' + e.message] };
+  //   Logger.log('apiScanEditoria Google Books errore: ' + e.message);
+  // }
+  report.googleBooks = { ok: true, fonte: 'Google Books', nuovi: 0, duplicati: 0, errori: 0, dettagli: ['Disabilitato: quota GCP esaurita'] };
 
   var durSec = Math.round((new Date().getTime() - t0) / 1000);
   report.durataSecondi = durSec;
