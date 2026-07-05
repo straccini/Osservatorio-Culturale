@@ -189,6 +189,8 @@ function getRelevantContent(email, agenteId, maxItems) {
     // Filtra score >= 40 e ordina decrescente
     scored = scored.filter(function(s) { return s.relevanceScore >= 40; });
     scored.sort(function(a, b) { return b.relevanceScore - a.relevanceScore; });
+    // v4.24 — Dedup fuzzy post-scoring (rimuove titoli simili dopo ordinamento per rilevanza)
+    scored = _dedupFuzzyByTitle_(scored);
 
     return { ok: true, items: scored.slice(0, maxItems), museo: museo };
   } catch(e) {
@@ -380,5 +382,181 @@ function _loadAgentContent_(agenteId) {
   }
   // Ordina per data decrescente
   items.sort(function(a, b) { return String(b.data).localeCompare(String(a.data)); });
+  // v4.24 — Dedup fuzzy: rimuove contenuti con titoli troppo simili (Jaccard > 0.65)
+  items = _dedupFuzzyByTitle_(items);
   return items;
+}
+
+/**
+ * v4.24 — Deduplicazione fuzzy per titoli simili.
+ * Confronta ogni coppia tramite similarità Jaccard sulle parole.
+ * Se due titoli condividono >65% delle parole, tiene solo il primo (più recente).
+ * Usata da _loadAgentContent_, getRelevantContent, buildTematicDigest.
+ *
+ * @param {Array} items — array con proprietà .titolo
+ * @param {number} [threshold] — soglia Jaccard 0.0-1.0 (default 0.65)
+ * @return {Array} items deduplicati
+ */
+function _dedupFuzzyByTitle_(items, threshold) {
+  threshold = threshold || 0.65;
+  if (!items || items.length < 2) return items || [];
+
+  // Parole significative: rimuove stopword e parole < 3 caratteri
+  var STOPWORDS = { 'il':1,'lo':1,'la':1,'le':1,'li':1,'gli':1,'un':1,'una':1,'uno':1,
+    'di':1,'del':1,'dei':1,'del':1,'della':1,'delle':1,'dello':1,'degli':1,
+    'da':1,'dal':1,'dai':1,'dalla':1,'dalle':1,'dallo':1,'dagli':1,
+    'in':1,'nel':1,'nei':1,'nella':1,'nelle':1,'nello':1,'negli':1,
+    'a':1,'al':1,'ai':1,'alla':1,'alle':1,'allo':1,'agli':1,
+    'con':1,'su':1,'sul':1,'sui':1,'sulla':1,'sulle':1,'sullo':1,'sugli':1,
+    'per':1,'tra':1,'fra':1,'e':1,'ed':1,'o':1,'ma':1,'che':1,
+    'the':1,'of':1,'and':1,'for':1,'to':1,'in':1,'a':1,'an':1,'on':1,'at':1,'by':1,
+    'news':1 };
+
+  function _getWords(title) {
+    return String(title || '').toLowerCase()
+      .replace(/[–—:;,.!?\(\)\[\]\"\'«»]/g, ' ')
+      .split(/\s+/)
+      .filter(function(w) { return w.length >= 3 && !STOPWORDS[w]; });
+  }
+
+  function _jaccard(wordsA, wordsB) {
+    if (!wordsA.length && !wordsB.length) return 1;
+    if (!wordsA.length || !wordsB.length) return 0;
+    var setB = {};
+    wordsB.forEach(function(w) { setB[w] = true; });
+    var intersection = 0;
+    var setA = {};
+    wordsA.forEach(function(w) {
+      setA[w] = true;
+      if (setB[w]) intersection++;
+    });
+    var union = Object.keys(setA).length + Object.keys(setB).length - intersection;
+    return union > 0 ? intersection / union : 0;
+  }
+
+  var result = [];
+  var wordCache = items.map(function(it) { return _getWords(it.titolo); });
+
+  for (var i = 0; i < items.length; i++) {
+    var dominated = false;
+    for (var j = 0; j < result.length; j++) {
+      var jIdx = result[j]._origIdx;
+      if (_jaccard(wordCache[i], wordCache[jIdx]) >= threshold) {
+        dominated = true;
+        break;
+      }
+    }
+    if (!dominated) {
+      items[i]._origIdx = i;
+      result.push(items[i]);
+    }
+  }
+
+  // Pulisci indice temporaneo
+  result.forEach(function(it) { delete it._origIdx; });
+  return result;
+}
+
+/**
+ * v4.24 — Jaccard similarity tra due stringhe titolo (utility per dedup sheet-level).
+ * Usata da dedupItemsByFingerprint (Bandi_v5.js) per dedup fuzzy a livello dati.
+ *
+ * @param {string} titleA
+ * @param {string} titleB
+ * @return {number} 0.0-1.0
+ */
+// ============================================================================
+// v4.25 — Contenuti agenti unificati per digest martedì
+// ============================================================================
+
+/**
+ * Raccoglie i migliori contenuti da TUTTI gli agenti per un utente.
+ * Usata dal digest unificato del martedì per integrare i contenuti agenti
+ * nelle sezioni del digest Matrix personalizzato.
+ *
+ * @param {string} email
+ * @param {number} [maxPerAgent] — max contenuti per agente (default 3)
+ * @return {Object} { ok, byAgent: {AG1: {agent, items}, ...}, allItems: [], museo }
+ */
+function getAllAgentContentForUser(email, maxPerAgent) {
+  maxPerAgent = maxPerAgent || 3;
+  try {
+    if (typeof OC_AGENTI === 'undefined' || !OC_AGENTI) return { ok:false, error:'OC_AGENTI non definito' };
+
+    var museo = (typeof getMuseoProfile === 'function') ? getMuseoProfile(email) : null;
+    var byAgent = {};
+    var allItems = [];
+
+    OC_AGENTI.forEach(function(agent) {
+      var relevant = getRelevantContent(email, agent.id, maxPerAgent);
+      var items = (relevant && relevant.ok && relevant.items) ? relevant.items : [];
+      // Arricchisci ogni item con info agente per rendering
+      items.forEach(function(it) {
+        it.agentId = agent.id;
+        it.agentCodice = agent.codice;
+        it.agentNome = agent.nome;
+        it.agentNomeBreve = agent.nomeBreve;
+        it.agentColor = agent.color;
+        it.agentIcon = agent.icon;
+      });
+      if (items.length > 0) {
+        byAgent[agent.codice] = { agent: agent, items: items };
+        allItems = allItems.concat(items);
+      }
+    });
+
+    // Dedup fuzzy globale (cross-agente)
+    allItems = _dedupFuzzyByTitle_(allItems);
+
+    return { ok: true, byAgent: byAgent, allItems: allItems, museo: museo };
+  } catch(e) {
+    Logger.log('getAllAgentContentForUser errore: ' + e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+/**
+ * Filtra contenuti agenti rimuovendo quelli già presenti nelle sezioni Matrix.
+ * Confronto fuzzy Jaccard (soglia 0.65) contro i titoli già inclusi.
+ *
+ * @param {Array} agentItems — array con .titolo
+ * @param {Array} matrixTitles — array di stringhe titolo già nel digest Matrix
+ * @return {Array} agentItems filtrati (senza duplicati vs Matrix)
+ */
+function _dedupAgentVsMatrix_(agentItems, matrixTitles) {
+  if (!agentItems || !agentItems.length || !matrixTitles || !matrixTitles.length) return agentItems || [];
+  return agentItems.filter(function(it) {
+    var titA = String(it.titolo || '').trim().toLowerCase();
+    if (!titA) return true;
+    for (var i = 0; i < matrixTitles.length; i++) {
+      if (_dedupFuzzyJaccard_(titA, String(matrixTitles[i]).trim().toLowerCase()) >= 0.65) {
+        return false; // duplicato vs Matrix, escludi
+      }
+    }
+    return true;
+  });
+}
+
+function _dedupFuzzyJaccard_(titleA, titleB) {
+  var STOPWORDS = { 'il':1,'lo':1,'la':1,'le':1,'li':1,'gli':1,'un':1,'una':1,'uno':1,
+    'di':1,'del':1,'dei':1,'della':1,'delle':1,'dello':1,'degli':1,
+    'da':1,'dal':1,'dai':1,'dalla':1,'dalle':1,'dallo':1,'dagli':1,
+    'in':1,'nel':1,'nei':1,'nella':1,'nelle':1,'nello':1,'negli':1,
+    'a':1,'al':1,'ai':1,'alla':1,'alle':1,'allo':1,'agli':1,
+    'con':1,'su':1,'sul':1,'sui':1,'sulla':1,'sulle':1,'sullo':1,'sugli':1,
+    'per':1,'tra':1,'fra':1,'e':1,'ed':1,'o':1,'ma':1,'che':1,
+    'the':1,'of':1,'and':1,'for':1,'to':1,'in':1,'a':1,'an':1,'on':1,'at':1,'by':1,
+    'news':1 };
+  function _w(t) {
+    return String(t||'').toLowerCase().replace(/[–—:;,.!?\(\)\[\]\"\'«»]/g,' ')
+      .split(/\s+/).filter(function(w){ return w.length >= 3 && !STOPWORDS[w]; });
+  }
+  var wA = _w(titleA), wB = _w(titleB);
+  if (!wA.length && !wB.length) return 1;
+  if (!wA.length || !wB.length) return 0;
+  var setB = {}; wB.forEach(function(w){ setB[w]=true; });
+  var setA = {}; var inter = 0;
+  wA.forEach(function(w){ setA[w]=true; if(setB[w]) inter++; });
+  var union = Object.keys(setA).length + Object.keys(setB).length - inter;
+  return union > 0 ? inter / union : 0;
 }

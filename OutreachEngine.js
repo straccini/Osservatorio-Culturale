@@ -202,7 +202,7 @@ function _outreachSendStep_(email, museo, step) {
       + '<p style="font-size:15px;color:#333;line-height:1.6">Sinopia monitora ogni giorno <b>bandi, notizie, podcast e opportunita</b> per musei e operatori culturali. Tutto gratuito, tutto mirato.</p>'
       + '<p style="font-size:15px;color:#333;line-height:1.6">Registrandoti ricevi una newsletter settimanale con i contenuti piu rilevanti per ' + (museo || 'la tua realta') + '.</p>'
       + '<a href="' + appUrl + '" style="display:inline-block;background:#935851;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600;margin:16px 0">Visita Sinopia &rarr;</a>'
-      + '<p style="font-size:13px;color:#888;margin-top:20px">Silvano Straccini — Sinopia<br>sinopiaconsulting@gmail.com</p></div>';
+      + '<p style="font-size:13px;color:#888;margin-top:20px">Silvano Straccini — Sinopia Consulting<br>sinopiaconsulting@gmail.com</p></div>';
   } else if (step === 2) {
     // Follow-up
     subject = 'Hai visto le opportunita per ' + (museo || 'il tuo territorio') + '?';
@@ -210,7 +210,7 @@ function _outreachSendStep_(email, museo, step) {
       + '<p style="font-size:15px;color:#333;line-height:1.6">Ti scrivo di nuovo perche ci sono <b>nuovi bandi e opportunita</b> che potrebbero interessare ' + (museo || 'la tua organizzazione') + '.</p>'
       + '<p style="font-size:15px;color:#333;line-height:1.6">In pochi minuti puoi attivare il tuo profilo e ricevere solo contenuti pertinenti:</p>'
       + '<a href="' + appUrl + '?goto=profilo-pro" style="display:inline-block;background:#935851;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600;margin:16px 0">Attiva il tuo profilo &rarr;</a>'
-      + '<p style="font-size:13px;color:#888;margin-top:20px">Silvano Straccini — Sinopia</p></div>';
+      + '<p style="font-size:13px;color:#888;margin-top:20px">Silvano Straccini — Duemilamusei</p></div>';
   } else {
     // Step 3: ultimo tentativo
     subject = 'Ultima segnalazione per ' + (museo || 'il tuo territorio');
@@ -218,14 +218,14 @@ function _outreachSendStep_(email, museo, step) {
       + '<p style="font-size:15px;color:#333;line-height:1.6">Questa e l\'ultima volta che ti scrivo. Se preferisci non ricevere aggiornamenti, non devi fare nulla.</p>'
       + '<p style="font-size:15px;color:#333;line-height:1.6">Se invece vuoi restare informato su bandi e opportunita culturali, il portale e sempre aperto:</p>'
       + '<a href="' + appUrl + '" style="display:inline-block;background:#935851;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600;margin:16px 0">Visita Sinopia &rarr;</a>'
-      + '<p style="font-size:13px;color:#888;margin-top:20px">Silvano Straccini — Sinopia</p></div>';
+      + '<p style="font-size:13px;color:#888;margin-top:20px">Silvano Straccini — Duemilamusei</p></div>';
   }
 
   MailApp.sendEmail({
     to: email,
     subject: subject,
     htmlBody: body,
-    name: 'Silvano Straccini — Sinopia',
+    name: 'Sinopia Consulting',
     replyTo: 'sinopiaconsulting@gmail.com'
   });
   if (typeof _digestMarkSent_ === 'function') _digestMarkSent_(email, 'outreach_step' + step);
@@ -252,7 +252,7 @@ function sendWelcomeEmail(email, nome) {
         + '<p style="font-size:15px;color:#333;line-height:1.6"><b>Prossimo passo:</b> completa il tuo profilo per ricevere contenuti mirati sui tuoi interessi specifici.</p>'
         + '<a href="' + appUrl + '?goto=profilo-pro" style="display:inline-block;background:#935851;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600;margin:16px 0">Completa il tuo profilo &rarr;</a>'
         + (calUrl ? '<p style="font-size:14px;color:#555;margin-top:20px;padding:14px;background:#F7F4EE;border-radius:8px"><b>Vuoi una consulenza gratuita?</b> Prenota 30 minuti con noi per capire come valorizzare il tuo progetto culturale.<br><a href="' + calUrl + '" style="color:#935851;font-weight:600">Prenota ora &rarr;</a></p>' : '')
-        + '<p style="font-size:13px;color:#888;margin-top:20px">Silvano Straccini — Sinopia<br><a href="' + appUrl + '" style="color:#935851">Sinopia · Osservatorio Culturale</a></p></div>',
+        + '<p style="font-size:13px;color:#888;margin-top:20px">Silvano Straccini — Duemilamusei<br><a href="' + appUrl + '" style="color:#935851">sinopia.duemilamusei.it</a></p></div>',
       name: 'Sinopia — Osservatorio Culturale',
       replyTo: 'sinopiaconsulting@gmail.com'
     });

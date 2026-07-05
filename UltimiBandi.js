@@ -34,7 +34,10 @@ function getUltimiBandiMonitorati(limit) {
       var db = b.dataRil instanceof Date ? b.dataRil.getTime() : 0;
       return db - da;
     });
-    return rows.slice(0, n).map(_mapBando_);
+    // Gate finale: filtro cultura + normalizzazione link prima dell'esposizione
+    return (typeof bandiGateFinale_ === 'function')
+      ? bandiGateFinale_(rows.slice(0, n).map(_mapBando_))
+      : rows.slice(0, n).map(_mapBando_);
   } catch (e) { Logger.log('getUltimiBandiMonitorati: ' + (e && e.message || e)); return []; }
 }
 
@@ -69,7 +72,10 @@ function getBandiListV42(limit) {
       var db = b.dataRil instanceof Date ? b.dataRil.getTime() : 0;
       return db - da;
     });
-    return rows.slice(0, n).map(_mapBando_);
+    // Gate finale: filtro cultura + normalizzazione link prima dell'esposizione
+    return (typeof bandiGateFinale_ === 'function')
+      ? bandiGateFinale_(rows.slice(0, n).map(_mapBando_))
+      : rows.slice(0, n).map(_mapBando_);
   } catch (e) { Logger.log('getBandiListV42: ' + (e && e.message || e)); return []; }
 }
 
@@ -322,49 +328,6 @@ function getLibriListV42(limit) {
 }
 
 // ------------------------------------------------------------
-//  5b) Editoria "Dalla ricerca" — pubblicazioni + podcast curati,
-//      normalizzati per il digest/newsletter (sezione "Dalla ricerca").
-//      Forma item: { tipo, fonte, url, titolo, autore, note }
-//      tipo ∈ 'pubblicazione' | 'podcast'
-// ------------------------------------------------------------
-function getEditoria(limit) {
-  var n = Number(limit) || 5;
-  var items = [];
-  try {
-    var libri = (typeof getLibriListV42 === 'function') ? getLibriListV42(n) : [];
-    libri.forEach(function(b){
-      items.push({
-        tipo  : 'pubblicazione',
-        titolo: String(b.titolo || ''),
-        autore: String(b.autore || ''),
-        fonte : String(b.editore || b.fonte || ''),
-        url   : String(b.link || ''),
-        note  : String(b.descrizione || ''),
-        _recente: !!b.isRecente
-      });
-    });
-  } catch(e) { Logger.log('getEditoria libri: ' + (e && e.message || e)); }
-  try {
-    var pod = (typeof getPodcastListV42 === 'function') ? getPodcastListV42(n) : [];
-    pod.forEach(function(p){
-      items.push({
-        tipo  : 'podcast',
-        titolo: String(p.titolo || ''),
-        autore: String(p.show || ''),
-        fonte : String(p.show || ''),
-        url   : String(p.link || ''),
-        note  : String(p.tematica || ''),
-        _recente: !!p.isRecente
-      });
-    });
-  } catch(e) { Logger.log('getEditoria podcast: ' + (e && e.message || e)); }
-  // Priorità ai contenuti recenti, poi taglia a n e rimuovi il flag interno
-  items.sort(function(a,b){ return (b._recente?1:0) - (a._recente?1:0); });
-  items = items.slice(0, n).map(function(x){ delete x._recente; return x; });
-  return { ok: true, items: items };
-}
-
-// ------------------------------------------------------------
 //  6) Elenco video YouTube (page-video) — dal foglio Podcast, ID=VID*
 // ------------------------------------------------------------
 function getVideoListV42(limit) {
@@ -457,6 +420,9 @@ function _radarBandiRows_(sh) {
   var iSomm   = _findCol_(head, ['SommarioAI','Sommario','Note']);
   var iSalv   = _findCol_(head, ['Salvato','salvato','SALVATO','Saved']);
   var iRegB   = _findCol_(head, ['Regione','regione','REGIONE','Region']);
+  var iTipoB  = _findCol_(head, ['TipoBando','tipoBando','TIPO_BANDO']);
+  var iSetCul = _findCol_(head, ['SettoreCultura','settoreCultura','SETTORE_CULTURA']);
+  var iCpv    = _findCol_(head, ['CPV','cpv','CpvCode']);
   if (iTitolo < 0) iTitolo = 1;
   var oggi = new Date(); oggi.setHours(0,0,0,0);
   var out = [];
@@ -487,7 +453,11 @@ function _radarBandiRows_(sh) {
       link    : iLink  >= 0 ? row[iLink]  : '',
       sommario: iSomm  >= 0 ? String(row[iSomm]||'') : '',
       salvato : iSalv  >= 0 ? row[iSalv]  : false,
-      regione : iRegB  >= 0 ? String(row[iRegB]||'') : ''
+      regione : iRegB  >= 0 ? String(row[iRegB]||'') : '',
+      tipoBando: iTipoB >= 0 ? String(row[iTipoB]||'') : '',
+      settoreCultura: iSetCul >= 0 ? String(row[iSetCul]||'') : '',
+      cpv: iCpv >= 0 ? String(row[iCpv]||'') : '',
+      cpvDescrizione: iCpv >= 0 ? (typeof getCpvDescrizione === 'function' ? getCpvDescrizione(String(row[iCpv]||'')) : '') : ''
     });
   }
   return out;
@@ -519,7 +489,11 @@ function _mapBando_(x) {
     link     : String(x.link || ''),
     sommario: String(x.sommario || ''),
     salvato : x.salvato === true || x.salvato === 'TRUE' || x.salvato === 1 || String(x.salvato).toLowerCase() === 'true',
-    regione : String(x.regione || '')
+    regione : String(x.regione || ''),
+    tipoBando: String(x.tipoBando || ''),
+    settoreCultura: String(x.settoreCultura || ''),
+    cpv: String(x.cpv || ''),
+    cpvDescrizione: String(x.cpvDescrizione || '')
   };
 }
 

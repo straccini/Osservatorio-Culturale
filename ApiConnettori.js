@@ -660,7 +660,12 @@ function api_scanTed_(opts) {
  */
 function api_scanItunes_(opts, titoliEditoria) {
   var report = { nuovi: 0, duplicati: 0, errori: 0 };
-  var terms = ['museo italiano', 'patrimonio culturale', 'heritage museum', 'cultural policy'];
+  // v4.25 — Espansi da 4 a 10 termini per maggiore copertura podcast culturali
+  var terms = [
+    'museo italiano', 'patrimonio culturale', 'heritage museum', 'cultural policy',
+    'beni culturali podcast', 'arte contemporanea italia', 'archeologia italiana',
+    'turismo culturale', 'accessibilità musei', 'restauro conservazione'
+  ];
 
   for (var t = 0; t < terms.length; t++) {
     try {
@@ -827,7 +832,12 @@ function api_scanYouTube_(opts, titoliEditoria) {
     return report;
   }
 
-  var terms = ['museo patrimonio culturale', 'cultural heritage museum', 'innovazione museale'];
+  // v4.25 — Espansi da 3 a 8 termini per maggiore copertura video culturali
+  var terms = [
+    'museo patrimonio culturale', 'cultural heritage museum', 'innovazione museale',
+    'accessibilità museo italia', 'restauro beni culturali', 'allestimento museale',
+    'turismo culturale italia', 'archeologia italiana documentario'
+  ];
 
   for (var t = 0; t < terms.length; t++) {
     try {

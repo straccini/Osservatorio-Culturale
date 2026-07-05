@@ -589,6 +589,30 @@
           <input type="search" id="bandiSearch" aria-label="Cerca bandi" placeholder="Cerca per titolo, ente, settore, regione o parola chiave…" oninput="OC.searchBandi(this.value)" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
         </div>
       </div>
+      <!-- v4.25.3 — Tipo bando: dropdown con checkbox multi-select + conteggi -->
+      <div id="bandiTipoDropdown" style="position:relative;display:inline-block;margin-bottom:10px">
+        <button id="bandiTipoBtn" onclick="OC.toggleTipoDropdown()" style="padding:8px 16px;border:2px solid var(--accent,#8B3A1F);border-radius:14px;background:#fff;font-size:13px;color:var(--ink,#101010);cursor:pointer;font-weight:600;display:flex;align-items:center;gap:6px">
+          Tipo bando ▾ <span id="bandiTipoCountBadge" style="background:var(--accent,#8B3A1F);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px">tutti</span>
+        </button>
+        <div id="bandiTipoMenu" style="display:none;position:absolute;top:100%;left:0;z-index:100;background:#fff;border:1px solid var(--rule-2,#D2D2D7);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px 0;min-width:260px;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:#92400E;border-bottom:1px solid #f0f0f0">
+            <input type="checkbox" value="finanziamento" onchange="OC.toggleBandiTipo()" checked style="accent-color:#D97706;width:16px;height:16px"> 💰 Finanziamenti <span id="cnt_finanziamento" style="margin-left:auto;font-size:11px;color:#aaa"></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:#1E40AF;border-bottom:1px solid #f0f0f0">
+            <input type="checkbox" value="servizio_fornitura" onchange="OC.toggleBandiTipo()" checked style="accent-color:#3B82F6;width:16px;height:16px"> 🔧 Servizi e Forniture <span id="cnt_servizio_fornitura" style="margin-left:auto;font-size:11px;color:#aaa"></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:#065F46;border-bottom:1px solid #f0f0f0">
+            <input type="checkbox" value="lavori" onchange="OC.toggleBandiTipo()" checked style="accent-color:#059669;width:16px;height:16px"> 🏗 Lavori <span id="cnt_lavori" style="margin-left:auto;font-size:11px;color:#aaa"></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:500;color:#854D0E;background:#FFFBEB">
+            <input type="checkbox" value="_senza" onchange="OC.toggleBandiTipo()" checked style="accent-color:#EAB308;width:16px;height:16px"> ⚠ Senza categoria <span id="cnt_senza" style="margin-left:auto;font-size:11px;color:#aaa"></span>
+          </label>
+          <div style="padding:6px 16px;border-top:1px solid #f0f0f0;display:flex;gap:8px">
+            <button onclick="OC.selezionaTuttiBandiTipo(true)" style="flex:1;padding:4px;border:1px solid #ddd;border-radius:6px;background:#f9f9f9;cursor:pointer;font-size:11px">Seleziona tutti</button>
+            <button onclick="OC.selezionaTuttiBandiTipo(false)" style="flex:1;padding:4px;border:1px solid #ddd;border-radius:6px;background:#f9f9f9;cursor:pointer;font-size:11px">Deseleziona</button>
+          </div>
+        </div>
+      </div>
       <div class="filters filters-tools" id="bandiTools" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">
         <select id="bandiTema" class="filter-select" onchange="OC.setBandiTema(this.value)" title="Filtra i bandi mostrati per area tematica (ambito 01-05 della tassonomia Osservatorio)" style="padding:8px 14px;border:1px solid var(--rule-2,#D2D2D7);border-radius:14px;background:#fff;font-size:13px;color:var(--ink,#101010);cursor:pointer">
           <option value="0">Tutte le tematiche</option>
@@ -606,9 +630,15 @@
           <option value="spettacolo">Spettacolo dal vivo · CPV 92312/92320</option>
           <option value="archeologia">Archeologia · CPV 45112450</option>
         </select>
-        <select id="bandiRegione" class="filter-select" onchange="OC.setBandiRegione(this.value)" title="Filtra i bandi per regione (i bandi nazionali/UE senza regione restano in 'Tutte')" style="padding:8px 14px;border:1px solid var(--rule-2,#D2D2D7);border-radius:14px;background:#fff;font-size:13px;color:var(--ink,#101010);cursor:pointer">
-          <option value="">Tutte le regioni</option>
-          <option>Abruzzo</option><option>Basilicata</option><option>Calabria</option><option>Campania</option><option>Emilia-Romagna</option><option>Friuli-Venezia Giulia</option><option>Lazio</option><option>Liguria</option><option>Lombardia</option><option>Marche</option><option>Molise</option><option>Piemonte</option><option>Puglia</option><option>Sardegna</option><option>Sicilia</option><option>Toscana</option><option>Trentino-Alto Adige</option><option>Umbria</option><option>Valle d'Aosta</option><option>Veneto</option>
+        <select id="bandiRegione" class="filter-select" onchange="OC.setBandiRegione(this.value)" title="Filtra per ambito geografico: Europa (bandi UE), Italia (bandi nazionali), oppure per singola regione" style="padding:8px 14px;border:1px solid var(--rule-2,#D2D2D7);border-radius:14px;background:#fff;font-size:13px;color:var(--ink,#101010);cursor:pointer">
+          <option value="">UE / It / Regione</option>
+          <optgroup label="Ambito geografico">
+            <option value="_europa">🇪🇺 Europa (bandi UE)</option>
+            <option value="_italia">🇮🇹 Italia (nazionali)</option>
+          </optgroup>
+          <optgroup label="Regioni italiane">
+            <option>Abruzzo</option><option>Basilicata</option><option>Calabria</option><option>Campania</option><option>Emilia-Romagna</option><option>Friuli-Venezia Giulia</option><option>Lazio</option><option>Liguria</option><option>Lombardia</option><option>Marche</option><option>Molise</option><option>Piemonte</option><option>Puglia</option><option>Sardegna</option><option>Sicilia</option><option>Toscana</option><option>Trentino-Alto Adige</option><option>Umbria</option><option>Valle d'Aosta</option><option>Veneto</option>
+          </optgroup>
         </select>
         <select id="bandiPreset" class="filter-select" onchange="OC.setBandiPreset(this.value)" title="Filtro rapido: tutti i bandi / solo urgenti (scadenza ≤10gg) / solo gli ultimi 30gg rilevati / solo quelli che hai marcato con ★" style="padding:8px 14px;border:1px solid var(--rule-2,#D2D2D7);border-radius:14px;background:#fff;font-size:13px;color:var(--ink,#101010);cursor:pointer">
           <option value="tutti">Tutti i bandi</option>
@@ -625,19 +655,7 @@
         </select>
         <button class="filter-chip" onclick="OC.exportBandiCSV()" title="Scarica i bandi filtrati in CSV" style="white-space:nowrap;padding:8px 14px">⤓&nbsp;Esporta CSV</button>
       </div>
-      <div class="filters" id="bandiViewToggle" style="margin-top:6px">
-        <button class="filter-chip active" data-view="lista">Lista</button>
-        <button class="filter-chip" data-view="scadenzario">Scadenzario</button>
-        <button class="filter-chip" data-view="regioni">Regioni</button>
-      </div>
-      <div class="filters" id="bandiSettoreFilters" style="margin-top:6px">
-        <button class="filter-chip active" data-settore="">Tutti i settori</button>
-        <button class="filter-chip" data-settore="musei">🏛 Musei</button>
-        <button class="filter-chip" data-settore="biblioteche">📚 Biblioteche</button>
-        <button class="filter-chip" data-settore="patrimonio">🏗 Patrimonio</button>
-        <button class="filter-chip" data-settore="spettacolo">🎭 Spettacolo</button>
-        <button class="filter-chip" data-settore="archeologia">⛏ Archeologia</button>
-      </div>
+      <!-- TipoBando filter è il primo select nella barra filtri sopra -->
       <div id="bandiList" aria-live="polite">
         <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
@@ -2003,14 +2021,24 @@
           <h3 style="margin-top:0;font-size:15px">Automazione newsletter</h3>
           <p class="hint" style="margin-bottom:10px">Invio automatico settimanale. Richiede bot Telegram configurato per le autorizzazioni.</p>
           <div style="background:var(--surface-2);border-radius:8px;padding:12px 14px">
-            <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:4px">Newsletter (Coorte A+B)</div>
-            <div id="cronCoortiStatus" style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:4px">Invio automatico ogni <b>lunedi alle 07:00</b></div>
-            <div style="font-size:12px;color:var(--ink-2);margin-bottom:6px">Include generalisti + lead personalizzati.</div>
+            <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:4px">Digest Lettori (Coorte A) &mdash; Luned&igrave;</div>
+            <div id="cronCoortiStatus" style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:4px">Invio manuale ogni <b>luned&igrave;</b> &mdash; solo iscritti MailingList</div>
+            <div style="font-size:12px;color:var(--ink-2);margin-bottom:6px">Solo Coorte A (lettori generalisti). I profilati ricevono il <b>marted&igrave;</b>.</div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-              <button class="btn btn-secondary" onclick="OC._dryRunCoorti()" style="font-size:11px;padding:4px 10px" title="Simula invio senza inviare email">Dry-run</button>
-              <button class="btn btn-secondary" onclick="OC._eseguiCoorti()" style="font-size:11px;padding:4px 10px" title="Esegui invio reale a entrambe le coorti">Esegui invio</button>
+              <button class="btn btn-secondary" onclick="OC._dryRunCoorti()" style="font-size:11px;padding:4px 10px" title="Simula invio senza inviare email">Dry-run lettori</button>
+              <button class="btn btn-secondary" onclick="OC._eseguiCoorti()" style="font-size:11px;padding:4px 10px" title="Esegui invio reale ai soli lettori (Coorte A)">Invia lettori luned&igrave;</button>
             </div>
-            <div id="cronCoortiResult" style="font-size:11px;color:var(--ink-3)">Gestito da: <code>sendDigestAuto2coorti</code></div>
+            <div id="cronCoortiResult" style="font-size:11px;color:var(--ink-3)">Gestito da: <code>sendDigestAuto2coorti</code> (solo Coorte A)</div>
+          </div>
+          <div style="background:var(--surface-2);border-radius:8px;padding:12px 14px;margin-top:10px">
+            <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:4px">Digest Profilati (Coorte B + Agenti) &mdash; Marted&igrave;</div>
+            <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:4px">Trigger automatico <b>marted&igrave; 07:30</b></div>
+            <div style="font-size:12px;color:var(--ink-2);margin-bottom:6px">Matrix personalizzati + email agenti tematici.</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+              <button class="btn btn-secondary" onclick="OC._dryRunProfilati()" style="font-size:11px;padding:4px 10px">Dry-run profilati</button>
+              <button class="btn btn-secondary" onclick="OC._eseguiProfilati()" style="font-size:11px;padding:4px 10px">Invia profilati marted&igrave;</button>
+            </div>
+            <div id="cronProfilatiResult" style="font-size:11px;color:var(--ink-3)">Gestito da: <code>sendDigestProfilatiMartedi</code></div>
           </div>
           <!-- v4.24.13 — Lunedì 09:00 con autorizzazione Telegram -->
           <div style="margin-top:12px;padding:10px 14px;background:var(--surface-2);border-radius:8px">
@@ -3292,6 +3320,9 @@
     spettacolo: 'Spettacolo', archeologia: 'Archeologia'
   };
   var _filterBandiSettore = '';
+  // v4.25.3: mappa tipo→bool (multi-select dropdown)
+  var _filterBandiTipi = { finanziamento:true, servizio_fornitura:true, lavori:true, '_senza':true };
+  var _filterBandiTipiAttivo = false;
 
   /** Invalidate cache for a tipo — replaces 4 identical if/else chains */
   function _invalidateCache(tipo) {
@@ -4655,6 +4686,77 @@
       + '</div>';
   }
 
+  // v4.25 — Badge tipo bando
+  var _TIPO_BANDO_LABELS = { finanziamento:'💰 Finanziamento', servizio_fornitura:'🔧 Servizi/Forniture', servizio:'🔧 Servizio', fornitura:'📦 Fornitura', lavori:'🏗 Lavori' };
+  var _SETTORE_CULTURA_LABELS = { musei:'🏛 Musei e patrimonio museale', biblioteche:'📚 Biblioteche e archivi', patrimonio:'🏗 Patrimonio e conservazione', spettacolo:'🎭 Spettacolo e arti performative', archeologia:'⛏ Archeologia' };
+
+  // v4.25.9 — Aggiorna conteggi nelle option di un <select>
+  // Formato: "Testo originale (N)" — aggiorna solo il numero tra parentesi
+  function _updateSelectCounts_(selectId, valueCounts, labelCounts) {
+    var sel = document.getElementById(selectId);
+    if (!sel) return;
+    var opts = sel.options;
+    for (var i = 0; i < opts.length; i++) {
+      // Preserva il value originale PRIMA di modificare il testo
+      // (option senza attributo value usano textContent come valore)
+      if (!opts[i].getAttribute('value') && opts[i].textContent) {
+        var origVal = opts[i].textContent.replace(/\s*\(\d+\)\s*$/, '').trim();
+        opts[i].setAttribute('value', origVal);
+      }
+      var val = opts[i].getAttribute('value') || '';
+      var txt = opts[i].textContent.replace(/\s*\(\d+\)\s*$/, ''); // rimuovi vecchio conteggio
+      var count = null;
+      // Cerca per value esatto
+      if (val && valueCounts && valueCounts[val] !== undefined) {
+        count = valueCounts[val];
+      }
+      // Cerca per label nelle labelCounts
+      if (count === null && labelCounts) {
+        var txtLower = txt.toLowerCase().trim();
+        if (labelCounts[txtLower] !== undefined) count = labelCounts[txtLower];
+        if (count === null && val && labelCounts[val] !== undefined) count = labelCounts[val];
+        // Match parziale per settore (es. "Musei · CPV 9252x" → "musei")
+        if (count === null) {
+          var keys = Object.keys(labelCounts);
+          for (var k = 0; k < keys.length; k++) {
+            if (txtLower.indexOf(keys[k]) >= 0) { count = labelCounts[keys[k]]; break; }
+          }
+        }
+      }
+      if (count !== null) {
+        opts[i].textContent = txt + ' (' + count + ')';
+      }
+    }
+  }
+
+  // v4.25.9 — Riga CPV/settore informativa sotto il titolo del bando
+  function _brCpvLine_(b) {
+    var parts = [];
+    // 1. CPV numerico + descrizione (se presente)
+    if (b.cpv) {
+      parts.push('<span style="font-weight:600;color:var(--accent,#8B3A1F)">CPV ' + esc(b.cpv) + '</span>');
+      if (b.cpvDescrizione) parts.push('<span style="font-style:italic">' + esc(b.cpvDescrizione) + '</span>');
+    }
+    // 2. Settore cultura classificato (se presente e diverso da CPV desc)
+    if (b.settoreCultura) {
+      var scLabel = _SETTORE_CULTURA_LABELS[(b.settoreCultura||'').toLowerCase()] || b.settoreCultura;
+      if (!b.cpvDescrizione || scLabel !== b.cpvDescrizione) {
+        parts.push('<span style="color:#065F46;font-weight:500">' + esc(scLabel) + '</span>');
+      }
+    }
+    // 3. Settore generico come fallback (se nessun CPV e nessun settoreCultura)
+    if (!parts.length && b.settore) {
+      var settore = String(b.settore||'');
+      // Pulisci settori generici poco utili
+      if (settore !== 'Appalti pubblici cultura — TED' && settore !== 'Appalto cultura — BDNCP/ANAC') {
+        parts.push('<span style="color:var(--ink-3,#888)">' + esc(settore) + '</span>');
+      }
+    }
+    if (!parts.length) return '';
+    return '<div class="br-cpv-line" style="font-size:11.5px;color:var(--ink-3,#888);margin:4px 0 6px;line-height:1.5;display:flex;flex-wrap:wrap;gap:4px;align-items:baseline">' + parts.join('<span style="color:#ccc;margin:0 2px">·</span>') + '</div>';
+  }
+  function _tipoBadgeLabel_(tipo) { return _TIPO_BANDO_LABELS[tipo] || tipo || ''; }
+
   function _brRowHtml_(b) {
     var ambN     = _ambNum_(b.ambito) || _ambNum_(b.settore) || 0;
     var giorni   = (b.giorni != null) ? parseInt(b.giorni, 10) : null;
@@ -4679,9 +4781,14 @@
       ? '<div class="br-scad' + (isUrgent ? ' br-scad-urgent' : isMed ? ' br-scad-med' : '') + '">' + esc(b.scadenza) + giorniHtml + '</div>'
       : '<div class="br-scad br-scad-nd">Data n.d.</div>';
 
-    // Link CTA
+    // Link CTA — usa linkTipo dal gate finale (diretto/generico/consulta)
+    var _lt = b.linkTipo || (url ? 'diretto' : '');
+    var _lLabel, _lTitle;
+    if (_lt === 'generico')      { _lLabel = '&#8599;&nbsp;Consulta il sito'; _lTitle = 'Il bando non ha un link diretto: apri il sito dell\'ente'; }
+    else if (_lt === 'consulta') { _lLabel = '&#128269;&nbsp;Cerca il bando';  _lTitle = 'Nessun link disponibile: ricerca web mirata su titolo ed ente'; }
+    else                         { _lLabel = '&#8599;&nbsp;Apri scheda';        _lTitle = 'Apri scheda ufficiale del bando'; }
     var linkHtml = url
-      ? '<a class="br-link" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Apri scheda ufficiale del bando">&#8599;&nbsp;Apri scheda</a>'
+      ? '<a class="br-link' + (_lt !== 'diretto' ? ' br-link-alt' : '') + '" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="' + _lTitle + '">' + _lLabel + '</a>'
       : '<span class="br-link br-link-nd">Nessun link</span>';
 
     // Bottoni azione
@@ -4694,6 +4801,7 @@
       + '<div class="br-left">'
       +   '<div class="br-tags">'
       +     '<span class="br-tema' + temaCls + '">' + esc(temaLabel) + '</span>'
+      +     (b.tipoBando ? '<span class="br-tipo-badge br-tipo-' + esc(b.tipoBando) + '">' + _tipoBadgeLabel_(b.tipoBando) + '</span>' : '')
       +     (isUrgent ? '<span class="br-badge-urgent">&#9889;&nbsp;Urgente</span>' : '')
       +     (b.isRecente && !isUrgent ? '<span class="br-badge-new">Nuovo</span>' : '')
       +     (b.settoreCultura ? '<span class="nr-fonte" style="font-size:11px">' + (CPV_CULTURA_LABELS[(b.settoreCultura||'').toLowerCase()] || b.settoreCultura) + '</span>' : '')
@@ -4702,6 +4810,7 @@
       +     esc(b.titolo || '(senza titolo)')
       +   '</p>'
       +   (sommario ? '<p class="br-summary">' + esc(trunc(sommario, 180)) + '</p>' : '')
+      +   _brCpvLine_(b)
       +   '<div class="br-meta">'
       +     (b.ente    ? '<span class="br-ente">' + esc(b.ente) + '</span>' : '')
       +     (b.regione ? '<span class="br-sep">&middot;</span><span>' + esc(b.regione) + '</span>' : '')
@@ -4921,7 +5030,21 @@
   }
   function _regioneMatch_(b, reg){
     if (!reg) return true;
-    return String(b.regione||'').toLowerCase().indexOf(String(reg).toLowerCase()) >= 0;
+    var regione = String(b.regione||'').toLowerCase().trim();
+    var livello = String(b.livello||'').toLowerCase().trim();
+    var ente = String(b.ente||'').toLowerCase().trim();
+    var settore = String(b.settore||'').toLowerCase().trim();
+    // v4.25 — Filtro Europa: bandi UE/europei
+    if (reg === '_europa') {
+      return livello === 'eu' || livello === 'europeo' || /eu\b|europ|ted|creative europe|horizon|erasmus|interreg|cerv\b|life\b/i.test(settore + ' ' + ente);
+    }
+    // v4.25 — Filtro Italia: bandi nazionali (non UE, non regionali specifici)
+    if (reg === '_italia') {
+      var isEu = livello === 'eu' || /europ|ted\b/i.test(settore + ' ' + ente);
+      return !isEu && (livello === 'nazionale' || !regione || regione === 'vari' || regione === 'italia' || /nazional|ministerial|mic\b|pnrr/i.test(ente + ' ' + settore));
+    }
+    // Regione specifica
+    return regione.indexOf(String(reg).toLowerCase()) >= 0;
   }
 
   function renderBandiList(list){
@@ -4931,6 +5054,29 @@
     var preset = _filterBandi.preset || 'tutti';
     var fAmb   = _filterBandi.amb || 0;
     var q      = String(_filterBandi.q || '').trim().toLowerCase();
+    // v4.25.9 — Pre-calcola conteggi PRIMA dei filtri (tipo, località, settore cultura)
+    var _tipoCounts = {};
+    var _locCounts = { _europa:0, _italia:0 };
+    var _regioneCounts = {};
+    var _cpvCounts = {};
+    (list||[]).forEach(function(b){
+      // Tipo bando
+      var t = b.tipoBando || '';
+      if (t) _tipoCounts[t] = (_tipoCounts[t]||0) + 1;
+      else _tipoCounts['_senza'] = (_tipoCounts['_senza']||0) + 1;
+      // Località
+      var liv = String(b.livello||'').toLowerCase();
+      var set = String(b.settore||'').toLowerCase();
+      var ent = String(b.ente||'').toLowerCase();
+      if (liv === 'eu' || /europ|ted\b|creative europe|horizon/i.test(set + ' ' + ent)) _locCounts._europa++;
+      else _locCounts._italia++;
+      // Regione
+      var reg = String(b.regione||'').trim();
+      if (reg && reg !== 'Vari' && reg !== 'Tutte') _regioneCounts[reg] = (_regioneCounts[reg]||0) + 1;
+      // Settore cultura
+      var sc = String(b.settoreCultura||'').toLowerCase();
+      if (sc) _cpvCounts[sc] = (_cpvCounts[sc]||0) + 1;
+    });
     var sort   = _filterBandi.sort || 'scadenza-asc';
     var total  = list.length;
 
@@ -4984,7 +5130,14 @@
       if (_filterBandi.cpv && !_cpvCulturaMatch_(b, _filterBandi.cpv)) return;
       if (_filterBandi.regione && !_regioneMatch_(b, _filterBandi.regione)) return;
 
-      // v5.2 — Filtro settore cultura (chip bar)
+      // v4.25.4 — Filtro tipo bando multi-select (conteggi già calcolati sopra)
+      if (_filterBandiTipiAttivo) {
+        var bTipo = b.tipoBando || '';
+        if (!bTipo) { if (!_filterBandiTipi['_senza']) return; }
+        else if (!_filterBandiTipi[bTipo]) return;
+      }
+
+      // v5.2 — Filtro settore cultura (chip bar — rimosso dalla UI ma logica preservata per compatibilità)
       if (_filterBandiSettore) {
         if (!_cpvCulturaMatch_(b, _filterBandiSettore)) return;
       }
@@ -5005,6 +5158,25 @@
       else cnt.textContent = shown < total ? shown + ' di ' + total + ' bandi' : total + ' bandi monitorati';
     }
 
+    // v4.25.3 — Aggiorna conteggi nel dropdown tipo bando
+    ['finanziamento','servizio_fornitura','lavori','_senza'].forEach(function(k){
+      var el = document.getElementById('cnt_' + k);
+      if (el) el.textContent = '(' + (_tipoCounts[k]||0) + ')';
+    });
+    // Totale nel badge
+    var badgeEl = $('bandiTipoCountBadge');
+    if (badgeEl) {
+      if (!_filterBandiTipiAttivo) badgeEl.textContent = total;
+      else badgeEl.textContent = shown + '/' + total;
+    }
+
+    // v4.25.9 — Aggiorna conteggi nelle tendine Località e Settore cultura
+    _updateSelectCounts_('bandiRegione', {
+      '_europa': _locCounts._europa,
+      '_italia': _locCounts._italia
+    }, _regioneCounts);
+    _updateSelectCounts_('bandiCpv', {}, _cpvCounts);
+
     if (!shown) {
       wrap.innerHTML = '';
       if (em) { em.textContent = 'Nessun bando trovato per questo filtro.'; em.hidden = false; }
@@ -5022,10 +5194,6 @@
       altri.forEach(function(x){ html += _brRowHtml_(x.b); });
     }
     wrap.innerHTML = html;
-    // v4.18.9 — chip rimossi, i 2 select si auto-sincronizzano via stato HTML
-    // v5.2 — Settore chips: visibili solo per livello >= 1
-    var settoreBar = document.getElementById('bandiSettoreFilters');
-    if (settoreBar) settoreBar.style.display = (typeof _ocLivello === 'function' && _ocLivello() >= 1) ? '' : 'none';
   }
   // ---- Scadenzario bandi — vista timeline per scadenza ----
   function renderScadenzario(bandi) {
@@ -8798,15 +8966,15 @@
       .testDigestInviaAdmin((window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
-  // v4.20 — Cron coorti dry-run
+  // v4.24 — Cron coorti (solo lettori lunedì)
   function _dryRunCoorti() {
     if (!hasGAS()) return;
-    showToast('Dry-run coorti in corso (nessuna email inviata)...', 'ok');
+    showToast('Dry-run lettori in corso...', 'ok');
     var out = document.getElementById('cronCoortiResult');
-    if (out) out.textContent = 'Esecuzione dry-run...';
+    if (out) out.textContent = 'Esecuzione dry-run lettori...';
     google.script.run
       .withSuccessHandler(function(r) {
-        if (out) out.textContent = r && r.ok ? 'Dry-run OK: ' + (r.generalisti_inviati||0) + ' generalisti, ' + (r.leadCaldi_inviati||0) + ' lead' : 'Errore: ' + (r&&r.error||'?');
+        if (out) out.textContent = r && r.ok ? 'Dry-run OK: ' + (r.generalisti_inviati||0) + ' lettori (solo Coorte A)' : 'Errore: ' + (r&&r.error||'?');
       })
       .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
       .sendDigestAuto2coorti({dryRun:true, token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
@@ -8814,16 +8982,48 @@
 
   function _eseguiCoorti() {
     if (!hasGAS()) return;
-    if (!confirm('Inviare il digest a 2 coorti ORA? (Generalisti + Lead personalizzati)')) return;
-    showToast('Invio coorti in corso...', 'ok');
+    if (!confirm('Inviare il digest ai SOLI LETTORI (Coorte A)? I profilati riceveranno martedi.')) return;
+    showToast('Invio lettori in corso...', 'ok');
     var out = document.getElementById('cronCoortiResult');
     if (out) out.textContent = 'Invio in corso...';
     google.script.run
       .withSuccessHandler(function(r) {
-        if (out) out.textContent = r && r.ok ? 'Inviato: ' + (r.generalisti_inviati||0) + ' gen + ' + (r.leadCaldi_inviati||0) + ' lead' : 'Errore: ' + (r&&r.error||'?');
+        if (out) out.textContent = r && r.ok ? 'Inviato: ' + (r.generalisti_inviati||0) + ' lettori' : 'Errore: ' + (r&&r.error||'?');
       })
       .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
       .sendDigestAuto2coorti({token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
+  }
+
+  // v4.24 — Profilati (martedì)
+  function _dryRunProfilati() {
+    if (!hasGAS()) return;
+    showToast('Dry-run profilati in corso...', 'ok');
+    var out = document.getElementById('cronProfilatiResult');
+    if (out) out.textContent = 'Esecuzione dry-run profilati...';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (out) out.textContent = r && r.ok
+          ? 'Dry-run OK: ' + (r.coorteB_inviati||0) + ' profilati (' + (r.coorteB_matrix||0) + ' Matrix, ' + (r.coorteB_tematici||0) + ' tematici)'
+          : 'Errore: ' + (r&&r.error||'?');
+      })
+      .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
+      .sendDigestProfilatiMartedi({dryRun:true, token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
+  }
+
+  function _eseguiProfilati() {
+    if (!hasGAS()) return;
+    if (!confirm('Inviare il digest PROFILATO (Coorte B + Agenti) ORA?')) return;
+    showToast('Invio profilati in corso...', 'ok');
+    var out = document.getElementById('cronProfilatiResult');
+    if (out) out.textContent = 'Invio in corso...';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (out) out.textContent = r && r.ok
+          ? 'Inviato: ' + (r.coorteB_inviati||0) + ' profilati + ' + (r.agenti_inviati||0) + ' agenti'
+          : 'Errore: ' + (r&&r.error||'?');
+      })
+      .withFailureHandler(function(e) { if (out) out.textContent = 'Errore: ' + e; })
+      .sendDigestProfilatiMartedi({token:(window.OC_SESSION&&window.OC_SESSION.token)||null});
   }
 
   // v4.20 — Anteprima per destinatario
@@ -10692,6 +10892,12 @@
         var gpanel = $('oc-guida-panel');
         if (gpanel && !gpanel.contains(e.target)) closeGuida();
       }
+      // v4.25.3 — Chiudi dropdown tipo bando se click fuori
+      var tipoDD = document.getElementById('bandiTipoDropdown');
+      var tipoMenu = document.getElementById('bandiTipoMenu');
+      if (tipoMenu && tipoMenu.style.display !== 'none' && tipoDD && !tipoDD.contains(e.target)) {
+        tipoMenu.style.display = 'none';
+      }
     });
     document.addEventListener('keydown', function(e){
       if (e.key === 'Escape') { closeDetail(); closeGuida(); _closeBandoDrawer_(); }
@@ -10783,7 +10989,7 @@
   document.addEventListener('click', function(e){
     var chip = e.target.closest('.filter-chip');
     if (!chip) return;
-    var bar = chip.closest('#bandiFilters, #bandiTematicheFilters, #bandiSettoreFilters, #newsFilters, #newsTematicheFilters, #podcastFilters, #podcastTematicheFilters, #videoFilters, #videoTematicheFilters, #libriFilters, #libriTematicheFilters, #archivioFilters, #normeFilters, #socialFilters');
+    var bar = chip.closest('#bandiFilters, #bandiTematicheFilters, #bandiTipoBandoFilters, #newsFilters, #newsTematicheFilters, #podcastFilters, #podcastTematicheFilters, #videoFilters, #videoTematicheFilters, #libriFilters, #libriTematicheFilters, #archivioFilters, #normeFilters, #socialFilters');
     if (!bar) return;
     e.preventDefault();
     // Aggiorna stato visivo solo nella riga cliccata
@@ -10806,9 +11012,9 @@
       // L2 tematica — non tocca L1
       _filterBandi.amb = parseInt(chip.getAttribute('data-amb'), 10) || 0;
       if (_cacheBandi) renderBandiList(_cacheBandi);
-    } else if (bar.id === 'bandiSettoreFilters') {
-      // v5.2 — Settore cultura chip filter
-      _filterBandiSettore = chip.dataset.settore || '';
+    } else if (bar.id === 'bandiTipoBandoFilters') {
+      // v4.25 — Tipo bando filter (finanziamento/servizio/fornitura/lavori)
+      _filterBandiTipo = chip.dataset.tipo || '';
       if (_cacheBandi) renderBandiList(_cacheBandi);
     } else if (bar.id === 'newsFilters') {
       // L1 preset — resetta L2 a "Tutte"
@@ -11264,6 +11470,8 @@
     testDigestAdmin: testDigestAdmin,
     _dryRunCoorti: _dryRunCoorti,
     _eseguiCoorti: _eseguiCoorti,
+    _dryRunProfilati: _dryRunProfilati,
+    _eseguiProfilati: _eseguiProfilati,
     _previewForEmail: _previewForEmail,
     _loadAgentStats: _loadAgentStats,
     _sendAgentForced: _sendAgentForced,
@@ -11308,6 +11516,30 @@
     sortBandi: function(s){
       _filterBandi.sort = s || 'scadenza-asc';
       if (_cacheBandi) renderBandiList(_cacheBandi);
+    },
+    // v4.25.3 — Tipo bando dropdown multi-select
+    toggleTipoDropdown: function(){
+      var menu = document.getElementById('bandiTipoMenu');
+      if (menu) menu.style.display = menu.style.display === 'none' ? '' : 'none';
+    },
+    toggleBandiTipo: function(){
+      var checks = document.querySelectorAll('#bandiTipoMenu input[type=checkbox]');
+      _filterBandiTipi = {};
+      var allChecked = true;
+      checks.forEach(function(cb){
+        _filterBandiTipi[cb.value] = cb.checked;
+        if (!cb.checked) allChecked = false;
+        cb.parentElement.style.opacity = cb.checked ? '1' : '0.45';
+      });
+      _filterBandiTipiAttivo = !allChecked;
+      if (_cacheBandi) renderBandiList(_cacheBandi);
+    },
+    selezionaTuttiBandiTipo: function(stato){
+      document.querySelectorAll('#bandiTipoMenu input[type=checkbox]').forEach(function(cb){
+        cb.checked = stato;
+        cb.parentElement.style.opacity = stato ? '1' : '0.45';
+      });
+      OC.toggleBandiTipo();
     },
     // v4.18.9 — select tematica + filtro rapido (sostituiscono i chip)
     setBandiTema: function(v){

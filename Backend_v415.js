@@ -113,7 +113,7 @@ function setupLibriSeed() {
         'Definizione fondativa adottata a Praga 24 agosto 2022: museo come istituzione non-profit, permanente, al servizio della societa, accessibile e inclusiva, che opera con la partecipazione delle comunita.',
         'https://icom.museum/en/resources/standards-guidelines/museum-definition/','',new Date(),'ICOM','attivo',5,true],
       ['LB002','Museum Matrix — Modelli di valutazione museale','Matthias Henkel','Embassy of Culture','2016',1,'Strategia museale',
-        'Modello a 5 dimensioni (Brand, Collection, Facility, Program, Service). Marchio registrato DPMA n. 30 2016 034 145. Ispirazione per MuseMu Matrix Sinopia.',
+        'Modello a 5 dimensioni (Brand, Collection, Facility, Program, Service). Marchio registrato DPMA n. 30 2016 034 145. Ispirazione per MuseMu Matrix Duemilamusei.',
         '','',new Date(),'Embassy of Culture','attivo',5,true],
       ['LB003','Welfare culturale','Cicerchia A., Rossi Ghiglione A., Seia C.','Treccani','2020',4,'Welfare culturale',
         'Voce definitoria ufficiale italiana del concetto di welfare culturale come integrazione di pratiche artistiche e politiche di benessere.',
@@ -136,9 +136,9 @@ function setupLibriSeed() {
       ['LB009','Easy-to-Read European Standards','Inclusion Europe','Inclusion Europe','2014',2,'Accessibilita',
         'Linee guida europee per la comunicazione facile da leggere e capire. Riferimento per accessibilita cognitiva nei musei.',
         'https://www.inclusion-europe.eu/easy-to-read-standards-guidelines/','',new Date(),'Inclusion Europe','attivo',5,true],
-      ['LB010','Musei Sensibili — Documento Strategico Sinopia','Silvano Straccini','Sinopia','2026',5,'Strategia museale',
-        'Documento strategico Sinopia: cinque dimensioni di evoluzione (Identita, Inclusione, Programma, Comunita, Digital & Gov) con framework operativo e roadmap.',
-        '','',new Date(),'Sinopia','attivo',5,true]
+      ['LB010','Musei Sensibili — Documento Strategico Duemilamusei','Silvano Straccini','Duemilamusei','2026',5,'Strategia museale',
+        'Documento strategico Duemilamusei: cinque dimensioni di evoluzione (Identita, Inclusione, Programma, Comunita, Digital & Gov) con framework operativo e roadmap.',
+        '','',new Date(),'Duemilamusei','attivo',5,true]
     ];
     sh.getRange(2, 1, seed.length, BV415_LIBRI_HEAD.length).setValues(seed);
     Logger.log('setupLibriSeed: foglio creato con ' + seed.length + ' titoli seed');

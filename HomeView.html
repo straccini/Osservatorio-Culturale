@@ -205,7 +205,14 @@
     </div>
   </div>
 
-  <!-- ===== SEGNALAZIONI COMMUNITY — v4.23 spostate e compattate in fondo (prima del footer) ===== -->
+  <!-- ===== SEGNALAZIONI COMMUNITY (v4.19.0) ===== -->
+  <section id="homeSegnalazioniSection" style="margin-top:36px">
+    <div class="section-head">
+      <div class="left"><h2 class="section-title">Segnalazioni</h2></div>
+    </div>
+    <div id="homeSegnalazioniList" aria-live="polite"></div>
+    <div class="empty-state" id="homeSegnalazioniEmpty" hidden>Nessuna segnalazione ancora.</div>
+  </section>
 
   <!-- v4.22 — Capitali spostato in fondo alla home (fix 5) -->
 
@@ -282,18 +289,19 @@
   </div>
 
   <!-- ===== CANDIDATURE SPECIALI — v4.22 spostato in fondo (fix 5) ===== -->
-  <div id="homeCapitaliSection" style="margin-top:28px;background:#E8E5E0;color:var(--ink,#101010);border-radius:14px;padding:22px 26px;position:relative;overflow:hidden">
+  <div id="homeCapitaliSection" style="margin-top:36px;background:#E8E5E0;color:var(--ink,#101010);border-radius:16px;padding:40px 44px;position:relative;overflow:hidden">
     <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
       <div>
         <span style="font-family:var(--font-ui);font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;color:var(--accent,#935851)">Remember &middot; Candidature speciali</span>
-        <h2 style="font-family:var(--font-display);font-size:1.25rem;margin:4px 0 0;color:var(--ink,#101010);font-weight:600;line-height:1.1;letter-spacing:-0.02em">Capitali della <em style="font-weight:500;color:var(--ink-2,#555);font-style:normal">Cultura</em> &amp; candidature</h2>
+        <h2 style="font-family:var(--font-display);font-size:1.625rem;margin:6px 0 0;color:var(--ink,#101010);font-weight:600;line-height:1.1;letter-spacing:-0.025em">Capitali della <em style="font-weight:500;color:var(--ink-2,#555);font-style:normal">Cultura</em></h2>
       </div>
       <button class="section-action" type="button" data-goto="capitali" style="color:var(--accent,#935851);background:transparent;border:none;font-size:13px;font-weight:500;cursor:pointer;letter-spacing:-0.005em">Tutte le candidature &rarr;</button>
     </div>
-    <div id="homeCapitaliList" style="margin-top:2px"></div>
-    <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid rgba(0,0,0,0.08);padding-top:13px">
-      <div style="font-size:12.5px;color:var(--ink-2,#555)">Stai pensando a una candidatura? Valutiamola insieme.</div>
-      <button type="button" onclick="OC.prenotaConsulenza(event,'generica')" style="background:var(--accent,#935851);color:#fff;border:none;padding:9px 18px;border-radius:999px;font-family:var(--font-ui);font-size:13px;font-weight:500;cursor:pointer;letter-spacing:-0.005em;flex-shrink:0">Prenota una consulenza &rarr;</button>
+    <p style="font-family:var(--font-ui);font-size:14px;color:var(--ink-2,#555);line-height:1.55;margin:0 0 20px;max-width:700px">Le scadenze ufficiali delle principali candidature riservate ai Comuni e ai territori. Click sulla candidatura per aprire la scheda con tutti i dettagli e una checklist operativa.</p>
+    <div id="homeCapitaliList"></div>
+    <div style="margin-top:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border-top:1px solid rgba(0,0,0,0.08);padding-top:20px">
+      <div><div style="font-family:var(--font-display);font-size:15px;font-weight:500;color:var(--ink,#101010);letter-spacing:-0.015em">Stai pensando a una candidatura?</div><div style="font-size:12px;color:var(--ink-3,#888);margin-top:4px">Una call gratuita per valutare insieme tempi, requisiti e strategia.</div></div>
+      <button type="button" onclick="OC.prenotaConsulenza(event,'generica')" style="background:var(--accent,#935851);color:#fff;border:none;padding:13px 24px;border-radius:999px;font-family:var(--font-ui);font-size:14px;font-weight:500;cursor:pointer;letter-spacing:-0.005em;flex-shrink:0">Prenota una consulenza &rarr;</button>
     </div>
   </div>
 
@@ -307,23 +315,9 @@
     </div>
     <label style="display:flex;align-items:start;gap:6px;margin-top:10px;cursor:pointer">
       <input type="checkbox" id="homeNlGdpr" style="margin-top:3px" />
-      <span style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.4">Acconsento al trattamento dei dati. <a href="#" onclick="OC.go('privacy');return false" style="color:#fff;text-decoration:underline">Privacy policy</a></span>
+      <span style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.4">Acconsento al trattamento dei dati. <a href="https://www.sinopiaconsulting.it/privacy" target="_blank" rel="noopener" style="color:#fff;text-decoration:underline">Privacy policy</a></span>
     </label>
     <div id="homeNlSuccess" hidden style="color:#fff;font-weight:600;padding:8px 0">Controlla la tua email per confermare.</div>
   </div>
-
-  <!-- ===== SEGNALAZIONI COMMUNITY — blocco unico compatto, in fondo prima del footer (v4.23) ===== -->
-  <section id="homeSegnalazioniSection" style="margin-top:28px;padding:20px 24px;background:linear-gradient(135deg,#E8F5E9 0%,#F1F8E9 100%);border:1px solid #A5D6A7;border-radius:14px">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
-      <div style="min-width:0">
-        <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--amb-2,#3F7A5E);letter-spacing:.14em;text-transform:uppercase;font-weight:700">Community</div>
-        <h2 style="font-family:var(--font-display);font-size:1.15rem;font-weight:600;margin:3px 0 0;color:var(--ink,#101010);letter-spacing:-0.015em">Segnalazioni della community</h2>
-        <p style="font-family:var(--font-ui);font-size:12px;color:var(--ink-2,#555);margin:4px 0 0;line-height:1.45;max-width:560px">Un progetto, un evento o una buona pratica del tuo territorio. Dopo una revisione redazionale sar&agrave; visibile a tutti.</p>
-      </div>
-      <button type="button" data-action="apriFormSegnalazione" style="background:var(--amb-2,#3F7A5E);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;font-family:var(--font-ui)">Segnala iniziativa &rarr;</button>
-    </div>
-    <div id="homeSegnalazioniList" aria-live="polite" style="margin-top:8px"></div>
-    <div class="empty-state sm" id="homeSegnalazioniEmpty" hidden style="padding:8px 0 0;color:var(--ink-3)">Nessuna segnalazione ancora &mdash; sii il primo a segnalare.</div>
-  </section>
 
 </section>

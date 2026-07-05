@@ -89,31 +89,153 @@ var COL_B = {
   LIVELLO:            6,
   REGIONE:            7,
   SETTORE:            8,
-  SOGGETTI:           9,
-  IMPORTO:            10,
-  COFIN:              11,
-  SCADENZA:           12,
-  FONTE_ID:           13,
-  FONTE_NOME:         14,
-  URL_BANDO:          15,
-  URL_ENTE:           16,
-  URL_VALIDATO:       17,    // boolean
-  DATA_VALIDAZIONE:   18,
-  SOMMARIO:           19,
-  AMBITO:             20,    // 1-5
-  PRIORITA_REGIONALE: 21,
-  STATUS:             22,    // Nuovo|InCorso|Inviato|Vinto|Perso
-  STATO_RECORD:       23,    // attivo|archiviato
-  LETTO:              24,    // boolean
-  SALVATO:            25,    // boolean
-  NOTE:               26
+  TIPO_BANDO:         9,     // v4.25: finanziamento|servizio|fornitura|lavori
+  SOGGETTI:           10,
+  IMPORTO:            11,
+  COFIN:              12,
+  SCADENZA:           13,
+  FONTE_ID:           14,
+  FONTE_NOME:         15,
+  URL_BANDO:          16,
+  URL_ENTE:           17,
+  URL_VALIDATO:       18,    // boolean
+  DATA_VALIDAZIONE:   19,
+  SOMMARIO:           20,
+  AMBITO:             21,    // 1-5
+  PRIORITA_REGIONALE: 22,
+  STATUS:             23,    // Nuovo|InCorso|Inviato|Vinto|Perso
+  STATO_RECORD:       24,    // attivo|archiviato
+  LETTO:              25,    // boolean
+  SALVATO:            26,    // boolean
+  NOTE:               27
 };
 
 var COL_B_HEADERS = [
-  'ID','Fingerprint','DataRilevamento','Titolo','Ente','Livello','Regione','Settore','Soggetti',
-  'Importo','Cofin','Scadenza','FonteID','FonteNome','UrlBando','UrlEnte','UrlValidato','DataValidazione',
+  'ID','Fingerprint','DataRilevamento','Titolo','Ente','Livello','Regione','Settore',
+  'TipoBando',  // v4.25
+  'Soggetti','Importo','Cofin','Scadenza','FonteID','FonteNome','UrlBando','UrlEnte','UrlValidato','DataValidazione',
   'Sommario','Ambito','PrioritaRegionale','Status','StatoRecord','Letto','Salvato','Note'
 ];
+
+/**
+ * v4.25 — Classifica il tipo di bando (finanziamento/servizio/fornitura/lavori).
+ * Usa keyword matching su titolo + settore + sommario + fonte.
+ * @param {Object} bando — { titolo, settore, sommario, fonteNome }
+ * @return {string} 'finanziamento'|'servizio'|'fornitura'|'lavori'
+ */
+/**
+ * v4.25.3 — Classifica il tipo di bando in 3 categorie:
+ *   - finanziamento: contributi, sovvenzioni, PNRR, fondi UE
+ *   - servizio_fornitura: appalti servizi, forniture, consulenze, acquisti
+ *   - lavori: costruzione, ristrutturazione, cantieri edili
+ */
+function _classificaTipoBando_(bando) {
+  var titolo = String(bando.titolo||'').toLowerCase();
+  var settore = String(bando.settore||'').toLowerCase();
+  var sommario = String(bando.sommario||'').toLowerCase();
+  var testo = titolo + ' ' + settore + ' ' + sommario;
+  var fonte = String(bando.fonteNome || '').toLowerCase();
+
+  // === FINANZIAMENTO: contributi, sovvenzioni, bandi a fondo perduto ===
+  if (/finanziament|contribut[oi]|sovvenzion|grant|subsid|funding|fondo perduto|erogazione|cofinanziament|incentiv[oi]|premio|borsa di studio|call for proposal|avviso.*finanz|bando.*finanz/i.test(testo)) {
+    return 'finanziamento';
+  }
+  // Fonti che sono quasi sempre finanziamenti
+  if (/italia domani|pnrr|creative europe|europa creativa|fesr|fse|contributi\s*regione|europafacile|contribitiregione/i.test(fonte)) {
+    return 'finanziamento';
+  }
+  if (/pnrr|fesr|fse\+?|creative europe|europa creativa|horizon|erasmus|interreg|life\b|cerv\b|fondo.*cultur|art.?bonus/i.test(testo)) {
+    return 'finanziamento';
+  }
+  // Parole chiave forti nel titolo (non nel sommario generico)
+  if (/bando.*premio|avviso pubblico|manifestazione.*interesse|invito.*proposte|call\b/i.test(titolo)) {
+    return 'finanziamento';
+  }
+
+  // === LAVORI: costruzione, ristrutturazione, cantieri (NON "lavoro" generico) ===
+  // Specifico: "lavori di", "lavori per", "esecuzione lavori", "appalto lavori"
+  if (/\blavori\s+(di|per|ed|pubblic)|esecuzione\s+lavori|appalto\s+lavori|opere\s+edili/i.test(testo)) {
+    return 'lavori';
+  }
+  if (/costruzion[ei]|ristrutturazion[ei]|cantiere|edili\b|impiantistic|demolizion|scavo\s+archeolog|restauro\s+ediliz|rifaciment|adeguamento\s+sismico/i.test(testo)) {
+    return 'lavori';
+  }
+
+  // === SERVIZIO E FORNITURA: appalti, consulenze, acquisti, gestione ===
+  if (/servizi[oi]|service|consule|progettazion[ei]|sorveglian|biglietter|gestione|affidament|incaric[oi]|appalto/i.test(testo)) {
+    return 'servizio_fornitura';
+  }
+  if (/fornitur|supply|supplies|acquist[oi]|attrezzatur|dotazion|arredi|noleggi/i.test(testo)) {
+    return 'servizio_fornitura';
+  }
+
+  // Default per fonte TED = servizio_fornitura, per le altre = finanziamento
+  if (/ted|appalti pubblici/i.test(fonte)) return 'servizio_fornitura';
+  return 'finanziamento';
+}
+
+/**
+ * v4.25 — Backfill TipoBando per bandi esistenti.
+ * Idempotente: salta righe che hanno già un valore in TipoBando.
+ * Da eseguire una volta dall'editor GAS.
+ */
+function backfillTipoBandi() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Bandi_v5');
+  if (!sh || sh.getLastRow() < 2) return { ok:false, error:'foglio vuoto' };
+  var vals = sh.getDataRange().getValues();
+  var head = vals[0].map(function(h){ return String(h||'').trim(); });
+  var iTit = head.indexOf('Titolo'), iSett = head.indexOf('Settore');
+  var iSomm = head.indexOf('Sommario'), iFonte = head.indexOf('FonteNome');
+  var iTipo = head.indexOf('TipoBando');
+  if (iTipo < 0) return { ok:false, error:'colonna TipoBando non trovata — aggiungerla prima' };
+  // v4.25.3 — Forza riclassificazione di TUTTI (categorie cambiate: servizio+fornitura uniti)
+  var stats = { finanziamento:0, servizio_fornitura:0, lavori:0, totale:0 };
+  for (var r = 1; r < vals.length; r++) {
+    var tipo = _classificaTipoBando_({
+      titolo: vals[r][iTit], settore: vals[r][iSett],
+      sommario: vals[r][iSomm], fonteNome: vals[r][iFonte]
+    });
+    sh.getRange(r + 1, iTipo + 1).setValue(tipo);
+    stats[tipo] = (stats[tipo]||0) + 1;
+    stats.totale++;
+  }
+  Logger.log('backfillTipoBandi: ' + JSON.stringify(stats));
+  return { ok:true, stats:stats };
+}
+
+/**
+ * v4.25 — Setup completo TipoBando: aggiunge la colonna al foglio + backfill classificazione.
+ * Eseguire UNA VOLTA dall'editor GAS: seleziona setupTipoBando → ▶ Esegui.
+ * Idempotente: se la colonna esiste già, esegue solo il backfill.
+ */
+function setupTipoBando() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Bandi_v5');
+  if (!sh) return { ok:false, error:'Foglio Bandi_v5 non trovato' };
+
+  var head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  var esistente = head.indexOf('TipoBando');
+
+  if (esistente >= 0) {
+    Logger.log('[setupTipoBando] Colonna TipoBando già presente alla posizione ' + (esistente + 1) + '. Eseguo solo backfill.');
+  } else {
+    // Inserisci colonna alla posizione 9 (dopo Settore=col 8)
+    var posInserimento = 9;
+    sh.insertColumnAfter(8);
+    // Imposta header
+    sh.getRange(1, posInserimento).setValue('TipoBando');
+    sh.getRange(1, posInserimento).setFontWeight('bold').setBackground('#1A1815').setFontColor('#fff');
+    sh.setColumnWidth(posInserimento, 120);
+    SpreadsheetApp.flush();
+    Logger.log('[setupTipoBando] Colonna TipoBando inserita alla posizione ' + posInserimento);
+  }
+
+  // Backfill
+  var result = backfillTipoBandi();
+  Logger.log('[setupTipoBando] Backfill: ' + JSON.stringify(result));
+  return { ok:true, colonnaAggiunta: esistente < 0, backfill: result };
+}
 
 // Schema colonne FontiBandiLog_v5
 var COL_L = {
@@ -929,6 +1051,9 @@ function _saveBandoV5_(ss, shBandi, bandoRaw, fonteId, fonteNome, fingerprints) 
   var id = 'B5-' + new Date().getTime() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
   var ambito = _classificaAmbitoV5_(bandoRaw.settore, bandoRaw.titolo);
 
+  // v4.25 — Classifica tipo bando automaticamente
+  var tipoBando = _classificaTipoBando_({ titolo: bandoRaw.titolo, settore: bandoRaw.settore, sommario: bandoRaw.sommario, fonteNome: fonteNome });
+
   var riga = new Array(COL_B_HEADERS.length).fill('');
   riga[COL_B.ID - 1]               = id;
   riga[COL_B.FINGERPRINT - 1]      = fp;
@@ -938,6 +1063,7 @@ function _saveBandoV5_(ss, shBandi, bandoRaw, fonteId, fonteNome, fingerprints) 
   riga[COL_B.LIVELLO - 1]          = bandoRaw.livello || 'Vari';
   riga[COL_B.REGIONE - 1]          = bandoRaw.regione || '';
   riga[COL_B.SETTORE - 1]          = (bandoRaw.settore || '').slice(0, 100);
+  riga[COL_B.TIPO_BANDO - 1]       = tipoBando;
   riga[COL_B.SOGGETTI - 1]         = (bandoRaw.soggetti || '').slice(0, 200);
   riga[COL_B.IMPORTO - 1]          = bandoRaw.importo || '';
   riga[COL_B.COFIN - 1]            = '';
@@ -1808,6 +1934,9 @@ function getBandiV5(limit) {
 
     var oggi = new Date(); oggi.setHours(0, 0, 0, 0);
     var tz = Session.getScriptTimeZone() || 'Europe/Rome';
+    var head = vals[0].map(function(h){ return String(h||'').trim(); });
+    var iSC = head.indexOf('SettoreCultura');
+    var iCPV = head.indexOf('CPV');
     var out = [];
 
     for (var r = 1; r < vals.length; r++) {
@@ -1838,7 +1967,12 @@ function getBandiV5(limit) {
         giorni  : giorni,
         dataRil : rawRil,
         esito   : String(row[COL_B.STATUS - 1] || '').toLowerCase() === 'esito',
-        link    : row[COL_B.URL_BANDO - 1] || row[COL_B.URL_ENTE - 1] || ''
+        link    : row[COL_B.URL_BANDO - 1] || row[COL_B.URL_ENTE - 1] || '',
+        tipoBando: String(row[COL_B.TIPO_BANDO - 1] || ''),
+        livello : String(row[COL_B.LIVELLO - 1] || ''),
+        settoreCultura: iSC >= 0 ? String(row[iSC] || '') : '',
+        cpv: iCPV >= 0 ? String(row[iCPV] || '') : '',
+        cpvDescrizione: iCPV >= 0 && typeof getCpvDescrizione === 'function' ? getCpvDescrizione(String(row[iCPV] || '')) : ''
       });
     }
 
@@ -1858,7 +1992,7 @@ function getBandiV5(limit) {
       return db - da;
     });
 
-    return out.slice(0, n).map(function(x) {
+    var _mappati = out.slice(0, n).map(function(x) {
       var scadFmt = '';
       if (x.scadDate && !isNaN(x.scadDate.getTime())) {
         scadFmt = Utilities.formatDate(x.scadDate, tz, 'd MMM yyyy');
@@ -1885,9 +2019,16 @@ function getBandiV5(limit) {
         isRecente: !!(x.dataRil instanceof Date && !isNaN(x.dataRil.getTime()) && x.dataRil.getTime() >= sette_fa),
         dataRil  : rilFmt,
         esito    : !!x.esito,
-        link     : String(x.link || '')
+        link     : String(x.link || ''),
+        tipoBando: String(x.tipoBando || ''),
+        settoreCultura: String(x.settoreCultura || ''),
+        cpv      : String(x.cpv || ''),
+        cpvDescrizione: String(x.cpvDescrizione || ''),
+        livello  : String(x.livello || '')
       };
     });
+    // Gate finale: filtro cultura + normalizzazione link prima dell'esposizione
+    return (typeof bandiGateFinale_ === 'function') ? bandiGateFinale_(_mappati) : _mappati;
   } catch(e) { Logger.log('getBandiV5: ' + (e && e.message || e)); return []; }
 }
 
@@ -1904,6 +2045,9 @@ function getUltimiBandiV5(limit) {
     var vals = sh.getDataRange().getValues();
     if (vals.length < 2) return [];
 
+    var _headUlt = vals[0].map(function(h){ return String(h||'').trim(); });
+    var iSC = _headUlt.indexOf('SettoreCultura');
+    var iCPV = _headUlt.indexOf('CPV');
     var oggi = new Date(); oggi.setHours(0, 0, 0, 0);
     var tz = Session.getScriptTimeZone() || 'Europe/Rome';
     var items = [];
@@ -1927,7 +2071,7 @@ function getUltimiBandiV5(limit) {
 
     items.sort(function(a, b) { return b.rilDate.getTime() - a.rilDate.getTime(); });
 
-    return items.slice(0, n).map(function(x) {
+    var _mappatiUlt = items.slice(0, n).map(function(x) {
       var row = vals[x.r];
       var rawScad = row[COL_B.SCADENZA - 1];
       var scadDate = (rawScad instanceof Date) ? rawScad : (rawScad ? new Date(rawScad) : null);
@@ -1945,9 +2089,13 @@ function getUltimiBandiV5(limit) {
         giorni  : giorni,
         isUrgent: giorni !== null && giorni >= 0 && giorni <= 7,
         dataRil : (x.rilDate.getTime() > 0) ? Utilities.formatDate(x.rilDate, tz, 'dd/MM/yyyy') : '',
-        link    : String(row[COL_B.URL_BANDO - 1] || row[COL_B.URL_ENTE - 1] || '')
+        link    : String(row[COL_B.URL_BANDO - 1] || row[COL_B.URL_ENTE - 1] || ''),
+        settoreCultura: iSC >= 0 ? String(row[iSC] || '') : '',
+        cpv     : iCPV >= 0 ? String(row[iCPV] || '') : ''
       };
     });
+    // Gate finale: filtro cultura + normalizzazione link prima dell'esposizione
+    return (typeof bandiGateFinale_ === 'function') ? bandiGateFinale_(_mappatiUlt) : _mappatiUlt;
   } catch(e) { Logger.log('getUltimiBandiV5: ' + (e && e.message || e)); return []; }
 }
 
@@ -2390,13 +2538,14 @@ function dedupItemsByFingerprint(opts, token) {
       if (!key || key === '|') continue; // niente chiave utile
 
       if (seenK[key] != null) {
-        // È una duplicata: marca archiviato
+        // È una duplicata esatta: marca archiviato
         duplicati++;
         if (sampleDup.length < 5) {
           sampleDup.push({
             row: r + 1,
             titolo: String(row[iTit] || '').substring(0, 80),
-            primaOccorrenza: seenK[key] + 1
+            primaOccorrenza: seenK[key] + 1,
+            tipo: 'esatto'
           });
         }
         if (!dryRun) {
@@ -2404,7 +2553,33 @@ function dedupItemsByFingerprint(opts, token) {
           archiviati++;
         }
       } else {
-        seenK[key] = r;
+        // v4.24 — Secondo passaggio: dedup fuzzy per titoli simili (Jaccard > 0.65)
+        var isDupFuzzy = false;
+        if (titVal && typeof _dedupFuzzyJaccard_ === 'function') {
+          for (var sk in seenK) {
+            if (sk.indexOf('|') >= 0) { // è una chiave titolo|fonte
+              var seenTit = sk.split('|')[0];
+              if (seenTit && _dedupFuzzyJaccard_(titVal, seenTit) >= 0.65) {
+                isDupFuzzy = true;
+                duplicati++;
+                if (sampleDup.length < 5) {
+                  sampleDup.push({
+                    row: r + 1,
+                    titolo: String(row[iTit] || '').substring(0, 80),
+                    primaOccorrenza: seenK[sk] + 1,
+                    tipo: 'fuzzy'
+                  });
+                }
+                if (!dryRun) {
+                  sh.getRange(r + 1, iArch + 1).setValue(true);
+                  archiviati++;
+                }
+                break;
+              }
+            }
+          }
+        }
+        if (!isDupFuzzy) seenK[key] = r;
       }
     }
 
@@ -2524,7 +2699,8 @@ function dedupSheetByFingerprint(opts) {
           sampleDup.push({
             row: r + 1,
             titolo: String(row[iTit] || '').substring(0, 80),
-            primaOccorrenza: seenK[key] + 1
+            primaOccorrenza: seenK[key] + 1,
+            tipo: 'esatto'
           });
         }
         if (!dryRun) {
@@ -2532,7 +2708,33 @@ function dedupSheetByFingerprint(opts) {
           archiviati++;
         }
       } else {
-        seenK[key] = r;
+        // v4.24 — Dedup fuzzy per titoli simili
+        var isDupFuzzy = false;
+        if (titVal && typeof _dedupFuzzyJaccard_ === 'function') {
+          for (var sk in seenK) {
+            if (sk.indexOf('|') >= 0) {
+              var seenTit = sk.split('|')[0];
+              if (seenTit && _dedupFuzzyJaccard_(titVal, seenTit) >= 0.65) {
+                isDupFuzzy = true;
+                duplicati++;
+                if (sampleDup.length < 5) {
+                  sampleDup.push({
+                    row: r + 1,
+                    titolo: String(row[iTit] || '').substring(0, 80),
+                    primaOccorrenza: seenK[sk] + 1,
+                    tipo: 'fuzzy'
+                  });
+                }
+                if (!dryRun) {
+                  sh.getRange(r + 1, iArch + 1).setValue(cfg.archValueOnArchive);
+                  archiviati++;
+                }
+                break;
+              }
+            }
+          }
+        }
+        if (!isDupFuzzy) seenK[key] = r;
       }
     }
 

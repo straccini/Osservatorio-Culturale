@@ -1,5 +1,5 @@
 // ============================================================================
-//  KB_v1.gs — Knowledge Base Sinopia in JSON (v4.18.16 · 2026-05-12)
+//  KB_v1.gs — Knowledge Base Duemilamusei in JSON (v4.18.16 · 2026-05-12)
 // ----------------------------------------------------------------------------
 //  Traduce in codice la KB scritta in /musemu matrix/KB_Duemilamusei.md (v1.1).
 //  5 assi: Tematiche T1-T9 · Strumenti STR-A/E · Erogatore · Beneficiario ·
@@ -109,7 +109,7 @@ var KB_MODELLI = [
     quandoSiAttiva:'incarichi RUP, DG, Presidenza CdA, Direttore Sistema',
     forza:3 },
   { codice:'M14', nome:'Accessibilità integrata (LIS via partner ALCO)',
-    evidence:'Partnership formale Sinopia × ALCO per LIS (in corso) · Pesaro CIC 2024 ufficio accessibilità',
+    evidence:'Partnership formale Duemilamusei × ALCO per LIS (in corso) · Pesaro CIC 2024 ufficio accessibilità',
     quandoSiAttiva:'bandi con linea accessibilità o premialità accessibilità cognitiva',
     forza:2 }
 ];
@@ -125,7 +125,7 @@ var KB_LINEE_SERVIZIO = [
     cap:'5-8 pre-progettazioni gratuite al mese' },
   { codice:'LS2', nome:'Pre-consulenza gestionale / sondaggi mirati di pre-valutazione',
     trigger:'Compilazione sondaggio mirato (inbound) o invio outbound qualificato',
-    output:'Diagnosi gap + 2-3 raccomandazioni operative + servizi Sinopia attivabili',
+    output:'Diagnosi gap + 2-3 raccomandazioni operative + servizi Duemilamusei attivabili',
     beneficiario:'Direttore/responsabile museo',
     cap:'Soft: gestito via funnel Matrix' },
   { codice:'LS3', nome:'Candidature speciali (CIC, ECoC, Arte Contemporanea, UNESCO…)',
@@ -309,7 +309,7 @@ var KB_AMBITI_PUBBLICI = [
 // ============================================================================
 
 /**
- * Ritorna l'intera Knowledge Base Sinopia come oggetto JSON.
+ * Ritorna l'intera Knowledge Base Duemilamusei come oggetto JSON.
  * Usata da frontend per popolare pagina admin "📚 KB Tassonomia".
  *
  * @return {Object} { ambitiPubblici, tematiche, strumenti, modelli, lineeServizio, candidature, meta }

@@ -404,7 +404,7 @@ function testUnsubscribeUrl() {
   try {
     adminEmail = String(PropertiesService.getScriptProperties().getProperty('OC_ADMIN_EMAILS') || '').split(',')[0].trim().toLowerCase();
   } catch(_){}
-  if (!adminEmail) adminEmail = 's.straccini@gmail.com';
+  if (!adminEmail) adminEmail = 'sinopiaconsulting@gmail.com';
   return {
     email: adminEmail,
     url: _buildUnsubscribeUrl_(adminEmail),

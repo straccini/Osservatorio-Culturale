@@ -290,7 +290,7 @@ function getMatrixReport(responseId) {
     // Costruisce le narrative dei pilastri Musei Sensibili
     var pillars = _matrixComputePillars_(scoring);
 
-    // Costruisce raccomandazioni servizi Sinopia (mappatura gap → servizio)
+    // Costruisce raccomandazioni servizi Duemilamusei (mappatura gap → servizio)
     var serviceRecommendations = _matrixGetServiceRecommendations_(responses, scoring);
 
     // Costruisce roadmap suggerita (fasi Musei Sensibili)
@@ -389,7 +389,7 @@ function saveMatrixContact(data) {
     } catch(eCrm) { Logger.log('crm_onMatrixOptIn fallito (non bloccante): ' + eCrm.message); }
 
     // Auto-register as lettore
-    try { if (typeof _autoRegisterUser_ === 'function') _autoRegisterUser_(emailLower, data.nome || data.museo || '', 'matrix', true); } catch(e) {}
+    try { if (typeof _autoRegisterUser_ === 'function') _autoRegisterUser_(emailLower, data.nome || data.museo || '', 'matrix'); } catch(e) {}
 
     return {
       ok: true,
@@ -640,7 +640,7 @@ function _matrixPillarNarrative_(pillarCode, score) {
 }
 
 /**
- * Mappa gap → servizi Sinopia (riusa la logica del D4b matrice gap-servizio).
+ * Mappa gap → servizi Duemilamusei (riusa la logica del D4b matrice gap-servizio).
  * Per ora ritorna un set di base, espandibile in futuro caricando D4b da JSON.
  */
 function _matrixGetServiceRecommendations_(responses, scoring) {
@@ -911,7 +911,7 @@ function testMatrixPDFEmail() {
 
 var OC_MATRIX_PDF_FOLDER_NAME = 'MuseMu Matrix - Report';
 var OC_MATRIX_DUEMILAMUSEI_BRAND = 'Sinopia · MuseMu Matrix';
-var OC_MATRIX_DUEMILAMUSEI_FOOTER = 'Sinopia | Deruta (PG) | sinopiaconsulting.it';
+var OC_MATRIX_DUEMILAMUSEI_FOOTER = 'Sinopia | Fano (PU) | sinopia.consulting';
 
 /**
  * Recupera o crea la cartella Drive che ospita i PDF generati.
@@ -1300,7 +1300,7 @@ function _matrixBuildEmailBody_(nome, report, fileUrl) {
     +     '<a href="' + fileUrl + '" style="display:inline-block;background:#0E7490;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600">Apri il report online</a>'
     +   '</p>'
     +   '<p>Sono a disposizione per un confronto sui prossimi passi: una sessione gratuita di 30 minuti per discutere insieme priorità, fattibilità e tempi di intervento.</p>'
-    +   '<p style="margin-top:28px">Cordialmente,<br><b>Silvano Straccini</b><br>Sinopia · Deruta (PG)</p>'
+    +   '<p style="margin-top:28px">Cordialmente,<br><b>Silvano Straccini</b><br>Sinopia · Fano (PU)</p>'
     +   '<hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0">'
     +   '<p style="font-size:11px;color:#888;line-height:1.4">'
     +     'Riceve questa email perché ha completato il questionario MuseMu Matrix sull\'Osservatorio Culturale Sinopia e ha espresso consenso al follow-up. '

@@ -24,14 +24,15 @@
  *      06:00  lunediMattina       — Scan completo fonti (solo lunedì)
  *      06:15  galRunOggi          — 10 GAL del giorno
  *
- *    DIGEST (Opzione B — revisione prima dell'invio)
+ *    DIGEST (v4.24 — separazione lunedì/martedì)
  *      DOM 18:00  cronGenerateDigestWeekly — genera bozze settimanali + Telegram
- *      LUN (manuale)  sendDigestAuto2coorti — invio A+B+C dal pannello admin
+ *      LUN (manuale)  sendDigestAuto2coorti — invio SOLO Coorte A (lettori generalisti)
+ *      MAR 07:30  sendDigestProfilatiMartedi — invio Coorte B (Matrix) + email agenti
  *
  *    MATTINA (email + scan)
  *      07:00  scanSources         — RSS news (mar+gio)
  *      07:30  scanPodcast         — Podcast+video (mar+gio)
- *      07:30  sendAgentEmails     — Check + invio email agenti
+ *      07:30  sendAgentEmails     — Check + invio email agenti (AG1 ora è martedì)
  *
  *    TARDA MATTINA
  *      09:00  generateNextSocialDraft — Bozza social (ogni 2gg interno)
@@ -87,15 +88,16 @@ var OC_TRIGGER_SCHEDULE = [
   // === DIGEST — Opzione B (revisione prima dell'invio) ===
   // Domenica sera: genera TUTTE le bozze (generalista + Matrix) + Telegram all'admin.
   { fn: 'cronGenerateDigestWeekly',     tipo: 'weekly',   giorno: ScriptApp.WeekDay.SUNDAY, ora: 18, min: 0, desc: 'Genera bozze digest settimanale (domenica) — rivedi e invia lunedi' },
-  // NB: sendDigestAuto2coorti NON e piu schedulato. L'invio a tutte le coorti
-  // (A lettori + B Matrix + C profilati) e MANUALE: l'admin lo lancia lunedi dal
-  // pannello Impostazioni → Digest (pulsante "Invia digest settimanale") dopo aver
-  // rivisto l'anteprima. Per tornare all'invio automatico, riaggiungere qui la riga.
+  // v4.24: sendDigestAuto2coorti è MANUALE (lunedì, solo Coorte A lettori).
+  // Il martedì, sendDigestProfilatiMartedi invia Coorte B (Matrix) + email agenti.
+  // v4.24: sendDigestProfilatiMartedi è DAILY — sostituisce sendAgentEmails.
+  // Mar: Coorte B (profilati) + agenti. Altri gg: solo agenti (check interno isAgentEmailDay).
+  { fn: 'sendDigestProfilatiMartedi',   tipo: 'daily',    ora: 7,  min: 30,  desc: 'Daily: mar=profilati+agenti, altri gg=solo agenti' },
 
   // === MATTINA (scan contenuti) ===
   { fn: 'scanSourcesBisettimanale',     tipo: 'daily',    ora: 7,  min: 0,   desc: 'Scan RSS news (solo mar+gio)' },
-  { fn: 'scanPodcastBisettimanale',     tipo: 'daily',    ora: 7,  min: 30,  desc: 'Scan podcast (solo mar+gio)' },
-  { fn: 'sendAgentEmails',              tipo: 'daily',    ora: 7,  min: 30,  desc: 'Email agenti (check giorno interno)' },
+  { fn: 'scanPodcastBisettimanale',     tipo: 'daily',    ora: 7,  min: 30,  desc: 'Scan podcast+video quotidiano (RSS + YouTube Atom)' },
+  // sendAgentEmails RIMOSSO v4.24 — sostituito da sendDigestProfilatiMartedi (1 trigger in meno)
 
   // === OUTREACH ===
   { fn: 'outreachRunDaily',              tipo: 'daily',    ora: 9,  min: 0,   desc: 'Outreach: sequenze follow-up 14gg' },
@@ -122,13 +124,25 @@ function scanSourcesBisettimanale() {
 }
 
 /**
- * Scan podcast solo martedì e giovedì.
+ * v4.25 — Scan podcast+video QUOTIDIANO (era solo mar/gio, ora tutti i giorni).
+ * Scansiona sia podcast RSS sia video YouTube Atom per mantenere i contenuti freschi.
  */
 function scanPodcastBisettimanale() {
-  var day = new Date().getDay();
-  if (day !== 2 && day !== 4) { Logger.log('[scanPodcastBisettimanale] Oggi non è mar/gio, skip'); return; }
-  // v5.2 — Usa scanPodcastDiretto (legge dal foglio FontiPodcast) se disponibile
-  return (typeof scanPodcastDiretto === 'function') ? scanPodcastDiretto() : scanPodcast();
+  // v4.25 — Rimosso filtro giorno: scan quotidiano per podcast e video
+  Logger.log('[scanPodcastBisettimanale] Scan podcast+video quotidiano');
+  var risultati = { podcast: 0, video: 0 };
+  // Podcast RSS
+  try {
+    risultati.podcast = (typeof scanPodcastDiretto === 'function') ? scanPodcastDiretto() : scanPodcast();
+  } catch(e) { Logger.log('scanPodcast err: ' + e.message); }
+  // Video YouTube (Atom feeds, no API key)
+  try {
+    if (typeof scanVideoYoutube === 'function') {
+      risultati.video = scanVideoYoutube();
+    }
+  } catch(e) { Logger.log('scanVideoYoutube err: ' + e.message); }
+  Logger.log('[scanPodcastBisettimanale] Completato: ' + risultati.podcast + ' podcast, ' + risultati.video + ' video nuovi');
+  return risultati;
 }
 
 // ============================================================================
@@ -316,6 +330,44 @@ function installFasRunCompletoTrigger() {
   var msg = 'Trigger fasRunCompleto installato (daily ~05:00). Duplicati rimossi: ' + rimossi + '.';
   Logger.log('[TRIGGER] ' + msg);
   return { ok: true, rimossiDuplicati: rimossi, creato: 'fasRunCompleto daily@05', nota: msg };
+}
+
+/**
+ * v4.24 CHIRURGICO — installa SOLO il trigger settimanale sendDigestProfilatiMartedi
+ * (martedì 07:30), senza toccare gli altri trigger attivi.
+ * Idempotente: rimuove eventuali duplicati e ne crea uno solo.
+ *
+ * Da eseguire UNA VOLTA dall'editor GAS: seleziona questa funzione e clicca ▶ Esegui.
+ */
+function installTriggerProfilatiMartedi() {
+  var rimossi = 0;
+  var liberati = 0;
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    var fn = t.getHandlerFunction();
+    // Rimuovi duplicati del nuovo trigger
+    if (fn === 'sendDigestProfilatiMartedi') {
+      ScriptApp.deleteTrigger(t);
+      rimossi++;
+    }
+    // v4.24 — sendAgentEmails daily è ora SOSTITUITO da sendDigestProfilatiMartedi
+    // (che è daily e chiama sendAgentEmails internamente + Coorte B il martedì)
+    if (fn === 'sendAgentEmails') {
+      ScriptApp.deleteTrigger(t);
+      liberati++;
+      Logger.log('[TRIGGER] Rimosso sendAgentEmails (sostituito da sendDigestProfilatiMartedi daily)');
+    }
+  });
+  // Daily 07:30: mar=Coorte B+agenti, altri giorni=solo agenti
+  ScriptApp.newTrigger('sendDigestProfilatiMartedi')
+    .timeBased()
+    .everyDays(1)
+    .atHour(7)
+    .nearMinute(30)
+    .create();
+  var msg = 'Trigger sendDigestProfilatiMartedi installato (daily ~07:30, profilati solo martedi). '
+    + 'Rimossi: ' + rimossi + ' duplicati, ' + liberati + ' sendAgentEmails (sostituito).';
+  Logger.log('[TRIGGER] ' + msg);
+  return { ok: true, rimossiDuplicati: rimossi, liberati: liberati, creato: 'sendDigestProfilatiMartedi daily@07:30', nota: msg };
 }
 
 // ============================================================================

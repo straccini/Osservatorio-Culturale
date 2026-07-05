@@ -6,7 +6,7 @@
  *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
  *
  *  Scopo: generare SVG inline per le card bandi mostrate nel carosello hero
- *  della home (Sprint 2 home redesign). Branding Sinopia coerente,
+ *  della home (Sprint 2 home redesign). Branding Duemilamusei coerente,
  *  costo zero, sempre disponibile.
  *
  *  Funzione esportata:
@@ -146,7 +146,7 @@ function renderSvgCardBando(bando) {
       '</defs>' +
       '<rect width="1440" height="810" fill="url(#bg' + amb + ')"/>' +
       pattern +
-      // Top bar Sinopia brand
+      // Top bar Duemilamusei brand
       '<g font-family="Inter, Arial, sans-serif" font-size="13" letter-spacing="3" fill="#6E6A62">' +
         '<text x="80" y="80" font-weight="700">OSSERVATORIO CULTURALE · DUEMILAMUSEI</text>' +
         '<line x1="80" y1="105" x2="1360" y2="105" stroke="#D5D0C4" stroke-width="1"/>' +
@@ -178,7 +178,7 @@ function renderSvgCardBando(bando) {
       '<g font-family="Inter, Arial, sans-serif" font-size="12" letter-spacing="2" fill="#9A958B">' +
         '<line x1="80" y1="755" x2="1360" y2="755" stroke="#D5D0C4" stroke-width="1"/>' +
         '<text x="80" y="780">SCOPRI IL BANDO COMPLETO SU OSSERVATORIO CULTURALE</text>' +
-        '<text x="1360" y="780" text-anchor="end">SINOPIACONSULTING.IT</text>' +
+        '<text x="1360" y="780" text-anchor="end">DUEMILAMUSEI.IT</text>' +
       '</g>' +
       '</svg>';
 

@@ -91,25 +91,73 @@ function generateDigestForUser(email, responseId, opts) {
     var bandiByDim   = {};
     var newsByDim    = {};
     var podcastByDim = {};
-    // v4.19.1 — Dedup cross-dimensione: stesso bando/news/podcast non appare in più sezioni
+    // v4.24 — Dedup cross-dimensione esatto + fuzzy: nessun contenuto duplicato o simile tra sezioni
     var _seenBandi = {}, _seenNews = {}, _seenPodcast = {};
+    var _allBandiAccum = [], _allNewsAccum = [], _allPodAccum = [];
+
+    function _crossDedupExact(item, seen) {
+      var k = String(item.titolo||'').trim().toLowerCase();
+      if (!k || seen[k]) return false;
+      seen[k] = true;
+      return true;
+    }
+
     topDims.forEach(function(dim) {
-      bandiByDim[dim]   = _queryContenutiPerDim_('bandi',   dim, 6).filter(function(b) {
-        var k = String(b.titolo||'').trim().toLowerCase(); if (_seenBandi[k]) return false; _seenBandi[k]=true; return true;
-      }).slice(0,4);
-      newsByDim[dim]    = _queryContenutiPerDim_('items',   dim, 5).filter(function(n) {
-        var k = String(n.titolo||'').trim().toLowerCase(); if (_seenNews[k]) return false; _seenNews[k]=true; return true;
-      }).slice(0,3);
-      podcastByDim[dim] = _queryContenutiPerDim_('podcast', dim, 4).filter(function(p) {
-        var k = String(p.titolo||'').trim().toLowerCase(); if (_seenPodcast[k]) return false; _seenPodcast[k]=true; return true;
-      }).slice(0,2);
+      var rawBandi = _queryContenutiPerDim_('bandi', dim, 6).filter(function(b) { return _crossDedupExact(b, _seenBandi); });
+      _allBandiAccum = _allBandiAccum.concat(rawBandi);
+      bandiByDim[dim] = rawBandi.slice(0, 4);
+
+      var rawNews = _queryContenutiPerDim_('items', dim, 5).filter(function(n) { return _crossDedupExact(n, _seenNews); });
+      _allNewsAccum = _allNewsAccum.concat(rawNews);
+      newsByDim[dim] = rawNews.slice(0, 3);
+
+      var rawPod = _queryContenutiPerDim_('podcast', dim, 4).filter(function(p) { return _crossDedupExact(p, _seenPodcast); });
+      _allPodAccum = _allPodAccum.concat(rawPod);
+      podcastByDim[dim] = rawPod.slice(0, 2);
     });
+
+    // Dedup fuzzy cross-dimensione (titoli simili tra dimensioni diverse)
+    if (typeof _dedupFuzzyByTitle_ === 'function') {
+      var _allBandiClean = _dedupFuzzyByTitle_(_allBandiAccum);
+      var _allNewsClean = _dedupFuzzyByTitle_(_allNewsAccum);
+      var _allPodClean = _dedupFuzzyByTitle_(_allPodAccum);
+
+      // Ricostruisci i bucket per dimensione mantenendo solo gli item sopravvissuti
+      var _bandiSet = {}; _allBandiClean.forEach(function(b) { _bandiSet[String(b.titolo||'').trim().toLowerCase()] = true; });
+      var _newsSet = {};  _allNewsClean.forEach(function(n) { _newsSet[String(n.titolo||'').trim().toLowerCase()] = true; });
+      var _podSet = {};   _allPodClean.forEach(function(p) { _podSet[String(p.titolo||'').trim().toLowerCase()] = true; });
+
+      topDims.forEach(function(dim) {
+        bandiByDim[dim] = (bandiByDim[dim] || []).filter(function(b) { return _bandiSet[String(b.titolo||'').trim().toLowerCase()]; });
+        newsByDim[dim] = (newsByDim[dim] || []).filter(function(n) { return _newsSet[String(n.titolo||'').trim().toLowerCase()]; });
+        podcastByDim[dim] = (podcastByDim[dim] || []).filter(function(p) { return _podSet[String(p.titolo||'').trim().toLowerCase()]; });
+      });
+    }
+
+    // v4.25 — Contenuti agenti unificati (se richiesto)
+    var agentItems = [];
+    if (opts.includeAgentContent && typeof getAllAgentContentForUser === 'function') {
+      var agentData = getAllAgentContentForUser(email, 3);
+      if (agentData && agentData.ok && agentData.allItems && agentData.allItems.length) {
+        // Raccogli tutti i titoli Matrix per dedup cross-sistema
+        var matrixTitles = [];
+        topDims.forEach(function(dim) {
+          (bandiByDim[dim]||[]).forEach(function(b){ if(b.titolo) matrixTitles.push(b.titolo); });
+          (newsByDim[dim]||[]).forEach(function(n){ if(n.titolo) matrixTitles.push(n.titolo); });
+          (podcastByDim[dim]||[]).forEach(function(p){ if(p.titolo) matrixTitles.push(p.titolo); });
+        });
+        // Dedup agenti vs Matrix
+        agentItems = (typeof _dedupAgentVsMatrix_ === 'function')
+          ? _dedupAgentVsMatrix_(agentData.allItems, matrixTitles)
+          : agentData.allItems;
+      }
+    }
 
     // Compone HTML
     var museumName = report.museumName || 'la tua struttura';
     var dataStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy');
     var subject = '[Personalizzato] Aggiornamenti per ' + museumName + ' — ' + dataStr;
-    var html = _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcastByDim, email);
+    var html = _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcastByDim, email, agentItems);
 
     // Salva in DigestQueue solo se richiesto (default sì, per generateDigestQueueAll).
     // Invio diretto coorte B e anteprima passano {save:false} → niente bozza spuria.
@@ -144,135 +192,6 @@ function generateDigestForUser(email, responseId, opts) {
     Logger.log('generateDigestForUser errore: ' + e.message + '\n' + e.stack);
     return { error: e.message };
   }
-}
-
-// ============================================================================
-// DIGEST DEDICATA — LETTORI PROFILATI (ProfiloPro, senza Matrix)
-// Stesso meccanismo del digest Matrix ma pilotato dagli interessi_dimensioni
-// del profilo invece che dai gap del report.
-// ============================================================================
-
-/** @private Nome leggibile (IT) di una dimensione MuseMu (D1..D10). */
-function _proDimNome_(code) {
-  var M = {
-    D1: 'Identità e brand', D2: 'Collezione e patrimonio', D3: 'Edificio ed esperienza spaziale',
-    D4: 'Programma e offerta culturale', D5: 'Servizi e terzo luogo', D6: 'Maturità digitale e tecnologia',
-    D7: 'Accessibilità radicale', D8: 'Audience e edutainment', D9: 'Governance, sostenibilità ed ecosistema',
-    D10: 'Welfare culturale e impatto sociale'
-  };
-  return M[String(code || '').toUpperCase()] || code;
-}
-
-/**
- * Genera il digest segmentato per un lettore PROFILATO, sui suoi interessi.
- * @param {string} email
- * @param {string} dimsCsv  interessi_dimensioni CSV (es. 'D7,D8,D10')
- * @param {Object} [opts]
- * @return {Object} { ok, email, subject, html, interessi[], totale } | { error } | { ok, empty }
- */
-function generateDigestForDims(email, dimsCsv, opts) {
-  opts = opts || {};
-  try {
-    if (!email) return { error: 'email obbligatoria' };
-    var dims = String(dimsCsv || '').split(',')
-      .map(function(s){ return s.trim().toUpperCase(); })
-      .filter(function(d){ return /^D(10|[1-9])$/.test(d); });
-    if (!dims.length) return { error: 'nessun interesse (interessi_dimensioni) per ' + email };
-    var topDims = dims.slice(0, 3); // prime 3, come le 3 priorità Matrix
-    var interessiTop = topDims.map(function(d){ return { dimensionCode: d, dimensionName: _proDimNome_(d) }; });
-
-    var bandiByDim = {}, newsByDim = {}, podcastByDim = {};
-    var _sb = {}, _sn = {}, _sp = {};
-    topDims.forEach(function(dim) {
-      bandiByDim[dim]   = _queryContenutiPerDim_('bandi',   dim, 6).filter(function(b){ var k = String(b.titolo||'').trim().toLowerCase(); if (_sb[k]) return false; _sb[k] = true; return true; }).slice(0, 4);
-      newsByDim[dim]    = _queryContenutiPerDim_('items',   dim, 5).filter(function(n){ var k = String(n.titolo||'').trim().toLowerCase(); if (_sn[k]) return false; _sn[k] = true; return true; }).slice(0, 3);
-      podcastByDim[dim] = _queryContenutiPerDim_('podcast', dim, 4).filter(function(p){ var k = String(p.titolo||'').trim().toLowerCase(); if (_sp[k]) return false; _sp[k] = true; return true; }).slice(0, 2);
-    });
-
-    var totale = topDims.reduce(function(s, d){ return s + bandiByDim[d].length + newsByDim[d].length + podcastByDim[d].length; }, 0);
-    if (!totale) return { ok: true, email: email, empty: true, html: '', interessi: topDims, note: 'nessun contenuto pertinente agli interessi' };
-
-    var dataStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy');
-    var subject = 'Sinopia · Il tuo digest sui temi che hai scelto — ' + dataStr;
-    var html = _buildDigestProfiloHtml_(interessiTop, bandiByDim, newsByDim, podcastByDim, email);
-    return { ok: true, email: email, subject: subject, html: html, htmlLength: html.length, interessi: topDims, totale: totale };
-  } catch (e) {
-    Logger.log('generateDigestForDims errore: ' + e.message + '\n' + e.stack);
-    return { error: e.message };
-  }
-}
-
-/** @private Builder HTML del digest profilato (riusa _dsCard_/_dsSubsectionHeader_). */
-function _buildDigestProfiloHtml_(interessi, bandiByDim, newsByDim, podcastByDim, email) {
-  var dateStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy');
-  var webUrl = ''; try { webUrl = ScriptApp.getService().getUrl() || ''; } catch (e) {}
-  var p = [];
-  p.push('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Il tuo digest Sinopia</title></head>');
-  p.push('<body style="margin:0;padding:0;background:#F4F4F6;font-family:Inter,Helvetica,Arial,sans-serif;color:#1D1D1F;">');
-  p.push('<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#F4F4F6;padding:24px 0;"><tr><td align="center">');
-  p.push('<table role="presentation" width="640" cellspacing="0" cellpadding="0" border="0" style="max-width:640px;background:#FFFFFF;border-radius:12px;overflow:hidden;">');
-  p.push('<tr><td style="padding:28px 28px 18px 28px;background:linear-gradient(135deg,#935851 0%,#5C3A36 100%);color:#FFFFFF;">');
-  p.push('<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.85">Sinopia · Digest personalizzato · ' + _h_(dateStr) + '</div>');
-  p.push('<div style="font-size:22px;font-weight:700;margin-top:8px;">I contenuti sui tuoi temi</div></td></tr>');
-  p.push('<tr><td style="padding:18px 28px 6px 28px;"><div style="background:#FBF7EF;border-left:3px solid #935851;padding:14px 16px;border-radius:6px;font-size:13px;line-height:1.6;color:#5C3A36">Una selezione settimanale di <b>bandi, news e podcast</b> filtrati sui <b>temi che hai scelto nel tuo profilo</b>. Niente rumore generico: solo contenuti pertinenti ai tuoi interessi.</div></td></tr>');
-  p.push('<tr><td style="padding:14px 28px 0 28px;"><div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8A8A8E;font-weight:700;margin-bottom:8px">I tuoi temi di interesse</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr>');
-  interessi.forEach(function(o, i) {
-    var col = ['#935851', '#B8902A', '#0E7490'][i] || '#666';
-    p.push('<td style="width:33%;padding:6px 4px"><div style="background:#FAFAFA;border-top:3px solid ' + col + ';padding:10px 12px;border-radius:6px"><div style="font-size:11px;color:' + col + ';font-weight:700">' + _h_(o.dimensionCode) + '</div><div style="font-size:13px;color:#1D1D1F;margin-top:3px;line-height:1.3">' + _h_(o.dimensionName) + '</div></div></td>');
-  });
-  p.push('</tr></table></td></tr>');
-  interessi.forEach(function(o) {
-    var dim = o.dimensionCode, bandi = bandiByDim[dim] || [], news = newsByDim[dim] || [], pod = podcastByDim[dim] || [];
-    var tot = bandi.length + news.length + pod.length; if (!tot) return;
-    p.push('<tr><td style="padding:24px 28px 6px 28px;border-top:1px solid #ECECEE;"><div style="font-size:13px;color:#935851;font-weight:700">' + _h_(dim) + ' · ' + _h_(o.dimensionName) + '</div><div style="font-size:11px;color:#888;margin-top:2px">' + tot + ' aggiornamenti pertinenti questa settimana</div></td></tr>');
-    if (bandi.length) { p.push(_dsSubsectionHeader_('🔥 Bandi pertinenti')); bandi.forEach(function(b){ p.push(_dsCard_(b, '#B8902A', 'bando')); }); }
-    if (news.length)  { p.push(_dsSubsectionHeader_('📰 News'));            news.forEach(function(n){ p.push(_dsCard_(n, '#0E7490', 'news')); }); }
-    if (pod.length)   { p.push(_dsSubsectionHeader_('🎙️ Podcast / Video')); pod.forEach(function(x){ p.push(_dsCard_(x, '#534AB7', 'podcast')); }); }
-  });
-  if (webUrl) {
-    p.push('<tr><td style="padding:28px 28px 12px 28px;text-align:center;border-top:1px solid #ECECEE;"><div style="font-size:13px;color:#3A3A3C;margin-bottom:10px">Vuoi affinare i temi o avere un\'analisi completa del tuo museo?</div>');
-    p.push('<a href="' + _h_(webUrl) + '?goto=profilo-pro" style="display:inline-block;background:#935851;color:#FFFFFF;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:0 6px 6px 0;">Aggiorna il mio profilo →</a>');
-    p.push('<a href="' + _h_(webUrl) + '?goto=matrix-landing" style="display:inline-block;background:#8E6E1F;color:#FFFFFF;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:0 0 6px 0;">Valuta il tuo museo · Matrix →</a></td></tr>');
-  }
-  p.push('<tr><td style="padding:14px 28px 28px 28px;border-top:1px solid #ECECEE;"><p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;">Ricevi questa email perché hai compilato il tuo profilo professionale su Sinopia e scelto i temi di interesse. Dati trattati ai sensi del Reg. UE 2016/679.</p>');
-  if (typeof _digestUnsubFooter_ === 'function' && email) { p.push(_digestUnsubFooter_(email, { style: 'matrix' })); }
-  p.push('</td></tr></table></td></tr></table></body></html>');
-  return p.join('');
-}
-
-/**
- * TEST — invia un digest profilato a un'email (usa gli interessi del suo profilo,
- * fallback D7,D8,D10). Da eseguire dall'editor per validare prima dell'invio reale.
- */
-function testDigestProfilato(email) {
-  var target = String(email || (function(){ try { return Session.getActiveUser().getEmail(); } catch(e){ return ''; } })() || 'sinopiaconsulting@gmail.com').toLowerCase();
-  var dims = '';
-  try {
-    var hit = ((typeof _proListaProfilati_ === 'function') ? _proListaProfilati_() : []).filter(function(p){ return p.email === target; })[0];
-    if (hit) dims = hit.interessiCsv;
-  } catch (_) {}
-  if (!dims) dims = 'D7,D8,D10';
-  var res = generateDigestForDims(target, dims, { save: false });
-  if (!res || !res.ok || !res.html) { Logger.log('[TEST profilato] ' + JSON.stringify(res)); return res; }
-  MailApp.sendEmail({ to: target, subject: res.subject, htmlBody: res.html, name: 'Sinopia · Osservatorio Culturale' });
-  Logger.log('[TEST profilato] inviato a ' + target + ' · interessi=' + dims + ' · ' + res.totale + ' contenuti');
-  return { ok: true, inviato: target, interessi: dims, totale: res.totale };
-}
-
-/**
- * Frontend-safe: invia un digest profilato (ProfiloPro) di PROVA all'email indicata.
- * Admin-gated. Chiamabile via google.script.run dal pannello Impostazioni → Digest.
- * @param {string} email
- * @param {string} token  token di sessione admin
- * @return {Object} { ok, inviato, interessi, totale } | { ok:false, error }
- */
-function testDigestProfilatoUI(email, token) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
-    return { ok: false, error: 'forbidden' };
-  }
-  var dest = String(email || '').trim();
-  if (dest.indexOf('@') < 0) return { ok: false, error: 'email non valida' };
-  return testDigestProfilato(dest);
 }
 
 /**
@@ -492,8 +411,10 @@ function _queryContenutiPerDim_(target, dim, limit) {
     var iAmbito = _findCol_(headers, ['Ambito','ambito','AmbitoId']);
 
     var rows = sh.getRange(2, 1, sh.getLastRow()-1, headers.length).getValues();
+    // v4.24 — Raccogli con margine per dedup fuzzy
+    var rawLimit = limit * 2;
     var out = [];
-    for (var i = rows.length - 1; i >= 0 && out.length < limit; i--) { // dal piu recente
+    for (var i = rows.length - 1; i >= 0 && out.length < rawLimit; i--) { // dal piu recente
       var dims = (iDim >= 0) ? String(rows[i][iDim] || '').trim() : '';
       var match = false;
       if (dims) {
@@ -511,7 +432,11 @@ function _queryContenutiPerDim_(target, dim, limit) {
         scadenza: iSca >= 0 ? String(rows[i][iSca] || '') : ''
       });
     }
-    return out;
+    // v4.24 — Dedup fuzzy: rimuove titoli simili già a livello di query
+    if (typeof _dedupFuzzyByTitle_ === 'function') {
+      out = _dedupFuzzyByTitle_(out);
+    }
+    return out.slice(0, limit);
   } catch(e) {
     Logger.log('_queryContenutiPerDim_ ' + target + ' ' + dim + ' errore: ' + e.message);
     return [];
@@ -583,7 +508,7 @@ function _getRecentDraftsByEmail_(daysBack) {
 // HELPER PRIVATI — Costruzione HTML email personalizzata
 // ============================================================================
 
-function _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcastByDim, email) {
+function _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcastByDim, email, agentItems) {
   var museumName = report.museumName || 'la tua struttura';
   var profile = report.profileAssigned || '';
   var score = report.syntheticScore || 0;
@@ -654,6 +579,32 @@ function _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcas
     }
   });
 
+  // v4.25 — Sezione "Altre segnalazioni della settimana" (contenuti agenti)
+  if (agentItems && agentItems.length > 0) {
+    parts.push('<tr><td style="padding:28px 28px 6px 28px;border-top:1px solid #ECECEE;">');
+    parts.push('<div style="font-size:14px;color:#1D1D1F;font-weight:700">Altre segnalazioni della settimana</div>');
+    parts.push('<div style="font-size:11px;color:#888;margin-top:2px">' + agentItems.length + ' contenuti selezionati dai nostri agenti tematici</div>');
+    parts.push('</td></tr>');
+
+    // Raggruppa per agente
+    var agentGroups = {};
+    agentItems.forEach(function(it) {
+      var code = it.agentCodice || 'altro';
+      if (!agentGroups[code]) agentGroups[code] = { icon: it.agentIcon||'📌', nome: it.agentNomeBreve||code, color: it.agentColor||'#666', items: [] };
+      agentGroups[code].items.push(it);
+    });
+
+    Object.keys(agentGroups).forEach(function(code) {
+      var grp = agentGroups[code];
+      parts.push('<tr><td style="padding:10px 28px 4px 28px;">');
+      parts.push('<div style="font-size:12px;color:' + grp.color + ';font-weight:700">' + grp.icon + ' ' + _h_(grp.nome) + '</div>');
+      parts.push('</td></tr>');
+      grp.items.forEach(function(it) {
+        parts.push(_dsCard_({ titolo: it.titolo, link: it.url||'', ente: it.fonte||'', scadenza: it.data||'' }, grp.color, 'agente'));
+      });
+    });
+  }
+
   // CTA: rivedi report Matrix
   if (webUrl) {
     parts.push('<tr><td style="padding:28px 28px 12px 28px;text-align:center;border-top:1px solid #ECECEE;">');
@@ -667,14 +618,18 @@ function _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcas
     parts.push('<tr><td style="padding:0 28px;">' + _digestCapitaleCta_(webUrl || '') + '</td></tr>');
   }
 
-  // Footer
+  // Footer — v4.24: tipo digest esplicito, unsubscribe, modifica preferenze
   parts.push('<tr><td style="padding:14px 28px 28px 28px;border-top:1px solid #ECECEE;">');
-  parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;">Ricevi questa email perche hai completato il questionario MuseMu Matrix per ' + _h_(museumName) + ' e hai espresso consenso al follow-up. Dati trattati ai sensi del Reg. UE 2016/679.</p>');
+  parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;">Questa è una <strong>digest personalizzata MuseMu Matrix</strong> per ' + _h_(museumName) + '.<br>Ricevi questa email perché hai completato il questionario e hai espresso consenso al follow-up. Dati trattati ai sensi del Reg. UE 2016/679.</p>');
   // v4.18.54 — Footer unsubscribe link
   if (typeof _digestUnsubFooter_ === 'function' && email) {
     parts.push(_digestUnsubFooter_(email, { style: 'matrix' }));
   }
-  parts.push('<p style="margin:8px 0 0;font-size:11px;color:#A8A8AA">Sinopia · Osservatorio Culturale · Deruta (PG) · sinopiaconsulting@gmail.com</p>');
+  // v4.24 — Link modifica preferenze
+  if (webUrl) {
+    parts.push('<p style="margin:8px 0 0;font-size:11px;color:#8A8A8E;">Vuoi ricevere contenuti diversi? <a href="' + _h_(webUrl) + '#profilo-agenti" style="color:#0E7490;text-decoration:underline;">Modifica le tue preferenze</a>.</p>');
+  }
+  parts.push('<p style="margin:8px 0 0;font-size:11px;color:#A8A8AA">Sinopia · Osservatorio Culturale · Fano (PU) · sinopiaconsulting@gmail.com</p>');
   parts.push('</td></tr>');
 
   parts.push('</table></td></tr></table></body></html>');
@@ -708,7 +663,7 @@ function _dsCard_(item, color, kind) {
 
 /**
  * Test rapido del digest segmentato con dati di esempio.
- * Genera bozza per sinopiaconsulting@gmail.com e usa l'ULTIMO responseId in
+ * Genera bozza per s.straccini@gmail.com e usa l'ULTIMO responseId in
  * ResponsesMatrix (utile dopo aver eseguito testMatrixModule).
  */
 function testGenerateDigestSegmentato(token) {
@@ -726,7 +681,7 @@ function testGenerateDigestSegmentato(token) {
   var lastRow = rmSh.getLastRow();
   var rid = String(rmSh.getRange(lastRow, 1).getValue());
   Logger.log('Uso responseId: ' + rid);
-  var res = generateDigestForUser('sinopiaconsulting@gmail.com', rid);
+  var res = generateDigestForUser('s.straccini@gmail.com', rid);
   Logger.log('Risultato generazione: ' + JSON.stringify(res, null, 2));
   if (!res.ok) return res;
 
@@ -844,10 +799,8 @@ function testDigestMatrixForEmail(email, token) {
 // ============================================================================
 
 var OC_DIGEST_TRIGGER_HANDLER = 'cronGenerateDigestWeekly';
-// Opzione B (revisione prima dell'invio): bozze generate DOMENICA sera, l'admin
-// rivede e invia lunedi mattina dal pannello. Niente piu invio automatico.
-var OC_DIGEST_TRIGGER_DAY = ScriptApp.WeekDay.SUNDAY;
-var OC_DIGEST_TRIGGER_HOUR = 18; // domenica 18:00
+var OC_DIGEST_TRIGGER_DAY = ScriptApp.WeekDay.TUESDAY;
+var OC_DIGEST_TRIGGER_HOUR = 6; // martedi 06:00
 var OC_DIGEST_LAST_RUN_PROP = 'OC_DIGEST_LAST_RUN';
 var OC_DIGEST_LAST_RESULT_PROP = 'OC_DIGEST_LAST_RESULT';
 
@@ -911,11 +864,11 @@ function cronGenerateDigestWeekly() {
 
     // 3) Notifica Telegram all'admin
     Logger.log('[3/3] Notifica Telegram all\'admin...');
-    var msg = '*Digest settimanale · bozze pronte (domenica sera)*\n\n' +
+    var msg = '*Digest weekly · bozze pronte*\n\n' +
               '_' + Utilities.formatDate(startedAt, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm') + '_\n\n' +
               '*Segmentati Matrix:* ' + (report.segmentati ? (report.segmentati.generati||0) : 0) + ' bozze\n' +
               '*Generalista:* ' + (report.generalista && report.generalista.ok ? '1 bozza pronta' : 'errore') + '\n\n' +
-              '👉 *Lunedi mattina*: apri Impostazioni → Digest, rivedi l\'anteprima e premi *Invia digest settimanale* per spedire a tutti (lettori + Matrix + profilati).';
+              'Apri il pannello admin per revisione e invio.';
     try {
       if (typeof sendTelegram === 'function') {
         var tg = sendTelegram(msg);
@@ -962,18 +915,18 @@ function setupMatrixDigestTrigger() {
       }
     });
 
-    // Crea nuovo trigger weekly domenica 18:00 (Opzione B: bozze pronte per il lunedi)
+    // Crea nuovo trigger weekly martedi 06:00
     var trig = ScriptApp.newTrigger(OC_DIGEST_TRIGGER_HANDLER)
       .timeBased()
       .onWeekDay(OC_DIGEST_TRIGGER_DAY)
       .atHour(OC_DIGEST_TRIGGER_HOUR)
       .create();
 
-    Logger.log('Trigger creato: ' + OC_DIGEST_TRIGGER_HANDLER + ' domenica ' + OC_DIGEST_TRIGGER_HOUR + ':00. Rimossi precedenti: ' + removed);
+    Logger.log('Trigger creato: ' + OC_DIGEST_TRIGGER_HANDLER + ' martedi ' + OC_DIGEST_TRIGGER_HOUR + ':00. Rimossi precedenti: ' + removed);
     return {
       ok: true,
       triggerId: trig.getUniqueId(),
-      day: 'SUNDAY',
+      day: 'TUESDAY',
       hour: OC_DIGEST_TRIGGER_HOUR,
       removedOld: removed
     };

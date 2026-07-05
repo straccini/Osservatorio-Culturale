@@ -147,11 +147,6 @@ function _generateDigestDraftCore_(opts) {
   var pod  = (bandiUrg && bandiUrg.podcast) ? bandiUrg.podcast.slice(0, maxPodcast) : [];
   var urg  = (bandiUrg && bandiUrg.bandiUrgenti) ? bandiUrg.bandiUrgenti.slice(0, maxBandi) : [];
 
-  // Editoria "Dalla ricerca" (pubblicazioni + podcast curati) per la sezione newsletter
-  var maxEditoria = opts.maxEditoria || 5;
-  var ediRes = _safeCall_(function(){ return getEditoria(maxEditoria); }, { items: [] });
-  var editoria = (ediRes && ediRes.items) ? ediRes.items : [];
-
   // Filtro ambito (se richiesto)
   if (ambito) {
     urg      = urg.filter(function(b){ return String(b.ambito||b.ambitoId||'') === ambito; });
@@ -176,7 +171,6 @@ function _generateDigestDraftCore_(opts) {
     bandiRecenti:   bandiNew,
     news:           news,
     podcast:        pod,
-    editoria:       editoria,
     stato:     'bozza'
   };
 
@@ -196,8 +190,7 @@ function _generateDigestDraftCore_(opts) {
       bandiUrgenti: urg.length,
       bandiRecenti: bandiNew.length,
       news:         news.length,
-      podcast:      pod.length,
-      editoria:     editoria.length
+      podcast:      pod.length
     }
   };
 }

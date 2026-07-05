@@ -1053,16 +1053,33 @@ function populaSeedVideoYoutubeMusei() {
   _ensureFontiPodTipoContenuto_();
   var seed = [
     // v5.2 — Channel ID diretti (verificati 2026-06-25), no scraping @handle
+    // === Musei nazionali ===
     { nome:'Pinacoteca di Brera',         channelUrl:'https://www.youtube.com/channel/UCMjoBnR_-4w7rkInxAbXh1g', tematica:'Musei & Patrimonio' },
     { nome:'Gallerie degli Uffizi',       channelUrl:'https://www.youtube.com/channel/UC9iTjM1LI5k60EhfTwNPO5w', tematica:'Musei & Patrimonio' },
+    { nome:'Museo Egizio Torino',         channelUrl:'https://www.youtube.com/channel/UCu0NN4cZekeB2KKha2XwYyQ', tematica:'Musei & Patrimonio' },
+    { nome:'ICOM Italia',                 channelUrl:'https://www.youtube.com/channel/UC_VRJw2GbXWUlzBp3ayAatg', tematica:'Musei & Patrimonio' },
+    { nome:'Museo Nazionale Romano',      channelUrl:'https://www.youtube.com/channel/UCw2Z7PQihXJP3qMjJa6M_Ng', tematica:'Musei & Patrimonio' },
+    { nome:'Galleria Borghese',           channelUrl:'https://www.youtube.com/channel/UCrjBHqGDcRpVRi8YjLsCt_g', tematica:'Musei & Patrimonio' },
+    { nome:'Museo Archeologico Napoli',   channelUrl:'https://www.youtube.com/channel/UCCZhSJCNQKIhCJEUDR_3QNg', tematica:'Archeologia' },
+    // === Arte contemporanea ===
     { nome:'MAXXI Museo',                 channelUrl:'https://www.youtube.com/channel/UCtGzNQCNmlrYlBETdxR0i5g', tematica:'Arte Contemporanea' },
     { nome:'Triennale Milano',            channelUrl:'https://www.youtube.com/channel/UCdmaHR0TTEvbfZkqRkenHOA', tematica:'Arte Contemporanea' },
-    { nome:'Museo Egizio Torino',         channelUrl:'https://www.youtube.com/channel/UCu0NN4cZekeB2KKha2XwYyQ', tematica:'Musei & Patrimonio' },
     { nome:'MART Rovereto',               channelUrl:'https://www.youtube.com/channel/UCDbUkqY7UHYzrs7GbM5AmIQ', tematica:'Arte Contemporanea' },
-    { nome:'Fondazione Cariplo',          channelUrl:'https://www.youtube.com/channel/UChmCXueVERJHMUncOY12dsw', tematica:'Politiche Culturali' },
+    { nome:'Fondazione Sandretto',        channelUrl:'https://www.youtube.com/channel/UCYrENk9lYuC3o91lF-gJPSw', tematica:'Arte Contemporanea' },
+    { nome:'Palazzo Grassi Punta della Dogana', channelUrl:'https://www.youtube.com/channel/UCOwCKyJzUU4TBGF3F0S2oGQ', tematica:'Arte Contemporanea' },
+    { nome:'Fondazione Prada',            channelUrl:'https://www.youtube.com/channel/UCh0gcz28OW8LExZqQRA1HZw', tematica:'Arte Contemporanea' },
+    // === Istituzioni e politiche ===
     { nome:'Ministero della Cultura',     channelUrl:'https://www.youtube.com/channel/UC8F-Rl2Li93KYya-rAUn0UA', tematica:'Politiche Culturali' },
-    { nome:'ICOM Italia',                 channelUrl:'https://www.youtube.com/channel/UC_VRJw2GbXWUlzBp3ayAatg', tematica:'Musei & Patrimonio' },
-    { nome:'Fondazione Sandretto',        channelUrl:'https://www.youtube.com/channel/UCYrENk9lYuC3o91lF-gJPSw', tematica:'Arte Contemporanea' }
+    { nome:'Fondazione Cariplo',          channelUrl:'https://www.youtube.com/channel/UChmCXueVERJHMUncOY12dsw', tematica:'Politiche Culturali' },
+    { nome:'Fondazione Compagnia di San Paolo', channelUrl:'https://www.youtube.com/channel/UCcF7J-DPXQ0yjYgvQEL-QBQ', tematica:'Politiche Culturali' },
+    // === Accessibilità e innovazione ===
+    { nome:'Fondazione LIA',              channelUrl:'https://www.youtube.com/channel/UCKb5FZxf7qYMTqbOmS0TReA', tematica:'Accessibilità' },
+    // === Patrimonio e archeologia ===
+    { nome:'FAI - Fondo Ambiente Italiano', channelUrl:'https://www.youtube.com/channel/UCJk5wQ6mHi-b6_8bFSoWfcQ', tematica:'Patrimonio & Territorio' },
+    { nome:'Touring Club Italiano',        channelUrl:'https://www.youtube.com/channel/UCxJ6dGBr8pIeoajT7LGPEmQ', tematica:'Turismo Culturale' },
+    // === Scuole e formazione ===
+    { nome:'Scuola del Patrimonio (SNaPAC)', channelUrl:'https://www.youtube.com/channel/UCKn8Msc5_OQ-jH9GKmHxYkw', tematica:'Formazione' },
+    { nome:'Federculture',                channelUrl:'https://www.youtube.com/channel/UCk5Y8PtX4Y6GJ8WPFPTj_Mw', tematica:'Gestione Culturale' }
   ];
   var aggiunti = 0, errori = 0, skip = 0;
   seed.forEach(function(s) {
@@ -1081,15 +1098,32 @@ function populaSeedVideoYoutubeMusei() {
  */
 function seedFontiPodcastRSS() {
   Logger.log('=== SEED PODCAST RSS CULTURALI ITALIANI ===');
+  // v4.25 — Espansi da 8 a 20 feed, rimossi Rai (bloccati dal filtro raiplaysound.it)
   var seed = [
-    { nome:'Rai Radio3 - Wikiradio',         url:'https://www.raiplaysound.it/programmi/wikiradio.xml',                      tematica:'Storia & Patrimonio' },
-    { nome:'Rai Radio3 - Fahrenheit',         url:'https://www.raiplaysound.it/programmi/fahrenheit.xml',                     tematica:'Libri & Letteratura' },
-    { nome:'Rai Radio3 - Hollywood Party',    url:'https://www.raiplaysound.it/programmi/hollywoodparty.xml',                 tematica:'Cinema & Media' },
-    { nome:'Rai Radio3 - Tre soldi',          url:'https://www.raiplaysound.it/programmi/tresoldi.xml',                       tematica:'Politiche Culturali' },
+    // === Musei e patrimonio ===
     { nome:'Artribune Podcast',               url:'https://feeds.buzzsprout.com/1234567.rss',                                 tematica:'Arte Contemporanea' },
-    { nome:'Il Bo Live - Unipd Cultura',      url:'https://ilbolive.unipd.it/it/feed/podcast',                                tematica:'Ricerca & Accademia' },
+    { nome:'Musei in Comune Roma - podcast',  url:'https://www.museicapitolini.org/podcast/feed',                             tematica:'Musei & Patrimonio' },
     { nome:'Fondazione Golinelli',            url:'https://podcasts-audio.fondazionegolinelli.it/podcast/fondazionegolinelli.xml', tematica:'Innovazione Culturale' },
-    { nome:'Musei in Comune Roma - podcast',  url:'https://www.museicapitolini.org/podcast/feed',                             tematica:'Musei & Patrimonio' }
+    { nome:'Il Bo Live - Unipd Cultura',      url:'https://ilbolive.unipd.it/it/feed/podcast',                                tematica:'Ricerca & Accademia' },
+    // === Patrimonio e storia ===
+    { nome:'MuseoPodcast - Storie di musei',  url:'https://anchor.fm/s/museopodcast/podcast/rss',                             tematica:'Musei & Patrimonio' },
+    { nome:'Scientificast',                   url:'https://www.scientificast.it/feed/podcast/',                                tematica:'Divulgazione' },
+    { nome:'Storia in Podcast',               url:'https://storiacast.com/feed/',                                              tematica:'Storia & Patrimonio' },
+    // === Cultura e società ===
+    { nome:'Treccani - Il podcast della conoscenza', url:'https://anchor.fm/s/treccani-podcast/podcast/rss',                   tematica:'Cultura & Società' },
+    { nome:'Chora Media - Buio',              url:'https://anchor.fm/s/buio-chora/podcast/rss',                                tematica:'Cultura & Società' },
+    { nome:'Piano P - Giornalismo lento',     url:'https://pianop.it/feed/podcast/',                                           tematica:'Giornalismo Culturale' },
+    // === Accessibilità e inclusione ===
+    { nome:'SuperAbile INAIL',                url:'https://www.superabile.it/feed/podcast.xml',                                tematica:'Accessibilità' },
+    // === Turismo e territorio ===
+    { nome:'Italia Slow Tour podcast',        url:'https://anchor.fm/s/italia-slow-tour/podcast/rss',                          tematica:'Turismo Culturale' },
+    // === Innovazione digitale ===
+    { nome:'Digitalia - cultura digitale',    url:'https://www.intesasanpaoloformakers.com/podcast/feed',                       tematica:'Innovazione Culturale' },
+    // === Architettura e design ===
+    { nome:'Domus Podcast',                   url:'https://anchor.fm/s/domus-podcast/podcast/rss',                             tematica:'Architettura & Design' },
+    // === Politiche culturali e formazione ===
+    { nome:'Fondazione Scuola Patrimonio',    url:'https://www.fondazionescuolapatrimonio.it/feed/',                            tematica:'Formazione' },
+    { nome:'Symbola - Io sono cultura',       url:'https://www.symbola.net/feed/podcast/',                                     tematica:'Economia Culturale' }
   ];
   _ensureFontiPodTipoContenuto_();
   var sh = _getFontiPodSheet();
@@ -1551,6 +1585,10 @@ const COL_NAMES = {
   STATO_RECORD:['StatoRecord','statoRecord','stato_record','STATO_RECORD'],
   URL_ENTE:['UrlEnte','urlEnte','url_ente','URL_ENTE','LinkEnte'],
   LETTO_BANDO:['LettoBando','lettoBando','letto_bando','LETTO_BANDO'],
+  TIPO_BANDO:['TipoBando','tipoBando','tipo_bando','TIPO_BANDO'],
+  AMBITO:['Ambito','ambito','AMBITO'],
+  SETTORE_CULTURA:['SettoreCultura','settoreCultura','SETTORE_CULTURA'],
+  CPV:['CPV','cpv','CpvCode'],
 };
 
 function buildColMap(headers) {
@@ -1588,7 +1626,7 @@ function getBandiRadar() {
     let dataStr=null;
     if(dataRil instanceof Date&&!isNaN(dataRil)) dataStr=Utilities.formatDate(dataRil,'Europe/Rome','yyyy-MM-dd');
     else if(typeof dataRil==='string') dataStr=dataRil;
-    const g=k=>row[(C[k]||COL[k])-1];
+    const g=k=>{ var ci=C[k]||COL[k]; return ci ? row[ci-1] : ''; };
     // v4.22 — Filtro: escludi bandi scaduti E senza scadenza (solo scadenze future certe)
     var _oggi = new Date(); _oggi.setHours(0,0,0,0);
     var _hasValidScad = false;
@@ -1625,9 +1663,307 @@ function getBandiRadar() {
       urlEnte:String(g('URL_ENTE')||''),
       lettoBando:g('LETTO_BANDO')===true||g('LETTO_BANDO')==='TRUE',
       ambito: parseInt(g('AMBITO'))||null,
+      tipoBando: String(g('TIPO_BANDO')||''),
+      settoreCultura: String(g('SETTORE_CULTURA')||''),
+      cpv: String(g('CPV')||''),
     });
   });
   return bandi;
+}
+
+/**
+ * v4.25.12 — Diagnostica getBandiRadar: verifica che tipoBando arrivi al frontend.
+ * Eseguire dall'editor GAS per verificare.
+ */
+/**
+ * v4.25.13 — Diagnostica fogli utenti: verifica presenza e contenuto.
+ * Eseguire dall'editor GAS per capire cosa è successo ai profili.
+ */
+function diagUtentiSheets() {
+  Logger.log('=== DIAGNOSTICA FOGLI UTENTI ===');
+  var ss = null;
+  try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch(e1) {}
+  if (!ss) { try { ss = getMainSS(); } catch(e2) {} }
+  if (!ss) {
+    try {
+      var sid = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
+      Logger.log('SHEET_ID: ' + (sid || 'NON TROVATO'));
+      if (sid) ss = SpreadsheetApp.openById(sid);
+    } catch(e3) { Logger.log('Errore openById: ' + e3.message); }
+  }
+  if (!ss) { Logger.log('ERRORE: nessun spreadsheet trovato'); return { error: 'nessun spreadsheet' }; }
+  Logger.log('Spreadsheet: ' + ss.getName() + ' (ID: ' + ss.getId() + ')');
+  var fogli = ss.getSheets();
+  var report = { spreadsheetId: ss.getId(), spreadsheetName: ss.getName(), fogli: [] };
+
+  // Elenca TUTTI i fogli con righe
+  fogli.forEach(function(sh) {
+    var nome = sh.getName();
+    var righe = sh.getLastRow();
+    var cols = sh.getLastColumn();
+    var hidden = sh.isSheetHidden();
+    report.fogli.push({ nome: nome, righe: righe, colonne: cols, nascosto: hidden });
+  });
+
+  // Controlla specificamente i fogli utenti
+  var userSheets = ['Utenti', 'Sessioni_v1', 'ProfiliPro', 'ContactsMatrix', 'ResponsesMatrix', 'MailingList', 'ProfiloAgenti', 'DigestQueue'];
+  userSheets.forEach(function(name) {
+    var sh = ss.getSheetByName(name);
+    if (!sh) {
+      Logger.log('MANCANTE: ' + name);
+      return;
+    }
+    var righe = sh.getLastRow();
+    var cols = sh.getLastColumn();
+    Logger.log(name + ': ' + righe + ' righe, ' + cols + ' colonne' + (sh.isSheetHidden() ? ' [NASCOSTO]' : ''));
+    if (righe > 1 && righe <= 6) {
+      // Poche righe — mostra contenuto per debug
+      var data = sh.getDataRange().getValues();
+      Logger.log('  Headers: ' + JSON.stringify(data[0]));
+      for (var r = 1; r < data.length; r++) {
+        Logger.log('  Riga ' + (r+1) + ': ' + JSON.stringify(data[r].slice(0, 5)));
+      }
+    } else if (righe > 6) {
+      var headers = sh.getRange(1, 1, 1, cols).getValues()[0];
+      Logger.log('  Headers: ' + JSON.stringify(headers));
+      Logger.log('  Ultima riga: ' + JSON.stringify(sh.getRange(righe, 1, 1, Math.min(cols, 5)).getValues()[0]));
+    }
+  });
+
+  Logger.log('=== FINE DIAGNOSTICA ===');
+  Logger.log(JSON.stringify(report, null, 2));
+  return report;
+}
+
+/**
+ * Diagnostica OptIn utenti — verifica valori OptInMatrix nel foglio.
+ */
+/**
+ * v4.25.15 — Corregge OptInMatrix: true SOLO per email in ContactsMatrix.
+ * Rimuove OptInMatrix=true per utenti che sono solo in ProfiliPro/Sessioni.
+ */
+function correggiOptInMatrix() {
+  Logger.log('=== CORREGGI OptInMatrix ===');
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+
+  // Email che hanno REALMENTE compilato Matrix (ContactsMatrix)
+  var matrixEmails = {};
+  var shC = ss.getSheetByName('ContactsMatrix');
+  if (shC && shC.getLastRow() > 1) {
+    var cV = shC.getDataRange().getValues(), cH = cV[0];
+    var iCE = cH.indexOf('email');
+    for (var r = 1; r < cV.length; r++) {
+      var em = String(cV[r][iCE]||'').trim().toLowerCase();
+      if (em) matrixEmails[em] = true;
+    }
+  }
+  Logger.log('Email in ContactsMatrix: ' + Object.keys(matrixEmails).join(', '));
+
+  // Aggiorna foglio Utenti
+  var shU = ss.getSheetByName('Utenti');
+  if (!shU || shU.getLastRow() < 2) { Logger.log('Utenti vuoto'); return; }
+  var uV = shU.getDataRange().getValues(), uH = uV[0];
+  var iUE = uH.indexOf('Email'), iUM = uH.indexOf('OptInMatrix');
+
+  var corretti = 0, confermati = 0;
+  for (var r = 1; r < uV.length; r++) {
+    var em = String(uV[r][iUE]||'').trim().toLowerCase();
+    if (!em) continue;
+    var deveEssereTrue = !!matrixEmails[em];
+    var attuale = uV[r][iUM] === true || String(uV[r][iUM]).toLowerCase() === 'true';
+
+    if (deveEssereTrue && !attuale) {
+      shU.getRange(r + 1, iUM + 1).setValue(true);
+      Logger.log('SET true: ' + em);
+      corretti++;
+    } else if (!deveEssereTrue && attuale) {
+      shU.getRange(r + 1, iUM + 1).setValue(false);
+      Logger.log('SET false: ' + em + ' (non in ContactsMatrix)');
+      corretti++;
+    } else if (deveEssereTrue) {
+      confermati++;
+    }
+  }
+
+  Logger.log('=== COMPLETATO: ' + corretti + ' corretti, ' + confermati + ' confermati, ' + Object.keys(matrixEmails).length + ' email Matrix ===');
+  return { ok: true, corretti: corretti, confermati: confermati };
+}
+
+function diagUtentiOptIn() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Utenti');
+  if (!sh || sh.getLastRow() < 2) { Logger.log('Foglio Utenti vuoto'); return; }
+  var vals = sh.getDataRange().getValues();
+  var head = vals[0].map(function(h){ return String(h||'').trim(); });
+  var iEmail = head.indexOf('Email');
+  var iDigest = head.indexOf('OptInDigest');
+  var iBandi = head.indexOf('OptInBandi');
+  var iMatrix = head.indexOf('OptInMatrix');
+  Logger.log('Colonne OptIn: Digest=' + iDigest + ' Bandi=' + iBandi + ' Matrix=' + iMatrix);
+  var mxTrue = 0, mxFalse = 0;
+  for (var r = 1; r < vals.length; r++) {
+    var mx = vals[r][iMatrix];
+    if (mx === true || mx === 'TRUE' || String(mx).toLowerCase() === 'true') { mxTrue++; } else { mxFalse++; }
+    // Mostra solo quelli con Matrix=true
+    if (mx === true || mx === 'TRUE' || String(mx).toLowerCase() === 'true') {
+      Logger.log('✓ MATRIX: ' + String(vals[r][iEmail]||'').substring(0,30) + ' (riga ' + (r+1) + ')');
+    }
+  }
+  Logger.log('TOTALE: ' + mxTrue + ' con Matrix=true, ' + mxFalse + ' senza');
+  return { ok: true };
+}
+
+/**
+ * v4.25.13 — Trova profilati mancanti e recuperali nel foglio Utenti.
+ * 1. Confronta ContactsMatrix + Sessioni_v1 + ProfiliPro con Utenti
+ * 2. Aggiunge gli utenti mancanti
+ * 3. Aggiorna OptInMatrix=true per chi ha compilato Matrix
+ */
+function recuperaProfilati() {
+  Logger.log('=== RECUPERA PROFILATI ===');
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+
+  // Raccogli tutti i profilati da fonti diverse
+  var profilati = {}; // email → { fonte, responseId, nome }
+
+  // ContactsMatrix
+  var shC = ss.getSheetByName('ContactsMatrix');
+  if (shC && shC.getLastRow() > 1) {
+    var cV = shC.getDataRange().getValues(), cH = cV[0];
+    var iCE = cH.indexOf('email'), iCR = cH.indexOf('response_id');
+    for (var r = 1; r < cV.length; r++) {
+      var em = String(cV[r][iCE]||'').trim().toLowerCase();
+      if (em) profilati[em] = { fonte: 'ContactsMatrix', responseId: String(cV[r][iCR]||'') };
+    }
+  }
+  Logger.log('ContactsMatrix: ' + Object.keys(profilati).length);
+
+  // Sessioni_v1 con matrix_completato=true
+  var shS = ss.getSheetByName('Sessioni_v1');
+  if (shS && shS.getLastRow() > 1) {
+    var sV = shS.getDataRange().getValues(), sH = sV[0];
+    var iSE = sH.indexOf('email'), iSM = sH.indexOf('matrix_completato');
+    for (var r = 1; r < sV.length; r++) {
+      var em = String(sV[r][iSE]||'').trim().toLowerCase();
+      var mx = sV[r][iSM];
+      if (em && (mx === true || String(mx).toLowerCase() === 'true')) {
+        if (!profilati[em]) profilati[em] = { fonte: 'Sessioni' };
+        else profilati[em].fonte += '+Sessioni';
+      }
+    }
+  }
+
+  // ProfiliPro
+  var shP = ss.getSheetByName('ProfiliPro');
+  if (shP && shP.getLastRow() > 1) {
+    var pV = shP.getDataRange().getValues(), pH = pV[0];
+    var iPE = pH.indexOf('email');
+    for (var r = 1; r < pV.length; r++) {
+      var em = String(pV[r][iPE]||'').trim().toLowerCase();
+      if (em) {
+        if (!profilati[em]) profilati[em] = { fonte: 'ProfiliPro' };
+        else profilati[em].fonte += '+ProfiliPro';
+      }
+    }
+  }
+
+  // ResponsesMatrix → nome museo via response_id
+  var shR = ss.getSheetByName('ResponsesMatrix');
+  var nomiMuseo = {};
+  if (shR && shR.getLastRow() > 1) {
+    var rV = shR.getDataRange().getValues(), rH = rV[0];
+    var iRR = rH.indexOf('response_id'), iRN = rH.indexOf('museum_name');
+    for (var r = 1; r < rV.length; r++) {
+      var rid = String(rV[r][iRR]||'');
+      var nome = String(rV[r][iRN]||'');
+      if (rid && nome) nomiMuseo[rid] = nome;
+    }
+  }
+
+  Logger.log('Profilati totali: ' + Object.keys(profilati).length);
+
+  // Leggi Utenti
+  var shU = ss.getSheetByName('Utenti');
+  if (!shU) { Logger.log('Foglio Utenti non trovato!'); return { ok:false, error:'Utenti non trovato' }; }
+  var uV = shU.getDataRange().getValues(), uH = uV[0];
+  var iUE = uH.indexOf('Email'), iUM = uH.indexOf('OptInMatrix'), iUN = uH.indexOf('Nome');
+  var utentiMap = {};
+  for (var r = 1; r < uV.length; r++) {
+    var em = String(uV[r][iUE]||'').trim().toLowerCase();
+    if (em) utentiMap[em] = { row: r + 1, optInMatrix: uV[r][iUM], nome: String(uV[r][iUN]||'') };
+  }
+
+  var aggiunti = 0, aggiornati = 0;
+
+  Object.keys(profilati).forEach(function(em) {
+    var p = profilati[em];
+    var nomeMuseo = p.responseId ? (nomiMuseo[p.responseId] || '') : '';
+
+    if (!utentiMap[em]) {
+      // MANCANTE: aggiungi riga in Utenti
+      var id = 'U' + Date.now() + Math.floor(Math.random()*1000);
+      var now = new Date().toISOString();
+      shU.appendRow([id, em, nomeMuseo, 'lettore', 'attivo', true, false, true, now, '', 'recupero_profilati', 'Recuperato da ' + p.fonte]);
+      Logger.log('AGGIUNTO: ' + em + ' (' + p.fonte + ')' + (nomeMuseo ? ' — ' + nomeMuseo : ''));
+      aggiunti++;
+    } else if (!utentiMap[em].optInMatrix || utentiMap[em].optInMatrix === false) {
+      // PRESENTE ma OptInMatrix=false: aggiorna
+      shU.getRange(utentiMap[em].row, iUM + 1).setValue(true);
+      Logger.log('AGGIORNATO OptInMatrix: ' + em + ' (riga ' + utentiMap[em].row + ')');
+      aggiornati++;
+    }
+  });
+
+  SpreadsheetApp.flush();
+  Logger.log('=== COMPLETATO: ' + aggiunti + ' aggiunti, ' + aggiornati + ' OptInMatrix aggiornati ===');
+  return { ok: true, aggiunti: aggiunti, aggiornati: aggiornati, profilatiTotali: Object.keys(profilati).length };
+}
+
+function diagBandiRadarFields() {
+  var bandi = getBandiRadar();
+  var sample = bandi.slice(0, 5);
+  var tipoCount = { vuoto: 0, finanziamento: 0, servizio_fornitura: 0, lavori: 0, altro: 0 };
+  bandi.forEach(function(b) {
+    var t = b.tipoBando || '';
+    if (!t) tipoCount.vuoto++;
+    else if (tipoCount[t] !== undefined) tipoCount[t]++;
+    else tipoCount.altro++;
+  });
+
+  var result = {
+    totale: bandi.length,
+    tipoCount: tipoCount,
+    campione: sample.map(function(b) {
+      return {
+        titolo: (b.titolo || '').substring(0, 40),
+        tipoBando: b.tipoBando || '(VUOTO)',
+        settoreCultura: b.settoreCultura || '(VUOTO)',
+        cpv: b.cpv || '(VUOTO)',
+        settore: b.settore || '(VUOTO)',
+        regione: b.regione || '(VUOTO)'
+      };
+    })
+  };
+
+  // Verifica colonne nel foglio
+  var sheet = getSheetRadar();
+  if (sheet) {
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    var tipoBandoCol = -1;
+    for (var i = 0; i < headers.length; i++) {
+      if (String(headers[i]).trim() === 'TipoBando') { tipoBandoCol = i + 1; break; }
+    }
+    result.sheetHeaders = headers.map(function(h) { return String(h).trim(); });
+    result.tipoBandoCol = tipoBandoCol;
+    // Leggi un campione dalla colonna TipoBando
+    if (tipoBandoCol > 0 && sheet.getLastRow() > 1) {
+      var vals = sheet.getRange(2, tipoBandoCol, Math.min(5, sheet.getLastRow() - 1), 1).getValues();
+      result.tipoBandoSample = vals.map(function(r) { return String(r[0] || ''); });
+    }
+  }
+
+  Logger.log('diagBandiRadarFields: ' + JSON.stringify(result, null, 2));
+  return result;
 }
 
 function saveBandoRadar(b) {
@@ -1787,11 +2123,11 @@ function getSocialWall() {
 function fetchAndCacheSocialWall() {
   const fonti = getSocialFontiList().fonti.filter(f => f.Attiva);
   if (!fonti.length) return {posts:[], updatedAt:new Date().toISOString()};
-  // v5.2 — Espansione: 12 fonti (era 8), cutoff 14gg (era 7), 24 post (era 16), dedup URL
-  const posts = [], cutoff = new Date(Date.now() - 14 * 86400000);
-  for (const fonte of fonti.slice(0, 12)) {
+  // v4.25 — Espansione: TUTTE le fonti attive (era 12), cutoff 30gg (era 14), 40 post (era 24)
+  const posts = [], cutoff = new Date(Date.now() - 30 * 86400000);
+  for (const fonte of fonti) {
     try {
-      const rssItems = fetchRSS(fonte.URL, {muteHttpExceptions:true, followRedirects:true}).slice(0, 3);
+      const rssItems = fetchRSS(fonte.URL, {muteHttpExceptions:true, followRedirects:true}).slice(0, 5);
       rssItems.forEach(item => {
         if (item.data < cutoff) return;
         posts.push({fonte:fonte.Nome, tipo:String(fonte.Tipo||'blog'), categoria:String(fonte.Categoria||''),
@@ -1811,7 +2147,7 @@ function fetchAndCacheSocialWall() {
     seen[p.url] = true;
     return true;
   });
-  const result = {posts: deduped.slice(0, 24), updatedAt: new Date().toISOString()};
+  const result = {posts: deduped.slice(0, 40), updatedAt: new Date().toISOString()};
   try { const p = PropertiesService.getScriptProperties(); p.setProperty('SW_CACHE', JSON.stringify(result)); p.setProperty('SW_CACHE_TIME', Date.now().toString()); } catch(e){}
   return result;
 }
@@ -1899,6 +2235,26 @@ function seedSocialFontiIstituzionali() {
     // v4.19.1 — Testate generaliste cultura (filtro semantico in scanSources)
     { id:'SW35', nome:'Il Sole 24 Ore — Cultura', url:'https://www.ilsole24ore.com/rss/cultura.xml',                  tipo:'rivista',       cat:'Cultura & Societa',      av:'S' },
     { id:'SW36', nome:'Repubblica — Cultura',      url:'https://www.repubblica.it/rss/cultura/rss2.0.xml',             tipo:'rivista',       cat:'Cultura & Societa',      av:'R' },
+    // v4.25 — Musei, festival, innovazione, accessibilità, territorio
+    { id:'SW37', nome:'Palazzo Strozzi Firenze',   url:'https://www.palazzostrozzi.org/feed/',                         tipo:'museo',         cat:'Arte & Mostre',          av:'P' },
+    { id:'SW38', nome:'Museo del Novecento Milano',url:'https://www.museodelnovecento.org/feed/',                      tipo:'museo',         cat:'Arte Contemporanea',     av:'9' },
+    { id:'SW39', nome:'MUDEC Milano',              url:'https://www.mudec.it/feed/',                                   tipo:'museo',         cat:'Musei & Patrimonio',     av:'M' },
+    { id:'SW40', nome:'M9 — Museo del 900 Mestre', url:'https://www.m9museum.it/feed/',                               tipo:'museo',         cat:'Innovazione Museale',    av:'9' },
+    { id:'SW41', nome:'Museo Madre Napoli',        url:'https://www.madrenapoli.it/feed/',                             tipo:'museo',         cat:'Arte Contemporanea',     av:'M' },
+    { id:'SW42', nome:'Gallerie d\'Italia',         url:'https://gallerieditalia.com/feed/',                            tipo:'museo',         cat:'Musei & Patrimonio',     av:'G' },
+    { id:'SW43', nome:'NEMO — Network European Museums', url:'https://www.ne-mo.org/feed/',                            tipo:'istituzione',   cat:'Innovazione Museale',    av:'N' },
+    { id:'SW44', nome:'Europa Nostra',             url:'https://www.europanostra.org/feed/',                            tipo:'istituzione',   cat:'Patrimonio & Territorio',av:'E' },
+    { id:'SW45', nome:'Fondazione Palazzo Ducale Genova', url:'https://www.palazzoducale.genova.it/feed/',              tipo:'museo',         cat:'Musei & Patrimonio',     av:'P' },
+    { id:'SW46', nome:'Museo Civico Bassano',      url:'https://www.museobassano.it/feed/',                            tipo:'museo',         cat:'Musei & Patrimonio',     av:'B' },
+    { id:'SW47', nome:'Fondazione Musei Civici Venezia', url:'https://www.visitmuve.it/feed/',                          tipo:'museo',         cat:'Musei & Patrimonio',     av:'V' },
+    { id:'SW48', nome:'Museo Nazionale Scienza Milano', url:'https://www.museoscienza.org/feed/',                       tipo:'museo',         cat:'Innovazione Museale',    av:'S' },
+    { id:'SW49', nome:'ArtBonus — Cultura Italia',  url:'https://artbonus.gov.it/feed/',                               tipo:'istituzione',   cat:'Politiche Culturali',    av:'A' },
+    { id:'SW50', nome:'Che Fare — Innovazione sociale', url:'https://www.che-fare.com/feed/',                           tipo:'rivista',       cat:'Welfare Culturale',      av:'C' },
+    { id:'SW51', nome:'cheFare — Cultura e società', url:'https://www.chefare.com/feed/',                               tipo:'rivista',       cat:'Cultura & Societa',      av:'C' },
+    { id:'SW52', nome:'Vita — Non profit e sociale', url:'https://www.vita.it/feed/',                                   tipo:'rivista',       cat:'Welfare Culturale',      av:'V' },
+    { id:'SW53', nome:'Lettera43 — Cultura',        url:'https://www.lettera43.it/feed/cultura/',                       tipo:'rivista',       cat:'Cultura & Societa',      av:'L' },
+    { id:'SW54', nome:'Patrimonio UNESCO Italia',   url:'https://www.sitiunesco.it/feed/',                              tipo:'istituzione',   cat:'Patrimonio & Territorio',av:'U' },
+    { id:'SW55', nome:'Italia Nostra',              url:'https://www.italianostra.org/feed/',                            tipo:'associazione',  cat:'Patrimonio & Territorio',av:'I' },
   ];
   let aggiunti = 0, skip = 0;
   seed.forEach(function(f) {

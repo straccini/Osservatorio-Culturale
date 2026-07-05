@@ -410,7 +410,7 @@ h4{font-size:1.0625rem}
   min-width:18px;
 }
 .amb-name,.nav-item.amb span:last-of-type{
-  flex:1; font-size:1rem; line-height:1.3;
+  flex:1; font-size:13px; font-weight:400; line-height:1.3;
 }
 .nav-item.amb.active{
   background:var(--amb-soft, var(--surface-2));
@@ -2466,6 +2466,16 @@ body.is-home-page .topbar-search{display:none}
   font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700;
   color: var(--success,#0F7B5A); background: #ECFDF5; padding: 3px 9px; border-radius: 20px;
 }
+/* v4.25 — Badge tipo bando */
+.br-tipo-badge {
+  font-family: var(--font-ui); font-size: 0.7rem; font-weight: 600;
+  padding: 2px 8px; border-radius: 20px; white-space: nowrap;
+}
+.br-tipo-finanziamento { color: #92400E; background: #FEF3C7; }
+.br-tipo-servizio_fornitura { color: #1E40AF; background: #DBEAFE; }
+.br-tipo-servizio { color: #1E40AF; background: #DBEAFE; }
+.br-tipo-fornitura { color: #6B21A8; background: #F3E8FF; }
+.br-tipo-lavori { color: #065F46; background: #D1FAE5; }
 
 /* Titolo */
 .br-title {
@@ -2533,6 +2543,9 @@ body.is-home-page .topbar-search{display:none}
   cursor: default; font-weight: 400;
 }
 .br-link-nd:hover { background: transparent; color: var(--ink-4, var(--ink-3)); }
+/* Link non-diretto (consulta sito / ricerca): stessa forma, tono più sobrio */
+.br-link-alt { border-color: var(--ink-3, #6E6E73); color: var(--ink-2, #3A3A3C); font-weight: 600; }
+.br-link-alt:hover { background: var(--ink-3, #6E6E73); color: #fff; }
 
 /* ============================================================
    Bottoni azione — direzione C v5.0

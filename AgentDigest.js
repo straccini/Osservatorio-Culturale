@@ -68,6 +68,12 @@ function _sendForAgent_(agenteId, opts) {
   var agent = getAgentConfig(agenteId);
 
   try {
+    // v4.24 — Lock anti-concurrent: impedisce invio simultaneo con sendDigestAuto2coorti
+    var lock = LockService.getScriptLock();
+    if (!lock.tryLock(10000)) {
+      Logger.log('[AgentDigest] Altro invio in corso (lock), skip ' + (agent ? agent.codice : agenteId));
+      return { ok: false, agenteId: agenteId, error: 'lock_attivo' };
+    }
     // 1. Carica destinatari (musei profilati con opt-in per questo agente)
     var destinatari = _getAgentRecipients_(agenteId);
     if (opts.maxDestinatari) destinatari = destinatari.slice(0, opts.maxDestinatari);
@@ -138,8 +144,10 @@ function _sendForAgent_(agenteId, opts) {
 
     var elapsed = Date.now() - t0;
     Logger.log('  ' + agent.codice + ' completato: ' + inviati + ' inviati, ' + errori + ' errori (' + Math.round(elapsed / 1000) + 's)');
+    try { lock.releaseLock(); } catch(_){}
     return { ok: true, agenteId: agenteId, inviati: inviati, errori: errori, tempoMs: elapsed };
   } catch(e) {
+    try { lock.releaseLock(); } catch(_){}
     return { ok: false, agenteId: agenteId, error: e.message };
   }
 }
@@ -248,8 +256,24 @@ function _buildAgentEmailHtml_(agent, items, dest, museo) {
   html += '<a href="mailto:sinopiaconsulting@gmail.com?subject=' + encodeURIComponent(agent.nomeBreve + ' - richiesta info') + '" style="display:inline-block;padding:10px 24px;background:' + headerColor + ';color:#fff;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;">Contattaci</a>';
   html += '</div>';
 
-  // Footer
-  html += '<p style="font-size:11px;color:#9E9A92;text-align:center;margin-top:32px;">Ricevi questa email perche hai compilato MuseMu Matrix.<br>Per non ricevere piu: rispondi STOP.</p>';
+  // Footer — v4.24: tipo digest esplicito, unsubscribe HMAC, link modifica preferenze
+  var appUrl = '';
+  try { appUrl = PropertiesService.getScriptProperties().getProperty('OC_APP_PUBLIC_URL') || ScriptApp.getService().getUrl() || ''; } catch(_){}
+  html += '<div style="border-top:1px solid #E5E1D8;margin-top:32px;padding-top:16px;text-align:center;">';
+  html += '<p style="font-size:11px;color:#9E9A92;margin:0 0 8px;line-height:1.5;">'
+    + 'Questa è una <strong>digest tematica</strong> dell\'agente <em>' + _agentEsc_(agent.nome) + '</em>.<br>'
+    + 'Ricevi questa email in base al tuo profilo MuseMu Matrix.</p>';
+  // Unsubscribe link (HMAC-signed)
+  if (dest.email && typeof _digestUnsubFooter_ === 'function') {
+    html += _digestUnsubFooter_(dest.email, { style: 'standard' });
+  }
+  // Link modifica preferenze
+  if (appUrl) {
+    html += '<p style="font-size:11px;color:#9E9A92;margin:8px 0 0;line-height:1.5;">'
+      + 'Vuoi ricevere contenuti diversi? <a href="' + appUrl + '#profilo-agenti" style="color:#8B3A1F;text-decoration:underline;">Modifica le tue preferenze</a>.'
+      + '</p>';
+  }
+  html += '</div>';
   html += '</div></body></html>';
 
   return html;
@@ -298,7 +322,7 @@ function previewAgentEmail(agenteId, email) {
   var agent = getAgentConfig(agenteId || 1);
   if (!agent) return { ok: false, error: 'Agente non trovato' };
 
-  email = email || 'sinopiaconsulting@gmail.com';
+  email = email || 's.straccini@gmail.com';
   var relevant = getRelevantContent(email, agent.id, agent.maxContenuti || 10);
   if (!relevant.ok) return relevant;
 

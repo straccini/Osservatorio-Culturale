@@ -289,7 +289,7 @@ function registraUtente(email, nome, source) {
   return _autoRegisterUser_(email, nome, source);
 }
 
-function _autoRegisterUser_(email, nome, source, skipWelcome) {
+function _autoRegisterUser_(email, nome, source) {
   email = String(email || '').toLowerCase().trim();
   if (!email || email.indexOf('@') < 0) return { ok: false, error: 'email non valida' };
 
@@ -339,10 +339,8 @@ function _autoRegisterUser_(email, nome, source, skipWelcome) {
     ]);
     Logger.log('[AUTH] Registrato: ' + email + ' via ' + (source || 'auto'));
     try { if (typeof _logConsenso_ === 'function') _logConsenso_(email, source || 'registrazione'); } catch(_){} // v4.23 consenso
-    // v4.20 — Welcome email post-registrazione. v664: saltata se il flusso invia GIÀ il
-    // magic-link (login/registrazione/profilo/matrix) → l'email del magic-link è già di benvenuto
-    // (evita la doppia email). Resta attiva per i flussi senza magic-link (es. newsletter).
-    try { if (!skipWelcome && typeof sendWelcomeEmail === 'function') sendWelcomeEmail(email, nome || ''); } catch(_){}
+    // v4.20 — Welcome email post-registrazione
+    try { if (typeof sendWelcomeEmail === 'function') sendWelcomeEmail(email, nome || ''); } catch(_){}
     return { ok: true, action: 'created' };
   } catch(e) {
     Logger.log('[AUTH] _autoRegisterUser_ err: ' + e.message);
@@ -376,7 +374,7 @@ function requestAccess(body) {
     // LIGHT (v656): nessuna approvazione per i lettori. "Richiedi accesso" AUTO-REGISTRA come
     // lettore ATTIVO (come newsletter/profilo) e invia subito un magic-link. Solo sospesi e
     // rifiutati restano bloccati. L'eventuale ruolo elevato resta gestito dalle liste admin/editor.
-    var reg = (typeof _autoRegisterUser_ === 'function') ? _autoRegisterUser_(email, nome, 'self_request', true) : { ok:false, error:'no_autoreg' };
+    var reg = (typeof _autoRegisterUser_ === 'function') ? _autoRegisterUser_(email, nome, 'self_request') : { ok:false, error:'no_autoreg' };
     if (reg.error === 'gia_registrato')    return { ok:true, alreadyActive:true, email:email, message:'Sei gia attivo. Clicca ENTRA per accedere.' };
     if (reg.error === 'accesso_rifiutato') return { error:'Richiesta precedente rifiutata. Contatta l amministratore.' };
     if (reg.error === 'account_sospeso')   return { error:'Account sospeso. Contatta l amministratore.' };
@@ -488,13 +486,26 @@ function getAllUtenti(opts) {
 
     if (opts.statoFilter) items = items.filter(function(o){ return String(o.Stato||'') === opts.statoFilter; });
     if (opts.ruoloFilter) items = items.filter(function(o){ return String(o.Ruolo||'') === opts.ruoloFilter; });
-    // v5.7 — flag _hasProfilo: l'utente ha compilato "Il mio profilo professionale" (foglio ProfiliPro)
+    // v4.25.15 — _hasProfilo: SOLO ProfiliPro (profilo professionale)
+    // OptInMatrix viene dal foglio Utenti (colonna OptInMatrix) — SOLO ContactsMatrix
     try {
-      if (typeof proEmailsConProfilo === 'function') {
-        var _profMap = proEmailsConProfilo();
-        items.forEach(function(u){ u._hasProfilo = !!_profMap[String(u.Email||'').toLowerCase().trim()]; });
+      var _profMap = {};
+      var _ss = (typeof getMainSS === 'function') ? getMainSS() : null;
+      if (_ss) {
+        var _shPP = _ss.getSheetByName('ProfiliPro');
+        if (_shPP && _shPP.getLastRow() > 1) {
+          var _ppV = _shPP.getDataRange().getValues(), _ppH = _ppV[0];
+          var _iPPE = _ppH.indexOf('email');
+          if (_iPPE >= 0) {
+            for (var _rp = 1; _rp < _ppV.length; _rp++) {
+              var _ep = String(_ppV[_rp][_iPPE]||'').trim().toLowerCase();
+              if (_ep) _profMap[_ep] = true;
+            }
+          }
+        }
       }
-    } catch(_eProf){}
+      items.forEach(function(u){ u._hasProfilo = !!_profMap[String(u.Email||'').toLowerCase().trim()]; });
+    } catch(_eProf){ Logger.log('_hasProfilo err: ' + (_eProf && _eProf.message)); }
     var result = { ok:true, items:items, _dbg:_dbg };
     if (infoMsg) result.info = infoMsg;
     return result;

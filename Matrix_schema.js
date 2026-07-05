@@ -3,7 +3,7 @@
  *  Matrix_schema.gs — Schema MuseMu Matrix v1.0.2 embedded (auto-generato)
  * ============================================================================
  *  Sprint 2 (2026-04-30)
- *  Source: D2_Master_Questionario_v1.0.2.json (generato dal team Sinopia)
+ *  Source: D2_Master_Questionario_v1.0.2.json (generato dal team Duemilamusei)
  *
  *  IMPORTANTE: NON modificare manualmente questo file.
  *  Per aggiornare lo schema:
@@ -148,7 +148,7 @@ var OC_MATRIX_SCHEMA = {
     {
       "code": "D6",
       "name": "Digital Maturity & Tech Integration",
-      "origin": "Sinopia + NEMO Digital Roadmap",
+      "origin": "Duemilamusei + NEMO Digital Roadmap",
       "subDimensions": [
         "Web & social presence",
         "Digital content & catalog",
@@ -183,7 +183,7 @@ var OC_MATRIX_SCHEMA = {
     {
       "code": "D9",
       "name": "Governance, Sustainability & Territorial Ecosystem",
-      "origin": "Sinopia + ESG",
+      "origin": "Duemilamusei + ESG",
       "subDimensions": [
         "Governance & networks",
         "Financial sustainability",
@@ -2410,7 +2410,7 @@ var OC_MATRIX_SCHEMA = {
       },
       {
         "code": "D11.6",
-        "text": "Per le opportunità di sviluppo che vorreste affrontare, sareste interessati a un supporto Sinopia nello scouting di bandi pubblici/privati e nella progettazione candidabile?",
+        "text": "Per le opportunità di sviluppo che vorreste affrontare, sareste interessati a un supporto Duemilamusei nello scouting di bandi pubblici/privati e nella progettazione candidabile?",
         "type": "likert",
         "labels": [
           "Nessun interesse al momento",
@@ -2468,7 +2468,7 @@ var OC_MATRIX_SCHEMA = {
           },
           {
             "value": "webinar",
-            "label": "Webinar e corsi gratuiti Sinopia"
+            "label": "Webinar e corsi gratuiti Duemilamusei"
           },
           {
             "value": "matrix_aggiornamenti",

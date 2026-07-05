@@ -48,96 +48,39 @@ function scanSources() {
   const sh=SS.getSheetByName(SH.ITEMS);
   const existing=getExistingURLs(sh);
   let added=0;
-  for(const fonte of fonti) added += _scanUnaFonte_(fonte, sh, existing);
-  return added;
-}
-
-// v4.27 — Scansione di UNA fonte (estratta da scanSources per riuso in scanSourcesBatch).
-function _scanUnaFonte_(fonte, sh, existing) {
-  let added=0;
-  try {
-    Logger.log(' Fonte: ' + fonte.Nome);
-    const rssUrl = fonte.RSSURL || fonte.URL;
-    if (!rssUrl) { Logger.log('  ! URL mancante, saltata'); return 0; }
-    const items = fetchRSS(rssUrl, fonte);
-    if (!items.length) {
-      Logger.log('  -> 0 item (feed vuoto o non valido)');
-      try { updateFeedSourceStats('rss', fonte, 'EMPTY', 0, 'Feed vuoto o non valido (0 item)'); } catch(_e){}
-      return 0;
-    }
-    // v4.19.1 — Flag generalista: gate semantico per Sole/Repubblica
-    const isGeneralista = FONTI_GENERALISTE.indexOf(fonte.Nome) !== -1;
-    let nuovi = 0, scartati = 0;
-    for(const item of items) {
-      // v4.18.41 — Dedup at-source con URL canonicalizzato (rimuove utm_*, trailing slash, ecc.)
-      const itemKey = (typeof _canonicalUrl_ === 'function') ? _canonicalUrl_(item.url) : item.url;
-      if(existing.has(itemKey)) continue;
-      // v4.19.1 — Gate semantico: fonti generaliste → solo articoli cultura/musei
-      if (isGeneralista && !passaFiltroCulturaMusei_(item.titolo, item.estratto)) {
-        scartati++;
-        continue;
+  for(const fonte of fonti) {
+    try {
+      Logger.log(' Fonte: ' + fonte.Nome);
+      const rssUrl = fonte.RSSURL || fonte.URL;
+      if (!rssUrl) { Logger.log('  ! URL mancante, saltata'); continue; }
+      const items = fetchRSS(rssUrl, fonte);
+      if (!items.length) { Logger.log('  -> 0 item (feed vuoto o non valido)'); continue; }
+      // v4.19.1 — Flag generalista: gate semantico per Sole/Repubblica
+      const isGeneralista = FONTI_GENERALISTE.indexOf(fonte.Nome) !== -1;
+      let nuovi = 0, scartati = 0;
+      for(const item of items) {
+        // v4.18.41 — Dedup at-source con URL canonicalizzato (rimuove utm_*, trailing slash, ecc.)
+        const itemKey = (typeof _canonicalUrl_ === 'function') ? _canonicalUrl_(item.url) : item.url;
+        if(existing.has(itemKey)) continue;
+        // v4.19.1 — Gate semantico: fonti generaliste → solo articoli cultura/musei
+        if (isGeneralista && !passaFiltroCulturaMusei_(item.titolo, item.estratto)) {
+          scartati++;
+          continue;
+        }
+        Utilities.sleep(600);
+        const ai = processWithAI(item.titolo, item.estratto, fonte.Ambito);
+        saveItem(sh, item, fonte, ai);
+        existing.add(itemKey);
+        added++;
+        nuovi++;
       }
-      Utilities.sleep(600);
-      const ai = processWithAI(item.titolo, item.estratto, fonte.Ambito);
-      saveItem(sh, item, fonte, ai);
-      existing.add(itemKey);
-      added++;
-      nuovi++;
+      Logger.log('  OK ' + nuovi + ' nuovi / ' + items.length + ' trovati' + (scartati ? ' (' + scartati + ' off-topic scartati)' : ''));
+      updateFeedSourceStats('rss', fonte, items.length>0?'OK':'EMPTY', items.length, '');
+    } catch(err) {
+      Logger.log('  ERR fonte "' + fonte.Nome + '": ' + err.message.substring(0,80));
     }
-    Logger.log('  OK ' + nuovi + ' nuovi / ' + items.length + ' trovati' + (scartati ? ' (' + scartati + ' off-topic scartati)' : ''));
-    updateFeedSourceStats('rss', fonte, items.length>0?'OK':'EMPTY', items.length, '');
-  } catch(err) {
-    Logger.log('  ERR fonte "' + fonte.Nome + '": ' + err.message.substring(0,80));
-    try { updateFeedSourceStats('rss', fonte, 'ERROR', 0, err.message); } catch(_e){}
   }
   return added;
-}
-
-// v4.27 — Scansione a BATCH con ripresa: scansiona finché ha tempo (budget ~4,6 min),
-// salva un cursore in ScriptProperties e riprende dal punto esatto al run successivo.
-// Con trigger frequenti (2-3+ run/giorno) copre tutte le fonti senza superare il limite 6 min.
-function scanSourcesBatch() {
-  _initLegacyConsts_();
-  const SS=getMainSS();
-  const fonti=getFeedSources('rss');
-  if (!fonti.length) return { added:0, scanned:0, da:0, a:0, totale:0, cicloCompleto:true };
-  const sh=SS.getSheetByName(SH.ITEMS);
-  const existing=getExistingURLs(sh);
-  const props=PropertiesService.getScriptProperties();
-  let cursor=Number(props.getProperty('SCAN_CURSOR')||0);
-  if (cursor>=fonti.length || cursor<0) cursor=0;
-  const BUDGET_MS=280000; // ~4,6 min (limite GAS 6 min, margine per chiudere)
-  const start=Date.now();
-  let added=0, scanned=0, i=cursor;
-  for (; i<fonti.length; i++) {
-    if (Date.now()-start > BUDGET_MS) break;
-    added += _scanUnaFonte_(fonti[i], sh, existing);
-    scanned++;
-  }
-  const fine = (i>=fonti.length);
-  props.setProperty('SCAN_CURSOR', fine ? '0' : String(i));
-  Logger.log('scanSourcesBatch: fonti ' + cursor + '→' + i + ' di ' + fonti.length + ' (' + scanned + ' scansionate, ' + added + ' nuovi)' + (fine ? ' — CICLO COMPLETO, cursore azzerato' : ' — ripresa al prossimo run da ' + i));
-  return { added:added, scanned:scanned, da:cursor, a:i, totale:fonti.length, cicloCompleto:fine };
-}
-
-// v4.27 — Installa il trigger della scansione a batch (default ogni 4 ore = 6 run/giorno).
-// Rimuove i trigger time-driven di scanSources/scanSourcesBatch per non sommarli (limite 20).
-function scanSourcesBatchSetup(oreIntervallo) {
-  const h = Number(oreIntervallo) || 4;
-  let rimossi=0;
-  ScriptApp.getProjectTriggers().forEach(function(t){
-    const fn=t.getHandlerFunction();
-    if ((fn==='scanSources' || fn==='scanSourcesBatch') && String(t.getEventType())==='CLOCK') { ScriptApp.deleteTrigger(t); rimossi++; }
-  });
-  try {
-    ScriptApp.newTrigger('scanSourcesBatch').timeBased().everyHours(h).create();
-  } catch(e) {
-    const tot = ScriptApp.getProjectTriggers().length;
-    Logger.log('scanSourcesBatchSetup ERRORE: ' + e.message + ' (trigger: ' + tot + '/20). Esegui qaListaTrigger()/qaDeduplicaTrigger() per liberare slot.');
-    return { ok:false, error:e.message, triggerPresenti:tot };
-  }
-  Logger.log('scanSourcesBatchSetup: rimossi ' + rimossi + ' trigger scan, creato scanSourcesBatch ogni ' + h + 'h');
-  return { ok:true, rimossi:rimossi, ogniOre:h };
 }
 
 function fetchRSS(url,fonte) {
@@ -437,7 +380,8 @@ function scanPodcastDiretto() {
 
   Logger.log('scanPodcastDiretto: ' + tutteLeFonti.length + ' fonti totali');
 
-  var SKIP_DOMAINS = ['raiplaysound.it', 'feeds.spreaker.com/user'];
+  // v4.25 — Rimosso raiplaysound.it dalla blocklist (feed RSS funzionanti, molti contenuti culturali)
+  var SKIP_DOMAINS = ['feeds.spreaker.com/user'];
 
   tutteLeFonti.forEach(function(fonte) {
     var skipThis = SKIP_DOMAINS.some(function(d) { return fonte.url.indexOf(d) !== -1; });

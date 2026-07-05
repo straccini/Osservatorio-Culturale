@@ -86,104 +86,6 @@ function ensureSheetProfiliPro_() {
 // FUNZIONI PUBBLICHE
 // ============================================================================
 
-/**
- * @private Lista dei lettori che hanno compilato il profilo professionale.
- * Riga in ProfiliPro con email valorizzata. Usata da admin + digest dedicata.
- * @return {Array} [{email, interessi:[], interessiCsv, consenso, completezza, ruolo, ente, area}]
- */
-function _proListaProfilati_() {
-  var out = [];
-  try {
-    var ss = getMainSS();
-    var sh = ss.getSheetByName(PROFILO_PRO_SHEET);
-    if (!sh || sh.getLastRow() < 2) return out;
-    var vals = sh.getDataRange().getValues();
-    var H = vals[0];
-    var iEmail = H.indexOf('email'), iInt = H.indexOf('interessi_dimensioni'),
-        iCons = H.indexOf('consenso_profilazione'), iComp = H.indexOf('completezza'),
-        iRuolo = H.indexOf('ruolo_funzione'), iEnte = H.indexOf('tipo_ente'),
-        iArea = H.indexOf('area_geografica');
-    for (var r = 1; r < vals.length; r++) {
-      var email = String(vals[r][iEmail] || '').toLowerCase().trim();
-      if (!email) continue;
-      var intCsv = iInt >= 0 ? String(vals[r][iInt] || '') : '';
-      var interessi = intCsv.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
-      out.push({
-        email: email,
-        interessi: interessi,
-        interessiCsv: interessi.join(','),
-        consenso: iCons >= 0 ? (vals[r][iCons] === true || String(vals[r][iCons]).toLowerCase() === 'true') : false,
-        completezza: iComp >= 0 ? (Number(vals[r][iComp]) || 0) : 0,
-        ruolo: iRuolo >= 0 ? String(vals[r][iRuolo] || '') : '',
-        ente: iEnte >= 0 ? String(vals[r][iEnte] || '') : '',
-        area: iArea >= 0 ? String(vals[r][iArea] || '') : ''
-      });
-    }
-  } catch (e) { Logger.log('_proListaProfilati_ err: ' + e.message); }
-  return out;
-}
-
-/**
- * Mappa email→true dei lettori con profilo professionale (per la colonna admin).
- * @return {Object} { '<email>': true }
- */
-function proEmailsConProfilo() {
-  var m = {};
-  _proListaProfilati_().forEach(function(p){ m[p.email] = true; });
-  return m;
-}
-
-/**
- * Lista profilati esposta al frontend admin (tab Utenti / cruscotto).
- * @param {string} [token] token admin
- * @return {Object} { ok, totale, conInteressi, items:[...] }
- */
-function getProfiliProList(token) {
-  if (token !== undefined && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
-    return { ok: false, error: 'forbidden' };
-  }
-  var list = _proListaProfilati_();
-  return {
-    ok: true,
-    totale: list.length,
-    conInteressi: list.filter(function(p){ return p.interessi.length > 0; }).length,
-    items: list
-  };
-}
-
-/**
- * Diagnostico coorti digest: riconcilia i profili nel foglio con le coorti effettive.
- * Spiega perché "profili nel foglio" può differire da "profilati nel digest": i
- * compilatori Matrix hanno la PRECEDENZA → finiscono in coorte B, non C.
- * @param {string} [token] admin
- * @return {Object} { ok, profiliFoglio, profiliConInteressi, coorteA, coorteB, coorteC, inMatrix }
- */
-function getDiagnosiCoorti(token) {
-  if (token !== undefined && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
-    return { ok: false, error: 'forbidden' };
-  }
-  var lista = _proListaProfilati_();
-  var totale = lista.length;
-  var conInteressi = lista.filter(function(p){ return p.interessi.length > 0; }).length;
-  var counts = {};
-  try {
-    if (typeof getDigestRecipientsByCohort === 'function') {
-      var rec = getDigestRecipientsByCohort();
-      if (rec && rec.counts) counts = rec.counts;
-    }
-  } catch (e) { Logger.log('getDiagnosiCoorti: ' + e.message); }
-  var coorteC = counts.profilati || 0;
-  return {
-    ok: true,
-    profiliFoglio: totale,
-    profiliConInteressi: conInteressi,
-    coorteA: counts.generalisti || 0,
-    coorteB: counts.leadCaldi || 0,
-    coorteC: coorteC,
-    inMatrix: Math.max(0, conInteressi - coorteC)
-  };
-}
-
 function getProfilo(token) {
   var user = _proGetUser_(token);
   if (!user) return null;
@@ -196,25 +98,7 @@ function saveProfilo(payload) {
   var _tok = payload.__token || null;
   try { delete payload.__token; } catch(_){}
   var user = _proGetUser_(_tok);
-  var autoReg = null, magicLink = null;
-  if (!user) {
-    // REGOLA: chi NON è loggato, compilando "Il mio profilo" si AUTO-REGISTRA alla lista
-    // lettori (email + consenso) e diventa profilato. Chi è già loggato salta questo blocco
-    // (usa la sessione, nessuna email richiesta).
-    var em = String(payload.email || '').toLowerCase().trim();
-    if (!em || em.indexOf('@') < 0) return { ok:false, error:'email_richiesta' };
-    if (payload.consenso_profilazione !== true) return { ok:false, error:'consenso_richiesto' };
-    var reg = (typeof _autoRegisterUser_ === 'function') ? _autoRegisterUser_(em, payload.nome || '', 'profilo_pro', true) : { ok:false, error:'no_autoreg' };
-    if (reg && reg.error === 'gia_registrato') return { ok:false, error:'gia_registrato' };
-    if (reg && reg.error === 'accesso_rifiutato') return { ok:false, error:'Accesso non consentito per questo indirizzo.' };
-    if (reg && reg.error === 'account_sospeso') return { ok:false, error:'Account sospeso.' };
-    if (!reg || reg.ok !== true) return { ok:false, error:(reg && reg.error) || 'registrazione fallita' };
-    try {
-      if (typeof createSessione === 'function') { var _sess = createSessione(em, 'registrazione'); magicLink = (_sess && _sess.magicLink) || null; }
-    } catch(eSess) { Logger.log('saveProfilo createSessione: ' + eSess.message); }
-    user = { email: em, livello: 1 };
-    autoReg = reg.action || 'created';
-  }
+  if (!user) return { ok:false, error:'Accesso non autorizzato. Effettua il login.' };
   var existing = _proFindByEmail_(user.email);
   if (!existing && payload.consenso_profilazione !== true) {
     return { ok:false, error:'Il consenso alla profilazione e necessario per salvare il profilo.' };
@@ -259,8 +143,7 @@ function saveProfilo(payload) {
       if (rid) crm_recordEvent(rid, 'profilo_salvato', isNew?10:2, {completezza:completezza});
     } catch(e){}
   }
-  return { ok:true, profileId:profileId, completezza:completezza, isNew:isNew,
-           autoRegistered: autoReg, email: user.email, magicLinkSent: !!magicLink };
+  return { ok:true, profileId:profileId, completezza:completezza, isNew:isNew };
 }
 
 function deleteProfilo() {

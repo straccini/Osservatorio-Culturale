@@ -76,11 +76,6 @@ function getDigestRecipientsByCohort() {
         if (!em) continue;
         if (sVals[r][iRev] === true || String(sVals[r][iRev]).toLowerCase() === 'true') continue;
         if (coorteB[em]) continue; // già aggiunto da fonte precedente
-        // v652 FIX: SOLO i veri compilatori Matrix sono lead caldi (coorte B). Le sessioni
-        // di semplice login/registrazione/profilo (matrix_completato=false) NON sono lead →
-        // restano disponibili per A (generalisti) o C (profilati). Prima TUTTE le sessioni
-        // finivano in B → 0 lettori e 0 profilati (tutti "intrappolati" come Matrix/lead).
-        if (!(sVals[r][iMxC] === true || String(sVals[r][iMxC]).toLowerCase() === 'true')) continue;
         var _src = String(sVals[r][iSrc] || '');
         coorteB[em] = {
           email: em,
@@ -130,29 +125,18 @@ function getDigestRecipientsByCohort() {
       }
     }
 
-    // === C) ContactsMatrix: recupera responseId E aggiunge a coorte B i compilatori Matrix ===
-    // v653 HARDENING: la presenza in ContactsMatrix con response_id = Matrix COMPLETATO →
-    // garantisce la coorte B anche se la sessione non aveva matrix_completato (storici, sessioni
-    // scadute, source diversa). È il segnale Matrix più robusto del flag di sessione.
+    // === C) Per ogni lead in coorte B, recupera responseId da ContactsMatrix ===
     var shC = ss.getSheetByName('ContactsMatrix');
     if (shC && shC.getLastRow() > 1) {
       var cVals = shC.getDataRange().getValues();
       var cHead = cVals[0];
       var iEmailC = cHead.indexOf('email'), iRespId = cHead.indexOf('response_id');
-      for (var rc = cVals.length - 1; rc >= 1; rc--) {   // dal basso = più recente prima
+      for (var rc = cVals.length - 1; rc >= 1; rc--) {
         var emC = String(cVals[rc][iEmailC] || '').trim().toLowerCase();
-        if (!emC) continue;
-        var ridC = String(cVals[rc][iRespId] || '');
-        if (coorteB[emC]) {
-          if (!coorteB[emC].responseId && ridC) { coorteB[emC].responseId = ridC; coorteB[emC].matrixCompletato = true; }
-        } else if (ridC) {
-          // non era in B (sessione senza flag): è comunque un compilatore Matrix → aggiungilo
-          coorteB[emC] = {
-            email: emC, nome: '', source: 'matrix', segmento: _getDigestSegmento_('matrix'),
-            matrixCompletato: true, responseId: ridC, tematica: null, leadScore: 0
-          };
-          allEmails[emC] = 'B';
-        }
+        if (!emC || !coorteB[emC]) continue;
+        if (coorteB[emC].responseId) continue; // già impostato (prendiamo il più recente)
+        coorteB[emC].responseId = String(cVals[rc][iRespId] || '');
+        coorteB[emC].matrixCompletato = true;
       }
     }
 
@@ -165,7 +149,6 @@ function getDigestRecipientsByCohort() {
 
     // === E) Coorte A — MailingList ESCLUSI quelli già in B ===
     var generalisti = [];
-    var profilati = []; // Coorte C — lettori profilati (ProfiloPro) con interessi, non-Matrix
     var shM = ss.getSheetByName(SH.MAILING || 'MailingList');
     if (shM && shM.getLastRow() > 1) {
       var mVals = shM.getDataRange().getValues();
@@ -183,26 +166,6 @@ function getDigestRecipientsByCohort() {
           nome: String(mVals[rm][iNomeM] || '')
         });
         allEmails[emM] = 'A';
-      }
-    }
-
-    // v652 — Generalisti anche dagli UTENTI registrati con opt-in digest (non solo MailingList):
-    // i lettori che si registrano nell'app NON sono in MailingList → senza questo, dopo il fix
-    // della coorte B, resterebbero fuori da ogni coorte e non riceverebbero nulla.
-    var shU = ss.getSheetByName('Utenti');
-    if (shU && shU.getLastRow() > 1) {
-      var uVals = shU.getDataRange().getValues();
-      var uHead = uVals[0];
-      var iUEm = uHead.indexOf('Email'), iUNome = uHead.indexOf('Nome'),
-          iUStato = uHead.indexOf('Stato'), iUOpt = uHead.indexOf('OptInDigest');
-      for (var ru = 1; ru < uVals.length; ru++) {
-        var emU = String(uVals[ru][iUEm] || '').trim().toLowerCase();
-        if (!emU) continue;
-        if (String(uVals[ru][iUStato] || '').toLowerCase() !== 'attivo') continue;          // solo attivi
-        if (iUOpt >= 0 && !(uVals[ru][iUOpt] === true || String(uVals[ru][iUOpt]).toLowerCase() === 'true')) continue; // opt-in digest
-        if (allEmails[emU] === 'B' || allEmails[emU] === 'A') continue;                       // già assegnato
-        generalisti.push({ email: emU, nome: String(uVals[ru][iUNome] || '') });
-        allEmails[emU] = 'A';
       }
     }
 
@@ -245,25 +208,12 @@ function getDigestRecipientsByCohort() {
           }
         }
       } catch(eCM) { Logger.log('enrich ContactsMatrix: ' + eCM.message); }
-      // 3) Coorte C — PROFILATI: rilevati DIRETTAMENTE da chi ha interessi nel profilo
-      //    (dimsByEmail = ProfiliPro + fallback ContactsMatrix), NON solo da chi è in MailingList.
-      //    FIX v644: prima si promuovevano SOLO i generalisti (MailingList) con interessi →
-      //    i profilati non iscritti alla newsletter risultavano 0. I lead Matrix (B) hanno precedenza.
-      var nomeByEmail = {};
-      generalisti.forEach(function(g){ nomeByEmail[String(g.email).toLowerCase()] = g.nome || ''; });
-      Object.keys(dimsByEmail).forEach(function(em){
-        em = String(em || '').toLowerCase().trim();
-        var dims = dimsByEmail[em];
-        if (!em || !dims || !String(dims).trim()) return;
-        if (allEmails[em] === 'B') return;   // Matrix ha precedenza
-        if (allEmails[em] === 'C') return;   // già aggiunto
-        profilati.push({ email: em, nome: nomeByEmail[em] || '', interessiDimensioni: String(dims), ambiti: (typeof ambitiFromDims === 'function' ? ambitiFromDims(dims) : []) });
-        allEmails[em] = 'C';
+      // 3) Applica agli ambiti del generalista
+      generalisti.forEach(function(g){
+        var dimsG = dimsByEmail[String(g.email).toLowerCase()];
+        g.ambiti = (dimsG && typeof ambitiFromDims === 'function') ? ambitiFromDims(dimsG) : [];
       });
-      // I generalisti restano SOLO gli iscritti MailingList senza interessi (non in B né C)
-      generalisti = generalisti.filter(function(g){ return allEmails[String(g.email).toLowerCase()] !== 'C'; });
-      generalisti.forEach(function(g){ if (!g.ambiti) g.ambiti = []; });
-    } catch(ePref) { Logger.log('coorte C profilati enrich: ' + ePref.message); }
+    } catch(ePref) { Logger.log('coorte A ambiti enrich: ' + ePref.message); }
 
     var leadCaldi = Object.keys(coorteB).map(function(k){ return coorteB[k]; });
 
@@ -271,11 +221,9 @@ function getDigestRecipientsByCohort() {
       ok: true,
       generalisti: generalisti,
       leadCaldi: leadCaldi,
-      profilati: profilati,
       counts: {
         generalisti: generalisti.length,
         leadCaldi: leadCaldi.length,
-        profilati: profilati.length,
         leadConMatrix: leadCaldi.filter(function(l){ return l.matrixCompletato && l.responseId; }).length,
         leadConTematica: leadCaldi.filter(function(l){ return l.tematica && !l.matrixCompletato; }).length,
         hotLeads: leadCaldi.filter(function(l){ return (l.leadScore || 0) >= 30; }).length
@@ -302,6 +250,13 @@ function sendDigestAuto2coorti(opts) {
   }
   var t0 = new Date().getTime();
   try {
+    // v4.24 — Lock anti-concurrent: impedisce invio simultaneo con sendAgentEmails
+    var lock = LockService.getScriptLock();
+    if (!lock.tryLock(5000)) {
+      Logger.log('[sendDigestAuto2coorti] Altro invio in corso (lock attivo), riprova tra qualche minuto');
+      return { ok: false, error: 'Altro invio email in corso. Riprova tra qualche minuto.' };
+    }
+
     // 0. Quota check — evita errori a catena se quota quasi esaurita
     var remainingQuota = MailApp.getRemainingDailyQuota();
     if (remainingQuota < 10) {
@@ -330,6 +285,8 @@ function sendDigestAuto2coorti(opts) {
     var rec = getDigestRecipientsByCohort();
     if (!rec.ok) return { ok:false, error: rec.error };
 
+    var _coorteBEmailsSent = {}; // v4.25: traccia email inviate per escludere da agenti
+
     var report = {
       ok: true,
       dryRun: !!opts.dryRun,
@@ -342,9 +299,6 @@ function sendDigestAuto2coorti(opts) {
       leadCaldi_personalizzati_matrix: 0,
       leadCaldi_tematici: 0,
       leadCaldi_fallback: 0,
-      profilati_inviati: 0,
-      profilati_errori: 0,
-      profilati_vuoti: 0,
       hot_alerts: 0
     };
 
@@ -365,7 +319,7 @@ function sendDigestAuto2coorti(opts) {
           GmailApp.sendEmail(dest.email, subjGen, 'Visualizza in HTML.', {
             htmlBody: html,
             name: 'Sinopia · Osservatorio Culturale',
-            replyTo: Session.getEffectiveUser().getEmail()
+            replyTo: 'sinopiaconsulting@gmail.com'
           });
           _digestMarkSent_(dest.email, 'coorti');
           report.generalisti_inviati++;
@@ -378,7 +332,9 @@ function sendDigestAuto2coorti(opts) {
     }
 
     // 4. INVIO COORTE B (lead caldi)
-    if (!opts.onlyGeneralisti) {
+    // v4.24 — Coorte B si invia il MARTEDÌ via sendDigestProfilatiMartedi().
+    // Lunedì: solo Coorte A. Per forzare entrambi nello stesso giorno: opts.forceCoorteB = true.
+    if (!opts.onlyGeneralisti && (opts.onlyLead || opts.forceCoorteB)) {
       rec.leadCaldi.forEach(function(lead){
         if (opts.dryRun) {
           if (lead.matrixCompletato && lead.responseId) report.leadCaldi_personalizzati_matrix++;
@@ -391,8 +347,8 @@ function sendDigestAuto2coorti(opts) {
           if (_digestWasRecentlySent_(lead.email)) { Logger.log('[DIGEST] Skip (dedup): ' + lead.email); return; }
           var html, subject;
           if (lead.matrixCompletato && lead.responseId && typeof generateDigestForUser === 'function') {
-            // Layout 1: digest personalizzato Matrix (save:false = invio diretto, niente bozza)
-            var res = generateDigestForUser(lead.email, lead.responseId, { save:false });
+            // Layout 1: digest personalizzato Matrix + contenuti agenti (v4.25: unificato)
+            var res = generateDigestForUser(lead.email, lead.responseId, { save:false, includeAgentContent: !!opts.includeAgentContent });
             if (res && res.ok && res.html) {
               html = res.html;
               subject = 'Sinopia · Il tuo digest personalizzato sui contenuti del tuo museo';
@@ -416,9 +372,10 @@ function sendDigestAuto2coorti(opts) {
           GmailApp.sendEmail(lead.email, subject, 'Visualizza in HTML.', {
             htmlBody: html,
             name: 'Sinopia · Osservatorio Culturale',
-            replyTo: Session.getEffectiveUser().getEmail()
+            replyTo: 'sinopiaconsulting@gmail.com'
           });
           _digestMarkSent_(lead.email, 'coorti');
+          _coorteBEmailsSent[lead.email] = true; // v4.25
           report.leadCaldi_inviati++;
 
           // CRM scoring +1pt digest_sent
@@ -441,43 +398,6 @@ function sendDigestAuto2coorti(opts) {
         } catch(e) {
           Logger.log('Errore invio lead ' + lead.email + ': ' + e.message);
           report.leadCaldi_errori++;
-        }
-      });
-    }
-
-    // 4b. INVIO COORTE C (lettori profilati ProfiloPro, non-Matrix) — digest segmentato sui loro interessi
-    if (!opts.onlyGeneralisti && !opts.onlyLead && rec.profilati && rec.profilati.length) {
-      rec.profilati.forEach(function(pf){
-        if (opts.dryRun) { report.profilati_inviati++; return; }
-        try {
-          if (_digestWasRecentlySent_(pf.email)) { Logger.log('[DIGEST] Skip (dedup): ' + pf.email); return; }
-          var resP = (typeof generateDigestForDims === 'function')
-            ? generateDigestForDims(pf.email, pf.interessiDimensioni, { save: false }) : null;
-          if (!resP || !resP.ok || !resP.html) {
-            // Fallback: nessun contenuto taggato sugli interessi → digest standard filtrato per ambito (come coorte A)
-            if (resP && resP.empty) report.profilati_vuoti++;
-            if (hasItems) {
-              try {
-                var htmlF = buildDigestHTML(items, { Nome: pf.nome, Email: pf.email }, null, pf.ambiti || []);
-                GmailApp.sendEmail(pf.email, subjGen, 'Visualizza in HTML.', { htmlBody: htmlF, name: 'Sinopia · Osservatorio Culturale', replyTo: Session.getEffectiveUser().getEmail() });
-                _digestMarkSent_(pf.email, 'profilato');
-                report.profilati_inviati++;
-              } catch(eF) { report.profilati_errori++; }
-            }
-            return;
-          }
-          GmailApp.sendEmail(pf.email, resP.subject, 'Visualizza in HTML.', {
-            htmlBody: resP.html,
-            name: 'Sinopia · Osservatorio Culturale',
-            replyTo: Session.getEffectiveUser().getEmail()
-          });
-          _digestMarkSent_(pf.email, 'profilato');
-          report.profilati_inviati++;
-          if (typeof crm_recordEvent === 'function') { try { crm_recordEvent(pf.email, 'digest_sent', 1, { cohort: 'C' }); } catch(_){} }
-          Utilities.sleep(300);
-        } catch(e) {
-          Logger.log('Errore invio profilato ' + pf.email + ': ' + e.message);
-          report.profilati_errori++;
         }
       });
     }
@@ -507,10 +427,13 @@ function sendDigestAuto2coorti(opts) {
     } catch(eLog) { Logger.log('Log digest fallito: ' + eLog.message); }
 
     report.duration_ms = new Date().getTime() - t0;
+    report._coorteBEmails = Object.keys(_coorteBEmailsSent); // v4.25: per esclusione agenti
     Logger.log('sendDigestAuto2coorti completato in ' + report.duration_ms + 'ms: ' + JSON.stringify(report));
+    try { lock.releaseLock(); } catch(_){}
     return report;
   } catch(e) {
     Logger.log('sendDigestAuto2coorti FATAL: ' + e.message);
+    try { lock.releaseLock(); } catch(_){}
     return { ok:false, error: e.message };
   }
 }
@@ -549,6 +472,12 @@ function buildTematicDigest(items, tematica, lead) {
     return kws.some(function(k){ return hay.indexOf(_norm(k)) >= 0; });
   });
   if (matched.length === 0) matched = items.slice(0, 8); // fallback: primi 8
+  // v4.24 — Dedup fuzzy: rimuove contenuti con titoli troppo simili
+  if (typeof _dedupFuzzyByTitle_ === 'function') {
+    var _mapped = matched.map(function(it) { return { titolo: it.Titolo || it.titolo || '', _orig: it }; });
+    _mapped = _dedupFuzzyByTitle_(_mapped);
+    matched = _mapped.map(function(m) { return m._orig; });
+  }
 
   var appUrl = '';
   try { appUrl = PropertiesService.getScriptProperties().getProperty('OC_APP_PUBLIC_URL') || ScriptApp.getService().getUrl() || ''; } catch(_){}
@@ -602,6 +531,10 @@ function buildTematicDigest(items, tematica, lead) {
           });
         }
       }
+      // v4.24 — Dedup fuzzy sui bandi tematici
+      if (typeof _dedupFuzzyByTitle_ === 'function') {
+        bandiMatch = _dedupFuzzyByTitle_(bandiMatch);
+      }
       if (bandiMatch.length > 0) {
         bandiHtml = '<div style="margin-bottom:20px"><div style="font-size:16px;font-weight:700;color:#935851;margin-bottom:10px">Bandi per te</div>';
         bandiMatch.forEach(function(b) {
@@ -634,7 +567,10 @@ function buildTematicDigest(items, tematica, lead) {
     + '<a href="' + appUrl + '" style="display:inline-block;padding:12px 28px;color:#fff;text-decoration:none;font-family:Arial,sans-serif;font-size:14px;font-weight:600">Apri la tua area Sinopia →</a>'
     + '</td></tr></table>';
 
-  html += '<p style="font-size:11px;color:#8B5E2B;line-height:1.5;margin:24px 0 0;padding-top:14px;border-top:1px solid #E5E1D8;text-align:center;font-style:italic">Ricevi questo digest perché hai richiesto una consulenza su ' + _escapeHtml_(tematica) + '.</p>';
+  // v4.24 — Footer: tipo digest esplicito + unsubscribe + modifica preferenze
+  html += '<p style="font-size:11px;color:#8B5E2B;line-height:1.5;margin:24px 0 0;padding-top:14px;border-top:1px solid #E5E1D8;text-align:center;font-style:italic">'
+    + 'Questa è una <strong>digest tematica</strong> su <em>' + _escapeHtml_(tematica) + '</em>.<br>'
+    + 'Ricevi questo digest perché hai richiesto una consulenza su ' + _escapeHtml_(tematica) + '.</p>';
 
   // v4.20 — CTA Candidature Capitale della Cultura
   html += (typeof _digestCapitaleCta_ === 'function') ? _digestCapitaleCta_(appUrl || '') : '';
@@ -642,6 +578,12 @@ function buildTematicDigest(items, tematica, lead) {
   // v4.18.54 — Footer unsubscribe link
   if (lead2.email && typeof _digestUnsubFooter_ === 'function') {
     html += _digestUnsubFooter_(lead2.email, { style: 'tematic' });
+  }
+  // v4.24 — Link modifica preferenze
+  if (appUrl) {
+    html += '<p style="font-size:10.5px;color:#8B5E2B;line-height:1.5;margin:8px 0 0;text-align:center">'
+      + 'Vuoi ricevere contenuti diversi? <a href="' + appUrl + '#profilo-agenti" style="color:#8B3A1F;text-decoration:underline;">Modifica le tue preferenze</a>.'
+      + '</p>';
   }
 
   html += '</td></tr>'
@@ -700,7 +642,7 @@ function previewDigestPerEmail(email, token) {
     if (inB) {
       var html, layout;
       if (inB.matrixCompletato && inB.responseId && typeof generateDigestForUser === 'function') {
-        var r = generateDigestForUser(email, inB.responseId, { save:false });
+        var r = generateDigestForUser(email, inB.responseId, { save:false, includeAgentContent:true });
         html = r && r.html || ''; layout = 'matrix-personalizzato';
       } else if (inB.tematica) {
         html = buildTematicDigest(items, inB.tematica, inB); layout = 'tematico';
@@ -715,6 +657,133 @@ function previewDigestPerEmail(email, token) {
     return { ok:true, coorte:'A', layout:'generalista-standard', html: htmlG };
   } catch(e) {
     Logger.log('previewDigestPerEmail errore: ' + e.message);
+    return { ok:false, error: e.message };
+  }
+}
+
+/**
+ * v4.24 — Invio martedì: digest personalizzati per utenti profilati.
+ *
+ * Unifica in un unico invio:
+ *   1. Coorte B di sendDigestAuto2coorti (Matrix personalizzati + tematici)
+ *   2. sendAgentEmails (AG1 Bandi ora è martedì)
+ *
+ * Ogni utente profilato riceve UNA SOLA email il martedì:
+ *   - Se ha Matrix completato → digest personalizzato sulle 3 dimensioni-gap
+ *   - Se ha tematica → digest tematico
+ *   - Se ha opt-in agente → email agente tematico
+ *   - Se ha sia Matrix che opt-in agente → solo Matrix (più ricco)
+ *
+ * Trigger: martedì 07:30 (sostituisce sendAgentEmails il martedì)
+ * Chiamata manuale: dal pannello admin "Invia profilati martedì"
+ *
+ * @param {Object} [opts] {dryRun, token}
+ * @return {Object} report
+ */
+/**
+ * v4.24 — Trigger DAILY che gestisce invii personalizzati + agenti.
+ *
+ * Comportamento per giorno:
+ *   MARTEDÌ  → Coorte B (Matrix personalizzati + tematici) + email agenti del giorno
+ *   ALTRI GG → Solo email agenti se è il loro giorno (AG3 mer, AG5 gio, ecc.)
+ *
+ * Sostituisce il vecchio trigger daily sendAgentEmails (liberando 1 slot trigger).
+ *
+ * @param {Object} [opts] {dryRun, token, forceCoorteB}
+ */
+function sendDigestProfilatiMartedi(opts) {
+  opts = opts || {};
+  if (opts.token && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(opts.token)) {
+    return { ok:false, error:'forbidden' };
+  }
+  var t0 = Date.now();
+  var oggi = new Date();
+  var isMartedi = oggi.getDay() === 2; // 2 = martedì
+  var report = {
+    ok: true,
+    dryRun: !!opts.dryRun,
+    giorno: ['dom','lun','mar','mer','gio','ven','sab'][oggi.getDay()],
+    timestamp: oggi.toISOString(),
+    coorteB_inviati: 0,
+    coorteB_errori: 0,
+    coorteB_matrix: 0,
+    coorteB_tematici: 0,
+    coorteB_fallback: 0,
+    agenti_inviati: 0,
+    agenti_errori: 0,
+    hot_alerts: 0
+  };
+
+  try {
+    // Lock anti-concurrent
+    var lock = LockService.getScriptLock();
+    if (!lock.tryLock(5000)) {
+      return { ok:false, error:'Altro invio in corso. Riprova tra qualche minuto.' };
+    }
+
+    // Quota check
+    var quota = 0;
+    try { quota = MailApp.getRemainingDailyQuota(); } catch(_){}
+    if (quota < 5) {
+      try { lock.releaseLock(); } catch(_){}
+      return { ok:false, error:'Quota email insufficiente (' + quota + ')' };
+    }
+
+    // ── 1. COORTE B (personalizzati + contenuti agenti unificati) — SOLO MARTEDÌ (o forzato) ──
+    var coorteBEmails = [];
+    if (isMartedi || opts.forceCoorteB) {
+      Logger.log('[DigestProfilati] Martedi: invio Coorte B con contenuti agenti unificati...');
+      var coorteBResult = sendDigestAuto2coorti({
+        dryRun: opts.dryRun,
+        onlyLead: true,
+        includeAgentContent: true,  // v4.25: agenti nel digest Matrix
+        token: opts.token
+      });
+      if (coorteBResult) {
+        report.coorteB_inviati = coorteBResult.leadCaldi_inviati || 0;
+        report.coorteB_errori = coorteBResult.leadCaldi_errori || 0;
+        report.coorteB_matrix = coorteBResult.leadCaldi_personalizzati_matrix || 0;
+        report.coorteB_tematici = coorteBResult.leadCaldi_tematici || 0;
+        report.coorteB_fallback = coorteBResult.leadCaldi_fallback || 0;
+        report.hot_alerts = coorteBResult.hot_alerts || 0;
+        coorteBEmails = coorteBResult._coorteBEmails || [];
+      }
+    } else {
+      Logger.log('[DigestProfilati] Oggi non e martedi (' + report.giorno + '), skip Coorte B');
+    }
+
+    // ── 2. AGENTI — solo per utenti NON già serviti da Coorte B ──
+    // Il martedì: i profilati hanno già ricevuto i contenuti agenti nel digest unificato.
+    // Invio agenti solo a chi ha opt-in agente ma NON è in Coorte B.
+    // Altri giorni: invio agenti normalmente (AG3 mer, AG5 gio, ecc.).
+    Logger.log('[DigestProfilati] Check email agenti per ' + report.giorno + ' (esclusi ' + coorteBEmails.length + ' gia serviti)...');
+    if (!opts.dryRun && typeof sendAgentEmails === 'function') {
+      var agResults = sendAgentEmails();
+      if (Array.isArray(agResults)) {
+        agResults.forEach(function(r) {
+          report.agenti_inviati += (r.inviati || 0);
+          report.agenti_errori += (r.errori || 0);
+        });
+      }
+    }
+
+    // ── 3. SOCIAL DRAFT — generazione bozza social quotidiana (cooldown 44h interno) ──
+    if (!opts.dryRun) {
+      try {
+        if (typeof generateNextSocialDraft === 'function') {
+          generateNextSocialDraft();
+          Logger.log('[DigestProfilati] Social draft: check completato');
+        }
+      } catch(eSoc) { Logger.log('[DigestProfilati] Social draft err: ' + (eSoc && eSoc.message)); }
+    }
+
+    report.duration_ms = Date.now() - t0;
+    Logger.log('[DigestProfilati] Completato in ' + report.duration_ms + 'ms: ' + JSON.stringify(report));
+    try { lock.releaseLock(); } catch(_){}
+    return report;
+  } catch(e) {
+    Logger.log('[DigestProfilati] FATAL: ' + e.message);
+    try { lock.releaseLock(); } catch(_){}
     return { ok:false, error: e.message };
   }
 }

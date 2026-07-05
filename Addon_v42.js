@@ -318,22 +318,6 @@ function getHomepageDataV42() {
  * @param {number|string} ambitoId - 1..5
  * @return {Object} {ambitoId, news, bandi, podcast}
  */
-// v4.26 — Ambito di un bando per la pagina ambito.
-// Usa la colonna AMBITO del foglio se valorizzata (1-5); altrimenti classifica al volo
-// da settore+titolo con _classificaAmbitoV5_ (stessa logica usata per i badge della home),
-// cosi' la pagina ambito non resta a 0 quando la colonna AMBITO del RADAR e' vuota.
-function _ambitoBandoV42_(b) {
-  var v = Number(_pickV42_(b, ['ambito','Ambito','AMBITO','ambitoId','AmbitoId']));
-  if (v >= 1 && v <= 5) return v;
-  if (typeof _classificaAmbitoV5_ === 'function') {
-    return Number(_classificaAmbitoV5_(
-      _pickV42_(b, ['settore','Settore','SETTORE']) || '',
-      _pickV42_(b, ['titolo','Titolo','TITOLO']) || ''
-    )) || 0;
-  }
-  return v || 0;
-}
-
 function getAmbitoDataV42(ambitoId) {
   var id = Number(ambitoId);
   var tz = Session.getScriptTimeZone() || 'Europe/Rome';
@@ -378,10 +362,11 @@ function getAmbitoDataV42(ambitoId) {
     var bFiltered = bAll.filter(function(b){
       var stato = _pickV42_(b, ['statoRecord','StatoRecord','STATO_RECORD','stato_record']);
       if (String(stato || '').toLowerCase() === 'archiviato') return false;
-      return _ambitoBandoV42_(b) === id;
+      var ambVal = _pickV42_(b, ['ambito','Ambito','AMBITO','ambitoId','AmbitoId']);
+      return Number(ambVal) === id;
     });
     bandi = bFiltered.map(function(b){
-      var ambId = _ambitoBandoV42_(b);
+      var ambId = Number(_pickV42_(b, ['ambito','Ambito','AMBITO','ambitoId','AmbitoId']) || 0);
       // Calcolo giorni alla scadenza per priorità urgenza
       var rawScad = _pickV42_(b, ['scadenza','Scadenza','SCADENZA']);
       var giorni = null, scadFmt = rawScad || '';

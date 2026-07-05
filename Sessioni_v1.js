@@ -304,12 +304,8 @@ function disablePublicLogin() {
  * Flag assente o qualsiasi altro valore = CHIUSO.
  */
 function isPublicLoginEnabled_() {
-  // v660 — Modello light: login pubblico ATTIVO di default. Disattivo SOLO se la property
-  // è impostata esplicitamente a 'false' (kill-switch admin via disabilitaLoginPubblico).
-  try {
-    var v = PropertiesService.getScriptProperties().getProperty('OC_PUBLIC_LOGIN_ENABLED');
-    return v !== 'false';
-  } catch (e) { return true; }
+  try { return PropertiesService.getScriptProperties().getProperty('OC_PUBLIC_LOGIN_ENABLED') === 'true'; }
+  catch (e) { return false; }
 }
 
 /** Toggle admin-only per il login pubblico */
@@ -328,7 +324,7 @@ function statoLoginPubblico() {
   return { ok:true, enabled: isPublicLoginEnabled_() };
 }
 
-function loginConEmail(email, nome) {
+function loginConEmail(email) {
   try {
     if (!email || !String(email).trim()) return { ok:false, error:'email_mancante' };
     email = String(email).trim().toLowerCase();
@@ -363,25 +359,8 @@ function loginConEmail(email, nome) {
       utente = { email: email, nome: email.split('@')[0], ruolo: 'admin', stato: 'attivo' };
       Logger.log('[AUTH] Auto-creato utente admin: ' + email);
     }
-    if (!utente) {
-      // LIGHT (v656): email NON registrata → auto-registra come lettore attivo e procedi.
-      // Un solo gesto per entrare/registrarsi: il magic-link conferma l'email. Coerente con
-      // newsletter e auto-registrazione profilo. (Resta gated dal flag login pubblico sopra.)
-      if (typeof _autoRegisterUser_ === 'function') {
-        var _reg = _autoRegisterUser_(email, String(nome || '').trim(), 'login', true);
-        if (_reg && _reg.error === 'accesso_rifiutato') return { ok:false, error:'account_non_attivo', stato:'rifiutato' };
-        if (_reg && _reg.error === 'account_sospeso')  return { ok:false, error:'account_non_attivo', stato:'sospeso' };
-      }
-      utente = (typeof getUtenteByEmail_ === 'function') ? getUtenteByEmail_(email) : null;
-      if (!utente) utente = { email: email, nome: email.split('@')[0], ruolo: 'lettore', stato: 'attivo' };
-    }
-    // LIGHT (v655): NON bloccare i PENDING. Ricevono comunque il magic-link e vengono attivati
-    // al primo click (validaSessione attiva i pending). Risolve il catch-22 per cui un lettore
-    // pending non poteva loggarsi → non riceveva il link → restava bloccato per sempre (es. santini).
-    // Restano bloccati SOLO sospesi e rifiutati.
-    if ((utente.stato === 'sospeso' || utente.stato === 'rifiutato') && !isAdminEmail) {
-      return { ok:false, error:'account_non_attivo', stato: utente.stato };
-    }
+    if (!utente) return { ok:false, error:'email_non_registrata' };
+    if (utente.stato !== 'attivo' && !isAdminEmail) return { ok:false, error:'account_non_attivo', stato: utente.stato };
 
     // Crea o riusa sessione
     var sh = _getOrCreateSessioniSheet_();

@@ -29,8 +29,8 @@ var OC_AGENTI = [
     fontiCategorie: ['ministero', 'regione', 'ue', 'aggregatore', 'fondazione', 'associazione', 'rivista'],
     fontiTipo: ['HTML', 'RSS', 'API'],
     scanFrequenza: 'ogni_6h',
-    emailFrequenza: 'settimanale',  // lunedi
-    emailGiorni: [1],  // 1=lunedi
+    emailFrequenza: 'settimanale',  // martedi (v4.24: spostato da lunedi per evitare doppio invio)
+    emailGiorni: [2],  // 2=martedi
     emailOra: 7,
     maxContenuti: 10,
     promptSpecializzato: 'Sei esperto di finanziamenti pubblici per la cultura e i musei. Estrai SOLO bandi/avvisi/call pertinenti a: musei, cultura, beni culturali, progettazione culturale, progettazione museale, patrimonio culturale, allestimenti e musealizzazione, valorizzazione e accessibilita dei luoghi della cultura, digitalizzazione dei beni culturali, turismo culturale. SCARTA tutto il resto (agricoltura, industria, startup generiche, edilizia non culturale, ecc.). Per ogni bando rilevante riporta: titolo, ente, scadenza, importo, regione, url. Regioni prioritarie: Marche, Umbria, Puglia, Sardegna, Emilia-Romagna.',

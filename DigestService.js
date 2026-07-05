@@ -179,14 +179,18 @@ function sendDigest(itemIds, bandiIds, podcastIds) {
 
 function buildDigestHTML(items, dest, readerUrl, filterAmbiti) {
   const nomeDestinatario = dest ? (dest.Nome||dest.Email) : '';
-  // v4.22 — Dedup per titolo: nessun contenuto duplicato nel digest
+  // v4.24 — Dedup esatto + fuzzy: nessun contenuto duplicato nel digest
   const _dsSeen = {};
-  const dedupItems = (items||[]).filter(function(i){
+  var _exactDedup = (items||[]).filter(function(i){
     const key = String(i.Titolo||'').trim().toLowerCase().replace(/\s+/g,' ');
     if (!key || _dsSeen[key]) return false;
     _dsSeen[key] = true;
     return true;
   });
+  // Dedup fuzzy (Jaccard sui titoli simili)
+  var dedupItems = (typeof _dedupFuzzyByTitle_ === 'function')
+    ? _dedupFuzzyByTitle_(_exactDedup.map(function(it){ return { titolo: it.Titolo||it.titolo||'', _orig: it }; })).map(function(m){ return m._orig; })
+    : _exactDedup;
   const grouped={1:[],2:[],3:[],4:[],5:[]};
   dedupItems.forEach(i=>{if(grouped[i.Ambito])grouped[i.Ambito].push(i);});
   // v4.24 — Filtro per ambiti scelti dal lettore (solo-ambiti, no Matrix). Vuoto/assente = tutti i 5.
@@ -212,16 +216,20 @@ function buildDigestHTML(items, dest, readerUrl, filterAmbiti) {
     if (_ed && _ed.testo) {
       const _edTesto = String(_ed.testo).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
       const _edTitolo = String(_ed.titolo||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      const _edFoto = (_ed.foto) ? `<img src="${String(_ed.foto)}" alt="" width="548" style="width:100%;max-width:548px;border-radius:10px;display:block;margin-bottom:14px"/>` : '';
-      const _edFirma = (_ed.firma) ? `<div style="margin-top:12px;font-style:italic;font-size:13px;color:#6E6A62">${String(_ed.firma).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : '';
-      editorialeBlock = `<tr><td style="padding:20px 36px 4px">${_edFoto}<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8B3A1F;font-weight:700;margin-bottom:8px">Approfondimento della settimana</div><div style="font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:10px">${_edTitolo}</div><p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C">${_edTesto}</p>${_edFirma}<div style="margin-top:14px;border-bottom:1px solid #e8e5e0"></div></td></tr>`;
+      editorialeBlock = `<tr><td style="padding:20px 36px 4px"><div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8B3A1F;font-weight:700;margin-bottom:8px">Approfondimento della settimana</div><div style="font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:10px">${_edTitolo}</div><p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C">${_edTesto}</p><div style="margin-top:14px;border-bottom:1px solid #e8e5e0"></div></td></tr>`;
     }
   } catch(_edErr) { Logger.log('[DigestService] editoriale hook err: ' + _edErr.message); }
 
   const readerBtn = readerUrl ? `<tr><td style="padding:16px 36px 8px"><div style="background:linear-gradient(135deg,#0F2744,#185FA5);border-radius:10px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px"><div><div style="font-size:13px;font-weight:600;color:#fff">Ciao${nomeDestinatario?' '+nomeDestinatario:''}!</div><div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px">Seleziona gli articoli che ti interessano e scarica il tuo PDF personalizzato.</div></div><a href="${readerUrl}" style="display:inline-block;background:#B8902A;color:#fff;text-decoration:none;padding:9px 18px;border-radius:7px;font-size:12px;font-weight:700;white-space:nowrap">Apri il tuo digest &rarr;</a></div></td></tr>` : '';
-  // v4.18.54 — Footer unsubscribe (link cancellazione iscrizione)
-  const unsubFooter = (dest && (dest.Email || dest.email) && typeof _digestUnsubFooter_ === 'function')
-    ? _digestUnsubFooter_(dest.Email || dest.email, { style: 'standard' })
+  // v4.24 — Footer: tipo digest esplicito + unsubscribe + modifica preferenze
+  var _destEmail = dest ? (dest.Email || dest.email) : '';
+  const unsubFooter = (_destEmail && typeof _digestUnsubFooter_ === 'function')
+    ? '<div style="padding:18px 36px 0;font-size:11px;color:#888;text-align:center;line-height:1.5">'
+      + 'Questa è la <strong>digest settimanale</strong> dell\'Osservatorio Culturale Sinopia.</div>'
+      + _digestUnsubFooter_(_destEmail, { style: 'standard' })
+      + (readerUrl ? '<div style="padding:0 36px 8px;font-size:11px;color:#888;text-align:center;line-height:1.5">'
+        + 'Vuoi ricevere contenuti diversi? <a href="' + readerUrl.split('?')[0] + '#profilo-agenti" style="color:#bbb;text-decoration:underline;">Modifica le tue preferenze</a>.'
+        + '</div>' : '')
     : '';
   // v4.20 — CTA Candidature Capitale della Cultura
   const capitaleCta = (typeof _digestCapitaleCta_ === 'function') ? _digestCapitaleCta_(readerUrl || '') : '';

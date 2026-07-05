@@ -33,9 +33,51 @@
 // Fase 2: integrazione via Gmail scan o proxy.
 var FAS_TED_FEEDS = [];
 
-// Italia Domani RSS — PNRR
-// v4.20 — Disabilitato: questi sono feed NEWS, non bandi PNRR. Rimuovere o ricategorizzare.
-var FAS_PNRR_FEEDS = [];
+// v5.3 — Feed PNRR + MiC + Fondazione Scuola Patrimonio
+var FAS_PNRR_FEEDS = [
+  {
+    nome: 'Italia Domani — Bandi Amministrazioni',
+    url: 'https://www.italiadomani.gov.it/content/sogei-ng/it/it/feed-rss.makers_notices_feed_rss.xml',
+    ente: 'PNRR Italia Domani', livello: 'Nazionale',
+    filtroKeyword: /cultur|museo|musei|patrimonio|archiv|bibliote|restaur|digital.*heritage|spettacol|M1C3/i
+  },
+  {
+    nome: 'Italia Domani — Bandi Soggetti Attuatori',
+    url: 'https://www.italiadomani.gov.it/content/sogei-ng/it/it/feed-rss.recipients_notices_feed_rss.xml',
+    ente: 'PNRR Italia Domani', livello: 'Nazionale',
+    filtroKeyword: /cultur|museo|musei|patrimonio|archiv|bibliote|restaur|performing art|spettacol|M1C3/i
+  },
+  {
+    nome: 'PNRR Cultura MiC',
+    url: 'https://pnrr.cultura.gov.it/feed/',
+    ente: 'Ministero della Cultura — PNRR', livello: 'Nazionale',
+    filtroKeyword: null
+  },
+  {
+    nome: 'Ministero Cultura — Avvisi',
+    url: 'https://cultura.gov.it/comunicati/avvisi/feed',
+    ente: 'Ministero della Cultura', livello: 'Nazionale',
+    filtroKeyword: /bando|avviso|contribut|finanziament|selezione|concorso|premio/i
+  },
+  {
+    nome: 'Spettacolo MiC',
+    url: 'https://spettacolo.cultura.gov.it/feed/',
+    ente: 'MiC — Direzione Generale Spettacolo', livello: 'Nazionale',
+    filtroKeyword: null
+  },
+  {
+    nome: 'Fondazione Scuola Patrimonio — Generale',
+    url: 'https://www.fondazionescuolapatrimonio.it/feed/',
+    ente: 'SNaPAC — Scuola Nazionale Patrimonio', livello: 'Nazionale',
+    filtroKeyword: /formazione|bando|avviso|cantiere|ricerca|museo|patrimonio|accessib/i
+  },
+  {
+    nome: 'Fondazione Scuola Patrimonio — Editoria',
+    url: 'https://www.fondazionescuolapatrimonio.it/categoria/editoria/feed/',
+    ente: 'SNaPAC — Scuola Nazionale Patrimonio', livello: 'Nazionale',
+    filtroKeyword: null
+  }
+];
 
 // ============================================================================
 // PARSER TED RSS
@@ -130,6 +172,11 @@ function fasParserItaliaDomaniRss(opts) {
         var item = items[j];
         if (!item.link) continue;
         if (existingUrls[item.link.toLowerCase()]) { report.duplicati++; continue; }
+        // v5.3: filtro keyword se il feed lo richiede
+        if (feed.filtroKeyword) {
+          var testo = (item.titolo || '') + ' ' + (item.descrizione || '');
+          if (!feed.filtroKeyword.test(testo)) continue;
+        }
 
         if (!dryRun) {
           var bando = {
@@ -137,7 +184,7 @@ function fasParserItaliaDomaniRss(opts) {
             ente: feed.ente,
             livello: feed.livello,
             regione: '',
-            settore: 'PNRR / Cultura',
+            settore: feed.filtroKeyword ? 'Cultura — ' + feed.nome : 'PNRR / Cultura',
             urlBando: item.link,
             sommario: item.descrizione || '',
             scadenza: item.data || '',
@@ -264,27 +311,30 @@ function fasRetryFontiSilenti(opts) {
  * @param {Object} [opts] {dryRun, maxItems}
  * @return {Object} {ok, nuovi, duplicati, errori, dettagli[]}
  */
-// Gate pertinenza TED — bilingue IT/EN (le notice TED sono multilingua), allineato ai
-// termini delle query FT ~ "...". Usato per scartare i match full-text che non sono cultura
-// (termine presente solo nel nome del buyer). Applicato SOLO se la notice ha una descrizione.
-var FAS_TED_CULTURA_RX = /mus(eo|ei|eum)|bibliotec|librar|archiv|cultural|patrimonio|heritage|monument|restaur|restor|teatr|theat|archeolog|archaeolog|spettacol|exhibit|mostr|beni cultural/i;
-
 function fasParserTedApiPost(opts) {
   opts = opts || {};
   var dryRun = !!opts.dryRun;
   var maxItems = opts.maxItems || 20;
-  var report = { ok: true, nuovi: 0, duplicati: 0, scartati: 0, errori: 0, dettagli: [] };
+  var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
   var existingUrls = _fasLoadExistingUrls_();
 
-  // v5.2 fix: TED v3 expert query — FT ~ "term" (full text), non PC IN (...) che da HTTP 400
+  // v4.25.8 — TED v3: campo "PC" (Product Classification) per CPV cultura.
+  // Sintassi verificata: PC = "code" OR PC = "code" (no wildcard, no IN).
+  // Query 1: CPV 925xx (biblioteche, archivi, musei, servizi culturali)
+  // Query 2: CPV 454xx (restauro monumenti, scavi archeologici, musei)
+  // Query 3: fulltext + scope culturale per catturare bandi con CPV non standard
   var payloads = [
     {
-      label: 'Musei-Biblioteche-Archivi',
-      query: 'FT ~ "museum" OR FT ~ "biblioteca" OR FT ~ "archivio" OR FT ~ "museo"'
+      label: 'CPV-925-Cultura',
+      query: 'PC = "92500000" OR PC = "92510000" OR PC = "92511000" OR PC = "92512000" OR PC = "92520000" OR PC = "92521000" OR PC = "92521100" OR PC = "92521200" OR PC = "92522000" OR PC = "92522100" OR PC = "92522200"'
     },
     {
-      label: 'Patrimonio-Restauro-Spettacolo',
-      query: 'FT ~ "cultural heritage" OR FT ~ "restauro" OR FT ~ "patrimonio culturale" OR FT ~ "teatro"'
+      label: 'CPV-923-Spettacolo',
+      query: 'PC = "92300000" OR PC = "92310000" OR PC = "92311000" OR PC = "92312000" OR PC = "92312100" OR PC = "92320000"'
+    },
+    {
+      label: 'CPV-454-Restauro',
+      query: 'PC = "45454100" OR PC = "45212350" OR PC = "45212310" OR PC = "45212313" OR PC = "45112450"'
     }
   ];
 
@@ -331,22 +381,19 @@ function fasParserTedApiPost(opts) {
         var htmlLinks = nLinks.html || {};
         var link = htmlLinks.ITA || htmlLinks.ENG || '';
         if (!link && pubNumber) link = 'https://ted.europa.eu/it/notice/-/detail/' + pubNumber;
-
-        // v5.3: titolo/sommario leggibili da description-proc (gestisce stringa o oggetto
-        // multilingua {ita|eng|...}); fallback al publication-number se assente.
-        var descTxt = _fasTedTesto_(n['description-proc']);
-        var titolo = descTxt ? descTxt.substring(0, 160) : pubNumber;
-        // scadenza dal termine ricezione offerte (può essere stringa/array/oggetto per lotto)
-        var scad = _fasNormalizzaData_(_fasTedTesto_(n['deadline-receipt-tender-date-lot']));
+        var titolo = pubNumber;
 
         if (!titolo || !link) return;
-        // GATE PERTINENZA (solo se c'è una descrizione): la query FT ~ "..." matcha il
-        // termine anche nel nome del buyer → scarta i non-cultura. Se manca la descrizione
-        // si tiene il record (si confida nella query), per non azzerare TED.
-        if (descTxt && !FAS_TED_CULTURA_RX.test((titolo + ' ' + descTxt).toLowerCase())) {
-          report.scartati++; return;
-        }
         if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
+
+        // v4.25.6 — Filtro post-fetch: scarta bandi chiaramente non culturali
+        var descProc = String(n['description-proc'] || n.description || '');
+        if (typeof isBandoCulturale === 'function') {
+          if (!isBandoCulturale(titolo, 'TED', descProc, '')) {
+            Logger.log('[FAS] TED SCARTATO (non culturale): ' + titolo.substring(0, 60));
+            return;
+          }
+        }
 
         if (!dryRun) {
           _fasSaveBando_({
@@ -356,8 +403,8 @@ function fasParserTedApiPost(opts) {
             regione: '',
             settore: 'Appalti pubblici cultura — TED',
             urlBando: link,
-            sommario: descTxt ? descTxt.substring(0, 500) : '',
-            scadenza: scad,
+            sommario: descProc.substring(0, 500),
+            scadenza: '',
             ambito: 3,
             fonteNome: 'TED — FAS v3 (' + p.label + ')'
           });
@@ -528,7 +575,7 @@ var FAS_API_REGISTRY = [
     auth: 'Nessuna (open data)',
     alimenta: 'Bandi',
     stato: 'in_sviluppo',
-    motivoBlocco: 'Copertura: 20 regioni + dati.gov.it. ANAC opendata ESCLUSO (dati.anticorruzione.it WAF-bloccato + dati storici): i bandi ANAC nuovi arrivano dalla BDNCP Pubblicità Legale (bdncp_pubblicita). Portali non raggiungibili saltati silenziosamente. Filtro rilevanza permissivo (cultura/turismo).',
+    motivoBlocco: 'Copertura nazionale completa: 20 regioni + ANAC + dati.gov.it (22 portali totali). Portali non raggiungibili saltati silenziosamente. Filtro rilevanza permissivo (tutti i risultati accettati se query contiene cultura/turismo).',
     limiteRate: 'Variabile per portale',
     mappaCampi: 'title->Titolo, organization->Ente, notes->SommarioAI, resources[0].url->Link'
   },
@@ -743,8 +790,8 @@ function _fasSaveBando_(bando) {
       String(bando.livello || 'Vari'),   // Livello
       String(bando.regione || ''),       // Regione
       String(bando.settore || ''),       // Settore
-      String(bando.soggetti || ''),     // Soggetti (backward-compat: altri parser non lo passano → '')
-      (bando.importo != null && bando.importo !== '' ? bando.importo : ''), // Importo
+      '',                                // Soggetti
+      '',                                // Importo
       '',                                // Cofin
       bando.scadenza || '',              // Scadenza
       'FAS',                             // FonteID
@@ -802,26 +849,6 @@ function _fasXmlVal_(el, tagName) {
 function _fasStripHtml_(html) {
   if (!html) return '';
   return String(html).replace(/<[^>]*>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
-}
-
-/**
- * @private Estrae testo da un campo TED v3 che può essere stringa, array (per-lotto)
- * o oggetto multilingua { ita|it|eng|en|... }. Ritorna stringa pulita ('' se vuoto).
- */
-function _fasTedTesto_(v) {
-  if (v == null) return '';
-  if (typeof v === 'string') return v.replace(/\s+/g, ' ').trim();
-  if (Array.isArray(v)) {
-    for (var i = 0; i < v.length; i++) { var t = _fasTedTesto_(v[i]); if (t) return t; }
-    return '';
-  }
-  if (typeof v === 'object') {
-    var pref = v.ita || v.it || v.eng || v.en;
-    if (pref) return _fasTedTesto_(pref);
-    for (var k in v) { if (v[k]) { var tt = _fasTedTesto_(v[k]); if (tt) return tt; } }
-    return '';
-  }
-  return String(v).trim();
 }
 
 function _fasNormalizzaData_(dateStr) {
@@ -978,25 +1005,18 @@ function fasParserOpenCoesione(opts) {
 // PARSER CKAN REGIONALE
 // ============================================================================
 
-// Gate cultura CKAN — i dataset open-data sono indicizzati su titolo/note/tag e la query
-// di portale ('bandi cultura musei...') è OR → CKAN può restituire dataset che matchano solo
-// 'bandi'. Si richiede un termine realmente culturale nel testo del dataset. Stem 'cultur'
-// (matcha cultura/culturale/culturali), '\barte\b' con confine di parola (evita "parte"),
-// e termini del dominio Sinopia (gastronomia, borghi).
-var FAS_CKAN_CULTURA_RX = /cultur|mus(eo|ei|eal)|bibliotec|archiv|patrimonio|monument|restaur|archeolog|teatr|spettacol|mostr|\barte\b|beni cultural|gastronom|borg|heritage/i;
-
 /**
  * Cerca dataset bandi/cultura sui portali CKAN regionali e nazionali.
  * CKAN API: package_search?q=bandi+cultura&rows=20
  *
  * @param {Object} [opts] {dryRun, maxPerPortale}
- * @return {Object} {ok, nuovi, duplicati, scartati, errori, dettagli[]}
+ * @return {Object} {ok, nuovi, duplicati, errori, dettagli[]}
  */
 function fasParserCkanRegionale(opts) {
   opts = opts || {};
   var dryRun = !!opts.dryRun;
   var maxPerPortale = opts.maxPerPortale || 20;
-  var report = { ok: true, nuovi: 0, duplicati: 0, scartati: 0, errori: 0, dettagli: [] };
+  var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
 
   var existingUrls = _fasLoadExistingUrls_();
 
@@ -1047,11 +1067,12 @@ function fasParserCkanRegionale(opts) {
         if (!titolo || !dsUrl) continue;
         if (existingUrls[dsUrl.toLowerCase()]) { report.duplicati++; continue; }
 
-        // GATE CULTURA — richiede un termine realmente culturale in titolo/note/tag del dataset.
-        // (rimosso il vecchio bypass "se la query del portale contiene cultura accetta tutto",
-        //  che disattivava il filtro: ogni query di portale contiene 'cultura').
+        // Filtra dataset rilevanti per cultura/musei/bandi
         var allText = (titolo + ' ' + (ds.notes || '') + ' ' + (ds.tags || []).map(function(t) { return t.name || t; }).join(' ')).toLowerCase();
-        if (!FAS_CKAN_CULTURA_RX.test(allText)) { report.scartati++; continue; }
+        var isRelevant = /bando|bandi|cultur|museo|musei|patrimoni|finanziament|contribut|turism|concorso|avviso|arte|teatro|biblioteca|archivi/.test(allText);
+        // Se la query del portale include già 'cultura'/'turismo', accetta comunque
+        if (!isRelevant && /cultur|turism/.test(portal.query.toLowerCase())) isRelevant = true;
+        if (!isRelevant) continue;
 
         if (!dryRun) {
           _fasSaveBando_({
@@ -1080,7 +1101,7 @@ function fasParserCkanRegionale(opts) {
     }
   }
 
-  Logger.log('[FAS] CKAN totale: ' + report.nuovi + ' nuovi, ' + report.duplicati + ' dup, ' + report.scartati + ' scartati (non-cultura)');
+  Logger.log('[FAS] CKAN totale: ' + report.nuovi + ' nuovi, ' + report.duplicati + ' dup');
   return report;
 }
 
@@ -1111,66 +1132,12 @@ var FAS_BDNCP_KEYWORDS = [
   'valorizzazione culturale'
 ];
 
-// Gate di pertinenza culturale: la ricerca full-text BDNCP matcha la keyword OVUNQUE,
-// anche nel nome della stazione appaltante (es. "...PATRIMONIO SRL", "AZIENDA BENI COMUNI...").
-// Per accettare un bando il termine culturale deve comparire nel TITOLO o nella DESCRIZIONE
-// CPV (la classificazione reale del bando), non solo nel nome dell'ente.
-// Verificato live (18/06): su kw "patrimonio culturale" scarta il ~53% di falsi positivi
-// (gestione bar, assicurazioni, rifiuti, servizi cimiteriali) senza perdere i bandi veri.
-// v4.28 — allargato ai temi Osservatorio mancanti: accessibilità (audioguide, LIS, braille,
-// audiodescrizione, CAA) + ecomusei/pinacoteche. Tutti termini inequivocabilmente culturali
-// → non reintroducono i falsi positivi (bar/rifiuti/cimiteriale) bloccati il 18/06.
-var FAS_BDNCP_CULTURA_RX = /mus(eo|ei|eal)|bibliotec|archiv|cultural|patrimonio|monument|restaur|archeolog|teatr|mostr|spettacol|allestiment|beni cultural|audioguid|audiodescriz|lingua dei segni|\bLIS\b|braille|comunicazione aumentativa|easy.to.read|pinacotec|antiquarium|ecomuseo/i;
-
-// Mappa nome-provincia → regione: il BDNCP riporta in luogo_nuts il nome della PROVINCIA
-// (es. "Firenze"), non la regione. La colonna Regione di Bandi_v5 alimenta i filtri regionali
-// della pagina Bandi → serve la regione vera ("Toscana"). Fallback: nome provincia se non mappata.
-var FAS_PROVINCE_REGIONE = {
-  'TORINO':'Piemonte','VERCELLI':'Piemonte','NOVARA':'Piemonte','CUNEO':'Piemonte','ASTI':'Piemonte','ALESSANDRIA':'Piemonte','BIELLA':'Piemonte','VERBANO-CUSIO-OSSOLA':'Piemonte','VERBANIA':'Piemonte',
-  'AOSTA':"Valle d'Aosta","VALLE D'AOSTA":"Valle d'Aosta",
-  'VARESE':'Lombardia','COMO':'Lombardia','SONDRIO':'Lombardia','MILANO':'Lombardia','BERGAMO':'Lombardia','BRESCIA':'Lombardia','PAVIA':'Lombardia','CREMONA':'Lombardia','MANTOVA':'Lombardia','LECCO':'Lombardia','LODI':'Lombardia','MONZA E DELLA BRIANZA':'Lombardia','MONZA E BRIANZA':'Lombardia',
-  'BOLZANO':'Trentino-Alto Adige','BOLZANO/BOZEN':'Trentino-Alto Adige','TRENTO':'Trentino-Alto Adige',
-  'VERONA':'Veneto','VICENZA':'Veneto','BELLUNO':'Veneto','TREVISO':'Veneto','VENEZIA':'Veneto','PADOVA':'Veneto','ROVIGO':'Veneto',
-  'UDINE':'Friuli-Venezia Giulia','GORIZIA':'Friuli-Venezia Giulia','TRIESTE':'Friuli-Venezia Giulia','PORDENONE':'Friuli-Venezia Giulia',
-  'IMPERIA':'Liguria','SAVONA':'Liguria','GENOVA':'Liguria','LA SPEZIA':'Liguria',
-  'PIACENZA':'Emilia-Romagna','PARMA':'Emilia-Romagna','REGGIO EMILIA':'Emilia-Romagna',"REGGIO NELL'EMILIA":'Emilia-Romagna','MODENA':'Emilia-Romagna','BOLOGNA':'Emilia-Romagna','FERRARA':'Emilia-Romagna','RAVENNA':'Emilia-Romagna','FORLI-CESENA':'Emilia-Romagna',"FORLI'-CESENA":'Emilia-Romagna','RIMINI':'Emilia-Romagna',
-  'MASSA-CARRARA':'Toscana','MASSA CARRARA':'Toscana','LUCCA':'Toscana','PISTOIA':'Toscana','FIRENZE':'Toscana','LIVORNO':'Toscana','PISA':'Toscana','AREZZO':'Toscana','SIENA':'Toscana','GROSSETO':'Toscana','PRATO':'Toscana',
-  'PERUGIA':'Umbria','TERNI':'Umbria',
-  'PESARO E URBINO':'Marche','ANCONA':'Marche','MACERATA':'Marche','ASCOLI PICENO':'Marche','FERMO':'Marche',
-  'VITERBO':'Lazio','RIETI':'Lazio','ROMA':'Lazio','LATINA':'Lazio','FROSINONE':'Lazio',
-  "L'AQUILA":'Abruzzo','TERAMO':'Abruzzo','PESCARA':'Abruzzo','CHIETI':'Abruzzo',
-  'CAMPOBASSO':'Molise','ISERNIA':'Molise',
-  'CASERTA':'Campania','BENEVENTO':'Campania','NAPOLI':'Campania','AVELLINO':'Campania','SALERNO':'Campania',
-  'FOGGIA':'Puglia','BARI':'Puglia','TARANTO':'Puglia','BRINDISI':'Puglia','LECCE':'Puglia','BARLETTA-ANDRIA-TRANI':'Puglia',
-  'POTENZA':'Basilicata','MATERA':'Basilicata',
-  'COSENZA':'Calabria','CATANZARO':'Calabria','REGGIO CALABRIA':'Calabria','REGGIO DI CALABRIA':'Calabria','CROTONE':'Calabria','VIBO VALENTIA':'Calabria',
-  'TRAPANI':'Sicilia','PALERMO':'Sicilia','MESSINA':'Sicilia','AGRIGENTO':'Sicilia','CALTANISSETTA':'Sicilia','ENNA':'Sicilia','CATANIA':'Sicilia','RAGUSA':'Sicilia','SIRACUSA':'Sicilia',
-  'SASSARI':'Sardegna','NUORO':'Sardegna','CAGLIARI':'Sardegna','ORISTANO':'Sardegna','SUD SARDEGNA':'Sardegna'
-};
-
-function _fasProvinciaRegione_(prov) {
-  if (!prov) return '';
-  return FAS_PROVINCE_REGIONE[String(prov).toUpperCase().replace(/\s+/g, ' ').trim()] || '';
-}
-
-/**
- * @private true se la data (yyyy-mm-dd) è valida ED è strettamente nel passato (scaduta).
- * Date vuote/malformate → false (nel dubbio si tiene il bando).
- */
-function _fasIsScaduta_(iso) {
-  if (!iso || !/^\d{4}-\d{2}-\d{2}/.test(String(iso))) return false;
-  var d = new Date(String(iso).slice(0, 10) + 'T23:59:59');
-  if (isNaN(d.getTime())) return false;
-  var oggi = new Date(); oggi.setHours(0, 0, 0, 0);
-  return d < oggi;
-}
-
 function fasParserBdncpCultura(opts) {
   opts = opts || {};
   var dryRun = !!opts.dryRun;
   var giorni = opts.giorni || 7;
   var sizePerKw = opts.sizePerKw || 50;
-  var report = { ok: true, nuovi: 0, duplicati: 0, scartati: 0, scaduti: 0, errori: 0, dettagli: [] };
+  var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
   var existingUrls = _fasLoadExistingUrls_();
   var visti = {}; // dedup per idAvviso tra keyword diverse
 
@@ -1215,33 +1182,21 @@ function fasParserBdncpCultura(opts) {
         var info = _fasBdncpEstrai_(av);
         if (!info.titolo) return;
 
-        // GATE PERTINENZA — il termine culturale deve essere nel titolo o nella descrizione
-        // CPV, non solo nel nome dell'ente (evita falsi positivi tipo "...PATRIMONIO SRL"
-        // con CPV rifiuti/cimiteriale/bar). Vedi FAS_BDNCP_CULTURA_RX.
-        var _blob = (info.titolo + ' ' + (info.cpv || '')).toLowerCase();
-        if (!FAS_BDNCP_CULTURA_RX.test(_blob)) { report.scartati++; return; }
-
         var link = info.docLink ||
           (id ? 'https://pubblicitalegale.anticorruzione.it/bandi/' + id : '');
         if (!link) return;
         if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
-
-        // La query full-text non ha filtro data → scarta i bandi già scaduti (importarli è inutile).
-        var scadIso = info.scadenza || _fasNormalizzaData_(av.dataScadenza || '');
-        if (_fasIsScaduta_(scadIso)) { report.scaduti++; return; }
 
         if (!dryRun) {
           _fasSaveBando_({
             titolo: info.titolo.substring(0, 300),
             ente: info.ente || 'BDNCP',
             livello: 'Nazionale',
-            regione: _fasProvinciaRegione_(info.luogo) || info.luogo || '',
-            soggetti: info.luogo || '',
-            importo: (info.importo && !isNaN(Number(info.importo))) ? Number(info.importo) : (info.importo || ''),
+            regione: info.luogo || '',
             settore: info.cpv || 'Appalto cultura — BDNCP/ANAC',
             urlBando: link,
             sommario: (info.titolo + (info.importo ? ' — EUR ' + info.importo : '')).substring(0, 500),
-            scadenza: scadIso,
+            scadenza: info.scadenza || _fasNormalizzaData_(av.dataScadenza || ''),
             ambito: 3,
             fonteNome: 'BDNCP — Pubblicità Legale ANAC',
             cpv: info.cpv || ''
@@ -1261,101 +1216,8 @@ function fasParserBdncpCultura(opts) {
     }
   });
 
-  Logger.log('[FAS] BDNCP totale: ' + report.nuovi + ' nuovi, ' + report.duplicati + ' dup, ' + report.scartati + ' scartati (non-cultura), ' + report.scaduti + ' scaduti, ' + report.errori + ' errori');
+  Logger.log('[FAS] BDNCP totale: ' + report.nuovi + ' nuovi, ' + report.duplicati + ' dup, ' + report.errori + ' errori');
   return report;
-}
-
-/**
- * ONE-SHOT — Bonifica i bandi BDNCP già salvati che NON sono culturali (falsi positivi
- * del full-text pre-gate: enti con "PATRIMONIO"/"BENI" nel nome ma CPV rifiuti/cimiteriale/
- * bar/assicurazione/ecc.). Applica FAS_BDNCP_CULTURA_RX su Titolo + Settore(=descrizione CPV).
- * Marca StatoRecord='archiviato' (REVERSIBILE — non distrugge nulla).
- *
- * @param {boolean} [dryRun=true] se true riporta SOLO cosa verrebbe archiviato, senza scrivere.
- * @return {Object} {ok, dryRun, esaminatiBdncp, nonCultura, esempi[]}
- */
-function cleanupBandiNonCulturaBdncp(dryRun) {
-  if (dryRun === undefined) dryRun = true;
-  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
-  var sh = ss.getSheetByName('Bandi_v5');
-  if (!sh || sh.getLastRow() < 2) return { ok: false, error: 'Bandi_v5 vuoto o assente' };
-  var vals = sh.getDataRange().getValues();
-  var H = vals[0];
-  var iTit = H.indexOf('Titolo'), iSet = H.indexOf('Settore'),
-      iFon = H.indexOf('FonteNome'), iStato = H.indexOf('StatoRecord');
-  if (iTit < 0 || iFon < 0 || iStato < 0) return { ok: false, error: 'colonne Titolo/FonteNome/StatoRecord mancanti' };
-  var esaminati = 0, hit = 0, esempi = [];
-  for (var r = 1; r < vals.length; r++) {
-    if (!/BDNCP/i.test(String(vals[r][iFon] || ''))) continue;
-    if (String(vals[r][iStato] || '').toLowerCase() === 'archiviato') continue;
-    esaminati++;
-    var blob = (String(vals[r][iTit] || '') + ' ' + (iSet >= 0 ? String(vals[r][iSet] || '') : '')).toLowerCase();
-    if (FAS_BDNCP_CULTURA_RX.test(blob)) continue; // è cultura → tieni
-    hit++;
-    if (esempi.length < 15) esempi.push({ titolo: String(vals[r][iTit] || '').slice(0, 50), cpv: iSet >= 0 ? String(vals[r][iSet] || '').slice(0, 30) : '' });
-    if (!dryRun) sh.getRange(r + 1, iStato + 1).setValue('archiviato');
-  }
-  Logger.log('[BDNCP cleanup] BDNCP esaminati: ' + esaminati + ' | non-cultura: ' + hit + (dryRun ? ' (DRY-RUN, nulla scritto)' : ' → ARCHIVIATI'));
-  return { ok: true, dryRun: dryRun, esaminatiBdncp: esaminati, nonCultura: hit, esempi: esempi };
-}
-
-/**
- * Wrapper di comodo — esegue la bonifica IN MODALITÀ APPLICA (archivia davvero).
- * Serve perché il pulsante "Esegui" dell'editor GAS non permette di passare argomenti:
- *   - cleanupBandiNonCulturaBdncp        → dry-run (anteprima, non scrive)
- *   - cleanupBandiNonCulturaBdncpApplica → archivia i non-cultura (reversibile)
- */
-function cleanupBandiNonCulturaBdncpApplica() {
-  return cleanupBandiNonCulturaBdncp(false);
-}
-
-/**
- * Wrapper GATED per il pulsante "Bonifica" del cruscotto Salute (chiamato da frontend).
- * Archivia i bandi BDNCP non-cultura. Richiede admin (modifica dati).
- * @param {string} [token] token admin (sessionStorage oc_admin_token)
- * @return {Object} report di cleanupBandiNonCulturaBdncp, oppure {ok:false,error:'forbidden'}
- */
-function bonificaFontiNonCultura(token) {
-  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) {
-    return { ok: false, error: 'forbidden' };
-  }
-  return cleanupBandiNonCulturaBdncp(false);
-}
-
-/**
- * DIAGNOSTICA (read-only) — scansiona TUTTI i bandi attivi (qualsiasi fonte) e applica
- * il gate cultura su Titolo+Settore. Riporta quanti record NON contengono un termine
- * culturale e da QUALE FonteNome provengono. Serve a capire se i bandi non-cultura visti
- * (es. cimiteri/rifiuti) arrivano da una fonte diversa da BDNCP. Non scrive nulla.
- *
- * @return {Object} {ok, attivi, nonCultura, perFonte:{<fonte>:n}, esempi[]}
- */
-function diagBandiNonCulturaTutte() {
-  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
-  var sh = ss.getSheetByName('Bandi_v5');
-  if (!sh || sh.getLastRow() < 2) return { ok: false, error: 'Bandi_v5 vuoto o assente' };
-  var vals = sh.getDataRange().getValues();
-  var H = vals[0];
-  var iTit = H.indexOf('Titolo'), iSet = H.indexOf('Settore'),
-      iFon = H.indexOf('FonteNome'), iStato = H.indexOf('StatoRecord');
-  if (iTit < 0) return { ok: false, error: 'colonna Titolo mancante' };
-  var attivi = 0, nonCult = 0, perFonte = {}, esempi = [];
-  for (var r = 1; r < vals.length; r++) {
-    if (iStato >= 0 && String(vals[r][iStato] || '').toLowerCase() === 'archiviato') continue;
-    attivi++;
-    var blob = (String(vals[r][iTit] || '') + ' ' + (iSet >= 0 ? String(vals[r][iSet] || '') : '')).toLowerCase();
-    if (FAS_BDNCP_CULTURA_RX.test(blob)) continue; // ha un termine cultura → ok
-    nonCult++;
-    var fonte = iFon >= 0 ? String(vals[r][iFon] || '(vuota)') : '(vuota)';
-    perFonte[fonte] = (perFonte[fonte] || 0) + 1;
-    if (esempi.length < 20) esempi.push({
-      fonte: fonte.slice(0, 32),
-      titolo: String(vals[r][iTit] || '').slice(0, 45),
-      settore: iSet >= 0 ? String(vals[r][iSet] || '').slice(0, 30) : ''
-    });
-  }
-  Logger.log('[DIAG non-cultura] attivi: ' + attivi + ' | non-cultura: ' + nonCult + ' | per fonte: ' + JSON.stringify(perFonte));
-  return { ok: true, attivi: attivi, nonCultura: nonCult, perFonte: perFonte, esempi: esempi };
 }
 
 /**
@@ -1408,82 +1270,6 @@ function _fasBdncpEstrai_(av) {
 // ============================================================================
 // ORCHESTRATORE FASE 2
 // ============================================================================
-
-/**
- * Parser Gazzetta Ufficiale 5ª Serie Speciale — Contratti Pubblici (sopra-soglia), filtrato cultura.
- * RSS: https://www.gazzettaufficiale.it/rss/S5
- *  - item <title> = ente; <description> = oggetto (spesso SINTETICO/generico, es. "Variante in
- *    corso d'opera") → filtro FAS_BDNCP_CULTURA_RX su (ente + descrizione).
- *  - LIMITE NOTO: descrizioni generiche → recall PARZIALE (cattura solo gli avvisi la cui
- *    descrizione cita l'oggetto culturale). Recall pieno = fetch pagina avviso (N richieste,
- *    rischio WAF/timeout) → escluso di proposito.
- *  - <link> = pagina del singolo avviso (link specifico, ok per la regola #4).
- *  - Gli item sono solo gli avvisi RECENTI (ultime gazzette) → intrinsecamente "nuovi": nessuna
- *    scadenza nel feed, quindi non si filtra per data (non vengono archiviati da bandiPulisciVecchi).
- *
- * ⛔ PARCHEGGIATO — valutato 2026-06-28, NON attivare. Il dry-run ha dato 6 item · 0 cultura:
- *    l'RSS GU/S5 espone solo gli ultimissimi avvisi (volume irrisorio rispetto alle centinaia per
- *    edizione) e con descrizioni spesso generiche → via RSS inadeguata. La copertura ANAC/contratti
- *    cultura resta su fasParserBdncpCultura (BDNCP, attivo nel daily). Codice lasciato come
- *    riferimento; NON wirato ad alcun trigger. Recall pieno = fetch pagina-avviso (rischio WAF/
- *    timeout) → non vale il rapporto valore/rischio.
- *
- * @param {Object} opts {dryRun}
- */
-function fasParserGazzettaS5(opts) {
-  opts = opts || {};
-  var dryRun = !!opts.dryRun;
-  var report = { ok: true, dryRun: dryRun, nuovi: 0, duplicati: 0, scartati: 0, errori: 0, esempi: [] };
-  var existingUrls = _fasLoadExistingUrls_();
-  try {
-    var resp = UrlFetchApp.fetch('https://www.gazzettaufficiale.it/rss/S5', {
-      muteHttpExceptions: true, followRedirects: true, deadline: 25,
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaOC/1.0; cultural-observatory)', 'Accept': 'application/rss+xml,application/xml,text/xml' }
-    });
-    if (resp.getResponseCode() !== 200) {
-      report.ok = false; report.esempi.push({ errore: 'HTTP ' + resp.getResponseCode() });
-      Logger.log('[FAS] GU S5 HTTP ' + resp.getResponseCode()); return report;
-    }
-    var doc;
-    try { doc = XmlService.parse(resp.getContentText('UTF-8')); }
-    catch (e) { report.ok = false; report.errori++; report.esempi.push({ errore: 'XML parse: ' + e.message }); return report; }
-    var root = doc.getRootElement(), ns = root.getNamespace();
-    var channel = root.getChild('channel') || root.getChild('channel', ns);
-    var items = channel ? (channel.getChildren('item') || channel.getChildren('item', ns) || []) : [];
-    items.forEach(function (it) {
-      try {
-        function g(tag) { var el = it.getChild(tag) || it.getChild(tag, ns); return el ? String(el.getText() || '').trim() : ''; }
-        var ente = g('title'), descr = g('description'), link = g('link');
-        if (!link) return;
-        if (!FAS_BDNCP_CULTURA_RX.test((ente + ' ' + descr).toLowerCase())) { report.scartati++; return; }
-        if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
-        if (!dryRun) {
-          _fasSaveBando_({
-            titolo: String(descr || ente).substring(0, 300),
-            ente: ente.substring(0, 160),
-            livello: 'Nazionale',
-            settore: 'Contratto pubblico cultura — GU 5ª Serie',
-            urlBando: link,
-            sommario: descr.substring(0, 500),
-            ambito: 3,
-            fonteNome: 'Gazzetta Ufficiale 5ª Serie (Contratti)'
-          });
-          existingUrls[link.toLowerCase()] = true;
-        }
-        report.nuovi++;
-        if (report.esempi.length < 15) report.esempi.push({ ente: ente.substring(0, 60), oggetto: descr.substring(0, 90), link: link });
-      } catch (eI) { report.errori++; }
-    });
-    Logger.log('[FAS] GU S5: ' + items.length + ' item · ' + report.nuovi + ' cultura' + (dryRun ? ' (DRY-RUN)' : ' nuovi') + ' · ' + report.scartati + ' scartati · ' + report.duplicati + ' dup');
-  } catch (e) {
-    report.ok = false; report.errori++; report.esempi.push({ errore: e.message });
-    Logger.log('[FAS] GU S5 errore: ' + e.message);
-  }
-  return report;
-}
-
-/** Dry-run lanciabile dal selettore editor (non scrive nulla). */
-function fasParserGazzettaS5Test() { return fasParserGazzettaS5({ dryRun: true }); }
 
 /**
  * Esegue tutti i parser Fase 2: OpenCoesione + CKAN.
@@ -1635,12 +1421,8 @@ function fasRunCompleto() {
 // ============================================================================
 
 /**
- * @deprecated 2026-06-28 — NON usare per bandi nuovi. ANAC opendata (dati.anticorruzione.it)
- * è WAF-bloccato (rifiuta le chiamate server-to-server: verificato HTTP 403) e fornisce solo
- * dati STORICI (≤ set 2025), non bandi dal 01/06/2026 in avanti. Per l'ANAC dei bandi APERTI/
- * nuovi usare fasParserBdncpCultura (BDNCP Pubblicità Legale). Già SKIP in FASE 2b dalla v4.20;
- * lasciato solo per riferimento storico.
- * Parser ANAC OCDS — Contratti pubblici cultura/musei. API: https://dati.anticorruzione.it/opendata/ocds_it
+ * Parser ANAC OCDS — Contratti pubblici cultura/musei.
+ * API: https://dati.anticorruzione.it/opendata/ocds_it
  */
 function fasParserAnac(opts) {
   opts = opts || {};
@@ -2073,322 +1855,6 @@ function fasDeprecaFontiIrrecuperabili(opts) {
 }
 
 /**
- * Wrapper DRY-RUN di fasDeprecaFontiIrrecuperabili — ri-testa le fonti silenti (>=3 fail)
- * e riporta cosa verrebbe RECUPERATO vs DEPRECATO, SENZA scrivere nulla.
- * Eseguire questo PRIMA dell'apply (fasDeprecaFontiIrrecuperabili senza argomenti).
- */
-function fasDeprecaFontiDryRun() {
-  return fasDeprecaFontiIrrecuperabili({ dryRun: true });
-}
-
-// ============================================================================
-// RIPRISTINO FONTI CULTURA — URL/feed corretti (ricerca verificata 2026-06-19)
-// ============================================================================
-// Mappa nome-fonte → {url, tipo, nota}. URL verificati live (giugno 2026).
-// 32 fonti recuperate (13 batch-1 + 19 batch-2). Restano deprecate/non monitorabili:
-//   - feed disabilitati/paywall: Apollo, Touring Club, FAI, Il Giornale dell'Arte
-//   - SPA/JS o domini morti: Musei Italiani, We Are Museums, AI4Culture, PugliaPromozione, museumsandaging
-//   - bloccate Cloudflare/anti-bot: FISH, Europeana Pro
-//   - chiuse: Il Giornale delle Fondazioni; JS-Coveo: Regione Sardegna - Cultura
-//   - API gia coperte dai parser FAS: TED, BDNCP, ANAC, OpenCUP, EU Funding, opendata regionali
-var FAS_FONTI_RIPRISTINO = {
-  'Italia Domani - PNRR':            { url: 'https://www.italiadomani.gov.it/content/sogei-ng/it/it/feed-rss.news_feed_rss.xml', tipo: 'RSS', nota: 'feed news PNRR (403 era solo sul layer HTML)' },
-  'Fondazione Cariplo - Cultura':    { url: 'https://www.fondazionecariplo.it/feed/', tipo: 'RSS', nota: 'feed WordPress sito-wide, filtrare cultura' },
-  'ICOM Italia - Opportunità':       { url: 'https://www.icom-italia.org/feed/', tipo: 'RSS', nota: 'feed generale attivo (giu 2026)' },
-  'Federculture - Bandi':            { url: 'https://www.federculture.it/feed/', tipo: 'RSS', nota: 'pubblica i Bollettino Bandi' },
-  'Fondazione Symbola - Bandi':      { url: 'https://symbola.net/feed/', tipo: 'RSS', nota: 'feed generale (feed eventi dedicato e morto)' },
-  'Fondazione Symbola - Notizie':    { url: 'https://symbola.net/tipologia/news/feed/', tipo: 'RSS', nota: 'feed tassonomia News' },
-  'Fondazione Fitzcarraldo':         { url: 'https://www.fitzcarraldo.it/feed/', tipo: 'RSS', nota: '' },
-  'NEMO - European Museum Network':  { url: 'https://www.ne-mo.org/news-events/', tipo: 'HTML', nota: 'nessun RSS (sito custom): scrape HTML del listing' },
-  'MuseumNext - Opportunities':      { url: 'https://www.museumnext.com/feed/', tipo: 'RSS', nota: '' },
-  'ANCI - Bandi e Opportunita':      { url: 'https://www.anci.it/feed/', tipo: 'RSS', nota: 'feed generale, filtrare bandi' },
-  'Regione Puglia - Bandi':          { url: 'https://www.regione.puglia.it/feed-bandi-regione-puglia?p_p_id=com_liferay_asset_publisher_web_portlet_AssetPublisherPortlet_INSTANCE_zY8SiKCyhUKl&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=getRSS&p_p_cacheability=cacheLevelPage', tipo: 'RSS', nota: 'feed bandi nuovo portale Liferay, filtrare cultura' },
-  'IndiceBandi - Cultura':           { url: 'https://www.indicebandi.it/it/taxonomy/term/5/feed', tipo: 'RSS', nota: 'gia pre-filtrato cultura (Drupal taxonomy)' },
-  'MAB Italia - Bandi':              { url: 'https://anai.org/feed/', tipo: 'RSS', nota: 'PROXY ANAI: MAB non ha feed proprio, ANAI pubblica le news MAB' },
-
-  // ── BATCH 2 (ricerca verificata 2026-06-20) — recupero fonti silenti ──
-  // Riviste d'arte (bot-blocking o URL feed cambiato)
-  'Artribune':                       { url: 'https://www.artribune.com/feed/', tipo: 'RSS', nota: 'feed ok (era bot-blocking)' },
-  'Artribune - Bandi':               { url: 'https://www.artribune.com/tag/bandi/feed/', tipo: 'RSS', nota: 'feed tag bandi (lento per natura)' },
-  'Finestre sull\'Arte':             { url: 'https://www.finestresullarte.info/finestresullarte.xml', tipo: 'RSS', nota: 'URL feed corretto (era /feed 404)' },
-  'Flash Art Italia':                { url: 'https://flash---art.it/feed/', tipo: 'RSS', nota: 'feed WordPress (era pagina HTML)' },
-  'ArtsLife':                        { url: 'https://www.artslife.com/feed/', tipo: 'RSS', nota: 'feed ok (era bot-blocking)' },
-  'The Art Newspaper':               { url: 'https://www.theartnewspaper.com/rss.xml', tipo: 'RSS', nota: 'URL feed corretto (era /feed 404)' },
-  'Patrimonio Culturale ER':         { url: 'https://patrimonioculturale.regione.emilia-romagna.it/rss.xml', tipo: 'RSS', nota: 'path Plone corretto (.xml)' },
-  'Wikimedia Italia - Musei':        { url: 'https://www.wikimedia.it/feed/', tipo: 'RSS', nota: 'feed news (era pagina bando)' },
-  // MiC + organi periferici (migrati a *.cultura.gov.it)
-  'SMN - Sistema Museale Nazionale': { url: 'https://musei.cultura.gov.it/feed/', tipo: 'RSS', nota: 'dominio nuovo (beniculturali.it legacy morto)' },
-  'Soprintendenza Marche - Circolari': { url: 'https://sabapancona.cultura.gov.it/feed/', tipo: 'RSS', nota: 'SABAP Ancona-PU, dominio nuovo' },
-  'Soprintendenza Puglia - Circolari': { url: 'https://sabapba.cultura.gov.it/feed/', tipo: 'RSS', nota: 'SABAP Bari, dominio nuovo' },
-  'MiC - Bandi e Concorsi':          { url: 'https://cultura.gov.it/comunicati/bandi-e-concorsi', tipo: 'HTML', nota: 'CMS custom: scrape HTML (no RSS)' },
-  'MiC - Avvisi':                    { url: 'https://cultura.gov.it/comunicati/avvisi', tipo: 'HTML', nota: 'CMS custom: scrape HTML (no RSS)' },
-  'MiC - Decreti e Circolari':       { url: 'https://cultura.gov.it/comunicati/circolari', tipo: 'HTML', nota: 'URL corretto, scrape HTML' },
-  // Fondazioni + ministeri + europei
-  'Fondazione Compagnia di San Paolo': { url: 'https://www.compagniadisanpaolo.it/it/feed/', tipo: 'RSS', nota: 'feed generale, filtrare cultura' },
-  'Ministero del Turismo - Bandi':   { url: 'https://www.ministeroturismo.gov.it/feed/', tipo: 'RSS', nota: 'feed news, cattura avvisi finanziamento' },
-  'Europa Creativa - Desk Italia':   { url: 'https://europacreativa.cultura.gov.it/feed/', tipo: 'RSS', nota: 'Creative Europe IT (news+bandi)' },
-  // Accessibilita + internazionali
-  'ENS - Ente Nazionale Sordi':      { url: 'https://www.ens.it/feed/', tipo: 'RSS', nota: 'LIS/accessibilita (era /notizie/feed 404)' },
-  'NEMO Digital Updates':            { url: 'https://www.ne-mo.org/news', tipo: 'HTML', nota: 'NEMO non ha RSS: scrape /news' }
-};
-
-function _fasNormNome_(s) {
-  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
-}
-
-/**
- * Ripristina le fonti cultura deprecate con URL/feed corretti (vedi FAS_FONTI_RIPRISTINO).
- * Cerca per Nome (accent/case-insensitive) nei fogli FontiBandi_v5/News/Podcast/Video,
- * aggiorna URL+Tipo, riattiva (Attiva=true, FailConsecutivi=0, UltimoEsito='RESTORED').
- *
- * @param {boolean} [dryRun=true] anteprima senza scrivere.
- * @return {Object} {ok, dryRun, aggiornate, nonTrovate[], dettagli[]}
- */
-function fasRipristinaFontiCultura(dryRun) {
-  if (dryRun === undefined) dryRun = true;
-  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
-  var report = { ok: true, dryRun: dryRun, aggiornate: 0, nonTrovate: [], dettagli: [] };
-
-  // Indice normalizzato della mappa
-  var mapNorm = {};
-  Object.keys(FAS_FONTI_RIPRISTINO).forEach(function(k) { mapNorm[_fasNormNome_(k)] = { key: k, val: FAS_FONTI_RIPRISTINO[k] }; });
-  var trovati = {};
-
-  ['FontiBandi_v5', 'FontiNews', 'FontiPodcast', 'FontiVideo'].forEach(function(shName) {
-    var sh = ss.getSheetByName(shName);
-    if (!sh || sh.getLastRow() < 2) return;
-    var vals = sh.getDataRange().getValues();
-    var H = vals[0];
-    var iNome = H.indexOf('Nome'), iUrl = H.indexOf('URL'), iTipo = H.indexOf('Tipo'),
-        iAtt = H.indexOf('Attiva'), iFail = H.indexOf('FailConsecutivi'),
-        iEsito = H.indexOf('UltimoEsito'), iErr = H.indexOf('UltimoErrore');
-    if (iNome < 0 || iUrl < 0) return;
-    for (var r = 1; r < vals.length; r++) {
-      var hit = mapNorm[_fasNormNome_(vals[r][iNome])];
-      if (!hit) continue;
-      trovati[hit.key] = true;
-      var m = hit.val;
-      if (!dryRun) {
-        sh.getRange(r + 1, iUrl + 1).setValue(m.url);
-        if (iTipo >= 0 && m.tipo) sh.getRange(r + 1, iTipo + 1).setValue(m.tipo);
-        if (iAtt >= 0) sh.getRange(r + 1, iAtt + 1).setValue(true);
-        if (iFail >= 0) sh.getRange(r + 1, iFail + 1).setValue(0);
-        if (iEsito >= 0) sh.getRange(r + 1, iEsito + 1).setValue('RESTORED');
-        if (iErr >= 0) sh.getRange(r + 1, iErr + 1).setValue('[RESTORED ' + new Date().toISOString().slice(0, 10) + '] ' + (m.nota || 'URL aggiornato'));
-      }
-      report.aggiornate++;
-      report.dettagli.push({ nome: String(vals[r][iNome] || ''), sheet: shName, nuovoUrl: m.url, tipo: m.tipo || '' });
-    }
-  });
-
-  Object.keys(FAS_FONTI_RIPRISTINO).forEach(function(k) { if (!trovati[k]) report.nonTrovate.push(k); });
-  Logger.log('[FAS] Ripristino fonti cultura: ' + report.aggiornate + ' aggiornate' + (dryRun ? ' (DRY-RUN, nulla scritto)' : '') + ', non trovate nei fogli: ' + report.nonTrovate.length);
-  report.dettagli.forEach(function(d) { Logger.log('[RIPRISTINO] ' + d.nome + ' | ' + d.sheet + ' -> ' + d.tipo + ' | ' + d.nuovoUrl); });
-  report.nonTrovate.forEach(function(n) { Logger.log('[NON TROVATA nei fogli] ' + n); });
-  return report;
-}
-
-/** Wrapper APPLICA (scrive davvero) — il pulsante Esegui non passa argomenti. */
-function fasRipristinaFontiCulturaApplica() {
-  return fasRipristinaFontiCultura(false);
-}
-
-/**
- * ONE-SHOT — aggiunge ANAI (Associazione Nazionale Archivistica Italiana) come fonte News.
- * Feed verificato live (2026-06-19): https://anai.org/feed/ — RSS 2.0, contenuti giugno 2026,
- * pubblica anche le news MAB. Usa addFonteUnificataV2 (gestisce dedup per URL → idempotente).
- *
- * @return {Object} risultato di addFonteUnificataV2
- */
-function fasAggiungiFonteANAI() {
-  if (typeof addFonteUnificataV2 !== 'function') {
-    return { ok: false, error: 'addFonteUnificataV2 non disponibile (Fonti_v1.js)' };
-  }
-  return addFonteUnificataV2({
-    tipo: 'news',
-    nome: 'ANAI - Notizie e Bandi',
-    url: 'https://anai.org/feed/',
-    tipoFonte: 'RSS',
-    tag: 'istituzionale',
-    categoria: 'cultura',
-    priorita: 2,
-    enteDefault: 'ANAI - Associazione Nazionale Archivistica Italiana',
-    livello: 'Nazionale'
-  });
-}
-
-/**
- * ONE-SHOT — aggiunge le categorie extra di IndiceBandi (feed Drupal verificati 2026-06-19):
- *   term/26 = Turismo · term/30 = Associazioni ed enti del terzo settore.
- * Idempotente (dedup per URL in addFonteUnificataV2).
- */
-function fasAggiungiFontiIndiceBandi() {
-  if (typeof addFonteUnificataV2 !== 'function') {
-    return { ok: false, error: 'addFonteUnificataV2 non disponibile (Fonti_v1.js)' };
-  }
-  var fonti = [
-    { nome: 'IndiceBandi - Turismo', url: 'https://www.indicebandi.it/it/taxonomy/term/26/feed' },
-    { nome: 'IndiceBandi - Terzo settore', url: 'https://www.indicebandi.it/it/taxonomy/term/30/feed' }
-  ];
-  var risultati = fonti.map(function(f) {
-    return addFonteUnificataV2({
-      tipo: 'bandi', nome: f.nome, url: f.url, tipoFonte: 'RSS',
-      tag: 'settoriale', categoria: 'cultura', priorita: 2,
-      enteDefault: 'IndiceBandi', livello: 'Nazionale'
-    });
-  });
-  return { ok: true, risultati: risultati };
-}
-
-/**
- * DIAGNOSTICA (read-only) — elenca le fonti SILENTI (inattive o con >=3 fallimenti),
- * escluse le DEPRECATED, dai 4 fogli fonti. Per pianificare un recupero mirato.
- * @return {Object} {ok, totale, fonti:[{nome, sheet, url, attiva, fail, esito, errore}]}
- */
-function fasListaFontiSilenti() {
-  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
-  var out = { ok: true, totale: 0, fonti: [] };
-  ['FontiBandi_v5', 'FontiNews', 'FontiPodcast', 'FontiVideo'].forEach(function(shName) {
-    var sh = ss.getSheetByName(shName);
-    if (!sh || sh.getLastRow() < 2) return;
-    var vals = sh.getDataRange().getValues();
-    var H = vals[0];
-    var iNome = H.indexOf('Nome'), iUrl = H.indexOf('URL'), iAtt = H.indexOf('Attiva'),
-        iFail = H.indexOf('FailConsecutivi'), iEsito = H.indexOf('UltimoEsito'), iErr = H.indexOf('UltimoErrore');
-    for (var r = 1; r < vals.length; r++) {
-      if (!vals[r][0]) continue;
-      var att = vals[r][iAtt] === true || String(vals[r][iAtt]).toUpperCase() === 'TRUE';
-      var fail = Number(iFail >= 0 ? vals[r][iFail] : 0) || 0;
-      var esito = String(iEsito >= 0 ? vals[r][iEsito] : '');
-      if (esito === 'DEPRECATED' || esito === 'DUPLICATE') continue;
-      if (!att || fail >= 3) {
-        out.totale++;
-        if (out.fonti.length < 120) out.fonti.push({
-          nome: String(iNome >= 0 ? vals[r][iNome] : '').slice(0, 60),
-          sheet: shName,
-          url: String(iUrl >= 0 ? vals[r][iUrl] : '').slice(0, 90),
-          attiva: att, fail: fail, esito: esito,
-          errore: String(iErr >= 0 ? vals[r][iErr] : '').slice(0, 70)
-        });
-      }
-    }
-  });
-  Logger.log('[FAS] Fonti silenti (escluse deprecate): ' + out.totale);
-  // Log riga per riga così la lista compare nel log dell'editor (il return non e' visibile li')
-  out.fonti.forEach(function(f) {
-    Logger.log('[SILENTE] ' + f.nome + ' | ' + f.sheet + ' | esito=' + (f.esito || '-') +
-               ' | fail=' + f.fail + ' | attiva=' + f.attiva + ' | ' + f.url);
-  });
-  return out;
-}
-
-// ============================================================================
-// DEPRECAZIONE FONTI MORTE VERIFICATE (ricerca 2026-06-20) + DEDUP RIGHE
-// ============================================================================
-// Fonti accertate NON monitorabili (verificate 2+ volte): le marca DEPRECATED
-// così escono da "silenti". NON include le API gestite dai parser FAS (TED/BDNCP/...).
-var FAS_FONTI_MORTE = {
-  'Il Giornale dell\'Arte':              'CMS custom Allemandi senza feed RSS',
-  'Musei Italiani - News':               'dominio musei-italiani.org non piu attivo',
-  'Apollo Magazine':                     'feed RSS disabilitati (paywall WordPress)',
-  'Touring Club Italiano':               'SPA JavaScript senza feed RSS',
-  'FAI - Fondo Ambiente':                'CMS custom, nessun feed esposto',
-  'MiC Comunicati':                      'sottodominio comunicati.cultura.gov.it dismesso (coperto da MiC Bandi/Avvisi)',
-  'AMACI - Opportunità':                 'sito in ricostruzione, nessun feed',
-  'PugliaPromozione - Bandi':            'migrato a Liferay JS (aret.regione.puglia.it), nessun RSS',
-  'PUGLIAPROMOZIONE':                    'URL morto/duplicato (404)',
-  'Portale Operatori Turismo — Italia.it': 'nessun feed, ridondante con feed Min. Turismo',
-  'We Are Museums':                      'SPA React senza feed ne HTML scrapabile',
-  'MuseWeb':                             'sito di conferenza, nessun blog/feed attivo',
-  'AI4Culture (EU)':                     'progetto UE concluso 02/2025, sito JS-shell',
-  'Digital Heritage Lab UNESCO':         'pagina 404, nessun feed tematico UNESCO',
-  'Museum of the Future Blog':           'pagina /stories 404, nessun feed',
-  'Age-Friendly Museum Network':         'dominio museumsandaging.org inesistente (NXDOMAIN)',
-  'FISH - Superamento Handicap':         'feed dietro Cloudflare, scanner GAS bloccato (403)',
-  'Europeana Pro Blog':                  'dominio pro.europeana.eu anti-bot (403)',
-  'Il Giornale delle Fondazioni':        'testata chiusa, non pubblica piu (archivio statico)',
-  'Regione Sardegna - Cultura':          'listato bandi dietro motore JS (Coveo), nessun RSS'
-};
-
-/**
- * Marca DEPRECATED le fonti accertate non monitorabili (FAS_FONTI_MORTE), con motivo.
- * @param {boolean} [dryRun=true] anteprima senza scrivere.
- */
-function fasDeprecaFontiMorteVerificate(dryRun) {
-  if (dryRun === undefined) dryRun = true;
-  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
-  var report = { ok: true, dryRun: dryRun, deprecate: 0, nonTrovate: [], dettagli: [] };
-  var mapNorm = {};
-  Object.keys(FAS_FONTI_MORTE).forEach(function(k) { mapNorm[_fasNormNome_(k)] = { key: k, motivo: FAS_FONTI_MORTE[k] }; });
-  var trovati = {};
-  ['FontiBandi_v5', 'FontiNews', 'FontiPodcast', 'FontiVideo'].forEach(function(shName) {
-    var sh = ss.getSheetByName(shName);
-    if (!sh || sh.getLastRow() < 2) return;
-    var vals = sh.getDataRange().getValues();
-    var H = vals[0];
-    var iNome = H.indexOf('Nome'), iAtt = H.indexOf('Attiva'), iEsito = H.indexOf('UltimoEsito'), iErr = H.indexOf('UltimoErrore');
-    if (iNome < 0) return;
-    for (var r = 1; r < vals.length; r++) {
-      var hit = mapNorm[_fasNormNome_(vals[r][iNome])];
-      if (!hit) continue;
-      trovati[hit.key] = true;
-      if (!dryRun) {
-        if (iAtt >= 0) sh.getRange(r + 1, iAtt + 1).setValue(false);
-        if (iEsito >= 0) sh.getRange(r + 1, iEsito + 1).setValue('DEPRECATED');
-        if (iErr >= 0) sh.getRange(r + 1, iErr + 1).setValue('[DEPRECATA ' + new Date().toISOString().slice(0, 10) + '] ' + hit.motivo);
-      }
-      report.deprecate++;
-      report.dettagli.push({ nome: String(vals[r][iNome] || ''), sheet: shName, motivo: hit.motivo });
-    }
-  });
-  Object.keys(FAS_FONTI_MORTE).forEach(function(k) { if (!trovati[k]) report.nonTrovate.push(k); });
-  Logger.log('[FAS] Deprecazione fonti morte: ' + report.deprecate + (dryRun ? ' (DRY-RUN, nulla scritto)' : ' marcate DEPRECATED') + ', non trovate: ' + report.nonTrovate.length);
-  report.dettagli.forEach(function(d) { Logger.log('[DEPRECA] ' + d.nome + ' | ' + d.sheet + ' | ' + d.motivo); });
-  report.nonTrovate.forEach(function(n) { Logger.log('[NON TROVATA] ' + n); });
-  return report;
-}
-function fasDeprecaFontiMorteVerificateApplica() { return fasDeprecaFontiMorteVerificate(false); }
-
-/**
- * Dedup righe doppie: nello STESSO foglio, righe con la stessa URL → tiene la prima,
- * marca le successive DUPLICATE + Attiva=false (NON cancella, reversibile). Dedup solo
- * intra-foglio (cross-foglio bandi/news puo' essere intenzionale → non toccato).
- * @param {boolean} [dryRun=true] anteprima senza scrivere.
- */
-function fasDedupFonti(dryRun) {
-  if (dryRun === undefined) dryRun = true;
-  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
-  var report = { ok: true, dryRun: dryRun, duplicati: 0, dettagli: [] };
-  ['FontiBandi_v5', 'FontiNews', 'FontiPodcast', 'FontiVideo'].forEach(function(shName) {
-    var sh = ss.getSheetByName(shName);
-    if (!sh || sh.getLastRow() < 2) return;
-    var vals = sh.getDataRange().getValues();
-    var H = vals[0];
-    var iNome = H.indexOf('Nome'), iUrl = H.indexOf('URL'), iAtt = H.indexOf('Attiva'), iEsito = H.indexOf('UltimoEsito');
-    if (iUrl < 0) return;
-    var visti = {};
-    for (var r = 1; r < vals.length; r++) {
-      var url = String(vals[r][iUrl] || '').trim().toLowerCase().replace(/\/+$/, '');
-      if (!url) continue;
-      if (visti[url]) {
-        report.duplicati++;
-        report.dettagli.push({ nome: String(iNome >= 0 ? vals[r][iNome] : '') , sheet: shName, url: url.slice(0, 60), tenutaRiga: visti[url] });
-        if (!dryRun) {
-          if (iAtt >= 0) sh.getRange(r + 1, iAtt + 1).setValue(false);
-          if (iEsito >= 0) sh.getRange(r + 1, iEsito + 1).setValue('DUPLICATE');
-        }
-      } else {
-        visti[url] = r + 1;
-      }
-    }
-  });
-  Logger.log('[FAS] Dedup fonti: ' + report.duplicati + ' duplicati' + (dryRun ? ' (DRY-RUN, nulla scritto)' : ' marcati DUPLICATE/inattivi'));
-  report.dettagli.forEach(function(d) { Logger.log('[DUP] ' + d.nome + ' | ' + d.sheet + ' | ' + d.url + ' (tenuta riga ' + d.tenutaRiga + ')'); });
-  return report;
-}
-function fasDedupFontiApplica() { return fasDedupFonti(false); }
-
-/**
  * Report completo fonti: attive, silenti, deprecate, per tipo.
  */
 // ============================================================================
@@ -2411,7 +1877,7 @@ function testTedApiQuick() {
       payload: JSON.stringify(body),
       muteHttpExceptions: true,
       deadline: 15,
-      headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaOC/1.0 (sinopiaconsulting@gmail.com)' }
+      headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaOC/1.0 (s.straccini@gmail.com)' }
     });
     var status = resp.getResponseCode();
     var body200 = resp.getContentText().substring(0, 400);
@@ -2485,7 +1951,7 @@ function fasReportFontiCompleto() {
       var head = vals[0];
       var iAtt = head.indexOf('Attiva'), iFail = head.indexOf('FailConsecutivi'),
           iEsito = head.indexOf('UltimoEsito');
-      var stats = { totale: 0, attive: 0, silenti: 0, deprecate: 0, duplicati: 0, ok: 0 };
+      var stats = { totale: 0, attive: 0, silenti: 0, deprecate: 0, ok: 0 };
       for (var r = 1; r < vals.length; r++) {
         if (!vals[r][0]) continue;
         stats.totale++;
@@ -2493,7 +1959,6 @@ function fasReportFontiCompleto() {
         var fail = Number(vals[r][iFail] || 0);
         var esito = String(vals[r][iEsito] || '');
         if (esito === 'DEPRECATED') stats.deprecate++;
-        else if (esito === 'DUPLICATE') stats.duplicati++;
         else if (!att || fail >= 3) stats.silenti++;
         else if (esito === 'OK' || esito === 'RECOVERED' || esito === 'RECOVERED_FASE3') stats.ok++;
         if (att) stats.attive++;
@@ -2501,14 +1966,13 @@ function fasReportFontiCompleto() {
       out.fogli[shName] = stats;
     });
     // Totali
-    out.totaleAttive = 0; out.totaleSilenti = 0; out.totaleDeprecate = 0; out.totaleDuplicati = 0;
+    out.totaleAttive = 0; out.totaleSilenti = 0; out.totaleDeprecate = 0;
     Object.keys(out.fogli).forEach(function(k) {
       out.totaleAttive += out.fogli[k].attive || 0;
       out.totaleSilenti += out.fogli[k].silenti || 0;
       out.totaleDeprecate += out.fogli[k].deprecate || 0;
-      out.totaleDuplicati += out.fogli[k].duplicati || 0;
     });
-    Logger.log('[FAS] Report fonti: attive=' + out.totaleAttive + ' silenti=' + out.totaleSilenti + ' deprecate=' + out.totaleDeprecate + ' duplicati=' + out.totaleDuplicati);
+    Logger.log('[FAS] Report fonti: attive=' + out.totaleAttive + ' silenti=' + out.totaleSilenti + ' deprecate=' + out.totaleDeprecate);
   } catch(e) { out.ok = false; out.error = e.message; }
   return out;
 }

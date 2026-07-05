@@ -137,7 +137,7 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);font-size:
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
       <div>
         <div class="rd-brand">Sinopia &middot; Osservatorio Culturale</div>
-        <div class="rd-sub">Sinopia · Deruta · Digest personale</div>
+        <div class="rd-sub">Sinopia · Fano · Digest personale</div>
       </div>
       <div style="text-align:right">
         <div id="rd-data" style="font-size:11px;color:var(--ink-3,#888)">-</div>
@@ -169,8 +169,8 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);font-size:
   <!-- FOOTER -->
   <div class="rd-footer">
     <p>
-      Sinopia &middot; Osservatorio Culturale · Deruta (PG)<br>
-      Link personale valido 30 giorni · <a href="mailto:sinopiaconsulting@gmail.com">sinopiaconsulting@gmail.com</a>
+      Sinopia &middot; Osservatorio Culturale · Fano (PU)<br>
+      Link personale valido 30 giorni · <a href="mailto:info@sinopiaconsulting.it">info@sinopiaconsulting.it</a>
     </p>
   </div>
 </div>
@@ -459,7 +459,7 @@ function buildPdfHTML(items, bandi, podcast, nome) {
   html += '@media print{body{padding:0}h2{page-break-after:avoid}}';
   html += '</style></head><body>';
   html += '<h1>Digest Sinopia &middot; Osservatorio Culturale</h1>';
-  html += '<div class="subtitle">Sinopia · Deruta' + (nome ? ' · Per ' + esc(nome) : '') + ' · ' + esc(date) + '</div>';
+  html += '<div class="subtitle">Sinopia · Fano' + (nome ? ' · Per ' + esc(nome) : '') + ' · ' + esc(date) + '</div>';
 
   if (items.length) {
     html += '<h2 class="sec-not">Notizie &amp; Tendenze</h2>';
@@ -495,7 +495,7 @@ function buildPdfHTML(items, bandi, podcast, nome) {
     });
   }
 
-  html += '<div class="footer">Sinopia &middot; Osservatorio Culturale · sinopiaconsulting@gmail.com</div>';
+  html += '<div class="footer">Sinopia &middot; Osservatorio Culturale · info@sinopiaconsulting.it</div>';
   html += '</body></html>';
   return html;
 }

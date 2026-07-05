@@ -313,20 +313,6 @@ function sasRunWeekly() {
     Logger.log('[SAS] MA4 ERRORE: ' + e.message);
   }
 
-  // ── Bonifica bandi BDNCP non-cultura (safety net settimanale, dopo gli aggiornamenti) ──
-  try {
-    if (typeof cleanupBandiNonCulturaBdncp === 'function') {
-      var bon = cleanupBandiNonCulturaBdncp(false); // applica (archivia i non-cultura)
-      if (bon && bon.ok) {
-        report.azioni.push('Bonifica BDNCP: ' + bon.nonCultura + ' non-cultura archiviati (su ' + bon.esaminatiBdncp + ' esaminati)');
-        Logger.log('[SAS] Bonifica BDNCP: ' + bon.nonCultura + '/' + bon.esaminatiBdncp + ' archiviati');
-      }
-    }
-  } catch(e) {
-    report.errori.push('Bonifica: ' + e.message);
-    Logger.log('[SAS] Bonifica ERRORE: ' + e.message);
-  }
-
   // ── KPI settimanali ──
   try {
     report.kpi = _sasCalcolaKPI_();
@@ -343,19 +329,11 @@ function sasRunWeekly() {
     report.errori.push('Trend: ' + e.message);
   }
 
-  // ── Digest Queue: genera bozze per compilatori Matrix opt-in (v4.19.1) ──
-  try {
-    if (typeof generateDigestQueueAll === 'function') {
-      var dq = generateDigestQueueAll({ silent: true });
-      report.agenti.DigestQueue = dq;
-      var dqGen = (dq && dq.generati) || 0;
-      if (dqGen > 0) report.azioni.push('DigestQueue: generate ' + dqGen + ' bozze personalizzate');
-      Logger.log('[SAS] DigestQueue completato: ' + dqGen + ' bozze');
-    }
-  } catch(e) {
-    report.errori.push('DigestQueue: ' + e.message);
-    Logger.log('[SAS] DigestQueue ERRORE: ' + e.message);
-  }
+  // ── Digest Queue: RIMOSSO v4.24 ──
+  // generateDigestQueueAll è già chiamato da cronGenerateDigestWeekly (DOM 18:00).
+  // Chiamarlo anche qui (LUN 05:30) creava bozze duplicate e spreco risorse.
+  // Se serve rigenerare le bozze, usare il pannello admin o cronGenerateDigestWeekly.
+  Logger.log('[SAS] DigestQueue: skip (gestito da cronGenerateDigestWeekly domenica)');
 
   // ── Strategia e raccomandazioni ──
   try {

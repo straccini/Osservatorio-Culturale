@@ -57,11 +57,9 @@ function buildNewsletterHtml_(draft) {
   try { if (typeof getEditorialeCorrente === 'function') _editoriale = getEditorialeCorrente(); } catch(_){}
   if (_editoriale && _editoriale.testo) {
     parts.push('<tr><td style="padding:20px 28px 4px 28px;">');
-    if (_editoriale.foto) parts.push('<img src="' + String(_editoriale.foto) + '" alt="" width="564" style="width:100%;max-width:564px;border-radius:10px;display:block;margin-bottom:14px"/>');
     parts.push('<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8B3A1F;font-weight:700;margin-bottom:8px;">Approfondimento della settimana</div>');
     parts.push('<div style="font-size:16px;font-weight:700;color:#1D1D1F;margin-bottom:10px;">' + _h_(_editoriale.titolo) + '</div>');
     parts.push('<p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C;">' + _h_(_editoriale.testo).replace(/\n/g, '<br>') + '</p>');
-    if (_editoriale.firma) parts.push('<div style="margin-top:12px;font-style:italic;font-size:13px;color:#6E6A62;">' + _h_(_editoriale.firma) + '</div>');
     parts.push('<div style="margin-top:14px;border-bottom:1px solid #E5E5E7;padding-bottom:6px"></div>');
     parts.push('</td></tr>');
   } else {
@@ -71,15 +69,22 @@ function buildNewsletterHtml_(draft) {
     parts.push('</td></tr>');
   }
 
-  // v4.22 — Dedup cross-sezione: nessun titolo duplicato nella newsletter
+  // v4.24 — Dedup cross-sezione esatto + fuzzy: nessun titolo duplicato o simile nella newsletter
   var _nlSeen = {};
   function _nlDedup(items, keyFn) {
-    return (items || []).filter(function(it) {
+    var exactDedup = (items || []).filter(function(it) {
       var key = String(keyFn(it) || '').trim().toLowerCase().replace(/\s+/g,' ');
       if (!key || _nlSeen[key]) return false;
       _nlSeen[key] = true;
       return true;
     });
+    // Dedup fuzzy tra gli item passati in questa sezione
+    if (typeof _dedupFuzzyByTitle_ === 'function') {
+      var mapped = exactDedup.map(function(it) { return { titolo: keyFn(it) || '', _orig: it }; });
+      mapped = _dedupFuzzyByTitle_(mapped);
+      return mapped.map(function(m) { return m._orig; });
+    }
+    return exactDedup;
   }
 
   // Bandi urgenti
@@ -138,22 +143,6 @@ function buildNewsletterHtml_(draft) {
     parts.push('</td></tr>');
   }
 
-  // v5.5 — Invito a profilarsi (newsletter generica → chi non si è profilato): newsletter su misura
-  if (webUrl) {
-    var _sepNl = (webUrl.indexOf('?') >= 0) ? '&' : '?';
-    var _urlProfilo = webUrl + _sepNl + 'goto=profilo-pro';
-    var _urlMatrix  = webUrl + _sepNl + 'goto=matrix-landing';
-    parts.push('<tr><td style="padding:4px 28px 22px 28px;">');
-    parts.push('<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FBF7EF;border:1px solid #E8DFC9;border-radius:10px;">');
-    parts.push('<tr><td style="padding:20px 22px;">');
-    parts.push('<div style="font-size:15px;font-weight:700;color:#1D1D1F;margin-bottom:6px;">Vuoi una newsletter più vicina alle tue aspettative?</div>');
-    parts.push('<p style="margin:0 0 14px;font-size:13px;line-height:1.55;color:#3A3A3C;">Compila il questionario e riceverai <b>gratuitamente</b> una selezione di contenuti su misura per il tuo profilo professionale e per il tuo museo.</p>');
-    parts.push('<a href="' + _h_(_urlProfilo) + '" style="display:inline-block;background:#935851;color:#FFFFFF;padding:10px 18px;border-radius:7px;text-decoration:none;font-size:13px;font-weight:600;margin:0 8px 8px 0;">Il mio profilo &rarr;</a>');
-    parts.push('<a href="' + _h_(_urlMatrix) + '" style="display:inline-block;background:#8E6E1F;color:#FFFFFF;padding:10px 18px;border-radius:7px;text-decoration:none;font-size:13px;font-weight:600;margin:0 0 8px 0;">Valuta il tuo museo &middot; MuseMu Matrix &rarr;</a>');
-    parts.push('</td></tr></table>');
-    parts.push('</td></tr>');
-  }
-
   // Footer
   parts.push('<tr><td style="padding:16px 28px 28px 28px;border-top:1px solid #ECECEE;">');
   parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;">Ricevi questa newsletter in quanto iscritto all\'Osservatorio Culturale. Per modificare le preferenze o cancellarti, usa il link di disiscrizione in fondo.</p>');
@@ -172,7 +161,7 @@ function buildNewsletterHtml_(draft) {
 function sendNewsletterEmail_(subject, html) {
   // Sprint 1.4 (2026-05-01): legge da Utenti (OptInDigest=true && Stato=attivo) via Auth.gs.
   // Fallback su vecchia MailingList se Utenti vuoto.
-  var sender   = _safeEmail_() || 's.straccini@gmail.com';
+  var sender   = _safeEmail_() || 'sinopiaconsulting@gmail.com';
   var senderName = 'Osservatorio Culturale';
   var sent = 0;
   var errors = [];
@@ -390,7 +379,7 @@ function testInviaDigestGeneralista(emailDest, token) {
     // 4) Invio diretto al destinatario test (bypass MailingList)
     Logger.log('--- 4. Invio email diretto ---');
     var sender = '';
-    try { sender = Session.getActiveUser().getEmail() || 's.straccini@gmail.com'; } catch(e) { sender = 's.straccini@gmail.com'; }
+    try { sender = Session.getActiveUser().getEmail() || 'sinopiaconsulting@gmail.com'; } catch(e) { sender = 'sinopiaconsulting@gmail.com'; }
     MailApp.sendEmail({
       to:       emailDest,
       subject:  draft.soggetto,
