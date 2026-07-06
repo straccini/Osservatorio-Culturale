@@ -359,6 +359,51 @@ function agentiQualitaSetupTutto() {
 }
 
 // ============================================================================
+//  PULIZIA FEED MORTI CONFERMATI — one-shot con dry-run
+// ----------------------------------------------------------------------------
+//  Disattiva SOLO le fonti attive il cui feed risponde 404 (rimosso) o è
+//  irraggiungibile a livello DNS — morte certe, non 403/WAF né FEED OK.
+//  Esempi noti (diagnosi 2026-07-06): riga vecchia "The Art Newspaper"
+//  (theartnewspaper.com/rss → 404; la NUOVA riga /rss.xml funziona),
+//  "Fondazione Golinelli" (DNS error). Audit scritto in Note.
+// ============================================================================
+function fontiDisattivaFeed404(dryRun) {
+  if (dryRun === undefined) dryRun = true;
+  var rep = { ok: true, dryRun: dryRun, esaminate: 0, daDisattivare: [], disattivate: 0 };
+  var sh = (typeof _qaSheet_ === 'function') ? _qaSheet_('FontiFeed')
+         : ((typeof getMainSS === 'function') ? getMainSS().getSheetByName('FontiFeed') : null);
+  if (!sh || sh.getLastRow() < 2) { rep.ok = false; rep.error = 'FontiFeed assente'; return rep; }
+  var vals = sh.getDataRange().getValues();
+  var head = vals[0].map(function(h){ return String(h||'').trim(); });
+  var iNome = head.indexOf('Nome'), iUrl = head.indexOf('URL_Feed'),
+      iAtt = head.indexOf('Attiva'), iNote = head.indexOf('Note');
+  for (var r = 1; r < vals.length; r++) {
+    var row = vals[r];
+    if (!row[0]) continue;
+    if (!(row[iAtt] === true || String(row[iAtt]).toUpperCase() === 'TRUE')) continue;
+    rep.esaminate++;
+    var diag = _aqDiagnosiFeed_(String(row[iUrl] || ''));
+    var morta = diag.problema === 'HTTP 404' || diag.problema === 'IRRAGGIUNGIBILE' || diag.problema === 'URL NON VALIDO';
+    if (!morta) continue;
+    rep.daDisattivare.push({ nome: String(row[iNome]||''), url: String(row[iUrl]||''), problema: diag.problema });
+    if (!dryRun) {
+      sh.getRange(r + 1, iAtt + 1).setValue(false);
+      if (iNote >= 0) {
+        var nota = '[disattivata ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Europe/Rome', 'dd/MM/yyyy') + '] ' + diag.problema + ' — fontiDisattivaFeed404';
+        sh.getRange(r + 1, iNote + 1).setValue((String(row[iNote]||'') + ' ' + nota).trim().slice(-500));
+      }
+      rep.disattivate++;
+    }
+    Utilities.sleep(150);
+  }
+  if (!dryRun) SpreadsheetApp.flush();
+  Logger.log('[fontiDisattivaFeed404] ' + (dryRun ? 'DRY-RUN' : 'APPLICATO') + ' — morte certe: ' +
+    rep.daDisattivare.length + '/' + rep.esaminate + ' attive');
+  Logger.log(JSON.stringify(rep, null, 2));
+  return rep;
+}
+
+// ============================================================================
 //  DIAGNOSI + FIX SCANNER FONTI (causa "FEED OK ma mai scansionata")
 // ----------------------------------------------------------------------------
 //  Lo scanner news (scanSources → getFeedSources('rss')) legge:

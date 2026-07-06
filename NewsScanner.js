@@ -48,7 +48,26 @@ function scanSources() {
   const sh=SS.getSheetByName(SH.ITEMS);
   const existing=getExistingURLs(sh);
   let added=0;
-  for(const fonte of fonti) {
+  // v4.25.9 — ANTI-TIMEOUT: la lista supera il limite GAS (6 min) e le fonti in
+  // coda non venivano MAI scansionate ("Exceeded maximum execution time" su
+  // Espoarte, 2026-07-06). Fix: (a) rotazione round-robin — ogni run riparte
+  // dall'indice dove il precedente si è fermato (checkpoint in ScriptProperties);
+  // (b) budget tempo 270s con stop PULITO (le stats della fonte corrente vengono
+  // comunque scritte). In 2-3 run consecutivi tutte le fonti vengono coperte.
+  const _props = PropertiesService.getScriptProperties();
+  const _nF = fonti.length || 1;
+  const _startIdx = Number(_props.getProperty('OC_SCAN_RR_IDX') || 0) % _nF;
+  const _ordered = fonti.slice(_startIdx).concat(fonti.slice(0, _startIdx));
+  const _T0 = Date.now(), _BUDGET_MS = 270000;
+  let _processed = 0, _stopBudget = false;
+  for(const fonte of _ordered) {
+    if (Date.now() - _T0 > _BUDGET_MS) {
+      _stopBudget = true;
+      Logger.log('[scanSources] Budget tempo esaurito dopo ' + _processed + '/' + _nF +
+        ' fonti — la prossima esecuzione riparte da "' + (fonte.Nome || '?') + '"');
+      break;
+    }
+    _processed++;
     try {
       Logger.log(' Fonte: ' + fonte.Nome);
       const rssUrl = fonte.RSSURL || fonte.URL;
@@ -80,6 +99,12 @@ function scanSources() {
       Logger.log('  ERR fonte "' + fonte.Nome + '": ' + err.message.substring(0,80));
     }
   }
+  // v4.25.9 — checkpoint round-robin: il prossimo run riparte da dove ci si è fermati
+  // (se il giro è completo, riparte dall'inizio: (start+processed) % n torna a start).
+  _props.setProperty('OC_SCAN_RR_IDX', String((_startIdx + _processed) % _nF));
+  Logger.log('[scanSources] Run: ' + _processed + '/' + _nF + ' fonti (da idx ' + _startIdx + ')' +
+    (_stopBudget ? ' — INTERROTTO per budget, riprende automaticamente' : ' — giro completo') +
+    ' · ' + added + ' item nuovi');
   return added;
 }
 
