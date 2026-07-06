@@ -30,7 +30,10 @@
 var OC_CRON_EXTRA = [
   { fn: 'qaNotturnaGAS',         tipo: 'daily',  ora: 23, desc: 'QA notturna nativa (salute fonti + conteggi + email)' },
   { fn: 'fontiReportGiornaliero', tipo: 'daily',  ora: 8,  desc: 'Report FONTI (silenti/aggregatori/link bandi)' },
-  { fn: 'scanNewsletterGmail',   tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 6, desc: 'Ingestione newsletter da Gmail (settimanale)' }
+  { fn: 'scanNewsletterGmail',   tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 6, desc: 'Ingestione newsletter da Gmail (settimanale)' },
+  // v4.25 — Agenti qualità (AgenteQualita.js): via dispatcher, NON trigger dedicati (limite 20)
+  { fn: 'agenteQualitaBandi',    tipo: 'daily',  ora: 5,  desc: 'Qualità bandi: archivia scaduti/junk/non-cultura, report senza-link' },
+  { fn: 'agenteFontiMute',       tipo: 'monthdays', giorniMese: [1, 6, 11, 16, 21, 26], ora: 7, desc: 'Fonti mute: diagnosi per-fonte ogni 5 giorni + email' }
 ];
 
 /** Schedule consolidato = approvato (SetupMaster) + nuovi. */
@@ -45,12 +48,14 @@ function _ocWeekDay_(dow) {
   return [null, W.MONDAY, W.TUESDAY, W.WEDNESDAY, W.THURSDAY, W.FRIDAY, W.SATURDAY, W.SUNDAY][dow];
 }
 
-/** Un job è dovuto all'ora H (0-23) e giorno dow (1-7)? */
-function _ocCronDovuto_(t, H, dow) {
+/** Un job è dovuto all'ora H (0-23), giorno settimana dow (1-7), giorno mese dom (1-31)? */
+function _ocCronDovuto_(t, H, dow, dom) {
   if (t.tipo === 'hourly') return (H % (Number(t.ore) || 6)) === 0;
   var ore = (t.ore && t.ore.length) ? t.ore : [Number(t.ora)];
   if (ore.indexOf(H) < 0) return false;
   if (t.tipo === 'weekly') return t.giorno === _ocWeekDay_(dow);
+  // v4.25 — 'monthdays': gira nei giorni del mese indicati (es. [1,6,11,16,21,26] ≈ ogni 5gg)
+  if (t.tipo === 'monthdays') return (t.giorniMese || []).indexOf(Number(dom)) >= 0;
   return true; // daily
 }
 
@@ -62,6 +67,7 @@ function ocCronDispatch() {
   var now = new Date();
   var H = Number(Utilities.formatDate(now, tz, 'H'));
   var dow = Number(Utilities.formatDate(now, tz, 'u')); // 1=Lun..7=Dom
+  var dom = Number(Utilities.formatDate(now, tz, 'd')); // 1-31 giorno del mese
   var stamp = Utilities.formatDate(now, tz, 'yyyyMMdd-HH');
 
   var props = PropertiesService.getScriptProperties();
@@ -72,7 +78,7 @@ function ocCronDispatch() {
   var start = Date.now(), eseguiti = [], falliti = [];
   for (var i = 0; i < sched.length; i++) {
     var t = sched[i];
-    if (!_ocCronDovuto_(t, H, dow)) continue;
+    if (!_ocCronDovuto_(t, H, dow, dom)) continue;
     if (Date.now() - start > 300000) { Logger.log('ocCronDispatch: budget esaurito, i rimanenti slittano'); break; }
     if (!/^[A-Za-z0-9_]+$/.test(t.fn)) continue;
     try { eval(t.fn + '()'); eseguiti.push(t.fn); }
@@ -140,7 +146,8 @@ function ocCronStato() {
   var now = new Date();
   var H = Number(Utilities.formatDate(now, tz, 'H'));
   var dow = Number(Utilities.formatDate(now, tz, 'u'));
-  var dovuti = _ocCronSchedule_().filter(function(t) { return _ocCronDovuto_(t, H, dow); }).map(function(t) { return t.fn; });
+  var dom = Number(Utilities.formatDate(now, tz, 'd'));
+  var dovuti = _ocCronSchedule_().filter(function(t) { return _ocCronDovuto_(t, H, dow, dom); }).map(function(t) { return t.fn; });
   var triggerDispatcher = ScriptApp.getProjectTriggers().filter(function(t) { return t.getHandlerFunction() === 'ocCronDispatch'; }).length;
   var rep = { adesso: Utilities.formatDate(now, tz, 'EEE HH:mm'), dispatcherAttivo: triggerDispatcher > 0, jobDovutiOra: dovuti, ultimoRun: PropertiesService.getScriptProperties().getProperty('OC_CRON_LAST') || '—' };
   Logger.log('ocCronStato: ' + JSON.stringify(rep, null, 2));

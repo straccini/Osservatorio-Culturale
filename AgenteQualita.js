@@ -344,11 +344,149 @@ function fontiRipristinaPrimarie() {
 }
 
 // ============================================================================
-//  SETUP UNICO — attiva entrambi gli agenti in un colpo
+//  SETUP UNICO — v4.25: gli agenti girano nel CronDispatcher (OC_CRON_EXTRA),
+//  NON con trigger dedicati (limite GAS 20 trigger già saturo).
+//  agenteQualitaBandi  → daily 05:00 · agenteFontiMute → giorni 1/6/11/16/21/26 h07
+//  Per attivarli: ocCronSetup(true) [dry-run] poi ocCronSetup(false) [applica].
 // ============================================================================
 function agentiQualitaSetupTutto() {
-  var a = agenteQualitaBandiSetupTrigger();
-  var b = agenteFontiMuteSetupTrigger();
-  Logger.log('agentiQualitaSetupTutto: bandi daily 05:00 ✓ · fonti mute ogni 5gg 07:00 ✓');
-  return { ok: true, bandi: a, fontiMute: b };
+  Logger.log('Gli agenti sono registrati nel CronDispatcher (OC_CRON_EXTRA).');
+  Logger.log('NON servono trigger dedicati. Per attivare/consolidare:');
+  Logger.log('  1) ocCronSetup(true)   → mostra il piano senza toccare nulla');
+  Logger.log('  2) ocCronSetup(false)  → applica: 1 solo trigger orario dispatcher');
+  var stato = (typeof ocCronStato === 'function') ? ocCronStato() : null;
+  return { ok: true, via: 'CronDispatcher', jobs: ['agenteQualitaBandi daily 05', 'agenteFontiMute giorni 1/6/11/16/21/26 h07'], statoDispatcher: stato };
+}
+
+// ============================================================================
+//  DIAGNOSI + FIX SCANNER FONTI (causa "FEED OK ma mai scansionata")
+// ----------------------------------------------------------------------------
+//  Lo scanner news (scanSources → getFeedSources('rss')) legge:
+//    - flag USE_FONTI_FEED_RSS OFF → foglio legacy `Fonti`
+//    - flag ON                     → foglio `FontiFeed`
+//  Le fonti nuove (batch 2026-06/07) sono in FontiFeed: se il flag è OFF lo
+//  scanner non le vede MAI → "FEED OK, problema lato scanner".
+// ============================================================================
+
+/** Fotografa flag + conteggi fonti per capire quale foglio legge ogni scanner. */
+function fontiScannerDiagnosi() {
+  var p = PropertiesService.getScriptProperties();
+  var rep = {
+    flags: {
+      USE_FONTI_FEED_RSS:     String(p.getProperty('USE_FONTI_FEED_RSS')),
+      USE_FONTI_FEED_PODCAST: String(p.getProperty('USE_FONTI_FEED_PODCAST')),
+      USE_FONTI_FEED_VIDEO:   String(p.getProperty('USE_FONTI_FEED_VIDEO'))
+    },
+    fogli: {}
+  };
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+
+  // Legacy `Fonti`
+  var shL = ss.getSheetByName('Fonti');
+  if (shL && shL.getLastRow() > 1) {
+    var vL = shL.getDataRange().getValues(); var hL = vL[0].map(String);
+    var iAttL = hL.indexOf('Attiva'); var attL = 0;
+    for (var r = 1; r < vL.length; r++) if (vL[r][0] && (vL[r][iAttL] === true || String(vL[r][iAttL]).toUpperCase() === 'TRUE')) attL++;
+    rep.fogli.Fonti_legacy = { righe: vL.length - 1, attive: attL };
+  } else rep.fogli.Fonti_legacy = { righe: 0, attive: 0 };
+
+  // FontiFeed per tipo
+  var shF = ss.getSheetByName('FontiFeed');
+  if (shF && shF.getLastRow() > 1) {
+    var vF = shF.getDataRange().getValues(); var hF = vF[0].map(String);
+    var iTipo = hF.indexOf('Tipo'), iAttF = hF.indexOf('Attiva'), iScan = hF.indexOf('UltimaScan');
+    var perTipo = {};
+    for (var q = 1; q < vF.length; q++) {
+      if (!vF[q][0]) continue;
+      var tipo = String(vF[q][iTipo] || '?').toLowerCase();
+      var att = vF[q][iAttF] === true || String(vF[q][iAttF]).toUpperCase() === 'TRUE';
+      perTipo[tipo] = perTipo[tipo] || { totali: 0, attive: 0, maiScansionate: 0 };
+      perTipo[tipo].totali++;
+      if (att) {
+        perTipo[tipo].attive++;
+        if (!vF[q][iScan]) perTipo[tipo].maiScansionate++;
+      }
+    }
+    rep.fogli.FontiFeed = perTipo;
+  }
+
+  rep.lettura = {
+    scanner_news_legge: rep.flags.USE_FONTI_FEED_RSS === 'true' ? 'FontiFeed' : 'Fonti (legacy)',
+    conseguenza: rep.flags.USE_FONTI_FEED_RSS === 'true'
+      ? 'le fonti FontiFeed vengono scansionate'
+      : 'le fonti aggiunte a FontiFeed NON vengono MAI scansionate (causa delle mute FEED OK)'
+  };
+  rep.raccomandazione = rep.flags.USE_FONTI_FEED_RSS === 'true'
+    ? 'Flag già ON: investigare mapping scanner'
+    : 'Eseguire fontiScannerAttivaRss(true) [anteprima] poi fontiScannerAttivaRss(false) [applica]';
+  Logger.log(JSON.stringify(rep, null, 2));
+  return rep;
+}
+
+/**
+ * FIX: porta le fonti news attive del legacy `Fonti` dentro `FontiFeed` (se
+ * mancanti, dedup per URL normalizzato, SENZA ri-test HTTP: sono già in
+ * produzione) e attiva USE_FONTI_FEED_RSS. Da quel momento scanSources legge
+ * FontiFeed → tutte le fonti (vecchie + nuove) vengono scansionate.
+ * Rollback istantaneo: disableFontiFeed('rss').
+ * @param {boolean} dryRun default TRUE — solo anteprima, nessuna scrittura
+ */
+function fontiScannerAttivaRss(dryRun) {
+  if (dryRun === undefined) dryRun = true;
+  var rep = { ok: true, dryRun: dryRun, daImportare: [], giaPresenti: 0, importate: 0, flagPrima: '', flagDopo: '' };
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var p = PropertiesService.getScriptProperties();
+  rep.flagPrima = String(p.getProperty('USE_FONTI_FEED_RSS'));
+
+  var shL = ss.getSheetByName('Fonti');
+  var shF = (typeof ensureFontiFeedSheet_ === 'function') ? ensureFontiFeedSheet_() : ss.getSheetByName('FontiFeed');
+  if (!shF) { rep.ok = false; rep.error = 'FontiFeed assente'; return rep; }
+
+  // URL già in FontiFeed (normalizzati)
+  var esistenti = {};
+  var vF = shF.getDataRange().getValues();
+  var hF = vF[0].map(String);
+  var iUrlF = hF.indexOf('URL_Feed');
+  for (var r = 1; r < vF.length; r++) {
+    var u = (typeof _normalizeFeedUrl_ === 'function') ? _normalizeFeedUrl_(vF[r][iUrlF]) : String(vF[r][iUrlF]||'').toLowerCase();
+    if (u) esistenti[u] = true;
+  }
+
+  // Fonti legacy attive non ancora in FontiFeed
+  if (shL && shL.getLastRow() > 1) {
+    var vL = shL.getDataRange().getValues();
+    var hL = vL[0].map(String);
+    function cL(n){ return hL.indexOf(n); }
+    var iNome = cL('Nome'), iUrl = cL('URL'), iRss = cL('RSSURL'), iAmb = cL('Ambito'), iAmbL = cL('AmbitoLabel'), iAtt = cL('Attiva');
+    for (var q = 1; q < vL.length; q++) {
+      var row = vL[q];
+      if (!row[0]) continue;
+      if (!(row[iAtt] === true || String(row[iAtt]).toUpperCase() === 'TRUE')) continue;
+      var feed = String((iRss >= 0 ? row[iRss] : '') || (iUrl >= 0 ? row[iUrl] : '') || '').trim();
+      if (!/^https?:\/\//i.test(feed)) continue;
+      var norm = (typeof _normalizeFeedUrl_ === 'function') ? _normalizeFeedUrl_(feed) : feed.toLowerCase();
+      if (esistenti[norm]) { rep.giaPresenti++; continue; }
+      var cand = { nome: String(row[iNome]||feed), feed: feed, ambito: Number(row[iAmb]) || 1, ambLbl: String((iAmbL >= 0 && row[iAmbL]) || '') };
+      rep.daImportare.push(cand.nome);
+      if (!dryRun) {
+        shF.appendRow(['FF' + Date.now() + '_' + q, cand.nome, 'Migrazione-legacy 2026-07', 'rss', cand.feed, '',
+          cand.ambito, cand.ambLbl, '', '', 3, true, new Date(), '', '', 0, 0, 0, '',
+          'Importata da foglio Fonti (fontiScannerAttivaRss) — già attiva in produzione, non ritestata']);
+        esistenti[norm] = true;
+        rep.importate++;
+        Utilities.sleep(50); // ID univoci
+      }
+    }
+  }
+
+  if (!dryRun) {
+    p.setProperty('USE_FONTI_FEED_RSS', 'true');
+    SpreadsheetApp.flush();
+  }
+  rep.flagDopo = dryRun ? rep.flagPrima + ' (invariato — dry-run)' : 'true';
+  Logger.log('[fontiScannerAttivaRss] ' + (dryRun ? 'DRY-RUN' : 'APPLICATO') +
+    ' — da importare: ' + rep.daImportare.length + ' · già presenti: ' + rep.giaPresenti +
+    ' · flag: ' + rep.flagPrima + ' → ' + rep.flagDopo);
+  Logger.log(JSON.stringify(rep, null, 2));
+  return rep;
 }
