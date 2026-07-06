@@ -95,7 +95,7 @@ var OC_TRIGGER_SCHEDULE = [
   { fn: 'sendDigestProfilatiMartedi',   tipo: 'daily',    ora: 7,  min: 30,  desc: 'Daily: mar=profilati+agenti, altri gg=solo agenti' },
 
   // === MATTINA (scan contenuti) ===
-  { fn: 'scanSourcesBisettimanale',     tipo: 'daily',    ora: 7,  min: 0,   desc: 'Scan RSS news (solo mar+gio)' },
+  { fn: 'scanSourcesBisettimanale',     tipo: 'daily',    ora: 7,  min: 0,   desc: 'Scan RSS news quotidiano 07:00 (v4.25.10; +run 11/15/19 via dispatcher)' },
   { fn: 'scanPodcastBisettimanale',     tipo: 'daily',    ora: 7,  min: 30,  desc: 'Scan podcast+video quotidiano (RSS + YouTube Atom)' },
   // sendAgentEmails RIMOSSO v4.24 — sostituito da sendDigestProfilatiMartedi (1 trigger in meno)
 
@@ -115,11 +115,15 @@ var OC_TRIGGER_SCHEDULE = [
 // ============================================================================
 
 /**
- * Scan RSS news solo martedì e giovedì. Trigger daily ma skip gli altri giorni.
+ * v4.25.10 — Scan RSS news QUOTIDIANO (era solo mar/gio: le news arrivavano
+ * fredde). Nome mantenuto per compatibilità con i trigger esistenti.
+ * La freschezza vera arriva dai run multipli/giorno via CronDispatcher
+ * (scanSources a 11/15/19 + questo alle 07:00): con la rotazione round-robin
+ * anti-timeout di scanSources ogni run continua il giro dal punto precedente
+ * → TUTTE le fonti coperte più volte al giorno.
  */
 function scanSourcesBisettimanale() {
-  var day = new Date().getDay(); // 0=dom, 2=mar, 4=gio
-  if (day !== 2 && day !== 4) { Logger.log('[scanSourcesBisettimanale] Oggi non è mar/gio, skip'); return; }
+  Logger.log('[scanSourcesBisettimanale] Scan news quotidiano (v4.25.10)');
   return scanSources();
 }
 

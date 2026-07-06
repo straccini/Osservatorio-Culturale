@@ -33,7 +33,13 @@ var OC_CRON_EXTRA = [
   { fn: 'scanNewsletterGmail',   tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 6, desc: 'Ingestione newsletter da Gmail (settimanale)' },
   // v4.25 — Agenti qualità (AgenteQualita.js): via dispatcher, NON trigger dedicati (limite 20)
   { fn: 'agenteQualitaBandi',    tipo: 'daily',  ora: 5,  desc: 'Qualità bandi: archivia scaduti/junk/non-cultura, report senza-link' },
-  { fn: 'agenteFontiMute',       tipo: 'monthdays', giorniMese: [1, 6, 11, 16, 21, 26], ora: 7, desc: 'Fonti mute: diagnosi per-fonte ogni 5 giorni + email' }
+  { fn: 'agenteFontiMute',       tipo: 'monthdays', giorniMese: [1, 6, 11, 16, 21, 26], ora: 7, desc: 'Fonti mute: diagnosi per-fonte ogni 5 giorni + email' },
+  // v4.25.10 — FRESCHEZZA NEWS: run multipli/giorno. Il run delle 07:00 arriva dal
+  // base schedule (scanSourcesBisettimanale, ora quotidiano); questi 3 completano
+  // il giro round-robin → tutte le fonti coperte più volte al giorno.
+  { fn: 'scanSources',           tipo: 'daily',  ore: [11, 15, 19], desc: 'Scan news rotazione (freschezza pomeriggio/sera)' },
+  // v4.25.10 — PROFONDITÀ: pubblicazioni/editoria settimanale (sabato mattina)
+  { fn: 'pubDiscoveryScan',      tipo: 'weekly', giorno: ScriptApp.WeekDay.SATURDAY, ora: 6, desc: 'Discovery pubblicazioni/editoria (settimanale)' }
 ];
 
 /** Schedule consolidato = approvato (SetupMaster) + nuovi. */
