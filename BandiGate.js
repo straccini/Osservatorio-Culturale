@@ -49,6 +49,23 @@ function _bandiUrlValido_(u) {
   return /^https?:\/\/\S+/i.test(u) ? u : '';
 }
 
+// Titoli che NON sono bandi ma voci di navigazione/legali scrapate dai siti
+// (soprattutto portali GAL): privacy, cookie, credits, "chi siamo", ecc.
+var _BANDO_JUNK_RE = /^\s*(accetto\s+privacy|informativa(?:\s+privacy)?|privacy(?:\s*[-–&]|\s+e\s+cookie|\s+policy|\s*$)|cookie|credits?\b|crediti\b|organizzazione\s*&?\s*soci|associarsi\b|diventa\s+socio|chi\s+siamo|contatti\b|dove\s+siamo|come\s+raggiungerci|mappa\s+del\s+sito|mappa\s+dei\s+finanziamenti|area\s+riservata|accedi\b|log\s*in|iscriviti\b|newsletter\b|note\s+legali|termini\s+e\s+condizioni|amministrazione\s+trasparente)/i;
+
+/**
+ * true se il record NON è un vero bando (voce di menu/legale/navigazione o
+ * titolo che è di fatto un URL o un titolo vuoto).
+ */
+function _bandiNonBando_(b) {
+  var t = String((b && b.titolo) || '').trim();
+  if (!t) return true;                        // titolo vuoto
+  if (/^https?:\/\//i.test(t)) return true;   // titolo = URL → voce di menu
+  if (/\bgdpr\b/i.test(t)) return true;       // "... GDPR Compliance"
+  if (_BANDO_JUNK_RE.test(t)) return true;    // voce di navigazione/legale
+  return false;
+}
+
 /**
  * Classifica un URL come 'diretto' (pagina specifica del bando) o 'generico'
  * (homepage / sezione). Riusa l'euristica già validata _frLinkGenerico_ di
@@ -92,11 +109,15 @@ function bandiGateFinale_(arr) {
   if (!arr || !arr.length) return arr || [];
   var out = [];
   var scartatiCultura = 0;
+  var scartatiJunk = 0;
   for (var i = 0; i < arr.length; i++) {
     var b = arr[i];
     if (!b) continue;
 
     if (b.__gated) { out.push(b); continue; }
+
+    // 0) FILTRO ANTI-SPAZZATURA (voci di menu/legali scrapate, non bandi)
+    if (_bandiNonBando_(b)) { scartatiJunk++; continue; }
 
     // 1) FILTRO CULTURA (rete di sicurezza live)
     if (typeof isBandoCulturale === 'function') {
@@ -129,8 +150,9 @@ function bandiGateFinale_(arr) {
     b.__gated = true;
     out.push(b);
   }
-  if (scartatiCultura > 0) {
-    Logger.log('[bandiGateFinale_] scartati non-cultura: ' + scartatiCultura + '/' + arr.length);
+  if (scartatiCultura > 0 || scartatiJunk > 0) {
+    Logger.log('[bandiGateFinale_] scartati: ' + scartatiJunk + ' non-bando + ' +
+      scartatiCultura + ' non-cultura / ' + arr.length);
   }
   return out;
 }
@@ -149,7 +171,13 @@ function bandiGateSelfTest() {
     // --- NON CULTURA: devono essere SCARTATI ---
     { in:{ titolo:'Fornitura di ambulanze e presidi sanitari per ASL', settore:'sanità', sommario:'pronto soccorso', cpv:'34114121', link:'https://asl.esempio.it/bando' }, attesoIn:false, nome:'Ambulanze (sanità)' },
     { in:{ titolo:'Servizio di raccolta rifiuti urbani e nettezza urbana', settore:'ambiente', sommario:'', cpv:'90511000', link:'' }, attesoIn:false, nome:'Rifiuti (ambiente)' },
-    { in:{ titolo:'Manutenzione stradale e segnaletica orizzontale', settore:'', sommario:'asfaltatura', cpv:'45233141', link:'' }, attesoIn:false, nome:'Strade (lavori)' }
+    { in:{ titolo:'Manutenzione stradale e segnaletica orizzontale', settore:'', sommario:'asfaltatura', cpv:'45233141', link:'' }, attesoIn:false, nome:'Strade (lavori)' },
+    // --- SPAZZATURA (voci di menu/legali): devono essere SCARTATE ---
+    { in:{ titolo:'Accetto Privacy - GDPR Compliance', settore:'', sommario:'', cpv:'', link:'' }, attesoIn:false, nome:'Junk: privacy/GDPR' },
+    { in:{ titolo:'Credits: Alea.pro', settore:'', sommario:'', cpv:'', link:'' }, attesoIn:false, nome:'Junk: credits' },
+    { in:{ titolo:'Organizzazione & Soci', settore:'', sommario:'', cpv:'', link:'' }, attesoIn:false, nome:'Junk: organizzazione' },
+    { in:{ titolo:'Associarsi a VeGAL', settore:'', sommario:'', cpv:'', link:'' }, attesoIn:false, nome:'Junk: associarsi' },
+    { in:{ titolo:'https://agriculture.ec.europa.eu/common-agricultural-policy', settore:'', sommario:'', cpv:'', link:'' }, attesoIn:false, nome:'Junk: titolo-URL' }
   ];
 
   var risultati = [];
