@@ -780,35 +780,33 @@ function _fasSaveBando_(bando) {
     var sh = ss.getSheetByName('Bandi_v5');
     if (!sh) return;
 
+    // v4.25.11 — FIX CRITICO: la vecchia appendRow aveva 26 valori su 27 colonne
+    // (mancava TipoBando, col 9 aggiunta in v4.25) → tutto da col 9 in poi slittava
+    // di una colonna (Scadenza finiva in Cofin, 'FAS' in Scadenza, ecc.).
+    // Ora la riga è costruita PER INDICE via COL_B: robusta a futuri cambi schema.
     var id = 'BF' + Date.now() + Math.random().toString(36).substring(2, 4);
-    sh.appendRow([
-      id,                               // ID
-      '',                                // Fingerprint
-      new Date(),                        // DataRilevamento
-      String(bando.titolo || '').substring(0, 300), // Titolo
-      String(bando.ente || ''),          // Ente
-      String(bando.livello || 'Vari'),   // Livello
-      String(bando.regione || ''),       // Regione
-      String(bando.settore || ''),       // Settore
-      '',                                // Soggetti
-      '',                                // Importo
-      '',                                // Cofin
-      bando.scadenza || '',              // Scadenza
-      'FAS',                             // FonteID
-      String(bando.fonteNome || ''),     // FonteNome
-      String(bando.urlBando || ''),      // UrlBando
-      '',                                // UrlEnte
-      '',                                // UrlValidato
-      '',                                // DataValidazione
-      String(bando.sommario || '').substring(0, 500), // Sommario
-      bando.ambito || '',                // Ambito
-      '',                                // PrioritaRegionale
-      'nuovo_da_triage',                 // Status
-      'attivo',                          // StatoRecord
-      false,                             // Letto
-      false,                             // Salvato
-      ''                                 // Note
-    ]);
+    var nCol = COL_B_HEADERS.length;
+    var riga = new Array(nCol);
+    for (var i = 0; i < nCol; i++) riga[i] = '';
+    riga[COL_B.ID - 1]               = id;
+    riga[COL_B.DATA_RILEVAMENTO - 1] = new Date();
+    riga[COL_B.TITOLO - 1]           = String(bando.titolo || '').substring(0, 300);
+    riga[COL_B.ENTE - 1]             = String(bando.ente || '');
+    riga[COL_B.LIVELLO - 1]          = String(bando.livello || 'Vari');
+    riga[COL_B.REGIONE - 1]          = String(bando.regione || '');
+    riga[COL_B.SETTORE - 1]          = String(bando.settore || '');
+    riga[COL_B.TIPO_BANDO - 1]       = String(bando.tipoBando || ((typeof _classificaTipoBando_ === 'function') ? _classificaTipoBando_(bando) : ''));
+    riga[COL_B.SCADENZA - 1]         = bando.scadenza || '';
+    riga[COL_B.FONTE_ID - 1]         = 'FAS';
+    riga[COL_B.FONTE_NOME - 1]       = String(bando.fonteNome || '');
+    riga[COL_B.URL_BANDO - 1]        = String(bando.urlBando || '');
+    riga[COL_B.SOMMARIO - 1]         = String(bando.sommario || '').substring(0, 500);
+    riga[COL_B.AMBITO - 1]           = bando.ambito || '';
+    riga[COL_B.STATUS - 1]           = 'nuovo_da_triage';
+    riga[COL_B.STATO_RECORD - 1]     = 'attivo';
+    riga[COL_B.LETTO - 1]            = false;
+    riga[COL_B.SALVATO - 1]          = false;
+    sh.appendRow(riga);
   } catch(e) {
     Logger.log('[FAS] _fasSaveBando_ errore: ' + e.message);
   }
