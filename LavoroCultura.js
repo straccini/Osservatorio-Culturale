@@ -68,10 +68,12 @@ function _lcParseEnte_(titolo) {
  */
 function fasParserGuS4Cultura(opts) {
   opts = opts || {};
-  var dryRun = !!opts.dryRun;
+  // v2 — SICUREZZA: dryRun di DEFAULT finché non wirato (per scrivere davvero
+  // serve passare {dryRun:false} esplicito). Evita salvataggi accidentali da editor.
+  var dryRun = (opts.dryRun === undefined) ? true : !!opts.dryRun;
   var deepCap = (opts.deepCap === undefined) ? 15 : Number(opts.deepCap);
   var report = { ok: true, dryRun: dryRun, totFeed: 0, l1Cultura: 0, l2Candidati: 0,
-                 l2Fetch: 0, l2Match: 0, l2SaltatiPerCap: 0, duplicati: 0, nuovi: 0,
+                 l2Fetch: 0, l2Match: 0, l2Errori: 0, l2SaltatiPerCap: 0, duplicati: 0, nuovi: 0,
                  esclusi: 0, dettagli: [] };
   try {
     var resp = UrlFetchApp.fetch(LC_RSS_S4, {
@@ -96,6 +98,8 @@ function fasParserGuS4Cultura(opts) {
       var titolo = mT ? mT[1].replace(/\s+/g, ' ').trim() : '';
       var link = mL ? mL[1].trim() : '';
       if (!titolo || !link) continue;
+      // v2 — il feed GU usa link http:// → forza https (fetch più affidabile)
+      link = link.replace(/^http:\/\//i, 'https://');
 
       // Salta annullamenti/rettifiche e avvisi senza scadenza concorsuale
       if (/ANNULLAMENTO|RETTIFICA|REVOCA/i.test(titolo)) { report.esclusi++; continue; }
@@ -111,15 +115,22 @@ function fasParserGuS4Cultura(opts) {
         try {
           var det = UrlFetchApp.fetch(link, {
             muteHttpExceptions: true, followRedirects: true, deadline: 12,
-            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Feedfetcher/4.0)' }
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
           });
           if (det.getResponseCode() === 200) {
             var body = det.getContentText('UTF-8') || '';
             var mProf = body.match(LC_PROFESSIONE_RE);
             if (mProf) { isCultura = true; motivo = 'L2-professione: ' + mProf[1]; report.l2Match++; }
+          } else {
+            // v2 — fetch fallito: contato nel report (distingue "nessun match" da "fetch KO")
+            report.l2Errori++;
+            Logger.log('[LC] L2 HTTP ' + det.getResponseCode() + ' — ' + titolo.substring(0, 60));
           }
           Utilities.sleep(300);
-        } catch (eDet) { /* dettaglio irraggiungibile → scarta in sicurezza */ }
+        } catch (eDet) {
+          report.l2Errori++;
+          Logger.log('[LC] L2 errore fetch: ' + eDet.message.substring(0, 80) + ' — ' + titolo.substring(0, 60));
+        }
       }
 
       if (!isCultura) { report.esclusi++; continue; }
