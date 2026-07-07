@@ -1560,32 +1560,42 @@ function fasParserOpenCup(opts) {
 /**
  * Parser SEDIA — EU Funding & Tenders Portal (bandi europei cultura).
  * API: https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA
+ *
+ * v2 (2026-07-07, T2 Estero) — SBLOCCATO. Debug live della risposta:
+ *  - GET → 405; POST con body JSON → 200 ma la query viene IGNORATA e tornano
+ *    FAQ (DATASOURCE SEDIA_FAQ) senza campo title → per questo "10 risultati, 0 nuovi".
+ *  - L'API vuole MULTIPART FORM-DATA con parti JSON: query / languages / sort.
+ *    In GAS: payload con Utilities.newBlob(..., 'application/json') forza il multipart.
+ *  - I bandi veri sono type 1/2 (topic/call); status 31094501=FORTHCOMING,
+ *    31094502=OPEN. Campi in item.metadata (array): title, identifier,
+ *    deadlineDate (ISO), status. Verificato live: 125 bandi open/forthcoming.
+ *  - L'indice contiene anche OPEN con scadenza passata → filtro deadline >= oggi.
+ * SICUREZZA: dryRun default TRUE finché non wirato in FASE 2.
  */
 function fasParserSediaEU(opts) {
   opts = opts || {};
-  var dryRun = !!opts.dryRun;
-  var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+  var dryRun = (opts.dryRun === undefined) ? true : !!opts.dryRun;
+  var report = { ok: true, dryRun: dryRun, totale: 0, nuovi: 0, duplicati: 0, scadutiIndice: 0, senzaTitolo: 0, errori: 0, dettagli: [] };
   var existingUrls = _fasLoadExistingUrls_();
 
-  var searchUrl = 'https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=museum+OR+cultural+heritage+OR+patrimonio+culturale&pageSize=20&pageNumber=1';
+  var searchUrl = 'https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=culture+OR+cultural+heritage+OR+museum&pageSize=50&pageNumber=1';
 
   try {
     var resp = UrlFetchApp.fetch(searchUrl, {
-      method: 'get',
-      muteHttpExceptions: true, deadline: 10,
-      headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
+      method: 'post',
+      muteHttpExceptions: true, deadline: 25,
+      payload: {
+        query: Utilities.newBlob(JSON.stringify({ bool: { must: [
+          { terms: { type: ['1', '2'] } },
+          { terms: { status: ['31094501', '31094502'] } }
+        ]}}), 'application/json', 'query.json'),
+        languages: Utilities.newBlob(JSON.stringify(['en', 'it']), 'application/json', 'languages.json'),
+        sort: Utilities.newBlob(JSON.stringify({ field: 'deadlineDate', order: 'ASC' }), 'application/json', 'sort.json')
+      },
+      headers: { 'User-Agent': 'SinopiaBot/1.0' }
     });
     if (resp.getResponseCode() !== 200) {
-      // Prova POST con payload
-      resp = UrlFetchApp.fetch('https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=cultural+heritage', {
-        method: 'post',
-        contentType: 'application/json',
-        muteHttpExceptions: true, deadline: 10,
-        payload: JSON.stringify({ query: 'museum OR cultural heritage', languages: ['en','it'], sortField: 'sortDate', sortOrder: 'DESC' }),
-        headers: { 'User-Agent': 'SinopiaBot/1.0' }
-      });
-    }
-    if (resp.getResponseCode() !== 200) {
+      report.ok = false;
       report.dettagli.push({ fonte: 'SEDIA EU', errore: 'HTTP ' + resp.getResponseCode() });
       Logger.log('[FAS] SEDIA EU HTTP ' + resp.getResponseCode());
       return report;
@@ -1593,19 +1603,40 @@ function fasParserSediaEU(opts) {
 
     var data;
     try { data = JSON.parse(resp.getContentText()); } catch(_) {
-      report.errori++;
+      report.ok = false; report.errori++;
       report.dettagli.push({ fonte: 'SEDIA EU', errore: 'JSON parse' });
       return report;
     }
 
-    var results = data.results || data.content || [];
+    var results = data.results || [];
+    report.totale = Number(data.totalResults) || results.length;
+    var oggi = new Date(); oggi.setHours(0, 0, 0, 0);
+
     results.forEach(function(item) {
-      var titolo = item.title || item.name || '';
-      if (typeof titolo === 'object') titolo = titolo.en || titolo.it || Object.values(titolo)[0] || '';
-      var link = item.url || item.uri || '';
-      if (!link && item.identifier) link = 'https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/opportunities/topic-details/' + item.identifier;
-      if (!titolo || !link) return;
+      var md = item.metadata || {};
+      function g(k) { var v = md[k]; return (v && v.length) ? String(v[0]) : ''; }
+
+      var titolo = g('title');
+      var ident = g('identifier');
+      if (!titolo) { report.senzaTitolo++; return; }
+
+      // Scadenza: ISO in metadata.deadlineDate — scarta le scadenze passate
+      // presenti nell'indice (voci OPEN stantie verificate nel debug)
+      var scad = null;
+      var rawDl = g('deadlineDate');
+      if (rawDl) { var d = new Date(rawDl); if (!isNaN(d.getTime())) scad = d; }
+      if (scad && scad.getTime() < oggi.getTime()) { report.scadutiIndice++; return; }
+
+      var link = String(item.url || '');
+      if (!link && ident) link = 'https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/opportunities/topic-details/' + encodeURIComponent(ident.toLowerCase());
+      if (!link) return;
       if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
+
+      var statoLbl = g('status') === '31094501' ? 'FORTHCOMING' : 'OPEN';
+      if (report.dettagli.length < 20) {
+        report.dettagli.push({ titolo: titolo.substring(0, 90), id: ident, stato: statoLbl,
+          scadenza: scad ? Utilities.formatDate(scad, 'Europe/Rome', 'dd/MM/yyyy') : 'n.d.' });
+      }
 
       if (!dryRun) {
         _fasSaveBando_({
@@ -1613,20 +1644,23 @@ function fasParserSediaEU(opts) {
           ente: 'Commissione Europea',
           livello: 'EU',
           settore: 'EU Funding cultura',
+          tipoBando: 'finanziamento',
           urlBando: link,
-          sommario: String(item.description || item.summary || '').substring(0, 500),
-          scadenza: _fasNormalizzaData_(item.deadlineDate || item.deadline || ''),
+          sommario: ('Call ' + statoLbl + (ident ? ' — ' + ident : '') + '. ' + String(item.summary || '')).substring(0, 500),
+          scadenza: scad || '',
           ambito: 3,
-          fonteNome: 'SEDIA EU Funding & Tenders'
+          fonteNome: 'EU Funding & Tenders (SEDIA)'
         });
         existingUrls[link.toLowerCase()] = true;
       }
       report.nuovi++;
     });
-    report.dettagli.push({ fonte: 'SEDIA EU', risultati: results.length });
-    Logger.log('[FAS] SEDIA EU: ' + results.length + ' risultati, ' + report.nuovi + ' nuovi');
+    Logger.log('[FAS] SEDIA EU v2: indice=' + report.totale + ' · pagina=' + results.length +
+      ' · nuovi=' + report.nuovi + ' · dup=' + report.duplicati +
+      ' · scaduti-indice=' + report.scadutiIndice + (dryRun ? ' [DRY-RUN]' : ''));
+    Logger.log(JSON.stringify(report, null, 2));
   } catch(e) {
-    report.errori++;
+    report.ok = false; report.errori++;
     report.dettagli.push({ fonte: 'SEDIA EU', errore: e.message });
     Logger.log('[FAS] SEDIA EU errore: ' + e.message);
   }

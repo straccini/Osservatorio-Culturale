@@ -254,6 +254,30 @@ function fontiAggiungiBatchIstituzionali() {
   return { ok: true, aggiunte: aggiunte, totale: candidati.length, esiti: esiti };
 }
 
+/**
+ * T2 ESTERO — Batch fonti internazionali VERIFICATE live (curl, 2026-07-07):
+ *  - Res Artis (resartis.org/feed/) — rete mondiale residenze artistiche, 123 item
+ *  - On the Move (on-the-move.org/feed) — finanziamenti mobilità culturale internazionale
+ *  - AAM American Alliance of Museums (aam-us.org/feed/) — musei USA
+ * NON disponibili (verificato): e-flux (nessun RSS pubblico), TransArtists (404),
+ * ArtRabbit (404), Museums Association UK (feed vuoto), culture360 (502),
+ * NEMO (nessun feed). Ogni candidato ripassa dal gate fontiAggiungiFeedVerificato.
+ */
+function fontiAggiungiBatchEstero() {
+  var candidati = [
+    { url: 'https://resartis.org/feed/',      nome: 'Res Artis — Residenze',      ambito: 3 }, // open call residenze mondiali
+    { url: 'https://on-the-move.org/feed',    nome: 'On the Move — Mobilità',     ambito: 3 }, // funding mobilità artisti/operatori
+    { url: 'https://www.aam-us.org/feed/',    nome: 'AAM — Alliance of Museums',  ambito: 1 }  // musei USA/internazionale
+  ];
+  var esiti = candidati.map(function(c) {
+    var r = fontiAggiungiFeedVerificato(c.url, c.nome, c.ambito, 'Estero-T2 2026-07');
+    return { nome: c.nome, esito: r && r.ok ? 'AGGIUNTA' : ('saltata: ' + ((r && r.error) || '?')) };
+  });
+  var aggiunte = esiti.filter(function(e) { return e.esito === 'AGGIUNTA'; }).length;
+  Logger.log('fontiAggiungiBatchEstero: ' + aggiunte + '/' + candidati.length + '\n' + JSON.stringify(esiti, null, 2));
+  return { ok: true, aggiunte: aggiunte, totale: candidati.length, esiti: esiti };
+}
+
 // ----------------------------------------------------------------------------
 // EMAIL
 // ----------------------------------------------------------------------------
