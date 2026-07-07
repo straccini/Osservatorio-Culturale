@@ -233,7 +233,58 @@ function buildDigestHTML(items, dest, readerUrl, filterAmbiti) {
     : '';
   // v4.20 — CTA Candidature Capitale della Cultura
   const capitaleCta = (typeof _digestCapitaleCta_ === 'function') ? _digestCapitaleCta_(readerUrl || '') : '';
-  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Digest</title></head><body style="margin:0;padding:0;background:#f5f3ee;font-family:-apple-system,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f5f3ee" style="padding:28px 0"><tr><td align="center"><table width="620" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e8e5e0"><tr><td style="background:#1a1a1a;padding:28px 36px 24px"><div style="font-family:Georgia,serif;font-style:italic;font-size:24px;font-weight:500;color:#E89B7C;letter-spacing:.01em">Sinopia</div><div style="font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#bbb;margin-top:6px">Osservatorio Culturale &middot; Digest del ${formatDate(new Date())}</div></td></tr>${editorialeBlock}${readerBtn}<tr><td style="padding:4px 36px 36px"><table width="100%" cellpadding="0" cellspacing="0">${sectionsHTML}</table>${capitaleCta}</td></tr><tr><td style="border-top:1px solid #eee">${unsubFooter}</td></tr></table></td></tr></table></body></html>`;
+  // T1 Lavoro Cultura — 1 bando lavoro fisso nelle newsletter lettori (A) e profilati (C).
+  // La coorte C usa questo stesso builder (fallback); il digest Matrix (B) ha un builder
+  // separato in Matrix_digest.js e NON è toccato. Hook additivo con try-catch.
+  let lavoroBlock = '';
+  try {
+    lavoroBlock = (typeof _digestBandoLavoroBlock_ === 'function') ? _digestBandoLavoroBlock_(readerUrl || '') : '';
+  } catch(_lvErr) { Logger.log('[DigestService] lavoro hook err: ' + _lvErr.message); }
+  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Digest</title></head><body style="margin:0;padding:0;background:#f5f3ee;font-family:-apple-system,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f5f3ee" style="padding:28px 0"><tr><td align="center"><table width="620" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e8e5e0"><tr><td style="background:#1a1a1a;padding:28px 36px 24px"><div style="font-family:Georgia,serif;font-style:italic;font-size:24px;font-weight:500;color:#E89B7C;letter-spacing:.01em">Sinopia</div><div style="font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#bbb;margin-top:6px">Osservatorio Culturale &middot; Digest del ${formatDate(new Date())}</div></td></tr>${editorialeBlock}${readerBtn}<tr><td style="padding:4px 36px 36px"><table width="100%" cellpadding="0" cellspacing="0">${sectionsHTML}</table>${lavoroBlock}${capitaleCta}</td></tr><tr><td style="border-top:1px solid #eee">${unsubFooter}</td></tr></table></td></tr></table></body></html>`;
+}
+
+/**
+ * T1 Lavoro Cultura — blocco "Lavoro nella cultura" per il digest lettori/profilati.
+ * Seleziona 1 bando tipoBando='lavoro' attivo con la scadenza più vicina (futura).
+ * Ritorna '' se non ci sono concorsi (il blocco semplicemente non appare).
+ * @param {string} [appUrl] URL webapp per il link "vedi tutti"
+ * @return {string} HTML block
+ */
+function _digestBandoLavoroBlock_(appUrl) {
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var shName = (typeof SH_BANDI_V5 !== 'undefined') ? SH_BANDI_V5 : 'Bandi_v5';
+    var sh = ss.getSheetByName(shName);
+    if (!sh || sh.getLastRow() < 2) return '';
+    var vals = sh.getDataRange().getValues();
+    var oggi = new Date(); oggi.setHours(0,0,0,0);
+    var best = null;
+    for (var r = 1; r < vals.length; r++) {
+      var row = vals[r];
+      if (!row[COL_B.ID - 1]) continue;
+      if (String(row[COL_B.TIPO_BANDO - 1] || '') !== 'lavoro') continue;
+      if (String(row[COL_B.STATO_RECORD - 1] || '').toLowerCase() === 'archiviato') continue;
+      var rawScad = row[COL_B.SCADENZA - 1];
+      var scad = (rawScad instanceof Date) ? rawScad : (rawScad ? new Date(rawScad) : null);
+      if (!scad || isNaN(scad.getTime()) || scad.getTime() < oggi.getTime()) continue;
+      if (!best || scad.getTime() < best.scad.getTime()) {
+        best = { scad: scad, titolo: String(row[COL_B.TITOLO - 1] || ''), ente: String(row[COL_B.ENTE - 1] || ''),
+                 link: String(row[COL_B.URL_BANDO - 1] || row[COL_B.URL_ENTE - 1] || '') };
+      }
+    }
+    if (!best) return '';
+    function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    var tz = Session.getScriptTimeZone() || 'Europe/Rome';
+    var scadFmt = Utilities.formatDate(best.scad, tz, 'd MMMM yyyy');
+    var tuttiLink = appUrl ? ('<a href="' + appUrl + '" style="font-size:12px;color:#6B21A8;text-decoration:underline">Vedi tutti i concorsi nella sezione Lavoro cultura &rarr;</a>') : '';
+    return '<div style="background:#F7F3FB;border:2px solid #7C3AED;border-radius:12px;padding:18px 22px;margin:24px 0">'
+      + '<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6B21A8;font-weight:700;margin-bottom:8px">&#128100; Lavoro nella cultura</div>'
+      + '<div style="font-size:15px;font-weight:700;color:#1a1a1a;line-height:1.4;margin-bottom:6px">' + esc(best.titolo).substring(0, 200) + '</div>'
+      + '<div style="font-size:12.5px;color:#555;margin-bottom:10px">' + esc(best.ente) + ' &middot; <b style="color:#A32D2D">scade il ' + scadFmt + '</b></div>'
+      + (best.link ? '<a href="' + esc(best.link) + '" style="display:inline-block;background:#7C3AED;color:#fff;text-decoration:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:6px">Vai al concorso &rarr;</a><br>' : '')
+      + tuttiLink
+      + '</div>';
+  } catch(e) { Logger.log('[_digestBandoLavoroBlock_] ' + e.message); return ''; }
 }
 
 /**
