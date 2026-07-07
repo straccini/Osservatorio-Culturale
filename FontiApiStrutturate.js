@@ -1578,39 +1578,47 @@ function fasParserSediaEU(opts) {
   var report = { ok: true, dryRun: dryRun, totale: 0, nuovi: 0, duplicati: 0, scadutiIndice: 0, senzaTitolo: 0, errori: 0, dettagli: [] };
   var existingUrls = _fasLoadExistingUrls_();
 
-  var searchUrl = 'https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=culture+OR+cultural+heritage+OR+museum&pageSize=50&pageNumber=1';
-
   try {
-    var resp = UrlFetchApp.fetch(searchUrl, {
-      method: 'post',
-      muteHttpExceptions: true, deadline: 25,
-      payload: {
-        query: Utilities.newBlob(JSON.stringify({ bool: { must: [
-          { terms: { type: ['1', '2'] } },
-          { terms: { status: ['31094501', '31094502'] } }
-        ]}}), 'application/json', 'query.json'),
-        languages: Utilities.newBlob(JSON.stringify(['en', 'it']), 'application/json', 'languages.json'),
-        sort: Utilities.newBlob(JSON.stringify({ field: 'deadlineDate', order: 'ASC' }), 'application/json', 'sort.json')
-      },
-      headers: { 'User-Agent': 'SinopiaBot/1.0' }
-    });
-    if (resp.getResponseCode() !== 200) {
-      report.ok = false;
-      report.dettagli.push({ fonte: 'SEDIA EU', errore: 'HTTP ' + resp.getResponseCode() });
-      Logger.log('[FAS] SEDIA EU HTTP ' + resp.getResponseCode());
-      return report;
-    }
-
-    var data;
-    try { data = JSON.parse(resp.getContentText()); } catch(_) {
-      report.ok = false; report.errori++;
-      report.dettagli.push({ fonte: 'SEDIA EU', errore: 'JSON parse' });
-      return report;
-    }
-
-    var results = data.results || [];
-    report.totale = Number(data.totalResults) || results.length;
+    // v2.1 — PAGINAZIONE: l'ordinamento ASC mette le scadenze passate (voci
+    // stantie dell'indice) nelle prime pagine → si scorrono fino a 5 pagine
+    // (250 voci) raccogliendo solo le scadenze future.
     var oggi = new Date(); oggi.setHours(0, 0, 0, 0);
+    var results = [];
+    for (var pg = 1; pg <= 5; pg++) {
+      var searchUrl = 'https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=culture+OR+cultural+heritage+OR+museum&pageSize=50&pageNumber=' + pg;
+      var resp = UrlFetchApp.fetch(searchUrl, {
+        method: 'post',
+        muteHttpExceptions: true, deadline: 25,
+        payload: {
+          query: Utilities.newBlob(JSON.stringify({ bool: { must: [
+            { terms: { type: ['1', '2'] } },
+            { terms: { status: ['31094501', '31094502'] } }
+          ]}}), 'application/json', 'query.json'),
+          languages: Utilities.newBlob(JSON.stringify(['en', 'it']), 'application/json', 'languages.json'),
+          sort: Utilities.newBlob(JSON.stringify({ field: 'deadlineDate', order: 'ASC' }), 'application/json', 'sort.json')
+        },
+        headers: { 'User-Agent': 'SinopiaBot/1.0' }
+      });
+      if (resp.getResponseCode() !== 200) {
+        if (pg === 1) {
+          report.ok = false;
+          report.dettagli.push({ fonte: 'SEDIA EU', errore: 'HTTP ' + resp.getResponseCode() });
+          Logger.log('[FAS] SEDIA EU HTTP ' + resp.getResponseCode());
+          return report;
+        }
+        break; // pagine successive fallite: si lavora con quanto raccolto
+      }
+      var data;
+      try { data = JSON.parse(resp.getContentText()); } catch(_) {
+        if (pg === 1) { report.ok = false; report.errori++; report.dettagli.push({ fonte: 'SEDIA EU', errore: 'JSON parse' }); return report; }
+        break;
+      }
+      var pageResults = data.results || [];
+      report.totale = Number(data.totalResults) || report.totale;
+      results = results.concat(pageResults);
+      if (pageResults.length < 50) break; // ultima pagina
+      Utilities.sleep(300);
+    }
 
     results.forEach(function(item) {
       var md = item.metadata || {};
@@ -1655,7 +1663,7 @@ function fasParserSediaEU(opts) {
       }
       report.nuovi++;
     });
-    Logger.log('[FAS] SEDIA EU v2: indice=' + report.totale + ' · pagina=' + results.length +
+    Logger.log('[FAS] SEDIA EU v2.1: indice=' + report.totale + ' · raccolti=' + results.length +
       ' · nuovi=' + report.nuovi + ' · dup=' + report.duplicati +
       ' · scaduti-indice=' + report.scadutiIndice + (dryRun ? ' [DRY-RUN]' : ''));
     Logger.log(JSON.stringify(report, null, 2));
