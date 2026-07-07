@@ -604,6 +604,9 @@
           <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:#065F46;border-bottom:1px solid #f0f0f0">
             <input type="checkbox" value="lavori" onchange="OC.toggleBandiTipo()" checked style="accent-color:#059669;width:16px;height:16px"> 🏗 Lavori <span id="cnt_lavori" style="margin-left:auto;font-size:11px;color:#aaa"></span>
           </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:#6B21A8;border-bottom:1px solid #f0f0f0">
+            <input type="checkbox" value="lavoro" onchange="OC.toggleBandiTipo()" checked style="accent-color:#7C3AED;width:16px;height:16px"> 👤 Lavoro e Concorsi <span id="cnt_lavoro" style="margin-left:auto;font-size:11px;color:#aaa"></span>
+          </label>
           <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:500;color:#854D0E;background:#FFFBEB">
             <input type="checkbox" value="_senza" onchange="OC.toggleBandiTipo()" checked style="accent-color:#EAB308;width:16px;height:16px"> ⚠ Senza categoria <span id="cnt_senza" style="margin-left:auto;font-size:11px;color:#aaa"></span>
           </label>
@@ -3323,7 +3326,7 @@
   };
   var _filterBandiSettore = '';
   // v4.25.3: mappa tipo→bool (multi-select dropdown)
-  var _filterBandiTipi = { finanziamento:true, servizio_fornitura:true, lavori:true, '_senza':true };
+  var _filterBandiTipi = { finanziamento:true, servizio_fornitura:true, lavori:true, lavoro:true, '_senza':true };
   var _filterBandiTipiAttivo = false;
 
   /** Invalidate cache for a tipo — replaces 4 identical if/else chains */
@@ -5161,10 +5164,14 @@
     }
 
     // v4.25.3 — Aggiorna conteggi nel dropdown tipo bando
-    ['finanziamento','servizio_fornitura','lavori','_senza'].forEach(function(k){
+    ['finanziamento','servizio_fornitura','lavori','lavoro','_senza'].forEach(function(k){
       var el = document.getElementById('cnt_' + k);
       if (el) el.textContent = '(' + (_tipoCounts[k]||0) + ')';
     });
+    // T1 Lavoro Cultura — la voce sidebar "Lavoro cultura" appare SOLO quando
+    // ci sono risorse da esporre (almeno 1 concorso tipoBando='lavoro')
+    var _navLav = document.getElementById('nav-lavoro');
+    if (_navLav) _navLav.hidden = !((_tipoCounts['lavoro'] || 0) > 0);
     // Totale nel badge
     var badgeEl = $('bandiTipoCountBadge');
     if (badgeEl) {
@@ -11540,6 +11547,15 @@
       document.querySelectorAll('#bandiTipoMenu input[type=checkbox]').forEach(function(cb){
         cb.checked = stato;
         cb.parentElement.style.opacity = stato ? '1' : '0.45';
+      });
+      OC.toggleBandiTipo();
+    },
+    // T1 Lavoro Cultura — voce sidebar: apre Bandi filtrato sui soli concorsi
+    goLavoro: function(){
+      go('bandi');
+      document.querySelectorAll('#bandiTipoMenu input[type=checkbox]').forEach(function(cb){
+        cb.checked = (cb.value === 'lavoro');
+        cb.parentElement.style.opacity = cb.checked ? '1' : '0.45';
       });
       OC.toggleBandiTipo();
     },

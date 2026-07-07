@@ -39,7 +39,11 @@ var OC_CRON_EXTRA = [
   // il giro round-robin → tutte le fonti coperte più volte al giorno.
   { fn: 'scanSources',           tipo: 'daily',  ore: [11, 15, 19], desc: 'Scan news rotazione (freschezza pomeriggio/sera)' },
   // v4.25.10 — PROFONDITÀ: pubblicazioni/editoria settimanale (sabato mattina)
-  { fn: 'pubDiscoveryScan',      tipo: 'weekly', giorno: ScriptApp.WeekDay.SATURDAY, ora: 6, desc: 'Discovery pubblicazioni/editoria (settimanale)' }
+  { fn: 'pubDiscoveryScan',      tipo: 'weekly', giorno: ScriptApp.WeekDay.SATURDAY, ora: 6, desc: 'Discovery pubblicazioni/editoria (settimanale)' },
+  // T1 Lavoro Cultura — MONITOR dry-run 2×/sett (mer+sab, dopo le uscite GU mar+ven).
+  // Report email di cosa AVREBBE raccolto; attivazione piena dopo il periodo di osservazione.
+  { fn: 'lavoroCulturaMonitor',  tipo: 'weekly', giorno: ScriptApp.WeekDay.WEDNESDAY, ora: 8, desc: 'Monitor concorsi cultura GU S4 (dry-run, mercoledì)' },
+  { fn: 'lavoroCulturaMonitor',  tipo: 'weekly', giorno: ScriptApp.WeekDay.SATURDAY,  ora: 8, desc: 'Monitor concorsi cultura GU S4 (dry-run, sabato)' }
 ];
 
 /** Schedule consolidato = approvato (SetupMaster) + nuovi. */

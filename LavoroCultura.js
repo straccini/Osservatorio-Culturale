@@ -177,6 +177,43 @@ function fasParserGuS4Cultura(opts) {
 }
 
 // ============================================================================
+//  MONITOR 2×/SETTIMANA — fase di osservazione (Piano T1, approvata da Silvano)
+// ----------------------------------------------------------------------------
+//  Gira mercoledì e sabato (via CronDispatcher, dopo le uscite GU di mar+ven)
+//  in DRY-RUN: non salva nulla, invia all'admin il report di cosa AVREBBE
+//  raccolto. Dopo 4-5 numeri si decide l'attivazione piena (dryRun:false).
+// ============================================================================
+function lavoroCulturaMonitor() {
+  var rep = fasParserGuS4Cultura({ dryRun: true, deepCap: 20 });
+  var dest = (typeof _aqDest_ === 'function') ? _aqDest_() : 's.straccini@gmail.com';
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  var righe = (rep.dettagli || []).map(function(d){
+    return '<tr><td style="padding:5px;border-bottom:1px solid #eee">' + esc(d.titolo) +
+      '</td><td style="padding:5px;border-bottom:1px solid #eee;white-space:nowrap">' + esc(d.scadenza) +
+      '</td><td style="padding:5px;border-bottom:1px solid #eee;font-size:11px;color:#666">' + esc(d.motivo) + '</td></tr>';
+  }).join('');
+  var html = '<div style="font-family:Georgia,serif;max-width:680px">' +
+    '<h2>Monitor Lavoro Cultura — GU 4ª Serie (dry-run)</h2>' +
+    '<p>Feed: <b>' + rep.totFeed + '</b> concorsi · trovati cultura: <b>' + rep.nuovi + '</b>' +
+    ' (L1 ente: ' + Math.max(0, rep.l1Cultura) + ' · L2 professione: ' + rep.l2Match + ')' +
+    ' · L2 verificati: ' + rep.l2Fetch + '/' + rep.l2Candidati +
+    (rep.l2Errori ? ' · <span style="color:#B91C1C">fetch KO: ' + rep.l2Errori + '</span>' : '') +
+    (rep.l2SaltatiPerCap ? ' · oltre cap: ' + rep.l2SaltatiPerCap : '') + '</p>' +
+    (righe ? '<table style="border-collapse:collapse;width:100%;font-size:13px">' +
+      '<tr><th style="text-align:left;padding:5px;border-bottom:2px solid #333">Concorso</th>' +
+      '<th style="text-align:left;padding:5px;border-bottom:2px solid #333">Scadenza</th>' +
+      '<th style="text-align:left;padding:5px;border-bottom:2px solid #333">Match</th></tr>' + righe + '</table>'
+      : '<p style="color:#888">Nessun concorso culturale in questo numero (normale: escono periodicamente).</p>') +
+    '<p style="color:#888;font-size:12px;margin-top:12px">Fase di monitoraggio T1 — nessun dato salvato. ' +
+    'Per l\'attivazione piena: fasParserGuS4Cultura({dryRun:false}) + wiring dispatcher.</p></div>';
+  try {
+    MailApp.sendEmail({ to: dest, subject: '[OC] Monitor Lavoro Cultura — ' + rep.nuovi + ' concorsi trovati (dry-run)', htmlBody: html });
+    rep.emailInviata = dest;
+  } catch (e) { rep.emailErrore = e.message; }
+  return rep;
+}
+
+// ============================================================================
 //  SELF-TEST — nessun fetch, nessuna scrittura: verifica filtri e parsing
 // ============================================================================
 function lavoroCulturaSelfTest() {
