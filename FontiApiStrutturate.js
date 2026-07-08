@@ -1620,13 +1620,39 @@ function fasParserSediaEU(opts) {
       Utilities.sleep(300);
     }
 
+    // v2.2 — la ricerca testuale è larga (il cluster HORIZON-CL2 mescola HERITAGE
+    // con DEMOCRACY/TRANSFO): filtro cultura RIGOROSO su identifier+titolo.
+    // Verificato sui 142 risultati: tiene HERITAGE/CULTUR/CCI/arts, scarta
+    // democracy/biodiv/gender/postdoc.
+    var _sediaCulturaRe = /(HERITAGE|CULTUR|CREAT|\bCCI\b|\bARTS?\b|\bARTIST|MUSE[OU]|PATRIMON|ARCHAEO|ARCHEOLOG|LINGUISTIC|CINEMA|MEDIA-|AUDIOVISU|BOOK|MUSIC|architett|design)/i;
+
+    // PRE-PASS dedup EN/IT: raggruppa per identifier, sceglie 1 versione (IT>EN).
+    // Le voci senza identifier restano tutte (chiave = titolo).
+    var _byIdent = {};
+    var _deduped = [];
     results.forEach(function(item) {
+      var md = item.metadata || {};
+      var ident = (md.identifier && md.identifier.length) ? String(md.identifier[0]) : '';
+      var lang = (md.language && md.language.length) ? String(md.language[0]).toLowerCase() : '';
+      if (!ident) { _deduped.push(item); return; }
+      var cur = _byIdent[ident];
+      if (cur === undefined) { _byIdent[ident] = _deduped.length; _deduped.push(item); return; }
+      // già visto: sostituisci solo se questo è IT e il precedente non lo era
+      var prev = _deduped[cur].metadata || {};
+      var prevLang = (prev.language && prev.language.length) ? String(prev.language[0]).toLowerCase() : '';
+      if (lang === 'it' && prevLang !== 'it') _deduped[cur] = item;
+    });
+
+    _deduped.forEach(function(item) {
       var md = item.metadata || {};
       function g(k) { var v = md[k]; return (v && v.length) ? String(v[0]) : ''; }
 
       var titolo = g('title');
       var ident = g('identifier');
       if (!titolo) { report.senzaTitolo++; return; }
+
+      // FILTRO CULTURA — scarta i bandi non culturali del cluster largo
+      if (!_sediaCulturaRe.test(ident + ' ' + titolo)) { report.esclusiNonCultura = (report.esclusiNonCultura||0) + 1; return; }
 
       // Scadenza: ISO in metadata.deadlineDate — scarta le scadenze passate
       // presenti nell'indice (voci OPEN stantie verificate nel debug)
@@ -1663,9 +1689,10 @@ function fasParserSediaEU(opts) {
       }
       report.nuovi++;
     });
-    Logger.log('[FAS] SEDIA EU v2.1: indice=' + report.totale + ' · raccolti=' + results.length +
-      ' · nuovi=' + report.nuovi + ' · dup=' + report.duplicati +
-      ' · scaduti-indice=' + report.scadutiIndice + (dryRun ? ' [DRY-RUN]' : ''));
+    Logger.log('[FAS] SEDIA EU v2.2: indice=' + report.totale + ' · raccolti=' + results.length +
+      ' · dopo-dedup=' + _deduped.length + ' · nuovi=' + report.nuovi +
+      ' · esclusi-non-cultura=' + (report.esclusiNonCultura||0) +
+      ' · scaduti=' + report.scadutiIndice + ' · dup=' + report.duplicati + (dryRun ? ' [DRY-RUN]' : ''));
     Logger.log(JSON.stringify(report, null, 2));
   } catch(e) {
     report.ok = false; report.errori++;
