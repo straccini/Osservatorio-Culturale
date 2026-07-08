@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://sinopia.netlify.app/sitemap.xml
+Sitemap: https://sinopiaconsulting.it/sitemap.xml
