@@ -28,6 +28,10 @@ var _NORME_RE = /\b(decret[oi]|d\.?\s?lgs|d\.?\s?l\.|d\.?\s?m\.|d\.?p\.?c\.?m|d\
 // Contesto CULTURA obbligatorio (evita norme generiche non pertinenti).
 var _NORME_CULTURA_RE = /\b(musei?|museal|patrimoni|beni\s+cultural|bibliotec|archiv|soprintendenz|mic\b|ministero\s+della\s+cultura|accessibilit|restaur|paesagg|arte|artistic|espositiv|collezion|unesco|icom|teatr|spettacol|cinema|audiovisiv|editori|creativ)/i;
 
+// ANTI-RUMORE: newsletter generiche, alert advocacy USA, notizie estere non IT/UE.
+// Il foglio Norme è curato: meglio pochi riferimenti solidi che tanti deboli.
+var _NORME_ESCLUDI_RE = /\b(notiziario|newsletter|advocacy\s+alert|take\s+action|congress|appropriations|\bomb\b|federal\s+grant|uniform\s+guidance|invite\s+congress|capitol\s+hill|\bh\.r\.|\bs\.\s?\d+\s+bill)\b/i;
+
 /** Colonne Items (flessibile). */
 function _ncCol_(head, names) {
   for (var i = 0; i < names.length; i++) {
@@ -41,6 +45,7 @@ function _ncCol_(head, names) {
 function _ncIsNorma_(titolo, sommario) {
   var testo = String(titolo || '') + ' ' + String(sommario || '');
   if (!testo.trim()) return false;
+  if (_NORME_ESCLUDI_RE.test(testo)) return false;
   return _NORME_RE.test(testo) && _NORME_CULTURA_RE.test(testo);
 }
 
@@ -168,7 +173,11 @@ function normeCulturaSelfTest() {
     { t: 'Grande mostra di Caravaggio a Roma', s: 'esposizione dipinti', att: false },
     { t: 'Nuovo decreto sulla sanità pubblica', s: 'ospedali e ASL', att: false },
     { t: 'Il museo inaugura un nuovo allestimento', s: 'sale interattive', att: false },
-    { t: 'Regolamento UE sui dazi doganali industriali', s: 'commercio', att: false }
+    { t: 'Regolamento UE sui dazi doganali industriali', s: 'commercio', att: false },
+    // Rumore reale rilevato nel dry-run 2026-07-08 → deve essere ESCLUSO
+    { t: 'NOTIZIARIO N. 6/2026', s: 'Federculture aggiornamenti normativa cultura', att: false },
+    { t: 'July Advocacy Alert: Take Action on the Proposed Rule on Federal Grants, Invite Congress', s: 'museum advocacy', att: false },
+    { t: 'A Future of "Uniform Guidance"', s: 'federal grant museums regulation', att: false }
   ];
   var pass = 0, fail = 0;
   casi.forEach(function(c) {
