@@ -144,6 +144,23 @@ Sezione dedicata "Professioni" in sidebar con foglio proprio — più visibilit�
 
 ---
 
+## TAPPA P — Discovery attiva fonti PODCAST e VIDEO ⭐ priorità Silvano (aggiunta 2026-07-08)
+*Motivazione: podcast e video sono elementi redazionali di valore, ma oggi il parco fonti è statico e poco aggiornato. Serve una ricerca di fonti ATTIVA e COSTANTE, non un seed una-tantum.*
+
+**Priorità: PODCAST prima** (contenuto editoriale forte, ascolto in crescita nel settore cultura), poi VIDEO.
+
+### Cosa costruire
+1. **Audit del parco attuale** — quante fonti podcast/video attive, quante mute/ferme (riusare `agenteFontiMute` esteso ai tipi podcast/video: oggi diagnostica soprattutto RSS news).
+2. **Discovery ricorrente** — una skill/agente schedulato (mensile) che cerca nuovi podcast cultura italiani verificati e li propone via `fontiAggiungiFeedVerificato` (gate HTTP+RSS+dedup già pronto). Canali: Spreaker/Spotify RSS pubblici, Apple Podcasts, feed dei musei/festival/riviste.
+3. **Fonti candidate da verificare** (prima sessione): podcast di musei top (Uffizi, MAXXI, Triennale…), riviste (Il Post cultura, Chora/Will cultura), festival, università, ICOM. Per i video: canali YouTube museali (Atom feed, già supportato da `scanVideoYoutube`).
+4. **Freschezza** — lo scan podcast+video è già quotidiano (07:30); il collo di bottiglia è la QUANTITÀ e QUALITÀ delle fonti, non la frequenza.
+
+**Criticità/soluzioni**: Spotify non espone sempre RSS diretto (usare l'RSS originario del publisher); Apple Podcasts ha un lookup API pubblico per risolvere il feed. Rischio duplicati tra podcast e video → dedup per feed URL già attivo.
+
+**Deliverable T-P.1**: audit + 8-12 nuove fonti podcast verificate live; poi ciclo discovery mensile nel dispatcher.
+
+---
+
 ## Alternative di sviluppo ulteriori (non in piano, da valutare dopo)
 
 1. **Eventi & mostre in calendario** — Arte.it Mostre già attiva; un calendario navigabile per regione sarebbe una feature UI nuova (tocca l'assetto → decisione dedicata)
