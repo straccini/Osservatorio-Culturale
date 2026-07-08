@@ -1784,13 +1784,20 @@ function fasRunFase2b() {
     totaleNuovi: 0, durataMs: 0
   };
 
-  // v4.20 — ANAC, OpenCUP, SEDIA, Lombardia disabilitati: endpoint inerti (0 risultati / errori costanti).
-  // Riabilitare singolarmente quando gli endpoint tornano operativi.
-  Logger.log('[FAS] FASE 2b — SKIP: endpoint ANAC/OpenCUP/SEDIA/Lombardia disabilitati (v4.20)');
+  // v4.20 — ANAC, OpenCUP, Lombardia disabilitati: endpoint inerti (0 risultati / errori costanti).
+  // v2.2 (T2, 2026-07-08) — SEDIA EU RIATTIVATO: parser multipart corretto e
+  // verificato (18 bandi cultura UE, filtro 12/12, dedup EN/IT). Gli altri restano OFF.
   report.anac = { ok: true, skipped: true, motivo: 'endpoint inerte (v4.20)' };
   report.opencup = { ok: true, skipped: true, motivo: 'endpoint inerte (v4.20)' };
-  report.sedia = { ok: true, skipped: true, motivo: 'endpoint inerte (v4.20)' };
   report.lombardia = { ok: true, skipped: true, motivo: 'endpoint inerte (v4.20)' };
+  try {
+    report.sedia = fasParserSediaEU({ dryRun: false });
+    report.totaleNuovi += (report.sedia && report.sedia.nuovi) ? report.sedia.nuovi : 0;
+    Logger.log('[FAS] FASE 2b — SEDIA EU: ' + (report.sedia ? report.sedia.nuovi : 0) + ' bandi UE cultura nuovi');
+  } catch (eSedia) {
+    report.sedia = { ok: false, errore: eSedia.message };
+    Logger.log('[FAS] FASE 2b — SEDIA EU errore: ' + eSedia.message);
+  }
 
   report.durataMs = Date.now() - t0;
   Logger.log('[FAS] Fase 2b completata: ' + report.totaleNuovi + ' nuovi (' + report.durataMs + 'ms)');
