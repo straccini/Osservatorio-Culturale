@@ -311,6 +311,56 @@ function fasRetryFontiSilenti(opts) {
  * @param {Object} [opts] {dryRun, maxItems}
  * @return {Object} {ok, nuovi, duplicati, errori, dettagli[]}
  */
+/**
+ * v5.5 — Estrae testo da un campo TED v3 multilingua.
+ * TED restituisce {"eng":"...", "ita":"..."} o {"eng":["..."]} (valori array).
+ * Preferenza: ita → eng → prima lingua disponibile. Robusto a stringa/array/oggetto.
+ */
+function _tedText_(field) {
+  if (!field) return '';
+  if (typeof field === 'string') return field.trim();
+  if (Array.isArray(field)) return field.length ? _tedText_(field[0]) : '';
+  if (typeof field === 'object') {
+    var pref = ['ita', 'it', 'eng', 'en'];
+    for (var i = 0; i < pref.length; i++) {
+      if (field[pref[i]] !== undefined) {
+        var v = field[pref[i]];
+        return Array.isArray(v) ? String(v[0] || '').trim() : String(v || '').trim();
+      }
+    }
+    // nessuna lingua preferita → prima chiave disponibile
+    var keys = Object.keys(field);
+    if (keys.length) {
+      var w = field[keys[0]];
+      return Array.isArray(w) ? String(w[0] || '').trim() : String(w || '').trim();
+    }
+  }
+  return '';
+}
+
+/** v5.5 — Mappa notice-type TED → tipologia leggibile in italiano. */
+function _tedTipologia_(nt) {
+  var t = String(nt || '').toLowerCase();
+  if (t.indexOf('can') === 0) return 'Aggiudicazione';
+  if (t.indexOf('pin') === 0) return 'Avviso di preinformazione';
+  if (t.indexOf('cn') === 0) return 'Bando di gara';
+  if (t.indexOf('social') >= 0) return 'Servizi sociali/culturali';
+  if (t.indexOf('qs') === 0 || t.indexOf('design') >= 0) return 'Concorso di progettazione';
+  return t ? ('Avviso (' + nt + ')') : '';
+}
+
+/** v5.5 — Descrizione settore dai CPV cultura (usa la tassonomia CpvCultura). */
+function _tedCpvDescrizione_(cpvArr) {
+  if (!cpvArr || !cpvArr.length) return '';
+  for (var i = 0; i < cpvArr.length; i++) {
+    if (typeof getCpvDescrizione === 'function') {
+      var d = getCpvDescrizione(cpvArr[i]);
+      if (d) return d;
+    }
+  }
+  return '';
+}
+
 function fasParserTedApiPost(opts) {
   opts = opts || {};
   var dryRun = !!opts.dryRun;
@@ -344,7 +394,9 @@ function fasParserTedApiPost(opts) {
         query: p.query,
         limit: maxItems,
         scope: 'ACTIVE',
-        fields: ['organisation-country-buyer', 'deadline-receipt-tender-date-lot', 'description-proc']
+        // v5.5 — campi REALI TED v3: notice-title = oggetto dell'appalto (multilingua),
+        // buyer-name = ente, notice-type = tipologia, classification-cpv per descrizione.
+        fields: ['publication-number', 'notice-title', 'buyer-name', 'notice-type', 'classification-cpv', 'deadline-receipt-tender-date-lot']
       };
 
       var resp = UrlFetchApp.fetch('https://api.ted.europa.eu/v3/notices/search', {
@@ -379,32 +431,51 @@ function fasParserTedApiPost(opts) {
         var pubNumber = n['publication-number'] || n.publicationId || n.id || '';
         var nLinks = n.links || {};
         var htmlLinks = nLinks.html || {};
-        var link = htmlLinks.ITA || htmlLinks.ENG || '';
+        var link = htmlLinks.ITA || htmlLinks.ENG || htmlLinks.MUL || '';
         if (!link && pubNumber) link = 'https://ted.europa.eu/it/notice/-/detail/' + pubNumber;
-        var titolo = pubNumber;
 
+        // v5.5 — OGGETTO dell'appalto dal campo multilingua notice-title (era il
+        // bug: prima il titolo era solo il numero pubblicazione e la descrizione
+        // finiva "[object Object]"). _tedText_ estrae IT→EN→prima lingua.
+        var oggetto = _tedText_(n['notice-title']);
+        var buyer = _tedText_(n['buyer-name']);
+        var cpvArr = n['classification-cpv'] || [];
+        var tipologia = _tedTipologia_(n['notice-type']);
+        var cpvDesc = _tedCpvDescrizione_(cpvArr);
+
+        var titolo = oggetto || pubNumber;   // oggetto reale, fallback al numero
         if (!titolo || !link) return;
         if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
 
         // v4.25.6 — Filtro post-fetch: scarta bandi chiaramente non culturali
-        var descProc = String(n['description-proc'] || n.description || '');
+        // (ora sul titolo REALE → filtro molto più preciso)
         if (typeof isBandoCulturale === 'function') {
-          if (!isBandoCulturale(titolo, 'TED', descProc, '')) {
+          if (!isBandoCulturale(titolo, 'TED ' + cpvDesc, oggetto, cpvArr[0] || '')) {
             Logger.log('[FAS] TED SCARTATO (non culturale): ' + titolo.substring(0, 60));
             return;
           }
         }
 
+        // Descrizione macro: tipologia + settore CPV + numero pubblicazione
+        var sommario = [
+          tipologia ? ('Tipologia: ' + tipologia) : '',
+          cpvDesc ? ('Settore: ' + cpvDesc) : '',
+          pubNumber ? ('Pubblicazione TED ' + pubNumber) : ''
+        ].filter(Boolean).join(' · ');
+
+        var scad = _fasNormalizzaData_(n['deadline-receipt-tender-date-lot'] || '');
+
         if (!dryRun) {
           _fasSaveBando_({
             titolo: titolo.substring(0, 300),
-            ente: String(n['organisation-country-buyer'] || 'TED EU'),
+            ente: buyer || 'Committente UE (TED)',
             livello: 'EU',
             regione: '',
             settore: 'Appalti pubblici cultura — TED',
+            tipoBando: 'servizio_fornitura',
             urlBando: link,
-            sommario: descProc.substring(0, 500),
-            scadenza: '',
+            sommario: sommario.substring(0, 500),
+            scadenza: scad,
             ambito: 3,
             fonteNome: 'TED — FAS v3 (' + p.label + ')'
           });
@@ -425,6 +496,46 @@ function fasParserTedApiPost(opts) {
   });
 
   return report;
+}
+
+/**
+ * v5.5 — Pulizia one-shot: archivia i bandi TED MALFORMATI salvati prima del fix
+ * (titolo = solo numero pubblicazione tipo "136970-2024", oppure sommario
+ * "[object Object]"). I nuovi scan TED sono corretti; questa ripulisce lo storico.
+ * @param {Object} opts { dryRun:bool (default true) }
+ */
+function bandiPuliziaTedMalformati(opts) {
+  opts = opts || {};
+  var dryRun = (opts.dryRun === undefined) ? true : !!opts.dryRun;
+  var rep = { ok: true, dryRun: dryRun, esaminati: 0, malformati: 0, archiviati: 0, esempi: [] };
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName((typeof SH_BANDI_V5 !== 'undefined') ? SH_BANDI_V5 : 'Bandi_v5');
+    if (!sh || sh.getLastRow() < 2) { rep.ok = false; rep.error = 'foglio vuoto'; return rep; }
+    var vals = sh.getDataRange().getValues();
+    var iTit = COL_B.TITOLO - 1, iSom = COL_B.SOMMARIO - 1, iFonte = COL_B.FONTE_NOME - 1, iStato = COL_B.STATO_RECORD - 1;
+    for (var r = 1; r < vals.length; r++) {
+      var row = vals[r];
+      if (!row[0]) continue;
+      if (String(row[iStato] || '').toLowerCase() === 'archiviato') continue;
+      var fonte = String(row[iFonte] || '');
+      if (fonte.indexOf('TED') < 0) continue; // solo TED
+      rep.esaminati++;
+      var tit = String(row[iTit] || '').trim();
+      var som = String(row[iSom] || '');
+      var soloNumero = /^\d{3,}-\d{4}$/.test(tit);          // "136970-2024"
+      var objBug = som.indexOf('[object Object]') >= 0;      // sommario rotto
+      if (soloNumero || objBug) {
+        rep.malformati++;
+        if (rep.esempi.length < 8) rep.esempi.push(tit.substring(0, 40));
+        if (!dryRun) { sh.getRange(r + 1, iStato + 1).setValue('archiviato'); rep.archiviati++; }
+      }
+    }
+    if (!dryRun) SpreadsheetApp.flush();
+    Logger.log('[TED cleanup] esaminati=' + rep.esaminati + ' · malformati=' + rep.malformati +
+      ' · archiviati=' + rep.archiviati + (dryRun ? ' [DRY-RUN]' : '') + ' · es: ' + rep.esempi.join(', '));
+  } catch (e) { rep.ok = false; rep.error = e.message; Logger.log('[TED cleanup] ERR: ' + e.message); }
+  return rep;
 }
 
 // ============================================================================
