@@ -177,14 +177,16 @@ function fasParserGuS4Cultura(opts) {
 }
 
 // ============================================================================
-//  MONITOR 2×/SETTIMANA — fase di osservazione (Piano T1, approvata da Silvano)
+//  SCAN 2×/SETTIMANA — ATTIVAZIONE PIENA (Piano T1, promosso da Silvano 2026-07-10)
 // ----------------------------------------------------------------------------
-//  Gira mercoledì e sabato (via CronDispatcher, dopo le uscite GU di mar+ven)
-//  in DRY-RUN: non salva nulla, invia all'admin il report di cosa AVREBBE
-//  raccolto. Dopo 4-5 numeri si decide l'attivazione piena (dryRun:false).
+//  Gira mercoledì e sabato (via CronDispatcher, dopo le uscite GU di mar+ven):
+//  SALVA davvero i concorsi cultura in Bandi_v5 (tipoBando='lavoro') e invia
+//  all'admin il report di cosa ha aggiunto. I concorsi appaiono nella pagina
+//  "Lavoro cultura" e nel blocco rotante dei digest lettori.
 // ============================================================================
 function lavoroCulturaMonitor() {
-  var rep = fasParserGuS4Cultura({ dryRun: true, deepCap: 20 });
+  // v4.25.16 — dryRun:false = attivazione piena (era monitor osservativo)
+  var rep = fasParserGuS4Cultura({ dryRun: false, deepCap: 20 });
   var dest = (typeof _aqDest_ === 'function') ? _aqDest_() : 's.straccini@gmail.com';
   function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
   var righe = (rep.dettagli || []).map(function(d){
@@ -193,9 +195,10 @@ function lavoroCulturaMonitor() {
       '</td><td style="padding:5px;border-bottom:1px solid #eee;font-size:11px;color:#666">' + esc(d.motivo) + '</td></tr>';
   }).join('');
   var html = '<div style="font-family:Georgia,serif;max-width:680px">' +
-    '<h2>Monitor Lavoro Cultura — GU 4ª Serie (dry-run)</h2>' +
-    '<p>Feed: <b>' + rep.totFeed + '</b> concorsi · trovati cultura: <b>' + rep.nuovi + '</b>' +
+    '<h2>Lavoro Cultura — GU 4ª Serie (attivo)</h2>' +
+    '<p>Feed: <b>' + rep.totFeed + '</b> concorsi · <b>' + rep.nuovi + '</b> nuovi salvati' +
     ' (L1 ente: ' + Math.max(0, rep.l1Cultura) + ' · L2 professione: ' + rep.l2Match + ')' +
+    ' · duplicati: ' + rep.duplicati +
     ' · L2 verificati: ' + rep.l2Fetch + '/' + rep.l2Candidati +
     (rep.l2Errori ? ' · <span style="color:#B91C1C">fetch KO: ' + rep.l2Errori + '</span>' : '') +
     (rep.l2SaltatiPerCap ? ' · oltre cap: ' + rep.l2SaltatiPerCap : '') + '</p>' +
@@ -204,10 +207,9 @@ function lavoroCulturaMonitor() {
       '<th style="text-align:left;padding:5px;border-bottom:2px solid #333">Scadenza</th>' +
       '<th style="text-align:left;padding:5px;border-bottom:2px solid #333">Match</th></tr>' + righe + '</table>'
       : '<p style="color:#888">Nessun concorso culturale in questo numero (normale: escono periodicamente).</p>') +
-    '<p style="color:#888;font-size:12px;margin-top:12px">Fase di monitoraggio T1 — nessun dato salvato. ' +
-    'Per l\'attivazione piena: fasParserGuS4Cultura({dryRun:false}) + wiring dispatcher.</p></div>';
+    '<p style="color:#888;font-size:12px;margin-top:12px">I concorsi nuovi sono nella sezione <b>Lavoro cultura</b> e nel blocco opportunità dei digest lettori.</p></div>';
   try {
-    MailApp.sendEmail({ to: dest, subject: '[OC] Monitor Lavoro Cultura — ' + rep.nuovi + ' concorsi trovati (dry-run)', htmlBody: html });
+    MailApp.sendEmail({ to: dest, subject: '[OC] Lavoro Cultura — ' + rep.nuovi + ' nuovi concorsi salvati', htmlBody: html });
     rep.emailInviata = dest;
   } catch (e) { rep.emailErrore = e.message; }
   return rep;

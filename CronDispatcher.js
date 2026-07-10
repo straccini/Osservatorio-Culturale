@@ -42,8 +42,8 @@ var OC_CRON_EXTRA = [
   { fn: 'pubDiscoveryScan',      tipo: 'weekly', giorno: ScriptApp.WeekDay.SATURDAY, ora: 6, desc: 'Discovery pubblicazioni/editoria (settimanale)' },
   // T1 Lavoro Cultura — MONITOR dry-run 2×/sett (mer+sab, dopo le uscite GU mar+ven).
   // Report email di cosa AVREBBE raccolto; attivazione piena dopo il periodo di osservazione.
-  { fn: 'lavoroCulturaMonitor',  tipo: 'weekly', giorno: ScriptApp.WeekDay.WEDNESDAY, ora: 8, desc: 'Monitor concorsi cultura GU S4 (dry-run, mercoledì)' },
-  { fn: 'lavoroCulturaMonitor',  tipo: 'weekly', giorno: ScriptApp.WeekDay.SATURDAY,  ora: 8, desc: 'Monitor concorsi cultura GU S4 (dry-run, sabato)' },
+  { fn: 'lavoroCulturaMonitor',  tipo: 'weekly', giorno: ScriptApp.WeekDay.WEDNESDAY, ora: 8, desc: 'Lavoro cultura: scansione GU S4 e salvataggio concorsi (mercoledì)' },
+  { fn: 'lavoroCulturaMonitor',  tipo: 'weekly', giorno: ScriptApp.WeekDay.SATURDAY,  ora: 8, desc: 'Lavoro cultura: scansione GU S4 e salvataggio concorsi (sabato)' },
   // T3 Normativa — auto-popola il foglio Norme dal flusso news (filtro normativa+cultura)
   { fn: 'normeAutoPopolaRun',    tipo: 'weekly', giorno: ScriptApp.WeekDay.THURSDAY,  ora: 9, desc: 'Auto-popolamento sezione Norme (settimanale)' },
   // Flusso redazionale (Redazionale_v1.js, spec 2026-07-10): creazione ven 18 →
