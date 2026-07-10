@@ -8805,9 +8805,26 @@
         var cw = Math.round(W * scale), ch = Math.round(Hh * scale);
         var cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
         cv.getContext('2d').drawImage(img, 0, 0, cw, ch);
-        window._editorialeFotoDataUrl = cv.toDataURL('image/jpeg', 0.82);
+        // v4.25.14 — FIX blocco salvataggio: payload troppo grandi fanno morire
+        // google.script.run in silenzio (né successo né errore). Comprimi finché
+        // il dataURL resta sotto ~350KB (qualità a scalare, poi riduzione a 480px).
+        var dataUrl = cv.toDataURL('image/jpeg', 0.82);
+        var LIMITE = 350 * 1024;
+        var qualita = [0.7, 0.6, 0.5];
+        for (var qi = 0; qi < qualita.length && dataUrl.length > LIMITE; qi++) {
+          dataUrl = cv.toDataURL('image/jpeg', qualita[qi]);
+        }
+        if (dataUrl.length > LIMITE) {
+          var s2 = 480 / cw, cw2 = 480, ch2 = Math.round(ch * s2);
+          var cv2 = document.createElement('canvas'); cv2.width = cw2; cv2.height = ch2;
+          cv2.getContext('2d').drawImage(cv, 0, 0, cw2, ch2);
+          dataUrl = cv2.toDataURL('image/jpeg', 0.6);
+          cw = cw2; ch = ch2;
+        }
+        window._editorialeFotoDataUrl = dataUrl;
         window._editorialeFotoRemove = false;
-        if (prev) prev.innerHTML = '<div style="margin-top:4px"><img src="' + window._editorialeFotoDataUrl + '" alt="" style="max-width:100%;border-radius:8px;border:1px solid var(--rule)"/><div style="font-size:11px;color:var(--amb-2,#10916D);margin-top:3px">Nuova foto pronta (' + cw + '&times;' + ch + '). Verra&agrave; caricata al salvataggio.</div></div>';
+        var kb = Math.round(dataUrl.length / 1024);
+        if (prev) prev.innerHTML = '<div style="margin-top:4px"><img src="' + window._editorialeFotoDataUrl + '" alt="" style="max-width:100%;border-radius:8px;border:1px solid var(--rule)"/><div style="font-size:11px;color:var(--amb-2,#10916D);margin-top:3px">Nuova foto pronta (' + cw + '&times;' + ch + ', ' + kb + '&nbsp;KB). Verra&agrave; caricata al salvataggio.</div></div>';
       };
       img.onerror = function() { if (prev) prev.innerHTML = '<div style="font-size:12px;color:var(--danger,#B3261E)">File immagine non valido.</div>'; };
       img.src = ev.target.result;
@@ -8833,8 +8850,15 @@
     var payload = { titolo: titolo, testo: testo, firma: firma };
     if (window._editorialeFotoDataUrl) payload.fotoDataUrl = window._editorialeFotoDataUrl;
     else if (window._editorialeFotoRemove) payload.fotoRemove = true;
+    // v4.25.14 — watchdog: se il server non risponde entro 60s (payload perso),
+    // mostra un errore chiaro invece di restare su "Salvataggio..." per sempre
+    var _svDone = false;
+    var _svTimer = setTimeout(function(){
+      if (!_svDone && st) st.textContent = 'Errore: nessuna risposta dal server (60s). Riprova; se hai caricato una foto, riprova a selezionarla (viene ricompressa).';
+    }, 60000);
     google.script.run
       .withSuccessHandler(function(r) {
+        _svDone = true; clearTimeout(_svTimer);
         if (r && r.ok) {
           showToast && showToast('Revisione salvata.', 'ok');
           window._editorialeFotoDataUrl = null; window._editorialeFotoRemove = false;
@@ -8843,7 +8867,7 @@
           if (st) st.textContent = 'Errore: ' + ((r && r.error) || 'sconosciuto');
         }
       })
-      .withFailureHandler(function(e) { if (st) st.textContent = 'Errore: ' + e; })
+      .withFailureHandler(function(e) { _svDone = true; clearTimeout(_svTimer); if (st) st.textContent = 'Errore: ' + e; })
       .editorialeSalvaRevisione(payload, (window.OC_SESSION && window.OC_SESSION.token) || null);
   }
 

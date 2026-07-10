@@ -490,6 +490,18 @@ function _ed_fotoFolder_() {
 }
 
 /**
+ * v4.25.14 — Test dall'editor GAS: verifica l'intero percorso upload foto
+ * (decodifica → Drive → sharing → URL) con un PNG 1×1, senza browser di mezzo.
+ * Se ritorna un URL, il server è a posto e il problema è il trasporto client.
+ */
+function _testUploadFoto() {
+  var png1px = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+  var url = _ed_uploadFoto_(png1px);
+  Logger.log(url ? ('UPLOAD OK → ' + url) : 'UPLOAD FALLITO (vedi log [_ed_uploadFoto_])');
+  return { ok: !!url, url: url };
+}
+
+/**
  * Ritorna l'ultima bozza (per preview admin).
  */
 function getEditoriale(opts) {
