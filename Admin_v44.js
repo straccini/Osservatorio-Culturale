@@ -337,6 +337,11 @@ var OC_NL_AUTO_FLAG_ = 'OC_NL_LUNEDI_AUTH';
 
 /** Handler del trigger (niente gate: i trigger non hanno contesto utente). */
 function weeklyNewsletterAuthRequest() {
+  // v4.25.14 — SUPERATA dal flusso Redazionale_v1 (creazione ven 18 → revisione →
+  // richiesta al superadmin lun 10, con stamp anti-doppio). Se un vecchio trigger
+  // la chiama ancora, delega al nuovo flusso invece di rigenerare una bozza fresca
+  // (che ignorava le revisioni degli admin). Rimuovere il trigger: redazionaleSetup().
+  if (typeof redazionaleLunedi === 'function') return redazionaleLunedi();
   try {
     var gen = _generateDigestDraftCore_({ maxBandi: 8, maxNews: 6, maxPodcast: 3 });
     if (!gen || !gen.ok) {

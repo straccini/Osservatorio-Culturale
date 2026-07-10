@@ -2045,7 +2045,22 @@
             </div>
             <div id="cronProfilatiResult" style="font-size:11px;color:var(--ink-3)">Gestito da: <code>sendDigestProfilatiMartedi</code></div>
           </div>
-          <!-- v4.24.13 — Lunedì 09:00 con autorizzazione Telegram -->
+          <!-- v4.25.14 — FLUSSO REDAZIONALE (spec 2026-07-10): ven 18 creazione → revisione admin → lun 10 richiesta al superadmin -->
+          <div style="margin-top:12px;padding:12px 14px;background:#FFF8F0;border:2px solid var(--accent,#8B3A1F);border-radius:8px">
+            <div style="font-size:10px;color:var(--accent,#8B3A1F);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Redazionale settimanale · creazione ven 18:00 → revisione → richiesta invio lun 10:00</div>
+            <div id="redStatoBox" style="font-size:12px;color:var(--ink-2);margin:6px 0 8px">Premi &laquo;Stato&raquo; per caricare la bozza della settimana.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+              <label style="font-size:11px;color:var(--ink-3)">Bandi <input type="number" id="redMixBandi" value="8" min="0" max="20" style="width:52px;padding:4px;border:1px solid var(--rule);border-radius:5px"></label>
+              <label style="font-size:11px;color:var(--ink-3)">News <input type="number" id="redMixNews" value="6" min="0" max="20" style="width:52px;padding:4px;border:1px solid var(--rule);border-radius:5px"></label>
+              <label style="font-size:11px;color:var(--ink-3)">Podcast <input type="number" id="redMixPodcast" value="3" min="0" max="10" style="width:52px;padding:4px;border:1px solid var(--rule);border-radius:5px"></label>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" onclick="OC.redStato()" style="font-size:11px;padding:4px 10px" title="Mostra la bozza della settimana e lo stato della richiesta">Stato</button>
+              <button class="btn btn-secondary" onclick="OC.redRigenera()" style="font-size:11px;padding:4px 10px" title="Rigenera la composizione del digest col mix indicato (l'editoriale non viene toccato)">Rigenera mix</button>
+              <button class="btn btn-warning" onclick="if(confirm('Confermare la bozza e inviare SUBITO la richiesta di autorizzazione al superadmin (email con bozza completa + pulsante Invia)?'))OC.redConferma()" style="font-size:11px;padding:4px 12px" title="Non aspettare lunedì 10:00: manda ora la richiesta di invio al superadmin">Conferma e predisponi invio</button>
+            </div>
+          </div>
+          <!-- v4.24.13 — Lunedì 09:00 con autorizzazione Telegram (SUPERATO dal flusso redazionale: il trigger, se attivo, delega a redazionaleLunedi) -->
           <div style="margin-top:12px;padding:10px 14px;background:var(--surface-2);border-radius:8px">
             <div style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Newsletter lunedì 09:00 · sempre con autorizzazione Telegram</div>
             <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
@@ -11551,6 +11566,41 @@
         cb.parentElement.style.opacity = stato ? '1' : '0.45';
       });
       OC.toggleBandiTipo();
+    },
+    // v4.25.14 — Flusso redazionale (pannello pagina Digest)
+    redStato: function(){
+      var box = document.getElementById('redStatoBox'); if (box) box.textContent = 'Caricamento…';
+      google.script.run.withSuccessHandler(function(r){
+        if (!box) return;
+        if (!r || !r.ok) { box.textContent = 'Errore: ' + ((r && r.error) || 'sconosciuto'); return; }
+        var d = r.draft, e = r.editoriale;
+        box.innerHTML = 'Settimana <b>' + r.settimana + '</b> · ' +
+          (d ? ('bozza <b>' + d.id + '</b> (' + d.stato + '): ' + d.counts.bandiUrgenti + '+' + d.counts.bandiRecenti + ' bandi, ' + d.counts.news + ' news, ' + d.counts.podcast + ' podcast') : '<b>nessuna bozza</b> (si crea venerdì 18:00 o con Rigenera)') +
+          ' · editoriale: ' + (e ? (e.stato + ' &laquo;' + (e.titolo||'').substring(0,40) + '&raquo;') : 'assente') +
+          ' · richiesta invio: <b>' + (r.richiestaInviata ? 'GIÀ INVIATA' : 'non ancora') + '</b>';
+      }).withFailureHandler(function(err){ if (box) box.textContent = 'Errore: ' + err; })
+      .redazionaleStato((window.OC_SESSION && window.OC_SESSION.token) || null);
+    },
+    redRigenera: function(){
+      var box = document.getElementById('redStatoBox'); if (box) box.textContent = 'Rigenerazione in corso…';
+      var mix = {
+        maxBandi: Number((document.getElementById('redMixBandi')||{}).value) || 8,
+        maxNews: Number((document.getElementById('redMixNews')||{}).value) || 6,
+        maxPodcast: Number((document.getElementById('redMixPodcast')||{}).value) || 3
+      };
+      google.script.run.withSuccessHandler(function(r){
+        if (r && r.ok) { showToast && showToast('Bozza rigenerata: ' + r.id, 'ok'); OC.redStato(); }
+        else if (box) box.textContent = 'Errore: ' + ((r && r.error) || 'sconosciuto');
+      }).withFailureHandler(function(err){ if (box) box.textContent = 'Errore: ' + err; })
+      .redazionaleRigenera(mix, (window.OC_SESSION && window.OC_SESSION.token) || null);
+    },
+    redConferma: function(){
+      var box = document.getElementById('redStatoBox'); if (box) box.textContent = 'Invio richiesta al superadmin…';
+      google.script.run.withSuccessHandler(function(r){
+        if (r && r.ok) { showToast && showToast('Richiesta inviata al superadmin (email + Telegram)', 'ok'); OC.redStato(); }
+        else if (box) box.textContent = 'Errore: ' + ((r && r.error) || 'sconosciuto');
+      }).withFailureHandler(function(err){ if (box) box.textContent = 'Errore: ' + err; })
+      .redazionaleConferma((window.OC_SESSION && window.OC_SESSION.token) || null);
     },
     // T1 Lavoro Cultura — voce sidebar: apre Bandi filtrato sui soli concorsi
     goLavoro: function(){

@@ -216,7 +216,10 @@ function buildDigestHTML(items, dest, readerUrl, filterAmbiti) {
     if (_ed && _ed.testo) {
       const _edTesto = String(_ed.testo).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
       const _edTitolo = String(_ed.titolo||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      editorialeBlock = `<tr><td style="padding:20px 36px 4px"><div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8B3A1F;font-weight:700;margin-bottom:8px">Approfondimento della settimana</div><div style="font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:10px">${_edTitolo}</div><p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C">${_edTesto}</p><div style="margin-top:14px;border-bottom:1px solid #e8e5e0"></div></td></tr>`;
+      // v4.25.14 — RIPRISTINO regressione 1ff01773: foto banner + firma (da 2775252c)
+      const _edFoto = (_ed.foto) ? `<img src="${String(_ed.foto)}" alt="" width="548" style="width:100%;max-width:548px;border-radius:10px;display:block;margin-bottom:14px"/>` : '';
+      const _edFirma = (_ed.firma) ? `<div style="margin-top:12px;font-style:italic;font-size:13px;color:#6E6A62">${String(_ed.firma).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : '';
+      editorialeBlock = `<tr><td style="padding:20px 36px 4px">${_edFoto}<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8B3A1F;font-weight:700;margin-bottom:8px">Approfondimento della settimana</div><div style="font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:10px">${_edTitolo}</div><p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C">${_edTesto}</p>${_edFirma}<div style="margin-top:14px;border-bottom:1px solid #e8e5e0"></div></td></tr>`;
     }
   } catch(_edErr) { Logger.log('[DigestService] editoriale hook err: ' + _edErr.message); }
 

@@ -45,7 +45,11 @@ var OC_CRON_EXTRA = [
   { fn: 'lavoroCulturaMonitor',  tipo: 'weekly', giorno: ScriptApp.WeekDay.WEDNESDAY, ora: 8, desc: 'Monitor concorsi cultura GU S4 (dry-run, mercoledì)' },
   { fn: 'lavoroCulturaMonitor',  tipo: 'weekly', giorno: ScriptApp.WeekDay.SATURDAY,  ora: 8, desc: 'Monitor concorsi cultura GU S4 (dry-run, sabato)' },
   // T3 Normativa — auto-popola il foglio Norme dal flusso news (filtro normativa+cultura)
-  { fn: 'normeAutoPopolaRun',    tipo: 'weekly', giorno: ScriptApp.WeekDay.THURSDAY,  ora: 9, desc: 'Auto-popolamento sezione Norme (settimanale)' }
+  { fn: 'normeAutoPopolaRun',    tipo: 'weekly', giorno: ScriptApp.WeekDay.THURSDAY,  ora: 9, desc: 'Auto-popolamento sezione Norme (settimanale)' },
+  // Flusso redazionale (Redazionale_v1.js, spec 2026-07-10): creazione ven 18 →
+  // revisione admin → richiesta invio a superadmin lun 10 (o conferma anticipata)
+  { fn: 'redazionaleVenerdi',    tipo: 'weekly', giorno: ScriptApp.WeekDay.FRIDAY, ora: 18, desc: 'Redazionale: crea editoriale+bozza digest e avvisa gli admin' },
+  { fn: 'redazionaleLunedi',     tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 10, desc: 'Redazionale: scadenza termine → email autorizzazione al superadmin' }
 ];
 
 /** Schedule consolidato = approvato (SetupMaster) + nuovi. */
