@@ -137,15 +137,26 @@ function _generateDigestDraftCore_(opts) {
   var maxBandi   = opts.maxBandi   || 8;
   var maxNews    = opts.maxNews    || 6;
   var maxPodcast = opts.maxPodcast || 3;
+  // v4.25.15 — mix esteso: video e libri configurabili dal pannello redazionale
+  var maxVideo   = (opts.maxVideo  === undefined) ? 2 : Number(opts.maxVideo) || 0;
+  var maxLibri   = (opts.maxLibri  === undefined) ? 2 : Number(opts.maxLibri) || 0;
   var ambito     = String(opts.filtroAmbito || '').trim();
 
   // 1) Recupero dati dai data-provider esistenti
   var bandiUrg = _safeCall_(function(){ return getHomepageDataV42(); }, { bandiUrgenti:[], news:[], podcast:[] });
   var bandiNew = _safeCall_(function(){ return getUltimiBandiMonitorati(maxBandi); }, []);
+  var video = maxVideo > 0 ? _safeCall_(function(){ return getVideoListV42(maxVideo); }, []) : [];
+  var libri = maxLibri > 0 ? _safeCall_(function(){ return getLibriListV42(maxLibri); }, []) : [];
 
   var news = (bandiUrg && bandiUrg.news) ? bandiUrg.news.slice(0, maxNews) : [];
   var pod  = (bandiUrg && bandiUrg.podcast) ? bandiUrg.podcast.slice(0, maxPodcast) : [];
   var urg  = (bandiUrg && bandiUrg.bandiUrgenti) ? bandiUrg.bandiUrgenti.slice(0, maxBandi) : [];
+
+  // v4.25.15 — EPURAZIONE Lavoro Cultura: i concorsi (tipoBando='lavoro') hanno
+  // la loro sezione dedicata e il blocco rotante nel digest — fuori dalle liste bandi
+  var _noLavoro = function(b){ return String(b.tipoBando||'') !== 'lavoro'; };
+  urg = urg.filter(_noLavoro);
+  bandiNew = (bandiNew || []).filter(_noLavoro);
 
   // Filtro ambito (se richiesto)
   if (ambito) {
@@ -171,6 +182,8 @@ function _generateDigestDraftCore_(opts) {
     bandiRecenti:   bandiNew,
     news:           news,
     podcast:        pod,
+    video:          video,   // v4.25.15 — mix esteso
+    libri:          libri,   // v4.25.15 — mix esteso
     stato:     'bozza'
   };
 
@@ -190,7 +203,9 @@ function _generateDigestDraftCore_(opts) {
       bandiUrgenti: urg.length,
       bandiRecenti: bandiNew.length,
       news:         news.length,
-      podcast:      pod.length
+      podcast:      pod.length,
+      video:        video.length,
+      libri:        libri.length
     }
   };
 }

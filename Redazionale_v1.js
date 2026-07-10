@@ -27,7 +27,7 @@
 
 var RED_PROP_DRAFT = 'OC_RED_WEEK_DRAFT';   // draftId della bozza settimanale corrente
 var RED_PROP_SENT  = 'OC_RED_AUTH_SENT_';   // prefisso stamp anti-doppio (+ isoweek)
-var RED_MIX_DEFAULT = { maxBandi: 8, maxNews: 6, maxPodcast: 3 };
+var RED_MIX_DEFAULT = { maxBandi: 8, maxNews: 6, maxPodcast: 3, maxVideo: 2, maxLibri: 2 };
 
 /** Email del superadmin (override con ScriptProperty OC_SUPERADMIN_EMAIL). */
 function _redSuperadmin_() {
@@ -100,10 +100,14 @@ function redazionaleVenerdi() {
 function redazionaleRigenera(opts, token) {
   if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_(token)) return { ok: false, error: 'forbidden' };
   opts = opts || {};
+  // v4.25.15 — mix completo: 0 è un valore valido ("niente video questa settimana")
+  function _n(v, def, cap) { var x = Number(v); if (isNaN(x)) x = def; return Math.max(0, Math.min(cap, x)); }
   var mix = {
-    maxBandi:   Math.max(0, Math.min(20, Number(opts.maxBandi)   || RED_MIX_DEFAULT.maxBandi)),
-    maxNews:    Math.max(0, Math.min(20, Number(opts.maxNews)    || RED_MIX_DEFAULT.maxNews)),
-    maxPodcast: Math.max(0, Math.min(10, Number(opts.maxPodcast) || RED_MIX_DEFAULT.maxPodcast)),
+    maxBandi:   _n(opts.maxBandi,   RED_MIX_DEFAULT.maxBandi,   20),
+    maxNews:    _n(opts.maxNews,    RED_MIX_DEFAULT.maxNews,    20),
+    maxPodcast: _n(opts.maxPodcast, RED_MIX_DEFAULT.maxPodcast, 10),
+    maxVideo:   _n(opts.maxVideo,   RED_MIX_DEFAULT.maxVideo,   10),
+    maxLibri:   _n(opts.maxLibri,   RED_MIX_DEFAULT.maxLibri,   10),
     filtroAmbito: String(opts.filtroAmbito || '').trim()
   };
   var gen = _generateDigestDraftCore_(mix);
@@ -199,7 +203,7 @@ function redazionaleStato(token) {
   return {
     ok: true, settimana: week,
     draft: draft ? { id: draft.id, stato: draft.stato, soggetto: draft.soggetto,
-      counts: { bandiUrgenti: (draft.bandiUrgenti||[]).length, bandiRecenti: (draft.bandiRecenti||[]).length, news: (draft.news||[]).length, podcast: (draft.podcast||[]).length } } : null,
+      counts: { bandiUrgenti: (draft.bandiUrgenti||[]).length, bandiRecenti: (draft.bandiRecenti||[]).length, news: (draft.news||[]).length, podcast: (draft.podcast||[]).length, video: (draft.video||[]).length, libri: (draft.libri||[]).length } } : null,
     editoriale: ed && ed.ok !== false ? { titolo: (ed.titolo||''), stato: (ed.stato||'') } : null,
     richiestaInviata: !!props.getProperty(RED_PROP_SENT + week)
   };

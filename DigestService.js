@@ -261,7 +261,8 @@ function _digestBandoLavoroBlock_(appUrl) {
     if (!sh || sh.getLastRow() < 2) return '';
     var vals = sh.getDataRange().getValues();
     var oggi = new Date(); oggi.setHours(0,0,0,0);
-    var best = null;
+    // Candidati: concorsi attivi con scadenza futura, ordinati per scadenza
+    var candidati = [];
     for (var r = 1; r < vals.length; r++) {
       var row = vals[r];
       if (!row[COL_B.ID - 1]) continue;
@@ -270,12 +271,33 @@ function _digestBandoLavoroBlock_(appUrl) {
       var rawScad = row[COL_B.SCADENZA - 1];
       var scad = (rawScad instanceof Date) ? rawScad : (rawScad ? new Date(rawScad) : null);
       if (!scad || isNaN(scad.getTime()) || scad.getTime() < oggi.getTime()) continue;
-      if (!best || scad.getTime() < best.scad.getTime()) {
-        best = { scad: scad, titolo: String(row[COL_B.TITOLO - 1] || ''), ente: String(row[COL_B.ENTE - 1] || ''),
-                 link: String(row[COL_B.URL_BANDO - 1] || row[COL_B.URL_ENTE - 1] || '') };
-      }
+      candidati.push({ id: String(row[COL_B.ID - 1]), scad: scad,
+        titolo: String(row[COL_B.TITOLO - 1] || ''), ente: String(row[COL_B.ENTE - 1] || ''),
+        link: String(row[COL_B.URL_BANDO - 1] || row[COL_B.URL_ENTE - 1] || '') });
     }
-    if (!best) return '';
+    if (!candidati.length) return '';
+    candidati.sort(function(a, b){ return a.scad.getTime() - b.scad.getTime(); });
+
+    // v4.25.15 — ROTAZIONE SENZA RIPETIZIONI tra un invio e il successivo:
+    // la scelta è stabile per l'intera settimana (tutti i lettori dello stesso
+    // invio vedono lo stesso concorso), e la settimana dopo si passa al primo
+    // concorso NON ancora proposto (memoria in ScriptProperties). Quando tutti
+    // sono già stati proposti, la memoria si azzera e il giro ricomincia.
+    var props = PropertiesService.getScriptProperties();
+    var week = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Europe/Rome', "YYYY-'W'ww");
+    var rot = {};
+    try { rot = JSON.parse(props.getProperty('OC_DIGEST_LAVORO_ROT') || '{}'); } catch(_) { rot = {}; }
+    var sent = Array.isArray(rot.sent) ? rot.sent : [];
+    var best = null;
+    if (rot.week === week && rot.id) {
+      for (var c0 = 0; c0 < candidati.length; c0++) if (candidati[c0].id === rot.id) { best = candidati[c0]; break; }
+    }
+    if (!best) {
+      for (var c1 = 0; c1 < candidati.length; c1++) if (sent.indexOf(candidati[c1].id) < 0) { best = candidati[c1]; break; }
+      if (!best) { sent = []; best = candidati[0]; } // giro completo → ricomincia
+      if (sent.indexOf(best.id) < 0) sent.push(best.id);
+      try { props.setProperty('OC_DIGEST_LAVORO_ROT', JSON.stringify({ week: week, id: best.id, sent: sent.slice(-100) })); } catch(_) {}
+    }
     function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
     var tz = Session.getScriptTimeZone() || 'Europe/Rome';
     var scadFmt = Utilities.formatDate(best.scad, tz, 'd MMMM yyyy');

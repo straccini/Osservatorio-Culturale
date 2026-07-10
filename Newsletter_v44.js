@@ -118,6 +118,40 @@ function buildNewsletterHtml_(draft) {
     pod.forEach(function(p){ parts.push(_nlPodcastCard_(p)); });
   }
 
+  // v4.25.15 — Video (mix esteso, card compatta stile editoria)
+  var vid = _nlDedup(draft.video, function(v){ return v.titolo||v.Titolo; });
+  if (vid.length) {
+    parts.push(_nlSectionHeader_('Video'));
+    vid.forEach(function(v) {
+      parts.push('<tr><td style="padding:8px 28px;">');
+      parts.push('<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>');
+      parts.push('<td style="vertical-align:top;width:28px;font-size:18px;padding-right:10px">🎬</td>');
+      parts.push('<td style="vertical-align:top">');
+      parts.push('<div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#8A8A8E;margin-bottom:2px">Video · ' + _h_(v.canale || v.fonte || '') + '</div>');
+      if (v.link) parts.push('<a href="' + _h_(v.link) + '" style="color:#1D1D1F;text-decoration:none;font-size:14px;font-weight:600;line-height:1.4">' + _h_(v.titolo || '') + '</a>');
+      else parts.push('<div style="font-size:14px;font-weight:600;color:#1D1D1F;line-height:1.4">' + _h_(v.titolo || '') + '</div>');
+      parts.push('</td></tr></table>');
+      parts.push('</td></tr>');
+    });
+  }
+
+  // v4.25.15 — Libri e pubblicazioni (mix esteso)
+  var lib = _nlDedup(draft.libri, function(l){ return l.titolo||l.Titolo; });
+  if (lib.length) {
+    parts.push(_nlSectionHeader_('Libri e pubblicazioni'));
+    lib.forEach(function(l) {
+      parts.push('<tr><td style="padding:8px 28px;">');
+      parts.push('<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>');
+      parts.push('<td style="vertical-align:top;width:28px;font-size:18px;padding-right:10px">📚</td>');
+      parts.push('<td style="vertical-align:top">');
+      parts.push('<div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#8A8A8E;margin-bottom:2px">' + _h_((l.autore || '') + (l.editore ? ' · ' + l.editore : '') + (l.anno ? ' · ' + l.anno : '')) + '</div>');
+      if (l.link) parts.push('<a href="' + _h_(l.link) + '" style="color:#1D1D1F;text-decoration:none;font-size:14px;font-weight:600;line-height:1.4">' + _h_(l.titolo || '') + '</a>');
+      else parts.push('<div style="font-size:14px;font-weight:600;color:#1D1D1F;line-height:1.4">' + _h_(l.titolo || '') + '</div>');
+      parts.push('</td></tr></table>');
+      parts.push('</td></tr>');
+    });
+  }
+
   // Editoria — pubblicazioni e podcast dalla ricerca (foglio Editoria via getEditoria)
   var editoria = draft.editoria || [];
   if (editoria.length) {

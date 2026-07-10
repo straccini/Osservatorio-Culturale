@@ -604,9 +604,8 @@
           <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:#065F46;border-bottom:1px solid #f0f0f0">
             <input type="checkbox" value="lavori" onchange="OC.toggleBandiTipo()" checked style="accent-color:#059669;width:16px;height:16px"> 🏗 Lavori <span id="cnt_lavori" style="margin-left:auto;font-size:11px;color:#aaa"></span>
           </label>
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:#6B21A8;border-bottom:1px solid #f0f0f0">
-            <input type="checkbox" value="lavoro" onchange="OC.toggleBandiTipo()" checked style="accent-color:#7C3AED;width:16px;height:16px"> 👤 Lavoro e Concorsi <span id="cnt_lavoro" style="margin-left:auto;font-size:11px;color:#aaa"></span>
-          </label>
+          <!-- v4.25.15 — checkbox "Lavoro e Concorsi" rimossa: i concorsi hanno la pagina dedicata "Lavoro cultura" -->
+
           <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:500;color:#854D0E;background:#FFFBEB">
             <input type="checkbox" value="_senza" onchange="OC.toggleBandiTipo()" checked style="accent-color:#EAB308;width:16px;height:16px"> ⚠ Senza categoria <span id="cnt_senza" style="margin-left:auto;font-size:11px;color:#aaa"></span>
           </label>
@@ -1092,6 +1091,33 @@
       <div class="news-list" id="cestinoList" aria-live="polite">
         <div class="empty-state">Il cestino &egrave; vuoto.</div>
       </div>
+    </section>
+
+    <!-- ===== PAGE LAVORO CULTURA (v4.25.15) — concorsi e opportunità professionali ===== -->
+    <section class="page" id="page-lavoro">
+      <div class="page-head">
+        <div class="page-eyebrow" style="color:#6B21A8">Sezioni &middot; Lavoro cultura</div>
+        <h1 class="page-title">Concorsi e <em>opportunit&agrave; professionali</em></h1>
+        <p class="page-sub">Concorsi pubblici e posizioni del settore cultura, dalla Gazzetta Ufficiale 4&ordf; Serie e dalle fonti dedicate: soprintendenze, musei, biblioteche, accademie, teatri ed enti territoriali. Aggiornati automaticamente e archiviati alla scadenza.</p>
+      </div>
+      <div class="filters" id="lavoroFilters" style="margin-bottom:8px">
+        <button class="filter-chip active" onclick="OC.setLavoroPreset('tutti', this)">Tutti</button>
+        <button class="filter-chip" onclick="OC.setLavoroPreset('urgenti', this)">&#9889; In scadenza (10gg)</button>
+        <button class="filter-chip" onclick="OC.setLavoroPreset('salvati', this)">&#9733; Salvati</button>
+      </div>
+      <div class="filters" id="lavoroCatFilters" style="margin-bottom:10px">
+        <button class="filter-chip active" onclick="OC.setLavoroCat('', this)">Tutte le categorie</button>
+        <button class="filter-chip" onclick="OC.setLavoroCat('mic', this)">MiC &amp; Soprintendenze</button>
+        <button class="filter-chip" onclick="OC.setLavoroCat('musei', this)">Musei &amp; Parchi</button>
+        <button class="filter-chip" onclick="OC.setLavoroCat('biblio', this)">Biblioteche &amp; Archivi</button>
+        <button class="filter-chip" onclick="OC.setLavoroCat('accademie', this)">Accademie &amp; Conservatori</button>
+        <button class="filter-chip" onclick="OC.setLavoroCat('teatri', this)">Teatri &amp; Fondazioni</button>
+        <button class="filter-chip" onclick="OC.setLavoroCat('enti', this)">Enti locali</button>
+        <button class="filter-chip" onclick="OC.setLavoroCat('universita', this)">Universit&agrave; &amp; Ricerca</button>
+      </div>
+      <div class="muted" id="lavoroCount" style="margin-bottom:10px">&mdash;</div>
+      <div id="lavoroList"></div>
+      <div class="empty-state" id="lavoroEmpty" hidden>Nessuna opportunit&agrave; con i filtri correnti. I concorsi arrivano dal monitoraggio della GU 4&ordf; Serie (2 uscite a settimana): la sezione si popola man mano che escono posizioni del settore cultura.</div>
     </section>
 
     <!-- ===== PAGE MATRIX LANDING (Sprint 2 Step 5A - 2026-05-01): pagina commerciale ===== -->
@@ -2053,6 +2079,8 @@
               <label style="font-size:11px;color:var(--ink-3)">Bandi <input type="number" id="redMixBandi" value="8" min="0" max="20" style="width:52px;padding:4px;border:1px solid var(--rule);border-radius:5px"></label>
               <label style="font-size:11px;color:var(--ink-3)">News <input type="number" id="redMixNews" value="6" min="0" max="20" style="width:52px;padding:4px;border:1px solid var(--rule);border-radius:5px"></label>
               <label style="font-size:11px;color:var(--ink-3)">Podcast <input type="number" id="redMixPodcast" value="3" min="0" max="10" style="width:52px;padding:4px;border:1px solid var(--rule);border-radius:5px"></label>
+              <label style="font-size:11px;color:var(--ink-3)">Video <input type="number" id="redMixVideo" value="2" min="0" max="10" style="width:52px;padding:4px;border:1px solid var(--rule);border-radius:5px"></label>
+              <label style="font-size:11px;color:var(--ink-3)">Libri <input type="number" id="redMixLibri" value="2" min="0" max="10" style="width:52px;padding:4px;border:1px solid var(--rule);border-radius:5px"></label>
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
               <button class="btn btn-secondary" onclick="OC.redStato()" style="font-size:11px;padding:4px 10px" title="Mostra la bozza della settimana e lo stato della richiesta">Stato</button>
@@ -2766,7 +2794,7 @@
     home:'Home', chisiamo:'Chi siamo', privacy:'Privacy & GDPR', bandi:'Radar Bandi', news:'News & RSS', podcast:'Podcast', video:'Video & YouTube', libri:'Libri & Pubblicazioni',
     norme:'Norme & Riferimenti', social:'Social Wall', editoria:'Editoria',
     search:'Ricerca', stats:'Statistiche', ambito:'Ambito', digest:'Digest Reader',
-    matrix:'Valuta il tuo museo', 'matrix-landing':'MuseMu Matrix',
+    matrix:'Valuta il tuo museo', 'matrix-landing':'MuseMu Matrix', lavoro:'Lavoro cultura',
     settings:'Impostazioni', archivio:'Archivio', cestino:'Cestino',
     kb:'Tassonomia KB', compilatori:'Compilatori e lettori', sondaggio:'Sondaggio mirato',
     'sondaggi-catalogo': 'Autovalutazione rapida',
@@ -2843,7 +2871,7 @@
   // A) NAVIGAZIONE SPA
   // ==========================================================
   // Pagine accessibili a ospiti (livello 0) — tutto il resto richiede registrazione
-  var _GUEST_PAGES = { home:1, bandi:1, matrix:1, 'matrix-landing':1, 'sondaggi-catalogo':1, chisiamo:1, 'profilo-pro':1, privacy:1, news:1, podcast:1, video:1, social:1, editoria:1, capitali:1, norme:1, libri:1 };
+  var _GUEST_PAGES = { home:1, bandi:1, lavoro:1, matrix:1, 'matrix-landing':1, 'sondaggi-catalogo':1, chisiamo:1, 'profilo-pro':1, privacy:1, news:1, podcast:1, video:1, social:1, editoria:1, capitali:1, norme:1, libri:1 };
 
   function go(page, ambito){
     // Gate ospite: se pagina protetta, mostra card registrazione
@@ -2895,6 +2923,7 @@
     }
 
     if (page==='chisiamo') loadChiSiamoContent();
+    if (page==='lavoro') loadLavoro();  // v4.25.15 — pagina Lavoro cultura
     if (page==='bandi')    loadBandiList(false);
     if (page==='news')     loadNewsList(false);
     if (page==='podcast')  loadPodcastList(false);
@@ -3343,8 +3372,52 @@
   };
   var _filterBandiSettore = '';
   // v4.25.3: mappa tipo→bool (multi-select dropdown)
-  var _filterBandiTipi = { finanziamento:true, servizio_fornitura:true, lavori:true, lavoro:true, '_senza':true };
+  var _filterBandiTipi = { finanziamento:true, servizio_fornitura:true, lavori:true, '_senza':true };
   var _filterBandiTipiAttivo = false;
+
+  // ── v4.25.15 — Pagina Lavoro cultura (concorsi, tipoBando='lavoro') ──
+  var _filterLavoro = { preset: 'tutti', cat: '' };
+  // Categoria per tipologia di ente (dedotta da ente+titolo)
+  function _lavCat_(b) {
+    var t = (String(b.ente||'') + ' ' + String(b.titolo||'')).toUpperCase();
+    if (/SOPRINTENDENZ|MINISTERO DELLA CULTURA|ISTITUTO CENTRALE/.test(t)) return 'mic';
+    if (/MUSE[OI]|PARCO ARCHEOLOGICO|GALLERI|PINACOTEC|POLO MUSEALE/.test(t)) return 'musei';
+    if (/BIBLIOTEC|ARCHIVI/.test(t)) return 'biblio';
+    if (/ACCADEMIA|CONSERVATORIO/.test(t)) return 'accademie';
+    if (/TEATR|FONDAZIONE/.test(t)) return 'teatri';
+    if (/UNIVERSITA|CNR\b|ISTITUTO NAZIONALE|RICERCH/.test(t)) return 'universita';
+    if (/COMUNE|PROVINCIA|REGIONE|CITTA' METROPOLITANA|UNIONE/.test(t)) return 'enti';
+    return 'altro';
+  }
+  function loadLavoro() {
+    if (_cacheBandi) { renderLavoroList(); return; }
+    var wrap = $('lavoroList'); if (wrap) wrap.innerHTML = '<div class="empty-state sm">Caricamento opportunità…</div>';
+    if (!hasGAS()) return;
+    google.script.run.withSuccessHandler(function(r){
+      _cacheBandi = r || [];
+      renderLavoroList();
+    }).withFailureHandler(function(){ if (wrap) wrap.innerHTML = '<div class="empty-state sm">Errore di caricamento. Riprova.</div>'; })
+    .getBandiListV42(500);
+  }
+  function renderLavoroList() {
+    var wrap = $('lavoroList'); if (!wrap) return;
+    var list = (_cacheBandi || []).filter(function(b){ return String(b.tipoBando||'') === 'lavoro'; });
+    var html = '', shown = 0;
+    list.forEach(function(b){
+      var giorni = b.giorni != null ? parseInt(b.giorni, 10) : null;
+      if (_filterLavoro.preset === 'urgenti' && !(giorni !== null && giorni >= 0 && giorni <= 10)) return;
+      if (_filterLavoro.preset === 'salvati' && !b.salvato) return;
+      if (_filterLavoro.cat && _lavCat_(b) !== _filterLavoro.cat) return;
+      shown++; html += _brRowHtml_(b);
+    });
+    wrap.innerHTML = html;
+    var em = $('lavoroEmpty'); if (em) em.hidden = shown > 0;
+    var cnt = $('lavoroCount');
+    if (cnt) cnt.textContent = shown + (shown === 1 ? ' opportunità' : ' opportunità') + (list.length !== shown ? ' (su ' + list.length + ' totali)' : ' monitorate');
+    // La voce sidebar appare appena esistono concorsi
+    var navL = document.getElementById('nav-lavoro');
+    if (navL && list.length > 0) navL.hidden = false;
+  }
 
   /** Invalidate cache for a tipo — replaces 4 identical if/else chains */
   function _invalidateCache(tipo) {
@@ -5137,6 +5210,9 @@
       // Esiti/aggiudicazioni: visibili SOLO nel preset 'esiti'; esclusi altrove
       if (preset === 'esiti') { if (!b.esito) return; }
       else if (b.esito) return;
+      // v4.25.15 — EPURAZIONE: i concorsi (tipoBando='lavoro') vivono SOLO nella
+      // pagina dedicata "Lavoro cultura" (il conteggio sopra resta: guida la sidebar)
+      if (String(b.tipoBando || '') === 'lavoro') return;
       // L1 preset
       if (preset === 'recenti'   && !b.isRecente) return;
       if (preset === 'urgenti10' && !(giorni !== null && giorni >= 0 && giorni <= 10)) return;
@@ -5181,7 +5257,7 @@
     }
 
     // v4.25.3 — Aggiorna conteggi nel dropdown tipo bando
-    ['finanziamento','servizio_fornitura','lavori','lavoro','_senza'].forEach(function(k){
+    ['finanziamento','servizio_fornitura','lavori','_senza'].forEach(function(k){
       var el = document.getElementById('cnt_' + k);
       if (el) el.textContent = '(' + (_tipoCounts[k]||0) + ')';
     });
@@ -11599,7 +11675,7 @@
         if (!r || !r.ok) { box.textContent = 'Errore: ' + ((r && r.error) || 'sconosciuto'); return; }
         var d = r.draft, e = r.editoriale;
         box.innerHTML = 'Settimana <b>' + r.settimana + '</b> · ' +
-          (d ? ('bozza <b>' + d.id + '</b> (' + d.stato + '): ' + d.counts.bandiUrgenti + '+' + d.counts.bandiRecenti + ' bandi, ' + d.counts.news + ' news, ' + d.counts.podcast + ' podcast') : '<b>nessuna bozza</b> (si crea venerdì 18:00 o con Rigenera)') +
+          (d ? ('bozza <b>' + d.id + '</b> (' + d.stato + '): ' + d.counts.bandiUrgenti + '+' + d.counts.bandiRecenti + ' bandi, ' + d.counts.news + ' news, ' + d.counts.podcast + ' podcast, ' + (d.counts.video||0) + ' video, ' + (d.counts.libri||0) + ' libri') : '<b>nessuna bozza</b> (si crea venerdì 18:00 o con Rigenera)') +
           ' · editoriale: ' + (e ? (e.stato + ' &laquo;' + (e.titolo||'').substring(0,40) + '&raquo;') : 'assente') +
           ' · richiesta invio: <b>' + (r.richiestaInviata ? 'GIÀ INVIATA' : 'non ancora') + '</b>';
       }).withFailureHandler(function(err){ if (box) box.textContent = 'Errore: ' + err; })
@@ -11607,10 +11683,13 @@
     },
     redRigenera: function(){
       var box = document.getElementById('redStatoBox'); if (box) box.textContent = 'Rigenerazione in corso…';
+      function _mixVal(id, def){ var el = document.getElementById(id); if (!el) return def; var n = Number(el.value); return isNaN(n) ? def : n; }
       var mix = {
-        maxBandi: Number((document.getElementById('redMixBandi')||{}).value) || 8,
-        maxNews: Number((document.getElementById('redMixNews')||{}).value) || 6,
-        maxPodcast: Number((document.getElementById('redMixPodcast')||{}).value) || 3
+        maxBandi: _mixVal('redMixBandi', 8),
+        maxNews: _mixVal('redMixNews', 6),
+        maxPodcast: _mixVal('redMixPodcast', 3),
+        maxVideo: _mixVal('redMixVideo', 2),
+        maxLibri: _mixVal('redMixLibri', 2)
       };
       google.script.run.withSuccessHandler(function(r){
         if (r && r.ok) { showToast && showToast('Bozza rigenerata: ' + r.id, 'ok'); OC.redStato(); }
@@ -11626,14 +11705,17 @@
       }).withFailureHandler(function(err){ if (box) box.textContent = 'Errore: ' + err; })
       .redazionaleConferma((window.OC_SESSION && window.OC_SESSION.token) || null);
     },
-    // T1 Lavoro Cultura — voce sidebar: apre Bandi filtrato sui soli concorsi
-    goLavoro: function(){
-      go('bandi');
-      document.querySelectorAll('#bandiTipoMenu input[type=checkbox]').forEach(function(cb){
-        cb.checked = (cb.value === 'lavoro');
-        cb.parentElement.style.opacity = cb.checked ? '1' : '0.45';
-      });
-      OC.toggleBandiTipo();
+    // v4.25.15 — Lavoro Cultura: pagina dedicata con filtri propri
+    goLavoro: function(){ go('lavoro'); },
+    setLavoroPreset: function(v, el){
+      _filterLavoro.preset = v || 'tutti';
+      document.querySelectorAll('#lavoroFilters .filter-chip').forEach(function(c){ c.classList.toggle('active', c === el); });
+      renderLavoroList();
+    },
+    setLavoroCat: function(v, el){
+      _filterLavoro.cat = v || '';
+      document.querySelectorAll('#lavoroCatFilters .filter-chip').forEach(function(c){ c.classList.toggle('active', c === el); });
+      renderLavoroList();
     },
     // v4.18.9 — select tematica + filtro rapido (sostituiscono i chip)
     setBandiTema: function(v){
