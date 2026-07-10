@@ -186,7 +186,10 @@ function fasParserGuS4Cultura(opts) {
 // ============================================================================
 function lavoroCulturaMonitor() {
   // v4.25.16 — dryRun:false = attivazione piena (era monitor osservativo)
-  var rep = fasParserGuS4Cultura({ dryRun: false, deepCap: 20 });
+  // v4.25.21 — deepCap 40: controlla più pagine di dettaglio GU per intercettare
+  // i concorsi universitari in discipline culturali (L-ART, storia dell'arte,
+  // archeologia, museologia, restauro), che appaiono più spesso dei concorsi museali.
+  var rep = fasParserGuS4Cultura({ dryRun: false, deepCap: 40 });
   var dest = (typeof _aqDest_ === 'function') ? _aqDest_() : 's.straccini@gmail.com';
   function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
   var righe = (rep.dettagli || []).map(function(d){
@@ -254,4 +257,52 @@ function lavoroCulturaSelfTest() {
   if (okEnte) pass++; else fail++;
   Logger.log('=== lavoroCulturaSelfTest: ' + pass + '/' + (pass + fail) + ' PASS ===');
   return { ok: fail === 0, pass: pass, fail: fail };
+}
+
+// ============================================================================
+//  OPPORTUNITÀ PROFESSIONALI (v4.25.21) — popola la sezione anche quando i
+//  concorsi GU scarseggiano. Pesca dalle NEWS già raccolte le residenze, open
+//  call, borse, premi e mobilità del settore cultura: fonti dedicate (Res Artis,
+//  On the Move, AAM) + match keyword su titolo/sommario. Nessuna nuova fonte,
+//  nessuna scrittura: è una VISTA sui dati già presenti nel foglio Items.
+// ============================================================================
+
+// Fonti che pubblicano SOLO opportunità/residenze → dentro tutte
+var _LC_FONTI_OPPORTUNITA = /res\s*artis|on\s*the\s*move|alliance of museums|\bAAM\b/i;
+// Keyword opportunità (per le altre fonti news)
+var _LC_OPPORTUNITA_RE = /\b(residenz[ae]|residency|residencies|open\s+call|call\s+for|bando|borsa\s+di\s+studio|borse|fellowship|premio|premi\b|award|grant|mobilit|scholarship|artist[- ]in[- ]residence|selezione\s+pubblica|posizione\s+aperta|job\s+opportunit|vacancy|reclutament|assunzion)\b/i;
+
+/**
+ * Ritorna le opportunità professionali cultura dalle news (Items).
+ * @param {number} limit
+ * @return {Array<Object>} [{titolo, link, fonte, data, ambito, sommario, tipoOpp}]
+ */
+function getLavoroOpportunita(limit) {
+  var n = Number(limit) || 40;
+  var out = [];
+  try {
+    var news = (typeof getNewsListV42 === 'function') ? getNewsListV42(400) : [];
+    for (var i = 0; i < news.length; i++) {
+      var x = news[i];
+      var fonte = String(x.fonte || '');
+      var blob = String(x.titolo || '') + ' ' + String(x.sommario || '');
+      var daFonte = _LC_FONTI_OPPORTUNITA.test(fonte);
+      var daKeyword = _LC_OPPORTUNITA_RE.test(blob);
+      if (!daFonte && !daKeyword) continue;
+      // tipo opportunità (per badge)
+      var t = 'opportunita';
+      if (/residenz|residency|artist[- ]in[- ]residence/i.test(blob)) t = 'residenza';
+      else if (/open\s+call|call\s+for/i.test(blob)) t = 'call';
+      else if (/borsa|fellowship|scholarship|grant|mobilit/i.test(blob)) t = 'borsa';
+      else if (/premio|premi\b|award/i.test(blob)) t = 'premio';
+      out.push({
+        id: x.id, titolo: String(x.titolo || ''), link: String(x.link || ''),
+        fonte: fonte, data: String(x.data || ''), ambito: String(x.ambito || ''),
+        sommario: String(x.sommario || ''), tipoOpp: t,
+        isRecente: !!x.isRecente, salvato: !!x.salvato
+      });
+      if (out.length >= n) break;
+    }
+  } catch (e) { Logger.log('[getLavoroOpportunita] ' + (e && e.message || e)); }
+  return out;
 }

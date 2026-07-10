@@ -1098,7 +1098,7 @@
       <div class="page-head">
         <div class="page-eyebrow" style="color:#6B21A8">Sezioni &middot; Lavoro cultura</div>
         <h1 class="page-title">Concorsi e <em>opportunit&agrave; professionali</em></h1>
-        <p class="page-sub">Concorsi pubblici e posizioni del settore cultura, dalla Gazzetta Ufficiale 4&ordf; Serie e dalle fonti dedicate: soprintendenze, musei, biblioteche, accademie, teatri ed enti territoriali. Aggiornati automaticamente e archiviati alla scadenza.</p>
+        <p class="page-sub">Due canali per chi lavora nella cultura: <b>concorsi pubblici</b> (Gazzetta Ufficiale 4&ordf; Serie: soprintendenze, musei, biblioteche, accademie, teatri, enti) e <b>opportunit&agrave; e residenze</b> (open call, borse, premi e mobilit&agrave; internazionale). Aggiornati automaticamente.</p>
       </div>
       <div class="filters" id="lavoroFilters" style="margin-bottom:8px">
         <button class="filter-chip active" onclick="OC.setLavoroPreset('tutti', this)">Tutti</button>
@@ -1117,7 +1117,17 @@
       </div>
       <div class="muted" id="lavoroCount" style="margin-bottom:10px">&mdash;</div>
       <div id="lavoroList"></div>
-      <div class="empty-state" id="lavoroEmpty" hidden>Nessuna opportunit&agrave; con i filtri correnti. I concorsi arrivano dal monitoraggio della GU 4&ordf; Serie (2 uscite a settimana): la sezione si popola man mano che escono posizioni del settore cultura.</div>
+      <div class="empty-state" id="lavoroEmpty" hidden>Nessun concorso pubblico con i filtri correnti in questo momento. I concorsi cultura in Gazzetta Ufficiale escono periodicamente: la sezione si aggiorna a ogni scansione. Vedi intanto le <b>opportunità e residenze</b> qui sotto.</div>
+
+      <!-- v4.25.21 — Opportunità e residenze (dalle news: Res Artis, On the Move, open call, borse, premi) -->
+      <div id="lavoroOppSection" style="margin-top:26px" hidden>
+        <div class="section-head" style="margin-bottom:8px">
+          <div class="left"><h2 class="section-title">Opportunit&agrave; e <em>residenze</em></h2></div>
+        </div>
+        <p class="page-sub" style="margin:0 0 12px">Residenze artistiche, open call, borse, premi e mobilit&agrave; internazionale del settore cultura, dalle fonti monitorate.</p>
+        <div class="muted" id="lavoroOppCount" style="margin-bottom:10px">&mdash;</div>
+        <div id="lavoroOppList"></div>
+      </div>
     </section>
 
     <!-- ===== PAGE MATRIX LANDING (Sprint 2 Step 5A - 2026-05-01): pagina commerciale ===== -->
@@ -3442,15 +3452,49 @@
     if (/COMUNE|PROVINCIA|REGIONE|CITTA' METROPOLITANA|UNIONE/.test(t)) return 'enti';
     return 'altro';
   }
+  var _cacheLavoroOpp = null;
   function loadLavoro() {
-    if (_cacheBandi) { renderLavoroList(); return; }
-    var wrap = $('lavoroList'); if (wrap) wrap.innerHTML = '<div class="empty-state sm">Caricamento opportunità…</div>';
-    if (!hasGAS()) return;
-    google.script.run.withSuccessHandler(function(r){
-      _cacheBandi = r || [];
-      renderLavoroList();
-    }).withFailureHandler(function(){ if (wrap) wrap.innerHTML = '<div class="empty-state sm">Errore di caricamento. Riprova.</div>'; })
-    .getBandiListV42(500);
+    // Concorsi (da cache bandi)
+    if (_cacheBandi) { renderLavoroList(); }
+    else {
+      var wrap = $('lavoroList'); if (wrap) wrap.innerHTML = '<div class="empty-state sm">Caricamento concorsi…</div>';
+      if (hasGAS()) google.script.run.withSuccessHandler(function(r){ _cacheBandi = r || []; renderLavoroList(); })
+        .withFailureHandler(function(){ if (wrap) wrap.innerHTML = '<div class="empty-state sm">Errore di caricamento.</div>'; })
+        .getBandiListV42(500);
+    }
+    // Opportunità e residenze (dalle news)
+    if (_cacheLavoroOpp) { renderLavoroOpp(); }
+    else if (hasGAS()) {
+      google.script.run.withSuccessHandler(function(r){ _cacheLavoroOpp = r || []; renderLavoroOpp(); })
+        .withFailureHandler(function(){ _cacheLavoroOpp = []; renderLavoroOpp(); })
+        .getLavoroOpportunita(40);
+    }
+  }
+  var _LC_OPP_BADGE = { residenza:'🏠 Residenza', call:'📣 Open call', borsa:'🎓 Borsa/Mobilità', premio:'🏆 Premio', opportunita:'💼 Opportunità' };
+  function renderLavoroOpp() {
+    var sec = $('lavoroOppSection'), wrap = $('lavoroOppList'); if (!wrap) return;
+    var list = _cacheLavoroOpp || [];
+    if (!list.length) { if (sec) sec.hidden = true; return; }
+    if (sec) sec.hidden = false;
+    var html = '';
+    list.forEach(function(o){
+      var badge = _LC_OPP_BADGE[o.tipoOpp] || _LC_OPP_BADGE.opportunita;
+      var url = o.link || '';
+      html += '<div class="br-row" style="border-left:3px solid #7C3AED">'
+        + '<div class="br-left">'
+        + '<div class="br-tags"><span class="br-tema br-a5">' + esc(badge) + '</span>'
+        + (o.isRecente ? '<span class="br-badge-new">Nuovo</span>' : '') + '</div>'
+        + '<p class="br-title"' + (url ? ' onclick="OC.openUrl(\'' + esc(url) + '\')" title="Apri"' : '') + '>' + esc(o.titolo || '(senza titolo)') + '</p>'
+        + (o.sommario ? '<p class="br-summary">' + esc(trunc(o.sommario, 160)) + '</p>' : '')
+        + '<div class="br-meta">' + (o.fonte ? '<span class="br-ente">' + esc(o.fonte) + '</span>' : '') + (o.data ? '<span class="br-sep">&middot;</span><span>' + esc(o.data) + '</span>' : '') + '</div>'
+        + '</div>'
+        + '<div class="br-right">' + (url ? '<a class="br-link" href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">&#8599;&nbsp;Apri</a>' : '') + '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+    var cnt = $('lavoroOppCount'); if (cnt) cnt.textContent = list.length + (list.length === 1 ? ' opportunità' : ' opportunità e residenze');
+    // Se ci sono opportunità, il messaggio "vuoto" dei concorsi non deve dominare
+    var navL = document.getElementById('nav-lavoro'); if (navL) navL.hidden = false;
   }
   function renderLavoroList() {
     var wrap = $('lavoroList'); if (!wrap) return;
