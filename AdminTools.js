@@ -39,6 +39,9 @@ function adminRunTool(tool, token) {
       case 'fontiEstero':        r = fontiAggiungiBatchEstero(); break;
       case 'fontiNormativa':     r = fontiAggiungiBatchNormativa(); break;
       case 'fontiPrimarie':      r = fontiRipristinaPrimarie(); break;
+      case 'fontiPodcast':       r = fontiAggiungiBatchPodcast(); break;   // Tappa P
+      case 'fontiSocial':        r = fontiAggiungiBatchSocial(); break;    // Tappa 4
+      case 'podcastAudit':       r = podcastAuditFonti(); break;           // Tappa P
 
       // ── Contenuti: scansioni "adesso" ────────────────────────────────────
       case 'lavoroScan':         r = lavoroCulturaMonitor(); break;

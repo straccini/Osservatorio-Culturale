@@ -49,7 +49,9 @@ var OC_CRON_EXTRA = [
   // Flusso redazionale (Redazionale_v1.js, spec 2026-07-10): creazione ven 18 →
   // revisione admin → richiesta invio a superadmin lun 10 (o conferma anticipata)
   { fn: 'redazionaleVenerdi',    tipo: 'weekly', giorno: ScriptApp.WeekDay.FRIDAY, ora: 18, desc: 'Redazionale: crea editoriale+bozza digest e avvisa gli admin' },
-  { fn: 'redazionaleLunedi',     tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 10, desc: 'Redazionale: scadenza termine → email autorizzazione al superadmin' }
+  { fn: 'redazionaleLunedi',     tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 10, desc: 'Redazionale: scadenza termine → email autorizzazione al superadmin' },
+  // Tappa P — audit mensile salute fonti podcast/video (email all'admin, giorno 1)
+  { fn: 'podcastAuditMensile',   tipo: 'monthdays', giorniMese: [1], ora: 9, desc: 'Audit mensile fonti podcast/video mute (email)' }
 ];
 
 /** Schedule consolidato = approvato (SetupMaster) + nuovi. */

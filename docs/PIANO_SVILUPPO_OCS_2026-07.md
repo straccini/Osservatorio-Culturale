@@ -159,6 +159,18 @@ Sezione dedicata "Professioni" in sidebar con foglio proprio — più visibilit�
 
 **Deliverable T-P.1**: audit + 8-12 nuove fonti podcast verificate live; poi ciclo discovery mensile nel dispatcher.
 
+### ✅ FATTO (2026-07-10) — Tappa P avviata (Discovery_v1.js)
+- 4 podcast museali/culturali **verificati live** e pronti (`fontiAggiungiBatchPodcast`): FMStreaming/Fondazione Musei Senesi, L'arte con chi ne fa parte/Abbonamento Musei, Contemporaneamente/Artribune-Treccani, Visto Italia/Collezione Farnesina-exibart.
+- `podcastAuditFonti` + `podcastAuditMensile` (email, giorno 1 del mese via dispatcher) — sorveglianza salute parco podcast/video.
+- Bottoni nel pannello admin (Impostazioni → Sistema → Strumenti): "+ Podcast cultura", "Audit podcast/video".
+- **Nota**: la scoperta di feed NUOVI richiede ricerca web (non fattibile in GAS) → resta un'azione periodica assistita; l'audit automatico segnala quando il parco si impoverisce.
+
+### ✅ FATTO (2026-07-10) — Tappa 4 avviata (Discovery_v1.js)
+- 4 feed **social RSS verificati live** (`fontiAggiungiBatchSocial`): Mastodon #CulturalHeritage, #GLAM, #digitalheritage (hashtag = aggregano molti autori) + Douglas McCarthy/Open GLAM.
+- Entrano nel flusso news (tipo rss) → gate cultura + score AI come filtro. Reversibile.
+- Instagram/X/Facebook esclusi (no RSS pubblico); canale social-like italiano = `scanNewsletterGmail` (già attivo).
+- Bottone admin: "+ Social (Mastodon)".
+
 ---
 
 ## Alternative di sviluppo ulteriori (non in piano, da valutare dopo)
