@@ -2536,6 +2536,54 @@
             <span id="cfgCommercialStatus" style="font-size:12px;color:var(--ink-3)"></span>
           </div>
         </div>
+
+        <!-- v4.25.18 — STRUMENTI ADMIN: lancia le funzioni one-shot senza editor GAS -->
+        <div class="admin-card" style="margin-bottom:14px;border-left:4px solid var(--amb-5,#0E7490)">
+          <h3 style="margin-top:0">Strumenti amministrativi</h3>
+          <p class="hint">Esegui le funzioni di manutenzione direttamente dall&rsquo;app (nessun editor GAS). Ogni azione mostra il risultato qui sotto. Le voci &laquo;anteprima/dry-run&raquo; non scrivono nulla.</p>
+
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;margin:10px 0 6px">Contenuti · scansioni adesso</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+            <button class="btn btn-secondary" onclick="OC.adminTool('lavoroScan', this)" style="font-size:12px;padding:6px 12px" title="Scansiona la GU 4ª Serie e salva i concorsi cultura ora">Scansiona Lavoro cultura</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('sediaScan', this)" style="font-size:12px;padding:6px 12px" title="Scarica i bandi UE cultura da SEDIA ora">Scansiona bandi UE (SEDIA)</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('normeDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quali news diventerebbero Norme">Norme · anteprima</button>
+            <button class="btn btn-secondary" onclick="if(confirm('Scrivere le norme trovate nel foglio Norme?'))OC.adminTool('normeApply', this)" style="font-size:12px;padding:6px 12px" title="Scrive nel foglio Norme">Norme · applica</button>
+          </div>
+
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;margin:12px 0 6px">Pulizia bandi</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+            <button class="btn btn-secondary" onclick="OC.adminTool('tedMalformatiDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima dei TED con titolo-numero o [object Object]">TED malformati · anteprima</button>
+            <button class="btn btn-secondary" onclick="if(confirm('Archiviare i bandi TED malformati?'))OC.adminTool('tedMalformatiApply', this)" style="font-size:12px;padding:6px 12px">TED malformati · archivia</button>
+            <button class="btn btn-secondary" onclick="if(confirm('Ri-classificare cultura e archiviare i non-culturali?'))OC.adminTool('backfillCultura', this)" style="font-size:12px;padding:6px 12px" title="Ricalcola SettoreCultura e archivia i non-cultura">Backfill cultura</button>
+            <button class="btn btn-secondary" onclick="if(confirm('Archiviare i bandi TED vuoti (solo numero, senza scadenza)?'))OC.adminTool('tedVuoti', this)" style="font-size:12px;padding:6px 12px">TED vuoti · archivia</button>
+          </div>
+
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;margin:12px 0 6px">Fonti</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+            <button class="btn btn-secondary" onclick="OC.adminTool('fontiDiagnosi', this)" style="font-size:12px;padding:6px 12px" title="Flag e conteggi fonti per capire cosa legge lo scanner">Diagnosi scanner fonti</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('fontiEstero', this)" style="font-size:12px;padding:6px 12px">+ Fonti estere</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('fontiNormativa', this)" style="font-size:12px;padding:6px 12px">+ Fonti normativa</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('fontiPrimarie', this)" style="font-size:12px;padding:6px 12px">+ Fonti primarie</button>
+          </div>
+
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;margin:12px 0 6px">Setup &amp; automazione</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+            <button class="btn btn-secondary" onclick="OC.adminTool('cronStato', this)" style="font-size:12px;padding:6px 12px" title="Cosa girerebbe nell'ora corrente">Stato cron</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('cronSetupDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima consolidamento trigger">Cron · anteprima</button>
+            <button class="btn btn-warning" onclick="if(confirm('Consolidare i trigger in un unico dispatcher orario?'))OC.adminTool('cronSetupApply', this)" style="font-size:12px;padding:6px 12px">Cron · applica</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('redazionaleSetup', this)" style="font-size:12px;padding:6px 12px" title="Rimuove i trigger redazionali obsoleti">Setup redazionale</button>
+          </div>
+
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;margin:12px 0 6px">Diagnostica · test (non scrivono)</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+            <button class="btn btn-secondary" onclick="OC.adminTool('quota', this)" style="font-size:12px;padding:6px 12px" title="Email rimaste oggi">Quota email</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('gateSelfTest', this)" style="font-size:12px;padding:6px 12px">Test gate bandi</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('lavoroSelfTest', this)" style="font-size:12px;padding:6px 12px">Test filtro lavoro</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('normeSelfTest', this)" style="font-size:12px;padding:6px 12px">Test filtro norme</button>
+          </div>
+
+          <div id="adminToolResult" style="margin-top:10px;font-size:12px;color:var(--ink-2);white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;background:var(--surface-2);border-radius:8px;padding:10px 12px;max-height:320px;overflow:auto;display:none"></div>
+        </div>
       </div>
 
       <!-- tab gestione rimosso: stats integrate in Sistema -->
@@ -11666,6 +11714,36 @@
         cb.parentElement.style.opacity = stato ? '1' : '0.45';
       });
       OC.toggleBandiTipo();
+    },
+    // v4.25.18 — Strumenti admin: lancia una funzione one-shot via backend gated
+    adminTool: function(tool, btn){
+      var box = document.getElementById('adminToolResult');
+      var label = btn ? btn.textContent : tool;
+      if (box) { box.style.display = 'block'; box.textContent = '⏳ ' + label + '…'; }
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+      var done = false;
+      var timer = setTimeout(function(){ if (!done && box) box.textContent = '⏱ Nessuna risposta entro 90s. L\'operazione potrebbe essere ancora in corso: ricontrolla più tardi.'; if (btn){ btn.disabled=false; btn.style.opacity='1'; } }, 90000);
+      google.script.run
+        .withSuccessHandler(function(r){
+          done = true; clearTimeout(timer);
+          if (btn){ btn.disabled=false; btn.style.opacity='1'; }
+          if (!box) return;
+          if (r && r.ok) {
+            var out = (r.result !== undefined) ? r.result : r;
+            box.textContent = '✅ ' + label + '\n\n' + JSON.stringify(out, null, 2);
+            if (typeof showToast==='function') showToast(label + ' — ok', 'ok');
+          } else {
+            box.textContent = '❌ ' + label + '\n\n' + ((r && r.error) || 'errore sconosciuto');
+            if (typeof showToast==='function') showToast(label + ' — errore', 'err');
+          }
+        })
+        .withFailureHandler(function(e){
+          done = true; clearTimeout(timer);
+          if (btn){ btn.disabled=false; btn.style.opacity='1'; }
+          if (box) box.textContent = '❌ ' + label + '\n\n' + e;
+          if (typeof showToast==='function') showToast(label + ' — errore', 'err');
+        })
+        .adminRunTool(tool, (window.OC_SESSION && window.OC_SESSION.token) || null);
     },
     // v4.25.14 — Flusso redazionale (pannello pagina Digest)
     redStato: function(){
