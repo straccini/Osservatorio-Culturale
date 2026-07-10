@@ -2625,6 +2625,8 @@
               <option value="all">Tutte</option>
             </select>
             <button class="btn btn-secondary" onclick="OC._loadSegCoda()">Ricarica</button>
+            <!-- v4.25.14 — invio rapido anche dalla moderazione (stesso modal degli utenti) -->
+            <button type="button" onclick="OC.apriFormSegnalazione()" style="margin-left:auto;background:var(--amb-2,#3F7A5E);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">+ Segnala iniziativa</button>
           </div>
           <div id="segStats" style="display:flex;gap:12px;margin-bottom:14px;font-size:13px">
             <span id="segStatCount" class="muted">—</span>
@@ -13550,7 +13552,7 @@
             + '</div>';
         });
         wrap.innerHTML = html;
-      }).withFailureHandler(function(){}).getMieSegnalazioni();
+      }).withFailureHandler(function(){}).getMieSegnalazioni((window.OC_SESSION && window.OC_SESSION.token) || null);
     } catch(e){}
   }, 2000);
 

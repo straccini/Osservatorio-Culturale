@@ -66,8 +66,11 @@ function inviaSegnalazione(payload) {
   return { ok:true, segnalazioneId:id, dimensioni:dimensioni };
 }
 
-function getMieSegnalazioni() {
-  var user = _segGetUser_(1);
+// v4.25.14 — FIX: mancava il token di sessione → su deploy anonimo Session è
+// vuota e il gate falliva SEMPRE ("Accedi per vedere le tue segnalazioni" anche
+// da loggati/superadmin). Stesso pattern dello sweep token v4.24.8.
+function getMieSegnalazioni(token) {
+  var user = _segGetUser_(1, token);
   if (!user) return { ok:false, error:'Accedi per vedere le tue segnalazioni.' };
   var sh = getMainSS().getSheetByName(SEG_SHEET);
   if (!sh || sh.getLastRow()<2) return { ok:true, segnalazioni:[] };
