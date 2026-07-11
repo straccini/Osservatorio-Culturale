@@ -2583,6 +2583,7 @@
             <button class="btn btn-secondary" onclick="OC.adminTool('fontiEstero', this)" style="font-size:12px;padding:6px 12px">+ Fonti estere</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('fontiNormativa', this)" style="font-size:12px;padding:6px 12px">+ Fonti normativa</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('fontiPrimarie', this)" style="font-size:12px;padding:6px 12px">+ Fonti primarie</button>
+            <button class="btn btn-primary" onclick="OC.adminTool('fontiPodcastSocial', this)" style="font-size:12px;padding:6px 14px;background:var(--amb-5,#0E7490)" title="Attiva in un clic le 4 fonti podcast + le 4 fonti social Mastodon">▶ Attiva fonti podcast + social</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('fontiPodcast', this)" style="font-size:12px;padding:6px 12px" title="4 podcast museali/culturali verificati (Musei Senesi, Abbonamento Musei, Artribune, Farnesina)">+ Podcast cultura</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('fontiSocial', this)" style="font-size:12px;padding:6px 12px" title="Feed Mastodon #CulturalHeritage/#GLAM/#digitalheritage + Open GLAM">+ Social (Mastodon)</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('podcastAudit', this)" style="font-size:12px;padding:6px 12px" title="Quante fonti podcast/video sono mute">Audit podcast/video</button>
@@ -3507,13 +3508,27 @@
       if (_filterLavoro.cat && _lavCat_(b) !== _filterLavoro.cat) return;
       shown++; html += _brRowHtml_(b);
     });
-    wrap.innerHTML = html;
-    var em = $('lavoroEmpty'); if (em) em.hidden = shown > 0;
-    var cnt = $('lavoroCount');
-    if (cnt) cnt.textContent = shown + (shown === 1 ? ' opportunità' : ' opportunità') + (list.length !== shown ? ' (su ' + list.length + ' totali)' : ' monitorate');
-    // La voce sidebar appare appena esistono concorsi
-    var navL = document.getElementById('nav-lavoro');
-    if (navL && list.length > 0) navL.hidden = false;
+    // v4.25.22 — se non ci sono concorsi (caso normale: escono di rado), collassa
+    // il blocco concorsi in una nota compatta e dai risalto alle Opportunità sotto
+    var haiConcorsi = list.length > 0;
+    var filtri1 = $('lavoroFilters'), filtri2 = $('lavoroCatFilters'), cnt = $('lavoroCount'), em = $('lavoroEmpty');
+    if (filtri1) filtri1.style.display = haiConcorsi ? '' : 'none';
+    if (filtri2) filtri2.style.display = haiConcorsi ? '' : 'none';
+    if (cnt) cnt.style.display = haiConcorsi ? '' : 'none';
+    if (haiConcorsi) {
+      wrap.innerHTML = html;
+      if (em) em.hidden = shown > 0;
+      if (cnt) cnt.textContent = shown + ' concors' + (shown === 1 ? 'o' : 'i') + (list.length !== shown ? ' (su ' + list.length + ' totali)' : '');
+    } else {
+      // nessun concorso in GU al momento → nota discreta, niente empty-state grande
+      wrap.innerHTML = '<div style="padding:12px 16px;background:var(--surface-2);border-radius:10px;font-size:13px;color:var(--ink-3);line-height:1.5">'
+        + '<b style="color:var(--ink-2)">Nessun concorso pubblico cultura in Gazzetta in questo momento.</b> '
+        + 'I concorsi per musei, biblioteche, soprintendenze e accademie escono periodicamente: '
+        + 'la sezione si aggiorna a ogni scansione (mercoledì e sabato). '
+        + 'Vedi intanto le <b>opportunità e residenze</b> qui sotto &darr;</div>';
+      if (em) em.hidden = true;
+    }
+    var navL = document.getElementById('nav-lavoro'); if (navL) navL.hidden = false;
   }
 
   /** Invalidate cache for a tipo — replaces 4 identical if/else chains */

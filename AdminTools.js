@@ -41,6 +41,7 @@ function adminRunTool(tool, token) {
       case 'fontiPrimarie':      r = fontiRipristinaPrimarie(); break;
       case 'fontiPodcast':       r = fontiAggiungiBatchPodcast(); break;   // Tappa P
       case 'fontiSocial':        r = fontiAggiungiBatchSocial(); break;    // Tappa 4
+      case 'fontiPodcastSocial': r = { podcast: fontiAggiungiBatchPodcast(), social: fontiAggiungiBatchSocial() }; break; // entrambe in 1 clic (idempotente)
       case 'podcastAudit':       r = podcastAuditFonti(); break;           // Tappa P
 
       // ── Contenuti: scansioni "adesso" ────────────────────────────────────

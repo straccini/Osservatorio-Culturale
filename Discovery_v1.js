@@ -160,6 +160,25 @@ function fontiAggiungiBatchSocial() {
 }
 
 // ============================================================================
+//  AUTO-SEED UNA TANTUM — attiva podcast + social senza intervento manuale.
+//  Gira dal dispatcher (giornaliero); alla prima esecuzione aggiunge i batch e
+//  imposta un flag → le volte successive è un no-op immediato. Idempotente anche
+//  senza flag grazie al dedup del gate.
+// ============================================================================
+function discoveryAutoSeedOnce() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('OC_DISCOVERY_SEEDED') === 'true') {
+    return { ok: true, skipped: true };
+  }
+  var rep = { ok: true, podcast: null, social: null };
+  try { rep.podcast = fontiAggiungiBatchPodcast(); } catch (e) { rep.podcast = { error: e.message }; }
+  try { rep.social = fontiAggiungiBatchSocial(); } catch (e2) { rep.social = { error: e2.message }; }
+  props.setProperty('OC_DISCOVERY_SEEDED', 'true');
+  Logger.log('[discoveryAutoSeedOnce] podcast+social attivati una tantum: ' + JSON.stringify(rep));
+  return rep;
+}
+
+// ============================================================================
 //  SELF-TEST — verifica la logica del gate senza scrivere nulla
 // ============================================================================
 function discoverySelfTest() {
