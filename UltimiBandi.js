@@ -423,6 +423,8 @@ function _radarBandiRows_(sh) {
   var iTipoB  = _findCol_(head, ['TipoBando','tipoBando','TIPO_BANDO']);
   var iSetCul = _findCol_(head, ['SettoreCultura','settoreCultura','SETTORE_CULTURA']);
   var iCpv    = _findCol_(head, ['CPV','cpv','CpvCode']);
+  var iDescr  = _findCol_(head, ['Descrizione','descrizione','DESCRIZIONE','Description']);
+  var iTipoAp = _findCol_(head, ['TipoAppalto','tipoAppalto','tipo_appalto','TIPO_APPALTO']);
   if (iTitolo < 0) iTitolo = 1;
   var oggi = new Date(); oggi.setHours(0,0,0,0);
   var out = [];
@@ -457,7 +459,9 @@ function _radarBandiRows_(sh) {
       tipoBando: iTipoB >= 0 ? String(row[iTipoB]||'') : '',
       settoreCultura: iSetCul >= 0 ? String(row[iSetCul]||'') : '',
       cpv: iCpv >= 0 ? String(row[iCpv]||'') : '',
-      cpvDescrizione: iCpv >= 0 ? (typeof getCpvDescrizione === 'function' ? getCpvDescrizione(String(row[iCpv]||'')) : '') : ''
+      cpvDescrizione: iCpv >= 0 ? (typeof getCpvDescrizione === 'function' ? getCpvDescrizione(String(row[iCpv]||'')) : '') : '',
+      descrizione: iDescr >= 0 ? String(row[iDescr]||'') : '',
+      tipoAppalto: iTipoAp >= 0 ? String(row[iTipoAp]||'') : ''
     });
   }
   return out;
@@ -493,7 +497,9 @@ function _mapBando_(x) {
     tipoBando: String(x.tipoBando || ''),
     settoreCultura: String(x.settoreCultura || ''),
     cpv: String(x.cpv || ''),
-    cpvDescrizione: String(x.cpvDescrizione || '')
+    cpvDescrizione: String(x.cpvDescrizione || ''),
+    descrizione: String(x.descrizione || ''),
+    tipoAppalto: String(x.tipoAppalto || '')
   };
 }
 

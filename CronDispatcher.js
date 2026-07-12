@@ -50,7 +50,13 @@ var OC_CRON_EXTRA = [
   // revisione admin → richiesta invio a superadmin lun 10 (o conferma anticipata)
   { fn: 'redazionaleVenerdi',    tipo: 'weekly', giorno: ScriptApp.WeekDay.FRIDAY, ora: 18, desc: 'Redazionale: crea editoriale+bozza digest e avvisa gli admin' },
   { fn: 'redazionaleLunedi',     tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 10, desc: 'Redazionale: scadenza termine → email autorizzazione al superadmin' },
+  // v4.27 — Arricchimento bandi: Claude Haiku aggiunge descrizione e tipo appalto
+  // ai bandi che ne sono privi. 50 per run, daily ore 3 → ~50/giorno, ~48gg per 2400.
+  { fn: 'enrichBandiRadarBatch', tipo: 'daily',  ora: 3,  desc: 'Arricchimento bandi RADAR via Claude AI (50/run)' },
+  // v4.27 — apiScanTutto compattato: era trigger standalone lun 07:00 (ApiConnettori.js)
+  { fn: 'apiScanTutto',          tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 7, desc: 'API connettori: TED + iTunes + DOAJ + YouTube (lunedi)' },
   // Tappa P — audit mensile salute fonti podcast/video (email all'admin, giorno 1)
+  // [ri-innestato v4.27.6: perso nel clobber tra sessioni parallele]
   { fn: 'podcastAuditMensile',   tipo: 'monthdays', giorniMese: [1], ora: 9, desc: 'Audit mensile fonti podcast/video mute (email)' },
   // Attivazione una tantum fonti podcast+social (auto-disabilita dopo il 1° run)
   { fn: 'discoveryAutoSeedOnce',  tipo: 'daily', ora: 8, desc: 'Attiva una tantum le nuove fonti podcast + social' }
@@ -142,15 +148,17 @@ function ocCronSetup(dryRun) {
   }
 
   // APPLICA
-  var rimossi = 0;
+  var rimossi = 0, rimossiNomi = [];
   ScriptApp.getProjectTriggers().forEach(function(tr) {
     var fn = tr.getHandlerFunction();
-    if (fn === 'ocCronDispatch' || schedFns[fn]) { ScriptApp.deleteTrigger(tr); rimossi++; }
+    if (fn === 'ocCronDispatch' || schedFns[fn]) { ScriptApp.deleteTrigger(tr); rimossi++; rimossiNomi.push(fn); }
   });
   ScriptApp.newTrigger('ocCronDispatch').timeBased().everyHours(1).create();
   PropertiesService.getScriptProperties().deleteProperty('OC_CRON_LAST');
-  Logger.log('ocCronSetup APPLICATO: rimossi ' + rimossi + ' trigger, creato 1 dispatcher orario. Preservati (non riconosciuti): ' + altri.length);
-  return { dryRun: false, rimossi: rimossi, dispatcherCreati: 1, preservati: altri };
+  // Ri-leggi per sapere cosa resta davvero
+  var restanti = ScriptApp.getProjectTriggers().map(function(tr) { return tr.getHandlerFunction(); });
+  Logger.log('ocCronSetup APPLICATO: rimossi ' + rimossi + ' [' + rimossiNomi.join(',') + ']. Restanti: [' + restanti.join(',') + ']');
+  return { dryRun: false, rimossi: rimossi, rimossiNomi: rimossiNomi, dispatcherCreati: 1, restanti: restanti, schedFnKeys: Object.keys(schedFns) };
 }
 
 function _ocNomeGiorno_(wd) {

@@ -289,7 +289,6 @@ function getLavoroOpportunita(limit) {
       var daFonte = _LC_FONTI_OPPORTUNITA.test(fonte);
       var daKeyword = _LC_OPPORTUNITA_RE.test(blob);
       if (!daFonte && !daKeyword) continue;
-      // tipo opportunità (per badge)
       var t = 'opportunita';
       if (/residenz|residency|artist[- ]in[- ]residence/i.test(blob)) t = 'residenza';
       else if (/open\s+call|call\s+for/i.test(blob)) t = 'call';

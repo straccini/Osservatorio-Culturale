@@ -194,13 +194,13 @@
   .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;transition:.15s;border:1px solid transparent;font-family:var(--font-ui)}
   .btn-primary{background:var(--ink);color:var(--paper)}.btn-primary:hover{background:var(--ink-2)}
   .btn-secondary{background:var(--surface-2);color:var(--ink);border-color:var(--rule)}.btn-secondary:hover{background:var(--surface);border-color:var(--rule-2)}
-  .btn-warning{background:#FEF3C7;color:#92400E;border-color:#FDE68A}.btn-warning:hover{background:#FDE68A}
+  .btn-warning{background:oklch(0.96 0.03 80);color:var(--warning);border-color:oklch(0.92 0.06 85)}.btn-warning:hover{background:oklch(0.92 0.06 85)}
   .digest-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--rule);font-size:13px;gap:10px}
   .digest-row:last-child{border-bottom:none}
   .digest-row .status{font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em}
   .digest-row .status.bozza{background:var(--surface-2);color:var(--ink-3)}
-  .digest-row .status.in_attesa_approvazione{background:#FEF3C7;color:#92400E}
-  .digest-row .status.inviato{background:#DCFCE7;color:#166534}
+  .digest-row .status.in_attesa_approvazione{background:oklch(0.96 0.03 80);color:var(--warning)}
+  .digest-row .status.inviato{background:oklch(0.96 0.03 165);color:var(--success)}
   .admin-counts{display:flex;gap:14px;margin:8px 0 14px 0;font-size:13px;color:var(--ink-3)}
   .admin-counts b{color:var(--ink);font-weight:600}
   .preview-iframe{width:100%;min-height:520px;border:1px solid var(--rule);border-radius:var(--r-sm);background:#fff;margin-top:10px}
@@ -222,19 +222,19 @@
      dissolve a 6s a prescindere -> non puo' MAI restare bloccato sopra l'app. -->
 <style>
   #appBootSplash{position:fixed;inset:0;z-index:100000;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;gap:16px;background:#F7F4EE;
+    align-items:center;justify-content:center;gap:16px;background:var(--surface);
     font-family:Georgia,'Times New Roman',serif;
     animation:ocBootFailsafe .6s ease 6s forwards}
   #appBootSplash.oc-hide{opacity:0;visibility:hidden;pointer-events:none;
     transition:opacity .45s ease, visibility 0s linear .45s}
-  #appBootSplash .oc-boot-brand{font-style:italic;font-size:30px;color:#935851;letter-spacing:.01em;line-height:1}
+  #appBootSplash .oc-boot-brand{font-style:italic;font-size:30px;color:var(--accent);letter-spacing:.01em;line-height:1}
   #appBootSplash .oc-boot-sub{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#5C4332}
+    font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2)}
   #appBootSplash .oc-boot-spin{width:26px;height:26px;border:2.5px solid rgba(147,88,81,.22);
-    border-top-color:#935851;border-radius:50%;animation:ocBootSpin .8s linear infinite}
+    border-top-color:var(--accent);border-radius:50%;animation:ocBootSpin .8s linear infinite}
   @keyframes ocBootSpin{to{transform:rotate(360deg)}}
   @keyframes ocBootFailsafe{to{opacity:0;visibility:hidden;pointer-events:none}}
-  @media (prefers-color-scheme:dark){#appBootSplash{background:#1A1815}#appBootSplash .oc-boot-sub{color:#C9B79E}}
+  @media (prefers-color-scheme:dark){#appBootSplash{background:var(--paper)}#appBootSplash .oc-boot-sub{color:var(--ink-3)}}
 </style>
 <div id="appBootSplash" role="status" aria-label="Caricamento Sinopia">
   <div class="oc-boot-brand">Sinopia</div>
@@ -244,7 +244,7 @@
 
 <!-- SEO: contenuto visibile ai crawler che non eseguono JS -->
 <noscript>
-<div style="max-width:800px;margin:40px auto;padding:24px;font-family:Georgia,serif;color:#3A2818;line-height:1.6">
+<div style="max-width:800px;margin:40px auto;padding:24px;font-family:Georgia,serif;color:var(--ink-2);line-height:1.6">
   <h1>Sinopia — Osservatorio Culturale per Musei e Patrimonio</h1>
   <p>Sinopia è la piattaforma di monitoraggio in tempo reale di <strong>bandi, news, podcast, video e pubblicazioni</strong> per professionisti della cultura, musei e patrimonio culturale italiano. Utilizza scanner basati su intelligenza artificiale per aggregare contenuti da oltre 30 fonti istituzionali.</p>
 
@@ -298,7 +298,7 @@
 
     <div style="background:linear-gradient(135deg,#F1E6D6 0%,var(--surface,#F7F7F8) 100%);padding:24px 28px;border-bottom:1px solid var(--rule,#E5E5E7)">
       <div style="font-family:var(--font-display,Georgia,serif);font-style:italic;font-size:24px;color:var(--accent,#935851);line-height:1">Sinopia</div>
-      <div style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#5C4332;margin-top:4px">Osservatorio Culturale</div>
+      <div style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);margin-top:4px">Osservatorio Culturale</div>
     </div>
 
     <div style="padding:24px 28px">
@@ -418,7 +418,7 @@
       <div id="prenotaBlockBando" hidden>
         <div style="background:#EEF3F8;border:1px solid #C9D6E3;border-left:3px solid var(--amb-3,#2563EB);border-radius:8px;padding:14px 18px;margin-bottom:18px">
           <label for="prenotaBandoNome" style="font-size:12.5px;font-weight:700;color:var(--amb-3,#2563EB);display:block;margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase">Su quale bando vorresti la consulenza?</label>
-          <input type="text" id="prenotaBandoNome" maxlength="200" placeholder="Es: Avviso 8.7 Regione Puglia · oppure PNRR M1C3 musei · oppure Compagnia di San Paolo Arts" style="width:100%;padding:10px 12px;border:1.5px solid #C9D6E3;border-radius:8px;font-size:13.5px;font-family:inherit;outline:none;box-sizing:border-box"/>
+          <input type="text" id="prenotaBandoNome" maxlength="200" placeholder="Es: Avviso 8.7 Regione Puglia · oppure PNRR M1C3 musei · oppure Compagnia di San Paolo Arts" style="width:100%;padding:10px 12px;border:1.5px solid var(--rule-2);border-radius:8px;font-size:13.5px;font-family:inherit;outline:none;box-sizing:border-box"/>
           <div style="font-size:11.5px;color:var(--ink-3);margin-top:6px">Indica titolo, ente erogatore o codice del bando. Se hai un link, incollalo nella descrizione.</div>
         </div>
       </div>
@@ -585,33 +585,33 @@
       <!-- v4.18.9 (2026-05-12) — Filtri semplificati: ricerca prominente + 3 select + export -->
       <div class="bandi-search-bar" style="margin:14px 0 10px">
         <div style="position:relative;display:flex;align-items:center">
-          <span aria-hidden="true" style="position:absolute;left:18px;font-size:18px;color:#9C8E76;pointer-events:none">⌕</span>
+          <span aria-hidden="true" style="position:absolute;left:18px;font-size:18px;color:var(--ink-3);pointer-events:none">⌕</span>
           <input type="search" id="bandiSearch" aria-label="Cerca bandi" placeholder="Cerca per titolo, ente, settore, regione o parola chiave…" oninput="OC.searchBandi(this.value)" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
         </div>
       </div>
       <!-- v4.25.3 — Tipo bando: dropdown con checkbox multi-select + conteggi -->
       <div id="bandiTipoDropdown" style="position:relative;display:inline-block;margin-bottom:10px">
-        <button id="bandiTipoBtn" onclick="OC.toggleTipoDropdown()" style="padding:8px 16px;border:2px solid var(--accent,#8B3A1F);border-radius:14px;background:#fff;font-size:13px;color:var(--ink,#101010);cursor:pointer;font-weight:600;display:flex;align-items:center;gap:6px">
+        <button id="bandiTipoBtn" onclick="OC.toggleTipoDropdown()" style="padding:8px 16px;border:2px solid var(--accent,#8B3A1F);border-radius:14px;background:var(--paper);font-size:13px;color:var(--ink,#101010);cursor:pointer;font-weight:600;display:flex;align-items:center;gap:6px">
           Tipo bando ▾ <span id="bandiTipoCountBadge" style="background:var(--accent,#8B3A1F);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px">tutti</span>
         </button>
         <div id="bandiTipoMenu" style="display:none;position:absolute;top:100%;left:0;z-index:100;background:#fff;border:1px solid var(--rule-2,#D2D2D7);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px 0;min-width:260px;margin-top:4px">
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:#92400E;border-bottom:1px solid #f0f0f0">
-            <input type="checkbox" value="finanziamento" onchange="OC.toggleBandiTipo()" checked style="accent-color:#D97706;width:16px;height:16px"> 💰 Finanziamenti <span id="cnt_finanziamento" style="margin-left:auto;font-size:11px;color:#aaa"></span>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--warning);border-bottom:1px solid var(--rule)">
+            <input type="checkbox" value="finanziamento" onchange="OC.toggleBandiTipo()" checked style="accent-color:#D97706;width:16px;height:16px"> 💰 Finanziamenti <span id="cnt_finanziamento" style="margin-left:auto;font-size:11px;color:var(--ink-4)"></span>
           </label>
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:#1E40AF;border-bottom:1px solid #f0f0f0">
-            <input type="checkbox" value="servizio_fornitura" onchange="OC.toggleBandiTipo()" checked style="accent-color:#3B82F6;width:16px;height:16px"> 🔧 Servizi e Forniture <span id="cnt_servizio_fornitura" style="margin-left:auto;font-size:11px;color:#aaa"></span>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--amb-3);border-bottom:1px solid var(--rule)">
+            <input type="checkbox" value="servizio_fornitura" onchange="OC.toggleBandiTipo()" checked style="accent-color:#3B82F6;width:16px;height:16px"> 🔧 Servizi e Forniture <span id="cnt_servizio_fornitura" style="margin-left:auto;font-size:11px;color:var(--ink-4)"></span>
           </label>
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:#065F46;border-bottom:1px solid #f0f0f0">
-            <input type="checkbox" value="lavori" onchange="OC.toggleBandiTipo()" checked style="accent-color:#059669;width:16px;height:16px"> 🏗 Lavori <span id="cnt_lavori" style="margin-left:auto;font-size:11px;color:#aaa"></span>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--success);border-bottom:1px solid var(--rule)">
+            <input type="checkbox" value="lavori" onchange="OC.toggleBandiTipo()" checked style="accent-color:#059669;width:16px;height:16px"> 🏗 Lavori <span id="cnt_lavori" style="margin-left:auto;font-size:11px;color:var(--ink-4)"></span>
           </label>
           <!-- v4.25.15 — checkbox "Lavoro e Concorsi" rimossa: i concorsi hanno la pagina dedicata "Lavoro cultura" -->
 
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:500;color:#854D0E;background:#FFFBEB">
-            <input type="checkbox" value="_senza" onchange="OC.toggleBandiTipo()" checked style="accent-color:#EAB308;width:16px;height:16px"> ⚠ Senza categoria <span id="cnt_senza" style="margin-left:auto;font-size:11px;color:#aaa"></span>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:500;color:var(--warning);background:oklch(0.98 0.03 90)">
+            <input type="checkbox" value="_senza" onchange="OC.toggleBandiTipo()" checked style="accent-color:#EAB308;width:16px;height:16px"> ⚠ Senza categoria <span id="cnt_senza" style="margin-left:auto;font-size:11px;color:var(--ink-4)"></span>
           </label>
-          <div style="padding:6px 16px;border-top:1px solid #f0f0f0;display:flex;gap:8px">
-            <button onclick="OC.selezionaTuttiBandiTipo(true)" style="flex:1;padding:4px;border:1px solid #ddd;border-radius:6px;background:#f9f9f9;cursor:pointer;font-size:11px">Seleziona tutti</button>
-            <button onclick="OC.selezionaTuttiBandiTipo(false)" style="flex:1;padding:4px;border:1px solid #ddd;border-radius:6px;background:#f9f9f9;cursor:pointer;font-size:11px">Deseleziona</button>
+          <div style="padding:6px 16px;border-top:1px solid var(--rule);display:flex;gap:8px">
+            <button onclick="OC.selezionaTuttiBandiTipo(true)" style="flex:1;padding:4px;border:1px solid var(--rule);border-radius:6px;background:var(--surface);cursor:pointer;font-size:11px">Seleziona tutti</button>
+            <button onclick="OC.selezionaTuttiBandiTipo(false)" style="flex:1;padding:4px;border:1px solid var(--rule);border-radius:6px;background:var(--surface);cursor:pointer;font-size:11px">Deseleziona</button>
           </div>
         </div>
       </div>
@@ -681,7 +681,7 @@
       <!-- v4.18.15 (2026-05-12) E1 — Filtri unificati News (stesso pattern Bandi) -->
       <div class="news-search-bar" style="margin:14px 0 10px">
         <div style="position:relative;display:flex;align-items:center">
-          <span aria-hidden="true" style="position:absolute;left:18px;font-size:18px;color:#9C8E76;pointer-events:none">⌕</span>
+          <span aria-hidden="true" style="position:absolute;left:18px;font-size:18px;color:var(--ink-3);pointer-events:none">⌕</span>
           <input type="search" id="newsSearch" aria-label="Cerca news" placeholder="Cerca per titolo, fonte, tematica o parola chiave…" oninput="OC.searchNews(this.value)" title="Filtra le news in tempo reale per testo: cerca in titolo, fonte, settore e sommario" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
         </div>
       </div>
@@ -729,7 +729,7 @@
       <!-- v4.18.15 (2026-05-12) E2 — Filtri unificati Podcast -->
       <div class="podcast-search-bar" style="margin:14px 0 10px">
         <div style="position:relative;display:flex;align-items:center">
-          <span aria-hidden="true" style="position:absolute;left:18px;font-size:18px;color:#9C8E76;pointer-events:none">⌕</span>
+          <span aria-hidden="true" style="position:absolute;left:18px;font-size:18px;color:var(--ink-3);pointer-events:none">⌕</span>
           <input type="search" id="podcastSearch" aria-label="Cerca podcast" placeholder="Cerca per titolo, show, autore o parola chiave…" oninput="OC.searchPodcast(this.value)" title="Filtra i podcast in tempo reale per testo" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
         </div>
       </div>
@@ -777,7 +777,7 @@
       <!-- v4.18.15 (2026-05-12) E3 — Filtri unificati Video -->
       <div class="video-search-bar" style="margin:14px 0 10px">
         <div style="position:relative;display:flex;align-items:center">
-          <span aria-hidden="true" style="position:absolute;left:18px;font-size:18px;color:#9C8E76;pointer-events:none">⌕</span>
+          <span aria-hidden="true" style="position:absolute;left:18px;font-size:18px;color:var(--ink-3);pointer-events:none">⌕</span>
           <input type="search" id="videoSearch" aria-label="Cerca video" placeholder="Cerca per titolo, canale, tematica o parola chiave…" oninput="OC.searchVideo(this.value)" title="Filtra i video in tempo reale per testo" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
         </div>
       </div>
@@ -825,7 +825,7 @@
       <!-- v4.18.15 (2026-05-12) E4 — Filtri unificati Libri -->
       <div class="libri-search-bar" style="margin:14px 0 10px">
         <div style="position:relative;display:flex;align-items:center">
-          <span aria-hidden="true" style="position:absolute;left:18px;font-size:18px;color:#9C8E76;pointer-events:none">⌕</span>
+          <span aria-hidden="true" style="position:absolute;left:18px;font-size:18px;color:var(--ink-3);pointer-events:none">⌕</span>
           <input type="search" id="libriSearch" aria-label="Cerca libri" placeholder="Cerca per titolo, autore, editore o parola chiave…" oninput="OC.searchLibri(this.value)" title="Filtra le pubblicazioni in tempo reale per testo" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
         </div>
       </div>
@@ -1096,7 +1096,7 @@
     <!-- ===== PAGE LAVORO CULTURA (v4.25.15) — concorsi e opportunità professionali ===== -->
     <section class="page" id="page-lavoro">
       <div class="page-head">
-        <div class="page-eyebrow" style="color:#6B21A8">Sezioni &middot; Lavoro cultura</div>
+        <div class="page-eyebrow" style="color:var(--amb-1)">Sezioni &middot; Lavoro cultura</div>
         <h1 class="page-title">Concorsi e <em>opportunit&agrave; professionali</em></h1>
         <p class="page-sub">Due canali per chi lavora nella cultura: <b>concorsi pubblici</b> (Gazzetta Ufficiale 4&ordf; Serie: soprintendenze, musei, biblioteche, accademie, teatri, enti) e <b>opportunit&agrave; e residenze</b> (open call, borse, premi e mobilit&agrave; internazionale). Aggiornati automaticamente.</p>
       </div>
@@ -1258,7 +1258,7 @@
         <h2 style="font-size:26px;margin:0 0 12px;font-family:Georgia,serif">Pronti a iniziare?</h2>
         <p style="font-size:15px;line-height:1.6;max-width:560px;margin:0 auto 22px;opacity:.95">10 minuti per avere uno strumento di lavoro che normalmente costa migliaia di euro di consulenza esterna. Senza impegno, senza vendita, senza follow-up indesiderato.</p>
         <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
-          <button onclick="OC.go('matrix')" style="background:#fff;color:#8E6E1F;border:none;padding:14px 28px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">Inizia ora l'autovalutazione →</button>
+          <button onclick="OC.go('matrix')" style="background:var(--paper);color:var(--warning);border:none;padding:14px 28px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">Inizia ora l'autovalutazione →</button>
           <a href="mailto:sinopiaconsulting@gmail.com?subject=MuseMu%20Matrix%20-%20Richiesta%20informazioni" style="display:inline-block;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.6);padding:14px 24px;border-radius:8px;font-size:14px;text-decoration:none">Scrivimi prima</a>
         </div>
         <div style="margin-top:24px;font-size:12px;opacity:.85">
@@ -1436,7 +1436,7 @@
 
     <section class="page" id="page-chisiamo">
       <div class="page-head">
-        <div class="page-eyebrow" style="color:var(--accent,#935851)">Osservatorio Culturale &middot; Sinopia &middot; Chi siamo</div>
+        <div class="page-eyebrow" style="color:var(--accent)">Osservatorio Culturale &middot; Sinopia &middot; Chi siamo</div>
         <h1 class="page-title" id="cs-titolo">Una rete di esperti per la <em>cultura italiana</em></h1>
         <p class="page-sub" id="cs-sottotitolo">
           Siamo un team di progettisti e redattori culturali, esperti di tecnologie inclusive,
@@ -1449,19 +1449,19 @@
         </p>
       </div>
 
-      <!-- v4.18.26 — Sezione "Perché Sinopia" -->
-      <section style="margin:24px 0 28px;padding:24px 32px;background:#F1E6D6;border:1px solid var(--rule,#E5E5E7);border-left:3px solid var(--accent,#935851);border-radius:12px;display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:start">
-        <div style="font-family:var(--font-display);font-size:60px;line-height:.85;color:var(--accent,#935851);opacity:.85;flex-shrink:0;font-style:italic">S</div>
+      <!-- v4.27.10 — Sezione "Perché Sinopia" (no side-stripe, OKLCH) -->
+      <section style="margin:28px 0 32px;padding:28px 32px;background:var(--accent-soft);border:1px solid var(--rule);border-radius:var(--r-md);display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:start">
+        <div style="font-family:var(--font-serif);font-size:60px;line-height:.85;color:var(--accent);opacity:.85;flex-shrink:0">S</div>
         <div>
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#935851);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Perch&eacute; Sinopia</div>
-          <h2 id="cs-sinopia-titolo" style="font-family:var(--font-display);font-size:1.4rem;line-height:1.2;margin:0 0 10px;color:var(--ink,#101010);font-weight:500"><em>Sinopia</em>: il disegno che precede l&rsquo;affresco</h2>
-          <p id="cs-sinopia-p1" style="font-family:var(--font-display);font-size:14.5px;line-height:1.6;color:#5C4332;margin:0 0 8px">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Perch&eacute; Sinopia</div>
+          <h2 id="cs-sinopia-titolo" style="font-family:var(--font-serif);font-size:1.5rem;line-height:1.2;margin:0 0 10px;color:var(--ink);font-weight:500"><em>Sinopia</em>: il disegno che precede l&rsquo;affresco</h2>
+          <p id="cs-sinopia-p1" style="font-family:var(--font-ui);font-size:14px;line-height:1.65;color:var(--ink-2);margin:0 0 8px">
             La <b>sinopia</b> &egrave; il disegno preparatorio in terra rossa che, nel Medioevo e nel
             Rinascimento, gli artisti tracciavano sull&rsquo;intonaco grezzo prima di stendere lo strato
             finale dell&rsquo;affresco. Era il momento in cui l&rsquo;opera cominciava a prendere forma:
             una trama ancora nascosta, atta ad orientare la stesura del colore.
           </p>
-          <p id="cs-sinopia-p2" style="font-family:var(--font-display);font-size:14.5px;line-height:1.6;color:#5C4332;margin:0">
+          <p id="cs-sinopia-p2" style="font-family:var(--font-ui);font-size:14px;line-height:1.65;color:var(--ink-2);margin:0">
             Il nome <b>OCS, Osservatorio Culturale Sinopia</b>, racconta esattamente il nostro lavoro:
             <b>individuare in anticipo le linee del cambiamento culturale</b>, a partire da bandi, nuove
             pratiche, idee e normative, molto prima che diventino visibili a tutti. Sinopia raccoglie,
@@ -1471,19 +1471,16 @@
         </div>
       </section>
 
-      <!-- Manifesto operativo -->
-      <section style="margin:24px 0 28px;padding:26px 32px;background:#F6F2EA;border:1px solid var(--rule);border-radius:14px;display:grid;grid-template-columns:3px 1fr;gap:24px;align-items:start">
-        <span aria-hidden="true" style="align-self:stretch;background:linear-gradient(180deg,var(--accent,#935851) 0%,var(--amb-2,#10916D) 50%,var(--amb-3,#2563EB) 100%);border-radius:2px"></span>
-        <div>
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--link,var(--accent,#935851));letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Manifesto operativo</div>
-          <h2 id="cs-manifesto-titolo" style="font-family:var(--font-display);font-size:1.5rem;line-height:1.2;margin:0 0 12px;color:var(--ink);font-weight:500">Il museo come <em>presidio identitario</em>, non come contenitore.</h2>
-          <p id="cs-manifesto-p" style="font-family:var(--font-display);font-size:15px;line-height:1.65;color:var(--ink-2);margin:0">
-            Crediamo nel modello dei <b>Musei Sensibili</b>: luoghi della cultura che sanno ascoltare le proprie
-            comunit&agrave;, accogliere ogni pubblico senza barriere, valorizzare il patrimonio attraverso
-            linguaggi contemporanei e tecnologie inclusive. Ogni progetto integra simultaneamente sei assi:
-            contenuto, accessibilit&agrave;, pubblico, tecnologia, comunit&agrave;, sostenibilit&agrave;.
-          </p>
-        </div>
+      <!-- v4.27.10 — Manifesto operativo (no gradient side-stripe) -->
+      <section style="margin:28px 0 32px;padding:28px 32px;background:var(--surface);border:1px solid var(--rule);border-radius:var(--r-md)">
+        <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Manifesto operativo</div>
+        <h2 id="cs-manifesto-titolo" style="font-family:var(--font-serif);font-size:1.5rem;line-height:1.2;margin:0 0 12px;color:var(--ink);font-weight:500">Il museo come <em>presidio identitario</em>, non come contenitore.</h2>
+        <p id="cs-manifesto-p" style="font-family:var(--font-ui);font-size:14.5px;line-height:1.65;color:var(--ink-2);margin:0">
+          Crediamo nel modello dei <b>Musei Sensibili</b>: luoghi della cultura che sanno ascoltare le proprie
+          comunit&agrave;, accogliere ogni pubblico senza barriere, valorizzare il patrimonio attraverso
+          linguaggi contemporanei e tecnologie inclusive. Ogni progetto integra simultaneamente sei assi:
+          contenuto, accessibilit&agrave;, pubblico, tecnologia, comunit&agrave;, sostenibilit&agrave;.
+        </p>
       </section>
 
       <!-- Profili professionali -->
@@ -1492,7 +1489,7 @@
           <h2 class="section-title">Aree di <em>competenza</em></h2>
         </div>
       </div>
-      <p style="font-family:var(--font-display);font-size:14px;color:var(--ink-3);line-height:1.55;margin:0 0 18px;max-width:760px">
+      <p style="font-family:var(--font-ui);font-size:14px;color:var(--ink-3);line-height:1.6;margin:0 0 18px;max-width:760px">
         Aree di consulenza e sviluppo di opportunit&agrave; per musei e luoghi della cultura,
         rivolte a soggetti pubblici e privati, fondazioni ed enti del Terzo settore.
         I profili professionali della rete saranno pubblicati prossimamente.
@@ -1501,78 +1498,78 @@
            verranno aggiunte in seguito quando i profili reali saranno confermati. -->
       <div class="cs-competenze-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:36px">
 
-        <article style="padding:20px 22px;background:#fff;border:1px solid var(--rule);border-radius:12px;border-left:4px solid var(--accent,#935851)">
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#935851);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Coordinamento generale</div>
-          <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:600;color:var(--ink);margin:0 0 8px">Direzione operativa del progetto</h3>
-          <p style="font-size:13.5px;line-height:1.55;color:var(--ink-2);margin:0">
+        <article style="padding:20px 22px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-md)">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Coordinamento generale</div>
+          <h3 style="font-family:var(--font-serif);font-size:1.125rem;font-weight:500;color:var(--ink);margin:0 0 8px">Direzione operativa del progetto</h3>
+          <p style="font-family:var(--font-ui);font-size:14px;line-height:1.6;color:var(--ink-2);margin:0">
             Coordinamento integrato del team multidisciplinare, gestione delle relazioni con i committenti,
             pianificazione operativa, controllo qualit&agrave; e supervisione dei deliverable di progetto.
           </p>
         </article>
 
-        <article style="padding:20px 22px;background:#fff;border:1px solid var(--rule);border-radius:12px;border-left:4px solid var(--accent,#935851)">
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#935851);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Coordinamento strategico</div>
-          <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:600;color:var(--ink);margin:0 0 8px">Strategia culturale &amp; bandi</h3>
-          <p style="font-size:13.5px;line-height:1.55;color:var(--ink-2);margin:0">
+        <article style="padding:20px 22px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-md)">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Coordinamento strategico</div>
+          <h3 style="font-family:var(--font-serif);font-size:1.125rem;font-weight:500;color:var(--ink);margin:0 0 8px">Strategia culturale &amp; bandi</h3>
+          <p style="font-family:var(--font-ui);font-size:14px;line-height:1.6;color:var(--ink-2);margin:0">
             Strategia culturale e turistica, candidature bandi UE/PNRR/MiC, capitali della cultura,
             offerte tecniche per gare pubbliche. Visione d&rsquo;insieme e regia dei progetti di trasformazione museale.
           </p>
         </article>
 
-        <article style="padding:20px 22px;background:#fff;border:1px solid var(--rule);border-radius:12px;border-left:4px solid var(--amb-2,#10916D)">
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--amb-2,#10916D);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Tecnologie inclusive &amp; AI</div>
-          <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:600;color:var(--ink);margin:0 0 8px">Accessibilit&agrave; integrata</h3>
-          <p style="font-size:13.5px;line-height:1.55;color:var(--ink-2);margin:0">
+        <article style="padding:20px 22px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-md)">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--amb-2);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Tecnologie inclusive &amp; AI</div>
+          <h3 style="font-family:var(--font-serif);font-size:1.125rem;font-weight:500;color:var(--ink);margin:0 0 8px">Accessibilit&agrave; integrata</h3>
+          <p style="font-family:var(--font-ui);font-size:14px;line-height:1.6;color:var(--ink-2);margin:0">
             LIS (Lingua dei Segni Italiana), CAA, Easy to Read, Braille semplificato, Digital Human,
             audiodescrizioni, conformit&agrave; WCAG 2.1 AA. Intelligenza artificiale per narrazione adattiva.
             Ambiti: autismo, ipovedenza, sordit&agrave;, disabilit&agrave; cognitive, anziani, NEET, stranieri.
           </p>
         </article>
 
-        <article style="padding:20px 22px;background:#fff;border:1px solid var(--rule);border-radius:12px;border-left:4px solid var(--amb-3,#2563EB)">
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--amb-3,#2563EB);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Allestimenti &amp; HW/SW</div>
-          <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:600;color:var(--ink);margin:0 0 8px">Multimedialit&agrave; museale</h3>
-          <p style="font-size:13.5px;line-height:1.55;color:var(--ink-2);margin:0">
+        <article style="padding:20px 22px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-md)">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--amb-3);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Allestimenti &amp; HW/SW</div>
+          <h3 style="font-family:var(--font-serif);font-size:1.125rem;font-weight:500;color:var(--ink);margin:0 0 8px">Multimedialit&agrave; museale</h3>
+          <p style="font-family:var(--font-ui);font-size:14px;line-height:1.6;color:var(--ink-2);margin:0">
             Progettazione integrata di hardware e software museale: ledwall, proiezioni immersive,
             totem interattivi, CMS centralizzati, sensoristica IoT, mapping, AR/VR ed edutainment
             per scuole e famiglie.
           </p>
         </article>
 
-        <article style="padding:20px 22px;background:#fff;border:1px solid var(--rule);border-radius:12px;border-left:4px solid var(--accent,#935851)">
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent,#935851);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Pubblico &amp; comunit&agrave;</div>
-          <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:600;color:var(--ink);margin:0 0 8px">Co-progettazione &amp; mediazione</h3>
-          <p style="font-size:13.5px;line-height:1.55;color:var(--ink-2);margin:0">
+        <article style="padding:20px 22px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-md)">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--accent);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Pubblico &amp; comunit&agrave;</div>
+          <h3 style="font-family:var(--font-serif);font-size:1.125rem;font-weight:500;color:var(--ink);margin:0 0 8px">Co-progettazione &amp; mediazione</h3>
+          <p style="font-family:var(--font-ui);font-size:14px;line-height:1.6;color:var(--ink-2);margin:0">
             Segmentazione e profilazione dei pubblici, mediazione culturale, partecipazione attiva
             della comunit&agrave;, governance condivisa, valutazione di impatto sociale.
             Metodi: workshop partecipativi, living lab, community curation, outcome mapping.
           </p>
         </article>
 
-        <article style="padding:20px 22px;background:#fff;border:1px solid var(--rule);border-radius:12px;border-left:4px solid var(--amb-1,#7C3AED)">
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--amb-1,#7C3AED);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Contenuti &amp; ricerca</div>
-          <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:600;color:var(--ink);margin:0 0 8px">Ricerca &amp; narrativa museale</h3>
-          <p style="font-size:13.5px;line-height:1.55;color:var(--ink-2);margin:0">
+        <article style="padding:20px 22px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-md)">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--amb-1);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Contenuti &amp; ricerca</div>
+          <h3 style="font-family:var(--font-serif);font-size:1.125rem;font-weight:500;color:var(--ink);margin:0 0 8px">Ricerca &amp; narrativa museale</h3>
+          <p style="font-family:var(--font-ui);font-size:14px;line-height:1.6;color:var(--ink-2);margin:0">
             Ricerca storica e archivistica, costruzione di narrativa museale, sceneggiatura per
             allestimenti, redazione testi multilivello (esperto / generale / ETR), supervisione
             scientifica delle audioguide. Lingue: IT, EN, FR + versioni accessibili (LIS, Braille, ETR).
           </p>
         </article>
 
-        <article style="padding:20px 22px;background:#fff;border:1px solid var(--rule);border-radius:12px;border-left:4px solid var(--amb-5,#0E7490)">
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--amb-5,#0E7490);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Governance &amp; finanza</div>
-          <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:600;color:var(--ink);margin:0 0 8px">Sostenibilit&agrave; economica</h3>
-          <p style="font-size:13.5px;line-height:1.55;color:var(--ink-2);margin:0">
+        <article style="padding:20px 22px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-md)">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--amb-5);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Governance &amp; finanza</div>
+          <h3 style="font-family:var(--font-serif);font-size:1.125rem;font-weight:500;color:var(--ink);margin:0 0 8px">Sostenibilit&agrave; economica</h3>
+          <p style="font-family:var(--font-ui);font-size:14px;line-height:1.6;color:var(--ink-2);margin:0">
             Piani economici, rendicontazione fondi, modelli di gestione (in-house, concessione,
             fondazione di partecipazione), valutazione ex-ante ed ex-post, monitoraggio KPI culturali.
             Strumenti: business model canvas culturale, SROI, analisi DNSH, rendicontazione UE.
           </p>
         </article>
 
-        <article style="padding:20px 22px;background:#fff;border:1px solid var(--rule);border-radius:12px;border-left:4px solid #5C8A6D">
-          <div style="font-family:var(--font-ui);font-size:10.5px;color:#5C8A6D;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Sviluppo territoriale</div>
-          <h3 style="font-family:var(--font-display);font-size:1.05rem;font-weight:600;color:var(--ink);margin:0 0 8px">Reti &amp; partnership</h3>
-          <p style="font-size:13.5px;line-height:1.55;color:var(--ink-2);margin:0">
+        <article style="padding:20px 22px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-md)">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--amb-2);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Sviluppo territoriale</div>
+          <h3 style="font-family:var(--font-serif);font-size:1.125rem;font-weight:500;color:var(--ink);margin:0 0 8px">Reti &amp; partnership</h3>
+          <p style="font-family:var(--font-ui);font-size:14px;line-height:1.6;color:var(--ink-2);margin:0">
             Costruzione di partnership pubblico-private, reti museali territoriali, candidature
             congiunte per capitali della cultura, raccordo con amministrazioni locali, fondazioni
             bancarie ed enti del terzo settore. Esperienza su scala regionale ed europea (Creative Europe).
@@ -1588,20 +1585,20 @@
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:18px 0 36px">
-        <div style="padding:14px 16px;background:#fff;border:1px solid var(--rule);border-radius:10px">
-          <div style="font-family:var(--font-ui);font-size:11px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">Soggetti pubblici</div>
+        <div style="padding:14px 16px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-sm)">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--ink-3);letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-bottom:4px">Soggetti pubblici</div>
           <div style="font-size:13.5px;color:var(--ink-2);line-height:1.5">Musei civici e statali, comuni, regioni, unioni di comuni, soprintendenze, parchi archeologici, biblioteche pubbliche.</div>
         </div>
-        <div style="padding:14px 16px;background:#fff;border:1px solid var(--rule);border-radius:10px">
-          <div style="font-family:var(--font-ui);font-size:11px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">Fondazioni</div>
+        <div style="padding:14px 16px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-sm)">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--ink-3);letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-bottom:4px">Fondazioni</div>
           <div style="font-size:13.5px;color:var(--ink-2);line-height:1.5">Fondazioni museali, fondazioni di partecipazione, fondazioni bancarie, fondazioni comunitarie, ETS culturali.</div>
         </div>
-        <div style="padding:14px 16px;background:#fff;border:1px solid var(--rule);border-radius:10px">
-          <div style="font-family:var(--font-ui);font-size:11px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">Soggetti privati</div>
+        <div style="padding:14px 16px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-sm)">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--ink-3);letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-bottom:4px">Soggetti privati</div>
           <div style="font-size:13.5px;color:var(--ink-2);line-height:1.5">Musei privati, dimore storiche, case-museo, archivi d&rsquo;impresa, collezioni aziendali, gestori di siti culturali.</div>
         </div>
-        <div style="padding:14px 16px;background:#fff;border:1px solid var(--rule);border-radius:10px">
-          <div style="font-family:var(--font-ui);font-size:11px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">Terzo settore</div>
+        <div style="padding:14px 16px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-sm)">
+          <div style="font-family:var(--font-ui);font-size:10.5px;color:var(--ink-3);letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-bottom:4px">Terzo settore</div>
           <div style="font-size:13.5px;color:var(--ink-2);line-height:1.5">Cooperative culturali, associazioni di promozione sociale, imprese culturali e creative (ICC), reti museali territoriali.</div>
         </div>
       </div>
@@ -1862,7 +1859,7 @@
         <b>2) Newsletter lettori</b> = il ciclo completo su cui lavorare: prepara &rarr; verifica &rarr; anteprima &rarr; <span style="color:var(--amb-2,#10916D);font-weight:700">test reale</span> &rarr; invio &middot;
         <b>3) Digest Matrix</b> = compilatori Matrix, digest sui <i>gap</i> (genera coda &rarr; verifica &rarr; prova &rarr; invio) &middot;
         <b>4) Digest profilati</b> = lettori con profilo (senza Matrix), digest sui loro <i>interessi</i>; invio reale dal pulsante settimanale in alto, qui solo la prova.
-        <br>Legenda azioni: <span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; invio reale</span> &middot; <span style="color:#B45309;font-weight:700">&#9679; crea bozza (nessun invio)</span> &middot; <span style="color:var(--amb-3,#3C6A95);font-weight:700">&#9679; solo anteprima</span>
+        <br>Legenda azioni: <span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; invio reale</span> &middot; <span style="color:var(--warning);font-weight:700">&#9679; crea bozza (nessun invio)</span> &middot; <span style="color:var(--amb-3,#3C6A95);font-weight:700">&#9679; solo anteprima</span>
       </div>
 
       <!-- ===== INVIO SETTIMANALE (Opzione B: rivedi e invia) — tutte le coorti ===== -->
@@ -1882,12 +1879,12 @@
 
       <!-- ========== TAB 1: APPROFONDIMENTO ========== -->
       <div class="digest-tab-content" data-digest-content="approfondimento">
-        <div class="admin-card" style="margin-bottom:16px;border-left:4px solid #8B3A1F">
+        <div class="admin-card" style="margin-bottom:16px;border-left:4px solid var(--accent)">
 
           <!-- Stato corrente -->
           <div style="margin-bottom:16px">
             <div style="display:flex;align-items:center;margin-bottom:8px">
-              <span style="background:#8B3A1F;color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">i</span>
+              <span style="background:var(--accent);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">i</span>
               <span style="font-size:14px;font-weight:700;color:var(--ink)">Stato corrente</span>
             </div>
             <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">L'editoriale apre la newsletter. Viene generato dal Knowledge Layer (entita/temi caldi + norme + studi + podcast).</p>
@@ -1909,7 +1906,7 @@
             </div>
             <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Genera un nuovo approfondimento settimanale basato sui contenuti recenti.</p>
             <div style="margin-left:32px;display:flex;justify-content:flex-end">
-              <button class="btn btn-primary" onclick="OC._generaEditoriale()" style="font-size:12px;padding:7px 14px;background:#8B3A1F">Genera approfondimento</button>
+              <button class="btn btn-primary" onclick="OC._generaEditoriale()" style="font-size:12px;padding:7px 14px;background:var(--accent)">Genera approfondimento</button>
             </div>
           </div>
 
@@ -1934,7 +1931,7 @@
               <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px">Consigliata orizzontale, almeno 600px di larghezza. Viene ridimensionata a banner e ospitata su Drive (visibile anche nelle email).</div>
               <div id="editorialeFotoPreview"></div>
               <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
-                <button class="btn btn-primary" onclick="OC._salvaRevisioneEditoriale()" style="font-size:12px;padding:7px 14px;background:#8B3A1F">Salva revisione</button>
+                <button class="btn btn-primary" onclick="OC._salvaRevisioneEditoriale()" style="font-size:12px;padding:7px 14px;background:var(--accent)">Salva revisione</button>
                 <button class="btn btn-secondary" onclick="OC._generaEditoriale()" style="font-size:12px;padding:7px 12px">Rigenera</button>
                 <span id="editorialeStatus" style="font-size:12px;color:var(--ink-3)"></span>
               </div>
@@ -2428,12 +2425,12 @@
             <button class="btn btn-primary" data-action="showInvitaUtenteForm">Invita nuovo utente</button>
           </div>
           <div id="utentiStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:14px">
-            <div style="background:#FAFAFA;border:1px solid #E5E5E5;padding:10px;border-radius:6px"><div style="font-size:11px;color:#666;text-transform:uppercase;font-weight:700">Totale</div><div id="statUtTot" style="font-size:20px;font-weight:700;color:var(--ink-2,#3A3A3C)">—</div></div>
+            <div style="background:var(--paper);border:1px solid var(--rule);padding:10px;border-radius:6px"><div style="font-size:11px;color:#666;text-transform:uppercase;font-weight:700">Totale</div><div id="statUtTot" style="font-size:20px;font-weight:700;color:var(--ink-2,#3A3A3C)">—</div></div>
             <div style="background:#FAFAFA;border-left:3px solid var(--accent,#935851);padding:10px;border-radius:6px"><div style="font-size:11px;color:var(--accent,#935851);text-transform:uppercase;font-weight:700">In attesa</div><div id="statUtPending" style="font-size:20px;font-weight:700;color:var(--ink-2,#3A3A3C)">—</div></div>
             <div style="background:#FAFAFA;border-left:3px solid var(--amb-2,#10916D);padding:10px;border-radius:6px"><div style="font-size:11px;color:var(--amb-2,#10916D);text-transform:uppercase;font-weight:700">Attivi</div><div id="statUtAttivi" style="font-size:20px;font-weight:700;color:var(--ink-2,#3A3A3C)">—</div></div>
             <div style="background:#FAFAFA;border-left:3px solid var(--amb-1,#7C3AED);padding:10px;border-radius:6px"><div style="font-size:11px;color:var(--amb-1,#7C3AED);text-transform:uppercase;font-weight:700">Admin</div><div id="statUtAdmin" style="font-size:20px;font-weight:700;color:var(--ink-2,#3A3A3C)">—</div></div>
           </div>
-          <div id="invitaUtenteForm" style="background:#FAFAFA;border:1px solid #E5E5E5;border-radius:8px;padding:14px;margin-bottom:12px;display:none">
+          <div id="invitaUtenteForm" style="background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:14px;margin-bottom:12px;display:none">
             <div style="font-size:13px;font-weight:600;color:var(--ink-2,#3A3A3C);margin-bottom:4px">Invita nuovi utenti</div>
             <p style="font-size:11px;color:var(--ink-3);margin:0 0 10px;line-height:1.4">L'utente ricevera un'email di invito da Sinopia. Restera in stato <b>pending</b> finche non clicca il link di conferma. Il profilo selezionato viene attivato automaticamente al click.</p>
             <!-- Lista inviti dinamica -->
@@ -2475,13 +2472,13 @@
             <div style="font-size:13px;font-weight:700;color:var(--accent,#935851);margin-bottom:6px"> Import dati TSV dal computer</div>
             <p class="hint" style="margin-bottom:10px">Carica direttamente dal tuo PC i 2 file TSV con i dati iniziali. Niente più drag&amp;drop in Drive.</p>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">
-              <div style="padding:14px;background:#FAFAFA;border:1px solid #E5E5E5;border-radius:6px">
+              <div style="padding:14px;background:var(--paper);border:1px solid var(--rule);border-radius:6px">
                 <div style="font-size:13px;font-weight:600;color:var(--ink-2,#3A3A3C);margin-bottom:4px">Database 260 Musei italiani</div>
                 <div style="font-size:11px;color:#666;margin-bottom:8px">File: <code>oc-codebase\\MuseiDB_v1.tsv</code> (~36 KB)</div>
                 <input type="file" id="fileMuseiDB" accept=".tsv,.csv,.txt" style="font-size:12px;width:100%;margin-bottom:8px" onchange="OC.uploadTsv('MuseiDB_v1','fileMuseiDB','resultMuseiDB')"/>
                 <div id="resultMuseiDB" style="font-size:12px;min-height:16px"></div>
               </div>
-              <div style="padding:14px;background:#FAFAFA;border:1px solid #E5E5E5;border-radius:6px">
+              <div style="padding:14px;background:var(--paper);border:1px solid var(--rule);border-radius:6px">
                 <div style="font-size:13px;font-weight:600;color:var(--ink-2,#3A3A3C);margin-bottom:4px">🖼 9 Slide Musei Sensibili (base64)</div>
                 <div style="font-size:11px;color:#666;margin-bottom:8px">File: <code>oc-codebase\\MuseiSensibili_Assets.tsv</code> (~376 KB, carosello home)</div>
                 <input type="file" id="fileMuseiSens" accept=".tsv,.csv,.txt" style="font-size:12px;width:100%;margin-bottom:8px" onchange="OC.uploadTsv('MuseiSensibili_Assets','fileMuseiSens','resultMuseiSens')"/>
@@ -2577,6 +2574,13 @@
             <button class="btn btn-secondary" onclick="if(confirm('Archiviare i bandi TED vuoti (solo numero, senza scadenza)?'))OC.adminTool('tedVuoti', this)" style="font-size:12px;padding:6px 12px">TED vuoti · archivia</button>
           </div>
 
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;margin:12px 0 6px">Arricchimento bandi (v4.27)</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+            <button class="btn btn-secondary" onclick="OC.adminTool('enrichRadarSetup', this)" style="font-size:12px;padding:6px 12px" title="Aggiunge colonne Descrizione e TipoAppalto al foglio RADAR (idempotente)">Setup colonne</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('enrichRadarDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quanti bandi verrebbero arricchiti">Arricchimento &middot; anteprima</button>
+            <button class="btn btn-warning" onclick="if(confirm('Arricchire fino a 20 bandi con Claude AI?'))OC.adminTool('enrichRadarApply', this)" style="font-size:12px;padding:6px 12px" title="Usa Claude Haiku per aggiungere descrizione e tipo appalto ai bandi">Arricchisci bandi</button>
+          </div>
+
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;margin:12px 0 6px">Fonti</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
             <button class="btn btn-secondary" onclick="OC.adminTool('fontiDiagnosi', this)" style="font-size:12px;padding:6px 12px" title="Flag e conteggi fonti per capire cosa legge lo scanner">Diagnosi scanner fonti</button>
@@ -2584,9 +2588,10 @@
             <button class="btn btn-secondary" onclick="OC.adminTool('fontiNormativa', this)" style="font-size:12px;padding:6px 12px">+ Fonti normativa</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('fontiPrimarie', this)" style="font-size:12px;padding:6px 12px">+ Fonti primarie</button>
             <button class="btn btn-primary" onclick="OC.adminTool('fontiPodcastSocial', this)" style="font-size:12px;padding:6px 14px;background:var(--amb-5,#0E7490)" title="Attiva in un clic le 4 fonti podcast + le 4 fonti social Mastodon">▶ Attiva fonti podcast + social</button>
-            <button class="btn btn-secondary" onclick="OC.adminTool('fontiPodcast', this)" style="font-size:12px;padding:6px 12px" title="4 podcast museali/culturali verificati (Musei Senesi, Abbonamento Musei, Artribune, Farnesina)">+ Podcast cultura</button>
-            <button class="btn btn-secondary" onclick="OC.adminTool('fontiSocial', this)" style="font-size:12px;padding:6px 12px" title="Feed Mastodon #CulturalHeritage/#GLAM/#digitalheritage + Open GLAM">+ Social (Mastodon)</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('fontiPodcast', this)" style="font-size:12px;padding:6px 12px" title="4 podcast museali/culturali verificati">+ Podcast cultura</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('fontiSocial', this)" style="font-size:12px;padding:6px 12px" title="Feed Mastodon #CulturalHeritage/#GLAM/#digitalheritage">+ Social (Mastodon)</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('podcastAudit', this)" style="font-size:12px;padding:6px 12px" title="Quante fonti podcast/video sono mute">Audit podcast/video</button>
+            <button class="btn btn-secondary" onclick="if(confirm('Aggiungere 50 osservatori culturali internazionali come fonti RSS?'))OC.adminTool('fontiOsservatori', this)" style="font-size:12px;padding:6px 12px" title="54 osservatori culturali da uMap Global Mapping (EU, Americhe, Asia)">+ Osservatori culturali</button>
           </div>
 
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;margin:12px 0 6px">Setup &amp; automazione</div>
@@ -2683,16 +2688,16 @@
         <div style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 24px">
           <div style="font-family:var(--font-display);font-size:1.125rem;font-weight:600;color:var(--ink);margin-bottom:16px">Moduli installati</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px" id="sistemaModuli">
-            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">SAS</span> Supervisore autonomo</div>
-            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">SEAS</span> Scoperta fonti</div>
-            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">FAS</span> Fonti strutturate</div>
-            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">Matrix</span> Questionario 43 domande</div>
-            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">LS2</span> 6 micro-survey</div>
-            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">CRM</span> Lead scoring</div>
-            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">Auth</span> Sessioni permanenti</div>
-            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">PNRR</span> Triage automatico</div>
-            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">ROC</span> Outreach commerciale</div>
-            <div style="padding:10px 14px;background:#EAF3EC;border-radius:8px;font-size:0.875rem"><span style="color:#3F7A5E;font-weight:600">Tagger</span> MatrixDim auto</div>
+            <div style="padding:10px 14px;background:var(--amb-2-soft);border-radius:8px;font-size:0.875rem"><span style="color:var(--amb-2);font-weight:600">SAS</span> Supervisore autonomo</div>
+            <div style="padding:10px 14px;background:var(--amb-2-soft);border-radius:8px;font-size:0.875rem"><span style="color:var(--amb-2);font-weight:600">SEAS</span> Scoperta fonti</div>
+            <div style="padding:10px 14px;background:var(--amb-2-soft);border-radius:8px;font-size:0.875rem"><span style="color:var(--amb-2);font-weight:600">FAS</span> Fonti strutturate</div>
+            <div style="padding:10px 14px;background:var(--amb-2-soft);border-radius:8px;font-size:0.875rem"><span style="color:var(--amb-2);font-weight:600">Matrix</span> Questionario 43 domande</div>
+            <div style="padding:10px 14px;background:var(--amb-2-soft);border-radius:8px;font-size:0.875rem"><span style="color:var(--amb-2);font-weight:600">LS2</span> 6 micro-survey</div>
+            <div style="padding:10px 14px;background:var(--amb-2-soft);border-radius:8px;font-size:0.875rem"><span style="color:var(--amb-2);font-weight:600">CRM</span> Lead scoring</div>
+            <div style="padding:10px 14px;background:var(--amb-2-soft);border-radius:8px;font-size:0.875rem"><span style="color:var(--amb-2);font-weight:600">Auth</span> Sessioni permanenti</div>
+            <div style="padding:10px 14px;background:var(--amb-2-soft);border-radius:8px;font-size:0.875rem"><span style="color:var(--amb-2);font-weight:600">PNRR</span> Triage automatico</div>
+            <div style="padding:10px 14px;background:var(--amb-2-soft);border-radius:8px;font-size:0.875rem"><span style="color:var(--amb-2);font-weight:600">ROC</span> Outreach commerciale</div>
+            <div style="padding:10px 14px;background:var(--amb-2-soft);border-radius:8px;font-size:0.875rem"><span style="color:var(--amb-2);font-weight:600">Tagger</span> MatrixDim auto</div>
           </div>
         </div>
 
@@ -3173,7 +3178,7 @@
     // SEZIONE: Bandi urgenti
     var bU = r.bandi.urgenti || 0;
     html += '<div style="padding:10px 16px;border-bottom:1px solid #F0EDE5">';
-    html += '<div style="font-size:11px;color:#8B6314;letter-spacing:.08em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Bandi urgenti (≤7gg)</div>';
+    html += '<div style="font-size:11px;color:var(--warning);letter-spacing:.08em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Bandi urgenti (≤7gg)</div>';
     if (bU === 0) {
       html += '<div style="font-size:13px;color:var(--ink-3)">Nessun bando in scadenza imminente</div>';
     } else {
@@ -3471,7 +3476,7 @@
         .getLavoroOpportunita(40);
     }
   }
-  var _LC_OPP_BADGE = { residenza:'🏠 Residenza', call:'📣 Open call', borsa:'🎓 Borsa/Mobilità', premio:'🏆 Premio', opportunita:'💼 Opportunità' };
+  var _LC_OPP_BADGE = { residenza:'Residenza', call:'Open call', borsa:'Borsa/Mobilita', premio:'Premio', opportunita:'Opportunita' };
   function renderLavoroOpp() {
     var sec = $('lavoroOppSection'), wrap = $('lavoroOppList'); if (!wrap) return;
     var list = _cacheLavoroOpp || [];
@@ -3481,9 +3486,9 @@
     list.forEach(function(o){
       var badge = _LC_OPP_BADGE[o.tipoOpp] || _LC_OPP_BADGE.opportunita;
       var url = o.link || '';
-      html += '<div class="br-row" style="border-left:3px solid #7C3AED">'
+      html += '<div class="br-row">'
         + '<div class="br-left">'
-        + '<div class="br-tags"><span class="br-tema br-a5">' + esc(badge) + '</span>'
+        + '<div class="br-tags"><span class="br-tema br-a1">' + esc(badge) + '</span>'
         + (o.isRecente ? '<span class="br-badge-new">Nuovo</span>' : '') + '</div>'
         + '<p class="br-title"' + (url ? ' onclick="OC.openUrl(\'' + esc(url) + '\')" title="Apri"' : '') + '>' + esc(o.titolo || '(senza titolo)') + '</p>'
         + (o.sommario ? '<p class="br-summary">' + esc(trunc(o.sommario, 160)) + '</p>' : '')
@@ -3493,8 +3498,7 @@
         + '</div>';
     });
     wrap.innerHTML = html;
-    var cnt = $('lavoroOppCount'); if (cnt) cnt.textContent = list.length + (list.length === 1 ? ' opportunità' : ' opportunità e residenze');
-    // Se ci sono opportunità, il messaggio "vuoto" dei concorsi non deve dominare
+    var cnt = $('lavoroOppCount'); if (cnt) cnt.textContent = list.length + (list.length === 1 ? ' opportunita' : ' opportunita e residenze');
     var navL = document.getElementById('nav-lavoro'); if (navL) navL.hidden = false;
   }
   function renderLavoroList() {
@@ -3508,8 +3512,9 @@
       if (_filterLavoro.cat && _lavCat_(b) !== _filterLavoro.cat) return;
       shown++; html += _brRowHtml_(b);
     });
-    // v4.25.22 — se non ci sono concorsi (caso normale: escono di rado), collassa
-    // il blocco concorsi in una nota compatta e dai risalto alle Opportunità sotto
+    // v4.25.22 [ri-innestato v4.27.6, perso nel clobber]: senza concorsi (caso
+    // normale, escono di rado) collassa il blocco in una nota compatta e dai
+    // risalto alle Opportunità sotto
     var haiConcorsi = list.length > 0;
     var filtri1 = $('lavoroFilters'), filtri2 = $('lavoroCatFilters'), cnt = $('lavoroCount'), em = $('lavoroEmpty');
     if (filtri1) filtri1.style.display = haiConcorsi ? '' : 'none';
@@ -3520,7 +3525,6 @@
       if (em) em.hidden = shown > 0;
       if (cnt) cnt.textContent = shown + ' concors' + (shown === 1 ? 'o' : 'i') + (list.length !== shown ? ' (su ' + list.length + ' totali)' : '');
     } else {
-      // nessun concorso in GU al momento → nota discreta, niente empty-state grande
       wrap.innerHTML = '<div style="padding:12px 16px;background:var(--surface-2);border-radius:10px;font-size:13px;color:var(--ink-3);line-height:1.5">'
         + '<b style="color:var(--ink-2)">Nessun concorso pubblico cultura in Gazzetta in questo momento.</b> '
         + 'I concorsi per musei, biblioteche, soprintendenze e accademie escono periodicamente: '
@@ -4304,7 +4308,7 @@
         +     '<div class="hlr-tags">'
         +       _ambBadgeStrongHtml_(ambN, b.settore || '')
         +       (isUrgent?'<span class="hlr-urgent">Urgente</span>':'')
-        +       (b.isRecente && !isUrgent ? '<span class="hlr-urgent" style="background:#E8F5E9;color:#065F46">Nuovo</span>' : '')
+        +       (b.isRecente && !isUrgent ? '<span class="hlr-urgent" style="background:var(--amb-2-soft);color:var(--success)">Nuovo</span>' : '')
         +     '</div>'
         +     '<p class="hlr-title">'+esc(b.titolo||'(senza titolo)')+'</p>'
         +     (sub?'<p class="hlr-sub">'+esc(sub)+'</p>':'')
@@ -4503,7 +4507,7 @@
     ];
     html += '<div id="wsAmbitiCard" style="background:' + (_vuoto ? '#F3E6E2;border:1px solid #935851' : 'var(--surface-2,#F1EEE7);border:1px solid var(--rule,#E5E5E7)') + ';border-radius:12px;padding:18px 22px;margin:0 0 22px">';
     html += '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px">';
-    html += '<div style="font-weight:700;font-size:15px;color:' + (_vuoto ? '#8B3A1F' : 'var(--ink)') + '">' + (_vuoto ? 'Scegli i tuoi ambiti di interesse' : 'I tuoi ambiti di interesse') + '</div>';
+    html += '<div style="font-weight:700;font-size:15px;color:' + (_vuoto ? 'var(--accent)' : 'var(--ink)') + '">' + (_vuoto ? 'Scegli i tuoi ambiti di interesse' : 'I tuoi ambiti di interesse') + '</div>';
     html += '<a href="#" onclick="OC.go(\'profilo-pro\');return false" style="font-size:12px;color:var(--accent,#935851);font-weight:600">Profilo professionale completo &rarr;</a>';
     html += '</div>';
     html += '<div style="font-size:12.5px;color:' + (_vuoto ? '#7A4A40' : 'var(--ink-3)') + ';line-height:1.5;margin-bottom:12px">' + (_vuoto ? 'Tocca gli ambiti che ti interessano: riceverai un digest su misura invece della newsletter generale. Bastano pochi secondi, qui.' : 'Tocca un ambito per attivarlo/disattivarlo. Il digest si adatta.') + '</div>';
@@ -4512,7 +4516,7 @@
       var on = _ambSel.indexOf(a.id) >= 0;
       html += '<button type="button" onclick="OC.toggleAmbitoInteresse(' + a.id + ',this)" data-amb="' + a.id + '" data-on="' + (on?'1':'0') + '" '
         + 'style="cursor:pointer;border-radius:999px;padding:7px 15px;font-size:12.5px;font-weight:600;transition:all .15s;'
-        + (on ? 'background:var(--accent,#935851);color:#fff;border:1px solid var(--accent,#935851)' : 'background:#fff;color:var(--ink-2,#3A3A3C);border:1px solid var(--rule,#D9D4CA)') + '">'
+        + (on ? 'background:var(--accent,#935851);color:#fff;border:1px solid var(--accent,#935851)' : 'background:var(--paper);color:var(--ink-2,#3A3A3C);border:1px solid var(--rule,#D9D4CA)') + '">'
         + (on ? '✓ ' : '') + esc(a.n) + '</button>';
     });
     html += '</div>';
@@ -4948,7 +4952,7 @@
     if (b.settoreCultura) {
       var scLabel = _SETTORE_CULTURA_LABELS[(b.settoreCultura||'').toLowerCase()] || b.settoreCultura;
       if (!b.cpvDescrizione || scLabel !== b.cpvDescrizione) {
-        parts.push('<span style="color:#065F46;font-weight:500">' + esc(scLabel) + '</span>');
+        parts.push('<span style="color:var(--success);font-weight:500">' + esc(scLabel) + '</span>');
       }
     }
     // 3. Settore generico come fallback (se nessun CPV e nessun settoreCultura)
@@ -4970,7 +4974,7 @@
     var isUrgent = giorni !== null && giorni >= 0 && giorni <= 7;
     var isMed    = !isUrgent && giorni !== null && giorni >= 0 && giorni <= 10;
     var url      = b.link || b.url || b.URL || '';
-    var sommario = b.sommario || b.note || b.descrizione || '';
+    var sommario = b.descrizione || b.sommario || b.note || '';
 
     // Etichetta tematica: settore se presente, altrimenti nome breve ambito
     var temaLabel = b.settore || _TEMA_BREVI[ambN] || 'Bando';
@@ -5009,6 +5013,7 @@
       +   '<div class="br-tags">'
       +     '<span class="br-tema' + temaCls + '">' + esc(temaLabel) + '</span>'
       +     (b.tipoBando ? '<span class="br-tipo-badge br-tipo-' + esc(b.tipoBando) + '">' + _tipoBadgeLabel_(b.tipoBando) + '</span>' : '')
+      +     (b.tipoAppalto ? '<span class="br-tipo-badge" style="background:var(--surface-2);color:var(--ink-2)">' + esc(b.tipoAppalto) + '</span>' : '')
       +     (isUrgent ? '<span class="br-badge-urgent">&#9889;&nbsp;Urgente</span>' : '')
       +     (b.isRecente && !isUrgent ? '<span class="br-badge-new">Nuovo</span>' : '')
       +     (b.settoreCultura ? '<span class="nr-fonte" style="font-size:11px">' + (CPV_CULTURA_LABELS[(b.settoreCultura||'').toLowerCase()] || b.settoreCultura) + '</span>' : '')
@@ -5051,7 +5056,7 @@
         +   '<div class="hlr-left">'
         +     '<div class="hlr-tags">'
         +       _ambBadgeStrongHtml_(ambN, n.fonte || '')
-        +       (n.isRecente ? '<span class="hlr-urgent" style="background:#E8F5E9;color:#065F46">Recente</span>' : '')
+        +       (n.isRecente ? '<span class="hlr-urgent" style="background:var(--amb-2-soft);color:var(--success)">Recente</span>' : '')
         +     '</div>'
         +     '<p class="hlr-title">'+esc(n.titolo||'(senza titolo)')+'</p>'
         +     (sub?'<p class="hlr-sub">'+esc(sub)+'</p>':'')
@@ -5332,7 +5337,7 @@
 
       // v4.18.8 — Ricerca testuale: titolo, ente, settore, regione, sommario
       if (q) {
-        var hay = (String(b.titolo||'') + ' ' + String(b.ente||'') + ' ' + String(b.settore||'') + ' ' + String(b.regione||'') + ' ' + String(b.sommario||b.note||b.descrizione||'')).toLowerCase();
+        var hay = (String(b.titolo||'') + ' ' + String(b.ente||'') + ' ' + String(b.settore||'') + ' ' + String(b.regione||'') + ' ' + String(b.descrizione||b.sommario||b.note||'')).toLowerCase();
         if (hay.indexOf(q) < 0) return;
       }
 
@@ -6460,20 +6465,20 @@
               if (navWs) navWs.hidden = false;
             }
           }
-          html += '<div style="background:var(--surface,#F7F7F8);border:1px solid #C0DAC8;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#2D5F3A;line-height:1.5">';
+          html += '<div style="background:var(--surface,#F7F7F8);border:1px solid #C0DAC8;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:var(--success);line-height:1.5">';
           html += '<b>Area personale sbloccata</b> — Sei ora registrato come <code>'+esc(email)+'</code>. La topbar mostra il tuo profilo.';
           if (r.magicLink) {
-            html += ' <a href="'+esc(r.magicLink)+'" style="color:#2D5F3A;font-weight:600">Ricarica per accesso completo →</a>';
+            html += ' <a href="'+esc(r.magicLink)+'" style="color:var(--success);font-weight:600">Ricarica per accesso completo →</a>';
           }
           html += '</div>';
         } else if (email && consent && !r.sessioneCreata) {
-          html += '<div style="background:#FFF3E0;border:1px solid #F0D6A8;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#8B5E14;line-height:1.5">';
+          html += '<div style="background:oklch(0.97 0.03 70);border:1px solid oklch(0.90 0.05 70);border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:var(--warning);line-height:1.5">';
           html += '<b>Sessione non attivata</b> — La compilazione è stata salvata correttamente ma l\'area personale non si è attivata automaticamente. ';
           html += 'Riceverai comunque la pre-valutazione gratuita all\'indirizzo <code>'+esc(email)+'</code>.';
           if (r.sessioneErrore) { html += ' <br><span style="font-size:11px;color:#999">(Dettaglio: '+esc(r.sessioneErrore)+')</span>'; }
           html += '</div>';
         } else if (!email || !consent) {
-          html += '<div style="background:#FFF8E1;border:1px solid #F0E6C0;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#8B6914;line-height:1.5">';
+          html += '<div style="background:oklch(0.97 0.03 80);border:1px solid oklch(0.92 0.04 80);border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:var(--warning);line-height:1.5">';
           html += 'Compilazione anonima. <b>Vuoi la pre-valutazione gratuita?</b> La prossima volta, lascia la tua email per ricevere raccomandazioni personalizzate e sbloccare l\'area personale.';
           html += '</div>';
         }
@@ -6570,7 +6575,7 @@
 
     var html = '<div style="overflow-x:auto">';
     html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
-    html += '<thead><tr style="background:#F4F1EA;text-align:left">';
+    html += '<thead><tr style="background:var(--surface);text-align:left">';
     html += '<th style="padding:8px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Museo / responseId</th>';
     html += '<th style="padding:8px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:80px;text-align:center">Profilo</th>';
     html += '<th style="padding:8px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:70px;text-align:right">Score</th>';
@@ -6656,7 +6661,7 @@
     html += '<div class="admin-card" style="margin-bottom:18px;border-left:4px solid var(--amb-3,var(--amb-3,#2563EB))">';
     html += '<h3 style="margin-top:0">Ambiti pubblici (visibili agli utenti)</h3>';
     html += '<p class="hint">I 5 codici 01-05 che gli utenti vedono nelle pagine Radar Bandi/News/Podcast/Video/Libri come filtro tematico.</p>';
-    html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#F4F1EA;text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:80px">Codice</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Nome</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:140px">Etichetta breve</th></tr></thead><tbody>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--surface);text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:80px">Codice</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Nome</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:140px">Etichetta breve</th></tr></thead><tbody>';
     (kb.ambitiPubblici || []).forEach(function(a){
       html += '<tr><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:700;color:var(--amb-'+a.num+')">' + esc(a.codice) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4">' + esc(a.nome) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--ink-3)">' + esc(a.nomeBreve) + '</td></tr>';
     });
@@ -6666,7 +6671,7 @@
     html += '<div class="admin-card" style="margin-bottom:18px;border-left:4px solid var(--accent,#935851)">';
     html += '<h3 style="margin-top:0">Tematiche interne (T1-T9)</h3>';
     html += '<p class="hint">Classificazione più fine usata internamente per la consulenza. Ogni tematica T è mappata a uno degli ambiti pubblici (visibili).</p>';
-    html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#F4F1EA;text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:50px">Cod.</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Nome</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Descrizione / esempi</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:140px">Ambito pubblico</th></tr></thead><tbody>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--surface);text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:50px">Cod.</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Nome</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Descrizione / esempi</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:140px">Ambito pubblico</th></tr></thead><tbody>';
     (kb.tematiche || []).forEach(function(t){
       html += '<tr><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:700;color:var(--accent,#935851)">' + esc(t.codice) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:500">' + esc(t.nome) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--ink-3);font-size:12px">' + esc(t.descrizione) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--amb-'+t.ambitoPubblico+');font-weight:600">→ ' + esc(ambNameByNum[t.ambitoPubblico] || '—') + '</td></tr>';
     });
@@ -6676,7 +6681,7 @@
     html += '<div class="admin-card" style="margin-bottom:18px;border-left:4px solid var(--amb-1,#7C3AED)">';
     html += '<h3 style="margin-top:0">Tipo strumento del documento monitorato</h3>';
     html += '<p class="hint">Quando lo scanner rileva un documento, lo classifica per tipo: bando di finanziamento, gara d\'appalto, MoI, concorso, convenzione. Determina il funnel commerciale applicabile.</p>';
-    html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#F4F1EA;text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:80px">Codice</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Strumento</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Ruolo Sinopia</th></tr></thead><tbody>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--surface);text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:80px">Codice</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Strumento</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Ruolo Sinopia</th></tr></thead><tbody>';
     (kb.strumenti || []).forEach(function(s){
       html += '<tr><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:700;color:var(--amb-1,#7C3AED)">' + esc(s.codice) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4">' + esc(s.nome) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--ink-3);font-size:12px">' + esc(s.ruoloDM) + '</td></tr>';
     });
@@ -6686,7 +6691,7 @@
     html += '<div class="admin-card" style="margin-bottom:18px;border-left:4px solid var(--amb-2,#10916D)">';
     html += '<h3 style="margin-top:0">Modelli operativi Sinopia (M1-M14)</h3>';
     html += '<p class="hint">Leve di vantaggio competitivo: ciò che Sinopia può attivare dentro un progetto per portarsi punti premiali o partnership distintive. Ogni bando intelligente dovrebbe segnalare quali M_n sono attivabili.</p>';
-    html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#F4F1EA;text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:50px">Cod.</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Modello</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Evidence Sinopia</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:60px;text-align:center">Forza</th></tr></thead><tbody>'; // tabella modelli
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--surface);text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:50px">Cod.</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Modello</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Evidence Sinopia</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:60px;text-align:center">Forza</th></tr></thead><tbody>'; // tabella modelli
     (kb.modelli || []).forEach(function(m){
       var stelle = '★'.repeat(m.forza || 0) + '☆'.repeat(3 - (m.forza || 0));
       var starColor = m.forza >= 3 ? 'var(--accent,#935851)' : (m.forza >= 2 ? '#888' : '#BBB');
@@ -6698,7 +6703,7 @@
     html += '<div class="admin-card" style="margin-bottom:18px;border-left:4px solid var(--accent,#935851)">';
     html += '<h3 style="margin-top:0">Linee di servizio commerciali (LS1 / LS2 / LS3)</h3>';
     html += '<p class="hint">I 3 prodotti commerciali Sinopia, ciascuno con il suo trigger e workflow.</p>';
-    html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#F4F1EA;text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:60px">Cod.</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Linea di servizio</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Trigger</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Output</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:80px">Cap</th></tr></thead><tbody>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--surface);text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:60px">Cod.</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Linea di servizio</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Trigger</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Output</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:80px">Cap</th></tr></thead><tbody>';
     (kb.lineeServizio || []).forEach(function(l){
       html += '<tr><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:700;color:var(--accent,#935851)">' + esc(l.codice) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;font-weight:500">' + esc(l.nome) + '<div style="font-size:11px;color:var(--ink-3);margin-top:3px">Beneficiario: ' + esc(l.beneficiario) + '</div></td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--ink-3);font-size:11.5px">' + esc(l.trigger) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;color:var(--ink-3);font-size:11.5px">' + esc(l.output) + '</td><td style="padding:6px;border-bottom:1px solid #EFECE4;font-size:11px;color:#666">' + esc(l.cap) + '</td></tr>';
     });
@@ -6708,7 +6713,7 @@
     html += '<div class="admin-card" style="margin-bottom:18px;border-left:4px solid var(--amb-3,#2563EB)">';
     html += '<h3 style="margin-top:0">Candidature speciali monitorate (LS3)</h3>';
     html += '<p class="hint">9 riconoscimenti tracciati con calendario proattivo: outreach 6+ mesi prima della scadenza ai Comuni potenzialmente candidabili.</p>';
-    html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#F4F1EA;text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:80px">Ambito</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Riconoscimento</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:120px">Ciclo</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Beneficiario</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Promotore</th></tr></thead><tbody>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--surface);text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:80px">Ambito</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Riconoscimento</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:120px">Ciclo</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Beneficiario</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Promotore</th></tr></thead><tbody>';
     (kb.candidature || []).forEach(function(c){
       var ambBg = c.ambito === 'IT' ? '#E6F4EA' : (c.ambito === 'EU' ? '#EEF3F8' : 'var(--accent-soft,#F0E6E4)');
       var ambColor = c.ambito === 'IT' ? '#1E6B3A' : (c.ambito === 'EU' ? 'var(--amb-3,#2563EB)' : '#8B6314');
@@ -6772,7 +6777,7 @@
         if (info) info.textContent = fonti.length + ' fonti totali';
         if (!fonti.length) { wrap.innerHTML = '<em>Nessuna fonte registrata.</em>'; return; }
         var html = '<table style="width:100%;border-collapse:collapse;font-size:12px">'
-          + '<thead><tr style="background:#F4F1EA;text-align:left">'
+          + '<thead><tr style="background:var(--surface);text-align:left">'
           + '<th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Stato</th>'
           + '<th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Nome</th>'
           + '<th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Categoria</th>'
@@ -6784,9 +6789,9 @@
           + '</tr></thead><tbody>';
         fonti.forEach(function(f){
           var stato = f.silente ? '<span style="display:inline-block;padding:2px 8px;background:#FCE8E6;color:var(--danger,#C2410C);border-radius:10px;font-weight:600;font-size:11px">⚠ Silente</span>'
-                    : f.attiva ? '<span style="display:inline-block;padding:2px 8px;background:#E6F4EA;color:#1E6B3A;border-radius:10px;font-weight:600;font-size:11px">● Attiva</span>'
+                    : f.attiva ? '<span style="display:inline-block;padding:2px 8px;background:var(--amb-2-soft);color:var(--success);border-radius:10px;font-weight:600;font-size:11px">● Attiva</span>'
                                 : '<span style="display:inline-block;padding:2px 8px;background:#F1EEE8;color:var(--ink-3,#6E6E73);border-radius:10px;font-weight:600;font-size:11px">○ Off</span>';
-          var rowBg = f.silente ? 'background:#FFF8F7' : (f.attiva ? '' : 'background:#FAFAF6');
+          var rowBg = f.silente ? 'background:var(--accent-soft)' : (f.attiva ? '' : 'background:var(--paper)');
           var idEsc = esc(f.id);
           // Bottone Riprova: solo se silente o off
           var btnRiprova = (f.silente || !f.attiva)
@@ -7389,8 +7394,8 @@
         + '<td style="padding:5px;text-align:right;font-weight:600">'+((f.recordTotali||0)>0?f.recordTotali:'—')+'</td>'
         + '<td style="padding:5px;font-size:11px;color:var(--ink-2)" title="'+(f.ultimaScan?'Ultima scan: '+f.ultimaScan:'')+'">'+_fmTimeAgo(f.ultimoPrelievoReale)+'</td>'
         + '<td style="padding:5px">'
-          + '<button onclick="OC._toggleFonte(\''+esc(f._tipo)+'\',\''+esc(f.id)+'\',' + (!f.attiva) + ')" style="font-size:10px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;background:none;cursor:pointer;color:'+(f.attiva?'var(--danger)':'var(--amb-2)')+'" title="'+(f.attiva?'Disattiva':'Attiva')+'">'+(f.attiva?'Off':'On')+'</button> '
-          + '<button onclick="OC._deleteFonte(\''+esc(f._tipo)+'\',\''+esc(f.id)+'\')" style="font-size:10px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;background:none;cursor:pointer;color:var(--danger)" title="Elimina">&#10005;</button>'
+          + '<button onclick="OC._toggleFonte(\''+esc(f._tipo)+'\',\''+esc(f.id)+'\',' + (!f.attiva) + ')" style="font-size:10px;padding:2px 6px;border:1px solid var(--rule);border-radius:4px;background:none;cursor:pointer;color:'+(f.attiva?'var(--danger)':'var(--amb-2)')+'" title="'+(f.attiva?'Disattiva':'Attiva')+'">'+(f.attiva?'Off':'On')+'</button> '
+          + '<button onclick="OC._deleteFonte(\''+esc(f._tipo)+'\',\''+esc(f.id)+'\')" style="font-size:10px;padding:2px 6px;border:1px solid var(--rule);border-radius:4px;background:none;cursor:pointer;color:var(--danger)" title="Elimina">&#10005;</button>'
         + '</td></tr>';
     });
 
@@ -8040,7 +8045,7 @@
         var items = r.segnalazioni || [];
         if ($('segStatCount')) $('segStatCount').textContent = items.length + ' segnalazion' + (items.length===1?'e':'i');
         if (!items.length) { if (wrap) wrap.innerHTML = '<div class="empty-state sm">Nessuna segnalazione con stato "' + esc(stato) + '".</div>'; return; }
-        var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#E8F5E9">'
+        var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--amb-2-soft)">'
           + '<th style="text-align:left;padding:6px;border-bottom:1px solid #4CAF50">Data</th>'
           + '<th style="text-align:left;padding:6px;border-bottom:1px solid #4CAF50">Titolo</th>'
           + '<th style="text-align:left;padding:6px;border-bottom:1px solid #4CAF50">Tipo</th>'
@@ -8063,17 +8068,17 @@
             + '<td style="padding:5px;border-bottom:1px solid #eee;color:'+statoCol+';font-weight:600">' + esc(statoLabel) + '</td>'
             + '<td style="padding:5px;border-bottom:1px solid #eee">';
           if (s.stato === 'pending') {
-            html += '<button class="btn btn-secondary" onclick="OC._segApprova(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#2E7D32">Approva</button>';
-            html += '<button class="btn btn-secondary" onclick="OC._segRifiuta(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#C2410C">Rifiuta</button>';
+            html += '<button class="btn btn-secondary" onclick="OC._segApprova(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:var(--success)">Approva</button>';
+            html += '<button class="btn btn-secondary" onclick="OC._segRifiuta(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:var(--danger)">Rifiuta</button>';
           } else if (s.stato === 'approved') {
-            html += '<button class="btn btn-secondary" onclick="OC._segPubblica(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#1565C0;font-weight:600">Pubblica</button>';
-            html += '<button class="btn btn-secondary" onclick="OC._segUnpublish(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#795548">Non pubblicare</button>';
+            html += '<button class="btn btn-secondary" onclick="OC._segPubblica(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:var(--amb-3);font-weight:600">Pubblica</button>';
+            html += '<button class="btn btn-secondary" onclick="OC._segUnpublish(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:var(--ink-2)">Non pubblicare</button>';
           } else if (s.stato === 'published') {
-            html += '<button class="btn btn-secondary" onclick="OC._segUnpublish(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#795548">Ritira</button>';
+            html += '<button class="btn btn-secondary" onclick="OC._segUnpublish(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:var(--ink-2)">Ritira</button>';
           } else if (s.stato === 'unpublished') {
-            html += '<button class="btn btn-secondary" onclick="OC._segPubblica(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:#1565C0">Ripubblica</button>';
+            html += '<button class="btn btn-secondary" onclick="OC._segPubblica(\''+sid+'\')" style="font-size:10px;padding:3px 6px;margin-right:2px;color:var(--amb-3)">Ripubblica</button>';
           }
-          html += '<button class="btn btn-secondary" onclick="OC._segCancella(\''+sid+'\')" style="font-size:10px;padding:3px 6px;color:#C2410C" title="Cancella definitivamente">Cancella</button>';
+          html += '<button class="btn btn-secondary" onclick="OC._segCancella(\''+sid+'\')" style="font-size:10px;padding:3px 6px;color:var(--danger)" title="Cancella definitivamente">Cancella</button>';
           html += '</td></tr>';
         });
         html += '</tbody></table>';
@@ -8138,7 +8143,7 @@
         if (wrap) wrap.innerHTML = '<div class="empty-state sm">Nessun backup registrato.</div>';
         return;
       }
-      var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#F7F5F0">'
+      var html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--paper-2)">'
         + '<th style="text-align:left;padding:6px">Data</th>'
         + '<th style="text-align:left;padding:6px">Nome</th>'
         + '<th style="text-align:left;padding:6px">Link</th>'
@@ -8556,7 +8561,7 @@
       .withSuccessHandler(function(r) {
         if (!r) { if (out) out.innerHTML = '<div style="color:var(--danger,#C2410C)">Risposta vuota</div>'; return; }
         var html = '<div style="color:var(--amb-5,#0E7490);font-weight:600;margin-bottom:8px">🔐 Diagnostica autenticazione</div>';
-        html += '<pre style="font-size:11px;background:#FAFAFA;padding:12px;border:1px solid #E5E5E5;border-radius:6px;overflow-x:auto;white-space:pre-wrap;font-family:monospace">' + esc(JSON.stringify(r, null, 2)) + '</pre>';
+        html += '<pre style="font-size:11px;background:var(--surface);padding:12px;border:1px solid var(--rule);border-radius:6px;overflow-x:auto;white-space:pre-wrap;font-family:monospace">' + esc(JSON.stringify(r, null, 2)) + '</pre>';
         html += '<div style="margin-top:10px;padding:10px;background:var(--accent-soft,#F0E6E4);border-left:3px solid var(--amb-8,#B45309);font-size:12px;color:var(--ink-3,#6E6E73)">';
         if (r.sessionInfo && r.sessionInfo.effectiveUser === '(vuoto)' && r.sessionInfo.activeUser === '(vuoto)') {
           html += '<b>⚠️ Causa probabile:</b> Session.getEffectiveUser() e getActiveUser() ritornano entrambi vuoti. La webapp è distribuita come "Esegui come: ME" + "Accesso: Chiunque (anche senza accesso Google)" — in questa configurazione GAS non passa email del visitatore. Soluzione: nell\'editor GAS modifica deployment → "Esegui come: TE (s.straccini@gmail.com)" + "Chi ha accesso: Chiunque" (NON "anche senza accesso Google").';
@@ -8867,12 +8872,12 @@
         if (!r || r.ok === false) { if (out) out.textContent = 'Errore: ' + (r && r.error || 'sconosciuto'); return; }
         if (!out) return;
         if (!r.profiliFoglio) {
-          out.innerHTML = '<b style="color:#B45309">0 profili</b> nel foglio: nessuno ha ancora compilato &laquo;Il mio profilo&raquo; n&eacute; scelto ambiti. Per provare, compila un profilo con interessi (o usa la prova qui sotto con D7/D8/D10).';
+          out.innerHTML = '<b style="color:var(--warning)">0 profili</b> nel foglio: nessuno ha ancora compilato &laquo;Il mio profilo&raquo; n&eacute; scelto ambiti. Per provare, compila un profilo con interessi (o usa la prova qui sotto con D7/D8/D10).';
           return;
         }
         var h = '<b style="color:var(--amb-2,#10916D)">' + r.profiliFoglio + '</b> profili nel foglio (' + r.profiliConInteressi + ' con interessi) &middot; digest <b>profilati (coorte C): ' + r.coorteC + '</b>.';
         if (r.inMatrix > 0) {
-          h += ' <span style="color:#B45309"><b>' + r.inMatrix + '</b> di questi hanno fatto anche il <b>Matrix</b></span> &rarr; ricevono il digest <b>Matrix</b> (coorte B), non quello profilato: per questo possono risultare 0 tra i profilati pur avendo un profilo.';
+          h += ' <span style="color:var(--warning)"><b>' + r.inMatrix + '</b> di questi hanno fatto anche il <b>Matrix</b></span> &rarr; ricevono il digest <b>Matrix</b> (coorte B), non quello profilato: per questo possono risultare 0 tra i profilati pur avendo un profilo.';
         }
         h += '<br><span style="color:var(--ink-3)">Coorti digest totali: A lettori ' + r.coorteA + ' &middot; B Matrix/lead ' + r.coorteB + ' &middot; C profilati ' + r.coorteC + '.</span>';
         out.innerHTML = h;
@@ -8896,7 +8901,7 @@
         }
         var ed = r.editoriale;
         var stato = String(ed.stato || 'bozza');
-        var statoColor = stato === 'approvato' ? 'var(--amb-2,#10916D)' : (stato === 'bozza' ? '#8B3A1F' : 'var(--ink-3)');
+        var statoColor = stato === 'approvato' ? 'var(--amb-2,#10916D)' : (stato === 'bozza' ? 'var(--accent)' : 'var(--ink-3)');
         var statoLabel = stato === 'approvato' ? 'APPROVATO' : (stato === 'bozza' ? 'BOZZA — da approvare' : stato.toUpperCase());
         if (wrap) {
           wrap.innerHTML = ''
@@ -10289,7 +10294,7 @@
         var pct2 = Math.round(cnt2 / maxTema * 100);
         html += '<div class="st-amb-row">'
           + '<span class="st-amb-label">'+esc(t)+'</span>'
-          + '<div class="st-bar-wrap"><div class="st-bar" style="width:'+pct2+'%;background:#9C6A36"></div></div>'
+          + '<div class="st-bar-wrap"><div class="st-bar" style="width:'+pct2+'%;background:var(--warning)"></div></div>'
           + '<span class="st-amb-cnt">'+cnt2+'</span>'
           + '</div>';
       });
@@ -10979,7 +10984,7 @@
 
       // Urgency
       if (d.isUrgent) {
-        html += '<div style="display:inline-block;background:#FEF2F2;color:#991B1B;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:14px">Scade in ' + esc(String(d.giorni)) + ' giorni</div> ';
+        html += '<div style="display:inline-block;background:oklch(0.97 0.02 25);color:var(--danger);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:14px">Scade in ' + esc(String(d.giorni)) + ' giorni</div> ';
       }
 
       // Meta
@@ -11033,7 +11038,7 @@
     // Urgency badge for bandi
     var urgBadge = '';
     if (tipo === 'bando' && d.isUrgent) {
-      urgBadge = '<span style="background:#FEF2F2;color:#991B1B;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.03em">Scade in '+esc(String(d.giorni))+' giorni</span>';
+      urgBadge = '<span style="background:oklch(0.97 0.02 25);color:var(--danger);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.03em">Scade in '+esc(String(d.giorni))+' giorni</span>';
     }
 
     var score = d.score != null && d.score > 0
@@ -11353,7 +11358,7 @@
         + '<td style="padding:6px 8px;color:var(--ink-3)">'+esc(f.Tipo||'')+'</td>'
         + '<td style="padding:6px 8px;color:var(--ink-3)">'+esc(f.Categoria||'')+'</td>'
         + '<td style="padding:6px 8px;text-align:center"><button onclick="OC.toggleSocialFonteAtt(\''+esc(f.ID)+'\')" style="padding:2px 10px;border-radius:3px;border:1px solid '+(att?'var(--amb-2,#10916D)':'#ccc')+';background:'+(att?'#E8F5E9':'#f5f5f5')+';color:'+(att?'#1B5E20':'#888')+';font-size:11px;cursor:pointer">'+(att?'Attiva':'Disatt.')+'</button></td>'
-        + '<td style="padding:6px 8px;text-align:right"><button onclick="OC.deleteSocialFonte(\''+esc(f.ID)+'\')" style="padding:2px 8px;border-radius:3px;border:1px solid #ffcdd2;background:#fff3f3;color:#C8102E;font-size:11px;cursor:pointer">Elimina</button></td>'
+        + '<td style="padding:6px 8px;text-align:right"><button onclick="OC.deleteSocialFonte(\''+esc(f.ID)+'\')" style="padding:2px 8px;border-radius:3px;border:1px solid oklch(0.88 0.04 25);background:oklch(0.97 0.02 25);color:var(--danger);font-size:11px;cursor:pointer">Elimina</button></td>'
         + '</tr>';
     });
     html += '</tbody></table>';
@@ -12499,7 +12504,7 @@
             box.innerHTML = '<div style="background:var(--surface,#F7F7F8);color:#2A4A33;padding:10px 14px;border-radius:6px;border-left:3px solid var(--amb-2,#10916D)">✓ Nessuna fonte bandi disattivata. Tutte le fonti sono in stato Attiva=TRUE.</div>';
             return;
           }
-          var html = '<div style="background:#FEF6F6;border:1px solid #F5C5C5;padding:8px 12px;border-radius:6px;font-size:12.5px;color:#5C2020;margin-bottom:12px"><b>Trovate ' + list.length + ' fonti disattivate</b> · Per riattivare: vai sulla card "Diagnostica sistema fonti v5" → click "Riprova" su una riga (resetta fail consecutivi e attiva).</div>';
+          var html = '<div style="background:oklch(0.97 0.02 25);border:1px solid oklch(0.88 0.04 25);padding:8px 12px;border-radius:6px;font-size:12.5px;color:var(--danger);margin-bottom:12px"><b>Trovate ' + list.length + ' fonti disattivate</b> · Per riattivare: vai sulla card "Diagnostica sistema fonti v5" → click "Riprova" su una riga (resetta fail consecutivi e attiva).</div>';
           html += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
           html += '<thead><tr style="background:var(--danger,#C2410C);color:#fff;text-align:left">'
                 + '<th style="padding:6px 8px">#</th>'
@@ -12521,7 +12526,7 @@
                   + '<td style="padding:6px 8px;color:var(--ink-2)">' + esc(f.categoria || '—') + '</td>'
                   + '<td style="padding:6px 8px;color:var(--ink-3);white-space:nowrap">' + esc(f.ultimaScan || '—') + '</td>'
                   + '<td style="padding:6px 8px;text-align:center;color:' + (f.failConsec >= 3 ? 'var(--danger,#C2410C)' : 'var(--ink-2)') + ';font-weight:' + (f.failConsec >= 3 ? '700' : '400') + '">' + f.failConsec + '</td>'
-                  + '<td style="padding:6px 8px;color:#5C2020;font-size:11.5px">' + esc(errOrNote || '—') + '</td>'
+                  + '<td style="padding:6px 8px;color:var(--danger);font-size:11.5px">' + esc(errOrNote || '—') + '</td>'
                   + '<td style="padding:6px 8px"><a href="' + esc(f.url) + '" target="_blank" rel="noopener" style="color:var(--amb-3,#2563EB);font-size:11px;word-break:break-all">' + esc(f.url.substring(0, 50)) + (f.url.length > 50 ? '…' : '') + '</a></td>'
                   + '</tr>';
           });
@@ -12658,12 +12663,12 @@
             return;
           }
           var html = '<table style="width:100%;border-collapse:collapse;font-size:12px">';
-          html += '<thead><tr style="background:#F4F1EA;text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">News (titolo · fonte)</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:180px">Keyword match</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:90px">Rilevato</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:180px">Azioni</th></tr></thead><tbody>';
+          html += '<thead><tr style="background:var(--surface);text-align:left"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">News (titolo · fonte)</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:180px">Keyword match</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:90px">Rilevato</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7);width:180px">Azioni</th></tr></thead><tbody>';
           r.candidate.forEach(function(c){
             var linkH = c.newsLink ? ('<a href="' + esc(c.newsLink) + '" target="_blank" rel="noopener" style="color:var(--link);text-decoration:none">↗ apri</a>') : '<span style="color:var(--ink-3)">no link</span>';
             html += '<tr>';
             html += '<td style="padding:6px;border-bottom:1px solid #EFECE4"><b style="font-size:12px">' + esc(c.newsTitolo || '(senza titolo)') + '</b><div style="font-size:11px;color:var(--ink-3);margin-top:2px">' + esc(c.newsFonte || '—') + ' · ' + linkH + '</div></td>';
-            html += '<td style="padding:6px;border-bottom:1px solid #EFECE4;font-size:11px;color:#8B6314;font-family:monospace">' + esc(c.keywords || '') + '</td>';
+            html += '<td style="padding:6px;border-bottom:1px solid #EFECE4;font-size:11px;color:var(--warning);font-family:monospace">' + esc(c.keywords || '') + '</td>';
             html += '<td style="padding:6px;border-bottom:1px solid #EFECE4;font-size:11px;color:var(--ink-3)">' + esc(c.timestamp || '') + '</td>';
             html += '<td style="padding:6px;border-bottom:1px solid #EFECE4;white-space:nowrap">';
             html += '<button class="btn btn-secondary" style="font-size:11px;padding:4px 8px;background:var(--surface,#F7F7F8);border-color:var(--amb-2,#10916D);color:#1E5C3A;margin-right:4px" onclick="OC.crossrefApprove(\'' + esc(c.id) + '\')" title="Crea bozza in Bandi_v5 con stato candidato (da rifinire manualmente)">✓ Approva</button>';
@@ -12746,7 +12751,7 @@
             var el = $('ag' + a.id + 'KPI');
             if (el) el.innerHTML = a.fonti_attive + '/' + a.fonti_totali + ' fonti · ' + a.contenuti_totali + ' contenuti<br><span style="font-size:10px;color:#888">' + a.optin_musei + ' opt-in · ' + (a.ultima_scan ? new Date(a.ultima_scan).toLocaleString('it-IT', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : 'mai scan') + '</span>';
           });
-          if (info) info.innerHTML = '<b>' + r.profilo_musei_totali + '</b> musei profilati · <b>' + r.trigger_attivi + '</b> trigger attivi · Claude API: <b>' + (r.claude_api_key_presente ? 'OK ✓' : 'MANCANTE ✗') + '</b><br><span style="font-size:11px;color:#5C4332">' + esc(r.raccomandazione || '') + '</span>';
+          if (info) info.innerHTML = '<b>' + r.profilo_musei_totali + '</b> musei profilati · <b>' + r.trigger_attivi + '</b> trigger attivi · Claude API: <b>' + (r.claude_api_key_presente ? 'OK ✓' : 'MANCANTE ✗') + '</b><br><span style="font-size:11px;color:var(--ink-2)">' + esc(r.raccomandazione || '') + '</span>';
           // Popola azioni singolo agente
           var actDiv = $('agSingleActions');
           if (actDiv) {
@@ -12833,12 +12838,12 @@
           if (!r || !r.ok) { wrap.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + (r && r.error ? esc(r.error) : '?') + '</span>'; return; }
           var cnt = $('agProfiliCount'); if (cnt) cnt.textContent = '(' + r.total + ')';
           if (!r.items.length) { wrap.innerHTML = '<em style="color:#888">Nessun profilo presente. Usa il form sopra o "Popola da Matrix".</em>'; return; }
-          var html = '<table style="width:100%;border-collapse:collapse"><thead><tr style="background:#F4F1EA;text-align:left;font-size:11px"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Email</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Museo</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Opt-in</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Azioni</th></tr></thead><tbody>';
+          var html = '<table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--surface);text-align:left;font-size:11px"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Email</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Museo</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Opt-in</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Azioni</th></tr></thead><tbody>';
           r.items.forEach(function(p){
             var emailEsc = esc(p.Email || '');
             var opt = '';
             [1,2,3,4,5].forEach(function(n){
-              if (p['OptIn_AG' + n] === true) opt += '<span style="display:inline-block;padding:1px 6px;background:#E6F4EA;color:#1E6B3A;border-radius:8px;font-size:10px;margin-right:2px">AG' + n + '</span>';
+              if (p['OptIn_AG' + n] === true) opt += '<span style="display:inline-block;padding:1px 6px;background:var(--amb-2-soft);color:var(--success);border-radius:8px;font-size:10px;margin-right:2px">AG' + n + '</span>';
             });
             html += '<tr><td style="padding:5px;border-bottom:1px solid #EFECE4;font-size:11px">' + emailEsc + '</td>'
               + '<td style="padding:5px;border-bottom:1px solid #EFECE4;font-size:11px">' + esc(p.NomeMuseo || '—') + '</td>'
@@ -12894,7 +12899,7 @@
           if (!r || !r.ok) { wrap.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + (r && r.error ? esc(r.error) : '?') + '</span>'; return; }
           var cnt = $('agRisultatiCount'); if (cnt) cnt.textContent = '(' + r.total + ')';
           if (!r.items.length) { wrap.innerHTML = '<em style="color:#888">Nessun contenuto. Lancia uno scan o aspetta i trigger automatici.</em>'; return; }
-          var html = '<table style="width:100%;border-collapse:collapse"><thead><tr style="background:#F4F1EA;text-align:left;font-size:11px"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Ag.</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Titolo</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Fonte</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Data</th></tr></thead><tbody>';
+          var html = '<table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--surface);text-align:left;font-size:11px"><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Ag.</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Titolo</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Fonte</th><th style="padding:6px;border-bottom:1px solid var(--rule-2,#D2D2D7)">Data</th></tr></thead><tbody>';
           r.items.forEach(function(it){
             var d = it.dataAcquisizione ? new Date(it.dataAcquisizione).toLocaleString('it-IT', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
             html += '<tr><td style="padding:5px;border-bottom:1px solid #EFECE4;font-size:10px;font-weight:700">AG' + it.agenteId + '</td>'
@@ -12932,7 +12937,7 @@
           html += '<div style="display:grid;gap:10px;margin-bottom:18px">';
           (r.agenti || []).forEach(function(a){
             var checked = r.optIn && r.optIn[a.id] === true ? 'checked' : '';
-            html += '<label style="display:flex;gap:12px;align-items:flex-start;padding:14px 16px;background:#FAFAF6;border:1px solid #E5DDC8;border-left:3px solid ' + esc(a.color) + ';border-radius:8px;cursor:pointer">'
+            html += '<label style="display:flex;gap:12px;align-items:flex-start;padding:14px 16px;background:var(--paper);border:1px solid var(--rule);border-left:3px solid ' + esc(a.color) + ';border-radius:8px;cursor:pointer">'
               + '<input type="checkbox" id="wsAgOpt' + a.id + '" ' + checked + ' style="margin-top:3px;flex-shrink:0;transform:scale(1.2)">'
               + '<div style="flex:1">'
               + '<div style="font-family:var(--font-display);font-weight:600;color:var(--ink);font-size:14px;margin-bottom:3px">' + esc(a.icon) + ' ' + esc(a.nome) + '</div>'
@@ -13041,17 +13046,17 @@
       html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px">';
       html += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
       html += '<span style="display:inline-block;padding:3px 10px;background:' + col + '20;color:' + col + ';border-radius:4px;font-family:var(--font-ui);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700">' + esc(p.Stato || '?') + '</span>';
-      html += '<span style="font-size:11px;color:#5C4332">' + data + '</span>';
+      html += '<span style="font-size:11px;color:var(--ink-2)">' + data + '</span>';
       html += '<span style="font-size:11px;color:#888">· tematica: <b>' + esc(p.Tematica || '—') + '</b></span>';
-      html += '<span style="font-size:10px;color:#aaa">· id: ' + esc(p.ID || '') + '</span>';
+      html += '<span style="font-size:10px;color:var(--ink-4)">· id: ' + esc(p.ID || '') + '</span>';
       html += '</div>';
       // Bottoni rapidi per draft
       if (p.Stato === 'draft') {
         html += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
-        html += '<button class="btn btn-secondary" onclick="OC.socialApprove(\'' + idEsc + '\')" style="background:#EAF5EC;border-color:var(--amb-2,#10916D);color:#1E6B3A;font-size:11px;padding:4px 12px">✓ Approva</button>';
+        html += '<button class="btn btn-secondary" onclick="OC.socialApprove(\'' + idEsc + '\')" style="background:#EAF5EC;border-color:var(--amb-2,#10916D);color:var(--success);font-size:11px;padding:4px 12px">✓ Approva</button>';
         html += '<button class="btn btn-secondary" onclick="OC.socialEdit(\'' + idEsc + '\')" style="font-size:11px;padding:4px 12px">✏ Modifica</button>';
         html += '<button class="btn btn-secondary" onclick="OC.socialRegen(\'' + idEsc + '\')" style="font-size:11px;padding:4px 12px">Rigenera</button>';
-        html += '<button class="btn btn-secondary" onclick="OC.socialReject(\'' + idEsc + '\')" style="background:#FEF1F1;border-color:#C8102E;color:var(--danger,#C2410C);font-size:11px;padding:4px 12px">✗ Rifiuta</button>';
+        html += '<button class="btn btn-secondary" onclick="OC.socialReject(\'' + idEsc + '\')" style="background:#FEF1F1;border-color:var(--danger);color:var(--danger,#C2410C);font-size:11px;padding:4px 12px">✗ Rifiuta</button>';
         html += '</div>';
       } else if (p.Stato === 'approved' || p.Stato === 'scheduled') {
         html += '<div style="display:flex;gap:6px"><button class="btn btn-secondary" onclick="OC.socialEdit(\'' + idEsc + '\')" style="font-size:11px;padding:4px 12px">✏ Modifica</button></div>';
@@ -13064,15 +13069,15 @@
       // Body con immagine + testi
       html += '<div style="display:grid;grid-template-columns:' + (img ? '120px 1fr' : '1fr') + ';gap:14px;margin-top:8px">';
       if (img) {
-        html += '<div><img src="' + esc(img) + '" alt="" style="width:120px;height:120px;object-fit:cover;border-radius:6px;border:1px solid var(--rule,#E5E5E7)" onerror="this.style.display=\'none\'"><div style="font-size:9px;color:#aaa;margin-top:3px">' + esc(imgSrc) + '</div></div>';
+        html += '<div><img src="' + esc(img) + '" alt="" style="width:120px;height:120px;object-fit:cover;border-radius:6px;border:1px solid var(--rule,#E5E5E7)" onerror="this.style.display=\'none\'"><div style="font-size:9px;color:var(--ink-4);margin-top:3px">' + esc(imgSrc) + '</div></div>';
       }
       html += '<div>';
       // Caption IG
-      html += '<details style="margin-bottom:8px"><summary style="cursor:pointer;font-size:11px;color:#5C4332;text-transform:uppercase;letter-spacing:.04em;font-weight:700">📷 Caption Instagram (' + capIg.length + ' char)</summary>';
-      html += '<pre style="white-space:pre-wrap;font-family:var(--font-display);font-size:12.5px;color:var(--ink);margin:6px 0 0;padding:10px 12px;background:#FAFAF6;border-radius:6px;line-height:1.55">' + esc(capIg) + '</pre></details>';
+      html += '<details style="margin-bottom:8px"><summary style="cursor:pointer;font-size:11px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em;font-weight:700">📷 Caption Instagram (' + capIg.length + ' char)</summary>';
+      html += '<pre style="white-space:pre-wrap;font-family:var(--font-display);font-size:12.5px;color:var(--ink);margin:6px 0 0;padding:10px 12px;background:var(--paper);border-radius:6px;line-height:1.55">' + esc(capIg) + '</pre></details>';
       // Post LI
-      html += '<details><summary style="cursor:pointer;font-size:11px;color:#5C4332;text-transform:uppercase;letter-spacing:.04em;font-weight:700">💼 Post LinkedIn (' + postLi.length + ' char)</summary>';
-      html += '<pre style="white-space:pre-wrap;font-family:var(--font-display);font-size:12.5px;color:var(--ink);margin:6px 0 0;padding:10px 12px;background:#FAFAF6;border-radius:6px;line-height:1.55">' + esc(postLi) + '</pre></details>';
+      html += '<details><summary style="cursor:pointer;font-size:11px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em;font-weight:700">💼 Post LinkedIn (' + postLi.length + ' char)</summary>';
+      html += '<pre style="white-space:pre-wrap;font-family:var(--font-display);font-size:12.5px;color:var(--ink);margin:6px 0 0;padding:10px 12px;background:var(--paper);border-radius:6px;line-height:1.55">' + esc(postLi) + '</pre></details>';
       html += '</div></div>';
       // Footer meta
       if (p.NoteAdmin) html += '<div style="margin-top:8px;font-size:11px;color:var(--accent-hover,#7A4940);font-style:italic">Note: ' + esc(p.NoteAdmin) + '</div>';
@@ -13308,7 +13313,7 @@
         if (testoHtml.length > 1) {
           var prima = testoHtml.charAt(0);
           var resto = testoHtml.substring(1);
-          testoHtml = '<span style="float:left;font-family:Georgia,serif;font-size:64px;font-weight:700;line-height:.8;color:#8B3A1F;margin:4px 10px 0 0;padding-top:4px">' + prima + '</span>' + resto;
+          testoHtml = '<span style="float:left;font-family:Georgia,serif;font-size:64px;font-weight:700;line-height:.8;color:var(--accent);margin:4px 10px 0 0;padding-top:4px">' + prima + '</span>' + resto;
         }
         txt.innerHTML = testoHtml;
       }
@@ -13517,13 +13522,13 @@
     <div style="background:#fff;border:1px solid var(--rule,#E5E5E7);border-radius:12px;padding:24px;margin-bottom:20px">
       <h3 style="font-size:15px;font-weight:600;color:var(--ink);margin:0 0 16px">Chi sei</h3>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Area professionale</label><select id="pro-categoria" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Seleziona area...</option></select></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Ruolo specifico</label><select id="pro-ruolo" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;color:#999" disabled><option value="">Prima seleziona l area...</option></select></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Tipo di organizzazione</label><select id="pro-cat-ente" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Seleziona tipo...</option></select></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Organizzazione specifica</label><select id="pro-ente" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;color:#999" disabled><option value="">Prima seleziona il tipo...</option></select></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Area geografica</label><input id="pro-area" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" placeholder="Es. Puglia, Bari"></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Dimensione struttura</label><select id="pro-dimensione" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Seleziona...</option></select></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Esperienza nel settore</label><select id="pro-seniority" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Seleziona...</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Area professionale</label><select id="pro-categoria" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px"><option value="">Seleziona area...</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Ruolo specifico</label><select id="pro-ruolo" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px;color:#999" disabled><option value="">Prima seleziona l area...</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Tipo di organizzazione</label><select id="pro-cat-ente" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px"><option value="">Seleziona tipo...</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Organizzazione specifica</label><select id="pro-ente" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px;color:#999" disabled><option value="">Prima seleziona il tipo...</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Area geografica</label><input id="pro-area" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px" placeholder="Es. Puglia, Bari"></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Dimensione struttura</label><select id="pro-dimensione" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px"><option value="">Seleziona...</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Esperienza nel settore</label><select id="pro-seniority" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px"><option value="">Seleziona...</option></select></div>
       </div>
     </div>
 
@@ -13539,10 +13544,10 @@
       <h3 style="font-size:15px;font-weight:600;color:var(--ink);margin:0 0 6px">La tua esperienza (anonimo)</h3>
       <p style="font-size:13px;color:var(--ink-2);margin:0 0 16px;line-height:1.5">Queste informazioni ci aiutano a capire il livello della community. Risposte facoltative e aggregate in forma anonima.</p>
       <div style="display:grid;gap:14px">
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Quanti visitatori annui gestisce la tua struttura?</label><select id="pro-q-visitatori" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Preferisco non rispondere</option><option>Meno di 10.000</option><option>10.000 - 50.000</option><option>50.000 - 100.000</option><option>100.000 - 500.000</option><option>Oltre 500.000</option></select></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Quante persone lavorano nella tua struttura?</label><select id="pro-q-staff" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Preferisco non rispondere</option><option>1-3</option><option>4-10</option><option>11-30</option><option>31-100</option><option>Oltre 100</option></select></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Hai gia utilizzato strumenti AI nel tuo lavoro?</label><select id="pro-q-ai" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Preferisco non rispondere</option><option>No, mai</option><option>Si, in modo esplorativo</option><option>Si, regolarmente</option><option>Si, in modo strutturato</option></select></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Quanto e prioritaria l accessibilita nella tua struttura?</label><select id="pro-q-access" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Preferisco non rispondere</option><option>Non ancora affrontata</option><option>In fase di valutazione</option><option>In corso interventi</option><option>Ben strutturata</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Quanti visitatori annui gestisce la tua struttura?</label><select id="pro-q-visitatori" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px"><option value="">Preferisco non rispondere</option><option>Meno di 10.000</option><option>10.000 - 50.000</option><option>50.000 - 100.000</option><option>100.000 - 500.000</option><option>Oltre 500.000</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Quante persone lavorano nella tua struttura?</label><select id="pro-q-staff" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px"><option value="">Preferisco non rispondere</option><option>1-3</option><option>4-10</option><option>11-30</option><option>31-100</option><option>Oltre 100</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Hai gia utilizzato strumenti AI nel tuo lavoro?</label><select id="pro-q-ai" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px"><option value="">Preferisco non rispondere</option><option>No, mai</option><option>Si, in modo esplorativo</option><option>Si, regolarmente</option><option>Si, in modo strutturato</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Quanto e prioritaria l accessibilita nella tua struttura?</label><select id="pro-q-access" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px"><option value="">Preferisco non rispondere</option><option>Non ancora affrontata</option><option>In fase di valutazione</option><option>In corso interventi</option><option>Ben strutturata</option></select></div>
       </div>
     </div>
 
@@ -13550,7 +13555,7 @@
     <div style="background:#fff;border:1px solid var(--rule,#E5E5E7);border-radius:12px;padding:24px;margin-bottom:20px">
       <h3 style="font-size:15px;font-weight:600;color:var(--ink);margin:0 0 6px">Raccontaci di te</h3>
       <p style="font-size:13px;color:var(--ink-2);margin:0 0 12px;line-height:1.5">Hai esigenze particolari, progetti in corso o semplicemente vuoi presentarti? Scrivi liberamente.</p>
-      <textarea id="pro-note-libere" maxlength="2000" rows="5" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:vertical;font-family:inherit" placeholder="Es. Sto lavorando a un progetto di accessibilita per il mio museo..."></textarea>
+      <textarea id="pro-note-libere" maxlength="2000" rows="5" style="width:100%;padding:12px;border:1px solid var(--rule);border-radius:8px;font-size:14px;resize:vertical;font-family:inherit" placeholder="Es. Sto lavorando a un progetto di accessibilita per il mio museo..."></textarea>
       <div style="font-size:11px;color:var(--ink-3);margin-top:4px;text-align:right"><span id="pro-note-count">0</span>/2000</div>
     </div>
 
@@ -13559,10 +13564,10 @@
       <h3 style="font-size:15px;font-weight:600;color:var(--ink);margin:0 0 6px">I tuoi dati</h3>
       <p style="font-size:13px;color:var(--ink-2);margin:0 0 14px;line-height:1.5">Compilando qui ti registri e ricevi i contenuti personalizzati. Se hai gia un account, <b>accedi</b> e questo riquadro sparisce.</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Nome *</label><input id="pro-reg-nome" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" placeholder="Nome"></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Cognome</label><input id="pro-reg-cognome" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" placeholder="Cognome"></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Nome *</label><input id="pro-reg-nome" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px" placeholder="Nome"></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Cognome</label><input id="pro-reg-cognome" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px" placeholder="Cognome"></div>
       </div>
-      <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Email *</label><input type="email" id="pro-reg-email" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" placeholder="email@museo.it"></div>
+      <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Email *</label><input type="email" id="pro-reg-email" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px" placeholder="email@museo.it"></div>
     </div>
 
     <!-- Consenso + Salva -->
@@ -13662,7 +13667,7 @@
 <div id="oc-gdpr-gate" hidden style="position:fixed;inset:0;background:rgba(26,24,21,.7);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)">
   <div role="dialog" aria-modal="true" style="background:#fff;border-radius:16px;max-width:500px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.3);padding:36px 32px;font-family:var(--font-ui,sans-serif)">
     <div style="text-align:center;margin-bottom:8px">
-      <div style="font-family:Georgia,serif;font-style:italic;font-size:28px;color:#8B3A1F;letter-spacing:.01em">Sinopia</div>
+      <div style="font-family:Georgia,serif;font-style:italic;font-size:28px;color:var(--accent);letter-spacing:.01em">Sinopia</div>
       <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-top:2px">Osservatorio Culturale</div>
     </div>
     <h2 style="font-size:18px;font-weight:600;color:var(--ink);margin:16px 0 8px;text-align:center">Benvenuto in Sinopia!</h2>
@@ -13732,18 +13737,18 @@
       <p style="font-size:12.5px;color:var(--ink-2);margin:6px 0 0">Condividi un progetto o buona pratica con la community.</p>
     </div>
     <div style="padding:22px 26px">
-      <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Titolo *</label><input id="seg-titolo" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" maxlength="200"></div>
-      <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Descrizione *</label><textarea id="seg-descrizione" rows="4" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:vertical" maxlength="2000"></textarea></div>
+      <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Titolo *</label><input id="seg-titolo" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px" maxlength="200"></div>
+      <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Descrizione *</label><textarea id="seg-descrizione" rows="4" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px;resize:vertical" maxlength="2000"></textarea></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">URL (opz.)</label><input id="seg-url" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" type="url"></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Tipo</label><select id="seg-tipo" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="">Seleziona...</option><option>Mostra</option><option>Evento</option><option>Progetto</option><option>Pubblicazione</option><option>Buona pratica</option><option>Altro</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">URL (opz.)</label><input id="seg-url" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px" type="url"></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Tipo</label><select id="seg-tipo" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px"><option value="">Seleziona...</option><option>Mostra</option><option>Evento</option><option>Progetto</option><option>Pubblicazione</option><option>Buona pratica</option><option>Altro</option></select></div>
       </div>
-      <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Area geografica</label><input id="seg-area" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px" placeholder="Es. Puglia, Bari"></div>
+      <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Area geografica</label><input id="seg-area" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px" placeholder="Es. Puglia, Bari"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
-        <button type="button" onclick="OC.chiudiFormSegnalazione()" style="background:none;border:1px solid #ddd;padding:10px 18px;border-radius:8px;font-size:13px;cursor:pointer">Annulla</button>
-        <button type="button" id="seg-btn-invia" onclick="OC.inviaSegnalazione()" style="background:#3F7A5E;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Invia</button>
+        <button type="button" onclick="OC.chiudiFormSegnalazione()" style="background:none;border:1px solid var(--rule);padding:10px 18px;border-radius:8px;font-size:13px;cursor:pointer">Annulla</button>
+        <button type="button" id="seg-btn-invia" onclick="OC.inviaSegnalazione()" style="background:var(--amb-2);color:var(--paper);border:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Invia</button>
       </div>
-      <p id="seg-errore" style="font-size:12px;color:#C2410C;margin:10px 0 0;display:none"></p>
+      <p id="seg-errore" style="font-size:12px;color:var(--danger);margin:10px 0 0;display:none"></p>
     </div>
   </div>
 </div>
@@ -13809,7 +13814,7 @@
           + '</div>'
           + (desc ? '<div style="font-size:12.5px;color:var(--ink-2);margin-top:3px;line-height:1.4">' + desc + '</div>' : '')
           + '<div style="font-size:11px;color:var(--ink-3);margin-top:4px">'
-          + '<span style="font-weight:600;color:#3F7A5E">' + (s.tipo||'').replace(/</g,'&lt;') + '</span>'
+          + '<span style="font-weight:600;color:var(--amb-2)">' + (s.tipo||'').replace(/</g,'&lt;') + '</span>'
           + (s.area_geografica ? ' &middot; '+(s.area_geografica||'').replace(/</g,'&lt;') : '')
           + ' &middot; ' + (s.nome_autore||'Community').replace(/</g,'&lt;')
           + '</div></div>';
@@ -13869,14 +13874,14 @@
     ov.innerHTML = '<div style="background:var(--paper,#fff);border-radius:14px;max-width:440px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.25);position:relative;font-family:var(--font-ui,sans-serif);padding:32px 28px">'
       + '<button onclick="document.getElementById(\'oc-regform-overlay\').remove()" style="position:absolute;top:12px;right:12px;background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--ink-3)">&times;</button>'
       + '<div style="font-family:var(--font-display,Georgia,serif);font-style:italic;font-size:22px;color:var(--accent,#935851)">Sinopia</div>'
-      + '<div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#5C4332;margin:4px 0 16px">Osservatorio Culturale</div>'
+      + '<div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);margin:4px 0 16px">Osservatorio Culturale</div>'
       + '<h2 style="font-size:1.15rem;font-weight:500;color:var(--ink);margin:0 0 6px">Entra con la tua email</h2>'
       + '<p style="font-size:13px;color:var(--ink-2);margin:0 0 16px;line-height:1.5">Ti inviamo un <b>link per entrare senza password</b>. Se &egrave; la prima volta, ti registri in automatico come lettore.</p>'
       // v659 — Ingresso UNIFICATO (login = registrazione): un solo gesto, email + nome facoltativo.
       // Predisposto per campi futuri (telefono / WhatsApp / Telegram): basta aggiungere input qui
       // e passarli a loginConEmail/registraUtente.
-      + '<input type="email" id="_gateEmail" placeholder="La tua email" aria-label="Email" style="width:100%;padding:11px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px">'
-      + '<input type="text" id="_gateNome" placeholder="Nome (facoltativo)" aria-label="Nome" style="width:100%;padding:11px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px">'
+      + '<input type="email" id="_gateEmail" placeholder="La tua email" aria-label="Email" style="width:100%;padding:11px 14px;border:1px solid var(--rule);border-radius:8px;font-size:14px;margin-bottom:8px">'
+      + '<input type="text" id="_gateNome" placeholder="Nome (facoltativo)" aria-label="Nome" style="width:100%;padding:11px 14px;border:1px solid var(--rule);border-radius:8px;font-size:14px;margin-bottom:10px">'
       + '<label style="display:flex;align-items:start;gap:7px;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="_gateGdpr" checked style="margin-top:3px"><span style="font-size:11px;color:var(--ink-3);line-height:1.5">Acconsento al trattamento dei dati. <a href="#" onclick="OC.go(\'privacy\');document.getElementById(\'oc-regform-overlay\').remove();return false" style="color:var(--accent,#935851)">Privacy</a></span></label>'
       + '<button type="button" onclick="OC._gateDoLogin()" style="width:100%;background:var(--accent,#935851);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Entra &rarr;</button>'
       + '<div id="_gateMsg" role="alert" aria-live="assertive" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>'

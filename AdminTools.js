@@ -39,6 +39,7 @@ function adminRunTool(tool, token) {
       case 'fontiEstero':        r = fontiAggiungiBatchEstero(); break;
       case 'fontiNormativa':     r = fontiAggiungiBatchNormativa(); break;
       case 'fontiPrimarie':      r = fontiRipristinaPrimarie(); break;
+      case 'fontiOsservatori':  r = fontiAggiungiBatchOsservatori(); break;
       case 'fontiPodcast':       r = fontiAggiungiBatchPodcast(); break;   // Tappa P
       case 'fontiSocial':        r = fontiAggiungiBatchSocial(); break;    // Tappa 4
       case 'fontiPodcastSocial': r = { podcast: fontiAggiungiBatchPodcast(), social: fontiAggiungiBatchSocial() }; break; // entrambe in 1 clic (idempotente)
@@ -55,6 +56,12 @@ function adminRunTool(tool, token) {
       case 'tedMalformatiApply': r = bandiPuliziaTedMalformati({ dryRun: false }); break;
       case 'backfillCultura':    r = backfillSettoreCultura(); break;
       case 'tedVuoti':           r = puliziBandiTedVuoti(); break;
+
+      // ── Arricchimento bandi v4.27 ───────────────────────────────────────
+      case 'enrichRadarSetup':   r = addColonneRadar_v427(); break;
+      case 'enrichRadarDry':     r = arricchisciBandiRadar({ dryRun: true }); break;
+      case 'enrichRadarApply':   r = arricchisciBandiRadar({ cap: 20 }); break;
+      case 'enrichRadarBatch':   r = enrichBandiRadarBatch(); break;
 
       // ── Diagnostica / test (non scrivono nulla) ──────────────────────────
       case 'gateSelfTest':       r = bandiGateSelfTest(); break;

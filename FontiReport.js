@@ -278,6 +278,75 @@ function fontiAggiungiBatchEstero() {
   return { ok: true, aggiunte: aggiunte, totale: candidati.length, esiti: esiti };
 }
 
+/**
+ * v4.27.18 — Aggiunge 54 osservatori culturali internazionali come fonti news RSS.
+ * Fonte: uMap "Cultural Observatories: A Global Mapping Attempt" (1340668).
+ * Idempotente: dedup via fontiAggiungiFeedVerificato.
+ * Eseguire dal pannello admin: Impostazioni > Sistema > "+ Osservatori culturali"
+ */
+function fontiAggiungiBatchOsservatori() {
+  var candidati = [
+    { url: 'https://asef.org/feed/', nome: 'ASEF Asia-Europe Foundation (Singapour)', ambito: 1 },
+    { url: 'https://www.boekman.nl/feed/', nome: 'Boekman Foundation (Netherlands)', ambito: 1 },
+    { url: 'http://www.cupore.fi/feed', nome: 'Cupore Cultural Policy Research (Finland)', ambito: 1 },
+    { url: 'https://www.culturalpolicies.net/feed/', nome: 'Compendium Cultural Policies Europe (Deutschland)', ambito: 1 },
+    { url: 'https://culturalpolicyireland.org/feed/', nome: 'Cultural Policy Observatory Ireland', ambito: 1 },
+    { url: 'http://enfoqueconsumosculturales.org.ar/feed/', nome: 'Enfoque Consumos Culturales (Argentina)', ambito: 1 },
+    { url: 'https://www.egmus.eu/feed.xml', nome: 'EGMUS European Museum Statistics (Deutschland)', ambito: 1 },
+    { url: 'https://www.eno-net.phil.fau.eu/feed/', nome: 'ENO-net Arts & Cultural Education (Deutschland)', ambito: 1 },
+    { url: 'https://www.kupoge.de/feed/', nome: 'Kulturpolitische Gesellschaft (Deutschland)', ambito: 1 },
+    { url: 'https://mik.krakow.pl/feed/', nome: 'Malopolskie Obserwatorium Kultury (Poland)', ambito: 1 },
+    { url: 'https://ikm.gda.pl/feed/podcast', nome: 'Instytut Kultury Miejskiej Gdansk (Poland)', ambito: 1 },
+    { url: 'https://cnm.fr/feed/', nome: 'Observatoire CNM Filiere Musicale (France)', ambito: 3 },
+    { url: 'https://droitsculturels.org/observatoire/feed/', nome: 'Observatoire Droits Culturels (Switzerland)', ambito: 2 },
+    { url: 'https://www.ldh-france.org/feed/', nome: 'Observatoire Liberte de Creation (France)', ambito: 2 },
+    { url: 'https://www.observatoire-culture.net/feed/', nome: 'OPC Politiques Culturelles Grenoble (France)', ambito: 1 },
+    { url: 'https://www.observatoirepharos.com/feed', nome: 'Observatoire Pharos Pluralisme Culturel (France)', ambito: 1 },
+    { url: 'https://www.observatoire-culture.ch/feed', nome: 'Observatoire Romand de la Culture (Switzerland)', ambito: 1 },
+    { url: 'https://observatoricultural.blogspot.com/feeds/posts/default', nome: 'Observatori Cultural de Genere (Spain)', ambito: 2 },
+    { url: 'https://oikosobservatorio.com/feed/', nome: 'OIKOS Economia de la Cultura (Spain)', ambito: 1 },
+    { url: 'https://oaaep.unizar.es/feed/', nome: 'Observatorio Arte Esfera Publica (Spain)', ambito: 1 },
+    { url: 'https://www.economicas.uba.ar/investigacion/feed/', nome: 'Observatorio Cultural UBA (Argentina)', ambito: 1 },
+    { url: 'https://www.observatorioatalaya.es/feed/', nome: 'Observatorio Cultural Atalaya (Spain)', ambito: 1 },
+    { url: 'https://observatorioculturalveracruz.blogspot.com/feeds/posts/default', nome: 'Observatorio Cultural Veracruz (Mexico)', ambito: 1 },
+    { url: 'http://culturadesenvolvimentopoa.blogspot.com/feeds/posts/default', nome: 'Observatorio da Cultura POA (Brazil)', ambito: 1 },
+    { url: 'https://fundacionalternativas.org/feed/', nome: 'Observatorio Cultura y Comunicacion (Spain)', ambito: 4 },
+    { url: 'https://observatorioculturamurcia.wordpress.com/feed/', nome: 'Observatorio Cultura de Murcia (Spain)', ambito: 1 },
+    { url: 'https://cervantesobservatorio.fas.harvard.edu/en/rss.xml', nome: 'Cervantes Observatory Harvard (United States)', ambito: 1 },
+    { url: 'https://www.cegal.es/feed/', nome: 'Observatorio de la Libreria (Spain)', ambito: 1 },
+    { url: 'https://www.ocausal.es/es/feed/', nome: 'OCA Contenidos Audiovisuales (Spain)', ambito: 3 },
+    { url: 'https://www.erigaie.org/feed/', nome: 'Observatorio Patrimonio Cultural MIA (Colombia)', ambito: 1 },
+    { url: 'https://observacult.org/feed/', nome: 'Observacult Politicas Culturais (Brazil)', ambito: 1 },
+    { url: 'https://www.uv.mx/opc/feed', nome: 'OPC Politicas Culturales UV (Mexico)', ambito: 1 },
+    { url: 'https://politicasculturales.mx/feed', nome: 'Observatorio Politicas Culturales UACM (Mexico)', ambito: 1 },
+    { url: 'https://polobs.pt/feed/', nome: 'PolObs Politicas Comunicacao e Cultura (Portugal)', ambito: 4 },
+    { url: 'https://observatorio.uartes.edu.ec/feed/', nome: 'Observatorio Politicas y Economia Cultura (Ecuador)', ambito: 1 },
+    { url: 'https://www.ibermuseos.org/feed/', nome: 'Observatorio Iberoamericano de Museos (Spain)', ambito: 1 },
+    { url: 'http://www.fhuce.edu.uy/feed', nome: 'OBUPOC Politicas Culturales (Uruguay)', ambito: 1 },
+    { url: 'https://ocp.piemonte.it/feed/', nome: 'Osservatorio Culturale del Piemonte (Italia)', ambito: 1 },
+    { url: 'http://www.opib.librari.beniculturali.it/feed', nome: 'OPIB Programmi Internazionali Biblioteche (Italia)', ambito: 1 },
+    { url: 'https://spettacolo.cultura.gov.it/feed/', nome: 'Osservatorio dello Spettacolo MiC (Italia)', ambito: 3 },
+    { url: 'https://www.osservatori.net/feed/', nome: 'Osservatorio Innovazione Digitale Cultura (Italia)', ambito: 5 },
+    { url: 'https://www.tsm.tn.it/feed/', nome: 'OPAC Attivita Culturali Trentino (Italia)', ambito: 1 },
+    { url: 'https://spettacolo.emiliaromagnacultura.it/it/osservatorio/feed', nome: 'Osservatorio Spettacolo Emilia-Romagna (Italia)', ambito: 3 },
+    { url: 'https://symbola.net/feed/', nome: 'Fondazione Symbola (Italia)', ambito: 1 },
+    { url: 'https://idpc.gov.co/feed/', nome: 'Patrimonios Integrados (Colombia)', ambito: 1 },
+    { url: 'https://ascun.org.co/feed/', nome: 'RORESU Responsabilidad Social Universitaria (Colombia)', ambito: 4 },
+    { url: 'https://rok.amu.edu.pl/feed/', nome: 'ROK-UAM Obserwatorium Kultury (Poland)', ambito: 1 },
+    { url: 'https://wok.art.pl/feed/', nome: 'Warsaw Observatory of Culture (Poland)', ambito: 1 },
+    { url: 'http://www.kulturforschung.de/feed', nome: 'Zentrum fur Kulturforschung (Deutschland)', ambito: 1 },
+    { url: 'https://www.uv.mx/oum-max/feed', nome: 'Observatorio Universitario de Museos (Mexico)', ambito: 1 }
+  ];
+  var esiti = candidati.map(function(c) {
+    var r = fontiAggiungiFeedVerificato(c.url, c.nome, c.ambito, 'Osservatori-uMap-2026-07');
+    return { nome: c.nome, esito: r && r.ok ? 'AGGIUNTA' : ('saltata: ' + ((r && r.error) || '?')) };
+  });
+  var aggiunte = esiti.filter(function(e) { return e.esito === 'AGGIUNTA'; }).length;
+  var saltate = esiti.filter(function(e) { return e.esito !== 'AGGIUNTA'; }).length;
+  Logger.log('fontiAggiungiBatchOsservatori: ' + aggiunte + '/' + candidati.length + ' aggiunte, ' + saltate + ' saltate');
+  return { ok: true, aggiunte: aggiunte, saltate: saltate, totale: candidati.length, esiti: esiti };
+}
+
 // ----------------------------------------------------------------------------
 // EMAIL
 // ----------------------------------------------------------------------------

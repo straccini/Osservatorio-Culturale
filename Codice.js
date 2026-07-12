@@ -56,6 +56,8 @@ const COL = {
   STATO_RECORD: 18,  // * v3.0: attivo | archiviato
   URL_ENTE:     19,  // * v3.0: homepage ente pubblicante
   LETTO_BANDO:  20,  // * v3.1: true | false (flag lettura bando)
+  DESCRIZIONE:  21,  // * v4.27: descrizione testuale arricchita via Claude API
+  TIPO_APPALTO: 22,  // * v4.27: servizi|forniture|lavori|misto|finanziamento
 };
 
 const SHEET_RADAR = 'RADAR BANDI';
@@ -1552,6 +1554,161 @@ function getSheetRadar() {
 //   • addNuoveColonneRadar()                — migrazione schema RADAR colonne 18-20, già applicata
 // Recuperabili da git history se servono per audit.
 
+// v4.27 — Schema expansion: colonne 21-22 (DESCRIZIONE, TIPO_APPALTO)
+
+/**
+ * Aggiunge le colonne 21 (Descrizione) e 22 (TipoAppalto) al foglio RADAR BANDI.
+ * Idempotente: non sovrascrive se gli header esistono gia'.
+ * Eseguire UNA VOLTA dall'editor GAS o dal pannello admin.
+ */
+function addColonneRadar_v427() {
+  var sheet = getSheetRadar();
+  if (!sheet) return { ok: false, error: 'Foglio RADAR BANDI non trovato' };
+  var lastCol = sheet.getLastColumn();
+  var headers = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+  var added = [];
+  if (headers.indexOf('Descrizione') < 0) {
+    sheet.getRange(1, COL.DESCRIZIONE).setValue('Descrizione');
+    added.push('Descrizione (col ' + COL.DESCRIZIONE + ')');
+  }
+  if (headers.indexOf('TipoAppalto') < 0) {
+    sheet.getRange(1, COL.TIPO_APPALTO).setValue('TipoAppalto');
+    added.push('TipoAppalto (col ' + COL.TIPO_APPALTO + ')');
+  }
+  var msg = added.length ? 'Aggiunte: ' + added.join(', ') : 'Colonne gia presenti, nulla da fare';
+  Logger.log('addColonneRadar_v427: ' + msg);
+  return { ok: true, added: added, message: msg };
+}
+
+/**
+ * v4.27 — Arricchisce i bandi RADAR che hanno Descrizione e/o TipoAppalto vuoti.
+ * Usa Claude Haiku per estrarre descrizione e tipo appalto dal titolo + ente + note.
+ * @param {Object} opts  { cap: max bandi da arricchire (default 20), dryRun: boolean }
+ */
+function arricchisciBandiRadar(opts) {
+  opts = opts || {};
+  var cap = opts.cap || 20;
+  var dryRun = !!opts.dryRun;
+  var sheet = getSheetRadar();
+  if (!sheet) return { ok: false, error: 'Foglio RADAR BANDI non trovato' };
+
+  var apiKey = _claudeKey_();
+  if (!apiKey) return { ok: false, error: 'CLAUDE_API_KEY non configurata' };
+
+  var lastRow = sheet.getLastRow();
+  var lastCol = sheet.getLastColumn();
+  if (lastRow < 2) return { ok: true, arricchiti: 0, message: 'Nessun bando presente' };
+
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var colMap = buildColMap(headers);
+  var iDescr = colMap.DESCRIZIONE || COL.DESCRIZIONE;
+  var iTipo = colMap.TIPO_APPALTO || COL.TIPO_APPALTO;
+  var iTitolo = colMap.TITOLO || COL.TITOLO;
+  var iEnte = colMap.ENTE || COL.ENTE;
+  var iNote = colMap.NOTE || COL.NOTE;
+  var iSettore = colMap.SETTORE || COL.SETTORE;
+  var iLink = colMap.LINK || COL.LINK;
+
+  var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  var candidati = [];
+  for (var r = 0; r < data.length; r++) {
+    var row = data[r];
+    var descr = String(row[iDescr - 1] || '').trim();
+    var tipo = String(row[iTipo - 1] || '').trim();
+    if (descr && tipo) continue;  // gia arricchito
+    var titolo = String(row[iTitolo - 1] || '').trim();
+    if (!titolo) continue;
+    candidati.push({
+      rowIdx: r + 2,  // 1-indexed, header escluso
+      titolo: titolo,
+      ente: String(row[iEnte - 1] || ''),
+      note: String(row[iNote - 1] || ''),
+      settore: String(row[iSettore - 1] || ''),
+      link: String(row[iLink - 1] || ''),
+      hasDescr: !!descr,
+      hasTipo: !!tipo
+    });
+  }
+
+  if (!candidati.length) return { ok: true, arricchiti: 0, message: 'Tutti i bandi sono gia arricchiti' };
+
+  var batch = candidati.slice(0, cap);
+  if (dryRun) {
+    return { ok: true, dryRun: true, candidati: candidati.length, batch: batch.length,
+             anteprima: batch.map(function(c) { return { riga: c.rowIdx, titolo: c.titolo.substring(0, 60) }; }) };
+  }
+
+  // Rate-limit check
+  if (typeof _checkClaudeRateLimit_ === 'function' && !_checkClaudeRateLimit_()) {
+    return { ok: false, error: 'Limite giornaliero chiamate Claude raggiunto' };
+  }
+
+  var arricchiti = 0, errori = 0;
+  for (var i = 0; i < batch.length; i++) {
+    var c = batch[i];
+    try {
+      var prompt = 'Sei un esperto di appalti pubblici e bandi culturali italiani ed europei.\n'
+        + 'Dato questo bando:\n'
+        + '- Titolo: ' + c.titolo + '\n'
+        + '- Ente: ' + c.ente + '\n'
+        + '- Settore: ' + c.settore + '\n'
+        + (c.note ? '- Note: ' + c.note.substring(0, 500) + '\n' : '')
+        + (c.link ? '- Link: ' + c.link + '\n' : '')
+        + '\nRispondi SOLO con un JSON valido (nessun altro testo):\n'
+        + '{"descrizione":"<descrizione chiara del bando in 1-3 frasi, max 300 caratteri, in italiano>","tipo_appalto":"<uno tra: servizi|forniture|lavori|misto|finanziamento>"}\n'
+        + 'Se non riesci a determinare il tipo, usa "finanziamento" come default.';
+
+      var resp = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+        method: 'post', muteHttpExceptions: true,
+        headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+        payload: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 400,
+          messages: [{ role: 'user', content: prompt }] })
+      });
+
+      var code = resp.getResponseCode();
+      if (code === 429 || code >= 500) { errori++; Utilities.sleep(3000); continue; }
+      if (code !== 200) { errori++; continue; }
+
+      var body = JSON.parse(resp.getContentText());
+      var txt = (body.content && body.content[0] && body.content[0].text) || '';
+      // Estrai JSON dal testo (potrebbe avere backtick markdown)
+      var jsonMatch = txt.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) { errori++; continue; }
+      var parsed = JSON.parse(jsonMatch[0]);
+
+      if (!c.hasDescr && parsed.descrizione) {
+        sheet.getRange(c.rowIdx, iDescr).setValue(String(parsed.descrizione).substring(0, 500));
+      }
+      if (!c.hasTipo && parsed.tipo_appalto) {
+        var tipoNorm = String(parsed.tipo_appalto).toLowerCase().trim();
+        var tipiValidi = ['servizi', 'forniture', 'lavori', 'misto', 'finanziamento'];
+        if (tipiValidi.indexOf(tipoNorm) < 0) tipoNorm = 'finanziamento';
+        sheet.getRange(c.rowIdx, iTipo).setValue(tipoNorm);
+      }
+      arricchiti++;
+      // Pausa tra le chiamate per rispettare rate limit
+      if (i < batch.length - 1) Utilities.sleep(500);
+    } catch (e) {
+      Logger.log('arricchisciBandiRadar errore riga ' + c.rowIdx + ': ' + (e && e.message || e));
+      errori++;
+    }
+  }
+
+  return { ok: true, arricchiti: arricchiti, errori: errori, totCandidati: candidati.length,
+           message: arricchiti + ' bandi arricchiti' + (errori ? ', ' + errori + ' errori' : '') };
+}
+
+/**
+ * v4.27 — Wrapper per il dispatcher cron: arricchisce 50 bandi per run.
+ * Chiamato da ocCronDispatch (daily ore 3). Si auto-disattiva quando tutti
+ * i bandi sono arricchiti (nessuna chiamata API sprecata).
+ */
+function enrichBandiRadarBatch() {
+  var result = arricchisciBandiRadar({ cap: 50 });
+  Logger.log('enrichBandiRadarBatch: ' + JSON.stringify(result));
+  return result;
+}
+
 function diagBandiSheet() {
   const sheet=getSheetRadar();
   if(!sheet) return {error:'Foglio RADAR BANDI non trovato'};
@@ -1589,6 +1746,8 @@ const COL_NAMES = {
   AMBITO:['Ambito','ambito','AMBITO'],
   SETTORE_CULTURA:['SettoreCultura','settoreCultura','SETTORE_CULTURA'],
   CPV:['CPV','cpv','CpvCode'],
+  DESCRIZIONE:['Descrizione','descrizione','DESCRIZIONE','Description'],
+  TIPO_APPALTO:['TipoAppalto','tipoAppalto','tipo_appalto','TIPO_APPALTO'],
 };
 
 function buildColMap(headers) {
@@ -1977,6 +2136,8 @@ function saveBandoRadar(b) {
     'attivo',       // * STATO_RECORD
     b.urlEnte||'',  // * URL_ENTE
     false,          // * LETTO_BANDO (col 20)
+    b.descrizione||'',  // * v4.27 DESCRIZIONE (col 21)
+    b.tipoAppalto||'',  // * v4.27 TIPO_APPALTO (col 22)
   ];
   sheet.appendRow(newRow);
   const nr=sheet.getLastRow();
@@ -2002,6 +2163,8 @@ function updateBandoRadar(b) {
     b.statoRecord||'attivo',  // *
     b.urlEnte||'',            // *
     b.lettoBando||false,      // * LETTO_BANDO
+    b.descrizione||'',       // * v4.27 DESCRIZIONE
+    b.tipoAppalto||'',       // * v4.27 TIPO_APPALTO
   ];
   sheet.getRange(rowIndex,1,1,values.length).setValues([values]);
   if(b.scadenza) sheet.getRange(rowIndex,COL.SCADENZA).setNumberFormat('dd/mm/yyyy');
