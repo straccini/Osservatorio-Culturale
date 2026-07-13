@@ -13748,6 +13748,13 @@
         <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Tipo</label><select id="seg-tipo" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px"><option value="">Seleziona...</option><option>Mostra</option><option>Evento</option><option>Progetto</option><option>Pubblicazione</option><option>Buona pratica</option><option>Altro</option></select></div>
       </div>
       <div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Area geografica</label><input id="seg-area" style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:8px;font-size:14px" placeholder="Es. Puglia, Bari"></div>
+      <!-- v4.27.22 — immagine facoltativa (come la foto editoriale). Se assente, si usa l'og:image del link. -->
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:4px">Immagine (opz.)</label>
+        <input id="seg-foto-file" type="file" accept="image/*" onchange="OC._segFotoSelez(this)" style="font-size:12px;width:100%">
+        <div style="font-size:11px;color:var(--ink-3);margin-top:3px">Consigliata orizzontale. Se non la carichi, in home viene usata la foto del link (se disponibile).</div>
+        <div id="seg-foto-preview"></div>
+      </div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
         <button type="button" onclick="OC.chiudiFormSegnalazione()" style="background:none;border:1px solid var(--rule);padding:10px 18px;border-radius:8px;font-size:13px;cursor:pointer">Annulla</button>
         <button type="button" id="seg-btn-invia" onclick="OC.inviaSegnalazione()" style="background:var(--amb-2);color:var(--paper);border:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Invia</button>
@@ -13769,6 +13776,44 @@
   OC.chiudiFormSegnalazione = function() {
     var ov = document.getElementById('oc-segnalazione-overlay');
     if (ov) { ov.hidden=true; ov.style.display='none'; }
+    window._segFotoDataUrl = null;
+    var pv = document.getElementById('seg-foto-preview'); if (pv) pv.innerHTML='';
+    var ff = document.getElementById('seg-foto-file'); if (ff) ff.value='';
+  };
+  // v4.27.22 — selezione immagine: resize a max 800px + compressione garantita
+  // <350KB (stesso approccio della foto editoriale, evita payload che bloccano).
+  window._segFotoDataUrl = null;
+  OC._segFotoSelez = function(input) {
+    var f = input && input.files && input.files[0];
+    var prev = document.getElementById('seg-foto-preview');
+    window._segFotoDataUrl = null;
+    if (!f) { if (prev) prev.innerHTML=''; return; }
+    if (!/^image\//.test(f.type)) { if (prev) prev.innerHTML='<div style="font-size:11px;color:var(--danger)">Seleziona un file immagine.</div>'; input.value=''; return; }
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      var img = new Image();
+      img.onload = function() {
+        var W = img.naturalWidth, H = img.naturalHeight;
+        var scale = Math.min(1, 800 / W);
+        var cw = Math.round(W*scale), ch = Math.round(H*scale);
+        var cv = document.createElement('canvas'); cv.width=cw; cv.height=ch;
+        cv.getContext('2d').drawImage(img, 0, 0, cw, ch);
+        var dataUrl = cv.toDataURL('image/jpeg', 0.8);
+        var LIM = 350*1024, q=[0.65,0.5,0.4];
+        for (var i=0;i<q.length && dataUrl.length>LIM;i++) dataUrl = cv.toDataURL('image/jpeg', q[i]);
+        if (dataUrl.length > LIM) {
+          var s2=560/cw, cw2=560, ch2=Math.round(ch*s2);
+          var cv2=document.createElement('canvas'); cv2.width=cw2; cv2.height=ch2;
+          cv2.getContext('2d').drawImage(cv,0,0,cw2,ch2);
+          dataUrl = cv2.toDataURL('image/jpeg', 0.55); cw=cw2; ch=ch2;
+        }
+        window._segFotoDataUrl = dataUrl;
+        if (prev) prev.innerHTML = '<div style="margin-top:6px"><img src="'+dataUrl+'" alt="" style="max-width:100%;border-radius:8px;border:1px solid var(--rule)"><div style="font-size:11px;color:var(--amb-2);margin-top:3px">Immagine pronta ('+cw+'&times;'+ch+', '+Math.round(dataUrl.length/1024)+' KB)</div></div>';
+      };
+      img.onerror = function(){ if (prev) prev.innerHTML='<div style="font-size:11px;color:var(--danger)">File immagine non valido.</div>'; };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(f);
   };
   OC.inviaSegnalazione = function() {
     var payload = {
@@ -13777,6 +13822,7 @@
       url: (document.getElementById('seg-url')||{}).value||'',
       tipo: (document.getElementById('seg-tipo')||{}).value||'',
       area_geografica: (document.getElementById('seg-area')||{}).value||'',
+      fotoDataUrl: window._segFotoDataUrl || null,
       token: (window.OC_SESSION && window.OC_SESSION.token) || null
     };
     var errEl = document.getElementById('seg-errore');

@@ -98,13 +98,42 @@ function inviaSegnalazione(payload) {
   var ss = getMainSS();
   var sh = ss.getSheetByName(SEG_SHEET);
   if (!sh) { ensureSheetSegnalazioni_(); sh = ss.getSheetByName(SEG_SHEET); }
+  _segEnsureColonnaOgImage_(sh);
+  // v4.27.22 — immagine caricata dall'utente (facoltativa): va in og_image e ha
+  // priorità sull'estrazione automatica al publish. Non blocca l'invio se fallisce.
+  var ogImg = '';
+  if (payload.fotoDataUrl) {
+    try { ogImg = _segUploadFoto_(payload.fotoDataUrl); } catch (eF) { Logger.log('[seg upload foto] ' + eF.message); }
+  }
   var id = 'SEG-' + Utilities.getUuid().substring(0,8);
   var now = new Date().toISOString();
-  sh.appendRow([id, user.email, _sanitizeForCell_(user.nome||''), _sanitizeForCell_(String(payload.titolo).trim()),
+  // og_image è l'ultima colonna: costruisco la riga in base agli header per robustezza
+  var nCol = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].length;
+  var riga = [id, user.email, _sanitizeForCell_(user.nome||''), _sanitizeForCell_(String(payload.titolo).trim()),
     _sanitizeForCell_(String(payload.descrizione).trim()), _sanitizeForCell_(String(payload.url||'').trim()),
     _sanitizeForCell_(payload.tipo||'Altro'), dimensioni, _sanitizeForCell_(String(payload.area_geografica||'').trim()),
-    'pending', '', '', now, '', '']);
-  return { ok:true, segnalazioneId:id, dimensioni:dimensioni };
+    'pending', '', '', now, '', '', ogImg];
+  while (riga.length < nCol) riga.push('');
+  sh.appendRow(riga.slice(0, nCol));
+  return { ok:true, segnalazioneId:id, dimensioni:dimensioni, immagine: !!ogImg };
+}
+
+/** v4.27.22 — Carica su Drive l'immagine (data URL) di una segnalazione e ritorna l'URL thumbnail. */
+function _segUploadFoto_(dataUrl) {
+  try {
+    var m = String(dataUrl).match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,([\s\S]+)$/);
+    if (!m) return '';
+    var mime = m[1];
+    var bytes = Utilities.base64Decode(m[2]);
+    var ext = mime.indexOf('png') >= 0 ? 'png' : (mime.indexOf('webp') >= 0 ? 'webp' : 'jpg');
+    var blob = Utilities.newBlob(bytes, mime, 'segnalazione_' + Date.now() + '.' + ext);
+    var name = 'OC_Segnalazioni_Foto';
+    var it = DriveApp.getFoldersByName(name);
+    var folder = it.hasNext() ? it.next() : DriveApp.createFolder(name);
+    var file = folder.createFile(blob);
+    try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (_) {}
+    return 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w600';
+  } catch (e) { Logger.log('[_segUploadFoto_] ' + e.message); return ''; }
 }
 
 // v4.25.14 — FIX: mancava il token di sessione → su deploy anonimo Session è
