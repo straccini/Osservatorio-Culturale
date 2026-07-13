@@ -150,22 +150,26 @@ function _frLinkGenerico_(url) {
 }
 
 function _frBandiLink_() {
-  var sh = (typeof getSheetRadar === 'function') ? getSheetRadar() : null;
+  // v4.27.20 — FIX incoerenza report: leggeva il foglio RADAR legacy (non più
+  // servito dalla webapp, switchover v5 attivo) → "1178 senza link (100%)"
+  // mentre l'agente qualità ne contava 563 su Bandi_v5. Ora legge Bandi_v5
+  // (UrlBando con fallback UrlEnte, come l'esposizione reale).
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName((typeof SH_BANDI_V5 !== 'undefined') ? SH_BANDI_V5 : 'Bandi_v5');
   if (!sh || sh.getLastRow() < 2) return { attivi: 0, problemi: 0, dettaglio: [] };
-  var v = sh.getDataRange().getValues(); var h = v[0];
-  var iLink = h.indexOf('LINK'); if (iLink < 0) iLink = h.indexOf('Link'); if (iLink < 0) iLink = 12; // COL.LINK=13 → idx 12
-  var iTit = h.indexOf('Titolo'); if (iTit < 0) iTit = 1;
-  var iEnte = h.indexOf('Ente'); if (iEnte < 0) iEnte = 2;
-  var iStato = h.indexOf('StatoRecord');
+  var v = sh.getDataRange().getValues();
+  var iTit = COL_B.TITOLO - 1, iEnte = COL_B.ENTE - 1, iStato = COL_B.STATO_RECORD - 1;
+  var iUrlB = COL_B.URL_BANDO - 1, iUrlE = COL_B.URL_ENTE - 1;
   var attivi = 0, problemi = 0, dettaglio = [];
   for (var r = 1; r < v.length; r++) {
-    if (!v[r][iTit] && !v[r][0]) continue;
-    if (iStato >= 0 && String(v[r][iStato]).toLowerCase() === 'archiviato') continue;
+    if (!v[r][0]) continue;
+    if (String(v[r][iStato] || '').toLowerCase() === 'archiviato') continue;
     attivi++;
-    var motivo = _frLinkGenerico_(v[r][iLink]);
+    var link = String(v[r][iUrlB] || '').trim() || String(v[r][iUrlE] || '').trim();
+    var motivo = _frLinkGenerico_(link);
     if (motivo) {
       problemi++;
-      if (dettaglio.length < 20) dettaglio.push({ titolo: String(v[r][iTit] || '').slice(0, 70), ente: String(v[r][iEnte] || '').slice(0, 40), link: String(v[r][iLink] || ''), motivo: motivo });
+      if (dettaglio.length < 20) dettaglio.push({ titolo: String(v[r][iTit] || '').slice(0, 70), ente: String(v[r][iEnte] || '').slice(0, 40), link: link, motivo: motivo });
     }
   }
   return { attivi: attivi, problemi: problemi, perc: attivi ? Math.round(problemi * 100 / attivi) : 0, dettaglio: dettaglio };

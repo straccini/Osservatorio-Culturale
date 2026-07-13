@@ -46,6 +46,7 @@ function adminRunTool(tool, token) {
       case 'podcastAudit':       r = podcastAuditFonti(); break;           // Tappa P
 
       // ── Contenuti: scansioni "adesso" ────────────────────────────────────
+      case 'reportUnificato':    r = reportUnificatoGiornaliero(); break;  // 1 controllo + 1 email
       case 'lavoroScan':         r = lavoroCulturaMonitor(); break;
       case 'sediaScan':          r = fasParserSediaEU({ dryRun: false }); break;
       case 'normeDry':           r = normeAutoPopola({ dryRun: true, giorni: 60 }); break;

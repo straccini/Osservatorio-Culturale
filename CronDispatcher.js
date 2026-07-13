@@ -28,11 +28,13 @@
 // Job NUOVI (non presenti in OC_TRIGGER_SCHEDULE) gestiti dal dispatcher.
 // NB: scanSourcesBatch NON incluso per non sovrapporsi a scanSourcesBisettimanale.
 var OC_CRON_EXTRA = [
-  { fn: 'qaNotturnaGAS',         tipo: 'daily',  ora: 23, desc: 'QA notturna nativa (salute fonti + conteggi + email)' },
-  { fn: 'fontiReportGiornaliero', tipo: 'daily',  ora: 8,  desc: 'Report FONTI (silenti/aggregatori/link bandi)' },
+  // v4.27.20 — REPORT UNIFICATO (spec Silvano 2026-07-13): un solo controllo e
+  // una sola email al giorno. Sostituisce le 3 entry separate:
+  //   qaNotturnaGAS (daily 23) + fontiReportGiornaliero (daily 8) +
+  //   agenteQualitaBandi (daily 5) → reportUnificatoGiornaliero (daily 8).
+  // Le 3 funzioni restano lanciabili a mano dal pannello admin.
+  { fn: 'reportUnificatoGiornaliero', tipo: 'daily', ora: 8, desc: 'Report giornaliero unificato: qualità bandi + fonti + QA contenuti (1 email)' },
   { fn: 'scanNewsletterGmail',   tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 6, desc: 'Ingestione newsletter da Gmail (settimanale)' },
-  // v4.25 — Agenti qualità (AgenteQualita.js): via dispatcher, NON trigger dedicati (limite 20)
-  { fn: 'agenteQualitaBandi',    tipo: 'daily',  ora: 5,  desc: 'Qualità bandi: archivia scaduti/junk/non-cultura, report senza-link' },
   { fn: 'agenteFontiMute',       tipo: 'monthdays', giorniMese: [1, 6, 11, 16, 21, 26], ora: 7, desc: 'Fonti mute: diagnosi per-fonte ogni 5 giorni + email' },
   // v4.25.10 — FRESCHEZZA NEWS: run multipli/giorno. Il run delle 07:00 arriva dal
   // base schedule (scanSourcesBisettimanale, ora quotidiano); questi 3 completano
