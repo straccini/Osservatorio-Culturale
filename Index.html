@@ -2592,6 +2592,7 @@
             <button class="btn btn-secondary" onclick="OC.adminTool('fontiPodcast', this)" style="font-size:12px;padding:6px 12px" title="4 podcast museali/culturali verificati">+ Podcast cultura</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('fontiSocial', this)" style="font-size:12px;padding:6px 12px" title="Feed Mastodon #CulturalHeritage/#GLAM/#digitalheritage">+ Social (Mastodon)</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('podcastAudit', this)" style="font-size:12px;padding:6px 12px" title="Quante fonti podcast/video sono mute">Audit podcast/video</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('segOgImage', this)" style="font-size:12px;padding:6px 12px" title="Estrae le miniature (og:image) dei link delle segnalazioni pubblicate">Miniature segnalazioni</button>
             <button class="btn btn-secondary" onclick="if(confirm('Aggiungere 50 osservatori culturali internazionali come fonti RSS?'))OC.adminTool('fontiOsservatori', this)" style="font-size:12px;padding:6px 12px" title="54 osservatori culturali da uMap Global Mapping (EU, Americhe, Asia)">+ Osservatori culturali</button>
           </div>
 
@@ -8063,7 +8064,9 @@
           var sid = esc(s.segnalazioneId);
           html += '<tr>'
             + '<td style="padding:5px;border-bottom:1px solid #eee;font-size:11px">' + esc(dataStr) + '</td>'
-            + '<td style="padding:5px;border-bottom:1px solid #eee;font-weight:600">' + esc(s.titolo||'') + (s.url ? ' <a href="'+esc(s.url)+'" target="_blank" style="font-weight:400;font-size:10px">link</a>' : '') + '</td>'
+            + '<td style="padding:5px;border-bottom:1px solid #eee;font-weight:600">'
+              + (s.og_image ? '<img src="'+esc(s.og_image)+'" alt="" style="width:40px;height:30px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:6px" onerror="this.style.display=\'none\'">' : '')
+              + esc(s.titolo||'') + (s.url ? ' <a href="'+esc(s.url)+'" target="_blank" style="font-weight:400;font-size:10px">link</a>' : '') + '</td>'
             + '<td style="padding:5px;border-bottom:1px solid #eee">' + esc(s.tipo||'') + '</td>'
             + '<td style="padding:5px;border-bottom:1px solid #eee">' + esc(s.nome_autore||s.email_autore||'') + '</td>'
             + '<td style="padding:5px;border-bottom:1px solid #eee;color:'+statoCol+';font-weight:600">' + esc(statoLabel) + '</td>'
@@ -13809,7 +13812,14 @@
         var desc = (s.descrizione||'').replace(/</g,'&lt;');
         if (desc.length > 80) desc = desc.substring(0, 80) + '…';
         var url = (s.url||'').trim();
-        html += '<div style="padding:12px 0;border-bottom:1px solid var(--rule,#E5E5E7)">'
+        // v4.27.21 — miniatura og:image se presente (con onerror → nasconde il box)
+        var ogImg = (s.og_image||'').trim();
+        var thumb = ogImg
+          ? '<div style="flex-shrink:0;width:96px;height:72px;border-radius:8px;overflow:hidden;background:var(--surface-2,#F2EFEA)">'
+            + '<img src="'+ogImg.replace(/"/g,'&quot;')+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" '
+            + 'onerror="this.parentNode.style.display=\'none\'"></div>'
+          : '';
+        var testo = '<div style="flex:1;min-width:0">'
           + '<div style="font-size:14px;font-weight:600;color:var(--ink);line-height:1.35">'
           + (url ? '<a href="'+url.replace(/"/g,'&quot;')+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">' + titolo + ' ↗</a>' : titolo)
           + '</div>'
@@ -13819,6 +13829,8 @@
           + (s.area_geografica ? ' &middot; '+(s.area_geografica||'').replace(/</g,'&lt;') : '')
           + ' &middot; ' + (s.nome_autore||'Community').replace(/</g,'&lt;')
           + '</div></div>';
+        html += '<div style="display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--rule,#E5E5E7)">'
+          + testo + thumb + '</div>';
       });
       wrap.innerHTML = html;
     }).withFailureHandler(function() {

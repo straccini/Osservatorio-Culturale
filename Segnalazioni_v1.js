@@ -17,15 +17,56 @@ var _SEG_RATE_LIMIT = { perGiorno: 5, minIntervalloMin: 2 };
 function ensureSheetSegnalazioni_() {
   var ss = getMainSS();
   var sh = ss.getSheetByName(SEG_SHEET);
-  if (sh) { return { ok:true, action:'exists', rows:sh.getLastRow()-1 }; }
+  if (sh) { _segEnsureColonnaOgImage_(sh); return { ok:true, action:'exists', rows:sh.getLastRow()-1 }; }
   var h = ['segnalazioneId','email_autore','nome_autore','titolo','descrizione',
     'url','tipo','dimensioni','area_geografica','stato','note_redazione',
-    'editor_assegnato','dataInvio','dataDecisione','dataPubblicazione'];
+    'editor_assegnato','dataInvio','dataDecisione','dataPubblicazione','og_image'];
   sh = ss.insertSheet(SEG_SHEET);
   sh.getRange(1,1,1,h.length).setValues([h]);
   sh.getRange(1,1,1,h.length).setFontWeight('bold').setBackground('#E8F5E9');
   sh.setFrozenRows(1);
   return { ok:true, action:'created', columns:h.length };
+}
+
+// v4.27.21 — aggiunge la colonna og_image ai fogli esistenti (retro-compat).
+function _segEnsureColonnaOgImage_(sh) {
+  try {
+    var h = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+    if (h.indexOf('og_image') >= 0) return;
+    sh.getRange(1, sh.getLastColumn() + 1).setValue('og_image').setFontWeight('bold').setBackground('#E8F5E9');
+  } catch (e) { Logger.log('[seg og_image col] ' + e.message); }
+}
+
+/**
+ * v4.27.21 — Estrae l'immagine Open Graph (og:image) da una pagina web.
+ * Fallback: twitter:image, poi primo <img> significativo. Ritorna URL http(s)
+ * dell'immagine o '' se assente/irraggiungibile. Robusto: timeout, muteHttp.
+ */
+function _segEstraiOgImage_(pageUrl) {
+  pageUrl = String(pageUrl || '').trim();
+  if (!/^https?:\/\//i.test(pageUrl)) return '';
+  try {
+    var resp = UrlFetchApp.fetch(pageUrl, {
+      muteHttpExceptions: true, followRedirects: true, deadline: 12,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaOG/1.0)' }
+    });
+    if (resp.getResponseCode() !== 200) return '';
+    var html = resp.getContentText('UTF-8') || '';
+    // og:image / twitter:image (property o name, ordine attributi variabile)
+    var m = html.match(/<meta[^>]+(?:property|name)=["']og:image(?::secure_url|:url)?["'][^>]*content=["']([^"']+)["']/i)
+         || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']og:image["']/i)
+         || html.match(/<meta[^>]+(?:property|name)=["']twitter:image(?::src)?["'][^>]*content=["']([^"']+)["']/i);
+    var img = m ? m[1].trim() : '';
+    if (!img) return '';
+    // normalizza relativi / protocol-relative
+    if (img.indexOf('//') === 0) img = 'https:' + img;
+    else if (img.charAt(0) === '/') {
+      var mo = pageUrl.match(/^(https?:\/\/[^\/]+)/i);
+      if (mo) img = mo[1] + img;
+    }
+    if (!/^https?:\/\//i.test(img)) return '';
+    return img.substring(0, 500);
+  } catch (e) { Logger.log('[seg og:image] ' + e.message); return ''; }
 }
 
 // ============================================================================
@@ -189,6 +230,16 @@ function pubblicaSegnalazione(id, token) {
   var now = new Date().toISOString();
   sh.getRange(rowIdx, iStato+1).setValue('published');
   sh.getRange(rowIdx, iDataPubb+1).setValue(now);
+  // v4.27.21 — miniatura per la home: estrae og:image dal link (se presente e
+  // non già estratta). Non blocca la pubblicazione se fallisce.
+  _segEnsureColonnaOgImage_(sh);
+  var iOg = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].indexOf('og_image');
+  if (iOg >= 0 && (seg.url || '').trim() && !String(seg.og_image || '').trim()) {
+    try {
+      var ogImg = _segEstraiOgImage_(seg.url);
+      if (ogImg) { sh.getRange(rowIdx, iOg + 1).setValue(ogImg); seg.og_image = ogImg; }
+    } catch (eOg) { Logger.log('[pubblica og:image] ' + eOg.message); }
+  }
   // Promuovi in Items
   var shItems = ss.getSheetByName('Items');
   if (shItems) {
@@ -213,6 +264,42 @@ function unpublishSegnalazione(id, token) {
   var user = _segGetUser_(2, token);
   if (!user) return { ok:false, error:'Non autorizzato.' };
   return _segTransition_(id, 'unpublished', user.email, 'ritirata da ' + user.email);
+}
+
+/**
+ * v4.27.21 — Backfill miniature: estrae og:image per le segnalazioni PUBBLICATE
+ * che hanno un link ma non ancora un'immagine. Idempotente, cap per run.
+ * Lanciabile dal pannello admin. @param {Object} opts { cap:number (default 15) }
+ */
+function segBackfillOgImage(opts) {
+  opts = opts || {};
+  var cap = (opts.cap === undefined) ? 15 : Number(opts.cap);
+  var rep = { ok: true, esaminate: 0, aggiornate: 0, senzaImmagine: 0, dettagli: [] };
+  try {
+    var ss = getMainSS();
+    var sh = ss.getSheetByName(SEG_SHEET);
+    if (!sh || sh.getLastRow() < 2) { rep.ok = false; rep.error = 'foglio vuoto'; return rep; }
+    _segEnsureColonnaOgImage_(sh);
+    var data = sh.getDataRange().getValues();
+    var h = data[0];
+    var iStato = h.indexOf('stato'), iUrl = h.indexOf('url'), iOg = h.indexOf('og_image'), iTit = h.indexOf('titolo');
+    if (iOg < 0) { rep.ok = false; rep.error = 'colonna og_image assente'; return rep; }
+    for (var r = 1; r < data.length && rep.aggiornate < cap; r++) {
+      if (String(data[r][iStato]).trim() !== 'published') continue;
+      var url = String(data[r][iUrl] || '').trim();
+      if (!url || String(data[r][iOg] || '').trim()) continue;
+      rep.esaminate++;
+      var img = _segEstraiOgImage_(url);
+      if (img) {
+        sh.getRange(r + 1, iOg + 1).setValue(img);
+        rep.aggiornate++;
+        if (rep.dettagli.length < 15) rep.dettagli.push({ titolo: String(data[r][iTit] || '').slice(0, 50), img: img });
+      } else { rep.senzaImmagine++; }
+      Utilities.sleep(150);
+    }
+    Logger.log('[segBackfillOgImage] esaminate=' + rep.esaminate + ' aggiornate=' + rep.aggiornate + ' senza=' + rep.senzaImmagine);
+  } catch (e) { rep.ok = false; rep.error = e.message; }
+  return rep;
 }
 
 function cancellaSegnalazione(id, token) {
