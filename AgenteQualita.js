@@ -58,8 +58,8 @@ function agenteQualitaBandi(opts) {
   var dryRun = !!opts.dryRun;
   var rep = {
     ok: true, data: new Date().toISOString(), dryRun: dryRun,
-    esaminati: 0, scaduti: 0, junk: 0, nonCultura: 0, senzaLink: 0,
-    esempi: { scaduti: [], junk: [], nonCultura: [], senzaLink: [] }
+    esaminati: 0, scaduti: 0, junk: 0, nonCultura: 0, senzaInfo: 0, senzaLink: 0,
+    esempi: { scaduti: [], junk: [], nonCultura: [], senzaInfo: [], senzaLink: [] }
   };
   try {
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
@@ -95,6 +95,15 @@ function agenteQualitaBandi(opts) {
       var scad = (rawScad instanceof Date) ? rawScad : (rawScad ? new Date(rawScad) : null);
       if (scad && !isNaN(scad.getTime()) && scad.getTime() < oggi.getTime()) motivo = 'scaduti';
 
+      // a-bis) SENZA INFO BASE (v4.27.24): titolo solo-numero (TED rotto), oppure
+      // senza scadenza E senza descrizione utile → non pubblicabile.
+      if (!motivo) {
+        var descrRow = String(row[iSom]||'').replace(/\s+/g,' ').trim();
+        var titoloNum = !titolo.trim() || /^(?:ted\s+notice\s+)?\d{3,}[-\/]?\d*$/i.test(titolo.trim());
+        var senzaScad = !(scad && !isNaN(scad.getTime()));
+        if (titoloNum || (senzaScad && descrRow.length < 20)) motivo = 'senzaInfo';
+      }
+
       // b) NON PERTINENTE — junk (voci menu) poi non-cultura
       if (!motivo && typeof _bandiNonBando_ === 'function' && _bandiNonBando_({ titolo: titolo })) motivo = 'junk';
       if (!motivo && typeof isBandoCulturale === 'function') {
@@ -120,11 +129,11 @@ function agenteQualitaBandi(opts) {
 
     Logger.log('[agenteQualitaBandi] esaminati=' + rep.esaminati +
       ' archiviati: scaduti=' + rep.scaduti + ' junk=' + rep.junk +
-      ' nonCultura=' + rep.nonCultura + ' | senzaLink=' + rep.senzaLink +
+      ' nonCultura=' + rep.nonCultura + ' senzaInfo=' + rep.senzaInfo + ' | senzaLink=' + rep.senzaLink +
       (dryRun ? ' (DRY-RUN, nessuna scrittura)' : ''));
 
     // Email solo se ha trovato qualcosa (o se richiesta esplicitamente)
-    var trovati = rep.scaduti + rep.junk + rep.nonCultura;
+    var trovati = rep.scaduti + rep.junk + rep.nonCultura + rep.senzaInfo;
     if (opts.email !== false && (trovati > 0 || opts.email === true)) {
       try {
         MailApp.sendEmail({
@@ -152,6 +161,7 @@ function _aqEmailBandi_(rep) {
     blocco('Scaduti archiviati', rep.scaduti, rep.esempi.scaduti) +
     blocco('Voci non-bando archiviate', rep.junk, rep.esempi.junk) +
     blocco('Non pertinenti (non cultura) archiviati', rep.nonCultura, rep.esempi.nonCultura) +
+    blocco('Senza info base archiviati (titolo-numero / senza scadenza e descrizione)', rep.senzaInfo, rep.esempi.senzaInfo) +
     blocco('Senza link (esposti con link di ricerca)', rep.senzaLink, rep.esempi.senzaLink) +
     '<p style="color:#888;font-size:12px">Osservatorio Culturale · agenteQualitaBandi</p></div>';
 }

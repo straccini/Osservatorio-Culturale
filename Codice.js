@@ -1699,13 +1699,93 @@ function arricchisciBandiRadar(opts) {
 }
 
 /**
- * v4.27 — Wrapper per il dispatcher cron: arricchisce 50 bandi per run.
- * Chiamato da ocCronDispatch (daily ore 3). Si auto-disattiva quando tutti
- * i bandi sono arricchiti (nessuna chiamata API sprecata).
+ * v4.27.24 — Arricchimento su Bandi_v5 (il foglio SERVITO). La versione RADAR
+ * (arricchisciBandiRadar) scriveva sul foglio legacy non più esposto: qui la
+ * stessa logica opera su Bandi_v5 (COL_B), riempiendo Sommario e TipoBando dei
+ * bandi che ne sono privi ma che HANNO una scadenza (i senza-scadenza-senza-info
+ * vengono archiviati dall'agente qualità, non arricchiti).
+ */
+function arricchisciBandiV5(opts) {
+  opts = opts || {};
+  var cap = opts.cap || 20;
+  var dryRun = !!opts.dryRun;
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var shName = (typeof SH_BANDI_V5 !== 'undefined') ? SH_BANDI_V5 : 'Bandi_v5';
+  var sheet = ss.getSheetByName(shName);
+  if (!sheet) return { ok: false, error: 'Foglio Bandi_v5 non trovato' };
+  var apiKey = _claudeKey_();
+  if (!apiKey) return { ok: false, error: 'CLAUDE_API_KEY non configurata' };
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return { ok: true, arricchiti: 0, message: 'Nessun bando' };
+
+  var iTit = COL_B.TITOLO, iEnte = COL_B.ENTE, iSet = COL_B.SETTORE, iSom = COL_B.SOMMARIO,
+      iTipo = COL_B.TIPO_BANDO, iUrl = COL_B.URL_BANDO, iScad = COL_B.SCADENZA, iStat = COL_B.STATO_RECORD;
+  var data = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  var candidati = [];
+  for (var r = 0; r < data.length; r++) {
+    var row = data[r];
+    if (!row[0]) continue;
+    if (String(row[iStat - 1] || '').toLowerCase() === 'archiviato') continue;
+    var descr = String(row[iSom - 1] || '').trim();
+    var tipo = String(row[iTipo - 1] || '').trim();
+    if (descr && tipo) continue;                          // già completo
+    // solo bandi con scadenza (gli altri li gestisce l'agente qualità)
+    var rawScad = row[iScad - 1];
+    var scad = (rawScad instanceof Date) ? rawScad : (rawScad ? new Date(rawScad) : null);
+    if (!scad || isNaN(scad.getTime())) continue;
+    var titolo = String(row[iTit - 1] || '').trim();
+    if (!titolo || /^(?:ted\s+notice\s+)?\d{3,}[-\/]?\d*$/i.test(titolo)) continue; // titolo non informativo
+    candidati.push({ rowIdx: r + 2, titolo: titolo, ente: String(row[iEnte - 1] || ''),
+      settore: String(row[iSet - 1] || ''), link: String(row[iUrl - 1] || ''),
+      hasDescr: !!descr, hasTipo: !!tipo });
+  }
+  if (!candidati.length) return { ok: true, arricchiti: 0, message: 'Tutti i bandi (con scadenza) sono già completi' };
+  var batch = candidati.slice(0, cap);
+  if (dryRun) return { ok: true, dryRun: true, candidati: candidati.length, batch: batch.length,
+    anteprima: batch.map(function(c){ return { riga: c.rowIdx, titolo: c.titolo.substring(0, 60) }; }) };
+  if (typeof _checkClaudeRateLimit_ === 'function' && !_checkClaudeRateLimit_()) return { ok: false, error: 'Limite giornaliero Claude raggiunto' };
+
+  var arricchiti = 0, errori = 0;
+  for (var i = 0; i < batch.length; i++) {
+    var c = batch[i];
+    try {
+      var prompt = 'Sei un esperto di appalti pubblici e bandi culturali italiani ed europei.\n'
+        + 'Dato questo bando:\n- Titolo: ' + c.titolo + '\n- Ente: ' + c.ente + '\n- Settore: ' + c.settore + '\n'
+        + (c.link ? '- Link: ' + c.link + '\n' : '')
+        + '\nRispondi SOLO con un JSON valido:\n'
+        + '{"descrizione":"<1-3 frasi chiare, max 300 caratteri, italiano>","tipo_appalto":"<servizi|forniture|lavori|misto|finanziamento>"}';
+      var resp = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+        method: 'post', muteHttpExceptions: true,
+        headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+        payload: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 400, messages: [{ role: 'user', content: prompt }] })
+      });
+      var code = resp.getResponseCode();
+      if (code === 429 || code >= 500) { errori++; Utilities.sleep(3000); continue; }
+      if (code !== 200) { errori++; continue; }
+      var body = JSON.parse(resp.getContentText());
+      var txt = (body.content && body.content[0] && body.content[0].text) || '';
+      var jm = txt.match(/\{[\s\S]*\}/); if (!jm) { errori++; continue; }
+      var parsed = JSON.parse(jm[0]);
+      if (!c.hasDescr && parsed.descrizione) sheet.getRange(c.rowIdx, iSom).setValue(String(parsed.descrizione).substring(0, 500));
+      if (!c.hasTipo && parsed.tipo_appalto) {
+        var tn = String(parsed.tipo_appalto).toLowerCase().trim();
+        if (['servizi','forniture','lavori','misto','finanziamento'].indexOf(tn) < 0) tn = 'finanziamento';
+        sheet.getRange(c.rowIdx, iTipo).setValue(tn);
+      }
+      arricchiti++;
+      if (i < batch.length - 1) Utilities.sleep(500);
+    } catch (e) { Logger.log('arricchisciBandiV5 riga ' + c.rowIdx + ': ' + (e && e.message || e)); errori++; }
+  }
+  return { ok: true, arricchiti: arricchiti, errori: errori, totCandidati: candidati.length };
+}
+
+/**
+ * v4.27 — Wrapper per il dispatcher cron: arricchisce 50 bandi/run su Bandi_v5.
+ * (v4.27.24: repuntato da RADAR legacy al foglio servito Bandi_v5.)
  */
 function enrichBandiRadarBatch() {
-  var result = arricchisciBandiRadar({ cap: 50 });
-  Logger.log('enrichBandiRadarBatch: ' + JSON.stringify(result));
+  var result = arricchisciBandiV5({ cap: 50 });
+  Logger.log('enrichBandiRadarBatch (Bandi_v5): ' + JSON.stringify(result));
   return result;
 }
 

@@ -96,11 +96,33 @@ function _bandiLinkRicerca_(b) {
   return 'https://www.google.com/search?q=' + encodeURIComponent(q);
 }
 
+// v4.27.24 — Titolo "solo numero" (TED Notice rotto): NNNNN, NNNNN-YYYY, ecc.
+var _BANDO_TITOLO_NUMERO_RE = /^(?:ted\s+notice\s+)?\d{3,}[-\/]?\d*$/i;
+
 /**
- * GATE FINALE — applica filtro cultura + normalizzazione link a un array di
- * bandi GIÀ mappati (oggetti con .titolo/.settore/.sommario/.cpv/.link/.ente).
- * Idempotente: se un bando è già stato "gated" (proprietà __gated) non viene
- * ri-processato. Ritorna un NUOVO array coi soli bandi culturali.
+ * v4.27.24 — VALIDATORE DI ESPOSIZIONE (spec Silvano: "meglio un bando in meno
+ * che uno scaduto o senza informazioni base"). Ritorna false se il bando NON
+ * deve essere mostrato:
+ *  - titolo solo-numero (parse TED fallito) → MAI;
+ *  - scaduto (giorni < 0) → MAI;
+ *  - senza scadenza E senza una descrizione utile → MAI (nessuna info base).
+ * I bandi senza scadenza ma CON descrizione (es. finanziamenti a sportello)
+ * restano ammessi. Ritorna anche il motivo per il report.
+ */
+function _bandiMotivoScarto_(b) {
+  var tit = String((b && b.titolo) || '').trim();
+  if (!tit || _BANDO_TITOLO_NUMERO_RE.test(tit)) return 'titolo-non-informativo';
+  var g = (b && b.giorni !== undefined) ? b.giorni : null;
+  if (g !== null && g < 0) return 'scaduto';
+  var descr = String((b && b.sommario) || '').replace(/\s+/g, ' ').trim();
+  if (g === null && descr.length < 20) return 'senza-scadenza-e-senza-descrizione';
+  return '';
+}
+
+/**
+ * GATE FINALE — validazione + filtro cultura + normalizzazione link su un array
+ * di bandi GIÀ mappati. Idempotente (proprietà __gated). Ritorna i soli bandi
+ * VALIDI e culturali.
  *
  * @param {Array<Object>} arr
  * @return {Array<Object>}
@@ -110,6 +132,7 @@ function bandiGateFinale_(arr) {
   var out = [];
   var scartatiCultura = 0;
   var scartatiJunk = 0;
+  var scartatiInvalidi = 0;
   for (var i = 0; i < arr.length; i++) {
     var b = arr[i];
     if (!b) continue;
@@ -118,6 +141,9 @@ function bandiGateFinale_(arr) {
 
     // 0) FILTRO ANTI-SPAZZATURA (voci di menu/legali scrapate, non bandi)
     if (_bandiNonBando_(b)) { scartatiJunk++; continue; }
+
+    // 0-bis) VALIDAZIONE ESPOSIZIONE (scaduti / senza-info / titolo-numero)
+    if (_bandiMotivoScarto_(b)) { scartatiInvalidi++; continue; }
 
     // 1) FILTRO CULTURA (rete di sicurezza live)
     if (typeof isBandoCulturale === 'function') {
@@ -150,8 +176,9 @@ function bandiGateFinale_(arr) {
     b.__gated = true;
     out.push(b);
   }
-  if (scartatiCultura > 0 || scartatiJunk > 0) {
+  if (scartatiCultura > 0 || scartatiJunk > 0 || scartatiInvalidi > 0) {
     Logger.log('[bandiGateFinale_] scartati: ' + scartatiJunk + ' non-bando + ' +
+      scartatiInvalidi + ' invalidi (scaduti/senza-info) + ' +
       scartatiCultura + ' non-cultura / ' + arr.length);
   }
   return out;

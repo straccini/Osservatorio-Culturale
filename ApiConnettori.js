@@ -599,13 +599,15 @@ function api_scanTed_(opts) {
           }
         }
 
-        // Se non abbiamo titolo da XML, usiamo publication-number
-        if (!titolo) {
-          titolo = 'TED Notice ' + pubNumber;
-        }
+        // v4.27.24 — QUALITÀ ALLA FONTE (spec: meglio un bando in meno che uno rotto).
+        // NON salvare i TED privi di titolo reale (parse XML fallito → solo numero)
+        // o privi di scadenza: un appalto TED ha SEMPRE una deadline; se manca,
+        // l'estrazione è fallita → scartiamo invece di pubblicare un record inutile.
+        if (!titolo || !String(titolo).trim()) { report.filtrati = (report.filtrati || 0) + 1; continue; }
+        if (!scadenza || !String(scadenza).trim()) { report.filtrati = (report.filtrati || 0) + 1; continue; }
 
         // Filtra scadenze passate
-        if (scadenza && api_isScaduto_(scadenza)) {
+        if (api_isScaduto_(scadenza)) {
           report.filtrati++;
           continue;
         }

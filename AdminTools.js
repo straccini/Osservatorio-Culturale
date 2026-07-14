@@ -53,7 +53,11 @@ function adminRunTool(tool, token) {
       case 'normeDry':           r = normeAutoPopola({ dryRun: true, giorni: 60 }); break;
       case 'normeApply':         r = normeAutoPopola({ dryRun: false, cap: 15, giorni: 60 }); break;
 
-      // ── Pulizia bandi ────────────────────────────────────────────────────
+      // ── Validazione / pulizia bandi ──────────────────────────────────────
+      case 'validaBandiDry':     r = agenteQualitaBandi({ dryRun: true, email: false }); break;  // anteprima criticità
+      case 'validaBandiApply':   r = agenteQualitaBandi({ dryRun: false, email: false }); break; // archivia invalidi
+      case 'enrichV5Dry':        r = arricchisciBandiV5({ dryRun: true }); break;
+      case 'enrichV5Apply':      r = arricchisciBandiV5({ cap: 30 }); break;
       case 'tedMalformatiDry':   r = bandiPuliziaTedMalformati({ dryRun: true }); break;
       case 'tedMalformatiApply': r = bandiPuliziaTedMalformati({ dryRun: false }); break;
       case 'backfillCultura':    r = backfillSettoreCultura(); break;
