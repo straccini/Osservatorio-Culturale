@@ -597,6 +597,85 @@ function addNorma(body) {
 }
 
 /**
+ * Popola il foglio Norme con il dataset completo delle normative beni culturali.
+ * Include: normativa nazionale, decreti SMN, standard ICOM, accessibilita,
+ * documenti MiBAC, contributi ICOM, quaderni ICOM.
+ * Fonte dati: ICOM Italia (icom-italia.org/documenti-smn/) + normativa nazionale.
+ * Controllo doppioni automatico su titolo normalizzato.
+ * @param {Object} opts { dryRun:bool (default false) }
+ */
+function popolaNormativeICOM(opts) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var ss = getMainSS();
+  var sh = ss.getSheetByName(SH_NORME);
+  if (!sh) { setupNormeSheet(); sh = ss.getSheetByName(SH_NORME); }
+  var oggi = new Date();
+
+  // Raccogli titoli esistenti per dedup
+  var esistenti = {};
+  if (sh.getLastRow() >= 2) {
+    var titoli = sh.getRange(2, 2, sh.getLastRow()-1, 1).getValues();
+    titoli.forEach(function(r) {
+      var k = String(r[0]||'').toLowerCase().trim().replace(/\s+/g,' ');
+      if (k) esistenti[k] = true;
+    });
+  }
+
+  var norme = [
+    // === Normativa nazionale ===
+    ['Codice dei beni culturali e del paesaggio','D.Lgs. 22 gennaio 2004, n. 42','https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2004-01-22;42!vig=','1','Testo unico fondamentale che regola tutela, conservazione e valorizzazione del patrimonio culturale e paesaggistico italiano.'],
+    // === Sistema Museale Nazionale — Decreti ===
+    ['Sistema Museale Nazionale e Livelli Uniformi di Qualita (LUQ)','D.M. 21 febbraio 2018, n. 113','https://www.icom-italia.org/wp-content/uploads/2018/04/ICOMItalia.SMN_.D.M.21FEBBRAIO2018.21febbraio.2018.pdf','5','Istituisce il SMN fissando standard minimi di qualita per musei e luoghi della cultura di appartenenza pubblica.'],
+    ['Decreto istitutivo Commissione SMN','D.M. 1 giugno 2015','https://www.icom-italia.org/wp-content/uploads/2018/06/1513072195304_DM_1_giu_2015_-_istituzione_Commissione_SMN.pdf','5','Decreto che istituisce la Commissione ministeriale di studio per l\'attivazione del Sistema Museale Nazionale.'],
+    ['Organizzazione e funzionamento dei musei statali','D.M. 23 dicembre 2014','http://www.beniculturali.it/mibac/multimedia/MiBAC/documents/feed/pdf/DM%20del%2023%20dicembre%202014-imported-49315.pdf','1','Decreto sulla organizzazione e funzionamento dei musei statali italiani.'],
+    ['Regolamento di organizzazione MiBACT','DPCM 171 del 29 agosto 2014','https://www.icom-italia.org/wp-content/uploads/2018/09/ICOMItalia.DPCM_117_Regolamento-di-organizzazione-MiBACT.29agosto.2004.pdf','5','Regolamento di organizzazione del Ministero dei beni e delle attivita culturali e del turismo.'],
+    ['Commissione per il Sistema Museale Nazionale','D.M. 276 del 18 giugno 2018','https://www.icom-italia.org/wp-content/uploads/2018/07/D.M.-18-GIUGNO-2018-REP.-276-imported-80344.pdf','5','Decreto istitutivo della Commissione per il Sistema Museale Nazionale.'],
+    ['Prime modalita organizzazione e funzionamento SMN','D.M. 542 del 20 giugno 2018','http://musei.beniculturali.it/wp-content/uploads/2018/04/Decreto-20-giugno-2018-Prime-modalita%CC%80-di-organizzazione-e-funzionamento-del-Sistema-museale-nazionale.pdf','5','Prime modalita di organizzazione e funzionamento del Sistema Museale Nazionale.'],
+    ['Nomina costituenti Commissione SMN','D.M. 318 del 9 agosto 2018','https://www.icom-italia.org/wp-content/uploads/2018/09/ICOMItalia.Nomina-Costituenti-CommissioneSMN.9agosto.2018.pdf','5','Nomina dei costituenti della Commissione per il Sistema Museale Nazionale.'],
+    // === Standard ICOM ===
+    ['Codice Etico ICOM per i Musei','ICOM - Edizione 2004','http://www.icom-italia.org/images/documenti/codiceeticoicom.pdf','1','Testo di riferimento internazionale per la deontologia professionale museale: gestione collezioni, etica verso il pubblico.'],
+    ['Carta Nazionale delle Professioni Museali','ICOM Italia, 2005','https://www.icom-italia.org/professioni-museali/','1','Definisce competenze, requisiti e profili professionali per la gestione e il funzionamento dei musei in Italia.'],
+    // === Accessibilita ===
+    ['Linee guida superamento barriere architettoniche nei luoghi di interesse culturale','D.M. 28 marzo 2008','https://www.gazzettaufficiale.it/eli/id/2008/05/16/08A03372/sg','2','Indirizzi tecnico-scientifici per conciliare accessibilita delle persone con disabilita con tutela del patrimonio storico-artistico.'],
+    ['PEBA per i Musei','Circolare DGM n. 26/2018','http://musei.beniculturali.it/wp-content/uploads/2018/06/Circolare-DGM-n.-26-2018-PEBA-nei-musei.pdf','2','Linee guida per programmazione e redazione dei Piani di Eliminazione delle Barriere Architettoniche nei musei.'],
+    ['Convenzione ONU sui diritti delle persone con disabilita','Legge 3 marzo 2009, n. 18','https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2009-03-03;18!vig=','2','Ratifica italiana della Convenzione ONU. Art. 30: diritto delle persone con disabilita a partecipare alla vita culturale.'],
+    ['Legge Stanca - Accessibilita digitale','Legge 9 gennaio 2004, n. 4','https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2004-01-09;4!vig=','2','Legge italiana sull\'accessibilita digitale: siti web, app e postazioni multimediali dei luoghi della cultura pubblici.'],
+    // === Documenti e circolari MiBAC ===
+    ['Statuto e governance musei statali afferenti ai Poli museali','Circolare 27 del 27 agosto 2018','https://www.icom-italia.org/wp-content/uploads/2018/09/ICOMItalia.Musei-statali-Statuti-Circolare-27-Direzione-generale-Musei-27agosto.2018.pdf','5','Circolare su statuto e governance dei musei statali afferenti ai Poli museali.'],
+    ['Direttiva sulla Governance dei Poli Museali','Direttiva 27 agosto 2018','https://www.icom-italia.org/wp-content/uploads/2018/09/ICOMItalia.Direttiva-sulla-governance-dei-Poli-Museali.27agosto.2018.pdf','5','Direttiva ministeriale sulla governance dei Poli Museali italiani.'],
+    ['Modello di statuto per musei statali afferenti ai Poli Museali','Modello MiBAC 2018','https://www.icom-italia.org/wp-content/uploads/2018/09/ICOMItalia.Modello_Statuto_musei-statali-afferenti-ai-Poli-museali_MiBAC.27agosto.2018.docx','5','Modello tipo di statuto per musei statali afferenti ai Poli museali.'],
+    // === Contributi ICOM Italia ===
+    ['Contributo ICOM Italia sull\'attuazione del DM 113/2018','ICOM Italia, giugno 2018','https://www.icom-italia.org/wp-content/uploads/2018/07/ICOMItalia.ContributoSMN.Seminario.Reggello.22-23giugno.2018.pdf','5','Contributo di ICOM Italia sulle modalita per l\'attuazione del DM 113/2018 e attivazione del SMN.'],
+    ['Contributo ICOM Italia sul Sistema Museale Nazionale','ICOM Italia, marzo 2017','https://www.icom-italia.org/wp-content/uploads/2018/06/ICOMItalia.SMN_.ContributoICOMItalia.05marzo.2017.pdf','5','Contributo di ICOM Italia al dibattito sul Sistema Museale Nazionale.'],
+    ['Relazione finale Commissione SMN al Ministro','Relazione Commissione, 2017','https://www.icom-italia.org/wp-content/uploads/2018/06/ICOMItalia.SMN_.RelazioneConclusivaCommissione.2017.pdf','5','Relazione conclusiva della Commissione ministeriale di studio per l\'attivazione del SMN.'],
+    // === Quaderni ICOM ===
+    ['Quaderno 1 - Struttura organizzativa dei Musei','ICOM Italia, giugno 2016','https://www.icom-italia.org/wp-content/uploads/2018/06/ICOMItalia.SMN_.Quaderno1.21giugno.2016.pdf','1','Contributi alla definizione della struttura organizzativa dei Musei e dei compiti attribuiti alle aree funzionali.'],
+    ['Quaderno 2 - Professionalita e funzioni essenziali del museo','ICOM Italia, novembre 2017','https://www.icom-italia.org/wp-content/uploads/2018/06/ICOMItalia.SMN_.Quaderno2.novembre.2017.pdf','1','Approfondimento sulle professionalita e le funzioni essenziali per il funzionamento dei musei.']
+  ];
+
+  var nuove = [], duplicati = 0;
+  norme.forEach(function(n, idx) {
+    var key = n[0].toLowerCase().trim().replace(/\s+/g,' ');
+    if (esistenti[key]) { duplicati++; return; }
+    esistenti[key] = true;
+    nuove.push([
+      'NRM' + Date.now() + '' + idx,
+      n[0], n[1], n[2], n[3], n[4],
+      oggi, 'attivo'
+    ]);
+  });
+
+  if (!dryRun && nuove.length > 0) {
+    sh.getRange(sh.getLastRow() + 1, 1, nuove.length, NORME_HEADER.length).setValues(nuove);
+    SpreadsheetApp.flush();
+  }
+
+  Logger.log('popolaNormativeICOM: inserite=' + (dryRun ? 0 : nuove.length) + ' duplicati=' + duplicati + (dryRun ? ' [DRY-RUN]' : ' [SCRITTE]'));
+  return { ok: true, inserite: dryRun ? 0 : nuove.length, duplicati: duplicati, dryRun: dryRun, candidati: nuove.length };
+}
+
+/**
  * v4.15 (2026-05-09) — Alias backward-compatibility per chiamate frontend.
  * Wrapper di setupNormeSheet().
  */

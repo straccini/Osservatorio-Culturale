@@ -52,6 +52,8 @@ function adminRunTool(tool, token) {
       case 'sediaScan':          r = fasParserSediaEU({ dryRun: false }); break;
       case 'normeDry':           r = normeAutoPopola({ dryRun: true, giorni: 60 }); break;
       case 'normeApply':         r = normeAutoPopola({ dryRun: false, cap: 15, giorni: 60 }); break;
+      case 'normeICOM':          r = popolaNormativeICOM({ dryRun: false }); break;
+      case 'normeICOMDry':       r = popolaNormativeICOM({ dryRun: true }); break;
 
       // ── Validazione / pulizia bandi ──────────────────────────────────────
       case 'validaBandiDry':     r = agenteQualitaBandi({ dryRun: true, email: false }); break;  // anteprima criticità

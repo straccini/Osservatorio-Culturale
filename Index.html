@@ -2590,6 +2590,8 @@
             <button class="btn btn-secondary" onclick="OC.adminTool('sediaScan', this)" style="font-size:12px;padding:6px 12px" title="Scarica i bandi UE cultura da SEDIA ora">Scansiona bandi UE (SEDIA)</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('normeDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quali news diventerebbero Norme">Norme · anteprima</button>
             <button class="btn btn-secondary" onclick="if(confirm('Scrivere le norme trovate nel foglio Norme?'))OC.adminTool('normeApply', this)" style="font-size:12px;padding:6px 12px" title="Scrive nel foglio Norme">Norme · applica</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('normeICOMDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: 22 normative ICOM/nazionali da inserire">ICOM · anteprima</button>
+            <button class="btn btn-secondary" onclick="if(confirm('Inserire le 22 normative ICOM/nazionali nel foglio Norme? I doppioni vengono saltati.'))OC.adminTool('normeICOM', this)" style="font-size:12px;padding:6px 12px;background:#6B21A8;color:#fff" title="Popola le normative ICOM, decreti SMN, standard, accessibilita">ICOM · popola normative</button>
           </div>
 
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;margin:12px 0 6px">Pulizia bandi</div>
@@ -3012,6 +3014,14 @@
     var nav = document.querySelector(sel);
     if (nav) { nav.classList.add('active'); nav.setAttribute('aria-current','page'); }
 
+    // Auto-apri accordion "Altre fonti" se la pagina e' dentro il dropdown
+    var _afPages = {podcast:1,video:1,libri:1,norme:1,social:1};
+    if (_afPages[page]) {
+      var afBtn=$('altreFontiToggle'), afBody=$('altreFontiBody');
+      if(afBtn) afBtn.setAttribute('aria-expanded','true');
+      if(afBody) afBody.classList.remove('collapsed');
+    }
+
     var crumb = $('breadcrumb');
     if (crumb) {
       var homeLink = '<a href="#" onclick="OC.go(\'home\');return false" style="color:inherit;text-decoration:none;cursor:pointer">Osservatorio</a>';
@@ -3415,6 +3425,26 @@
         } catch(_e){}
       })
       .getHomePayload();
+
+    // Carica conteggi settimanali NEW per sidebar badges
+    google.script.run
+      .withSuccessHandler(function(c){
+        if(!c)return;
+        var keys=['bandi','news','podcast','video','libri','norme','lavoro','capitali','social'];
+        keys.forEach(function(k){
+          var el=document.getElementById('badge-new-'+k);
+          if(!el)return;
+          var n=c[k]||0;
+          if(n>0){el.textContent=n;el.hidden=false;}
+          else{el.hidden=true;}
+        });
+        // Badge aggregato "Altre fonti" (somma podcast+video+libri+norme+social)
+        var afTot=(c.podcast||0)+(c.video||0)+(c.libri||0)+(c.norme||0)+(c.social||0);
+        var afEl=document.getElementById('badge-new-altrefonti');
+        if(afEl){if(afTot>0){afEl.textContent=afTot;afEl.hidden=false;}else{afEl.hidden=true;}}
+      })
+      .withFailureHandler(function(){})
+      .getWeeklyNewCounts();
 
     // Carica mappa identita per filtro globale (badge topbar)
     _identLoadUI_();
@@ -11261,6 +11291,28 @@
       btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
       if (expanded) { body.classList.add('collapsed'); }
       else          { body.classList.remove('collapsed'); }
+    });
+  })();
+
+  // === ACCORDION: Altre fonti sidebar ===
+  (function(){
+    var btn  = $('altreFontiToggle');
+    var body = $('altreFontiBody');
+    if (!btn || !body) return;
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      var expanded = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      if (expanded) { body.classList.add('collapsed'); }
+      else          { body.classList.remove('collapsed'); }
+    });
+    // Auto-apri se una pagina interna e' attiva
+    body.querySelectorAll('.nav-item[data-page]').forEach(function(item){
+      item.addEventListener('click', function(){
+        btn.setAttribute('aria-expanded', 'true');
+        body.classList.remove('collapsed');
+      });
     });
   })();
 
