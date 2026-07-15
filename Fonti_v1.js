@@ -69,7 +69,8 @@ var FU_SHEETS = {
   video:   'FontiVideo',
   libri:   'FontiLibri',        // v4.22 — aggiunto
   norme:   'FontiNorme',        // v4.22 — aggiunto
-  social:  'FontiSocial'        // v4.22 — aggiunto
+  social:  'FontiSocial',       // v4.22 — aggiunto
+  lavoro:  'FontiNews'          // v4.27.24 — alias: le fonti lavoro vanno in FontiNews con tag dedicato
 };
 // NB: 'FontiFeed' NON va qui: ha schema a 20 colonne diverso da FU17, quindi
 // getFontiUnified/_fuRowToObj_ (indici FU17 fissi) lo leggerebbe corrotto.
@@ -83,7 +84,8 @@ var FU_TAGS_PER_TIPO = {
   video:   ['video'],
   libri:   ['pubblicazione','manuale','ricerca'],
   norme:   ['decreto','circolare','legge','regolamento','direttiva'],
-  social:  ['instagram','linkedin','facebook','twitter']
+  social:  ['instagram','linkedin','facebook','twitter','mastodon','bluesky'],
+  lavoro:  ['concorso','residenza','opencall','borsa','premio','opportunita']
 };
 
 // Esiti scansione (uniformi tra moduli)
@@ -281,7 +283,7 @@ function addFonteUnificataV2(body) {
       }
     } catch(_) {}
 
-    var prefix = { bandi:'FB', news:'FN', podcast:'FP', video:'FV', libri:'FL', norme:'FNR', social:'FS' }[tipo] || 'FF';
+    var prefix = { bandi:'FB', news:'FN', podcast:'FP', video:'FV', libri:'FL', norme:'FNR', social:'FS', lavoro:'FLV' }[tipo] || 'FF';
     var id = prefix + Date.now();
 
     var row = new Array(FU_HEADERS.length).fill('');

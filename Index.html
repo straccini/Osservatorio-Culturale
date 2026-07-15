@@ -2335,41 +2335,66 @@
 
       <!-- TAB TUTTE LE FONTI (v4.22 — matrice 11-col + modale + API) -->
       <div class="settings-tab-content" data-tab-content="tutti">
-        <!-- v4.22 — ZONA 1: Header diagnostica -->
+
+        <!-- v4.27.24 — CARICA NUOVE FONTI: primo blocco, prominente -->
+        <div style="background:var(--accent-soft);border:1px solid var(--rule);border-radius:var(--r-md);padding:20px 22px;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+            <div>
+              <div style="font-family:var(--font-serif);font-size:1.125rem;font-weight:600;color:var(--ink)">Carica nuove fonti</div>
+              <div style="font-size:12px;color:var(--ink-3);margin-top:2px">Aggiungi feed RSS, canali, portali da monitorare automaticamente</div>
+            </div>
+            <button class="btn btn-primary" onclick="OC._openAddFonteModal()" style="font-size:13px;padding:8px 18px;white-space:nowrap">+ Aggiungi fonte</button>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span style="font-size:11px;padding:3px 8px;border-radius:12px;background:var(--paper);border:1px solid var(--rule);color:var(--ink-3)">Bandi</span>
+            <span style="font-size:11px;padding:3px 8px;border-radius:12px;background:var(--paper);border:1px solid var(--rule);color:var(--ink-3)">News</span>
+            <span style="font-size:11px;padding:3px 8px;border-radius:12px;background:var(--paper);border:1px solid var(--rule);color:var(--ink-3)">Podcast</span>
+            <span style="font-size:11px;padding:3px 8px;border-radius:12px;background:var(--paper);border:1px solid var(--rule);color:var(--ink-3)">Video</span>
+            <span style="font-size:11px;padding:3px 8px;border-radius:12px;background:var(--paper);border:1px solid var(--rule);color:var(--ink-3)">Pubblicazioni</span>
+            <span style="font-size:11px;padding:3px 8px;border-radius:12px;background:var(--paper);border:1px solid var(--rule);color:var(--ink-3)">Norme</span>
+            <span style="font-size:11px;padding:3px 8px;border-radius:12px;background:var(--paper);border:1px solid var(--rule);color:var(--ink-3)">Social</span>
+            <span style="font-size:11px;padding:3px 8px;border-radius:12px;background:var(--paper);border:1px solid var(--rule);color:var(--ink-3)">Lavoro cultura</span>
+          </div>
+        </div>
+
+        <!-- Diagnostica fonti (spostata sotto carica fonti) -->
         <div class="admin-card" style="margin-bottom:14px">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-            <h3 style="margin:0;font-size:15px">Fonti monitorate</h3>
+            <h3 style="margin:0;font-family:var(--font-serif);font-size:1.125rem;font-weight:600">Fonti monitorate</h3>
             <div id="fmCounters" style="font-size:13px;color:var(--ink-2)">Caricamento...</div>
           </div>
           <div id="fmDiagToggle" style="margin-top:8px">
             <button class="btn btn-secondary" onclick="var d=document.getElementById('fmDiagPanel');d.hidden=!d.hidden;this.textContent=d.hidden?'Dettagli diagnostica':'Nascondi diagnostica'" style="font-size:11px;padding:4px 10px">Dettagli diagnostica</button>
           </div>
-          <div id="fmDiagPanel" hidden style="margin-top:10px;padding:12px;background:var(--surface-2);border-radius:8px;border:1px solid var(--rule)">
+          <div id="fmDiagPanel" hidden style="margin-top:10px;padding:12px;background:var(--surface-2);border-radius:var(--r-sm);border:1px solid var(--rule)">
             <div id="fmDiagContent" style="font-size:12px;color:var(--ink-2)">Caricamento diagnostica...</div>
             <button class="btn btn-secondary" onclick="OC._runAuditFonti()" style="font-size:11px;padding:4px 10px;margin-top:8px">Esegui audit completo</button>
           </div>
         </div>
 
-        <!-- Azioni rapide -->
+        <!-- MONITORAGGIO: azioni rapide + filtri -->
+        <div style="font-family:var(--font-serif);font-size:1.125rem;font-weight:600;color:var(--ink);margin-bottom:12px">Monitoraggio fonti attive</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
-          <button class="btn btn-primary" onclick="OC._scanNews()" style="font-size:12px;padding:6px 14px">Scan news</button>
-          <button class="btn btn-primary" onclick="OC._scanPodcast()" style="font-size:12px;padding:6px 14px">Scan podcast/video</button>
-          <button class="btn btn-primary" onclick="OC._scanBandi()" style="font-size:12px;padding:6px 14px">Scan bandi</button>
-          <div style="flex:1"></div>
-          <button class="btn btn-secondary" onclick="OC._openAddFonteModal()" style="font-size:12px;padding:6px 14px">+ Aggiungi fonte</button>
+          <button class="btn btn-secondary" onclick="OC._scanNews()" style="font-size:12px;padding:6px 14px">Scan news</button>
+          <button class="btn btn-secondary" onclick="OC._scanPodcast()" style="font-size:12px;padding:6px 14px">Scan podcast/video</button>
+          <button class="btn btn-secondary" onclick="OC._scanBandi()" style="font-size:12px;padding:6px 14px">Scan bandi</button>
+          <button class="btn btn-secondary" onclick="OC.adminTool('lavoroScan', this)" style="font-size:12px;padding:6px 14px">Scan lavoro cultura</button>
         </div>
         <div id="fmScanResult" style="font-size:12px;min-height:16px;color:var(--ink-3);margin-bottom:8px"></div>
 
         <!-- Barra filtri -->
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
-          <select id="fmFiltroContenitore" style="padding:7px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px;background:#fff" onchange="OC._reloadFontiMatrix()">
+          <select id="fmFiltroContenitore" style="padding:7px 10px;border:1px solid var(--rule);border-radius:var(--r-sm);font-size:13px;background:var(--paper);font-family:var(--font-ui)" onchange="OC._reloadFontiMatrix()">
             <option value="">Tutti i contenitori</option>
             <option value="bandi">Bandi</option>
             <option value="news">News</option>
             <option value="podcast">Podcast</option>
             <option value="video">Video</option>
+            <option value="libri">Pubblicazioni</option>
+            <option value="norme">Norme</option>
+            <option value="social">Social</option>
           </select>
-          <select id="fmFiltroStato" style="padding:7px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px;background:#fff" onchange="OC._reloadFontiMatrix()">
+          <select id="fmFiltroStato" style="padding:7px 10px;border:1px solid var(--rule);border-radius:var(--r-sm);font-size:13px;background:var(--paper);font-family:var(--font-ui)" onchange="OC._reloadFontiMatrix()">
             <option value="">Tutti gli stati</option>
             <option value="ok">OK</option>
             <option value="stantia">Stantia</option>
@@ -2377,13 +2402,13 @@
             <option value="silente">Silente</option>
             <option value="mai">Mai scansionata</option>
           </select>
-          <input id="fmRicerca" type="text" placeholder="Cerca nome o URL..." style="flex:1;min-width:180px;padding:7px 10px;border:1px solid #D0D0D0;border-radius:6px;font-size:13px" onkeyup="if(event.key==='Enter')OC._reloadFontiMatrix()"/>
+          <input id="fmRicerca" type="text" placeholder="Cerca nome o URL..." style="flex:1;min-width:180px;padding:7px 10px;border:1px solid var(--rule);border-radius:var(--r-sm);font-size:13px;font-family:var(--font-ui)" onkeyup="if(event.key==='Enter')OC._reloadFontiMatrix()"/>
           <button class="btn btn-secondary" onclick="OC._reloadFontiMatrix()" style="font-size:13px">Applica</button>
         </div>
 
         <!-- Nota agenti -->
-        <div style="background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.15);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--ink-2);line-height:1.5">
-          <b style="color:var(--amb-5,#0E7490)">Fonti Agenti AI</b> — Le fonti contrassegnate con badge Agente sono gestite dal sistema multi-agente (AgentConfig) e non sono modificabili da questo pannello. Per modificarle e necessario intervenire nel codice sorgente.
+        <div style="background:var(--amb-5-soft);border:1px solid var(--rule);border-radius:var(--r-sm);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--ink-2);line-height:1.5">
+          <b style="color:var(--amb-5)">Fonti Agenti AI</b> — Le fonti contrassegnate con badge Agente sono gestite dal sistema multi-agente e non sono modificabili da questo pannello.
         </div>
 
         <!-- ZONA 2: Matrice fonti -->
@@ -7491,9 +7516,53 @@
     wrap.innerHTML = html;
   }
 
+  // v4.27.24 — Modale aggiungi fonte redesign
+  var _afSelectedTipo = '';
+  var _AF_HINTS = {
+    bandi:   { label:'Bandi e finanziamenti', hint:'Feed RSS di bandi pubblici, avvisi di finanziamento, gare. Lo scanner estrarra titolo, ente, scadenza e importo.', placeholder:'Es. Regione Puglia Bandi', urlHint:'Feed RSS del portale bandi o della pagina avvisi', defaultFonte:'RSS' },
+    news:    { label:'News e articoli', hint:'Testate, blog, osservatori culturali, portali istituzionali. Le news entrano nel flusso quotidiano e nei digest settimanali.', placeholder:'Es. Artribune, ICOM Italia', urlHint:'Feed RSS della sezione notizie o del blog', defaultFonte:'RSS' },
+    podcast: { label:'Podcast audio', hint:'Serie audio su cultura, musei, patrimonio. Lo scanner importa titolo, episodio, durata e link ascolto.', placeholder:'Es. Museo Sensibile Podcast', urlHint:'Feed RSS del podcast (da iTunes, Spotify, o sito)', defaultFonte:'RSS' },
+    video:   { label:'Video e canali', hint:'Canali YouTube o feed video su temi culturali. Importa titolo, canale, data e thumbnail.', placeholder:'Es. MiC Cultura YouTube', urlHint:'URL del canale YouTube (youtube.com/c/... o @...)', defaultFonte:'YouTube' },
+    libri:   { label:'Pubblicazioni e ricerca', hint:'Riviste accademiche, editori specializzati, archivi open access (DOAJ, JSTOR, Open Library). Importa titolo, autore, editore.', placeholder:'Es. DOAJ Cultural Studies, Museologia', urlHint:'Feed RSS della rivista o catalogo editoriale', defaultFonte:'RSS' },
+    norme:   { label:'Norme e legislazione', hint:'Gazzetta Ufficiale, portali normativi, decreti MiC, direttive EU. Lo scanner filtra per pertinenza culturale.', placeholder:'Es. GU Cultura, EUR-Lex Heritage', urlHint:'Feed RSS del portale normativo o sezione legislativa', defaultFonte:'RSS' },
+    social:  { label:'Social e community', hint:'Feed Mastodon, Bluesky, aggregatori social su patrimonio culturale e musei (#GLAM, #DigitalHeritage, #CulturalHeritage).', placeholder:'Es. Mastodon #GLAM, Bluesky Museums', urlHint:'Feed RSS/Atom del profilo o hashtag', defaultFonte:'RSS' },
+    lavoro:  { label:'Lavoro cultura e opportunita', hint:'Concorsi pubblici, residenze artistiche, open call, borse di studio, posizioni nel settore culturale. I contenuti entrano nella sezione Lavoro cultura.', placeholder:'Es. Res Artis, On the Move, inPA Cultura', urlHint:'Feed RSS del portale concorsi o delle opportunita', defaultFonte:'RSS' }
+  };
+
+  function _afSelTipo(tipo) {
+    _afSelectedTipo = tipo;
+    var info = _AF_HINTS[tipo] || {};
+    // Evidenzia bottone selezionato
+    var btns = document.querySelectorAll('.af-tipo-btn');
+    for (var i = 0; i < btns.length; i++) {
+      var b = btns[i];
+      if (b.getAttribute('data-tipo') === tipo) {
+        b.style.borderColor = 'var(--accent)'; b.style.background = 'var(--accent-soft)';
+      } else {
+        b.style.borderColor = 'var(--rule)'; b.style.background = 'var(--paper)';
+      }
+    }
+    // Mostra pannello campi
+    var panel = $('afFieldsPanel'); if (panel) panel.style.display = 'block';
+    var lbl = $('afTipoLabel'); if (lbl) lbl.textContent = info.label || tipo;
+    var hint = $('afTipoHint'); if (hint) hint.textContent = info.hint || '';
+    var nome = $('afNome'); if (nome) nome.placeholder = info.placeholder || '';
+    var urlH = $('afUrlHint'); if (urlH) urlH.textContent = info.urlHint || '';
+    var sel = $('afTipoFonte'); if (sel) sel.value = info.defaultFonte || 'RSS';
+  }
+
   function _openAddFonteModal() {
+    _afSelectedTipo = '';
     var ov = document.getElementById('oc-addfonte-overlay');
     if (ov) { ov.hidden = false; ov.style.display = 'flex'; }
+    // Reset campi
+    var panel = $('afFieldsPanel'); if (panel) panel.style.display = 'none';
+    var btns = document.querySelectorAll('.af-tipo-btn');
+    for (var i = 0; i < btns.length; i++) { btns[i].style.borderColor = 'var(--rule)'; btns[i].style.background = 'var(--paper)'; }
+    ['afNome','afUrl','afTag','afEnte'].forEach(function(id){ var el=$(id); if(el) el.value=''; });
+    ['afCategoria','afLivello'].forEach(function(id){ var el=$(id); if(el) el.selectedIndex=0; });
+    var p=$('afPriorita'); if(p) p.value='2';
+    var r=$('afResult'); if(r) r.textContent='';
   }
   function _closeAddFonteModal() {
     var ov = document.getElementById('oc-addfonte-overlay');
@@ -7503,41 +7572,32 @@
 
   function _submitAddFonte() {
     if (!hasGAS()) return;
+    var tipo = _afSelectedTipo;
     var nome = ($('afNome')||{}).value || '';
     var url = ($('afUrl')||{}).value || '';
     var tipoFonte = ($('afTipoFonte')||{}).value || 'RSS';
-    var checks = document.querySelectorAll('.af-alimenta:checked');
-    var tipi = [];
-    for (var i = 0; i < checks.length; i++) tipi.push(checks[i].value);
     var out = $('afResult');
 
+    if (!tipo) { if(out) out.innerHTML='<span style="color:var(--danger)">Seleziona un tipo di risorsa</span>'; return; }
     if (!nome.trim()) { if(out) out.innerHTML='<span style="color:var(--danger)">Nome obbligatorio</span>'; return; }
     if (!url.trim()) { if(out) out.innerHTML='<span style="color:var(--danger)">URL obbligatorio</span>'; return; }
-    if (!tipi.length) { if(out) out.innerHTML='<span style="color:var(--danger)">Seleziona almeno un contenitore</span>'; return; }
 
     if(out) out.innerHTML='<span style="color:var(--ink-3)">Salvataggio...</span>';
-    var done = 0, total = tipi.length, errors = [];
-    tipi.forEach(function(tipo) {
-      google.script.run
-        .withSuccessHandler(function(r) {
-          done++;
-          if (!r || !r.ok) errors.push(tipo + ': ' + (r&&r.error||'errore'));
-          if (done === total) {
-            if (errors.length) { if(out) out.innerHTML='<span style="color:var(--danger)">Errori: '+esc(errors.join(', '))+'</span>'; }
-            else {
-              if(out) out.innerHTML='<span style="color:var(--amb-2)">Fonte aggiunta a '+total+' contenitor'+(total>1?'i':'e')+'</span>';
-              setTimeout(function(){ _closeAddFonteModal(); _reloadFontiMatrix(); }, 1200);
-            }
-          }
-        })
-        .withFailureHandler(function(e) { done++; errors.push(tipo+': '+e); if(done===total && out) out.innerHTML='<span style="color:var(--danger)">'+esc(errors.join(', '))+'</span>'; })
-        .addFonteUnificataV2({
-          tipo: tipo, nome: nome.trim(), url: url.trim(), tipoFonte: tipoFonte,
-          tag: ($('afTag')||{}).value || '', categoria: ($('afCategoria')||{}).value || '',
-          priorita: Number(($('afPriorita')||{}).value) || 2,
-          enteDefault: ($('afEnte')||{}).value || '', livello: ($('afLivello')||{}).value || ''
-        });
-    });
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r || !r.ok) { if(out) out.innerHTML='<span style="color:var(--danger)">'+ esc(r&&r.error||'errore') +'</span>'; }
+        else {
+          if(out) out.innerHTML='<span style="color:var(--success)">Fonte aggiunta con successo</span>';
+          setTimeout(function(){ _closeAddFonteModal(); _reloadFontiMatrix(); }, 1200);
+        }
+      })
+      .withFailureHandler(function(e) { if(out) out.innerHTML='<span style="color:var(--danger)">'+esc(String(e))+'</span>'; })
+      .addFonteUnificataV2({
+        tipo: tipo, nome: nome.trim(), url: url.trim(), tipoFonte: tipoFonte,
+        tag: ($('afTag')||{}).value || '', categoria: ($('afCategoria')||{}).value || '',
+        priorita: Number(($('afPriorita')||{}).value) || 2,
+        enteDefault: ($('afEnte')||{}).value || '', livello: ($('afLivello')||{}).value || ''
+      });
   }
 
   function _toggleFonte(tipo, id, newState) {
@@ -11749,6 +11809,7 @@
     _openAddFonteModal: _openAddFonteModal,
     _closeAddFonteModal: _closeAddFonteModal,
     _submitAddFonte: _submitAddFonte,
+    _afSelTipo: _afSelTipo,
     _scanNews: _scanNews,
     _scanBandi: _scanBandi,
     _scanPodcast: _scanPodcast,
@@ -13628,47 +13689,84 @@
 </div>
 
 <!-- v4.22 — Modale Aggiungi Fonte -->
-<div id="oc-addfonte-overlay" hidden style="position:fixed;inset:0;background:rgba(26,24,21,.55);z-index:9998;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)">
-  <div role="dialog" aria-modal="true" style="background:#fff;border-radius:16px;max-width:540px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.22);padding:32px;font-family:var(--font-ui,sans-serif);max-height:calc(100vh - 40px);overflow-y:auto;position:relative">
+<!-- v4.27.24 — Modale "Aggiungi fonte" redesign: tutte le 7 categorie, pannello per tipo -->
+<div id="oc-addfonte-overlay" hidden style="position:fixed;inset:0;background:oklch(0.14 0.005 70 / 0.55);z-index:9998;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)">
+  <div role="dialog" aria-modal="true" style="background:var(--paper);border-radius:var(--r-lg);max-width:600px;width:100%;box-shadow:var(--shadow-3);padding:32px;font-family:var(--font-ui);max-height:calc(100vh - 40px);overflow-y:auto;position:relative">
     <button onclick="OC._closeAddFonteModal()" aria-label="Chiudi" style="position:absolute;top:12px;right:12px;background:transparent;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;color:var(--ink-3);font-size:22px;line-height:1">&times;</button>
-    <div style="font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:4px">Aggiungi fonte</div>
-    <p style="font-size:13px;color:var(--ink-2);line-height:1.5;margin:0 0 18px">Inserisci i dati della nuova fonte da monitorare. I campi con * sono obbligatori.</p>
-    <div style="margin-bottom:16px">
-      <div style="font-size:12px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Identificazione</div>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Nome *</label><input id="afNome" type="text" placeholder="Es. ICOM Italia, Artribune" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"/><div style="font-size:11px;color:var(--ink-3);margin-top:2px">Nome leggibile della fonte</div></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">URL *</label><input id="afUrl" type="url" placeholder="https://..." style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"/><div style="font-size:11px;color:var(--ink-3);margin-top:2px">Indirizzo RSS, pagina web o canale YouTube</div></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Tipo fonte *</label><select id="afTipoFonte" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"><option value="RSS">RSS — feed XML</option><option value="HTML">HTML — pagina web</option><option value="YouTube">YouTube — canale video</option><option value="API">API — endpoint strutturato</option></select></div>
-      </div>
+    <div style="font-family:var(--font-serif);font-size:1.375rem;font-weight:600;color:var(--ink);margin-bottom:4px">Aggiungi fonte</div>
+    <p style="font-size:13px;color:var(--ink-3);line-height:1.5;margin:0 0 18px">Scegli il tipo di risorsa da monitorare, poi compila i campi richiesti.</p>
+
+    <!-- STEP 1: Selezione tipo risorsa -->
+    <div style="font-size:0.6875rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Tipo di risorsa *</div>
+    <div id="afTipoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:20px">
+      <button type="button" class="af-tipo-btn" data-tipo="bandi" style="padding:12px 10px;border:1.5px solid var(--rule);border-radius:var(--r-sm);background:var(--paper);cursor:pointer;text-align:center;transition:border-color .15s,background .15s" onclick="OC._afSelTipo('bandi')">
+        <div style="font-size:18px;margin-bottom:4px">&#128196;</div>
+        <div style="font-size:12px;font-weight:600;color:var(--ink)">Bandi</div>
+        <div style="font-size:10px;color:var(--ink-3)">Finanziamenti, gare</div>
+      </button>
+      <button type="button" class="af-tipo-btn" data-tipo="news" style="padding:12px 10px;border:1.5px solid var(--rule);border-radius:var(--r-sm);background:var(--paper);cursor:pointer;text-align:center;transition:border-color .15s,background .15s" onclick="OC._afSelTipo('news')">
+        <div style="font-size:18px;margin-bottom:4px">&#128240;</div>
+        <div style="font-size:12px;font-weight:600;color:var(--ink)">News</div>
+        <div style="font-size:10px;color:var(--ink-3)">Notizie, articoli</div>
+      </button>
+      <button type="button" class="af-tipo-btn" data-tipo="podcast" style="padding:12px 10px;border:1.5px solid var(--rule);border-radius:var(--r-sm);background:var(--paper);cursor:pointer;text-align:center;transition:border-color .15s,background .15s" onclick="OC._afSelTipo('podcast')">
+        <div style="font-size:18px;margin-bottom:4px">&#127897;</div>
+        <div style="font-size:12px;font-weight:600;color:var(--ink)">Podcast</div>
+        <div style="font-size:10px;color:var(--ink-3)">Audio, serie</div>
+      </button>
+      <button type="button" class="af-tipo-btn" data-tipo="video" style="padding:12px 10px;border:1.5px solid var(--rule);border-radius:var(--r-sm);background:var(--paper);cursor:pointer;text-align:center;transition:border-color .15s,background .15s" onclick="OC._afSelTipo('video')">
+        <div style="font-size:18px;margin-bottom:4px">&#127909;</div>
+        <div style="font-size:12px;font-weight:600;color:var(--ink)">Video</div>
+        <div style="font-size:10px;color:var(--ink-3)">YouTube, canali</div>
+      </button>
+      <button type="button" class="af-tipo-btn" data-tipo="libri" style="padding:12px 10px;border:1.5px solid var(--rule);border-radius:var(--r-sm);background:var(--paper);cursor:pointer;text-align:center;transition:border-color .15s,background .15s" onclick="OC._afSelTipo('libri')">
+        <div style="font-size:18px;margin-bottom:4px">&#128214;</div>
+        <div style="font-size:12px;font-weight:600;color:var(--ink)">Pubblicazioni</div>
+        <div style="font-size:10px;color:var(--ink-3)">Libri, ricerca</div>
+      </button>
+      <button type="button" class="af-tipo-btn" data-tipo="norme" style="padding:12px 10px;border:1.5px solid var(--rule);border-radius:var(--r-sm);background:var(--paper);cursor:pointer;text-align:center;transition:border-color .15s,background .15s" onclick="OC._afSelTipo('norme')">
+        <div style="font-size:18px;margin-bottom:4px">&#9878;</div>
+        <div style="font-size:12px;font-weight:600;color:var(--ink)">Norme</div>
+        <div style="font-size:10px;color:var(--ink-3)">Leggi, decreti</div>
+      </button>
+      <button type="button" class="af-tipo-btn" data-tipo="social" style="padding:12px 10px;border:1.5px solid var(--rule);border-radius:var(--r-sm);background:var(--paper);cursor:pointer;text-align:center;transition:border-color .15s,background .15s" onclick="OC._afSelTipo('social')">
+        <div style="font-size:18px;margin-bottom:4px">&#127760;</div>
+        <div style="font-size:12px;font-weight:600;color:var(--ink)">Social</div>
+        <div style="font-size:10px;color:var(--ink-3)">Feed, Mastodon</div>
+      </button>
+      <button type="button" class="af-tipo-btn" data-tipo="lavoro" style="padding:12px 10px;border:1.5px solid var(--rule);border-radius:var(--r-sm);background:var(--paper);cursor:pointer;text-align:center;transition:border-color .15s,background .15s" onclick="OC._afSelTipo('lavoro')">
+        <div style="font-size:18px;margin-bottom:4px">&#128188;</div>
+        <div style="font-size:12px;font-weight:600;color:var(--ink)">Lavoro cultura</div>
+        <div style="font-size:10px;color:var(--ink-3)">Concorsi, residenze</div>
+      </button>
     </div>
-    <div style="margin-bottom:16px">
-      <div style="font-size:12px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Classificazione</div>
-      <div style="margin-bottom:10px"><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px">Alimenta * <span style="font-weight:400;color:var(--ink-3)">(almeno uno)</span></label>
-        <div style="display:flex;gap:14px;flex-wrap:wrap">
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" class="af-alimenta" value="bandi" style="accent-color:var(--accent)"/> Bandi</label>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" class="af-alimenta" value="news" style="accent-color:var(--accent)"/> News</label>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" class="af-alimenta" value="podcast" style="accent-color:var(--accent)"/> Podcast</label>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" class="af-alimenta" value="video" style="accent-color:var(--accent)"/> Video</label>
-        </div>
-        <div style="font-size:11px;color:var(--ink-3);margin-top:4px">Se selezioni piu di uno, vengono create righe separate per contenitore.</div>
+
+    <!-- STEP 2: Campi (visibili dopo selezione tipo) -->
+    <div id="afFieldsPanel" style="display:none">
+      <div id="afTipoLabel" style="font-size:0.6875rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px"></div>
+      <div id="afTipoHint" style="font-size:12px;color:var(--ink-3);margin-bottom:14px;line-height:1.5;padding:10px 12px;background:var(--surface);border-radius:var(--r-sm)"></div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Nome *</label><input id="afNome" type="text" placeholder="" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:var(--r-sm);font-size:13px;font-family:var(--font-ui)"/></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">URL *</label><input id="afUrl" type="url" placeholder="https://..." style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:var(--r-sm);font-size:13px;font-family:var(--font-ui)"/><div id="afUrlHint" style="font-size:11px;color:var(--ink-3);margin-top:2px"></div></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Formato fonte</label><select id="afTipoFonte" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:var(--r-sm);font-size:13px;font-family:var(--font-ui)"><option value="RSS">RSS / Atom</option><option value="HTML">Pagina web</option><option value="YouTube">Canale YouTube</option><option value="API">API strutturata</option></select></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Categoria</label><select id="afCategoria" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"><option value="">— opzionale —</option><option>Ministero</option><option>Regione</option><option>UE</option><option>Fondazione</option><option>Associazione</option><option>Rivista</option><option>Aggregatore</option><option>Altro</option></select></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Livello</label><select id="afLivello" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"><option value="">— opzionale —</option><option>Nazionale</option><option>Regionale</option><option>EU</option><option>Locale</option></select></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Categoria</label><select id="afCategoria" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:var(--r-sm);font-size:13px;font-family:var(--font-ui)"><option value="">— opzionale —</option><option>Ministero</option><option>Regione</option><option>UE / Internazionale</option><option>Fondazione</option><option>Associazione</option><option>Universita / Ricerca</option><option>Rivista</option><option>Osservatorio culturale</option><option>Aggregatore</option><option>Ente locale</option><option>Altro</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Livello</label><select id="afLivello" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:var(--r-sm);font-size:13px;font-family:var(--font-ui)"><option value="">— opzionale —</option><option>Locale</option><option>Regionale</option><option>Nazionale</option><option>EU</option><option>Internazionale</option></select></div>
       </div>
-      <div style="margin-top:10px"><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Priorita</label><select id="afPriorita" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"><option value="1">1 — Alta (ogni ciclo)</option><option value="2" selected>2 — Media (settimane alterne)</option><option value="3">3 — Bassa (mensile)</option></select></div>
-    </div>
-    <div style="margin-bottom:18px">
-      <div style="font-size:12px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Opzionali</div>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Tag</label><input id="afTag" type="text" placeholder="Es. accessibilita, PNRR, musei" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"/><div style="font-size:11px;color:var(--ink-3);margin-top:2px">Etichette separate da virgola</div></div>
-        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Ente default</label><input id="afEnte" type="text" placeholder="Es. MiC, Regione Puglia" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:7px;font-size:13px"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Priorita</label><select id="afPriorita" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:var(--r-sm);font-size:13px;font-family:var(--font-ui)"><option value="1">1 Alta (ogni ciclo)</option><option value="2" selected>2 Media</option><option value="3">3 Bassa (mensile)</option></select></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Ente default</label><input id="afEnte" type="text" placeholder="Es. MiC, Regione Puglia" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:var(--r-sm);font-size:13px;font-family:var(--font-ui)"/></div>
       </div>
-    </div>
-    <div style="display:flex;gap:10px;align-items:center">
-      <button type="button" onclick="OC._submitAddFonte()" style="background:var(--accent,#935851);color:#fff;border:none;padding:11px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Aggiungi fonte</button>
-      <button type="button" onclick="OC._closeAddFonteModal()" style="background:none;border:1px solid var(--rule);padding:11px 18px;border-radius:8px;font-size:13px;cursor:pointer;color:var(--ink-2)">Annulla</button>
-      <span id="afResult" style="font-size:12px;flex:1"></span>
+      <div style="margin-bottom:18px"><label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:3px">Tag</label><input id="afTag" type="text" placeholder="Es. accessibilita, PNRR, musei" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:var(--r-sm);font-size:13px;font-family:var(--font-ui)"/><div style="font-size:11px;color:var(--ink-3);margin-top:2px">Etichette separate da virgola</div></div>
+
+      <div style="display:flex;gap:10px;align-items:center">
+        <button type="button" onclick="OC._submitAddFonte()" style="background:var(--accent);color:var(--paper);border:none;padding:11px 24px;border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font-ui)">Aggiungi fonte</button>
+        <button type="button" onclick="OC._closeAddFonteModal()" style="background:none;border:1px solid var(--rule);padding:11px 18px;border-radius:var(--r-sm);font-size:13px;cursor:pointer;color:var(--ink-2);font-family:var(--font-ui)">Annulla</button>
+        <span id="afResult" style="font-size:12px;flex:1"></span>
+      </div>
     </div>
   </div>
 </div>
