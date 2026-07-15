@@ -1,7 +1,52 @@
 # Osservatorio Culturale — Codebase Map
 
+---
+
+## ⛔ PROTOCOLLO ANTI-CLOBBER — OBBLIGATORIO, PRIMA DI QUALSIASI MODIFICA
+
+**Perché**: più sessioni Claude parallele lavorano su cloni locali diversi di questo
+progetto. `clasp push` sostituisce l'INTERO progetto GAS: un push da un locale non
+aggiornato CANCELLA il lavoro delle altre sessioni. È già successo 3 volte
+(persi e recuperati: Discovery_v1.js il 13/07, UI "Carica nuove fonti" il 15/07).
+
+**REGOLA — a inizio sessione, e comunque SEMPRE prima del primo `clasp push`:**
+
+```bash
+# 1. Scarica il remoto in una dir temporanea (MAI pull nella working dir: sporca il git)
+SP=<scratchpad>; mkdir -p "$SP/synccheck"; cp .clasp.json "$SP/synccheck/"
+cd "$SP/synccheck" && clasp pull
+
+# 2. Confronta col locale: file nuovi/diversi?
+for f in *.js *.html; do L="<working-dir>/$f";
+  [ ! -f "$L" ] && echo "SOLO-REMOTO: $f";
+  [ -f "$L" ] && ! diff -q <(tr -d '\r' < "$f") <(tr -d '\r' < "$L") >/dev/null 2>&1 && echo "DIFF: $f";
+done
+# + controllare i file SOLO-LOCALI (il remoto li perderebbe? o li ha cancellati?)
+```
+
+**3. Se il remoto è AVANTI** (file nuovi o versione OC_VERSION maggiore): adottare i
+file remoti nel locale (merge, non sovrascrittura cieca), committare come `sync:`,
+POI procedere con le proprie modifiche.
+**4. Se il remoto è INDIETRO o uguale**: procedere; il push riallinea.
+**5. Push sempre con `clasp push -f`** (evita il prompt manifest) e **deploy subito
+dopo** sullo stesso deploymentId (mai "+ Nuova distribuzione").
+
+**Recupero dopo un clobber**: GAS conserva le versioni. `clasp pull --versionNumber N`
+in una dir temporanea → diff con la versione base comune → re-innesto del delta.
+I deployment numerati non tuoi (buchi nella sequenza) = lavoro di un'altra sessione.
+
+**Regole collegate**:
+- Il codice sorgente vero è il repo git locale. MAI editare/salvare nell'editor GAS
+  (il pulsante Esegui salva la scheda aperta → ripristina file vecchi).
+- Le azioni manuali si lanciano dal pannello **Impostazioni → Sistema → Strumenti
+  amministrativi** (adminRunTool), non dall'editor.
+- Ogni modifica: `node --check` sui .js toccati + bilanciamento `<div>` su Index.html
+  prima del push. Commit git dopo ogni deploy riuscito.
+
+---
+
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.18.x · deployment @291 del 15/05/2026
+**Versione corrente**: v4.27.x (vedi `Constants.js → OC_VERSION`; deployment corrente = ultimo numero in `clasp deployments`)
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`
