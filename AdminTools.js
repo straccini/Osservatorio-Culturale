@@ -75,6 +75,7 @@ function adminRunTool(tool, token) {
       case 'gateSelfTest':       r = bandiGateSelfTest(); break;
       case 'lavoroSelfTest':     r = lavoroCulturaSelfTest(); break;
       case 'normeSelfTest':      r = normeCulturaSelfTest(); break;
+      case 'runAllTests':        r = ocRunAllTests(); break;
       case 'quota':              r = { ok: true, quotaEmailRimaste: MailApp.getRemainingDailyQuota() }; break;
 
       default:
