@@ -227,6 +227,32 @@
   --amb-10-soft:oklch(0.20 0.04 350);
 }
 
+/* v4.27.38 — Dark mode: 3 modali statici (registrazione, newsletter, prenotazione) */
+[data-theme="dark"] #oc-reg-overlay > div[role="dialog"],
+[data-theme="dark"] #oc-newsletter-overlay > div[role="dialog"],
+[data-theme="dark"] #oc-prenota-panel {
+  background:var(--paper) !important; color:var(--ink) !important;
+  border:1px solid var(--rule);
+}
+[data-theme="dark"] #oc-reg-overlay [style*="background:linear-gradient"] {
+  background:var(--surface-2) !important; border-bottom-color:var(--rule) !important;
+}
+[data-theme="dark"] #oc-reg-overlay input,
+[data-theme="dark"] #oc-newsletter-overlay input,
+[data-theme="dark"] #oc-prenota-overlay input,
+[data-theme="dark"] #oc-prenota-overlay textarea,
+[data-theme="dark"] #oc-prenota-overlay select {
+  background:var(--surface) !important; color:var(--ink) !important;
+  border-color:var(--rule) !important;
+}
+[data-theme="dark"] #oc-newsletter-overlay [style*="border-top"] {
+  border-top-color:var(--rule) !important;
+}
+[data-theme="dark"] #oc-prenota-overlay .b-field-label,
+[data-theme="dark"] #oc-prenota-overlay label {
+  color:var(--ink-2) !important;
+}
+
 /* v4.27.37 — WCAG 2.4.1 Skip navigation */
 .skip-link{
   position:absolute; top:-100%; left:16px; z-index:9999;
