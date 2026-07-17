@@ -274,9 +274,9 @@ function exportArchivio(token) {
     var folder = DriveApp.getRootFolder();
     var rows = [['Tipo','ID','Titolo','Data','Stato','URL']];
 
-    // Tipo: bandi (RADAR BANDI)
+    // Tipo: bandi (Bandi_v5 — v4.27.40 unificato)
     try {
-      var shBandi = ss.getSheetByName('RADAR BANDI') || ss.getSheetByName('Bandi_v5');
+      var shBandi = ss.getSheetByName('Bandi_v5');
       if (shBandi) {
         var vals = shBandi.getDataRange().getValues();
         var head = vals[0].map(function(h){ return String(h||'').trim(); });
@@ -380,7 +380,7 @@ function emptyTrash(opts, token) {
       } catch(e) { Logger.log('purgeSheet ' + sheetName + ': ' + e.message); return 0; }
     }
 
-    deleted.bandi   = purgeSheet('RADAR BANDI', ['StatoRecord','Stato'], ['DataRilevamento','DATA_RILEVAMENTO'], 'bando');
+    deleted.bandi   = purgeSheet('Bandi_v5', ['StatoRecord','Stato'], ['DataRilevamento','DATA_RILEVAMENTO'], 'bando');
     deleted.news    = purgeSheet('Items', ['StatoRecord','Stato'], ['DataPubblicazione','Data'], 'news');
     deleted.podcast = purgeSheet('Podcast', ['StatoRecord','Stato'], ['DataPubblicazione','Data','DataAggiunta'], 'podcast');
     deleted.libri   = purgeSheet(BV415_SH_LIBRI, ['Stato'], ['DataAggiunta'], 'libro');

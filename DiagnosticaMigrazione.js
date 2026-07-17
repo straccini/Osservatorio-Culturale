@@ -937,7 +937,7 @@ function migraBandiAmbito() {
 
 function debugProps() {
   const p=PropertiesService.getScriptProperties().getProperties();
-  Logger.log('SHEET_ID: '+p.SHEET_ID); Logger.log('ADMIN_PASSWORD: '+p.ADMIN_PASSWORD);
+  Logger.log('SHEET_ID: '+p.SHEET_ID); Logger.log('ADMIN_PASSWORD: '+(p.ADMIN_PASSWORD?'SET':'NOT SET'));
   Logger.log('CLAUDE_API_KEY: '+(p.CLAUDE_API_KEY?'SI':'NO'));
 }
 

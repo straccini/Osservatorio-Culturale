@@ -61,7 +61,7 @@ function ocRunAllTests() {
   _OC_TEST_SUITES.forEach(function(suite) {
     var result = { name: suite.name, description: suite.description, pass: 0, fail: 0, ok: false, error: null };
     try {
-      var fn = eval(suite.fn);
+      var fn = this[suite.fn];
       if (typeof fn !== 'function') {
         result.error = 'funzione ' + suite.fn + ' non trovata';
         result.ok = false;
