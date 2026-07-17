@@ -136,7 +136,6 @@
         <path d="M6 4h9l5 5v11H6z"/><path d="M15 4v5h5"/><path d="M9 14h7M9 17h5"/>
       </svg>
       <span class="lbl">Radar Bandi</span>
-      <span class="nav-badge" id="badge-bandi-urgenti" hidden>0</span>
       <span class="nav-badge nav-badge-new" id="badge-new-bandi" hidden>0</span>
     </a>
 
@@ -156,8 +155,8 @@
       <span class="nav-badge nav-badge-new" id="badge-new-capitali" hidden>0</span>
     </a>
 
-    <!-- T1 Lavoro Cultura — sempre visibile (v4.25.21: concorsi + opportunita/residenze) -->
-    <a href="#" class="nav-item" id="nav-lavoro" onclick="OC.goLavoro();return false">
+    <!-- T1 Lavoro Cultura — guest-locked (v4.27.30) -->
+    <a href="#" class="nav-item nav-guest-locked" id="nav-lavoro" onclick="OC.goLavoro();return false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="7" r="3.5"/><path d="M5 21v-1.5a5.5 5.5 0 0 1 5.5-5.5h3A5.5 5.5 0 0 1 19 19.5V21"/>
       </svg>
@@ -165,13 +164,10 @@
       <span class="nav-badge nav-badge-new" id="badge-new-lavoro" hidden>0</span>
     </a>
 
-    <!-- ===== Dropdown "Altre fonti" — accordion con sotto-label (Ipotesi C) ===== -->
-    <button class="nav-item nav-accordion-toggle nav-guest-locked" id="altreFontiToggle" aria-expanded="false" aria-controls="altreFontiBody" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M4 6h16M4 12h16M4 18h10"/>
-      </svg>
-      <span class="lbl">Altre fonti</span>
-      <span class="nav-badge nav-badge-new" id="badge-new-altrefonti" hidden>0</span>
+    <!-- ===== Dropdown "Altre fonti" — accordion, stesso stile di Ambiti tematici ===== -->
+    <button class="nav-label nav-accordion-toggle" id="altreFontiToggle" aria-expanded="false" aria-controls="altreFontiBody" type="button">
+      <span>Altre fonti</span>
+      <span class="nav-badge nav-badge-new" id="badge-new-altrefonti" hidden style="text-transform:none;letter-spacing:0">0</span>
       <svg class="accordion-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polyline points="6 9 12 15 18 9"/>
       </svg>

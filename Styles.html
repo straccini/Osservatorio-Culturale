@@ -397,13 +397,13 @@ h4{font-size:1rem}
   content:'•'; margin-right:3px;
 }
 .nav-badge-new{
-  background:#6B21A8; color:#fff !important; border-radius:4px;
-  padding:1px 5px; font-size:0.625rem !important; font-weight:700;
-  letter-spacing:.03em; line-height:1.4; margin-left:auto;
-  white-space:nowrap;
+  font-family:var(--font-ui); background:rgba(107,33,168,.12); color:#6B21A8 !important;
+  border-radius:3px; padding:0 3px; font-size:0.5625rem !important;
+  font-weight:400; letter-spacing:.01em; line-height:1.5;
+  margin-left:auto; white-space:nowrap; opacity:.85;
 }
-.nav-badge-new::before{ content:'NEW '; }
-[data-theme="dark"] .nav-badge-new{ background:#7C3AED; }
+.nav-badge-new::before{ content:'new '; }
+[data-theme="dark"] .nav-badge-new{ background:rgba(124,58,237,.15); color:#A78BFA !important; }
 .af-sublabel{
   font-size:0.625rem; font-weight:700; text-transform:uppercase;
   letter-spacing:.06em; color:var(--ink-3); opacity:.6;
@@ -1689,6 +1689,7 @@ body.is-home-page .topbar-search{display:none}
   width: 100%;
   display: flex; align-items: center; gap: 6px;
   background: none; border: none; cursor: pointer; padding: 0;
+  /* default: uppercase label-style — override per nav-item toggle sotto */
   font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700;
   letter-spacing: .14em; text-transform: uppercase;
   color: var(--ink-3); text-align: left;
@@ -1767,18 +1768,23 @@ body.is-home-page .topbar-search{display:none}
 /* Data nel meta sinistro */
 .nr-data{
   font-family:var(--font-ui);
-  font-size:0.875rem;
+  font-size:0.8125rem;
   color:var(--ink-3);
 }
 
 /* Data nel pannello destro */
 .nr-data-right{
   font-family:var(--font-ui);
-  font-size:0.875rem; font-weight:600;
-  color:var(--ink-2);
-  text-align:center;
-  margin-bottom:8px;
-  line-height:1.3;
+  font-size:0.8125rem; font-weight:500;
+  color:var(--ink-3);
+  margin-left:auto;
+}
+/* Estratto / descrizione normativa */
+.br-estratto{
+  font-family:var(--font-ui);
+  font-size:0.8125rem; color:var(--ink-3);
+  line-height:1.5; margin:2px 0 0;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
 }
 
 /* Score AI */
@@ -2590,11 +2596,11 @@ body.is-home-page .topbar-search{display:none}
 .br-tipo-fornitura { color: oklch(0.42 0.16 300); background: oklch(0.95 0.03 300); }
 .br-tipo-lavori { color: oklch(0.40 0.10 165); background: oklch(0.95 0.03 165); }
 
-/* v4.27.3 — Titolo bando: serif per eleganza editoriale, no underline */
+/* v4.27.29 — Titolo bando/norme: font-ui per coerenza con tutto il design system */
 .br-title {
-  font-family: var(--font-serif); font-size: 1.125rem; font-weight: 600;
-  color: var(--ink); line-height: 1.3; margin: 0 0 4px 0;
-  cursor: pointer; letter-spacing: -0.015em;
+  font-family: var(--font-ui); font-size: 1rem; font-weight: 600;
+  color: var(--ink); line-height: 1.35; margin: 0 0 4px 0;
+  cursor: pointer; letter-spacing: -0.01em;
 }
 .br-title:hover { color: var(--link); }
 
@@ -3965,7 +3971,7 @@ button:focus-visible:not(.btn):not(.br-act):not(.nav-item):not(.filter-chip):not
 .topbar-nl-cta { background:var(--accent,#935851); color:var(--paper); border:none; padding:6px 14px; border-radius:999px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font-ui); white-space:nowrap; margin-right:8px; }
 .topbar-nl-cta:hover { opacity:.85; }
 /* Sidebar: voci bloccate per ospiti (visibili ma sbiadite, click → gate CTA) */
-.nav-item.nav-locked { opacity:.35; }
+.nav-item.nav-locked { opacity:.35; pointer-events:none; cursor:default; }
 .nav-item.nav-locked .lbl { color:var(--ink-4,#aaa); }
 .nav-item.nav-locked svg { opacity:.5; }
 .nav-guest-locked-group.nav-locked-group { opacity:.35; }

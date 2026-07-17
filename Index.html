@@ -2975,7 +2975,7 @@
   // A) NAVIGAZIONE SPA
   // ==========================================================
   // Pagine accessibili a ospiti (livello 0) — tutto il resto richiede registrazione
-  var _GUEST_PAGES = { home:1, bandi:1, lavoro:1, matrix:1, 'matrix-landing':1, 'sondaggi-catalogo':1, chisiamo:1, 'profilo-pro':1, privacy:1, news:1, podcast:1, video:1, social:1, editoria:1, capitali:1, norme:1, libri:1 };
+  var _GUEST_PAGES = { home:1, bandi:1, matrix:1, 'matrix-landing':1, 'sondaggi-catalogo':1, chisiamo:1, 'profilo-pro':1, privacy:1, news:1 };
 
   function go(page, ambito){
     // Gate ospite: se pagina protetta, mostra card registrazione
@@ -5356,8 +5356,14 @@
     var total  = list.length;
 
     // v4.18.8 — Ordinamento applicato su copia (non muta cache originale)
+    // v4.27.29 — Nuovi bandi (isRecente) sempre per primi, qualsiasi ordinamento
     var sortedList = list.slice();
     sortedList.sort(function(a, b){
+      // Nuovi (rilevati di recente) sempre in cima
+      var nA = a.isRecente ? 0 : 1;
+      var nB = b.isRecente ? 0 : 1;
+      if (nA !== nB) return nA - nB;
+
       if (sort === 'importo-desc') {
         var iA = _parseImporto_(a.importo), iB = _parseImporto_(b.importo);
         return iB - iA;

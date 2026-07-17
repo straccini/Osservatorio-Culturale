@@ -161,15 +161,34 @@ function getWeeklyNewCounts() {
     }
   } catch(e) {}
 
-  // Bandi (RADAR BANDI — Data_Rilevamento)
+  // Bandi — conta da Bandi_v5 (fonte primaria) + RADAR BANDI (fallback)
   try {
-    var bandi = getBandiRadar();
-    bandi.forEach(function(b) {
-      if (b.statoRecord === 'archiviato') return;
-      var d = b.dataRilevamento ? new Date(b.dataRilevamento) : null;
-      if (d && d >= lunedi) counts.bandi++;
-    });
+    var bv5Sh = ss.getSheetByName('Bandi_v5');
+    if (bv5Sh && bv5Sh.getLastRow() > 1) {
+      var bv5 = bv5Sh.getDataRange().getValues(), bh5 = bv5[0];
+      var bdI = bh5.indexOf('DataRilevamento');
+      if (bdI < 0) bdI = bh5.indexOf('Data_Rilevamento');
+      var bsI = bh5.indexOf('StatoRecord');
+      for (var q = 1; q < bv5.length; q++) {
+        if (!bv5[q][0]) continue;
+        if (bsI >= 0 && String(bv5[q][bsI]||'').toLowerCase() === 'archiviato') continue;
+        var bd = bv5[q][bdI];
+        if (bd && (bd instanceof Date ? bd : new Date(bd)) >= lunedi) counts.bandi++;
+      }
+    }
   } catch(e) {}
+  // Fallback RADAR se Bandi_v5 non ha dati
+  if (counts.bandi === 0) {
+    try {
+      var bandi = getBandiRadar();
+      bandi.forEach(function(b) {
+        if (b.statoRecord === 'archiviato') return;
+        var raw = b.data || '';
+        var d = raw ? new Date(raw) : null;
+        if (d && !isNaN(d.getTime()) && d >= lunedi) counts.bandi++;
+      });
+    } catch(e) {}
+  }
 
   // Podcast + Video (Podcast sheet — DataRilevamento)
   try {
