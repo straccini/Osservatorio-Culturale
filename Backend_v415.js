@@ -394,9 +394,15 @@ function emptyTrash(opts, token) {
       totale: total,
       user: Session.getActiveUser().getEmail() || 'unknown'
     };
-    PropertiesService.getScriptProperties().setProperty(
-      'audit_emptyTrash_' + Date.now(), JSON.stringify(auditEntry)
-    );
+    // v4.27.37 — Audit su chiave fissa (sovrascrive, non accumula — previene leak 500KB)
+    var _auditProps = PropertiesService.getScriptProperties();
+    _auditProps.setProperty('audit_emptyTrash_last', JSON.stringify(auditEntry));
+    // Pulizia vecchie chiavi accumulate (audit_emptyTrash_<timestamp>)
+    try {
+      _auditProps.getKeys().forEach(function(k) {
+        if (k.indexOf('audit_emptyTrash_') === 0 && k !== 'audit_emptyTrash_last') _auditProps.deleteProperty(k);
+      });
+    } catch(_) {}
     Logger.log('emptyTrash: cancellati ' + total + ' record (' + JSON.stringify(deleted) + ')');
     return { ok: true, deleted: deleted, totale: total };
   } catch(e) {
