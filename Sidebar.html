@@ -15,6 +15,8 @@
   chiamato dentro Navigation.html (OC.hydrate()).
   ============================================================
 -->
+<!-- v4.27.37 — WCAG 2.4.1: skip to content -->
+<a href="#main-content" class="skip-link">Vai al contenuto</a>
 <aside class="sidebar" id="sidebar" aria-label="Navigazione principale">
 
   <!-- ===== Brand — logo Sinopia (v4.18.45: SVG inline = niente flash, no admin config) ===== -->
@@ -93,7 +95,7 @@
       </svg>
     </button>
 
-    <div id="ambitiList" class="accordion-body">
+    <div id="ambitiList" class="accordion-body" role="region" aria-label="Ambiti tematici">
       <a href="#" class="nav-item amb a1" data-page="ambito" data-ambito="1">
         <span class="amb-dot"></span>
         <span class="amb-num">01</span>
@@ -173,7 +175,7 @@
       </svg>
     </button>
 
-    <div id="altreFontiBody" class="accordion-body">
+    <div id="altreFontiBody" class="accordion-body" role="region" aria-label="Altre fonti">
       <!-- Multimedia -->
       <div class="af-sublabel">Multimedia</div>
       <a href="#" class="nav-item nav-guest-locked" data-page="podcast">

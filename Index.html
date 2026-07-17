@@ -570,7 +570,7 @@
     <?!= include('Topbar'); ?>
 
     <!-- v4.18.68 — main-content: unico contenitore scrollabile (fix iframe doppia scrollbar) -->
-    <div class="main-content">
+    <div class="main-content" id="main-content">
 
     <!-- ===== HOME ===== -->
     <?!= include('HomeView'); ?>
@@ -13891,6 +13891,10 @@
     _wcagFocusTrap_('oc-approfondimento-overlay', function(){ OC._chiudiApprofondimento(); });
     _wcagFocusTrap_('oc-addfonte-overlay', function(){ OC._closeAddFonteModal(); });
     _wcagFocusTrap_('oc-servizi-overlay', function(){ OC._chiudiServiziOverlay(); });
+    // v4.27.37 — Fix C1: focus trap sui 3 modali mancanti
+    _wcagFocusTrap_('oc-reg-overlay', function(){ var ov=document.getElementById('oc-reg-overlay'); if(ov)ov.style.display='none'; });
+    _wcagFocusTrap_('oc-newsletter-overlay', function(){ var ov=document.getElementById('oc-newsletter-overlay'); if(ov)ov.style.display='none'; });
+    _wcagFocusTrap_('oc-prenota-overlay', function(){ var ov=document.getElementById('oc-prenota-overlay'); if(ov)ov.style.display='none'; });
   });
 </script>
 

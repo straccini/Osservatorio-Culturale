@@ -33,7 +33,7 @@
   --ink:oklch(0.14 0.005 70);          /* #101010 equiv — tintato caldo */
   --ink-2:oklch(0.32 0.008 70);        /* #3A3A3C equiv */
   --ink-3:oklch(0.50 0.006 260);       /* #6E6E73 equiv */
-  --ink-4:oklch(0.52 0.006 260);       /* #74747A equiv — WCAG AA 4.68:1 su carta */
+  --ink-4:oklch(0.46 0.006 260);       /* ~#6B6B70 — WCAG AA 5.2:1 su carta (fix v4.27.37) */
   --ink-5:oklch(0.85 0.004 260);       /* #D2D2D7 equiv */
 
   /* Terracotta Sinopia — il pigmento del disegno preparatorio */
@@ -193,7 +193,7 @@
   --ink:oklch(0.97 0.005 70);
   --ink-2:oklch(0.91 0.004 260);
   --ink-3:oklch(0.68 0.006 260);
-  --ink-4:oklch(0.52 0.006 260);
+  --ink-4:oklch(0.62 0.006 260);       /* v4.27.37 — fix contrasto dark: ~5.0:1 su dark paper */
   --ink-5:oklch(0.40 0.006 260);
 
   --accent:oklch(0.62 0.07 22);
@@ -226,6 +226,15 @@
   --amb-9-soft:oklch(0.22 0.005 260);
   --amb-10-soft:oklch(0.20 0.04 350);
 }
+
+/* v4.27.37 — WCAG 2.4.1 Skip navigation */
+.skip-link{
+  position:absolute; top:-100%; left:16px; z-index:9999;
+  background:var(--ink); color:var(--paper); padding:8px 16px;
+  border-radius:0 0 8px 8px; font-size:14px; font-weight:600;
+  text-decoration:none; transition:top .2s;
+}
+.skip-link:focus{ top:0; }
 
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
@@ -2118,7 +2127,7 @@ body.is-home-page .topbar-search{display:none}
 .filter-chip{
   font-family:var(--font-ui);
   font-size:0.875rem; font-weight:600;
-  padding:7px 14px;
+  padding:7px 14px; min-height:44px;
   border:1px solid var(--rule);
   border-radius:100px;
   background:transparent;
