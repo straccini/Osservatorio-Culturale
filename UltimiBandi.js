@@ -18,65 +18,16 @@ function _ubTz_() { if (!_UB_TZ_) { try { _UB_TZ_ = Session.getScriptTimeZone();
 //  1) Ultimi bandi monitorati (card Home)
 // ------------------------------------------------------------
 function getUltimiBandiMonitorati(limit) {
-  // FASE 4 switchover: se Bandi_v5 è attivo, usa la nuova tabella
-  if (typeof isBandiV5Active === 'function' && isBandiV5Active()) {
-    return (typeof getUltimiBandiV5 === 'function') ? getUltimiBandiV5(limit) : [];
-  }
-  try {
-    var n = Number(limit) || 6;
-    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActive();
-    var sheetName = (typeof SHEET_RADAR === 'string' && SHEET_RADAR) ? SHEET_RADAR : 'RADAR BANDI';
-    var sh = ss.getSheetByName(sheetName);
-    if (!sh) return [];
-    var rows = _radarBandiRows_(sh);
-    rows.sort(function(a,b){
-      var da = a.dataRil instanceof Date ? a.dataRil.getTime() : 0;
-      var db = b.dataRil instanceof Date ? b.dataRil.getTime() : 0;
-      return db - da;
-    });
-    // Gate finale: filtro cultura + normalizzazione link prima dell'esposizione
-    return (typeof bandiGateFinale_ === 'function')
-      ? bandiGateFinale_(rows.slice(0, n).map(_mapBando_))
-      : rows.slice(0, n).map(_mapBando_);
-  } catch (e) { Logger.log('getUltimiBandiMonitorati: ' + (e && e.message || e)); return []; }
+  // v4.27.32: fonte unica Bandi_v5 — rimosso branch legacy RADAR BANDI
+  return (typeof getUltimiBandiV5 === 'function') ? getUltimiBandiV5(limit) : [];
 }
 
 // ------------------------------------------------------------
 //  2) Elenco completo bandi (page-bandi)
 // ------------------------------------------------------------
 function getBandiListV42(limit) {
-  // FASE 4 switchover: se Bandi_v5 è attivo, usa la nuova tabella
-  if (typeof isBandiV5Active === 'function' && isBandiV5Active()) {
-    return (typeof getBandiV5 === 'function') ? getBandiV5(limit) : [];
-  }
-  try {
-    var n = Number(limit) || 500;
-    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActive();
-    var sheetName = (typeof SHEET_RADAR === 'string' && SHEET_RADAR) ? SHEET_RADAR : 'RADAR BANDI';
-    var sh = ss.getSheetByName(sheetName);
-    if (!sh) return [];
-    var rows = _radarBandiRows_(sh);
-    // Ordina: urgenti (≤7gg) prima per scadenza ASC, poi non-urgenti per scadenza ASC,
-    // poi senza scadenza per dataRil DESC
-    rows.sort(function(a,b){
-      var aUrg = a.giorni !== null && a.giorni >= 0 && a.giorni <= 7;
-      var bUrg = b.giorni !== null && b.giorni >= 0 && b.giorni <= 7;
-      if (aUrg && !bUrg) return -1;
-      if (!aUrg && bUrg) return 1;
-      var sa = a.scadenza instanceof Date ? a.scadenza.getTime() : 0;
-      var sb = b.scadenza instanceof Date ? b.scadenza.getTime() : 0;
-      if (sa && sb) return sa - sb;
-      if (sa) return -1;
-      if (sb) return 1;
-      var da = a.dataRil instanceof Date ? a.dataRil.getTime() : 0;
-      var db = b.dataRil instanceof Date ? b.dataRil.getTime() : 0;
-      return db - da;
-    });
-    // Gate finale: filtro cultura + normalizzazione link prima dell'esposizione
-    return (typeof bandiGateFinale_ === 'function')
-      ? bandiGateFinale_(rows.slice(0, n).map(_mapBando_))
-      : rows.slice(0, n).map(_mapBando_);
-  } catch (e) { Logger.log('getBandiListV42: ' + (e && e.message || e)); return []; }
+  // v4.27.32: fonte unica Bandi_v5 — rimosso branch legacy RADAR BANDI
+  return (typeof getBandiV5 === 'function') ? getBandiV5(limit) : [];
 }
 
 // ------------------------------------------------------------

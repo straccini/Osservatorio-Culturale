@@ -103,10 +103,10 @@ function getHomepageDataV42() {
     });
   } catch(e) { news = []; }
 
-  // --- Bandi ---
+  // --- Bandi --- (v4.27.32: usa getBandiListV42 che rispetta il flag Bandi_v5)
   var bandi = [];
   try {
-    bandi = (typeof getBandiRadar === 'function') ? (getBandiRadar() || []) : [];
+    bandi = (typeof getBandiListV42 === 'function') ? (getBandiListV42(500) || []) : [];
   } catch(e) { bandi = []; }
 
   // --- Podcast ---
@@ -353,12 +353,10 @@ function getAmbitoDataV42(ambitoId) {
     });
   } catch(e) { news = []; }
 
-  // === BANDI ===
-  // FIX Sprint 1.2 (v4.7.2): mapping con _pickV42_ robusto. getBandiRadar() ora include
-  // la chiave 'ambito' (vedi modifica Codice.gs). Esclude i bandi archiviati.
+  // === BANDI === (v4.27.32: migrato a getBandiListV42 per coerenza con Bandi_v5)
   var bandi = [];
   try {
-    var bAll = (typeof getBandiRadar === 'function') ? (getBandiRadar() || []) : [];
+    var bAll = (typeof getBandiListV42 === 'function') ? (getBandiListV42(500) || []) : [];
     var bFiltered = bAll.filter(function(b){
       var stato = _pickV42_(b, ['statoRecord','StatoRecord','STATO_RECORD','stato_record']);
       if (String(stato || '').toLowerCase() === 'archiviato') return false;
@@ -479,9 +477,9 @@ function getGlobalSearchV42(q) {
     }
   } catch(e) {}
 
-  // Bandi
+  // Bandi (v4.27.32: migrato a getBandiListV42)
   try {
-    var b = (typeof getBandiRadar === 'function') ? (getBandiRadar() || []) : [];
+    var b = (typeof getBandiListV42 === 'function') ? (getBandiListV42(500) || []) : [];
     for (var j=0;j<b.length && bOut.length<20;j++){
       var tb = (b[j].titolo || b[j].Titolo || '').toString().toLowerCase();
       var eb = (b[j].ente || b[j].Ente || '').toString().toLowerCase();

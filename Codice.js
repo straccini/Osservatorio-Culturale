@@ -1539,13 +1539,9 @@ function getUltimaScansione() {
  * Sprint 1.3 D2.5h (2026-05-01) — getSheetRadar consolidato (file principale).
  */
 function getSheetRadar() {
-  // v5.2 (2026-06-14): foglio unico Bandi_v5. Fallback storico _RADAR_BANDI_LEGACY_
-  // rimosso insieme al foglio (era mai attivo finche' Bandi_v5 esiste). Resta solo
-  // RADAR BANDI come ponte transitorio; i chiamanti gestiscono gia' sh nullo.
-  var ss = getMainSS();
-  var sh = ss.getSheetByName('Bandi_v5');
-  if (sh) return sh;
-  return ss.getSheetByName(SHEET_RADAR); // null se assente: ok, i chiamanti lo verificano
+  // v4.27.32: fonte unica Bandi_v5. RADAR BANDI e il foglio standalone sono morti.
+  // Questa funzione resta come alias per i chiamanti legacy (getBandiRadar, Workflow, ecc.)
+  return getMainSS().getSheetByName('Bandi_v5');
 }
 
 // v4.18.38 (audit 2026-05-14) — Rimosse 3 funzioni morte:
