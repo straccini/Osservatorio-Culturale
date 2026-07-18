@@ -34,9 +34,17 @@
 var LC_RSS_S4 = 'https://www.gazzettaufficiale.it/rss/S4';
 
 // L1 — enti culturali certi (titoli GU in MAIUSCOLO, regex case-insensitive)
-var LC_ENTE_CULTURA_RE = /(MINISTERO DELLA CULTURA|SOPRINTENDENZ|MUSE[OI]\b|POLO MUSEALE|BIBLIOTEC|ARCHIVIO DI STATO|ARCHIVI DI STATO|ACCADEMIA DI BELLE ARTI|ACCADEMIA NAZIONALE|CONSERVATORIO DI MUSICA|TEATRO\b|FONDAZIONE LIRIC|PARCO ARCHEOLOGICO|GALLERI[AE]\b|PINACOTEC|ISTITUTO CENTRALE|BENI CULTURALI|ISTITUTO SUPERIORE PER LA CONSERVAZIONE)/i;
+// v4.27.37 — ampliata: fondazioni culturali, cineteche, triennale/biennale/quadriennale
+var LC_ENTE_CULTURA_RE = /(MINISTERO DELLA CULTURA|SOPRINTENDENZ|MUSE[OI]\b|POLO MUSEALE|BIBLIOTEC|ARCHIVIO DI STATO|ARCHIVI DI STATO|ACCADEMIA DI BELLE ARTI|ACCADEMIA NAZIONALE|CONSERVATORIO DI MUSICA|TEATRO\b|FONDAZIONE LIRIC|PARCO ARCHEOLOGICO|GALLERI[AE]\b|PINACOTEC|ISTITUTO CENTRALE|BENI CULTURALI|ISTITUTO SUPERIORE PER LA CONSERVAZIONE|FONDAZIONE[^.]{0,50}(MUSE|CULTUR|ARTE|TEATR|LIRIC)|CINETECA|TRIENNALE|BIENNALE|QUADRIENNALE|CENTRO PER IL LIBRO)/i;
 
-// L2 — enti generalisti che POSSONO bandire ruoli cultura (richiede verifica dettaglio)
+// L2 — enti generalisti che POSSONO bandire ruoli cultura (richiede verifica dettaglio).
+// v4.27.37 — LOGICA INVERTITA: prima si verificavano SOLO comuni/province/regioni/
+// universita e tutto il resto (fondazioni, istituti, aziende speciali, enti parco,
+// scuole superiori, CNR umanistico...) veniva scartato senza guardare la pagina di
+// dettaglio → interi numeri GU a 0 salvati. Ora si verifica TUTTO tranne una
+// blacklist di settori certamente estranei (sanita, militari, fisco, previdenza).
+var LC_ENTE_ESCLUSO_RE = /(AZIENDA SANITARIA|AZIENDA OSPEDALIER|AZIENDA SOCIO|ASL\b|AUSL|A\.S\.L|ULSS|ATS\b|IRCCS|ISTITUTO ZOOPROFILATTICO|POLICLINICO|OSPEDAL|ORDINE DEI MEDICI|INAIL|INPS|AGENZIA DELLE ENTRATE|GUARDIA DI FINANZA|ESERCITO|MARINA MILITARE|AERONAUTICA|CARABINIERI|POLIZIA|VIGILI DEL FUOCO|MINISTERO DELLA DIFESA|BANCA D'ITALIA|ISTITUTO NAZIONALE DI FISICA|ISTITUTO NAZIONALE DI ASTROFISICA|GEOFISICA|OCEANOGRAFIA)/i;
+// (mantenuta per riferimento/self-test: i vecchi enti "certamente generalisti")
 var LC_ENTE_GENERICO_RE = /^(COMUNE DI|PROVINCIA|CITTA' METROPOLITANA|REGIONE|UNIONE (DEI |DI )?COMUNI|UNIVERSITA)/i;
 
 // L2 — professioni/discipline culturali cercate nella pagina di dettaglio
@@ -107,8 +115,9 @@ function fasParserGuS4Cultura(opts) {
       var isCultura = LC_ENTE_CULTURA_RE.test(titolo);
       var motivo = isCultura ? 'L1-ente-cultura' : '';
 
-      // L2 — ente generalista: verifica professione nella pagina di dettaglio
-      if (!isCultura && !opts.noDeep && LC_ENTE_GENERICO_RE.test(titolo)) {
+      // L2 — verifica professione nella pagina di dettaglio per TUTTI gli enti
+      // non-L1 salvo blacklist (v4.27.37: prima solo comuni/regioni/universita)
+      if (!isCultura && !opts.noDeep && !LC_ENTE_ESCLUSO_RE.test(titolo)) {
         report.l2Candidati++;
         if (report.l2Fetch >= deepCap) { report.l2SaltatiPerCap++; continue; }
         report.l2Fetch++;
@@ -232,15 +241,20 @@ function lavoroCulturaSelfTest() {
     // L2 — candidati (ente generico: passerebbero SOLO col fetch dettaglio)
     { t: "COMUNE DI PESARO - CONCORSO (scad. 15 agosto 2026)", att: 'L2' },
     { t: "UNIVERSITA' DI BOLOGNA «ALMA MATER STUDIORUM» - CONCORSO (scad. 2 agosto 2026)", att: 'L2' },
+    // v4.27.37 — nuovi L1 ampliati
+    { t: "FONDAZIONE MUSEI CIVICI DI VENEZIA - SELEZIONE (scad. 30 agosto 2026)", att: 'L1' },
+    { t: "CINETECA DI BOLOGNA - AVVISO (scad. 12 settembre 2026)", att: 'L1' },
+    // L2 blacklist-based: enti non culturali ma nemmeno esclusi → deep-check
+    { t: "CONSIGLIO NAZIONALE DELLE RICERCHE - ISTITUTO DI FOTONICA - CONCORSO (scad. 18 luglio 2026)", att: 'L2' },
     // ESCLUSI — non devono passare
     { t: "AZIENDA SANITARIA LOCALE DI TARANTO - CONCORSO (scad. 10 agosto 2026)", att: 'NO' },
-    { t: "CONSIGLIO NAZIONALE DELLE RICERCHE - ISTITUTO DI FOTONICA - CONCORSO (scad. 18 luglio 2026)", att: 'NO' },
+    { t: "ISTITUTO NAZIONALE DI FISICA NUCLEARE - CONCORSO (scad. 9 agosto 2026)", att: 'NO' },
     { t: "UNIVERSITA' DI MILANO - ANNULLAMENTO", att: 'NO' }
   ];
   var pass = 0, fail = 0;
   casi.forEach(function(c) {
     var skip = /ANNULLAMENTO|RETTIFICA|REVOCA/i.test(c.t);
-    var eff = skip ? 'NO' : (LC_ENTE_CULTURA_RE.test(c.t) ? 'L1' : (LC_ENTE_GENERICO_RE.test(c.t) ? 'L2' : 'NO'));
+    var eff = skip ? 'NO' : (LC_ENTE_CULTURA_RE.test(c.t) ? 'L1' : (!LC_ENTE_ESCLUSO_RE.test(c.t) ? 'L2' : 'NO'));
     var ok = eff === c.att;
     if (ok) pass++; else fail++;
     Logger.log((ok ? 'PASS' : 'FAIL') + ' [' + eff + ' vs atteso ' + c.att + '] ' + c.t.substring(0, 70));

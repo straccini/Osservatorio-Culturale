@@ -46,6 +46,8 @@ function adminRunTool(tool, token) {
       case 'podcastAudit':       r = podcastAuditFonti(); break;           // Tappa P
       case 'segOgImage':         r = segBackfillOgImage({ cap: 20 }); break; // miniature segnalazioni
       case 'digestAssets':       r = digestAssetsSetup(); break; // one-shot: logo+masthead digest su Drive
+      case 'diagContatori':      r = diagContatoriBadge(); break; // diagnosi badge NEW + stato lavoro
+      case 'lavoroScanDry':      r = fasParserGuS4Cultura({ dryRun: true, deepCap: 40 }); break; // anteprima filtri nuovi
 
       // ── Contenuti: scansioni "adesso" ────────────────────────────────────
       case 'reportUnificato':    r = reportUnificatoGiornaliero(); break;  // 1 controllo + 1 email

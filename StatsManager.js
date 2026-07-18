@@ -137,6 +137,22 @@ function getGestioneStats() {
  * nella settimana corrente (lun 00:00 → dom 23:59).
  * Chiamata da hydrate() per popolare i badge NEW nella sidebar.
  */
+/**
+ * v4.27.37 — parser data robusto per i contatori: accetta Date, ISO yyyy-MM-dd
+ * e dd/MM/yyyy (le celle importate da fonti diverse non sono uniformi; prima
+ * una stringa dd/MM/yyyy produceva Invalid Date e il contenuto spariva dal
+ * conteggio in silenzio → badge a 0).
+ */
+function _wkParseData_(v) {
+  if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+  var s = String(v || '').trim();
+  if (!s) return null;
+  var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  var d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function getWeeklyNewCounts() {
   var ora = new Date();
   // Calcola inizio settimana (lunedi 00:00)
@@ -162,30 +178,38 @@ function getWeeklyNewCounts() {
   } catch(e) {}
 
   // Bandi — conta da Bandi_v5 (fonte primaria) + RADAR BANDI (fallback)
+  // v4.27.37: header fallback via COL_B, date robuste, TipoBando='lavoro'
+  // conteggiato a parte in counts.lavoro (la pagina Bandi li epura)
   try {
     var bv5Sh = ss.getSheetByName('Bandi_v5');
     if (bv5Sh && bv5Sh.getLastRow() > 1) {
       var bv5 = bv5Sh.getDataRange().getValues(), bh5 = bv5[0];
       var bdI = bh5.indexOf('DataRilevamento');
       if (bdI < 0) bdI = bh5.indexOf('Data_Rilevamento');
+      if (bdI < 0 && typeof COL_B !== 'undefined') bdI = COL_B.DATA_RILEVAMENTO - 1;
       var bsI = bh5.indexOf('StatoRecord');
+      if (bsI < 0 && typeof COL_B !== 'undefined') bsI = COL_B.STATO_RECORD - 1;
+      var btI = bh5.indexOf('TipoBando');
+      if (btI < 0 && typeof COL_B !== 'undefined') btI = COL_B.TIPO_BANDO - 1;
       for (var q = 1; q < bv5.length; q++) {
         if (!bv5[q][0]) continue;
         if (bsI >= 0 && String(bv5[q][bsI]||'').toLowerCase() === 'archiviato') continue;
-        var bd = bv5[q][bdI];
-        if (bd && (bd instanceof Date ? bd : new Date(bd)) >= lunedi) counts.bandi++;
+        var bd = _wkParseData_(bv5[q][bdI]);
+        if (!bd || bd < lunedi) continue;
+        if (btI >= 0 && String(bv5[q][btI]||'').toLowerCase() === 'lavoro') counts.lavoro++;
+        else counts.bandi++;
       }
     }
   } catch(e) {}
-  // Fallback RADAR se Bandi_v5 non ha dati
+  // Fallback RADAR legacy se Bandi_v5 non ha movimenti (date robuste v4.27.37;
+  // non additivo: i bandi consolidati esistono in entrambi i fogli)
   if (counts.bandi === 0) {
     try {
       var bandi = getBandiRadar();
       bandi.forEach(function(b) {
         if (b.statoRecord === 'archiviato') return;
-        var raw = b.data || '';
-        var d = raw ? new Date(raw) : null;
-        if (d && !isNaN(d.getTime()) && d >= lunedi) counts.bandi++;
+        var d = _wkParseData_(b.data);
+        if (d && d >= lunedi) counts.bandi++;
       });
     } catch(e) {}
   }
@@ -237,20 +261,45 @@ function getWeeklyNewCounts() {
     }
   } catch(e) {}
 
-  // Lavoro (LavoroCultura — DataRilevamento)
-  try {
-    var lavSh = ss.getSheetByName('LavoroCultura');
-    if (lavSh && lavSh.getLastRow() > 1) {
-      var lrv = lavSh.getDataRange().getValues(), lvh = lrv[0];
-      var lvdI = lvh.indexOf('DataRilevamento');
-      if (lvdI < 0) lvdI = lvh.indexOf('DataAggiunta');
-      for (var p = 1; p < lrv.length; p++) {
-        if (!lrv[p][0]) continue;
-        var lvd = lrv[p][lvdI];
-        if (lvd && (lvd instanceof Date ? lvd : new Date(lvd)) >= lunedi) counts.lavoro++;
-      }
-    }
-  } catch(e) {}
+  // Lavoro — v4.27.37: BUG FIX. Leggeva un foglio 'LavoroCultura' che NON esiste
+  // (i concorsi vivono in Bandi_v5 con TipoBando='lavoro') → badge sempre 0.
+  // Ora counts.lavoro viene calcolato nel loop Bandi_v5 sopra.
 
   return counts;
+}
+
+/**
+ * v4.27.37 — Diagnosi contatori e sezione Lavoro (tool admin 'diagContatori').
+ * Ritorna i conteggi settimanali + lo stato reale dei record lavoro in Bandi_v5,
+ * per capire con dati (non ipotesi) perche' un badge o la sezione sono vuoti.
+ */
+function diagContatoriBadge() {
+  var out = { weekly: null, lavoro: { totale: 0, attivi: 0, archiviati: 0, scaduti: 0, attiviConScadFutura: 0, ultimoRilevamento: null, esempi: [] } };
+  try { out.weekly = getWeeklyNewCounts(); } catch (e) { out.weeklyErrore = e.message; }
+  try {
+    var ss = getMainSS();
+    var sh = ss.getSheetByName('Bandi_v5');
+    if (sh && sh.getLastRow() > 1) {
+      var v = sh.getDataRange().getValues();
+      var oggi = new Date(); oggi.setHours(0, 0, 0, 0);
+      for (var i = 1; i < v.length; i++) {
+        if (!v[i][0]) continue;
+        if (String(v[i][COL_B.TIPO_BANDO - 1] || '').toLowerCase() !== 'lavoro') continue;
+        var L = out.lavoro; L.totale++;
+        var arch = String(v[i][COL_B.STATO_RECORD - 1] || '').toLowerCase() === 'archiviato';
+        if (arch) L.archiviati++; else L.attivi++;
+        var sc = _wkParseData_(v[i][COL_B.SCADENZA - 1]);
+        if (sc && sc < oggi) L.scaduti++;
+        if (!arch && sc && sc >= oggi) L.attiviConScadFutura++;
+        var dr = _wkParseData_(v[i][COL_B.DATA_RILEVAMENTO - 1]);
+        if (dr && (!L.ultimoRilevamento || dr > new Date(L.ultimoRilevamento))) L.ultimoRilevamento = dr.toISOString().slice(0, 10);
+        if (L.esempi.length < 5) L.esempi.push({
+          titolo: String(v[i][COL_B.TITOLO - 1] || '').substring(0, 80),
+          stato: arch ? 'archiviato' : 'attivo',
+          scadenza: sc ? sc.toISOString().slice(0, 10) : 'n.d.'
+        });
+      }
+    }
+  } catch (e2) { out.lavoroErrore = e2.message; }
+  return out;
 }
