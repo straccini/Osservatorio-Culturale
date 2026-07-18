@@ -2623,6 +2623,7 @@
             <button class="btn btn-secondary" onclick="OC.adminTool('fontiSocial', this)" style="font-size:12px;padding:6px 12px" title="Feed Mastodon #CulturalHeritage/#GLAM/#digitalheritage">+ Social (Mastodon)</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('podcastAudit', this)" style="font-size:12px;padding:6px 12px" title="Quante fonti podcast/video sono mute">Audit podcast/video</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('segOgImage', this)" style="font-size:12px;padding:6px 12px" title="Estrae le miniature (og:image) dei link delle segnalazioni pubblicate">Miniature segnalazioni</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('digestAssets', this)" style="font-size:12px;padding:6px 12px" title="One-shot: carica logo OCS e masthead 'traiettorie sottotraccia' su Drive per le email del digest">🖼 Asset grafici digest</button>
             <button class="btn btn-secondary" onclick="if(confirm('Aggiungere 50 osservatori culturali internazionali come fonti RSS?'))OC.adminTool('fontiOsservatori', this)" style="font-size:12px;padding:6px 12px" title="54 osservatori culturali da uMap Global Mapping (EU, Americhe, Asia)">+ Osservatori culturali</button>
           </div>
 
@@ -3306,10 +3307,19 @@
 
   function hydrate(){
     // v4.20 — Deep-link: ?goto=pagina (usato dalle newsletter)
+    // v4.27.26 — casi speciali newsletter: 'segnala' apre il form segnalazione,
+    // 'consulenza' apre il modale prenotazione (non sono pagine, sono overlay)
     try {
       var gotoMatch = (window.location.search || '').match(/[?&]goto=([^&]+)/);
       if (gotoMatch && gotoMatch[1]) {
-        setTimeout(function(){ try { go(decodeURIComponent(gotoMatch[1])); } catch(_){} }, 1000);
+        var _gotoDest = decodeURIComponent(gotoMatch[1]);
+        setTimeout(function(){
+          try {
+            if (_gotoDest === 'segnala') { OC.apriFormSegnalazione(); return; }
+            if (_gotoDest === 'consulenza') { OC.prenotaConsulenza(null, 'generica'); return; }
+            go(_gotoDest);
+          } catch(_){}
+        }, 1000);
       }
     } catch(_){}
     // v4.18.11 — avvia autorotation slideshow appena la home è hydratata

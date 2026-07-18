@@ -45,6 +45,7 @@ function adminRunTool(tool, token) {
       case 'fontiPodcastSocial': r = { podcast: fontiAggiungiBatchPodcast(), social: fontiAggiungiBatchSocial() }; break; // entrambe in 1 clic (idempotente)
       case 'podcastAudit':       r = podcastAuditFonti(); break;           // Tappa P
       case 'segOgImage':         r = segBackfillOgImage({ cap: 20 }); break; // miniature segnalazioni
+      case 'digestAssets':       r = digestAssetsSetup(); break; // one-shot: logo+masthead digest su Drive
 
       // ── Contenuti: scansioni "adesso" ────────────────────────────────────
       case 'reportUnificato':    r = reportUnificatoGiornaliero(); break;  // 1 controllo + 1 email

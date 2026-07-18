@@ -243,7 +243,46 @@ function buildDigestHTML(items, dest, readerUrl, filterAmbiti) {
   try {
     lavoroBlock = (typeof _digestBandoLavoroBlock_ === 'function') ? _digestBandoLavoroBlock_(readerUrl || '') : '';
   } catch(_lvErr) { Logger.log('[DigestService] lavoro hook err: ' + _lvErr.message); }
-  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Digest</title></head><body style="margin:0;padding:0;background:#f5f3ee;font-family:-apple-system,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f5f3ee" style="padding:28px 0"><tr><td align="center"><table width="620" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e8e5e0"><tr><td style="background:#1a1a1a;padding:28px 36px 24px"><div style="font-family:Georgia,serif;font-style:italic;font-size:24px;font-weight:500;color:#E89B7C;letter-spacing:.01em">Sinopia</div><div style="font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#bbb;margin-top:6px">Osservatorio Culturale &middot; Digest del ${formatDate(new Date())}</div></td></tr>${editorialeBlock}${readerBtn}<tr><td style="padding:4px 36px 36px"><table width="100%" cellpadding="0" cellspacing="0">${sectionsHTML}</table>${lavoroBlock}${capitaleCta}</td></tr><tr><td style="border-top:1px solid #eee">${unsubFooter}</td></tr></table></td></tr></table></body></html>`;
+  // v4.27.26 — Design «traiettorie sottotraccia» (approvato 2026-07-18):
+  // masthead a due righe con graticcio rosso terra (PNG da Drive, vedi
+  // DigestAssets.js), filetti terra, nav + social cablati, piede chiaro col logo.
+  var _assets = (typeof _digestAssetUrls_ === 'function') ? _digestAssetUrls_() : { logo: null, masthead: null };
+  var _appUrl = readerUrl ? readerUrl.split('?')[0] : '';
+  if (!_appUrl) { try { _appUrl = ScriptApp.getService().getUrl() || ''; } catch(_) {} }
+  var _sito = 'https://sinopia.netlify.app/';
+  var _linkedin = 'https://www.linkedin.com/company/sinopiaconsulting';
+  var _logoTop = _assets.logo
+    ? `<a href="${_sito}" style="text-decoration:none"><img src="${_assets.logo}" alt="OCS — Osservatorio Culturale Sinopia" width="100" height="70" style="display:block;border:0" /></a>`
+    : `<a href="${_sito}" style="text-decoration:none;font-family:Georgia,serif;font-weight:700;font-size:28px;color:#111111">OCS</a>`;
+  var _masthead = _assets.masthead
+    ? `<img src="${_assets.masthead}" alt="traiettorie sottotraccia" width="269" height="111" style="display:block;border:0;margin:0 auto" />`
+    : `<div style="font-family:Georgia,serif;font-size:34px;color:#111111;text-align:center;line-height:1.1">traiettorie<br>sottotraccia</div>`;
+  var _logoFoot = _assets.logo
+    ? `<a href="${_sito}" style="text-decoration:none"><img src="${_assets.logo}" alt="OCS" width="60" height="42" style="display:block;border:0" /></a>`
+    : '';
+  var _headerHtml =
+    `<tr><td style="padding:24px 36px 0"><table width="100%" cellpadding="0" cellspacing="0"><tr>`
+    + `<td align="left" style="vertical-align:middle">${_logoTop}</td>`
+    + `<td align="right" style="vertical-align:middle;font-size:14px;font-weight:700;color:#1F3F8F">${formatDate(new Date())}</td>`
+    + `</tr></table></td></tr>`
+    + `<tr><td style="padding:14px 36px 0"><div style="border-top:2px solid #A65138;font-size:0;line-height:0">&nbsp;</div></td></tr>`
+    + `<tr><td align="center" style="padding:14px 36px 6px">${_masthead}</td></tr>`
+    + `<tr><td style="padding:8px 36px 0"><div style="border-top:2px solid #A65138;font-size:0;line-height:0">&nbsp;</div></td></tr>`
+    + `<tr><td style="padding:12px 36px 0"><table width="100%" cellpadding="0" cellspacing="0"><tr>`
+    + `<td align="left" style="font-size:14px;font-weight:700"><a href="${_sito}" style="color:#1F3F8F;text-decoration:none">Osservatorio</a></td>`
+    + `<td align="center" style="font-size:14px;font-weight:700"><a href="${_appUrl}?goto=segnala" style="color:#1F3F8F;text-decoration:none">Segnala</a></td>`
+    + `<td align="right" style="font-size:14px;font-weight:700"><a href="${_appUrl}?goto=consulenza" style="color:#1F3F8F;text-decoration:none">Contattaci</a></td>`
+    + `</tr></table></td></tr>`
+    + `<tr><td align="center" style="padding:14px 36px 20px">`
+    + `<a href="${_linkedin}" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:6px;text-align:center;font-size:13px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">in</a>`
+    + `<a href="${_sito}" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:50%;text-align:center;font-size:14px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">&#8853;</a>`
+    + `</td></tr>`;
+  var _footerLogoHtml =
+    `<tr><td style="padding:16px 36px 4px"><table width="100%" cellpadding="0" cellspacing="0"><tr>`
+    + `<td align="left" style="vertical-align:middle">${_logoFoot}</td>`
+    + `<td align="left" style="vertical-align:middle;padding-left:10px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#8A8578">Osservatorio Culturale Sinopia</td>`
+    + `</tr></table></td></tr>`;
+  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Digest</title></head><body style="margin:0;padding:0;background:#E4E0D8;font-family:Arial,Helvetica,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#E4E0D8" style="padding:28px 0"><tr><td align="center"><table width="640" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #cfc9be">${_headerHtml}${editorialeBlock}${readerBtn}<tr><td style="padding:4px 36px 36px"><table width="100%" cellpadding="0" cellspacing="0">${sectionsHTML}</table>${lavoroBlock}${capitaleCta}</td></tr><tr><td style="border-top:2px solid #111111">${_footerLogoHtml}${unsubFooter}</td></tr></table></td></tr></table></body></html>`;
 }
 
 /**
@@ -301,12 +340,13 @@ function _digestBandoLavoroBlock_(appUrl) {
     function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
     var tz = Session.getScriptTimeZone() || 'Europe/Rome';
     var scadFmt = Utilities.formatDate(best.scad, tz, 'd MMMM yyyy');
-    var tuttiLink = appUrl ? ('<a href="' + appUrl + '" style="font-size:12px;color:#6B21A8;text-decoration:underline">Vedi tutti i concorsi nella sezione Lavoro cultura &rarr;</a>') : '';
-    return '<div style="background:#F7F3FB;border:2px solid #7C3AED;border-radius:12px;padding:18px 22px;margin:24px 0">'
-      + '<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6B21A8;font-weight:700;margin-bottom:8px">&#128100; Lavoro nella cultura</div>'
-      + '<div style="font-size:15px;font-weight:700;color:#1a1a1a;line-height:1.4;margin-bottom:6px">' + esc(best.titolo).substring(0, 200) + '</div>'
-      + '<div style="font-size:12.5px;color:#555;margin-bottom:10px">' + esc(best.ente) + ' &middot; <b style="color:#A32D2D">scade il ' + scadFmt + '</b></div>'
-      + (best.link ? '<a href="' + esc(best.link) + '" style="display:inline-block;background:#7C3AED;color:#fff;text-decoration:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:6px">Vai al concorso &rarr;</a><br>' : '')
+    // v4.27.26 — palette design «traiettorie sottotraccia»: carta, nero, blu, terra
+    var tuttiLink = appUrl ? ('<a href="' + appUrl + '?goto=lavoro" style="font-size:12px;color:#1F3F8F;text-decoration:underline">Vedi tutti i concorsi nella sezione Lavoro cultura &rarr;</a>') : '';
+    return '<div style="background:#F4F1EB;border:1px solid #111111;padding:16px 18px;margin:24px 0">'
+      + '<div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#1F3F8F;font-weight:800;margin-bottom:8px">&#128100; Lavoro nella cultura</div>'
+      + '<div style="font-family:Georgia,serif;font-size:16px;font-weight:700;color:#111111;line-height:1.4;margin-bottom:6px">' + esc(best.titolo).substring(0, 200) + '</div>'
+      + '<div style="font-size:12.5px;color:#777;margin-bottom:10px">' + esc(best.ente) + ' &middot; <b style="color:#C0331B">scade il ' + scadFmt + '</b></div>'
+      + (best.link ? '<a href="' + esc(best.link) + '" style="display:inline-block;background:#A65138;color:#ffffff;text-decoration:none;padding:8px 18px;font-size:13px;font-weight:700;margin-bottom:6px">Vai al concorso &rarr;</a><br>' : '')
       + tuttiLink
       + '</div>';
   } catch(e) { Logger.log('[_digestBandoLavoroBlock_] ' + e.message); return ''; }
