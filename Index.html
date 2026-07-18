@@ -4357,7 +4357,7 @@
   // ---- Ultimi bandi monitorati — lista riga con ambito, descrizione, date ----
   function renderUltimiBandiHome(list){
     var wrap = $('homeUltimiBandi'); if (!wrap) return;
-    list = (list || []).slice(0, 8);
+    list = (list || []).slice(0, 4); // v4.27.38 — max 4 in home (bilanciamento estetico)
     if (!list.length) {
       wrap.innerHTML = '';
       var em = $('homeUltimiBandiEmpty'); if (em) em.hidden = false;
