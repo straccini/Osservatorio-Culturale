@@ -9,6 +9,12 @@
       "port": 8765
     },
     {
+      "name": "bozza-email",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8787", "--directory", "C:\\Users\\sstra\\AppData\\Local\\Temp\\claude\\C--Users-sstra-Desktop-01-DUEMILAMUSEI-PROGETTI-musemu-matrix-oc-codebase\\8945c227-e367-40b6-a13e-4a6bfbbea457\\scratchpad"],
+      "port": 8787
+    },
+    {
       "name": "clasp push --watch (sync continuo verso GAS, no porta)",
       "runtimeExecutable": "clasp",
       "runtimeArgs": ["push", "--watch"],
