@@ -254,9 +254,10 @@ function buildDigestHTML(items, dest, readerUrl, filterAmbiti) {
   var _logoTop = _assets.logo
     ? `<a href="${_sito}" style="text-decoration:none"><img src="${_assets.logo}" alt="OCS — Osservatorio Culturale Sinopia" width="100" height="70" style="display:block;border:0" /></a>`
     : `<a href="${_sito}" style="text-decoration:none;font-family:Georgia,serif;font-weight:700;font-size:28px;color:#111111">OCS</a>`;
+  // v4.27.34 — masthead versione materica (502x130), allineato a SINISTRA
   var _masthead = _assets.masthead
-    ? `<img src="${_assets.masthead}" alt="traiettorie sottotraccia" width="269" height="111" style="display:block;border:0;margin:0 auto" />`
-    : `<div style="font-family:Georgia,serif;font-size:34px;color:#111111;text-align:center;line-height:1.1">traiettorie<br>sottotraccia</div>`;
+    ? `<img src="${_assets.masthead}" alt="traiettorie sottotraccia" width="301" height="78" style="display:block;border:0" />`
+    : `<div style="font-family:Georgia,serif;font-size:34px;color:#111111;text-align:left;line-height:1.1">traiettorie<br>sottotraccia</div>`;
   var _logoFoot = _assets.logo
     ? `<a href="${_sito}" style="text-decoration:none"><img src="${_assets.logo}" alt="OCS" width="60" height="42" style="display:block;border:0" /></a>`
     : '';
@@ -266,7 +267,7 @@ function buildDigestHTML(items, dest, readerUrl, filterAmbiti) {
     + `<td align="right" style="vertical-align:middle;font-size:14px;font-weight:700;color:#1F3F8F">${formatDate(new Date())}</td>`
     + `</tr></table></td></tr>`
     + `<tr><td style="padding:14px 36px 0"><div style="border-top:2px solid #A65138;font-size:0;line-height:0">&nbsp;</div></td></tr>`
-    + `<tr><td align="center" style="padding:14px 36px 6px">${_masthead}</td></tr>`
+    + `<tr><td align="left" style="padding:14px 36px 6px">${_masthead}</td></tr>`
     + `<tr><td style="padding:8px 36px 0"><div style="border-top:2px solid #A65138;font-size:0;line-height:0">&nbsp;</div></td></tr>`
     + `<tr><td style="padding:12px 36px 0"><table width="100%" cellpadding="0" cellspacing="0"><tr>`
     + `<td align="left" style="font-size:14px;font-weight:700"><a href="${_sito}" style="color:#1F3F8F;text-decoration:none">Osservatorio</a></td>`
