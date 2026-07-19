@@ -165,6 +165,16 @@ function doGet(e) {
   // LandingPublic.html resta disponibile via ?landing=1 se serve.
   if (params.landing === '1') return _doGetLanding();
 
+  // v4.27.39 — Diagnostica contatori NEW via URL (?diag=contatori): solo conteggi
+  // aggregati e titoli di concorsi pubblici GU — nessun dato sensibile. Serve a
+  // verificare i badge settimanali senza passare dall'editor GAS.
+  if (params.diag === 'contatori') {
+    var _dg;
+    try { _dg = (typeof diagContatoriBadge === 'function') ? diagContatoriBadge() : { errore: 'tool assente' }; }
+    catch (eDg) { _dg = { errore: eDg.message, stack: String(eDg.stack || '').substring(0, 300) }; }
+    return ContentService.createTextOutput(JSON.stringify(_dg, null, 2)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   // ---------- 0b) Sondaggio pubblico (?survey=accessibilita) — NO AUTH ----------
   if (params.survey) {
     if (_rateLimited_('survey', 30, 3600)) return HtmlService.createHtmlOutput('<h1>Troppe richieste</h1><p>Riprova tra qualche minuto.</p>');

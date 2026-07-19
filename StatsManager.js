@@ -201,18 +201,20 @@ function getWeeklyNewCounts() {
       }
     }
   } catch(e) {}
-  // Fallback RADAR legacy se Bandi_v5 non ha movimenti (date robuste v4.27.37;
-  // non additivo: i bandi consolidati esistono in entrambi i fogli)
-  if (counts.bandi === 0) {
-    try {
-      var bandi = getBandiRadar();
-      bandi.forEach(function(b) {
-        if (b.statoRecord === 'archiviato') return;
-        var d = _wkParseData_(b.data);
-        if (d && d >= lunedi) counts.bandi++;
-      });
-    } catch(e) {}
-  }
+  // RADAR legacy: ADDITIVO (v4.27.39). Le due popolazioni sono disgiunte:
+  // lo scanner RSS scrive su RADAR, TED/SEDIA (FAS) su Bandi_v5 — il vecchio
+  // fallback "solo se v5=0" nascondeva tutti i bandi RSS della settimana
+  // (verificato via ?diag=contatori: v5 aveva 1 nuovo e RADAR non veniva letto).
+  try {
+    var bandi = getBandiRadar();
+    bandi.forEach(function(b) {
+      if (b.statoRecord === 'archiviato') return;
+      // i concorsi lavoro (mirror da v5) sono gia' contati in counts.lavoro
+      if (/concorso pubblico/i.test(String(b.settore || ''))) return;
+      var d = _wkParseData_(b.data);
+      if (d && d >= lunedi) counts.bandi++;
+    });
+  } catch(e) {}
 
   // Podcast + Video (Podcast sheet — DataRilevamento)
   try {
@@ -301,5 +303,40 @@ function diagContatoriBadge() {
       }
     }
   } catch (e2) { out.lavoroErrore = e2.message; }
+  // v4.27.40 — flusso bandi della settimana, SENZA filtri (inclusi archiviati):
+  // distingue "non arriva nulla" da "arriva ma viene archiviato/filtrato"
+  try {
+    var ora = new Date();
+    var dow = ora.getDay();
+    var lun = new Date(ora.getFullYear(), ora.getMonth(), ora.getDate() - ((dow === 0) ? 6 : (dow - 1)), 0, 0, 0, 0);
+    var fb = { v5Sett: 0, v5SettArchiviati: 0, radarSett: 0, radarSettArchiviati: 0, radarUltimaData: null, v5UltimaData: null };
+    var ssx = getMainSS();
+    var shv = ssx.getSheetByName('Bandi_v5');
+    if (shv && shv.getLastRow() > 1) {
+      var vv = shv.getDataRange().getValues();
+      for (var a = 1; a < vv.length; a++) {
+        if (!vv[a][0]) continue;
+        var dd = _wkParseData_(vv[a][COL_B.DATA_RILEVAMENTO - 1]);
+        if (dd && (!fb.v5UltimaData || dd > new Date(fb.v5UltimaData))) fb.v5UltimaData = dd.toISOString().slice(0, 10);
+        if (!dd || dd < lun) continue;
+        fb.v5Sett++;
+        if (String(vv[a][COL_B.STATO_RECORD - 1] || '').toLowerCase() === 'archiviato') fb.v5SettArchiviati++;
+      }
+    }
+    var shr = (typeof getSheetRadar === 'function') ? getSheetRadar() : null;
+    if (shr && shr.getLastRow() > 1) {
+      var rv = shr.getDataRange().getValues(), rh = rv[0];
+      var rdI = rh.indexOf('Data_Rilevamento'); if (rdI < 0) rdI = rh.indexOf('DataRilevamento'); if (rdI < 0) rdI = 0;
+      var rsI = rh.indexOf('StatoRecord');
+      for (var r = 1; r < rv.length; r++) {
+        var rd = _wkParseData_(rv[r][rdI]);
+        if (rd && (!fb.radarUltimaData || rd > new Date(fb.radarUltimaData))) fb.radarUltimaData = rd.toISOString().slice(0, 10);
+        if (!rd || rd < lun) continue;
+        fb.radarSett++;
+        if (rsI >= 0 && String(rv[r][rsI] || '').toLowerCase() === 'archiviato') fb.radarSettArchiviati++;
+      }
+    }
+    out.flussoBandi = fb;
+  } catch (e3) { out.flussoErrore = e3.message; }
   return out;
 }
