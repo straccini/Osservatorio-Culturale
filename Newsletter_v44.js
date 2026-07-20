@@ -86,6 +86,22 @@ function buildNewsletterHtml_(draft) {
     parts.push('</td></tr>');
   }
 
+  // v4.27.44 — SEGNALAZIONE DELLA COMMUNITY: l'ultima pubblicata non ancora
+  // uscita nei digest precedenti (selezionata in _generateDigestDraftCore_).
+  if (draft.segnalazione && draft.segnalazione.titolo) {
+    var _sg = draft.segnalazione;
+    parts.push('<tr><td style="padding:16px 28px 4px 28px;">');
+    parts.push('<div style="background:#F4F1EB;border:1px solid #111111;padding:16px 18px;">');
+    parts.push('<div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#1F3F8F;font-weight:800;margin-bottom:8px;">&#128226; Dalla community &middot; Segnalazione della settimana</div>');
+    if (_sg.og_image) parts.push('<img src="' + _sg.og_image + '" alt="" width="564" style="width:100%;max-width:564px;display:block;margin-bottom:10px;" />');
+    parts.push('<div style="font-family:Georgia,serif;font-size:16px;font-weight:700;color:#111111;line-height:1.4;margin-bottom:6px;">' + _h_(_sg.titolo) + '</div>');
+    if (_sg.descrizione) parts.push('<p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#3A3A3C;">' + _h_(_sg.descrizione) + '</p>');
+    var _sgFirma = _sg.autore ? '<span style="font-size:12px;color:#8A8578;font-style:italic;">segnalata da ' + _h_(_sg.autore) + '</span>' : '';
+    if (_sg.url) parts.push('<a href="' + _h_(_sg.url) + '" style="display:inline-block;background:#A65138;color:#ffffff;text-decoration:none;padding:7px 16px;font-size:12px;font-weight:700;margin-right:10px;">Approfondisci &rarr;</a>' + _sgFirma);
+    else if (_sgFirma) parts.push(_sgFirma);
+    parts.push('</div></td></tr>');
+  }
+
   // v4.24 — Dedup cross-sezione esatto + fuzzy: nessun titolo duplicato o simile nella newsletter
   var _nlSeen = {};
   function _nlDedup(items, keyFn) {
@@ -586,7 +602,14 @@ function testInviaDigestHeader(emailDest, token) {
       name:     'Osservatorio Culturale (TEST)',
       replyTo:  sender
     });
-    return { ok: true, emailSent: emailDest, message: 'Intestazione digest inviata a ' + emailDest };
+    // v4.27.44 — diagnostica asset: conferma se la testata usa i PNG da Drive
+    // (logo OCS + lockup materico) o il fallback testuale (= eseguire il tool
+    // admin "🖼 Asset grafici digest" per caricarli).
+    var _ast = (typeof _digestAssetUrls_ === 'function') ? _digestAssetUrls_() : {};
+    return { ok: true, emailSent: emailDest,
+      assets: { logoPng: !!_ast.logo, mastheadPng: !!_ast.masthead },
+      message: 'Intestazione digest inviata a ' + emailDest
+        + (_ast.logo && _ast.masthead ? ' (testata con PNG logo+masthead)' : ' ⚠ ASSET PNG MANCANTI: eseguire "Asset grafici digest" dal pannello') };
   } catch(e) {
     return { ok:false, error: e.message };
   }

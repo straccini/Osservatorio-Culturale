@@ -130,6 +130,27 @@ function adminGenerateDigestDraft(opts) {
   return _generateDigestDraftCore_(opts);
 }
 
+// v4.27.44 — Giorni alla scadenza di un bando del digest, robusto sui formati:
+// usa b.giorni se numerico (homepage urgenti), altrimenti parsa b.scadenza
+// ('dd/MM/yyyy', ISO, Date). Ritorna null se non determinabile (sportello).
+function _digestGiorniScadenza_(b) {
+  if (!b) return null;
+  var g = Number(b.giorni);
+  if (isFinite(g) && String(b.giorni) !== '' && b.giorni !== null && b.giorni !== undefined) return g;
+  var raw = b.scadenza || b.Scadenza || '';
+  var d = null;
+  if (raw instanceof Date) { d = raw; }
+  else if (raw) {
+    var s = String(raw).trim();
+    var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (m) d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+    else { var t = new Date(s); if (!isNaN(t.getTime())) d = t; }
+  }
+  if (!d || isNaN(d.getTime())) return null;
+  var oggi = new Date(); oggi.setHours(0, 0, 0, 0);
+  return Math.round((d.getTime() - oggi.getTime()) / 86400000);
+}
+
 // v4.24.13 — Core SENZA gate: riusato dal trigger del lunedì (i trigger non hanno
 // contesto utente né token). Le funzioni pubbliche sopra/sotto mantengono il gate.
 function _generateDigestDraftCore_(opts) {
@@ -158,6 +179,42 @@ function _generateDigestDraftCore_(opts) {
   urg = urg.filter(_noLavoro);
   bandiNew = (bandiNew || []).filter(_noLavoro);
 
+  // v4.27.44 — NIENTE SCADENZE RAVVICINATE nel digest: chi legge lunedì deve
+  // avere il tempo di candidarsi. Fuori i bandi che scadono entro 7 giorni
+  // (in quello di oggi c'erano bandi in scadenza il giorno stesso/successivo).
+  // I bandi senza scadenza parsabile (sportello aperto) restano.
+  var _scadOk7 = function(b){ var g = _digestGiorniScadenza_(b); return g === null || g >= 7; };
+  urg = urg.filter(_scadOk7);
+  bandiNew = bandiNew.filter(_scadOk7);
+  // La sezione principale diventa "ultimi monitorati": se il filtro svuota gli
+  // urgenti, il digest resta comunque pieno con i bandiRecenti.
+
+  // v4.27.44 — SEGNALAZIONE DELLA COMMUNITY: solo l'ULTIMA pubblicata in ordine
+  // di tempo, e solo se non è già uscita in un digest precedente (memoria
+  // OC_DIGEST_SEGN_SENT, marcata a invio riuscito in adminConfirmSendWithToken).
+  var segnalazione = null;
+  try {
+    if (typeof getSegnalazioniPubblicate === 'function') {
+      var _segRes = getSegnalazioniPubblicate(1);
+      var _ultima = (_segRes && _segRes.segnalazioni && _segRes.segnalazioni[0]) || null;
+      if (_ultima) {
+        var _giaSent = [];
+        try { _giaSent = JSON.parse(PropertiesService.getScriptProperties().getProperty('OC_DIGEST_SEGN_SENT') || '[]'); } catch(_) {}
+        if (_giaSent.indexOf(String(_ultima.segnalazioneId || '')) < 0) {
+          segnalazione = {
+            segnalazioneId: String(_ultima.segnalazioneId || ''),
+            titolo:      String(_ultima.titolo || ''),
+            descrizione: String(_ultima.descrizione || '').substring(0, 500),
+            url:         String(_ultima.url || ''),
+            tipo:        String(_ultima.tipo || ''),
+            autore:      String(_ultima.nome_autore || ''),
+            og_image:    String(_ultima.og_image || '')
+          };
+        }
+      }
+    }
+  } catch(eSeg) { Logger.log('[digest segnalazione] ' + eSeg.message); }
+
   // Filtro ambito (se richiesto)
   if (ambito) {
     urg      = urg.filter(function(b){ return String(b.ambito||b.ambitoId||'') === ambito; });
@@ -184,6 +241,7 @@ function _generateDigestDraftCore_(opts) {
     podcast:        pod,
     video:          video,   // v4.25.15 — mix esteso
     libri:          libri,   // v4.25.15 — mix esteso
+    segnalazione:   segnalazione, // v4.27.44 — ultima segnalazione community non ancora pubblicata
     stato:     'bozza'
   };
 
@@ -328,6 +386,17 @@ function adminConfirmSendWithToken(draftId, authToken) {
   draft.stato  = 'inviato';
   draft.sentAt = new Date().toISOString();
   draft.sentTo = res.count || 0;
+  // v4.27.44 — la segnalazione inclusa è ora "pubblicata nel digest": memorizzala
+  // perché non venga riproposta nei digest successivi (ultimi 50 id).
+  if (draft.segnalazione && draft.segnalazione.segnalazioneId) {
+    try {
+      var _p = PropertiesService.getScriptProperties();
+      var _sent = [];
+      try { _sent = JSON.parse(_p.getProperty('OC_DIGEST_SEGN_SENT') || '[]'); } catch(_) {}
+      if (_sent.indexOf(draft.segnalazione.segnalazioneId) < 0) _sent.push(draft.segnalazione.segnalazioneId);
+      _p.setProperty('OC_DIGEST_SEGN_SENT', JSON.stringify(_sent.slice(-50)));
+    } catch(eSg) { warn.push('memoria segnalazione non salvata: ' + eSg.message); }
+  }
   try {
     PropertiesService.getScriptProperties().setProperty(OC_DRAFT_PROP_PFX_ + draftId, JSON.stringify(draft));
   } catch(eP) { warn.push('stato bozza non salvato: ' + eP.message); }
