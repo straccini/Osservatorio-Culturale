@@ -492,3 +492,106 @@ function _safeEmail_() {
 function _safeCall_(fn, fallback) {
   try { return fn(); } catch(e) { return fallback; }
 }
+
+// ============================================================================
+// EDITOR CONTENUTI DIGEST — carica/salva bozza per modifica manuale
+// ============================================================================
+
+/**
+ * Carica la bozza digest corrente per l'editor di contenuti.
+ * Ritorna le sezioni con i singoli item (titolo, tipo, incluso).
+ * @param {string} token sessione admin
+ * @return {Object} {ok, draftId, sezioni:[{nome, items:[{idx, titolo, ente?, tipo, incluso}]}]}
+ */
+function getDigestDraftForEdit(token) {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_(token)) return { ok: false, error: 'forbidden' };
+
+  // Cerca la bozza redazionale corrente, fallback all'ultima bozza newsletter
+  var props = PropertiesService.getScriptProperties();
+  var draftId = props.getProperty('OC_RED_WEEK_DRAFT') || '';
+  var draft = draftId ? _loadDraft_(draftId) : null;
+
+  // Fallback: cerca l'ultima bozza dal log
+  if (!draft) {
+    try {
+      var sh = _getOrCreateSheet_(OC_NL_SHEET_, ['ID','Data','Soggetto','Destinatari','Stato','Autore','Token']);
+      var vals = sh.getDataRange().getValues();
+      for (var r = vals.length - 1; r >= 1; r--) {
+        var stato = String(vals[r][4] || '').toLowerCase();
+        if (stato === 'bozza' || stato === 'in_attesa_approvazione') {
+          draftId = String(vals[r][0] || '');
+          draft = _loadDraft_(draftId);
+          if (draft) break;
+        }
+      }
+    } catch (_) {}
+  }
+
+  if (!draft) return { ok: false, error: 'Nessuna bozza digest trovata. Genera prima una bozza (Prepara newsletter o Rigenera mix).' };
+
+  function _mapItems(arr, tipo) {
+    return (arr || []).map(function(it, i) {
+      return {
+        idx: i,
+        titolo: String(it.titolo || it.Titolo || '(senza titolo)'),
+        ente: String(it.ente || it.Ente || it.fonte || it.Fonte || ''),
+        tipo: tipo,
+        incluso: true
+      };
+    });
+  }
+
+  var sezioni = [];
+  sezioni.push({ nome: 'Bandi in scadenza', key: 'bandiUrgenti', items: _mapItems(draft.bandiUrgenti, 'bando') });
+  sezioni.push({ nome: 'Bandi recenti', key: 'bandiRecenti', items: _mapItems(draft.bandiRecenti, 'bando') });
+  sezioni.push({ nome: 'News', key: 'news', items: _mapItems(draft.news, 'news') });
+  sezioni.push({ nome: 'Podcast', key: 'podcast', items: _mapItems(draft.podcast, 'podcast') });
+  sezioni.push({ nome: 'Video', key: 'video', items: _mapItems(draft.video, 'video') });
+  sezioni.push({ nome: 'Libri', key: 'libri', items: _mapItems(draft.libri, 'libro') });
+
+  return { ok: true, draftId: draftId, sezioni: sezioni };
+}
+
+/**
+ * Salva le modifiche manuali alla bozza digest (rimozione/riordino items).
+ * @param {string} draftId
+ * @param {Object} modifiche {key: [indici_da_mantenere_in_ordine]}
+ *   Es: { news: [0,2,1], bandiUrgenti: [0,1], podcast: [] }
+ *   Gli indici si riferiscono alle posizioni ORIGINALI; l'ordine nell'array
+ *   è il NUOVO ordine desiderato.
+ * @param {string} token sessione admin
+ * @return {Object} {ok, counts}
+ */
+function saveDigestDraftEdit(draftId, modifiche, token) {
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_(token)) return { ok: false, error: 'forbidden' };
+  if (!draftId) return { ok: false, error: 'draftId mancante' };
+  var draft = _loadDraft_(draftId);
+  if (!draft) return { ok: false, error: 'Bozza ' + draftId + ' non trovata' };
+
+  modifiche = modifiche || {};
+  var keys = ['bandiUrgenti', 'bandiRecenti', 'news', 'podcast', 'video', 'libri'];
+  keys.forEach(function(k) {
+    if (!modifiche.hasOwnProperty(k)) return; // sezione non modificata
+    var orig = draft[k] || [];
+    var indici = modifiche[k] || [];
+    var nuovi = [];
+    indici.forEach(function(i) {
+      if (i >= 0 && i < orig.length) nuovi.push(orig[i]);
+    });
+    draft[k] = nuovi;
+  });
+
+  PropertiesService.getScriptProperties().setProperty(OC_DRAFT_PROP_PFX_ + draftId, JSON.stringify(draft));
+
+  return {
+    ok: true, draftId: draftId,
+    counts: {
+      bandiUrgenti: (draft.bandiUrgenti || []).length,
+      bandiRecenti: (draft.bandiRecenti || []).length,
+      news: (draft.news || []).length,
+      podcast: (draft.podcast || []).length,
+      video: (draft.video || []).length,
+      libri: (draft.libri || []).length
+    }
+  };
+}

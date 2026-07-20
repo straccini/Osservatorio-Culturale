@@ -627,3 +627,88 @@ function editorialeTest() {
 function editorialeSetupTrigger() {
   return _ed_setupTrigger_();
 }
+
+// ============================================================================
+// STORICO EDITORIALI — lista e ripristino
+// ============================================================================
+
+/**
+ * Ritorna la lista degli ultimi N editoriali (dal più recente).
+ * Usato dal pannello admin per recuperare editoriali precedenti.
+ * @param {Object} opts {limit?, token?}
+ * @return {Object} {ok, lista:[{id, settimana, titolo, stato, firma, dataGenerazione}]}
+ */
+function getEditorialiLista(opts) {
+  opts = opts || {};
+  var tk = opts.token || null;
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(tk)) return { ok: false, error: 'forbidden' };
+  try {
+    var sh = _ed_ss_().getSheetByName(OC_EDITORIALI_SHEET);
+    if (!sh || sh.getLastRow() < 2) return { ok: true, lista: [] };
+    var vals = sh.getDataRange().getValues();
+    var H = vals[0];
+    var iId = H.indexOf('ID'), iTit = H.indexOf('titolo'), iSett = H.indexOf('settimana');
+    var iStato = H.indexOf('stato'), iFirma = H.indexOf('firma'), iData = H.indexOf('DataGenerazione');
+    var limit = Math.min(Number(opts.limit) || 20, 50);
+    var lista = [];
+    for (var r = vals.length - 1; r >= 1 && lista.length < limit; r--) {
+      lista.push({
+        id: String(vals[r][iId] || ''),
+        settimana: String(vals[r][iSett] || ''),
+        titolo: String(vals[r][iTit] || '').substring(0, 80),
+        stato: String(vals[r][iStato] || ''),
+        firma: iFirma >= 0 ? String(vals[r][iFirma] || '') : '',
+        dataGenerazione: iData >= 0 ? String(vals[r][iData] || '').substring(0, 16) : '',
+        riga: r + 1
+      });
+    }
+    return { ok: true, lista: lista };
+  } catch (e) { return { ok: false, error: e.message }; }
+}
+
+/**
+ * Ripristina un editoriale precedente come "bozza" corrente.
+ * Copia il contenuto in una nuova riga come bozza (non modifica lo storico).
+ * @param {string} editorialeId ID dell'editoriale da ripristinare (es. "ED1655124800")
+ * @param {string} token sessione admin
+ * @return {Object} {ok, id?, titolo?, error?}
+ */
+function ripristinaEditoriale(editorialeId, token) {
+  var tk = token || null;
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(tk)) return { ok: false, error: 'forbidden' };
+  if (!editorialeId) return { ok: false, error: 'ID mancante' };
+  try {
+    var sh = _ed_ensureSheet_();
+    if (sh.getLastRow() < 2) return { ok: false, error: 'Foglio editoriali vuoto' };
+    var vals = sh.getDataRange().getValues();
+    var H = vals[0];
+    var iId = H.indexOf('ID');
+    var source = null;
+    for (var r = 1; r < vals.length; r++) {
+      if (String(vals[r][iId]) === editorialeId) { source = vals[r]; break; }
+    }
+    if (!source) return { ok: false, error: 'Editoriale ' + editorialeId + ' non trovato' };
+
+    var iTit = H.indexOf('titolo'), iTesto = H.indexOf('testo'), iFirma = H.indexOf('firma');
+    var iFoto = H.indexOf('foto_url'), iPilastri = H.indexOf('pilastri');
+
+    // Crea nuova riga come bozza con i contenuti ripristinati
+    var newId = 'ED' + Date.now();
+    sh.appendRow([
+      newId,
+      (typeof _ed_isoWeek_ === 'function') ? _ed_isoWeek_() : '',
+      new Date().toISOString(),
+      String(source[iTit] || ''),
+      String(source[iTesto] || ''),
+      String(source[iPilastri] || '{}'),
+      'bozza',
+      '',
+      '',
+      'Ripristinato da ' + editorialeId,
+      iFirma >= 0 ? String(source[iFirma] || '') : '',
+      iFoto >= 0 ? String(source[iFoto] || '') : ''
+    ]);
+
+    return { ok: true, id: newId, originale: editorialeId, titolo: String(source[iTit] || '') };
+  } catch (e) { return { ok: false, error: e.message }; }
+}

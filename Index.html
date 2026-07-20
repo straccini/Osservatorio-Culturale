@@ -1956,6 +1956,21 @@
             <b>Nota:</b> L'approfondimento approvato viene anteposto automaticamente alla newsletter.
           </div>
 
+          <div style="border-bottom:1px solid var(--rule);margin:16px 0"></div>
+
+          <!-- Storico editoriali -->
+          <div>
+            <div style="display:flex;align-items:center;margin-bottom:8px">
+              <span style="background:var(--ink-3);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">S</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Storico editoriali</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Sfoglia gli editoriali precedenti e ripristina quello desiderato come bozza corrente.</p>
+            <div style="margin-left:32px;margin-bottom:8px">
+              <button class="btn btn-secondary" onclick="OC._loadStoricoEditoriali()" style="font-size:11px;padding:5px 10px">Carica storico</button>
+            </div>
+            <div id="editorialiLista" style="margin-left:32px;font-size:12px;color:var(--ink-3)"></div>
+          </div>
+
         </div>
       </div>
 
@@ -2012,6 +2027,21 @@
 
           <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
 
+          <!-- Step 3b — Modifica contenuti -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;margin-bottom:6px">
+              <span style="background:var(--warning,#D97706);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">&#9998;</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Modifica contenuti</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Rimuovi o riordina i singoli elementi (bandi, news, podcast, video, libri) prima dell'invio.</p>
+            <div style="margin-left:32px;display:flex;justify-content:flex-end">
+              <button class="btn btn-secondary" onclick="OC.openDigestEditor()" style="font-size:12px;padding:7px 14px;border-color:var(--warning,#D97706);color:var(--warning,#D97706)">&#9998; Modifica contenuti</button>
+            </div>
+            <div id="digestEditorStatus" style="margin-left:32px;margin-top:6px;font-size:12px;color:var(--ink-3)"></div>
+          </div>
+
+          <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
+
           <!-- Step 4 — Test -->
           <div style="margin-bottom:16px">
             <div style="display:flex;align-items:center;margin-bottom:6px">
@@ -2019,9 +2049,10 @@
               <span style="font-size:14px;font-weight:700;color:var(--ink)">Test</span>
             </div>
             <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px"><span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; Invio reale:</span> spedisce una copia vera della newsletter all'indirizzo che indichi (usa la tua email per verificarla nella casella). <i>Per la sola anteprima senza invio, usa &laquo;Anteprima per destinatario&raquo; in fondo alla pagina.</i></p>
-            <div style="margin-left:32px;display:flex;gap:8px;align-items:center">
-              <input type="email" id="lettoriTestEmail" value="s.straccini@gmail.com" placeholder="Email per il test reale..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
-              <button class="btn btn-secondary" onclick="OC.testDigestEmail()" style="padding:8px 16px;font-size:13px;border-color:var(--amb-2,#10916D);color:var(--amb-2,#10916D);white-space:nowrap" title="Invia una copia REALE della newsletter lettori all'indirizzo indicato">Invia test reale (email)</button>
+            <div style="margin-left:32px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input type="email" id="lettoriTestEmail" value="s.straccini@gmail.com" placeholder="Email per il test reale..." style="flex:1;min-width:200px;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
+              <button class="btn btn-secondary" onclick="OC.testDigestHeader()" style="padding:8px 16px;font-size:13px;border-color:var(--accent,#935851);color:var(--accent,#935851);white-space:nowrap" title="Invia SOLO l'intestazione con grafica, data e social (senza bandi/news)">Prova intestazione</button>
+              <button class="btn btn-secondary" onclick="OC.testDigestEmail()" style="padding:8px 16px;font-size:13px;border-color:var(--amb-2,#10916D);color:var(--amb-2,#10916D);white-space:nowrap" title="Invia una copia REALE della newsletter COMPLETA all'indirizzo indicato">Invia test completo</button>
             </div>
           </div>
 
@@ -2860,6 +2891,24 @@
         <p style="margin:22px 0 0;font-size:12px;color:var(--ink-3)">Ultimo aggiornamento: giugno 2026 &middot; Sinopia Srl &mdash; Osservatorio Culturale</p>
       </div>
     </section>
+
+    <!-- ===== MODAL EDITOR CONTENUTI DIGEST ===== -->
+    <div id="digestEditorOverlay" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.45);" onclick="if(event.target===this)OC.closeDigestEditor()">
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg,#fff);border-radius:14px;max-width:680px;width:92vw;max-height:85vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.25);padding:24px 28px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="margin:0;font-size:16px;font-weight:700;color:var(--ink)">&#9998; Modifica contenuti digest</h3>
+          <button onclick="OC.closeDigestEditor()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink-3);padding:4px 8px" aria-label="Chiudi">&times;</button>
+        </div>
+        <p style="font-size:12px;color:var(--ink-3);margin:0 0 14px;line-height:1.5">Deseleziona gli elementi da escludere. Usa le frecce per riordinare. Premi <b>Salva modifiche</b> per aggiornare la bozza.</p>
+        <div id="digestEditorBody" style="min-height:80px">
+          <div class="empty-state sm">Caricamento bozza…</div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;border-top:1px solid var(--rule);padding-top:14px">
+          <button class="btn btn-secondary" onclick="OC.closeDigestEditor()" style="font-size:13px;padding:8px 16px">Annulla</button>
+          <button class="btn btn-primary" id="digestEditorSaveBtn" onclick="OC.saveDigestEdits()" style="font-size:13px;padding:8px 16px;background:var(--warning,#D97706)">Salva modifiche</button>
+        </div>
+      </div>
+    </div>
 
     <!-- ===== FOOTER GLOBALE (v5.8 — ridisegnato) ===== -->
     <!-- v4.27.36 — footer come card arrotondata, coerente con gli altri box -->
@@ -13433,6 +13482,133 @@
     uploadTsv: uploadTsv,
     reloadFontiStats: reloadFontiStats,
     testDigestEmail: testDigestEmail,
+    testDigestHeader: function(){
+      if (!hasGAS()) return;
+      var inp = document.getElementById('lettoriTestEmail');
+      var emailDest = String((inp && inp.value) || '').trim() || 's.straccini@gmail.com';
+      if (emailDest.indexOf('@') < 0) { showToast && showToast('Email non valida', 'err'); return; }
+      $('adminStatus').textContent = 'Invio intestazione a ' + emailDest + '…';
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (r && r.ok) { $('adminStatus').textContent = ''; showToast && showToast('Intestazione inviata a ' + emailDest, 'ok'); }
+          else { $('adminStatus').textContent = 'Errore: ' + (r && r.error || ''); }
+        })
+        .withFailureHandler(function(e){ showToast && showToast('Errore: '+e, 'err'); })
+        .testInviaDigestHeader(emailDest, _tok_());
+    },
+    // v4.27.43 — Editor contenuti digest
+    openDigestEditor: function(){
+      var overlay = document.getElementById('digestEditorOverlay');
+      var body = document.getElementById('digestEditorBody');
+      if (overlay) overlay.style.display = 'block';
+      if (body) body.innerHTML = '<div class="empty-state sm">Caricamento bozza…</div>';
+      window._digestEditorData = null;
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (!r || !r.ok) { if (body) body.innerHTML = '<div class="empty-state sm" style="color:var(--danger)">' + esc((r && r.error) || 'Errore') + '</div>'; return; }
+          window._digestEditorData = r;
+          var html = '<div style="font-size:11px;color:var(--ink-3);margin-bottom:12px">Bozza <b>' + esc(r.draftId) + '</b></div>';
+          r.sezioni.forEach(function(sez, si){
+            if (!sez.items.length) return;
+            html += '<div style="margin-bottom:14px">';
+            html += '<div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent,#935851);font-weight:700;margin-bottom:6px">' + esc(sez.nome) + ' (' + sez.items.length + ')</div>';
+            sez.items.forEach(function(it, ii){
+              html += '<div class="de-item" data-sez="' + si + '" data-idx="' + ii + '" style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid var(--rule,#eee);font-size:12.5px">';
+              html += '<input type="checkbox" checked class="de-chk" style="flex-shrink:0" />';
+              html += '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(it.titolo) + '">' + esc(it.titolo) + '</span>';
+              if (it.ente) html += '<span style="flex-shrink:0;font-size:10px;color:var(--ink-3)">' + esc(it.ente).substring(0,25) + '</span>';
+              html += '<button onclick="OC._deMove(this,-1)" style="background:none;border:1px solid var(--rule);border-radius:4px;cursor:pointer;font-size:11px;padding:1px 5px" title="Sposta su">&uarr;</button>';
+              html += '<button onclick="OC._deMove(this,1)" style="background:none;border:1px solid var(--rule);border-radius:4px;cursor:pointer;font-size:11px;padding:1px 5px" title="Sposta giù">&darr;</button>';
+              html += '</div>';
+            });
+            html += '</div>';
+          });
+          if (body) body.innerHTML = html;
+        })
+        .withFailureHandler(function(e){ if (body) body.innerHTML = '<div class="empty-state sm" style="color:var(--danger)">Errore: ' + esc(e) + '</div>'; })
+        .getDigestDraftForEdit(_tok_());
+    },
+    closeDigestEditor: function(){
+      var overlay = document.getElementById('digestEditorOverlay');
+      if (overlay) overlay.style.display = 'none';
+    },
+    _deMove: function(btn, dir){
+      var row = btn.closest('.de-item'); if (!row) return;
+      var sib = (dir < 0) ? row.previousElementSibling : row.nextElementSibling;
+      if (!sib || !sib.classList.contains('de-item')) return;
+      if (dir < 0) row.parentNode.insertBefore(row, sib);
+      else row.parentNode.insertBefore(sib, row);
+    },
+    saveDigestEdits: function(){
+      var data = window._digestEditorData;
+      if (!data || !data.draftId) { showToast && showToast('Nessuna bozza caricata', 'err'); return; }
+      var body = document.getElementById('digestEditorBody'); if (!body) return;
+      var modifiche = {};
+      data.sezioni.forEach(function(sez){
+        var items = body.querySelectorAll('.de-item[data-sez="' + data.sezioni.indexOf(sez) + '"]');
+        var indici = [];
+        items.forEach(function(el){
+          var chk = el.querySelector('.de-chk');
+          if (chk && chk.checked) indici.push(parseInt(el.getAttribute('data-idx'), 10));
+        });
+        modifiche[sez.key] = indici;
+      });
+      var btn = document.getElementById('digestEditorSaveBtn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Salvataggio…'; }
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (btn) { btn.disabled = false; btn.textContent = 'Salva modifiche'; }
+          if (r && r.ok) {
+            showToast && showToast('Bozza aggiornata', 'ok');
+            OC.closeDigestEditor();
+            var st = document.getElementById('digestEditorStatus');
+            if (st) st.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Modificato: ' + r.counts.bandiUrgenti + '+' + r.counts.bandiRecenti + ' bandi, ' + r.counts.news + ' news, ' + r.counts.podcast + ' podcast, ' + (r.counts.video||0) + ' video, ' + (r.counts.libri||0) + ' libri</span>';
+          } else { showToast && showToast('Errore: ' + ((r && r.error) || 'sconosciuto'), 'err'); }
+        })
+        .withFailureHandler(function(e){ if (btn) { btn.disabled = false; btn.textContent = 'Salva modifiche'; } showToast && showToast('Errore: ' + e, 'err'); })
+        .saveDigestDraftEdit(data.draftId, modifiche, _tok_());
+    },
+    // v4.27.43 — Storico editoriali
+    _loadStoricoEditoriali: function(){
+      var wrap = document.getElementById('editorialiLista');
+      if (wrap) wrap.innerHTML = '<span class="muted">Caricamento…</span>';
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (!wrap) return;
+          if (!r || !r.ok) { wrap.innerHTML = '<span style="color:var(--danger)">Errore: ' + esc((r && r.error) || '?') + '</span>'; return; }
+          if (!r.lista || !r.lista.length) { wrap.innerHTML = '<div class="empty-state sm">Nessun editoriale nello storico.</div>'; return; }
+          var html = '<div style="border:1px solid var(--rule);border-radius:8px;overflow:hidden">';
+          r.lista.forEach(function(ed, i){
+            var bg = (i % 2 === 0) ? 'var(--surface-2,#F7F7F8)' : 'var(--bg,#fff)';
+            var statoColor = ed.stato === 'approvato' ? 'var(--amb-2,#10916D)' : 'var(--accent,#935851)';
+            html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:' + bg + ';border-bottom:1px solid var(--rule);font-size:12px">';
+            html += '<div style="flex:1;min-width:0">';
+            html += '<div style="font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(ed.titolo || '(senza titolo)') + '</div>';
+            html += '<div style="color:var(--ink-3);font-size:11px;margin-top:2px">' + esc(ed.settimana) + ' · ' + esc(ed.dataGenerazione || '') + (ed.firma ? ' · ' + esc(ed.firma) : '') + '</div>';
+            html += '</div>';
+            html += '<span style="font-size:10px;font-weight:700;color:' + statoColor + ';text-transform:uppercase;flex-shrink:0">' + esc(ed.stato) + '</span>';
+            html += '<button class="btn btn-secondary" onclick="OC._ripristinaEditoriale(\'' + esc(ed.id) + '\')" style="font-size:10px;padding:3px 8px;flex-shrink:0" title="Copia questo editoriale come nuova bozza">Ripristina</button>';
+            html += '</div>';
+          });
+          html += '</div>';
+          wrap.innerHTML = html;
+        })
+        .withFailureHandler(function(e){ if (wrap) wrap.innerHTML = '<span style="color:var(--danger)">Errore: ' + esc(e) + '</span>'; })
+        .getEditorialiLista({ token: _tok_() });
+    },
+    _ripristinaEditoriale: function(id){
+      if (!confirm('Ripristinare questo editoriale come bozza corrente?\n\nIl contenuto verrà copiato in una nuova bozza (lo storico non viene modificato).')) return;
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (r && r.ok) {
+            showToast && showToast('Editoriale ripristinato: "' + (r.titolo || '') + '"', 'ok');
+            OC._loadEditoriale();
+            OC._loadStoricoEditoriali();
+          } else { showToast && showToast('Errore: ' + ((r && r.error) || 'sconosciuto'), 'err'); }
+        })
+        .withFailureHandler(function(e){ showToast && showToast('Errore: ' + e, 'err'); })
+        .ripristinaEditoriale(id, _tok_());
+    },
     anteprimaInvioSettimanale: anteprimaInvioSettimanale,
     inviaDigestSettimanale: inviaDigestSettimanale,
     testDigestProfilatoInvio: testDigestProfilatoInvio,
