@@ -25,6 +25,22 @@ if (typeof OC_AMBITI !== 'undefined') {
   OC_AMBITI.forEach(function(a){ OC_AMB_COLORS_[String(a.id)] = { bg:'#F2F2F4', fg:a.color, label:a.nome }; });
 }
 
+// ================== DATA HELPER — sempre lunedì ==================
+
+/**
+ * Ritorna la data del prossimo (o corrente) lunedì, formattata dd/MM/yyyy.
+ * Se oggi è lunedì, ritorna oggi. Altrimenti il lunedì successivo.
+ * Usato sia nel digest sia nell'editoriale per data coerente.
+ */
+function _prossimoLunedi_(rifDate) {
+  var d = rifDate ? new Date(rifDate) : new Date();
+  var day = d.getDay(); // 0=dom, 1=lun, …
+  var diff = (day === 0) ? 1 : (day === 1) ? 0 : (8 - day);
+  d.setDate(d.getDate() + diff);
+  var tz = Session.getScriptTimeZone();
+  return Utilities.formatDate(d, tz, 'dd/MM/yyyy');
+}
+
 // ================== COMPOSER ==================
 
 /**
@@ -33,8 +49,7 @@ if (typeof OC_AMBITI !== 'undefined') {
  */
 function buildNewsletterHtml_(draft) {
   draft = draft || {};
-  var tz   = Session.getScriptTimeZone();
-  var data = Utilities.formatDate(new Date(draft.createdAt || Date.now()), tz, 'dd/MM/yyyy');
+  var data = _prossimoLunedi_(draft.createdAt);
 
   var webUrl = '';
   try { webUrl = ScriptApp.getService().getUrl() || ''; } catch(e) { webUrl = ''; }
@@ -46,11 +61,10 @@ function buildNewsletterHtml_(draft) {
   parts.push('<tr><td align="center">');
   parts.push('<table role="presentation" width="640" cellspacing="0" cellpadding="0" border="0" style="max-width:640px;background:#FFFFFF;border-radius:12px;overflow:hidden;">');
 
-  // Header
-  parts.push('<tr><td style="padding:28px 28px 16px 28px;background:#1D1D1F;color:#FFFFFF;">');
-  parts.push('<div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#A8A8AA;">Osservatorio Culturale · ' + _h_(data) + '</div>');
-  parts.push('<div style="font-size:22px;font-weight:700;margin-top:6px;">' + _h_(draft.soggetto||'Digest') + '</div>');
-  parts.push('</td></tr>');
+  // v4.27.43 — Testata design «traiettorie sottotraccia» approvato 2026-07-18
+  // (fondo bianco, logo a SX, data a DX, filetti terra, masthead, nav, social).
+  // Sostituisce il vecchio header scuro centrato. Helper condiviso: _nlMastheadHtml_.
+  parts.push(_nlMastheadHtml_(data));
 
   // v4.22 E1 — Editoriale settimanale (se approvato, sostituisce l'intro generica)
   var _editoriale = null;
@@ -180,9 +194,17 @@ function buildNewsletterHtml_(draft) {
     parts.push('</td></tr>');
   }
 
+  // Social links
+  parts.push('<tr><td style="padding:16px 28px 4px;text-align:center;border-top:1px solid #ECECEE;">');
+  parts.push('<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8E;margin-bottom:10px;">Seguici</div>');
+  parts.push('<a href="https://www.linkedin.com/company/sinopiaconsulting/" style="display:inline-block;background:#0A66C2;color:#fff;padding:8px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:0 4px;">LinkedIn</a>');
+  parts.push('<a href="https://www.instagram.com/sinopia_osservatorio?igsh=MTFhdjY2ZXZubzVpYg==" style="display:inline-block;background:#C13584;color:#fff;padding:8px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:0 4px;">Instagram</a>');
+  parts.push('<a href="mailto:sinopiaconsulting@gmail.com" style="display:inline-block;background:#5A5A5E;color:#fff;padding:8px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:0 4px;">Email</a>');
+  parts.push('</td></tr>');
+
   // Footer
-  parts.push('<tr><td style="padding:16px 28px 28px 28px;border-top:1px solid #ECECEE;">');
-  parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;">Ricevi questa newsletter in quanto iscritto all\'Osservatorio Culturale. Per modificare le preferenze o cancellarti, usa il link di disiscrizione in fondo.</p>');
+  parts.push('<tr><td style="padding:12px 28px 28px 28px;">');
+  parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;text-align:center;">&copy; Sinopia Srl &middot; Deruta (PG) &middot; Osservatorio Culturale<br>Ricevi questa newsletter in quanto iscritto. Per modificare le preferenze o cancellarti, usa il link di disiscrizione in fondo.</p>');
   parts.push('</td></tr>');
 
   parts.push('</table></td></tr></table></body></html>');
@@ -436,6 +458,136 @@ function testInviaDigestGeneralista(emailDest, token) {
     };
   } catch(e) {
     Logger.log('ERRORE: ' + e.message + '\n' + e.stack);
+    return { ok:false, error: e.message };
+  }
+}
+
+// ============================================================================
+// TESTATA CONDIVISA — design «traiettorie sottotraccia» (approvato 2026-07-18)
+// ----------------------------------------------------------------------------
+// Stessa testata di DigestService.buildDigestHTML: fondo BIANCO, logo OCS
+// allineato a SINISTRA (linkato al sito), data in blu a destra, filetto terra,
+// lockup masthead a sinistra, secondo filetto, nav Osservatorio/Segnala/
+// Contattaci, icone social in + IG + sito. Email-safe (tabelle, niente flex).
+// ============================================================================
+function _nlMastheadHtml_(dataLabel) {
+  var assets = (typeof _digestAssetUrls_ === 'function') ? _digestAssetUrls_() : {};
+  var appUrl = '';
+  try { appUrl = ScriptApp.getService().getUrl() || ''; } catch(e) { appUrl = ''; }
+  var sito = 'https://sinopia.netlify.app/';
+  var linkedin = 'https://www.linkedin.com/company/sinopiaconsulting';
+  var instagram = 'https://www.instagram.com/sinopia_osservatorio?igsh=MTFhdjY2ZXZubzVpYg==';
+  var logo = assets.logo
+    ? '<a href="' + sito + '" style="text-decoration:none"><img src="' + assets.logo + '" alt="OCS — Osservatorio Culturale Sinopia" width="100" height="70" style="display:block;border:0" /></a>'
+    : '<a href="' + sito + '" style="text-decoration:none;font-family:Georgia,serif;font-weight:700;font-size:28px;color:#111111">OCS</a>';
+  var masthead = assets.masthead
+    ? '<img src="' + assets.masthead + '" alt="traiettorie sottotraccia" width="301" height="78" style="display:block;border:0" />'
+    : '<div style="font-family:Georgia,serif;font-size:34px;color:#111111;text-align:left;line-height:1.1">traiettorie<br>sottotraccia</div>';
+  var p = [];
+  p.push('<tr><td style="padding:24px 28px 0;background:#FFFFFF"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>');
+  p.push('<td align="left" style="vertical-align:middle">' + logo + '</td>');
+  p.push('<td align="right" style="vertical-align:middle;font-size:13px;font-weight:700;color:#1F3F8F">' + _h_(dataLabel || '') + '</td>');
+  p.push('</tr></table></td></tr>');
+  p.push('<tr><td style="padding:14px 28px 0;background:#FFFFFF"><div style="border-top:2px solid #A65138;font-size:0;line-height:0">&nbsp;</div></td></tr>');
+  p.push('<tr><td align="left" style="padding:14px 28px 6px;background:#FFFFFF">' + masthead + '</td></tr>');
+  p.push('<tr><td style="padding:8px 28px 0;background:#FFFFFF"><div style="border-top:2px solid #A65138;font-size:0;line-height:0">&nbsp;</div></td></tr>');
+  p.push('<tr><td style="padding:12px 28px 0;background:#FFFFFF"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>');
+  p.push('<td align="left" style="font-size:14px;font-weight:700"><a href="' + sito + '" style="color:#1F3F8F;text-decoration:none">Osservatorio</a></td>');
+  p.push('<td align="center" style="font-size:14px;font-weight:700"><a href="' + appUrl + '?goto=segnala" style="color:#1F3F8F;text-decoration:none">Segnala</a></td>');
+  p.push('<td align="right" style="font-size:14px;font-weight:700"><a href="' + appUrl + '?goto=consulenza" style="color:#1F3F8F;text-decoration:none">Contattaci</a></td>');
+  p.push('</tr></table></td></tr>');
+  p.push('<tr><td align="center" style="padding:14px 28px 18px;background:#FFFFFF">');
+  p.push('<a href="' + linkedin + '" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:6px;text-align:center;font-size:13px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">in</a>');
+  p.push('<a href="' + instagram + '" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:8px;text-align:center;font-size:12px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">IG</a>');
+  p.push('<a href="' + sito + '" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:50%;text-align:center;font-size:14px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">&#8853;</a>');
+  p.push('</td></tr>');
+  return p.join('');
+}
+
+// ============================================================================
+// HEADER-ONLY — per prova di invio "solo testata"
+// ============================================================================
+
+/**
+ * Costruisce un HTML con la SOLA intestazione del digest:
+ * logo/masthead grafico, data (lunedì), editoriale (se approvato),
+ * link social e CTA webapp. Nessun bando/news/podcast.
+ */
+function buildDigestHeaderOnlyHtml_() {
+  var data = _prossimoLunedi_();
+  var webUrl = '';
+  try { webUrl = ScriptApp.getService().getUrl() || ''; } catch(e) { webUrl = ''; }
+
+  var parts = [];
+  parts.push('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Osservatorio Culturale — Digest</title></head>');
+  parts.push('<body style="margin:0;padding:0;background:#F4F4F6;font-family:Inter,Helvetica,Arial,sans-serif;color:#1D1D1F;">');
+  parts.push('<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#F4F4F6;padding:24px 0;">');
+  parts.push('<tr><td align="center">');
+  parts.push('<table role="presentation" width="640" cellspacing="0" cellpadding="0" border="0" style="max-width:640px;background:#FFFFFF;border-radius:12px;overflow:hidden;">');
+
+  // v4.27.43 — Testata design «traiettorie sottotraccia» (helper condiviso)
+  parts.push(_nlMastheadHtml_(data));
+
+  // Editoriale (se approvato)
+  var _editoriale = null;
+  try { if (typeof getEditorialeCorrente === 'function') _editoriale = getEditorialeCorrente(); } catch(_){}
+  if (_editoriale && _editoriale.testo) {
+    parts.push('<tr><td style="padding:20px 28px 4px 28px;">');
+    if (_editoriale.foto) parts.push('<img src="' + String(_editoriale.foto) + '" alt="" width="564" style="width:100%;max-width:564px;border-radius:10px;display:block;margin-bottom:14px"/>');
+    parts.push('<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8B3A1F;font-weight:700;margin-bottom:8px;">Approfondimento della settimana</div>');
+    parts.push('<div style="font-size:16px;font-weight:700;color:#1D1D1F;margin-bottom:10px;">' + _h_(_editoriale.titolo) + '</div>');
+    parts.push('<p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C;">' + _h_(_editoriale.testo).replace(/\n/g, '<br>') + '</p>');
+    if (_editoriale.firma) parts.push('<div style="margin-top:12px;font-style:italic;font-size:13px;color:#6E6A62;">' + _h_(_editoriale.firma) + '</div>');
+    parts.push('<div style="margin-top:14px;border-bottom:1px solid #E5E5E7;padding-bottom:6px"></div>');
+    parts.push('</td></tr>');
+  }
+
+  // CTA webapp
+  if (webUrl) {
+    parts.push('<tr><td style="padding:24px 28px 12px;text-align:center;">');
+    parts.push('<a href="' + _h_(webUrl) + '" style="display:inline-block;background:#1D1D1F;color:#FFFFFF;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">Apri Osservatorio Culturale →</a>');
+    parts.push('</td></tr>');
+  }
+
+  // Social links
+  parts.push('<tr><td style="padding:12px 28px 8px;text-align:center;">');
+  parts.push('<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8E;margin-bottom:10px;">Seguici</div>');
+  parts.push('<a href="https://www.linkedin.com/company/sinopiaconsulting/" style="display:inline-block;background:#0A66C2;color:#fff;padding:8px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:0 4px;">LinkedIn</a>');
+  parts.push('<a href="https://www.instagram.com/sinopia_osservatorio?igsh=MTFhdjY2ZXZubzVpYg==" style="display:inline-block;background:#C13584;color:#fff;padding:8px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:0 4px;">Instagram</a>');
+  parts.push('<a href="mailto:sinopiaconsulting@gmail.com" style="display:inline-block;background:#5A5A5E;color:#fff;padding:8px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:0 4px;">Email</a>');
+  parts.push('</td></tr>');
+
+  // Footer
+  parts.push('<tr><td style="padding:16px 28px 28px 28px;border-top:1px solid #ECECEE;">');
+  parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;text-align:center;">&copy; Sinopia Srl &middot; Deruta (PG) &middot; Osservatorio Culturale<br>Ricevi questa email in quanto iscritto. Per cancellarti, usa il link di disiscrizione.</p>');
+  parts.push('</td></tr>');
+
+  parts.push('</table></td></tr></table></body></html>');
+  return parts.join('');
+}
+
+/**
+ * Prova di invio: manda SOLO l'intestazione del digest (header grafico +
+ * editoriale + social links) senza bandi/news/podcast. Per verificare
+ * la resa grafica prima dell'invio completo.
+ */
+function testInviaDigestHeader(emailDest, token) {
+  var tk = token || null;
+  if (typeof _isCurrentUserAdmin_ !== 'function' || !_isCurrentUserAdmin_(tk)) return { ok:false, error:'forbidden' };
+  emailDest = emailDest || 's.straccini@gmail.com';
+  try {
+    var html = buildDigestHeaderOnlyHtml_();
+    var sender = '';
+    try { sender = Session.getActiveUser().getEmail() || 'sinopiaconsulting@gmail.com'; } catch(e) { sender = 'sinopiaconsulting@gmail.com'; }
+    MailApp.sendEmail({
+      to:       emailDest,
+      subject:  '[PROVA] Osservatorio Culturale — Intestazione digest ' + _prossimoLunedi_(),
+      htmlBody: html,
+      name:     'Osservatorio Culturale (TEST)',
+      replyTo:  sender
+    });
+    return { ok: true, emailSent: emailDest, message: 'Intestazione digest inviata a ' + emailDest };
+  } catch(e) {
     return { ok:false, error: e.message };
   }
 }

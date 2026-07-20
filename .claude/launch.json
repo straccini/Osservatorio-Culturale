@@ -11,7 +11,7 @@
     {
       "name": "bozza-email",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8787", "--directory", "C:\\Users\\sstra\\AppData\\Local\\Temp\\claude\\C--Users-sstra-Desktop-01-DUEMILAMUSEI-PROGETTI-musemu-matrix-oc-codebase\\8945c227-e367-40b6-a13e-4a6bfbbea457\\scratchpad"],
+      "runtimeArgs": ["-m", "http.server", "8787", "--directory", "C:\\Users\\sstra\\AppData\\Local\\Temp\\claude\\C--Users-sstra-Desktop-01-DUEMILAMUSEI-PROGETTI-musemu-matrix-oc-codebase\\c79cb9bf-a31d-47a8-84a5-94c02a0a741f\\scratchpad"],
       "port": 8787
     },
     {

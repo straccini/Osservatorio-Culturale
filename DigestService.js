@@ -251,6 +251,7 @@ function buildDigestHTML(items, dest, readerUrl, filterAmbiti) {
   if (!_appUrl) { try { _appUrl = ScriptApp.getService().getUrl() || ''; } catch(_) {} }
   var _sito = 'https://sinopia.netlify.app/';
   var _linkedin = 'https://www.linkedin.com/company/sinopiaconsulting';
+  var _instagram = 'https://www.instagram.com/sinopia_osservatorio?igsh=MTFhdjY2ZXZubzVpYg==';
   var _logoTop = _assets.logo
     ? `<a href="${_sito}" style="text-decoration:none"><img src="${_assets.logo}" alt="OCS — Osservatorio Culturale Sinopia" width="100" height="70" style="display:block;border:0" /></a>`
     : `<a href="${_sito}" style="text-decoration:none;font-family:Georgia,serif;font-weight:700;font-size:28px;color:#111111">OCS</a>`;
@@ -276,6 +277,7 @@ function buildDigestHTML(items, dest, readerUrl, filterAmbiti) {
     + `</tr></table></td></tr>`
     + `<tr><td align="center" style="padding:14px 36px 20px">`
     + `<a href="${_linkedin}" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:6px;text-align:center;font-size:13px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">in</a>`
+    + `<a href="${_instagram}" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:8px;text-align:center;font-size:12px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">IG</a>`
     + `<a href="${_sito}" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:50%;text-align:center;font-size:14px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">&#8853;</a>`
     + `</td></tr>`;
   var _footerLogoHtml =
