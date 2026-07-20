@@ -283,6 +283,62 @@ function fontiAggiungiBatchEstero() {
 }
 
 /**
+ * v4.27.42 — DESIGN & ARTE INTERNAZIONALE: fonti dalla segnalazione stampa del
+ * 2026-07-19 (caso Turrell/ARoS, rassegna Sole 24 Ore Domenica). Feed verificati
+ * live 2026-07-20 con fetch esterno:
+ *  - Designboom (feed valido, item stesso giorno) — arte/design/allestimenti
+ *  - ArchDaily via FeedBurner (25 item, aggiornamento orario) — architettura musei
+ *  - Artsy News (12 item, quotidiano) — mercato/mostre internazionali
+ *  - Galerie Magazine (valido, bassa cadenza ~6 item) — arte/design/collezionismo
+ *  - Sole 24 Ore EN: indice RSS su en.ilsole24ore.com/rss — scelti i 2 feed
+ *    più on-topic: "Arteconomy — Musei e Biennali" e "Cultura — Arti visive"
+ *    (sito EN GRATUITO, aggira il paywall della Domenica per l'arte)
+ *  - Dezeen e Archpaper: 403 dal fetch esterno (WAF) → inclusi, il gate
+ *    fontiAggiungiFeedVerificato li ri-testa dalla rete GAS e li salta se chiusi.
+ * GIÀ PRESENTI (esclusi per dedup): Exibart, Colossal, Sole 24 Ore Cultura IT,
+ * Apollo, My Modern Met, ArtNews, Artforum. Domus: nessun RSS pubblico (già
+ * coperta come fonte HTML nel sistema agenti). ARoS/Gagosian/Almine Rech: nessun
+ * feed → candidate social wall (rilancio manuale), vedi docs/SOCIAL_WALL_FONTI.md.
+ * Idempotente: ogni candidato passa dal gate (HTTP 200 + RSS valido + dedup).
+ */
+function fontiAggiungiBatchDesignArte() {
+  var candidati = [
+    { url: 'https://www.designboom.com/feed/',                            nome: 'Designboom',                        ambito: 3 }, // arte/design/installazioni
+    { url: 'http://feeds.feedburner.com/Archdaily',                       nome: 'ArchDaily',                         ambito: 1 }, // architettura musei/culturale
+    { url: 'https://www.artsy.net/rss/news',                              nome: 'Artsy News',                        ambito: 3 }, // mostre/mercato internazionale
+    { url: 'https://galeriemagazine.com/feed/',                           nome: 'Galerie Magazine',                  ambito: 3 }, // arte/design/collezionismo
+    { url: 'https://en.ilsole24ore.com/rss/arteconomy--musei-e-biennali.xml', nome: 'Sole 24 Ore EN — Musei e Biennali', ambito: 1 }, // governance musei (free EN)
+    { url: 'https://en.ilsole24ore.com/rss/cultura--arti-visive.xml',     nome: 'Sole 24 Ore EN — Arti visive',      ambito: 3 }, // arte visiva (free EN)
+    { url: 'https://www.dezeen.com/feed/',                                nome: 'Dezeen',                            ambito: 1 }, // architettura/design (403 esterno: test da GAS)
+    { url: 'https://www.archpaper.com/feed/',                             nome: 'The Architects Newspaper',          ambito: 1 }  // architettura culturale (403 esterno: test da GAS)
+  ];
+  var esiti = candidati.map(function(c) {
+    var r = fontiAggiungiFeedVerificato(c.url, c.nome, c.ambito, 'DesignArte-segnalazione 2026-07');
+    return { nome: c.nome, esito: r && r.ok ? 'AGGIUNTA' : ('saltata: ' + ((r && r.error) || '?')) };
+  });
+  var aggiunte = esiti.filter(function(e) { return e.esito === 'AGGIUNTA'; }).length;
+  Logger.log('fontiAggiungiBatchDesignArte: ' + aggiunte + '/' + candidati.length + '\n' + JSON.stringify(esiti, null, 2));
+  return { ok: true, aggiunte: aggiunte, totale: candidati.length, esiti: esiti };
+}
+
+/**
+ * Auto-seed una tantum del batch Design & Arte (stesso pattern di
+ * discoveryAutoSeedOnce): gira dal dispatcher giornaliero, al primo run aggiunge
+ * il batch e imposta il flag → poi no-op. Idempotente anche senza flag (dedup).
+ */
+function fontiDesignArteSeedOnce() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('OC_DESIGNARTE_SEEDED') === 'true') {
+    return { ok: true, skipped: true };
+  }
+  var rep;
+  try { rep = fontiAggiungiBatchDesignArte(); } catch (e) { rep = { ok: false, error: e.message }; }
+  props.setProperty('OC_DESIGNARTE_SEEDED', 'true');
+  Logger.log('[fontiDesignArteSeedOnce] batch design/arte attivato una tantum: ' + JSON.stringify(rep));
+  return rep;
+}
+
+/**
  * v4.27.18 — Aggiunge 54 osservatori culturali internazionali come fonti news RSS.
  * Fonte: uMap "Cultural Observatories: A Global Mapping Attempt" (1340668).
  * Idempotente: dedup via fontiAggiungiFeedVerificato.

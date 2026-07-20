@@ -40,6 +40,7 @@ function adminRunTool(tool, token) {
       case 'fontiNormativa':     r = fontiAggiungiBatchNormativa(); break;
       case 'fontiPrimarie':      r = fontiRipristinaPrimarie(); break;
       case 'fontiOsservatori':  r = fontiAggiungiBatchOsservatori(); break;
+      case 'fontiDesignArte':    r = fontiAggiungiBatchDesignArte(); break;  // segnalazione 2026-07 (Turrell/ARoS)
       case 'fontiPodcast':       r = fontiAggiungiBatchPodcast(); break;   // Tappa P
       case 'fontiSocial':        r = fontiAggiungiBatchSocial(); break;    // Tappa 4
       case 'fontiPodcastSocial': r = { podcast: fontiAggiungiBatchPodcast(), social: fontiAggiungiBatchSocial() }; break; // entrambe in 1 clic (idempotente)

@@ -75,6 +75,24 @@ MiC (Comunicati, Musei) · ICOM Italia · Federculture · MAB Italia · AMACI ·
 
 ---
 
+## B.5 — Musei e gallerie internazionali (segnalazione 2026-07-19, caso Turrell/ARoS)
+> Verifica feed con fetch reali 2026-07-20. Le gallerie commerciali e i musei internazionali
+> quasi mai espongono RSS → il canale per il wall è il **rilancio manuale** dei loro
+> post/annunci migliori (Instagram/LinkedIn), oppure la newsletter come segnale d'ingresso.
+
+| Candidato | Esito verifica | Azione |
+|---|---|---|
+| **ARoS Aarhus** (aros.dk) | ❌ nessun RSS/API; newsletter (heyloyalty) + IG/FB/LinkedIn attivi; sezione press | rilancio manuale (annunci mostre/skyspace); newsletter come alert |
+| **Gagosian** (gagosian.com/news) | ❌ 403 al fetch, nessun feed noto; news frequenti | rilancio manuale (committenze/mostre major) |
+| **Almine Rech** (alminerech.com) | ❌ nessun feed (verificato HTML: no rel=alternate) | rilancio manuale |
+| Designboom / Dezeen / ArchDaily / Artsy / Galerie / Archpaper | ✅/⚠ feed RSS → entrano come **fonti news** (batch `fontiAggiungiBatchDesignArte`, v4.27.42) | NON social wall: già coperte dal flusso news |
+
+**Nota API**: l'API pubblica di Artsy (api.artsy.net) richiede credenziali e non è più aperta a
+nuovi utenti generici → si usa il feed RSS `artsy.net/rss/news`. Il Sole 24 Ore EN espone un
+indice RSS completo (`en.ilsole24ore.com/rss`) — è di fatto la sua "API" gratuita.
+
+---
+
 ## C. Account Sinopia (futuri)
 Da aggiungere quando attivati (blog/Mastodon = feed; IG/LinkedIn = rilancio manuale o API owned). Tipo: `sinopia`.
 

@@ -61,7 +61,9 @@ var OC_CRON_EXTRA = [
   // [ri-innestato v4.27.6: perso nel clobber tra sessioni parallele]
   { fn: 'podcastAuditMensile',   tipo: 'monthdays', giorniMese: [1], ora: 9, desc: 'Audit mensile fonti podcast/video mute (email)' },
   // Attivazione una tantum fonti podcast+social (auto-disabilita dopo il 1° run)
-  { fn: 'discoveryAutoSeedOnce',  tipo: 'daily', ora: 8, desc: 'Attiva una tantum le nuove fonti podcast + social' }
+  { fn: 'discoveryAutoSeedOnce',  tipo: 'daily', ora: 8, desc: 'Attiva una tantum le nuove fonti podcast + social' },
+  // v4.27.42 — attivazione una tantum fonti design/arte internazionale (segnalazione 2026-07)
+  { fn: 'fontiDesignArteSeedOnce', tipo: 'daily', ora: 8, desc: 'Attiva una tantum le fonti design & arte internazionale' }
 ];
 
 /** Schedule consolidato = approvato (SetupMaster) + nuovi. */
