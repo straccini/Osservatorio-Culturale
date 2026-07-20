@@ -698,10 +698,10 @@ function doPost(e) {
         return jsonOk(deleteArchiviato(body));
       case 'deleteArchivioBulk':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(deleteArchivioBulk(body.ids||[]));
+        return jsonOk(deleteArchivioBulk(body.ids||[], body.token));
       case 'deleteArchivioTutto':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(deleteArchivioTutto());
+        return jsonOk(deleteArchivioTutto(body.token));
 
       // Scanner
       case 'runScanner':

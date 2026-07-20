@@ -190,14 +190,26 @@ function toggleSaved(tipo, id) {
 // Per items: Archiviato = true. Per podcast: StatoRecord = 'archiviato'.
 // ============================================================================
 
-function archive(tipo, id) {
-  // Role guard: richiede almeno lettore (livello >= 1)
+// v4.27.45 — Gate redazione: archiviare/cestinare/ripristinare è GESTIONE
+// RISORSE, riservata a redattori (livello 2) e admin (livello 3). Il token di
+// sessione arriva dal frontend (_tok_()); fallback su _isCurrentUserAdmin_
+// per l'esecuzione dall'editor GAS (Session attiva).
+function _wfIsEditorOrAdmin_(token) {
   try {
-    var _u = getCurrentUser_v44();
-    if (!_u || _u.ruolo === 'guest' || _u.ruolo === 'anonimo' || _u.ruolo === 'ospite') {
-      return { error: 'Azione riservata agli utenti registrati' };
+    if (typeof getRuoloCorrente === 'function') {
+      var r = getRuoloCorrente(token || null);
+      if (r && Number(r.livello) >= 2) return true;
     }
   } catch(e) {}
+  try { if (typeof _isCurrentUserAdmin_ === 'function' && _isCurrentUserAdmin_(token || null)) return true; } catch(e2) {}
+  return false;
+}
+
+function archive(tipo, id, token) {
+  // v4.27.45 — solo redattori/admin (prima bastava essere registrati)
+  if (!_wfIsEditorOrAdmin_(token)) {
+    return { ok:false, error: 'Azione riservata a redattori e amministratori' };
+  }
   try {
     var c = _wfConfig_(tipo);
 
@@ -228,14 +240,11 @@ function archive(tipo, id) {
 // Ripristina un record archiviato (lo riporta ATTIVO/non-archiviato).
 // ============================================================================
 
-function restore(tipo, id) {
-  // Role guard: richiede almeno lettore (livello >= 1)
-  try {
-    var _u = getCurrentUser_v44();
-    if (!_u || _u.ruolo === 'guest' || _u.ruolo === 'anonimo' || _u.ruolo === 'ospite') {
-      return { error: 'Azione riservata agli utenti registrati' };
-    }
-  } catch(e) {}
+function restore(tipo, id, token) {
+  // v4.27.45 — solo redattori/admin (gestione risorse)
+  if (!_wfIsEditorOrAdmin_(token)) {
+    return { ok:false, error: 'Azione riservata a redattori e amministratori' };
+  }
   try {
     var c = _wfConfig_(tipo);
 

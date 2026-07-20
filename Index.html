@@ -5016,11 +5016,14 @@
     if (typeof _ocLivello === 'function' && _ocLivello() < 1) return '';
     var cfg = _CARD_CFG[tipo] || _CARD_CFG.item;
     var wt = cfg.wfTipo, eid = esc(String(id));
+    // v4.27.45 — GESTIONE RISORSE (Archivia/Cestina) solo per redattori e admin
+    // (livello >= 2). Letto e Salva restano per tutti i registrati.
+    var canManage = typeof _ocLivello === 'function' && _ocLivello() >= 2;
     return '<div class="br-acts">'
       + '<button class="br-act br-act-read" onclick="event.stopPropagation();OC.markItemRead(\'' + wt + '\',\'' + eid + '\',this)">&#10003;&nbsp;' + cfg.readLabel + '</button>'
       + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai salvati' : 'Salva') + '" onclick="event.stopPropagation();OC.saveCard(\'' + wt + '\',\'' + eid + '\',this)">' + (salvato ? '&#9733; Salvato' : '&#9734; Salva') + '</button>'
-      + '<button class="br-act br-act-arch" onclick="event.stopPropagation();OC.archiveItem(\'' + wt + '\',\'' + eid + '\',this)">&#8659;&nbsp;Arch.</button>'
-      + (cfg.hasTrash ? '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'' + wt + '\',\'' + eid + '\',this)">&#128465;&nbsp;Cestina</button>' : '')
+      + (canManage ? '<button class="br-act br-act-arch" onclick="event.stopPropagation();OC.archiveItem(\'' + wt + '\',\'' + eid + '\',this)">&#8659;&nbsp;Arch.</button>' : '')
+      + (canManage && cfg.hasTrash ? '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'' + wt + '\',\'' + eid + '\',this)">&#128465;&nbsp;Cestina</button>' : '')
       + '</div>';
   }
 
@@ -8579,7 +8582,7 @@
         else { alert('Errore archiviazione: ' + (r && r.error || 'sconosciuto')); }
       })
       .withFailureHandler(function(e){ alert('Errore: '+e); })
-      .archive(tipo, id);
+      .archive(tipo, id, _tok_());
   }
 
   function deleteCard(tipo, id) {
@@ -8591,7 +8594,7 @@
         else { alert('Errore eliminazione: ' + (r && r.error || 'sconosciuto')); }
       })
       .withFailureHandler(function(e){ alert('Errore: '+e); })
-      .archive(tipo, id);  // archive prima, poi user puo restore o delete da foglio
+      .archive(tipo, id, _tok_());  // archive prima, poi user puo restore o delete da foglio
   }
 
   function runAutoArchive() {
@@ -9949,7 +9952,7 @@
                   }
                 })
                 .withFailureHandler(function(){})
-                .restore(tipo, id);
+                .restore(tipo, id, _tok_());
             }
           });
         } else {
@@ -9957,7 +9960,7 @@
         }
       })
       .withFailureHandler(function(e){ showToast('Errore: ' + (e.message || e), 'err'); })
-      .archive(tipo, id);
+      .archive(tipo, id, _tok_());
   }
 
   function trashItem(tipo, id, el) {
@@ -9986,7 +9989,7 @@
         }
       })
       .withFailureHandler(function(e){ showToast('Errore: ' + (e.message || e), 'err'); })
-      .archive(tipo, id);
+      .archive(tipo, id, _tok_());
   }
 
   function markItemRead(tipo, id, el) {
@@ -10936,8 +10939,11 @@
     var badge   = it.fonte || it.ente || it.serie || it.canale || it.editore || '';
     var sub     = it.sommario ? esc(trunc(it.sommario, 120)) : '';
     var meta    = it.data || it.anno || '';
-    var restoreBtn = '<button class="act-btn" onclick="OC.restoreFromArchivio(\''
-      + esc(tipo) + '\',\'' + esc(it.id) + '\',this)" title="Ripristina">&#8593; Ripristina</button>';
+    // v4.27.45 — Ripristina dall'archivio solo per redattori/admin
+    var restoreBtn = (typeof _ocLivello === 'function' && _ocLivello() >= 2)
+      ? '<button class="act-btn" onclick="OC.restoreFromArchivio(\''
+        + esc(tipo) + '\',\'' + esc(it.id) + '\',this)" title="Ripristina">&#8593; Ripristina</button>'
+      : '';
     var titleHtml = link
       ? '<h4 class="br-title"><a href="' + link + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none" onclick="event.stopPropagation()">' + titolo + '</a></h4>'
       : '<h4 class="br-title">' + titolo + '</h4>';
@@ -11021,7 +11027,7 @@
         } else { showToast('Errore ripristino', 'err'); }
       })
       .withFailureHandler(function(e){ showToast('Errore: ' + (e.message || e), 'err'); })
-      .restore(tipo, id);
+      .restore(tipo, id, _tok_());
   }
 
   // v4.20 — emptyTrash disabilitato: il cestino client-only è deprecato
@@ -11271,9 +11277,13 @@
     var _isSalv  = !!d.salvato;
     html += '<button class="act-btn act-read" onclick="OC.markItemRead(\''+esc(_wfTipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()">'+_readLbl+'</button>';
     html += '<button class="act-btn act-save'+(_isSalv?' act-save-on':'')+'" title="'+(_isSalv?'Rimuovi dai preferiti':'Salva nei preferiti')+'" onclick="OC.saveCard(\''+esc(_wfTipo)+'\',\''+esc(String(d.id))+'\',this)">' + (_isSalv ? '★ Salvato' : '☆ Salva') + '</button>';
-    html += '<button class="act-btn act-archive" onclick="OC.archiveItem(\''+esc(_wfTipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()">⇓ Archivia</button>';
-    if (tipo !== 'libro') {
-      html += '<button class="act-btn act-trash" onclick="OC.trashItem(\''+esc(_wfTipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()"> Cestino</button>';
+    // v4.27.45 — Archivia/Cestino nell'overlay solo per redattori e admin
+    var _canMg = typeof _ocLivello === 'function' && _ocLivello() >= 2;
+    if (_canMg) {
+      html += '<button class="act-btn act-archive" onclick="OC.archiveItem(\''+esc(_wfTipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()">⇓ Archivia</button>';
+      if (tipo !== 'libro') {
+        html += '<button class="act-btn act-trash" onclick="OC.trashItem(\''+esc(_wfTipo)+'\',\''+esc(String(d.id))+'\',null);OC.closeDetail()"> Cestino</button>';
+      }
     }
     html += '</div>';
 

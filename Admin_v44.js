@@ -169,7 +169,14 @@ function _generateDigestDraftCore_(opts) {
   var video = maxVideo > 0 ? _safeCall_(function(){ return getVideoListV42(maxVideo); }, []) : [];
   var libri = maxLibri > 0 ? _safeCall_(function(){ return getLibriListV42(maxLibri); }, []) : [];
 
-  var news = (bandiUrg && bandiUrg.news) ? bandiUrg.news.slice(0, maxNews) : [];
+  // v4.27.45 — le segnalazioni promosse in Items (fonte 'Community', ID COMM-*)
+  // NON entrano nella sezione News del digest: la community compare SOLO nel
+  // blocco dedicato (ultima segnalazione non ancora pubblicata, vedi sotto).
+  var _noCommunity = function(n){
+    return String(n.fonte || n.Fonte || '') !== 'Community'
+      && !/^COMM-/i.test(String(n.id || n.ID || ''));
+  };
+  var news = (bandiUrg && bandiUrg.news) ? bandiUrg.news.filter(_noCommunity).slice(0, maxNews) : [];
   var pod  = (bandiUrg && bandiUrg.podcast) ? bandiUrg.podcast.slice(0, maxPodcast) : [];
   var urg  = (bandiUrg && bandiUrg.bandiUrgenti) ? bandiUrg.bandiUrgenti.slice(0, maxBandi) : [];
 

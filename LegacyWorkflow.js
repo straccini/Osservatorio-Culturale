@@ -58,6 +58,9 @@ function ripristinaRecord(body) {
  *   Lavora sul foglio RADAR BANDI legacy v4.
  */
 function deleteArchiviato(body) {
+  // v4.27.45 — cancellazione definitiva: solo redattori/admin. Chiudeva un bypass:
+  // la funzione era chiamabile via google.script.run saltando i gate del doPost.
+  if (typeof _wfIsEditorOrAdmin_ === 'function' && !_wfIsEditorOrAdmin_(body && body.token)) return { error:'Azione riservata a redattori e amministratori' };
   const sheet=getSheetRadar();
   const rowIndex=parseInt((body.id||'').replace('r',''));
   if(!rowIndex||isNaN(rowIndex)) return {error:'ID non valido'};
@@ -71,7 +74,9 @@ function deleteArchiviato(body) {
  * @deprecated v4.18.40 — Usare API unificata di Workflow_unified.js (archive/restore bulk).
  *   Lavora sul foglio RADAR BANDI legacy v4.
  */
-function deleteArchivioBulk(ids) {
+function deleteArchivioBulk(ids, token) {
+  // v4.27.45 — solo redattori/admin (bypass google.script.run chiuso)
+  if (typeof _wfIsEditorOrAdmin_ === 'function' && !_wfIsEditorOrAdmin_(token)) return { error:'Azione riservata a redattori e amministratori' };
   if(!ids||!ids.length) return {error:'Nessun ID'};
   const sheet=getSheetRadar();
   const rowIndices=ids.map(id=>parseInt(id.replace('r',''))).filter(n=>!isNaN(n)&&n>1);
@@ -90,7 +95,9 @@ function deleteArchivioBulk(ids) {
  * @deprecated v4.18.40 — Usare autoDeleteVeryOld('bando', soglia_mesi) in Workflow_unified.js.
  *   Lavora sul foglio RADAR BANDI legacy v4.
  */
-function deleteArchivioTutto() {
+function deleteArchivioTutto(token) {
+  // v4.27.45 — solo redattori/admin (bypass google.script.run chiuso)
+  if (typeof _wfIsEditorOrAdmin_ === 'function' && !_wfIsEditorOrAdmin_(token)) return { error:'Azione riservata a redattori e amministratori' };
   const sheet=getSheetRadar();
   const lastRow=sheet.getLastRow();
   if(lastRow<2) return {ok:true, deleted:0};
@@ -159,7 +166,9 @@ function archiviaNotizieOlderThan(giorni) {
 /**
  * @deprecated v4.18.40 — Usare autoDeleteVeryOld('news', soglia_mesi) in Workflow_unified.js.
  */
-function eliminaArchiviatiTutti() {
+function eliminaArchiviatiTutti(token) {
+  // v4.27.45 — solo redattori/admin (bypass google.script.run chiuso)
+  if (typeof _wfIsEditorOrAdmin_ === 'function' && !_wfIsEditorOrAdmin_(token)) return { error:'Azione riservata a redattori e amministratori' };
   const sh = getMainSS().getSheetByName(SH.ITEMS);
   if (!sh || sh.getLastRow() < 2) return {ok:true, eliminati:0};
   const rows=sh.getDataRange().getValues(), h=rows[0];
