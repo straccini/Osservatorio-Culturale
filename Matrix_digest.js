@@ -104,14 +104,19 @@ function generateDigestForUser(email, responseId, opts) {
 
     topDims.forEach(function(dim) {
       var rawBandi = _queryContenutiPerDim_('bandi', dim, 6).filter(function(b) { return _crossDedupExact(b, _seenBandi); });
+      // v4.27.48 — anti-ripetizione coorte 'matrix' + coerenza tipologica bandi
+      if (typeof ddTipoCoerente === 'function') rawBandi = rawBandi.filter(function(b){ return ddTipoCoerente('bando', b); });
+      if (typeof ddFilterNotSent === 'function') rawBandi = ddFilterNotSent('matrix', 'bando', rawBandi);
       _allBandiAccum = _allBandiAccum.concat(rawBandi);
       bandiByDim[dim] = rawBandi.slice(0, 4);
 
       var rawNews = _queryContenutiPerDim_('items', dim, 5).filter(function(n) { return _crossDedupExact(n, _seenNews); });
+      if (typeof ddFilterNotSent === 'function') rawNews = ddFilterNotSent('matrix', 'news', rawNews);
       _allNewsAccum = _allNewsAccum.concat(rawNews);
       newsByDim[dim] = rawNews.slice(0, 3);
 
       var rawPod = _queryContenutiPerDim_('podcast', dim, 4).filter(function(p) { return _crossDedupExact(p, _seenPodcast); });
+      if (typeof ddFilterNotSent === 'function') rawPod = ddFilterNotSent('matrix', 'podcast', rawPod);
       _allPodAccum = _allPodAccum.concat(rawPod);
       podcastByDim[dim] = rawPod.slice(0, 2);
     });
@@ -162,6 +167,23 @@ function generateDigestForUser(email, responseId, opts) {
     // Salva in DigestQueue solo se richiesto (default sì, per generateDigestQueueAll).
     // Invio diretto coorte B e anteprima passano {save:false} → niente bozza spuria.
     var queueId = null;
+    // v4.27.48 — registra i contenuti effettivamente mostrati verso la coorte
+    // 'matrix'. Avviene alla generazione (la coda viene inviata subito dopo dal
+    // flusso bulk) o su invio diretto (opts.markSent=true dal routing coorte B).
+    // Il filtro usa lo snapshot di INIZIO esecuzione → gli utenti dello stesso
+    // run condividono lo stesso bacino di contenuti. Le anteprime/test
+    // (save:false senza markSent) NON registrano nulla.
+    if ((opts.save !== false || opts.markSent === true) && typeof ddMarkSent === 'function') {
+      try {
+        var _ddB = [], _ddN = [], _ddP = [];
+        topDims.forEach(function(dim) {
+          _ddB = _ddB.concat(bandiByDim[dim] || []);
+          _ddN = _ddN.concat(newsByDim[dim] || []);
+          _ddP = _ddP.concat(podcastByDim[dim] || []);
+        });
+        ddMarkSent('matrix', { bando: _ddB, news: _ddN, podcast: _ddP });
+      } catch(eDD) { Logger.log('[MatrixDigest] registro non aggiornato: ' + eDD.message); }
+    }
     if (opts.save !== false) {
       queueId = _saveDigestQueueRow_({
         Email: email,

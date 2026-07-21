@@ -96,6 +96,7 @@ function _sendForAgent_(agenteId, opts) {
     // 2. Per ogni destinatario, calcola contenuti rilevanti e invia
     var inviati = 0, errori = 0;
     var deliverySheet = opts.dryRun ? null : _getOrCreateDeliverySheet_();
+    var _ddAgentItems = []; // v4.27.48 — contenuti effettivamente inviati nel run (per il registro)
 
     destinatari.forEach(function(dest) {
       try {
@@ -104,6 +105,12 @@ function _sendForAgent_(agenteId, opts) {
           return;
         }
         var relevant = getRelevantContent(dest.email, agenteId, agent.maxContenuti || 10);
+        // v4.27.48 — ANTI-RIPETIZIONE coorte 'profilati': via i contenuti già
+        // usciti nelle email profilate (lo snapshot è unico per il run, quindi
+        // tutti i destinatari di questo giro vedono lo stesso bacino).
+        if (relevant && relevant.ok && typeof ddFilterNotSent === 'function') {
+          relevant.items = ddFilterNotSent('profilati', 'item', relevant.items);
+        }
         if (!relevant.ok || relevant.items.length === 0) return;
 
         var html = _buildAgentEmailHtml_(agent, relevant.items, dest, relevant.museo);
@@ -131,6 +138,7 @@ function _sendForAgent_(agenteId, opts) {
           if (typeof crm_recordEvent === 'function') {
             crm_recordEvent(dest.responseId || dest.email, 'digest_sent', 1, { agente: agent.codice });
           }
+          _ddAgentItems = _ddAgentItems.concat(relevant.items); // v4.27.48
         }
         inviati++;
       } catch(eMail) {
@@ -141,6 +149,12 @@ function _sendForAgent_(agenteId, opts) {
         }
       }
     });
+
+    // v4.27.48 — registra nel registro DigestInviati i contenuti usciti verso
+    // la coorte 'profilati' (marcatura a fine run, una sola volta).
+    if (!opts.dryRun && _ddAgentItems.length && typeof ddMarkSent === 'function') {
+      try { ddMarkSent('profilati', { item: _ddAgentItems }); } catch(eDD) { Logger.log('[AgentDigest] registro non aggiornato: ' + eDD.message); }
+    }
 
     var elapsed = Date.now() - t0;
     Logger.log('  ' + agent.codice + ' completato: ' + inviati + ' inviati, ' + errori + ' errori (' + Math.round(elapsed / 1000) + 's)');

@@ -279,6 +279,14 @@ function sendDigestAuto2coorti(opts) {
     // (bandi/news/podcast per dimensione) e devono partire comunque.
     var hasItems = itemIds.length > 0;
     var items = hasItems ? getItemsByIds(itemIds) : [];
+    // v4.27.48 — ANTI-RIPETIZIONE coorte 'generalista': via le news già uscite
+    // (registro DigestInviati, condiviso con la newsletter draft admin).
+    if (typeof ddFilterNotSent === 'function' && items.length) {
+      var _preDD = items.length;
+      items = ddFilterNotSent('generalista', 'news', items);
+      if (items.length < _preDD) Logger.log('[DIGEST] dedup registro: ' + (_preDD - items.length) + ' item già usciti esclusi');
+      hasItems = items.length > 0;
+    }
     if (!hasItems) Logger.log('sendDigestAuto2coorti: nessuna news inclusa — invio solo digest Matrix personalizzati.');
 
     // 2. Recipients per coorte
@@ -348,7 +356,8 @@ function sendDigestAuto2coorti(opts) {
           var html, subject;
           if (lead.matrixCompletato && lead.responseId && typeof generateDigestForUser === 'function') {
             // Layout 1: digest personalizzato Matrix + contenuti agenti (v4.25: unificato)
-            var res = generateDigestForUser(lead.email, lead.responseId, { save:false, includeAgentContent: !!opts.includeAgentContent });
+            // v4.27.48 — markSent: l'invio è immediato qui sotto → registra i contenuti (coorte matrix)
+            var res = generateDigestForUser(lead.email, lead.responseId, { save:false, markSent: !opts.dryRun, includeAgentContent: !!opts.includeAgentContent });
             if (res && res.ok && res.html) {
               html = res.html;
               subject = 'Sinopia · Il tuo digest personalizzato sui contenuti del tuo museo';
@@ -407,6 +416,15 @@ function sendDigestAuto2coorti(opts) {
       for (var ri = 1; ri < rows.length; ri++) {
         if (itemIds.indexOf(rows[ri][idCol]) >= 0) sh.getRange(ri+1, digCol+1).setValue(false);
       }
+    }
+    // v4.27.48 — registra nel registro DigestInviati le news uscite:
+    // coorte 'generalista' se le ha ricevute la coorte A; coorte 'profilati'
+    // se sono finite nei layout tematico/fallback dei lead.
+    if (!opts.dryRun && typeof ddMarkSent === 'function' && items.length) {
+      try {
+        if (report.generalisti_inviati > 0) ddMarkSent('generalista', { news: items });
+        if ((report.leadCaldi_tematici + report.leadCaldi_fallback) > 0) ddMarkSent('profilati', { news: items });
+      } catch(eDD) { Logger.log('[DIGEST] registro non aggiornato: ' + eDD.message); }
     }
 
     // 6. Log esecuzione su DigestLog

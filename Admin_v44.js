@@ -229,6 +229,24 @@ function _generateDigestDraftCore_(opts) {
     bandiNew = bandiNew.filter(function(b){ return String(b.ambito||b.ambitoId||'') === ambito; });
   }
 
+  // v4.27.48 — COERENZA TIPOLOGICA: fuori dalle liste bandi ciò che non ha
+  // natura di bando (report/pubblicazioni/eventi scambiati per bandi).
+  if (typeof ddTipoCoerente === 'function') {
+    urg      = urg.filter(function(b){ return ddTipoCoerente('bando', b); });
+    bandiNew = bandiNew.filter(function(b){ return ddTipoCoerente('bando', b); });
+  }
+  // v4.27.48 — ANTI-RIPETIZIONE coorte 'generalista': una risorsa già uscita
+  // nella newsletter generalista non deve più uscirci (registro DigestInviati,
+  // marcato a invio riuscito in adminConfirmSendWithToken).
+  if (typeof ddFilterNotSent === 'function') {
+    urg      = ddFilterNotSent('generalista', 'bando',   urg);
+    bandiNew = ddFilterNotSent('generalista', 'bando',   bandiNew);
+    news     = ddFilterNotSent('generalista', 'news',    news);
+    pod      = ddFilterNotSent('generalista', 'podcast', pod);
+    video    = ddFilterNotSent('generalista', 'video',   video);
+    libri    = ddFilterNotSent('generalista', 'libro',   libri);
+  }
+
   // 2) Oggetto draft
   var now    = new Date();
   var id     = 'DR' + Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
@@ -404,6 +422,19 @@ function adminConfirmSendWithToken(draftId, authToken) {
       _p.setProperty('OC_DIGEST_SEGN_SENT', JSON.stringify(_sent.slice(-50)));
     } catch(eSg) { warn.push('memoria segnalazione non salvata: ' + eSg.message); }
   }
+  // v4.27.48 — registra nel registro DigestInviati le risorse uscite verso la
+  // coorte 'generalista' (dal prossimo draft non verranno più riproposte).
+  try {
+    if (typeof ddMarkSent === 'function') {
+      ddMarkSent('generalista', {
+        bando:   (draft.bandiUrgenti || []).concat(draft.bandiRecenti || []),
+        news:    draft.news    || [],
+        podcast: draft.podcast || [],
+        video:   draft.video   || [],
+        libro:   draft.libri   || []
+      });
+    }
+  } catch(eDD) { warn.push('registro digest non aggiornato: ' + eDD.message); }
   try {
     PropertiesService.getScriptProperties().setProperty(OC_DRAFT_PROP_PFX_ + draftId, JSON.stringify(draft));
   } catch(eP) { warn.push('stato bozza non salvato: ' + eP.message); }

@@ -78,6 +78,8 @@ function adminRunTool(tool, token) {
 
       // ── Diagnostica / test (non scrivono nulla) ──────────────────────────
       case 'gateSelfTest':       r = bandiGateSelfTest(); break;
+      case 'ddSelfTest':         r = ddSelfTest(); break;                 // registro anti-ripetizione digest
+      case 'ddPrune':            r = ddPrune(180); break;                 // pulizia registro (manuale)
       case 'lavoroSelfTest':     r = lavoroCulturaSelfTest(); break;
       case 'normeSelfTest':      r = normeCulturaSelfTest(); break;
       case 'runAllTests':        r = ocRunAllTests(); break;

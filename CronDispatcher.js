@@ -68,7 +68,9 @@ var OC_CRON_EXTRA = [
   // v4.27.42 — attivazione una tantum fonti design/arte internazionale (segnalazione 2026-07)
   { fn: 'fontiDesignArteSeedOnce', tipo: 'daily', ora: 8, desc: 'Attiva una tantum le fonti design & arte internazionale' },
   // v4.27.47 — attivazione una tantum canali video internazionali (Louisiana, ARoS, MoMA, Tate)
-  { fn: 'videoIntlSeedOnce', tipo: 'daily', ora: 8, desc: 'Attiva una tantum i canali video internazionali' }
+  { fn: 'videoIntlSeedOnce', tipo: 'daily', ora: 8, desc: 'Attiva una tantum i canali video internazionali' },
+  // v4.27.48 — pulizia mensile registro anti-ripetizione digest (righe >180gg)
+  { fn: 'ddPrune', tipo: 'monthdays', giorniMese: [1], ora: 4, desc: 'Pulizia registro DigestInviati (>180gg)' }
 ];
 
 /** Schedule consolidato = approvato (SetupMaster) + nuovi. */
