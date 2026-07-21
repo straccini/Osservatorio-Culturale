@@ -45,6 +45,9 @@ function adminRunTool(tool, token) {
       case 'podcastAttivi':      r = podcastAggiungiBatchAttivi(); break;    // podcast internazionali attivi (rianimazione +0/30gg)
       case 'socialEditoriale':   r = generateSocialDraftFromEditoriale({ force: true }); break; // editoriale → coda social (manuale)
       case 'rassegnaTop':        r = rassegnaTopNews(); break;               // referenze multi-fonte delle top news
+      case 'socialStato':        r = socialStatoCanali(); break;             // stato canali IG/LI + ponte
+      case 'socialPubblica':     r = socialPubblicaApprovati({ cap: 3 }); break; // pubblica/ponte i post approvati
+      case 'socialPonte':        r = socialPubblicaApprovati({ cap: 3, soloPonte: true }); break; // solo ponte Telegram
       case 'fontiPodcast':       r = fontiAggiungiBatchPodcast(); break;   // Tappa P
       case 'fontiSocial':        r = fontiAggiungiBatchSocial(); break;    // Tappa 4
       case 'fontiPodcastSocial': r = { podcast: fontiAggiungiBatchPodcast(), social: fontiAggiungiBatchSocial() }; break; // entrambe in 1 clic (idempotente)

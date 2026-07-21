@@ -72,7 +72,11 @@ var OC_CRON_EXTRA = [
   // v4.27.48 — pulizia mensile registro anti-ripetizione digest (righe >180gg)
   { fn: 'ddPrune', tipo: 'monthdays', giorniMese: [1], ora: 4, desc: 'Pulizia registro DigestInviati (>180gg)' },
   // v4.27.50 — attivazione una tantum podcast attivi (The Week in Art, Talk Art)
-  { fn: 'podcastAttiviSeedOnce', tipo: 'daily', ora: 8, desc: 'Attiva una tantum i podcast internazionali attivi' }
+  { fn: 'podcastAttiviSeedOnce', tipo: 'daily', ora: 8, desc: 'Attiva una tantum i podcast internazionali attivi' },
+  // v4.27.52 — social: i post APPROVATI in coda vengono pubblicati (se le API
+  // sono configurate) o inoltrati pronti su Telegram (ponte). Mar+ven 10:00.
+  { fn: 'socialPubblicaApprovati', tipo: 'weekly', giorno: ScriptApp.WeekDay.TUESDAY, ora: 10, desc: 'Social: pubblica/inoltra i post approvati (martedì)' },
+  { fn: 'socialPubblicaApprovati', tipo: 'weekly', giorno: ScriptApp.WeekDay.FRIDAY,  ora: 10, desc: 'Social: pubblica/inoltra i post approvati (venerdì)' }
 ];
 
 /** Schedule consolidato = approvato (SetupMaster) + nuovi. */
