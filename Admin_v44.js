@@ -435,6 +435,12 @@ function adminConfirmSendWithToken(draftId, authToken) {
       });
     }
   } catch(eDD) { warn.push('registro digest non aggiornato: ' + eDD.message); }
+  // v4.27.51 — EDITORIALE → SOCIAL: alla partenza della newsletter l'editoriale
+  // è definitivo → genera la bozza IG+LinkedIn in SocialQueue (idempotente per
+  // settimana; approvazione admin nella Coda social prima di ogni pubblicazione).
+  try {
+    if (typeof generateSocialDraftFromEditoriale === 'function') generateSocialDraftFromEditoriale({ auto: true });
+  } catch(eSoc) { warn.push('bozza social editoriale non creata: ' + eSoc.message); }
   try {
     PropertiesService.getScriptProperties().setProperty(OC_DRAFT_PROP_PFX_ + draftId, JSON.stringify(draft));
   } catch(eP) { warn.push('stato bozza non salvato: ' + eP.message); }

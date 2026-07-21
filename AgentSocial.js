@@ -191,6 +191,23 @@ function generateNextSocialDraft(opts, token) {
       return { ok:false, error:'compose_fallito', news: news };
     }
 
+    // 3-bis. v4.27.51 — REFERENZE: rassegna stampa cross-fonte della notizia
+    // (richiesta Silvano 21/07: "le referenze e le fonti dei post più famosi",
+    // come la rassegna manuale del caso Turrell/ARoS). La riga "Ne parlano
+    // anche:" dà autorevolezza al post e mostra il lavoro dell'osservatorio.
+    try {
+      var rassegna = newsRassegnaStampa_(news.titolo, news.fonte, 45);
+      if (rassegna.length) {
+        var fontiR = rassegna.map(function(r){ return r.fonte; })
+          .filter(function(v, i, a){ return v && a.indexOf(v) === i; }).slice(0, 5);
+        if (fontiR.length) {
+          var lineaR = 'Ne parlano anche: ' + fontiR.join(' · ');
+          if (draft.postLi.length + lineaR.length + 2 < 3000) draft.postLi += '\n\n' + lineaR;
+          if (draft.captionIg.length + lineaR.length + 1 < 2200) draft.captionIg += '\n' + lineaR;
+        }
+      }
+    } catch(eR) { Logger.log('Social rassegna: ' + eR.message); }
+
     // 4. Estrai og:image
     var imageInfo = _extractOgImage_(news.url);
 
@@ -506,7 +523,7 @@ function _extractOgImage_(url) {
 // SCRITTURA SU SOCIAL QUEUE
 // ============================================================================
 
-function _writeDraftToQueue_(draftId, news, draft, imageInfo) {
+function _writeDraftToQueue_(draftId, news, draft, imageInfo, sourceTipo) {
   var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(SOCIAL_QUEUE_SHEET);
   if (!sh) {
@@ -526,7 +543,7 @@ function _writeDraftToQueue_(draftId, news, draft, imageInfo) {
     draftId,
     now,
     dataProg,
-    'news',
+    sourceTipo || 'news',   // v4.27.51 — anche 'editoriale'
     news.id,
     news.titolo,
     news.url,
@@ -566,6 +583,162 @@ function _sendSocialAlert_(draftId, news) {
       + 'Vai a Pannello admin → Coda social per approvare.';
     _tgSend_(msg);
   } catch(_){}
+}
+
+
+// ============================================================================
+// v4.27.51 — RASSEGNA STAMPA cross-fonte (le "referenze" dei post famosi)
+// ----------------------------------------------------------------------------
+// Data una notizia, cerca in Items (ultimi N giorni) le notizie che coprono la
+// STESSA storia da fonti DIVERSE (similarità Jaccard sulle parole significative
+// del titolo). È l'automazione della rassegna manuale del caso Turrell/ARoS.
+// ============================================================================
+
+function _rsWords_(titolo) {
+  var STOP = { il:1, lo:1, la:1, le:1, li:1, gli:1, un:1, una:1, uno:1, di:1, del:1, dei:1,
+    della:1, delle:1, dello:1, degli:1, da:1, dal:1, in:1, nel:1, nei:1, nella:1, nelle:1,
+    a:1, al:1, ai:1, alla:1, alle:1, con:1, su:1, sul:1, sulla:1, per:1, tra:1, fra:1,
+    e:1, ed:1, o:1, ma:1, che:1, piu:1, più:1,
+    the:1, of:1, and:1, for:1, to:1, an:1, on:1, at:1, by:1, with:1, its:1, his:1, her:1, new:1,
+    // stopword di DOMINIO: onnipresenti nel corpus dell'osservatorio, creerebbero
+    // falsi accostamenti tra storie diverse
+    museo:1, musei:1, museum:1, museums:1, museale:1, arte:1, art:1, mostra:1, mostre:1,
+    cultura:1, culturale:1, culturali:1, cultural:1, nuovo:1, nuova:1, grande:1, inside:1,
+    italia:1, italiano:1, italiana:1, italiani:1 };
+  return String(titolo || '').toLowerCase()
+    .replace(/[–—:;,.!?'’"«»()\[\]]/g, ' ')
+    .split(/\s+/)
+    .filter(function(w) { return w.length >= 3 && !STOP[w]; });
+}
+
+function _rsJaccard_(a, b) {
+  if (!a.length || !b.length) return { sim: 0, comuni: 0 };
+  var sb = {}; b.forEach(function(w){ sb[w] = true; });
+  var sa = {}, inter = 0;
+  a.forEach(function(w){ if (!sa[w]) { sa[w] = true; if (sb[w]) inter++; } });
+  var union = Object.keys(sa).length + Object.keys(sb).length - inter;
+  return { sim: union > 0 ? inter / union : 0, comuni: inter };
+}
+
+/**
+ * Rassegna stampa per un titolo: item simili da fonti DIVERSE.
+ * @return {Array<{fonte, titolo, url, sim}>} max 6, ordinati per similarità.
+ */
+function newsRassegnaStampa_(titolo, fonteEsclusa, giorni) {
+  giorni = Number(giorni) || 45;
+  var out = [];
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName((typeof SH !== 'undefined' && SH.ITEMS) || 'Items');
+    if (!sh || sh.getLastRow() < 2) return out;
+    var v = sh.getDataRange().getValues(); var h = v[0].map(String);
+    var iTit = h.indexOf('Titolo'), iFonte = h.indexOf('Fonte'), iUrl = h.indexOf('FonteURL'),
+        iData = h.indexOf('DataPubblicazione'), iArch = h.indexOf('Archiviato');
+    if (iTit < 0) return out;
+    var wRef = _rsWords_(titolo);
+    if (wRef.length < 2) return out;
+    var cutoff = Date.now() - giorni * 86400000;
+    var fLc = String(fonteEsclusa || '').toLowerCase().trim();
+    var perFonte = {}; // tiene il match migliore per fonte
+    for (var r = 1; r < v.length; r++) {
+      if (iArch >= 0 && (v[r][iArch] === true || String(v[r][iArch]).toUpperCase() === 'TRUE')) continue;
+      var fonte = String(v[r][iFonte] || '').trim();
+      if (!fonte || fonte.toLowerCase() === fLc) continue;
+      var d = v[r][iData];
+      var dt = (d instanceof Date) ? d : (d ? new Date(d) : null);
+      if (dt && !isNaN(dt.getTime()) && dt.getTime() < cutoff) continue;
+      var j = _rsJaccard_(wRef, _rsWords_(v[r][iTit]));
+      // Stessa storia se: >=3 parole significative comuni (nomi propri: i titoli
+      // multilingua hanno Jaccard basso — caso Turrell: sim 0.18-0.33 ma 3-5
+      // parole comuni), oppure >=2 comuni con similarità complessiva decente.
+      if (!(j.comuni >= 3 || (j.comuni >= 2 && j.sim >= 0.3))) continue;
+      var fk = fonte.toLowerCase();
+      if (!perFonte[fk] || perFonte[fk].sim < j.sim) {
+        perFonte[fk] = { fonte: fonte, titolo: String(v[r][iTit] || ''), url: String(iUrl >= 0 ? v[r][iUrl] || '' : ''), sim: Math.round(j.sim * 100) / 100 };
+      }
+    }
+    out = Object.keys(perFonte).map(function(k){ return perFonte[k]; });
+    out.sort(function(a, b){ return b.sim - a.sim; });
+    out = out.slice(0, 6);
+  } catch(e) { Logger.log('[rassegna] ' + e.message); }
+  return out;
+}
+
+/**
+ * DIAGNOSTICA admin: rassegna stampa delle top-5 news per score degli ultimi
+ * 7 giorni — per vedere quali storie hanno copertura multi-fonte.
+ */
+function rassegnaTopNews() {
+  var rep = { ok: true, storie: [] };
+  try {
+    var news = (typeof getNewsListV42 === 'function') ? getNewsListV42(400) : [];
+    var cutoff = Date.now() - 7 * 86400000;
+    var recenti = (news || []).filter(function(n) {
+      var d = n.data ? new Date(n.data) : null;
+      return d && !isNaN(d.getTime()) && d.getTime() >= cutoff;
+    });
+    recenti.sort(function(a, b){ return Number(b.score || 0) - Number(a.score || 0); });
+    recenti.slice(0, 5).forEach(function(n) {
+      var ras = newsRassegnaStampa_(n.titolo, n.fonte, 45);
+      rep.storie.push({ titolo: n.titolo, fonte: n.fonte, score: n.score,
+        referenze: ras.map(function(r){ return r.fonte + ' (' + r.sim + ')'; }) });
+    });
+  } catch(e) { rep.ok = false; rep.error = e.message; }
+  Logger.log('[rassegnaTopNews] ' + JSON.stringify(rep, null, 2));
+  return rep;
+}
+
+
+// ============================================================================
+// v4.27.51 — EDITORIALE → CODA SOCIAL (IG + LinkedIn)
+// ----------------------------------------------------------------------------
+// Richiesta Silvano 21/07: gli editoriali vanno pubblicati sui social come
+// predisposto (Layer 1+2 esistenti). Questa funzione genera la bozza social
+// dall'editoriale APPROVATO corrente e la mette in SocialQueue (stato draft →
+// approvazione admin → pubblicazione col Layer 3 quando attivo).
+// Idempotente per settimana (SourceId 'ED-<settimana>'). Viene chiamata
+// automaticamente alla partenza della newsletter (adminConfirmSendWithToken).
+// ============================================================================
+function generateSocialDraftFromEditoriale(opts) {
+  opts = opts || {};
+  try {
+    if (typeof getEditorialeCorrente !== 'function') return { ok: false, error: 'modulo editoriale assente' };
+    var ed = getEditorialeCorrente();
+    if (!ed || !ed.testo) return { ok: true, motivo: 'nessun_editoriale_approvato' };
+
+    var srcId = 'ED-' + (ed.settimana || String(ed.titolo || '').toLowerCase().replace(/\W+/g, '').substring(0, 40));
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName(SOCIAL_QUEUE_SHEET);
+    if (sh && sh.getLastRow() > 1) {
+      var v = sh.getDataRange().getValues(); var h = v[0];
+      var iSid = h.indexOf('SourceId');
+      for (var r = 1; r < v.length; r++) {
+        if (String(v[r][iSid]) === srcId) return { ok: true, motivo: 'gia_in_coda', draftId: String(v[r][0]) };
+      }
+    }
+
+    var pseudo = {
+      id: srcId,
+      titolo: ed.titolo || 'Editoriale della settimana',
+      sommario: String(ed.testo || '').replace(/\s+/g, ' ').substring(0, 900),
+      fonte: 'Editoriale Sinopia' + (ed.firma ? (' · ' + ed.firma) : ''),
+      tematica: 'identita',
+      ambito: 1,
+      url: 'https://' + _getSocialDomain_()
+    };
+    var draft = _composeSocialDraft_(pseudo);
+    if (!draft || !draft.captionIg || !draft.postLi) return { ok: false, error: 'compose_fallito' };
+
+    var imageInfo = { imageUrl: ed.foto || '', imageSource: ed.foto ? 'editoriale' : 'none' };
+    var draftId = 'SE' + new Date().getTime();
+    _writeDraftToQueue_(draftId, pseudo, draft, imageInfo, 'editoriale');
+    _sendSocialAlert_(draftId, { titolo: pseudo.titolo, tematica: 'editoriale', fonte: pseudo.fonte });
+    Logger.log('✓ Social draft EDITORIALE creato: ' + draftId + ' · ' + pseudo.titolo.substring(0, 60));
+    return { ok: true, draftId: draftId, titolo: pseudo.titolo, hasImage: !!ed.foto };
+  } catch(e) {
+    Logger.log('Social editoriale ERROR: ' + e.message);
+    return { ok: false, error: e.message };
+  }
 }
 
 
