@@ -1047,6 +1047,11 @@ function _parseFonteSitemap_(fonte) {
 function _saveBandoV5_(ss, shBandi, bandoRaw, fonteId, fonteNome, fingerprints) {
   var fp = _makeFingerprintV5_(bandoRaw.titolo, bandoRaw.urlBando);
   if (fingerprints[fp]) return false;   // duplicato
+  // v4.27.49 — gate d'ingresso: pubblicazioni/report/voci non-bando NON entrano
+  if (typeof bandoIngressoValido_ === 'function' && !bandoIngressoValido_(bandoRaw)) {
+    Logger.log('[saveBandoV5] scartato all\'ingresso (non-bando): ' + String(bandoRaw.titolo || '').slice(0, 80));
+    return false;
+  }
 
   var id = 'B5-' + new Date().getTime() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
   var ambito = _classificaAmbitoV5_(bandoRaw.settore, bandoRaw.titolo);

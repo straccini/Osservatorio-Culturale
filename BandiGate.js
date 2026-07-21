@@ -53,9 +53,15 @@ function _bandiUrlValido_(u) {
 // (soprattutto portali GAL): privacy, cookie, credits, "chi siamo", ecc.
 var _BANDO_JUNK_RE = /^\s*(accetto\s+privacy|informativa(?:\s+privacy)?|privacy(?:\s*[-–&]|\s+e\s+cookie|\s+policy|\s*$)|cookie|credits?\b|crediti\b|organizzazione\s*&?\s*soci|associarsi\b|diventa\s+socio|chi\s+siamo|contatti\b|dove\s+siamo|come\s+raggiungerci|mappa\s+del\s+sito|mappa\s+dei\s+finanziamenti|area\s+riservata|accedi\b|log\s*in|iscriviti\b|newsletter\b|note\s+legali|termini\s+e\s+condizioni|amministrazione\s+trasparente)/i;
 
+// v4.27.49 — Titoli con natura di PUBBLICAZIONE/REPORT/EVENTO, non di bando.
+// Casi reali dal report qualità del 21/07 (entrati e poi archiviati ogni
+// giorno dall'agente): 'Rapporto sociale 2024', 'Minicifre della cultura',
+// 'Performance dei Musei Civici', 'Aggiunti al Calendario di Timely'.
+var _BANDO_PUBBLICAZIONE_RE = /^\s*(rapporto\s|report\s+(annuale|sociale)\b|minicifre\b|newsletter\b|calendario\s|bilancio\s+(sociale|di\s+missione)\b|atti\s+del\b|aggiunti\s+al\b|performance\s+dei\b|programma\s+(annuale|culturale)\s*\d*\s*$)/i;
+
 /**
- * true se il record NON è un vero bando (voce di menu/legale/navigazione o
- * titolo che è di fatto un URL o un titolo vuoto).
+ * true se il record NON è un vero bando (voce di menu/legale/navigazione,
+ * titolo-URL, titolo vuoto o titolo con natura di pubblicazione/report).
  */
 function _bandiNonBando_(b) {
   var t = String((b && b.titolo) || '').trim();
@@ -63,7 +69,24 @@ function _bandiNonBando_(b) {
   if (/^https?:\/\//i.test(t)) return true;   // titolo = URL → voce di menu
   if (/\bgdpr\b/i.test(t)) return true;       // "... GDPR Compliance"
   if (_BANDO_JUNK_RE.test(t)) return true;    // voce di navigazione/legale
+  if (_BANDO_PUBBLICAZIONE_RE.test(t)) return true; // v4.27.49 — pubblicazione/report
   return false;
+}
+
+/**
+ * v4.27.49 — GATE D'INGRESSO (scanner → foglio Bandi_v5): blocca al
+ * SALVATAGGIO i record senza natura di bando, invece di lasciarli entrare e
+ * farli archiviare il giorno dopo dall'agente qualità (15 archiviati il
+ * 21/07). Conservativo: in dubbio lascia passare — l'agente qualità e il
+ * gate di esposizione restano come seconda e terza rete.
+ */
+function bandoIngressoValido_(b) {
+  if (!b) return false;
+  var t = String(b.titolo || '').trim();
+  if (!t || t.length < 8) return false;                    // titolo assente/troppo corto
+  if (_bandiNonBando_({ titolo: t })) return false;        // junk/nav/pubblicazione
+  if (_BANDO_TITOLO_NUMERO_RE.test(t)) return false;       // titolo solo-numero
+  return true;
 }
 
 /**

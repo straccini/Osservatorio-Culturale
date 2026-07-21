@@ -426,12 +426,22 @@ function _qaDestinatario_() {
 function _qaEmailHtml_(rep) {
   function row(label, c) {
     c = c || { tot: 0, g7: 0, g30: 0 };
+    // v4.27.49 — presidio novità settimanali: 7gg a zero evidenziato in rosso
+    var zero7 = Number(c.g7 || 0) === 0;
     return '<tr><td style="padding:6px 10px;border-bottom:1px solid #eee;font-weight:600;color:#1a1a1a">' + label + '</td>'
       + '<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;color:#1a1a1a">' + c.tot + '</td>'
-      + '<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;color:#3F7A5E">+' + c.g7 + '</td>'
+      + '<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;color:' + (zero7 ? '#B3261E;font-weight:700' : '#3F7A5E') + '">' + (zero7 ? '0 &#9888;' : '+' + c.g7) + '</td>'
       + '<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;color:#6E6A62">+' + c.g30 + '</td></tr>';
   }
   var co = rep.conteggi || {};
+  // v4.27.49 — banner categorie ferme (obiettivo: nessuna categoria a zero il lunedì)
+  var _zeroCats = [];
+  [['News', co.news], ['Bandi', co.bandi], ['Podcast', co.podcast], ['Video', co.video], ['Libri', co.libri]].forEach(function(p) {
+    if (!p[1] || Number(p[1].g7 || 0) === 0) _zeroCats.push(p[0]);
+  });
+  var zeroBanner = _zeroCats.length
+    ? '<div style="margin:10px 0 4px;padding:9px 12px;background:#FCF3E3;border:1px solid #E8CFA0;border-radius:8px;font-size:12px;color:#A35200">&#9888; <b>Categorie senza novità negli ultimi 7 giorni: ' + _zeroCats.join(', ') + '</b> — verificare fonti e scanner (piano novità settimanali, docs/STRATEGIA_NOVITA_SETTIMANALI.md).</div>'
+    : '';
   var fonti = rep.fonti || {};
   var morte = fonti.morteRss ? fonti.morteRss.candidate : '—';
   var feed = fonti.feedPerTipo ? (fonti.feedPerTipo.rss + ' rss / ' + fonti.feedPerTipo.podcast + ' pod / ' + fonti.feedPerTipo.video + ' video') : '—';
@@ -455,6 +465,7 @@ function _qaEmailHtml_(rep) {
     + '<table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="color:#9A958B;font-size:11px;text-transform:uppercase;letter-spacing:.04em"><td style="padding:4px 10px">Categoria</td><td style="padding:4px 10px;text-align:right">Totale</td><td style="padding:4px 10px;text-align:right">7gg</td><td style="padding:4px 10px;text-align:right">30gg</td></tr>'
     + row('News', co.news) + row('Bandi', co.bandi) + row('Podcast', co.podcast) + row('Video', co.video) + row('Libri', co.libri)
     + '</table>'
+    + zeroBanner
     + '<h3 style="font-size:13px;margin:16px 0 6px;color:#8B3A1F">Fonti</h3>'
     + '<div style="font-size:13px;color:#3A3A3C">Feed attivi: <b>' + feed + '</b> &middot; Fonti RSS a 0 record (candidate morte): <b>' + morte + '</b></div>'
     + '<h3 style="font-size:13px;margin:16px 0 6px;color:#8B3A1F">Integrità fogli</h3><div>' + integr + '</div>'

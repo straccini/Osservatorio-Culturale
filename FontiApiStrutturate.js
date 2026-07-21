@@ -887,6 +887,11 @@ function _fasFetchRss_(url, tipo) {
  */
 function _fasSaveBando_(bando) {
   try {
+    // v4.27.49 — gate d'ingresso: pubblicazioni/report/voci non-bando NON entrano
+    if (typeof bandoIngressoValido_ === 'function' && !bandoIngressoValido_(bando)) {
+      Logger.log('[FAS] scartato all\'ingresso (non-bando): ' + String((bando && bando.titolo) || '').slice(0, 80));
+      return;
+    }
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
     var sh = ss.getSheetByName('Bandi_v5');
     if (!sh) return;
