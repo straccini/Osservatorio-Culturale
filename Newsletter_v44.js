@@ -88,17 +88,27 @@ function buildNewsletterHtml_(draft) {
 
   // v4.27.44 — SEGNALAZIONE DELLA COMMUNITY: l'ultima pubblicata non ancora
   // uscita nei digest precedenti (selezionata in _generateDigestDraftCore_).
+  // v4.27.46 — impaginazione rivista (feedback Silvano 20/07): etichetta con lo
+  // STESSO stile delle altre sezioni (via _nlSectionHeader_, niente emoji né
+  // evidenziazione), foto ridotta a 170px in colonna accanto al testo.
   if (draft.segnalazione && draft.segnalazione.titolo) {
     var _sg = draft.segnalazione;
-    parts.push('<tr><td style="padding:16px 28px 4px 28px;">');
-    parts.push('<div style="background:#F4F1EB;border:1px solid #111111;padding:16px 18px;">');
-    parts.push('<div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#1F3F8F;font-weight:800;margin-bottom:8px;">&#128226; Dalla community &middot; Segnalazione della settimana</div>');
-    if (_sg.og_image) parts.push('<img src="' + _sg.og_image + '" alt="" width="564" style="width:100%;max-width:564px;display:block;margin-bottom:10px;" />');
-    parts.push('<div style="font-family:Georgia,serif;font-size:16px;font-weight:700;color:#111111;line-height:1.4;margin-bottom:6px;">' + _h_(_sg.titolo) + '</div>');
-    if (_sg.descrizione) parts.push('<p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#3A3A3C;">' + _h_(_sg.descrizione) + '</p>');
+    parts.push(_nlSectionHeader_('Dalla community · Segnalazione della settimana'));
+    parts.push('<tr><td style="padding:0 28px 8px 28px;">');
+    parts.push('<div style="background:#F4F1EB;border:1px solid #111111;padding:14px 16px;">');
+    parts.push('<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>');
+    if (_sg.og_image) {
+      parts.push('<td width="170" style="vertical-align:top;"><img src="' + _sg.og_image + '" alt="" width="170" style="width:170px;max-width:170px;height:auto;display:block;" /></td>');
+      parts.push('<td style="vertical-align:top;padding-left:14px;">');
+    } else {
+      parts.push('<td style="vertical-align:top;">');
+    }
+    parts.push('<div style="font-family:Georgia,serif;font-size:15px;font-weight:700;color:#111111;line-height:1.4;margin-bottom:6px;">' + _h_(_sg.titolo) + '</div>');
+    if (_sg.descrizione) parts.push('<p style="margin:0 0 10px;font-size:13px;line-height:1.55;color:#3A3A3C;">' + _h_(_sg.descrizione) + '</p>');
     var _sgFirma = _sg.autore ? '<span style="font-size:12px;color:#8A8578;font-style:italic;">segnalata da ' + _h_(_sg.autore) + '</span>' : '';
     if (_sg.url) parts.push('<a href="' + _h_(_sg.url) + '" style="display:inline-block;background:#A65138;color:#ffffff;text-decoration:none;padding:7px 16px;font-size:12px;font-weight:700;margin-right:10px;">Approfondisci &rarr;</a>' + _sgFirma);
     else if (_sgFirma) parts.push(_sgFirma);
+    parts.push('</td></tr></table>');
     parts.push('</div></td></tr>');
   }
 
