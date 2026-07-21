@@ -42,6 +42,7 @@ function adminRunTool(tool, token) {
       case 'fontiOsservatori':  r = fontiAggiungiBatchOsservatori(); break;
       case 'fontiDesignArte':    r = fontiAggiungiBatchDesignArte(); break;  // segnalazione 2026-07 (Turrell/ARoS)
       case 'videoIntl':          r = videoAggiungiCanaliIntl(); break;       // canali video internazionali (piano novità)
+      case 'podcastAttivi':      r = podcastAggiungiBatchAttivi(); break;    // podcast internazionali attivi (rianimazione +0/30gg)
       case 'fontiPodcast':       r = fontiAggiungiBatchPodcast(); break;   // Tappa P
       case 'fontiSocial':        r = fontiAggiungiBatchSocial(); break;    // Tappa 4
       case 'fontiPodcastSocial': r = { podcast: fontiAggiungiBatchPodcast(), social: fontiAggiungiBatchSocial() }; break; // entrambe in 1 clic (idempotente)

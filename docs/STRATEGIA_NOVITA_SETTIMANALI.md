@@ -10,7 +10,7 @@
 | Categoria | Novità/settimana | Stato | Collo di bottiglia |
 |---|---|---|---|
 | News | ~1.300 | ✅ abbondante | nessuno (semmai rumore) |
-| Podcast | ~50 | ✅ ok | — |
+| Podcast | ~50 → **+0/30gg (report 21/07)** | 🔴→✅ v4.27.50 | i feed in parco sono vivi ma le trasmissioni sono FERME (verifica live 21/07: Artribune 04/2026, Contemporaneamente 02/2025, Giuditta 2020) → aggiunti The Week in Art e Talk Art (settimanali, verificati) |
 | Norme | ~31 | ✅ ok | — |
 | Video | variabile | ⚠ da monitorare | canali YouTube poco frequenti |
 | Lavoro cultura | ~1 | ⚠ scarso | filtro L2 appena ampliato (v4.27.37) |

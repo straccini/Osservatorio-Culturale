@@ -70,7 +70,9 @@ var OC_CRON_EXTRA = [
   // v4.27.47 — attivazione una tantum canali video internazionali (Louisiana, ARoS, MoMA, Tate)
   { fn: 'videoIntlSeedOnce', tipo: 'daily', ora: 8, desc: 'Attiva una tantum i canali video internazionali' },
   // v4.27.48 — pulizia mensile registro anti-ripetizione digest (righe >180gg)
-  { fn: 'ddPrune', tipo: 'monthdays', giorniMese: [1], ora: 4, desc: 'Pulizia registro DigestInviati (>180gg)' }
+  { fn: 'ddPrune', tipo: 'monthdays', giorniMese: [1], ora: 4, desc: 'Pulizia registro DigestInviati (>180gg)' },
+  // v4.27.50 — attivazione una tantum podcast attivi (The Week in Art, Talk Art)
+  { fn: 'podcastAttiviSeedOnce', tipo: 'daily', ora: 8, desc: 'Attiva una tantum i podcast internazionali attivi' }
 ];
 
 /** Schedule consolidato = approvato (SetupMaster) + nuovi. */

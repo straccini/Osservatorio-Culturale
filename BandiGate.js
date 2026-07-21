@@ -110,6 +110,28 @@ function _bandiLinkTipo_(url) {
   return 'diretto';
 }
 
+// v4.27.50 — Pagine UFFICIALI dei programmi UE ricorrenti: quando un bando non
+// ha alcun link reale (i "senza link" del report qualità: Europa Creativa,
+// Culture Moves Europe, ...), meglio la pagina ufficiale del programma che una
+// ricerca Google. URL stabili di primo livello, verificati.
+var _BANDI_EU_PROGRAMMI = [
+  { re: /culture\s+moves\s+europe/i,                 url: 'https://culture.ec.europa.eu/creative-europe/culture-moves-europe' },
+  { re: /europa\s+creativa|creative\s+europe/i,      url: 'https://culture.ec.europa.eu/creative-europe' },
+  { re: /horizon\s+europe|orizzonte\s+europa/i,      url: 'https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/programmes/horizon' },
+  { re: /erasmus\s*\+|erasmus\s+plus/i,              url: 'https://erasmus-plus.ec.europa.eu/opportunities/opportunities-for-organisations' },
+  { re: /new\s+european\s+bauhaus|nuovo\s+bauhaus/i, url: 'https://new-european-bauhaus.europa.eu/funding-and-support_en' },
+  { re: /\binterreg\b/i,                             url: 'https://interreg.eu/' }
+];
+
+/** URL ufficiale del programma UE se il titolo/ente lo identifica, altrimenti ''. */
+function _bandiLinkUfficialeEU_(b) {
+  var t = String((b && b.titolo) || '') + ' ' + String((b && b.ente) || '');
+  for (var i = 0; i < _BANDI_EU_PROGRAMMI.length; i++) {
+    if (_BANDI_EU_PROGRAMMI[i].re.test(t)) return _BANDI_EU_PROGRAMMI[i].url;
+  }
+  return '';
+}
+
 /** Link di ricerca web mirato — "consulta il sito" quando manca un URL reale. */
 function _bandiLinkRicerca_(b) {
   var titolo = String((b && b.titolo) || '').slice(0, 120);
@@ -188,8 +210,10 @@ function bandiGateFinale_(arr) {
       b.linkTipo = 'generico';
       b.link = urlRaw;
     } else {
-      // nessun link reale → ricerca web mirata
-      var ricerca = _bandiLinkRicerca_(b);
+      // nessun link reale → prima la pagina UFFICIALE del programma UE (se
+      // riconosciuto), poi la ricerca web mirata (v4.27.50)
+      var ufficiale = _bandiLinkUfficialeEU_(b);
+      var ricerca = ufficiale || _bandiLinkRicerca_(b);
       b.linkDiretto = '';
       b.linkConsulta = ricerca;
       b.linkTipo = 'consulta';

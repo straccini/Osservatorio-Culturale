@@ -130,6 +130,39 @@ function podcastAuditMensile() {
 }
 
 // ============================================================================
+//  v4.27.50 — PODCAST ATTIVI: rianimazione sezione podcast (+0 episodi/30gg
+//  al 21/07). Diagnosi: i feed in parco sono VIVI ma le trasmissioni sono
+//  FERME (Artribune ultimo ep. 04/2026, Contemporaneamente 02/2025, Giuditta
+//  2020, L'arte con chi ne fa parte 2021). Questi 2 show internazionali
+//  pubblicano OGNI SETTIMANA (verificati live 2026-07-21, episodi di giugno).
+//  Il sommario AI traduce; entrano da FontiFeed tipo 'podcast'.
+// ============================================================================
+function podcastAggiungiBatchAttivi() {
+  var candidati = [
+    { url: 'https://feeds.acast.com/public/shows/the-week-in-art-by-the-art-newspaper', nome: 'The Week in Art — The Art Newspaper', ambito: 3, sito: 'https://www.theartnewspaper.com' },
+    { url: 'https://feeds.acast.com/public/shows/talkart',                              nome: 'Talk Art — Tovey & Diament',          ambito: 3, sito: 'https://talkart.co.uk' }
+  ];
+  var esiti = candidati.map(function(c) {
+    var r = _discAggiungiFeed_(c.url, c.nome, c.ambito, 'Podcast-attivi 2026-07', 'podcast', c.sito || '');
+    return { nome: c.nome, esito: r && r.ok ? 'AGGIUNTA' : ('saltata: ' + ((r && r.error) || '?')) };
+  });
+  var aggiunte = esiti.filter(function(e) { return e.esito === 'AGGIUNTA'; }).length;
+  Logger.log('podcastAggiungiBatchAttivi: ' + aggiunte + '/' + candidati.length + '\n' + JSON.stringify(esiti, null, 2));
+  return { ok: true, aggiunte: aggiunte, totale: candidati.length, esiti: esiti };
+}
+
+/** v4.27.50 — Auto-seed una tantum dei podcast attivi (pattern discoveryAutoSeedOnce). */
+function podcastAttiviSeedOnce() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('OC_PODATTIVI_SEEDED') === 'true') return { ok: true, skipped: true };
+  var rep;
+  try { rep = podcastAggiungiBatchAttivi(); } catch (e) { rep = { ok: false, error: e.message }; }
+  props.setProperty('OC_PODATTIVI_SEEDED', 'true');
+  Logger.log('[podcastAttiviSeedOnce] podcast attivi seminati una tantum: ' + JSON.stringify(rep));
+  return rep;
+}
+
+// ============================================================================
 //  TAPPA 4 — SOCIAL INBOUND: feed RSS pubblici Mastodon (verificati live 2026-07-10)
 // ----------------------------------------------------------------------------
 //  Mastodon espone RSS per profilo (profilo + '.rss') e per HASHTAG
