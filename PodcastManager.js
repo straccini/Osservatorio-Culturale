@@ -238,6 +238,45 @@ function _ensureFontiPodTipoContenuto_() {
   }
 }
 
+/**
+ * v4.27.47 — VIDEO INTERNAZIONALI ad alta cadenza (piano novità settimanali,
+ * docs/STRATEGIA_NOVITA_SETTIMANALI.md §Video): i canali museali italiani
+ * pubblicano poco (+0 video/7gg al 21/07); questi 4 canali internazionali
+ * pubblicano ogni settimana. Gli @handle vengono risolti in channel_id LATO
+ * GAS da _youtubeChannelToFeedUrl (il fetch esterno è dietro consent-wall UE).
+ * Idempotente: dedup su feedUrl in addFonteVideoYoutube.
+ */
+function videoAggiungiCanaliIntl() {
+  var canali = [
+    { nome: 'Louisiana Channel (Louisiana Museum DK)', channelUrl: 'https://www.youtube.com/@thelouisianachannel', tematica: 'Arte Contemporanea' },
+    { nome: 'ARoS Aarhus Art Museum',                  channelUrl: 'https://www.youtube.com/@arosartmuseum',       tematica: 'Musei & Patrimonio' },
+    { nome: 'MoMA — Museum of Modern Art',             channelUrl: 'https://www.youtube.com/@themuseumofmodernart', tematica: 'Arte Contemporanea' },
+    { nome: 'Tate',                                    channelUrl: 'https://www.youtube.com/@Tate',                tematica: 'Arte Contemporanea' }
+  ];
+  var esiti = canali.map(function(c) {
+    var r = addFonteVideoYoutube(c);
+    var esito = (r && r.ok) ? ('AGGIUNTO (' + r.feedUrl + ')') : ('saltato: ' + ((r && r.error) || '?'));
+    return { nome: c.nome, esito: esito };
+  });
+  var aggiunti = esiti.filter(function(e) { return e.esito.indexOf('AGGIUNTO') === 0; }).length;
+  Logger.log('videoAggiungiCanaliIntl: ' + aggiunti + '/' + canali.length + '\n' + JSON.stringify(esiti, null, 2));
+  return { ok: true, aggiunti: aggiunti, totale: canali.length, esiti: esiti };
+}
+
+/**
+ * v4.27.47 — Auto-seed una tantum dei canali video internazionali (stesso
+ * pattern di discoveryAutoSeedOnce): gira dal dispatcher, poi no-op.
+ */
+function videoIntlSeedOnce() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('OC_VIDEOINTL_SEEDED') === 'true') return { ok: true, skipped: true };
+  var rep;
+  try { rep = videoAggiungiCanaliIntl(); } catch (e) { rep = { ok: false, error: e.message }; }
+  props.setProperty('OC_VIDEOINTL_SEEDED', 'true');
+  Logger.log('[videoIntlSeedOnce] canali video intl attivati una tantum: ' + JSON.stringify(rep));
+  return rep;
+}
+
 function populaSeedVideoYoutubeMusei() {
   Logger.log('=== SEED VIDEO YOUTUBE MUSEI ITALIANI ===');
   _ensureFontiPodTipoContenuto_();

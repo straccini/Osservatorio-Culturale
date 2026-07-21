@@ -42,6 +42,9 @@ var OC_CRON_EXTRA = [
   { fn: 'scanSources',           tipo: 'daily',  ore: [11, 15, 19], desc: 'Scan news rotazione (freschezza pomeriggio/sera)' },
   // v4.25.10 — PROFONDITÀ: pubblicazioni/editoria settimanale (sabato mattina)
   { fn: 'pubDiscoveryScan',      tipo: 'weekly', giorno: ScriptApp.WeekDay.SATURDAY, ora: 6, desc: 'Discovery pubblicazioni/editoria (settimanale)' },
+  // v4.27.47 — LIBRI: seconda finestra settimanale (piano novità settimanali §Libri:
+  // +0 libri/7gg al 21/07 con la sola finestra del sabato)
+  { fn: 'pubDiscoveryScan',      tipo: 'weekly', giorno: ScriptApp.WeekDay.WEDNESDAY, ora: 6, desc: 'Discovery pubblicazioni/editoria (2ª finestra, mercoledì)' },
   // T1 Lavoro Cultura — MONITOR dry-run 2×/sett (mer+sab, dopo le uscite GU mar+ven).
   // Report email di cosa AVREBBE raccolto; attivazione piena dopo il periodo di osservazione.
   { fn: 'lavoroCulturaMonitor',  tipo: 'weekly', giorno: ScriptApp.WeekDay.WEDNESDAY, ora: 8, desc: 'Lavoro cultura: scansione GU S4 e salvataggio concorsi (mercoledì)' },
@@ -63,7 +66,9 @@ var OC_CRON_EXTRA = [
   // Attivazione una tantum fonti podcast+social (auto-disabilita dopo il 1° run)
   { fn: 'discoveryAutoSeedOnce',  tipo: 'daily', ora: 8, desc: 'Attiva una tantum le nuove fonti podcast + social' },
   // v4.27.42 — attivazione una tantum fonti design/arte internazionale (segnalazione 2026-07)
-  { fn: 'fontiDesignArteSeedOnce', tipo: 'daily', ora: 8, desc: 'Attiva una tantum le fonti design & arte internazionale' }
+  { fn: 'fontiDesignArteSeedOnce', tipo: 'daily', ora: 8, desc: 'Attiva una tantum le fonti design & arte internazionale' },
+  // v4.27.47 — attivazione una tantum canali video internazionali (Louisiana, ARoS, MoMA, Tate)
+  { fn: 'videoIntlSeedOnce', tipo: 'daily', ora: 8, desc: 'Attiva una tantum i canali video internazionali' }
 ];
 
 /** Schedule consolidato = approvato (SetupMaster) + nuovi. */

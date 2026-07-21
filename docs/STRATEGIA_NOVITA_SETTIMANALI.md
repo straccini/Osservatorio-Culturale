@@ -36,15 +36,19 @@
 ### Lavoro cultura — osservare 2 settimane il nuovo filtro L2 (blacklist, v4.27.37)
 - Se resta <2/settimana: aggiungere fonte complementare (portali ATS/inPA con filtro cultura).
 
-### Video — allineare la cadenza alla realtà dei canali
-- I canali museali pubblicano poco: integrare 2-3 canali internazionali ad alta cadenza
-  (es. ARoS ha canale attivo per le mostre; Louisiana Channel è il riferimento del settore).
-- Candidato verificabile: feed Atom YouTube `https://www.youtube.com/feeds/videos.xml?channel_id=…`
-  per Louisiana Channel e ARoS — prossimo batch video.
+### Video — allineare la cadenza alla realtà dei canali ✅ FATTO v4.27.47
+- Report 21/07: +0 video/7gg, 0 fonti video in FontiFeed → confermato collo di bottiglia.
+- `videoAggiungiCanaliIntl()`: Louisiana Channel, ARoS, MoMA, Tate (@handle risolti
+  lato GAS da `_youtubeChannelToFeedUrl`, dedup su feedUrl). Auto-seed `videoIntlSeedOnce`
+  dal dispatcher (daily 08) + bottone admin "+ Video intl".
+- ⚠ DA VERIFICARE dopo il primo run: scanner video legge FontiPodcast legacy
+  (flag `USE_FONTI_FEED_VIDEO` off) — controllare che i 4 canali producano VID*.
 
-### Libri — seconda finestra settimanale
-- `pubDiscoveryScan` gira solo sabato 06:00: aggiungere run mercoledì per raddoppiare
-  la probabilità di novità visibili a metà settimana (modifica banale in OC_CRON_EXTRA).
+### Libri — seconda finestra settimanale ✅ FATTO v4.27.47
+- Report 21/07: +0 libri/7gg nonostante la finestra del sabato → aggiunta 2ª finestra.
+- `pubDiscoveryScan` ora anche mercoledì 06:00 (OC_CRON_EXTRA).
+- ⚠ Se anche mercoledì produce 0: il problema non è la frequenza ma la discovery
+  stessa (fonti editoria mute) → diagnosi dedicata.
 
 ### Social wall — risveglio con rito settimanale ibrido
 Il wall è dormiente perché i feed-persona quasi non esistono (audit 2026-06-08: solo Solima).
