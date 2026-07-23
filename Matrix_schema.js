@@ -89,7 +89,7 @@ var OC_MATRIX_SCHEMA = {
       "anonymous": true,
       "storageScheme": "Two disaccoppiati: RESPONSES (anonima UUID) + CONTACTS (opt-in separato)",
       "gdprBasis": "consenso esplicito + legittimo interesse per dataset aggregato anonimo",
-      "dataController": "Sinopia Srl — Deruta (PG)"
+      "dataController": "Sinopia Srl unipersonale — Deruta (PG)"
     }
   },
   "dimensions": [

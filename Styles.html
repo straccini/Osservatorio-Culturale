@@ -466,14 +466,17 @@ h4{font-size:1rem}
 .nav-badge.urgent::before,.badge.urgent::before{
   content:'•'; margin-right:3px;
 }
+/* v4.27.56 — Era a 9px con opacita' .85: il numero non si leggeva.
+   Ora corpo 11px, pieno, cifre tabellari e contrasto verificato. */
 .nav-badge-new{
-  font-family:var(--font-ui); background:rgba(107,33,168,.12); color:#6B21A8 !important;
-  border-radius:3px; padding:0 3px; font-size:0.5625rem !important;
-  font-weight:400; letter-spacing:.01em; line-height:1.5;
-  margin-left:auto; white-space:nowrap; opacity:.85;
+  font-family:var(--font-ui); background:var(--accent-soft); color:var(--accent) !important;
+  border-radius:0; padding:1px 5px; font-size:0.6875rem !important;
+  font-weight:600; letter-spacing:.01em; line-height:1.45;
+  font-variant-numeric:tabular-nums;
+  margin-left:auto; white-space:nowrap; opacity:1;
 }
 .nav-badge-new::before{ content:'new '; }
-[data-theme="dark"] .nav-badge-new{ background:rgba(124,58,237,.15); color:#A78BFA !important; }
+[data-theme="dark"] .nav-badge-new{ background:var(--accent-soft); color:var(--accent) !important; }
 .af-sublabel{
   font-size:0.625rem; font-weight:700; text-transform:uppercase;
   letter-spacing:.06em; color:var(--ink-3); opacity:.6;
@@ -4152,13 +4155,11 @@ button:focus-visible:not(.btn):not(.br-act):not(.nav-item):not(.filter-chip):not
 /* ── 1. Il reticolo di riporto ─────────────────────────────────────────────
    Fisso rispetto al viewport: la griglia appartiene al muro, non al foglio
    che scorre. Solo sulla superficie di lettura, mai su barre e pannelli.     */
-.main-content{
-  background-color:var(--paper);
-  background-image:
-    repeating-linear-gradient(to right,  var(--grid-line)   0 1px, transparent 1px var(--grid-step)),
-    repeating-linear-gradient(to bottom, var(--grid-line-2) 0 1px, transparent 1px var(--grid-step));
-  background-attachment:fixed;
-}
+/* v4.27.56 — RETICOLO RIMOSSO. Applicato a colori non reggeva: non aggiungeva
+   eleganza ne' efficacia, e si leggeva come rumore. Il fondo torna carta piena.
+   I token --grid-* restano definiti ma inutilizzati, in attesa della ripresa
+   del discorso grafico. */
+.main-content{ background-color:var(--paper); }
 
 /* ── 2. Angoli vivi ────────────────────────────────────────────────────────
    La direzione chiede spigoli. Nel progetto ci sono ~490 arrotondamenti
@@ -4237,7 +4238,6 @@ button:focus-visible:not(.btn):not(.br-act):not(.nav-item):not(.filter-chip):not
    Seconda voce del marchio: dati, conteggi, riferimenti istituzionali.
    Il vermiglio resta per azione e urgenza — due voci, due compiti.          */
 .masthead-update,.mh-r,.st-kpi-val,.hstat b,.section-action .num{ color:var(--cobalt); }
-.nav-badge{ background:var(--cobalt); color:var(--paper); }
 
 /* ── 8. Tipografia dei titoli ──────────────────────────────────────────────*/
 .home-headline{ font-family:var(--font-serif) !important; font-weight:500 !important; }
@@ -4305,14 +4305,9 @@ button:focus-visible:not(.btn):not(.br-act):not(.nav-item):not(.filter-chip):not
 .br-meta,.nr-data,.nr-fonte,.br-fonte{ font-size:0.8125rem; }
 .section-title{ font-size:1.9rem; }
 
-/* ── 14. Il reticolo, deciso (v4.27.54) ────────────────────────────────────
-   Era troppo timido per leggersi come scelta: sembrava un'incertezza.
-   Ora e' allineato al gutter della pagina (48px) e ha una presenza netta;
-   le superfici che portano contenuto restano pulite e opache, cosi' il
-   rapporto figura/fondo e' esplicito invece che ambiguo.                    */
-.main-content{
-  background-position:var(--gutter) 0, 0 0;
-}
+/* ── 14. Superfici (v4.27.56) ──────────────────────────────────────────────
+   Senza reticolo il rapporto figura/fondo lo fa il salto tonale: carta per
+   la pagina, superficie per i contenitori.                                  */
 .app-footer,.card,.home-carosello,.home-headline-frame,.modal,.panel,.drawer{
   background-color:var(--surface);
 }

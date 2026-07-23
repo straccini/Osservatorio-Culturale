@@ -230,7 +230,7 @@ function buildNewsletterHtml_(draft) {
 
   // Footer
   parts.push('<tr><td style="padding:12px 28px 28px 28px;">');
-  parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;text-align:center;">&copy; Sinopia Srl &middot; Deruta (PG) &middot; Osservatorio Culturale<br>Ricevi questa newsletter in quanto iscritto. Per modificare le preferenze o cancellarti, usa il link di disiscrizione in fondo.</p>');
+  parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;text-align:center;">&copy; Sinopia Srl unipersonale &middot; Deruta (PG) &middot; Osservatorio Culturale<br>Ricevi questa newsletter in quanto iscritto. Per modificare le preferenze o cancellarti, usa il link di disiscrizione in fondo.</p>');
   parts.push('</td></tr>');
 
   parts.push('</table></td></tr></table></body></html>');
@@ -585,7 +585,7 @@ function buildDigestHeaderOnlyHtml_() {
 
   // Footer
   parts.push('<tr><td style="padding:16px 28px 28px 28px;border-top:1px solid #ECECEE;">');
-  parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;text-align:center;">&copy; Sinopia Srl &middot; Deruta (PG) &middot; Osservatorio Culturale<br>Ricevi questa email in quanto iscritto. Per cancellarti, usa il link di disiscrizione.</p>');
+  parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;text-align:center;">&copy; Sinopia Srl unipersonale &middot; Deruta (PG) &middot; Osservatorio Culturale<br>Ricevi questa email in quanto iscritto. Per cancellarti, usa il link di disiscrizione.</p>');
   parts.push('</td></tr>');
 
   parts.push('</table></td></tr></table></body></html>');
