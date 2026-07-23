@@ -4288,7 +4288,10 @@ button:focus-visible:not(.btn):not(.br-act):not(.nav-item):not(.filter-chip):not
   border-top:2px solid var(--ink) !important;
 }
 .app-footer > div{ max-width:none !important; margin-left:0 !important; margin-right:0 !important; }
-.app-footer .foot-logo{ display:block; height:34px; width:auto; margin-bottom:8px; }
+.app-footer .foot-logo{ display:block; height:40px; width:auto; margin-bottom:12px; }
+/* Il marchio Sinopia e' in terracotta smorzata: su fondo scuro va schiarito
+   quel tanto che basta a non spegnersi, senza snaturarne il colore. */
+[data-theme="dark"] .app-footer .foot-logo{ filter:brightness(1.35) saturate(.9); }
 
 /* ── 13. Leggibilita' (v4.27.54) ───────────────────────────────────────────
    Corpo piu' generoso, interlinea piu' aperta, misura di riga limitata:
