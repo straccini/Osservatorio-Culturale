@@ -3527,8 +3527,10 @@
 
     // v4.22 — Auto-scroll carosello ogni 8 secondi
     window._carIdx = 0;
+    window._carSlides = 3;   // v4.27.53 — diventa 4 se c'e' una segnalazione
     setInterval(function() {
-      window._carIdx = ((window._carIdx || 0) + 1) % 3;
+      var n = window._carSlides || 3;
+      window._carIdx = ((window._carIdx || 0) + 1) % n;
       if (typeof OC !== 'undefined' && OC._carGo) OC._carGo(window._carIdx);
     }, 8000);
   }
@@ -11837,15 +11839,19 @@
       return true;
     })(),
 
-    // v4.22 — Carosello 3 slide
+    // v4.27.53 — Carosello a 4 posizioni: le 3 slide di servizio + la
+    // segnalazione della community (visibile solo quando ce n'e' una).
+    // Il track e' largo 400%, quindi ogni passo vale 25%.
     _carGo: function(idx) {
       var slider = document.getElementById('carSlider');
       if (!slider) return;
-      slider.style.transform = 'translateX(-' + (idx * 33.333) + '%)';
+      var n = (typeof window._carSlides === 'number') ? window._carSlides : 3;
+      idx = ((idx % n) + n) % n;
+      slider.style.transform = 'translateX(-' + (idx * 25) + '%)';
       var dots = document.querySelectorAll('.car-dot');
       for (var i = 0; i < dots.length; i++) {
         dots[i].style.opacity = (i === idx) ? '1' : '.4';
-        dots[i].style.background = (i === idx) ? 'var(--accent,#935851)' : 'var(--ink-3,#999)';
+        dots[i].style.background = (i === idx) ? 'var(--accent)' : 'var(--ink-3,#999)';
       }
       window._carIdx = idx;
     },
@@ -14212,6 +14218,43 @@
     }).inviaSegnalazione(payload);
   };
 
+
+  // v4.27.53 — Popola la slide "segnalazione della settimana" del carosello.
+  // Se non c'e' nulla da mostrare la slide resta nascosta e il carosello
+  // continua a girare su 3 posizioni (nessun buco nella rotazione).
+  function _popolaSlideSegnalazione_(sg) {
+    var art = document.getElementById('carSlideSegn');
+    var dot = document.getElementById('carDot3');
+    if (!art) return;
+    if (!sg || !sg.titolo) { art.hidden = true; if (dot) dot.hidden = true; window._carSlides = 3; return; }
+    var t = document.getElementById('carSegnTitolo');
+    if (t) t.textContent = String(sg.titolo);
+    var d = document.getElementById('carSegnDesc');
+    if (d) {
+      var descr = String(sg.descrizione || '');
+      if (descr.length > 220) descr = descr.substring(0, 220) + '…';
+      d.textContent = descr;
+    }
+    var f = document.getElementById('carSegnFirma');
+    if (f) f.textContent = sg.nome_autore ? ('segnalata da ' + sg.nome_autore) : '';
+    var a = document.getElementById('carSegnLink');
+    var url = String(sg.url || '').trim();
+    if (a) {
+      if (/^https?:\/\//i.test(url)) { a.href = url; a.style.display = 'inline-block'; }
+      else { a.removeAttribute('href'); a.style.display = 'none'; }
+    }
+    var wrap = document.getElementById('carSegnImgWrap');
+    var img = document.getElementById('carSegnImg');
+    var og = String(sg.og_image || '').trim();
+    if (wrap && img) {
+      if (/^https?:\/\//i.test(og)) { img.src = og; wrap.style.display = 'block'; }
+      else { wrap.style.display = 'none'; }
+    }
+    art.hidden = false;
+    if (dot) dot.hidden = false;
+    window._carSlides = 4;
+  }
+
   // --- Segnalazioni: sezione home ---
   function _loadHomeSegnalazioni() {
     var wrap = document.getElementById('homeSegnalazioniList');
@@ -14225,6 +14268,9 @@
         return;
       }
       if (empty) empty.hidden = true;
+      // v4.27.53 — La PIU' RECENTE alimenta anche la 4a slide del carosello
+      // (getSegnalazioniPubblicate ordina gia' per dataPubblicazione discendente).
+      try { _popolaSlideSegnalazione_(r.segnalazioni[0]); } catch(eS) {}
       var html = '';
       r.segnalazioni.forEach(function(s) {
         var titolo = (s.titolo||'').replace(/</g,'&lt;');

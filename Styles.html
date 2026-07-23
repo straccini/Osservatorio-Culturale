@@ -36,12 +36,21 @@
   --ink-4:oklch(0.46 0.006 260);       /* ~#6B6B70 — WCAG AA 5.2:1 su carta (fix v4.27.37) */
   --ink-5:oklch(0.85 0.004 260);       /* #D2D2D7 equiv */
 
-  /* Terracotta Sinopia — il pigmento del disegno preparatorio */
-  --accent:oklch(0.52 0.08 22);        /* #935851 equiv */
-  --accent-soft:oklch(0.94 0.02 22);   /* #F0E6E4 equiv */
-  --accent-hover:oklch(0.44 0.08 22);  /* #7A4940 equiv */
-  --link:oklch(0.52 0.08 22);
-  --link-hover:oklch(0.44 0.08 22);
+  /* v4.27.53 — GRATICCIO: accento allineato al MARCHIO OCS.
+     Il logo porta un vermiglio vivo e un cobalto profondo; l'interfaccia
+     usava un mattone spento (#935851) e ignorava il blu. Recuperati entrambi. */
+  --accent:oklch(0.50 0.165 32);       /* ~#B8351A — vermiglio del marchio */
+  --accent-soft:oklch(0.95 0.028 32);  /* velatura di pigmento */
+  --accent-hover:oklch(0.42 0.155 32); /* ~#94270F */
+  --link:oklch(0.50 0.165 32);
+  --link-hover:oklch(0.42 0.155 32);
+  /* Cobalto del marchio — seconda voce: dati, stati, riferimenti istituzionali */
+  --cobalt:oklch(0.36 0.145 265);      /* ~#1E3A8A */
+  --cobalt-soft:oklch(0.94 0.035 265);
+  /* Reticolo di riporto — la griglia con cui si trasferisce la sinopia */
+  --grid-line:oklch(0.50 0.165 32 / 0.055);
+  --grid-line-2:oklch(0.50 0.165 32 / 0.038);
+  --grid-step:88px;
 
   /* 5 dimensioni MuseMu Matrix */
   --amb-1:oklch(0.50 0.24 290);  /* 01 Brand — viola elettrico */
@@ -86,16 +95,20 @@
   --sidebar-w:280px;
   --topbar-h:64px;
 
-  --r-sm:8px;
-  --r-md:12px;
-  --r-lg:16px;
+  /* v4.27.53 — GRATICCIO: angoli vivi. La separazione la fanno filetti e
+     allineamenti, non gli arrotondamenti. Restano tondi solo gli elementi
+     circolari per natura (avatar, pallini), che usano border-radius:50%. */
+  --r-sm:0px;
+  --r-md:0px;
+  --r-lg:0px;
   --radius:var(--r-md);
   --radius-lg:var(--r-lg);
 
-  --shadow-soft:0 0 0 1px oklch(0.14 0.005 70 / 0.04);
+  /* v4.27.53 — GRATICCIO: niente ombre. Il rilievo è dato dal filetto. */
+  --shadow-soft:0 0 0 1px oklch(0.14 0.005 70 / 0.05);
   --shadow-1:var(--shadow-soft);
-  --shadow-2:0 1px 3px oklch(0.14 0.005 70 / 0.06), 0 0 0 1px oklch(0.14 0.005 70 / 0.04);
-  --shadow-3:0 8px 24px -8px oklch(0.14 0.005 70 / 0.12), 0 0 0 1px oklch(0.14 0.005 70 / 0.04);
+  --shadow-2:0 0 0 1px oklch(0.14 0.005 70 / 0.07);
+  --shadow-3:0 0 0 1px oklch(0.14 0.005 70 / 0.10);
 }
 
 /* ── Accessibilità: 3 livelli testo (data-fontsize = "" | "large" | "xlarge") ───
@@ -196,11 +209,16 @@
   --ink-4:oklch(0.62 0.006 260);       /* v4.27.37 — fix contrasto dark: ~5.0:1 su dark paper */
   --ink-5:oklch(0.40 0.006 260);
 
-  --accent:oklch(0.62 0.07 22);
-  --accent-soft:oklch(0.22 0.04 22);
-  --accent-hover:oklch(0.72 0.06 22);
-  --link:oklch(0.62 0.07 22);
-  --link-hover:oklch(0.72 0.06 22);
+  /* v4.27.53 — GRATICCIO dark: vermiglio schiarito per reggere il fondo scuro */
+  --accent:oklch(0.68 0.145 34);
+  --accent-soft:oklch(0.26 0.055 32);
+  --accent-hover:oklch(0.77 0.125 36);
+  --link:oklch(0.68 0.145 34);
+  --link-hover:oklch(0.77 0.125 36);
+  --cobalt:oklch(0.72 0.115 265);
+  --cobalt-soft:oklch(0.24 0.055 265);
+  --grid-line:oklch(0.68 0.145 34 / 0.055);
+  --grid-line-2:oklch(0.68 0.145 34 / 0.035);
 
   --text-muted:oklch(0.68 0.006 260);
 
@@ -4099,5 +4117,123 @@ button:focus-visible:not(.btn):not(.br-act):not(.nav-item):not(.filter-chip):not
 
 /* Empty state: dark */
 [data-theme="dark"] .empty-state { color:var(--ink-3); }
+
+
+/* ============================================================================
+   v4.27.53 — DIREZIONE «GRATICCIO»
+   ----------------------------------------------------------------------------
+   Il graticcio e' la griglia con cui si riporta la sinopia — il disegno
+   preparatorio — sull'intonaco. Qui diventa la struttura visibile della
+   pagina: reticolo appena percettibile sul fondo, angoli vivi, nessuna ombra,
+   separazione affidata a filetti e allineamenti. L'accento passa dal mattone
+   spento al vermiglio del marchio OCS, affiancato dal cobalto (vedi token).
+   Blocco in coda: sovrascrive per ultimo, si rimuove in un pezzo solo.
+   ============================================================================ */
+
+/* ── 1. Il reticolo di riporto ─────────────────────────────────────────────
+   Fisso rispetto al viewport: la griglia appartiene al muro, non al foglio
+   che scorre. Solo sulla superficie di lettura, mai su barre e pannelli.     */
+.main-content{
+  background-color:var(--paper);
+  background-image:
+    repeating-linear-gradient(to right,  var(--grid-line)   0 1px, transparent 1px var(--grid-step)),
+    repeating-linear-gradient(to bottom, var(--grid-line-2) 0 1px, transparent 1px var(--grid-step));
+  background-attachment:fixed;
+}
+
+/* ── 2. Angoli vivi ────────────────────────────────────────────────────────
+   La direzione chiede spigoli. Nel progetto ci sono ~490 arrotondamenti
+   scritti a mano: si azzerano qui in un colpo solo invece di rincorrerli.
+   Restano tondi gli elementi circolari per natura (regola 2b).              */
+[style*="border-radius"]:not([style*="border-radius:50%"]):not([style*="border-radius: 50%"]){ border-radius:0 !important; }
+.card,.btn,.tag,.badge,.pill,.chip,.panel,.drawer,.toast,.modal,.modal-content,
+.filter-chip,.br-tema,.br-row:hover,.section-action,.empty-state,.home-list-skeleton,
+.home-headline-frame,.home-carosello,.hamb-chip,.home-stats-bar,.hstat,
+.nr-row,.pd-row,.vd-row,.lb-row,.bando-row,.news-row,.sr-row,.st-kpi-card,
+.nav-item,.kpi,.stat,.form-control,input,select,textarea,img{
+  border-radius:0 !important;
+}
+/* 2b. cerchi voluti */
+.avatar,.topbar-avatar,.user-avatar,.car-dot,.hc-dot,.mh-dot,.dot{
+  border-radius:50% !important;
+}
+
+/* ── 3. Niente ombre ───────────────────────────────────────────────────────
+   Il rilievo lo da' il filetto. Le ombre sfocate inline vengono spente;
+   restano gli anelli a 1px definiti nei token.                              */
+.main-content [style*="box-shadow"]:not([style*="inset"]){ box-shadow:none !important; }
+.card,.panel,.home-headline-frame,.home-carosello{ box-shadow:none; }
+
+/* ── 4. Teste di sezione ───────────────────────────────────────────────────
+   Filetto forte in inchiostro + occhiello in vermiglio: l'ingresso di ogni
+   sezione e' un modulo della griglia, non una decorazione.                  */
+.section-head{
+  border-bottom:2px solid var(--ink);
+  padding-bottom:11px;
+  align-items:baseline;
+}
+.section-eyebrow,.eyebrow{ color:var(--accent); letter-spacing:.16em; }
+.section-title{ font-weight:500; letter-spacing:-0.025em; }
+.section-title em{ color:var(--ink-3); }
+.section-action{
+  letter-spacing:.13em;
+  border-bottom:1px solid transparent;
+  transition:border-color .15s,color .15s;
+}
+.section-action:hover{ color:var(--accent); border-bottom-color:var(--accent); }
+
+/* ── 5. Righe di contenuto ─────────────────────────────────────────────────
+   Separazione per filetto. L'hover non sposta piu' la riga (niente margini
+   negativi): si accende una traccia in vermiglio sul bordo d'attacco.       */
+.br-row{
+  border-bottom:1px solid var(--rule);
+  border-left:2px solid transparent;
+  padding-left:12px;
+  transition:border-color .15s,background .15s;
+}
+.br-row:hover{
+  background:var(--surface);
+  margin:0;
+  padding-left:12px;
+  padding-right:0;
+  border-left-color:var(--accent);
+}
+.br-row.br-urgent{ border-left-color:var(--accent); }
+
+/* ── 6. Chip filtro: linguette squadrate ───────────────────────────────────*/
+.filter-chip{
+  border-radius:0 !important;
+  min-height:36px;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  font-size:0.75rem;
+}
+.filter-chip.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.filter-chip:hover{ border-color:var(--accent); color:var(--accent); }
+.filter-chip.active:hover{ color:var(--paper); border-color:var(--ink); }
+
+/* ── 7. Il cobalto al lavoro ───────────────────────────────────────────────
+   Seconda voce del marchio: dati, conteggi, riferimenti istituzionali.
+   Il vermiglio resta per azione e urgenza — due voci, due compiti.          */
+.masthead-update,.mh-r,.st-kpi-val,.hstat b,.section-action .num{ color:var(--cobalt); }
+.nav-badge{ background:var(--cobalt); color:var(--paper); }
+
+/* ── 8. Tipografia dei titoli ──────────────────────────────────────────────*/
+.home-headline{ font-family:var(--font-serif) !important; font-weight:500 !important; }
+.br-title,.nr-title{ letter-spacing:-0.012em; }
+
+/* ── 9. Coerenza nel tema scuro ────────────────────────────────────────────*/
+[data-theme="dark"] .section-head{ border-bottom-color:var(--ink); }
+[data-theme="dark"] .br-row:hover{ background:var(--surface-2); }
+[data-theme="dark"] .filter-chip.active{ background:var(--ink); color:var(--paper); }
+
+/* ── 10. Accessibilita' ────────────────────────────────────────────────────*/
+@media (prefers-reduced-motion:reduce){
+  .br-row,.section-action,.filter-chip{ transition:none; }
+}
+/* Il reticolo e' decorativo: sparisce quando si chiede meno contrasto/dati */
+@media (prefers-reduced-transparency:reduce){
+  .main-content{ background-image:none; }
+}
 
 </style>
