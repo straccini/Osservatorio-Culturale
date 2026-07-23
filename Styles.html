@@ -48,8 +48,8 @@
   --cobalt:oklch(0.36 0.145 265);      /* ~#1E3A8A */
   --cobalt-soft:oklch(0.94 0.035 265);
   /* Reticolo di riporto — la griglia con cui si trasferisce la sinopia */
-  --grid-line:oklch(0.50 0.165 32 / 0.055);
-  --grid-line-2:oklch(0.50 0.165 32 / 0.038);
+  --grid-line:oklch(0.50 0.165 32 / 0.10);
+  --grid-line-2:oklch(0.50 0.165 32 / 0.06);
   --grid-step:88px;
 
   /* 5 dimensioni MuseMu Matrix */
@@ -65,6 +65,16 @@
   --amb-3-soft:oklch(0.95 0.04 260);
   --amb-4-soft:oklch(0.95 0.04 55);
   --amb-5-soft:oklch(0.95 0.04 210);
+
+  /* v4.27.54 — INCHIOSTRO DEGLI AMBITI: i colori pieni servono a identificare,
+     non a essere letti. Sui fondi soft il badge 02 stava a 3.45:1, sotto la
+     soglia AA di 4.5:1 (e proprio l'ambito «Inclusione e accessibilita»).
+     Questi valori sono calcolati per stare tutti a ~5.5:1 sul rispettivo soft. */
+  --amb-1-ink:oklch(0.510 0.24 290);
+  --amb-2-ink:oklch(0.460 0.14 165);
+  --amb-3-ink:oklch(0.490 0.18 260);
+  --amb-4-ink:oklch(0.490 0.12 55);
+  --amb-5-ink:oklch(0.470 0.10 210);
 
   /* Compatibilita Matrix (dimensioni 6-10) */
   --amb-6:oklch(0.48 0.20 260); --amb-7:oklch(0.48 0.20 300); --amb-8:oklch(0.52 0.14 70);
@@ -92,6 +102,7 @@
   --border-strong:var(--rule-2);
   --ink-2-alias:var(--ink-2);
 
+  --gutter:48px;   /* v4.27.54 — margine unico: pagina, footer e reticolo */
   --sidebar-w:280px;
   --topbar-h:64px;
 
@@ -217,8 +228,14 @@
   --link-hover:oklch(0.77 0.125 36);
   --cobalt:oklch(0.72 0.115 265);
   --cobalt-soft:oklch(0.24 0.055 265);
-  --grid-line:oklch(0.68 0.145 34 / 0.055);
-  --grid-line-2:oklch(0.68 0.145 34 / 0.035);
+  --grid-line:oklch(0.68 0.145 34 / 0.085);
+  --grid-line-2:oklch(0.68 0.145 34 / 0.055);
+  /* v4.27.54 — inchiostro ambiti in dark: chiari sui soft scuri */
+  --amb-1-ink:oklch(0.80 0.15 290);
+  --amb-2-ink:oklch(0.84 0.12 165);
+  --amb-3-ink:oklch(0.82 0.12 260);
+  --amb-4-ink:oklch(0.83 0.11 55);
+  --amb-5-ink:oklch(0.85 0.09 210);
 
   --text-muted:oklch(0.68 0.006 260);
 
@@ -710,7 +727,7 @@ body.is-home-page .topbar-search{display:none}
    ========================================================== */
 /* v4.27.5 — Spacing ritmato: piu respiro in alto, compressione progressiva */
 .page{
-  padding:40px 48px 64px 48px;
+  padding:40px var(--gutter) 64px var(--gutter);
   max-width:1320px;
   width:100%;
   display:none;
@@ -2421,7 +2438,8 @@ body.is-home-page .topbar-search{display:none}
   }
   .sidebar.open{transform:translateX(0)}
   .topbar{padding:0 16px}
-  .page{padding:24px 20px 60px 20px}
+  :root{ --gutter:20px; }
+  .page{padding:24px var(--gutter) 60px var(--gutter)}
   .home-headline,.hero h1{font-size:2.2rem}
   .page-title{font-size:1.8rem}
   .ambito-hero h1{font-size:2rem}
@@ -2451,7 +2469,8 @@ body.is-home-page .topbar-search{display:none}
    ============================================================ */
 @media (max-width:480px){
   /* Page: padding stretto */
-  .page { padding: 16px 14px 48px 14px; }
+  :root{ --gutter:14px; }
+  .page { padding: 16px var(--gutter) 48px var(--gutter); }
 
   /* Tipografia: scala ridotta */
   h1 { font-size: 1.75rem; }
@@ -4184,21 +4203,23 @@ button:focus-visible:not(.btn):not(.br-act):not(.nav-item):not(.filter-chip):not
 
 /* ── 5. Righe di contenuto ─────────────────────────────────────────────────
    Separazione per filetto. L'hover non sposta piu' la riga (niente margini
-   negativi): si accende una traccia in vermiglio sul bordo d'attacco.       */
+   negativi). NIENTE bordo laterale colorato: e' vietato dal DESIGN.md del
+   progetto («Don't usare bordi laterali colorati come accento decorativo»).
+   L'hover si legge dal fondo e dal filetto inferiore che passa a inchiostro. */
 .br-row{
   border-bottom:1px solid var(--rule);
-  border-left:2px solid transparent;
-  padding-left:12px;
-  transition:border-color .15s,background .15s;
+  padding-left:0;
+  transition:background .15s,border-color .15s;
 }
 .br-row:hover{
   background:var(--surface);
   margin:0;
-  padding-left:12px;
+  padding-left:0;
   padding-right:0;
-  border-left-color:var(--accent);
+  border-bottom-color:var(--ink);
 }
-.br-row.br-urgent{ border-left-color:var(--accent); }
+/* Urgenza: stato, non decorazione. Si legge dal fondo e dal filetto. */
+.br-row.br-urgent{ border-bottom-color:var(--danger); }
 
 /* ── 6. Chip filtro: linguette squadrate ───────────────────────────────────*/
 .filter-chip{
@@ -4234,6 +4255,63 @@ button:focus-visible:not(.btn):not(.br-act):not(.nav-item):not(.filter-chip):not
 /* Il reticolo e' decorativo: sparisce quando si chiede meno contrasto/dati */
 @media (prefers-reduced-transparency:reduce){
   .main-content{ background-image:none; }
+}
+
+
+/* ── 11. Badge di categoria leggibili (v4.27.54) ───────────────────────────
+   Il colore pieno dell'ambito identifica; per LEGGERE serve piu' contrasto.
+   Il fondo resta la tinta soft, il testo passa all'inchiostro dell'ambito.   */
+.br-a1,.nr-a1,.amb-1{ color:var(--amb-1-ink); }
+.br-a2,.nr-a2,.amb-2{ color:var(--amb-2-ink); }
+.br-a3,.nr-a3,.amb-3{ color:var(--amb-3-ink); }
+.br-a4,.nr-a4,.amb-4{ color:var(--amb-4-ink); }
+.br-a5,.nr-a5,.amb-5{ color:var(--amb-5-ink); }
+.br-tema{
+  font-size:0.6875rem;
+  letter-spacing:.10em;
+  padding:3px 8px;
+  font-weight:700;
+}
+
+/* ── 12. Il piede allineato alla pagina (v4.27.54) ─────────────────────────
+   Il footer viveva su una griglia sua: card a filo del contenitore e testo
+   centrato su 1080px, mentre le pagine sono allineate a sinistra dentro
+   1320px con 48px di gutter. Da qui il disassamento. Ora condivide la
+   stessa geometria del contenuto.                                          */
+.app-footer{
+  max-width:1320px;
+  width:100%;
+  margin:56px 0 28px !important;
+  padding:36px var(--gutter) 24px var(--gutter) !important;
+  background:var(--surface) !important;
+  border:none !important;
+  border-top:2px solid var(--ink) !important;
+}
+.app-footer > div{ max-width:none !important; margin-left:0 !important; margin-right:0 !important; }
+.app-footer .foot-logo{ display:block; height:34px; width:auto; margin-bottom:8px; }
+
+/* ── 13. Leggibilita' (v4.27.54) ───────────────────────────────────────────
+   Corpo piu' generoso, interlinea piu' aperta, misura di riga limitata:
+   il testo lungo non deve mai superare i ~72 caratteri.                     */
+.br-sommario,.nr-sommario,.home-deck,.card p,.empty-state{
+  font-size:0.9375rem;
+  line-height:1.65;
+  max-width:72ch;
+}
+.br-title,.nr-title{ font-size:1rem; line-height:1.4; }
+.br-meta,.nr-data,.nr-fonte,.br-fonte{ font-size:0.8125rem; }
+.section-title{ font-size:1.9rem; }
+
+/* ── 14. Il reticolo, deciso (v4.27.54) ────────────────────────────────────
+   Era troppo timido per leggersi come scelta: sembrava un'incertezza.
+   Ora e' allineato al gutter della pagina (48px) e ha una presenza netta;
+   le superfici che portano contenuto restano pulite e opache, cosi' il
+   rapporto figura/fondo e' esplicito invece che ambiguo.                    */
+.main-content{
+  background-position:var(--gutter) 0, 0 0;
+}
+.app-footer,.card,.home-carosello,.home-headline-frame,.modal,.panel,.drawer{
+  background-color:var(--surface);
 }
 
 </style>

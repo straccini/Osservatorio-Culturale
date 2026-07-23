@@ -252,3 +252,41 @@ Il sistema e prevalentemente piatto. Le superfici si distinguono per tono (carta
 - **Don't** usare grigi puri. Ogni neutro ha sottotono caldo. Anche in dark mode, i fondi sono marroni profondi (#1A1815), mai blu-grigi.
 - **Don't** usare gradient text (`background-clip: text`).
 - **Don't** usare glassmorphism come default.
+
+## 7. Direzione «Graticcio» (v4.27.53-54, luglio 2026)
+
+Scelta da Silvano tra tre proposte. Aggiorna alcune regole precedenti: dove
+questa sezione e le precedenti divergono, **vale questa**.
+
+### Cosa cambia
+- **Angoli vivi.** I raggi (`--r-sm/md/lg`) sono a `0`. La separazione la fanno
+  filetti e allineamenti, non gli arrotondamenti. Restano circolari solo gli
+  elementi tondi per natura (avatar, pallini). Supera la voce «rounded» del
+  frontmatter, che resta come storico.
+- **Accento dal marchio.** `--accent` e' il vermiglio del logo OCS
+  `oklch(0.50 0.165 32)`, non piu' la terra di Siena `#8B4513`. Si aggiunge
+  `--cobalt` `oklch(0.36 0.145 265)`, seconda voce del marchio, per dati,
+  conteggi e riferimenti istituzionali. Il vermiglio resta per azione e urgenza.
+- **Reticolo di riporto.** Il fondo dell'area di lettura porta la griglia con
+  cui si trasferisce la sinopia sull'intonaco: allineata al gutter di pagina,
+  fissa rispetto al viewport, presenza netta (non un velo incerto). Le
+  superfici che portano contenuto restano opache e pulite: figura e fondo
+  devono essere distinguibili senza ambiguita'.
+- **Niente ombre.** Il rilievo lo da' il filetto. Conferma e irrigidisce la
+  Flat-by-Default Rule: nessuna ombra nemmeno in hover.
+- **Un solo gutter.** `--gutter` (48 / 20 / 14px per breakpoint) governa
+  pagina, footer e origine del reticolo. Il footer non ha piu' una griglia
+  propria: prima centrava il contenuto su 1080px mentre le pagine erano
+  allineate a sinistra, e il disassamento si vedeva.
+
+### Cosa resta valido e va ribadito
+- **Niente bordi laterali colorati.** La regola era gia' scritta e va rispettata
+  anche negli stati hover: l'hover di riga si legge dal fondo e dal filetto
+  inferiore che passa a inchiostro, non da una barra verticale.
+- **Contrasto.** Nuovi token `--amb-N-ink`: i colori pieni degli ambiti
+  identificano, ma per essere **letti** su fondo soft servono valori piu'
+  scuri. Il badge 02 stava a 3.45:1, sotto la soglia AA di 4.5:1, proprio
+  sull'ambito «Inclusione e accessibilita». Ora tutti e cinque stanno sopra
+  5.5:1. Ogni nuovo badge va misurato, non stimato a occhio.
+- **Misura di riga.** I testi lunghi sono limitati a 72ch; corpo a 15px con
+  interlinea 1.65.
