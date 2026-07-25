@@ -2641,6 +2641,8 @@
             <button class="btn btn-secondary" onclick="OC.adminTool('enrichRadarSetup', this)" style="font-size:12px;padding:6px 12px" title="Aggiunge colonne Descrizione e TipoAppalto al foglio RADAR (idempotente)">Setup colonne</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('enrichRadarDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quanti bandi verrebbero arricchiti">Arricchimento &middot; anteprima</button>
             <button class="btn btn-warning" onclick="if(confirm('Arricchire fino a 20 bandi con Claude AI?'))OC.adminTool('enrichRadarApply', this)" style="font-size:12px;padding:6px 12px" title="Usa Claude Haiku per aggiungere descrizione e tipo appalto ai bandi">Arricchisci bandi</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('enrichDeepDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: bandi senza scadenza o descrizione che verrebbero arricchiti visitando il link originale">Deep enrich &middot; anteprima</button>
+            <button class="btn btn-warning" onclick="if(confirm('Visitare i link di 15 bandi e estrarre scadenza/descrizione con Claude?'))OC.adminTool('enrichDeepApply', this)" style="font-size:12px;padding:6px 12px" title="Visita il link del bando, estrae il testo, e usa Claude per trovare scadenza, descrizione e importo. Notturno automatico ore 01+04.">Deep enrich (15)</button>
           </div>
 
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;margin:12px 0 6px">Fonti</div>

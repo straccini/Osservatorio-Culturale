@@ -58,6 +58,9 @@ var OC_CRON_EXTRA = [
   // v4.27 — Arricchimento bandi: Claude Haiku aggiunge descrizione e tipo appalto
   // ai bandi che ne sono privi. 50 per run, daily ore 3 → ~50/giorno, ~48gg per 2400.
   { fn: 'enrichBandiRadarBatch', tipo: 'daily',  ora: 3,  desc: 'Arricchimento bandi RADAR via Claude AI (50/run)' },
+  // v4.27.58 — Deep enrichment: fetch URL + Claude per scadenza/descrizione/importo
+  { fn: 'enrichBandiDeepBatch',  tipo: 'daily',  ora: 1,  desc: 'Deep enrichment bandi: fetch pagina + estrazione scadenza/descrizione (15/run, ore 01)' },
+  { fn: 'enrichBandiDeepBatch',  tipo: 'daily',  ora: 4,  desc: 'Deep enrichment bandi: seconda finestra notturna (15/run, ore 04)' },
   // v4.27 — apiScanTutto compattato: era trigger standalone lun 07:00 (ApiConnettori.js)
   { fn: 'apiScanTutto',          tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 7, desc: 'API connettori: TED + iTunes + DOAJ + YouTube (lunedi)' },
   // Tappa P — audit mensile salute fonti podcast/video (email all'admin, giorno 1)

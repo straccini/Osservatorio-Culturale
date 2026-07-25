@@ -282,6 +282,284 @@ function enrichBandiRadarBatch() {
   Logger.log('enrichBandiRadarBatch (Bandi_v5): ' + JSON.stringify(result));
   return result;
 }
+
+// ============================================================================
+// DEEP ENRICHMENT — v4.27.58
+// ============================================================================
+// A differenza di arricchisciBandiV5 (che passa solo il titolo a Claude),
+// questo modulo VISITA il link del bando, estrae il testo dalla pagina HTML,
+// e lo invia a Claude per estrarre: scadenza, descrizione, importo, tipo.
+// Priorità: prima bandi SENZA SCADENZA (i più critici), poi senza descrizione.
+// Schedulato come trigger notturno (01:00 + 04:00, 15 bandi/run).
+// ============================================================================
+
+/**
+ * Estrae testo utile da HTML grezzo, rimuovendo script/style/nav/footer.
+ * Ritorna max 3000 caratteri di testo pulito.
+ * @param {string} html
+ * @return {string}
+ */
+function _enrichExtractText_(html) {
+  if (!html) return '';
+  var s = String(html);
+  // Rimuovi blocchi non-contenuto
+  s = s.replace(/<script[\s\S]*?<\/script>/gi, ' ');
+  s = s.replace(/<style[\s\S]*?<\/style>/gi, ' ');
+  s = s.replace(/<nav[\s\S]*?<\/nav>/gi, ' ');
+  s = s.replace(/<footer[\s\S]*?<\/footer>/gi, ' ');
+  s = s.replace(/<header[\s\S]*?<\/header>/gi, ' ');
+  s = s.replace(/<aside[\s\S]*?<\/aside>/gi, ' ');
+  s = s.replace(/<!--[\s\S]*?-->/g, ' ');
+  // Rimuovi tutti i tag HTML
+  s = s.replace(/<[^>]+>/g, ' ');
+  // Decode entità comuni
+  s = s.replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<')
+       .replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&#\d+;/g, ' ');
+  // Collassa whitespace
+  s = s.replace(/\s+/g, ' ').trim();
+  // Tronca a 3000 char (sufficiente per Claude, dentro budget token)
+  return s.substring(0, 3000);
+}
+
+/**
+ * Fetch di una pagina web con gestione errori e User-Agent realistico.
+ * Per TED, usa l'API notices se disponibile.
+ * @param {string} url
+ * @return {string|null} — HTML/testo della pagina, o null se errore
+ */
+function _enrichFetchPage_(url) {
+  if (!url) return null;
+  try {
+    // TED: usa API notice detail se il link è un notice ID
+    var tedMatch = url.match(/ted\.europa\.eu.*?(\d{5,})/);
+    if (tedMatch) {
+      var tedUrl = 'https://api.ted.europa.eu/v3/notices/' + tedMatch[1];
+      var tedResp = UrlFetchApp.fetch(tedUrl, {
+        muteHttpExceptions: true, deadline: 15,
+        headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0 (cultural observatory)' }
+      });
+      if (tedResp && tedResp.getResponseCode() === 200) return tedResp.getContentText();
+    }
+
+    var resp = UrlFetchApp.fetch(url, {
+      muteHttpExceptions: true,
+      deadline: 15,
+      followRedirects: true,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/json,*/*',
+        'Accept-Language': 'it-IT,it;q=0.9,en;q=0.8'
+      }
+    });
+    if (!resp) return null;
+    var code = resp.getResponseCode();
+    if (code >= 400) {
+      Logger.log('[enrichDeep] HTTP ' + code + ' per ' + url);
+      return null;
+    }
+    return resp.getContentText();
+  } catch (e) {
+    Logger.log('[enrichDeep] fetch errore per ' + url + ': ' + e.message);
+    return null;
+  }
+}
+
+/**
+ * Deep enrichment: visita il link di ogni bando incompleto, estrae il
+ * contenuto della pagina, e usa Claude per estrarre scadenza, descrizione,
+ * importo e tipo appalto. Aggiorna SOLO i campi vuoti (mai sovrascrittura).
+ *
+ * Priorità selezione:
+ *   1. Bandi SENZA SCADENZA (i più critici per l'esposizione)
+ *   2. Bandi SENZA DESCRIZIONE (ma con scadenza)
+ *
+ * @param {Object} [opts] {cap:15, dryRun:false}
+ * @return {Object} report
+ */
+function enrichBandiDeep(opts) {
+  opts = opts || {};
+  var cap = opts.cap || 15;
+  var dryRun = !!opts.dryRun;
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var shName = (typeof SH_BANDI_V5 !== 'undefined') ? SH_BANDI_V5 : 'Bandi_v5';
+  var sheet = ss.getSheetByName(shName);
+  if (!sheet) return { ok: false, error: 'Foglio Bandi_v5 non trovato' };
+  var apiKey = _claudeKey_();
+  if (!apiKey) return { ok: false, error: 'CLAUDE_API_KEY non configurata' };
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return { ok: true, arricchiti: 0, message: 'Nessun bando' };
+
+  // Leggi tutti i dati in un colpo solo
+  var data = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+
+  // Separa candidati: priorità 1 (senza scadenza), priorità 2 (senza descrizione)
+  var senzaScadenza = [];
+  var senzaDescrizione = [];
+
+  for (var r = 0; r < data.length; r++) {
+    var row = data[r];
+    if (!row[0]) continue;
+    var stato = String(row[COL_B.STATO_RECORD - 1] || '').toLowerCase();
+    if (stato === 'archiviato') continue;
+    var url = String(row[COL_B.URL_BANDO - 1] || '').trim();
+    if (!url || !/^https?:\/\//i.test(url)) continue;
+    var titolo = String(row[COL_B.TITOLO - 1] || '').trim();
+    if (!titolo || /^(?:ted\s+notice\s+)?\d{3,}[-\/]?\d*$/i.test(titolo)) continue;
+
+    var rawScad = row[COL_B.SCADENZA - 1];
+    var hasScad = false;
+    if (rawScad instanceof Date && !isNaN(rawScad.getTime())) hasScad = true;
+    else if (rawScad && String(rawScad).trim()) hasScad = true;
+
+    var descr = String(row[COL_B.SOMMARIO - 1] || '').trim();
+    var hasDescr = descr.length >= 20;
+
+    if (hasScad && hasDescr) continue; // già completo
+
+    var entry = { rowIdx: r + 2, titolo: titolo,
+      ente: String(row[COL_B.ENTE - 1] || ''), url: url, hasScad: hasScad, hasDescr: hasDescr,
+      hasImporto: !!String(row[COL_B.IMPORTO - 1] || '').trim(),
+      hasTipo: !!String(row[COL_B.TIPO_BANDO - 1] || '').trim() };
+
+    if (!hasScad) senzaScadenza.push(entry);
+    else senzaDescrizione.push(entry);
+  }
+
+  // Unisci: prima senza scadenza, poi senza descrizione
+  var candidati = senzaScadenza.concat(senzaDescrizione);
+  var batch = candidati.slice(0, cap);
+
+  var report = {
+    ok: true, arricchiti: 0, errori: 0, fetchFalliti: 0,
+    scadenzeTrovate: 0, descrizioniTrovate: 0, importiTrovati: 0,
+    totCandidati: candidati.length, senzaScadenza: senzaScadenza.length,
+    senzaDescrizione: senzaDescrizione.length
+  };
+
+  if (!batch.length) {
+    report.message = 'Nessun bando incompleto con URL valida';
+    return report;
+  }
+
+  if (dryRun) {
+    report.dryRun = true;
+    report.batch = batch.length;
+    report.anteprima = batch.map(function(c) {
+      return { riga: c.rowIdx, titolo: c.titolo.substring(0, 60), url: c.url.substring(0, 80),
+               mancaScadenza: !c.hasScad, mancaDescrizione: !c.hasDescr };
+    });
+    return report;
+  }
+
+  // Rate limit check
+  if (typeof _checkClaudeRateLimit_ === 'function' && !_checkClaudeRateLimit_()) {
+    return { ok: false, error: 'Limite giornaliero Claude raggiunto' };
+  }
+
+  var t0 = Date.now();
+  for (var i = 0; i < batch.length; i++) {
+    // Budget tempo: max 5 minuti totali (GAS limit 6 min)
+    if (Date.now() - t0 > 300000) {
+      Logger.log('[enrichDeep] Budget tempo esaurito dopo ' + i + '/' + batch.length);
+      break;
+    }
+    var c = batch[i];
+    try {
+      // 1. Fetch della pagina
+      var html = _enrichFetchPage_(c.url);
+      if (!html) { report.fetchFalliti++; continue; }
+
+      // 2. Estrai testo dalla pagina
+      var pageText = _enrichExtractText_(html);
+      if (pageText.length < 30) { report.fetchFalliti++; continue; }
+
+      // 3. Prompt Claude con il contenuto reale della pagina
+      var campiRichiesti = [];
+      if (!c.hasScad) campiRichiesti.push('"scadenza":"YYYY-MM-DD o null se non trovata"');
+      if (!c.hasDescr) campiRichiesti.push('"descrizione":"1-3 frasi chiare in italiano, max 300 caratteri"');
+      if (!c.hasImporto) campiRichiesti.push('"importo":"cifra in euro o null"');
+      if (!c.hasTipo) campiRichiesti.push('"tipo_appalto":"servizi|forniture|lavori|misto|finanziamento"');
+
+      var prompt = 'Sei un esperto di appalti pubblici e bandi culturali.\n'
+        + 'Bando: "' + c.titolo + '" — Ente: ' + c.ente + '\n'
+        + 'Contenuto della pagina web del bando:\n---\n' + pageText + '\n---\n'
+        + 'Estrai dal testo SOLO le informazioni REALI (non inventare).\n'
+        + 'Rispondi SOLO con un JSON valido: {' + campiRichiesti.join(',') + '}';
+
+      var resp = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+        method: 'post', muteHttpExceptions: true,
+        headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+        payload: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 500,
+          messages: [{ role: 'user', content: prompt }] })
+      });
+
+      var code = resp.getResponseCode();
+      if (code === 429 || code >= 500) { report.errori++; Utilities.sleep(5000); continue; }
+      if (code !== 200) { report.errori++; continue; }
+
+      var body = JSON.parse(resp.getContentText());
+      var txt = (body.content && body.content[0] && body.content[0].text) || '';
+      var jm = txt.match(/\{[\s\S]*\}/);
+      if (!jm) { report.errori++; continue; }
+      var parsed = JSON.parse(jm[0]);
+
+      // 4. Aggiorna solo campi vuoti
+      var aggiornato = false;
+
+      if (!c.hasScad && parsed.scadenza && String(parsed.scadenza) !== 'null') {
+        var dScad = new Date(parsed.scadenza);
+        if (!isNaN(dScad.getTime()) && dScad > new Date()) {
+          sheet.getRange(c.rowIdx, COL_B.SCADENZA).setValue(dScad);
+          report.scadenzeTrovate++;
+          aggiornato = true;
+        }
+      }
+
+      if (!c.hasDescr && parsed.descrizione && String(parsed.descrizione).trim().length >= 10) {
+        sheet.getRange(c.rowIdx, COL_B.SOMMARIO).setValue(String(parsed.descrizione).substring(0, 500));
+        report.descrizioniTrovate++;
+        aggiornato = true;
+      }
+
+      if (!c.hasImporto && parsed.importo && String(parsed.importo) !== 'null') {
+        var imp = String(parsed.importo).replace(/[^\d.,]/g, '').trim();
+        if (imp) {
+          sheet.getRange(c.rowIdx, COL_B.IMPORTO).setValue(imp);
+          report.importiTrovati++;
+          aggiornato = true;
+        }
+      }
+
+      if (!c.hasTipo && parsed.tipo_appalto) {
+        var tn = String(parsed.tipo_appalto).toLowerCase().trim();
+        if (['servizi','forniture','lavori','misto','finanziamento'].indexOf(tn) >= 0) {
+          sheet.getRange(c.rowIdx, COL_B.TIPO_BANDO).setValue(tn);
+          aggiornato = true;
+        }
+      }
+
+      if (aggiornato) report.arricchiti++;
+      if (i < batch.length - 1) Utilities.sleep(1000);
+
+    } catch (e) {
+      Logger.log('[enrichDeep] riga ' + c.rowIdx + ' errore: ' + (e && e.message || e));
+      report.errori++;
+    }
+  }
+
+  Logger.log('[enrichDeep] completato: ' + JSON.stringify(report));
+  return report;
+}
+
+/**
+ * v4.27.58 — Wrapper per CronDispatcher: deep enrichment notturno (15/run).
+ */
+function enrichBandiDeepBatch() {
+  var result = enrichBandiDeep({ cap: 15 });
+  Logger.log('enrichBandiDeepBatch: ' + JSON.stringify(result));
+  return result;
+}
+
 // [22 funzioni diagnostica/migrazione estratte in DiagnosticaMigrazione.js]
 function buildColMap(headers) {
   const map={};

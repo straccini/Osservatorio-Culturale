@@ -81,6 +81,8 @@ function adminRunTool(tool, token) {
       case 'enrichRadarSetup':   r = addColonneRadar_v427(); break;
       case 'enrichRadarDry':     r = arricchisciBandiRadar({ dryRun: true }); break;
       case 'enrichRadarApply':   r = arricchisciBandiRadar({ cap: 20 }); break;
+      case 'enrichDeepDry':      r = enrichBandiDeep({ dryRun: true }); break;
+      case 'enrichDeepApply':    r = enrichBandiDeep({ cap: 15 }); break;
       case 'enrichRadarBatch':   r = enrichBandiRadarBatch(); break;
 
       // ── Diagnostica / test (non scrivono nulla) ──────────────────────────
