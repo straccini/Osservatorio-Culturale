@@ -41,6 +41,7 @@ function adminRunTool(tool, token) {
       case 'fontiPrimarie':      r = fontiRipristinaPrimarie(); break;
       case 'fontiOsservatori':  r = fontiAggiungiBatchOsservatori(); break;
       case 'fontiDesignArte':    r = fontiAggiungiBatchDesignArte(); break;  // segnalazione 2026-07 (Turrell/ARoS)
+      case 'fontiArteEU':        r = addFontiArteDefolt(); break;           // RSS arte contemporanea EU (SocialFonti)
       case 'videoIntl':          r = videoAggiungiCanaliIntl(); break;       // canali video internazionali (piano novità)
       case 'podcastAttivi':      r = podcastAggiungiBatchAttivi(); break;    // podcast internazionali attivi (rianimazione +0/30gg)
       case 'socialEditoriale':   r = generateSocialDraftFromEditoriale({ force: true }); break; // editoriale → coda social (manuale)
