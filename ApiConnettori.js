@@ -1045,6 +1045,50 @@ function apiScanEditoria(opts) {
   // }
   report.googleBooks = { ok: true, fonte: 'Google Books', nuovi: 0, duplicati: 0, errori: 0, dettagli: ['Disabilitato: quota GCP esaurita'] };
 
+  // 8. Europeana — patrimonio culturale europeo (richiede EUROPEANA_API_KEY)
+  try {
+    report.europeana = api_scanEuropeana_(opts, titoliEditoria);
+    Utilities.sleep(API_SLEEP_MS);
+  } catch (e) {
+    report.europeana = { ok: false, errori: 1, dettagli: ['Errore: ' + e.message] };
+    Logger.log('apiScanEditoria Europeana errore: ' + e.message);
+  }
+
+  // 9. Rijksmuseum — collezione Amsterdam (richiede RIJKSMUSEUM_API_KEY)
+  try {
+    report.rijksmuseum = api_scanRijksmuseum_(opts, titoliEditoria);
+    Utilities.sleep(API_SLEEP_MS);
+  } catch (e) {
+    report.rijksmuseum = { ok: false, errori: 1, dettagli: ['Errore: ' + e.message] };
+    Logger.log('apiScanEditoria Rijksmuseum errore: ' + e.message);
+  }
+
+  // 10. V&A Museum — collezione Londra (API pubblica)
+  try {
+    report.va = api_scanVA_(opts, titoliEditoria);
+    Utilities.sleep(API_SLEEP_MS);
+  } catch (e) {
+    report.va = { ok: false, errori: 1, dettagli: ['Errore: ' + e.message] };
+    Logger.log('apiScanEditoria V&A errore: ' + e.message);
+  }
+
+  // 11. SMK Danimarca — collezione Copenaghen (API pubblica)
+  try {
+    report.smk = api_scanSMK_(opts, titoliEditoria);
+    Utilities.sleep(API_SLEEP_MS);
+  } catch (e) {
+    report.smk = { ok: false, errori: 1, dettagli: ['Errore: ' + e.message] };
+    Logger.log('apiScanEditoria SMK errore: ' + e.message);
+  }
+
+  // 12. Science Museum Group — collezione UK (API pubblica)
+  try {
+    report.scienceMuseum = api_scanScienceMuseum_(opts, titoliEditoria);
+  } catch (e) {
+    report.scienceMuseum = { ok: false, errori: 1, dettagli: ['Errore: ' + e.message] };
+    Logger.log('apiScanEditoria Science Museum errore: ' + e.message);
+  }
+
   var durSec = Math.round((new Date().getTime() - t0) / 1000);
   report.durataSecondi = durSec;
   Logger.log('=== apiScanEditoria: fine (' + durSec + 's) ===');
@@ -1490,5 +1534,361 @@ function api_scanGoogleBooks_(opts, titoliEditoria) {
     } catch (e) { report.errori++; Logger.log('Google Books errore: ' + e.message); }
   }
   Logger.log('Google Books completato: ' + JSON.stringify(report));
+  return report;
+}
+
+
+// ============================================================================
+// CONNETTORI MUSEI EUROPEI — v4.27.57
+// ============================================================================
+// Europeana Search API + API collezioni museali aperte (Rijksmuseum, V&A, SMK,
+// Science Museum Group). Scrivono su foglio Editoria come tipo 'risorsa'.
+// Chiavi API opzionali in ScriptProperties:
+//   EUROPEANA_API_KEY       — obbligatoria (gratis su pro.europeana.eu)
+//   RIJKSMUSEUM_API_KEY     — obbligatoria (gratis su data.rijksmuseum.nl)
+//   SMK_API_KEY             — non richiesta (API pubblica)
+//   VA_API_KEY              — non richiesta (API pubblica)
+//   SCIENCE_MUSEUM_API_KEY  — non richiesta (API pubblica)
+// ============================================================================
+
+
+/**
+ * Europeana Search API — cerca oggetti del patrimonio culturale europeo.
+ * API docs: https://pro.europeana.eu/page/search
+ * Richiede chiave API (gratuita): registrarsi su pro.europeana.eu
+ *
+ * @param {Object} [opts] {dryRun}
+ * @param {Object} [titoliEditoria] — mappa dedup precaricata
+ * @return {Object} report {ok, fonte, nuovi, duplicati, errori}
+ */
+function api_scanEuropeana_(opts, titoliEditoria) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var report = { ok: true, fonte: 'Europeana', nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+
+  var apiKey = '';
+  try { apiKey = PropertiesService.getScriptProperties().getProperty('EUROPEANA_API_KEY') || ''; } catch (_) {}
+  if (!apiKey) {
+    report.ok = false;
+    report.dettagli.push('Chiave API mancante: impostare EUROPEANA_API_KEY in ScriptProperties');
+    Logger.log('[API] Europeana: chiave API mancante');
+    return report;
+  }
+
+  // Query tematiche: museologia, patrimonio culturale, accessibilità museale
+  var queries = [
+    'museum accessibility',
+    'cultural heritage digital',
+    'museologia patrimonio'
+  ];
+
+  for (var q = 0; q < queries.length; q++) {
+    try {
+      var url = 'https://api.europeana.eu/record/v2/search.json' +
+        '?wskey=' + apiKey +
+        '&query=' + encodeURIComponent(queries[q]) +
+        '&rows=20&sort=timestamp_update+desc' +
+        '&profile=standard&qf=TYPE:TEXT';
+
+      var resp = api_fetch_(url);
+      if (!resp || resp.getResponseCode() !== 200) {
+        report.errori++;
+        report.dettagli.push('HTTP ' + (resp ? resp.getResponseCode() : 'null') + ' per "' + queries[q] + '"');
+        continue;
+      }
+
+      var data = JSON.parse(resp.getContentText());
+      var items = (data.items || []);
+      Logger.log('[API] Europeana "' + queries[q] + '": ' + items.length + ' risultati');
+
+      for (var i = 0; i < items.length; i++) {
+        try {
+          var it = items[i];
+          var titolo = '';
+          if (it.title && it.title.length > 0) titolo = it.title[0];
+          if (!titolo) continue;
+
+          var autore = '';
+          if (it.dcCreator && it.dcCreator.length > 0) autore = it.dcCreator[0];
+          var linkUrl = it.guid || ('https://www.europeana.eu/item' + it.id);
+          var provider = (it.dataProvider && it.dataProvider.length > 0) ? it.dataProvider[0] : 'Europeana';
+
+          if (!dryRun) {
+            var scritto = api_scriviEditoria_({
+              tipo: 'risorsa', titolo: titolo.substring(0, 200), autore: autore,
+              url: linkUrl, fonte: 'Europeana',
+              categoria: 'Patrimonio Culturale',
+              note: ('Provider: ' + provider).substring(0, 200)
+            }, titoliEditoria);
+            if (scritto) report.nuovi++; else report.duplicati++;
+          } else { report.nuovi++; }
+        } catch (eItem) { report.errori++; }
+      }
+      Utilities.sleep(API_SLEEP_MS);
+    } catch (e) {
+      report.errori++;
+      report.dettagli.push('Errore Europeana "' + queries[q] + '": ' + e.message);
+      Logger.log('[API] Europeana errore: ' + e.message);
+    }
+  }
+  Logger.log('[API] Europeana completato: ' + JSON.stringify(report));
+  return report;
+}
+
+
+/**
+ * Rijksmuseum API — collezione del museo di Amsterdam.
+ * API docs: https://data.rijksmuseum.nl/object-metadata/api/
+ * Richiede chiave API (gratuita): registrarsi su data.rijksmuseum.nl
+ *
+ * @param {Object} [opts] {dryRun}
+ * @param {Object} [titoliEditoria] — mappa dedup precaricata
+ * @return {Object} report
+ */
+function api_scanRijksmuseum_(opts, titoliEditoria) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var report = { ok: true, fonte: 'Rijksmuseum', nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+
+  var apiKey = '';
+  try { apiKey = PropertiesService.getScriptProperties().getProperty('RIJKSMUSEUM_API_KEY') || ''; } catch (_) {}
+  if (!apiKey) {
+    report.ok = false;
+    report.dettagli.push('Chiave API mancante: impostare RIJKSMUSEUM_API_KEY in ScriptProperties');
+    Logger.log('[API] Rijksmuseum: chiave API mancante');
+    return report;
+  }
+
+  try {
+    var url = 'https://www.rijksmuseum.nl/api/en/collection' +
+      '?key=' + apiKey +
+      '&format=json&ps=20&s=relevance' +
+      '&q=museum+accessibility&imgonly=True';
+
+    var resp = api_fetch_(url);
+    if (!resp || resp.getResponseCode() !== 200) {
+      report.errori++;
+      report.dettagli.push('HTTP ' + (resp ? resp.getResponseCode() : 'null'));
+      return report;
+    }
+
+    var data = JSON.parse(resp.getContentText());
+    var items = data.artObjects || [];
+    Logger.log('[API] Rijksmuseum: ' + items.length + ' oggetti trovati');
+
+    for (var i = 0; i < items.length; i++) {
+      try {
+        var obj = items[i];
+        var titolo = obj.title || obj.longTitle || '';
+        if (!titolo) continue;
+        var autore = obj.principalOrFirstMaker || '';
+        var linkUrl = obj.links && obj.links.web ? obj.links.web : 'https://www.rijksmuseum.nl/en/collection/' + obj.objectNumber;
+
+        if (!dryRun) {
+          var scritto = api_scriviEditoria_({
+            tipo: 'risorsa', titolo: titolo.substring(0, 200), autore: autore,
+            url: linkUrl, fonte: 'Rijksmuseum',
+            categoria: 'Collezioni Museali',
+            note: obj.objectNumber || ''
+          }, titoliEditoria);
+          if (scritto) report.nuovi++; else report.duplicati++;
+        } else { report.nuovi++; }
+      } catch (eItem) { report.errori++; }
+    }
+  } catch (e) {
+    report.errori++;
+    report.dettagli.push('Errore: ' + e.message);
+    Logger.log('[API] Rijksmuseum errore: ' + e.message);
+  }
+  Logger.log('[API] Rijksmuseum completato: ' + JSON.stringify(report));
+  return report;
+}
+
+
+/**
+ * Victoria and Albert Museum (V&A) Collections API — Londra.
+ * API docs: https://developers.vam.ac.uk/
+ * API pubblica, nessuna chiave richiesta.
+ *
+ * @param {Object} [opts] {dryRun}
+ * @param {Object} [titoliEditoria] — mappa dedup precaricata
+ * @return {Object} report
+ */
+function api_scanVA_(opts, titoliEditoria) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var report = { ok: true, fonte: 'V&A Museum', nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+
+  try {
+    var url = 'https://api.vam.ac.uk/v2/objects/search' +
+      '?q=museum+accessibility+cultural+heritage' +
+      '&page_size=20&order_sort=desc&ordering=__updated';
+
+    var resp = api_fetch_(url);
+    if (!resp || resp.getResponseCode() !== 200) {
+      report.errori++;
+      report.dettagli.push('HTTP ' + (resp ? resp.getResponseCode() : 'null'));
+      return report;
+    }
+
+    var data = JSON.parse(resp.getContentText());
+    var items = data.records || [];
+    Logger.log('[API] V&A: ' + items.length + ' oggetti trovati');
+
+    for (var i = 0; i < items.length; i++) {
+      try {
+        var obj = items[i];
+        var titolo = '';
+        if (obj._primaryTitle) titolo = obj._primaryTitle;
+        else if (obj.objectType) titolo = obj.objectType + ' — ' + (obj._primaryDate || '');
+        if (!titolo) continue;
+        var autore = obj._primaryMaker && obj._primaryMaker.name ? obj._primaryMaker.name : '';
+        var linkUrl = 'https://collections.vam.ac.uk/item/' + obj.systemNumber;
+
+        if (!dryRun) {
+          var scritto = api_scriviEditoria_({
+            tipo: 'risorsa', titolo: titolo.substring(0, 200), autore: autore,
+            url: linkUrl, fonte: 'V&A Museum',
+            categoria: 'Collezioni Museali',
+            note: obj.systemNumber || ''
+          }, titoliEditoria);
+          if (scritto) report.nuovi++; else report.duplicati++;
+        } else { report.nuovi++; }
+      } catch (eItem) { report.errori++; }
+    }
+  } catch (e) {
+    report.errori++;
+    report.dettagli.push('Errore: ' + e.message);
+    Logger.log('[API] V&A errore: ' + e.message);
+  }
+  Logger.log('[API] V&A completato: ' + JSON.stringify(report));
+  return report;
+}
+
+
+/**
+ * SMK (Statens Museum for Kunst, Danimarca) API — collezione pubblica.
+ * API docs: https://www.smk.dk/en/article/smk-api/
+ * API pubblica, nessuna chiave richiesta.
+ *
+ * @param {Object} [opts] {dryRun}
+ * @param {Object} [titoliEditoria] — mappa dedup precaricata
+ * @return {Object} report
+ */
+function api_scanSMK_(opts, titoliEditoria) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var report = { ok: true, fonte: 'SMK Danimarca', nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+
+  try {
+    var url = 'https://api.smk.dk/api/v1/art/search/' +
+      '?keys=museum+heritage&offset=0&rows=20&lang=en';
+
+    var resp = api_fetch_(url);
+    if (!resp || resp.getResponseCode() !== 200) {
+      report.errori++;
+      report.dettagli.push('HTTP ' + (resp ? resp.getResponseCode() : 'null'));
+      return report;
+    }
+
+    var data = JSON.parse(resp.getContentText());
+    var items = data.items || [];
+    Logger.log('[API] SMK: ' + items.length + ' oggetti trovati');
+
+    for (var i = 0; i < items.length; i++) {
+      try {
+        var obj = items[i];
+        var titolo = '';
+        if (obj.titles && obj.titles.length > 0) titolo = obj.titles[0].title || '';
+        if (!titolo) continue;
+        var autore = '';
+        if (obj.production && obj.production.length > 0 && obj.production[0].creator) {
+          autore = obj.production[0].creator;
+        }
+        var linkUrl = 'https://open.smk.dk/artwork/image/' + (obj.object_number || obj.id || '');
+
+        if (!dryRun) {
+          var scritto = api_scriviEditoria_({
+            tipo: 'risorsa', titolo: titolo.substring(0, 200), autore: autore,
+            url: linkUrl, fonte: 'SMK Danimarca',
+            categoria: 'Collezioni Museali',
+            note: obj.object_number || ''
+          }, titoliEditoria);
+          if (scritto) report.nuovi++; else report.duplicati++;
+        } else { report.nuovi++; }
+      } catch (eItem) { report.errori++; }
+    }
+  } catch (e) {
+    report.errori++;
+    report.dettagli.push('Errore: ' + e.message);
+    Logger.log('[API] SMK errore: ' + e.message);
+  }
+  Logger.log('[API] SMK completato: ' + JSON.stringify(report));
+  return report;
+}
+
+
+/**
+ * Science Museum Group (Regno Unito) Collection API.
+ * API docs: https://group.sciencemuseum.org.uk/about-us/collection/api/
+ * API pubblica, nessuna chiave richiesta.
+ *
+ * @param {Object} [opts] {dryRun}
+ * @param {Object} [titoliEditoria] — mappa dedup precaricata
+ * @return {Object} report
+ */
+function api_scanScienceMuseum_(opts, titoliEditoria) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var report = { ok: true, fonte: 'Science Museum Group', nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
+
+  try {
+    var url = 'https://collection.sciencemuseumgroup.org.uk/search/objects' +
+      '?q=museum+heritage+accessibility' +
+      '&page[size]=20&page[number]=0&sort=-date';
+
+    var resp = api_fetch_(url, { headers: { 'Accept': 'application/json' } });
+    if (!resp || resp.getResponseCode() !== 200) {
+      report.errori++;
+      report.dettagli.push('HTTP ' + (resp ? resp.getResponseCode() : 'null'));
+      return report;
+    }
+
+    var data = JSON.parse(resp.getContentText());
+    var items = data.data || [];
+    Logger.log('[API] Science Museum: ' + items.length + ' oggetti trovati');
+
+    for (var i = 0; i < items.length; i++) {
+      try {
+        var obj = items[i];
+        var attr = obj.attributes || {};
+        var titolo = '';
+        if (attr.summary && attr.summary.title) titolo = attr.summary.title;
+        else if (attr.title && attr.title.length > 0) titolo = attr.title[0].value || '';
+        if (!titolo) continue;
+        var autore = '';
+        if (attr.lifecycle && attr.lifecycle.creation && attr.lifecycle.creation.length > 0) {
+          var maker = attr.lifecycle.creation[0].maker;
+          if (maker && maker.length > 0) autore = maker[0].summary_title || '';
+        }
+        var linkUrl = obj.links && obj.links.self ? obj.links.self : 'https://collection.sciencemuseumgroup.org.uk/objects/' + obj.id;
+
+        if (!dryRun) {
+          var scritto = api_scriviEditoria_({
+            tipo: 'risorsa', titolo: titolo.substring(0, 200), autore: autore,
+            url: linkUrl, fonte: 'Science Museum Group',
+            categoria: 'Collezioni Museali',
+            note: obj.id || ''
+          }, titoliEditoria);
+          if (scritto) report.nuovi++; else report.duplicati++;
+        } else { report.nuovi++; }
+      } catch (eItem) { report.errori++; }
+    }
+  } catch (e) {
+    report.errori++;
+    report.dettagli.push('Errore: ' + e.message);
+    Logger.log('[API] Science Museum errore: ' + e.message);
+  }
+  Logger.log('[API] Science Museum completato: ' + JSON.stringify(report));
   return report;
 }

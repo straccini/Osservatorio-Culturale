@@ -690,6 +690,67 @@ var FAS_API_REGISTRY = [
     limiteRate: 'Variabile per portale',
     mappaCampi: 'title->Titolo, organization->Ente, notes->SommarioAI, resources[0].url->Link'
   },
+  // v4.27.57 — Connettori musei europei + aggregatore Europeana
+  {
+    id: 'europeana',
+    nome: 'Europeana — Patrimonio culturale europeo',
+    endpoint: 'https://api.europeana.eu/record/v2/search.json',
+    formato: 'JSON (GET — wskey + query)',
+    auth: 'API key gratuita (pro.europeana.eu)',
+    alimenta: 'Editoria',
+    stato: 'in_sviluppo',
+    motivoBlocco: 'Richiede EUROPEANA_API_KEY in ScriptProperties',
+    limiteRate: '10.000 req/giorno (API gratuita)',
+    mappaCampi: 'title[0]->Titolo, dcCreator[0]->Autore, guid->Link, dataProvider[0]->Fonte'
+  },
+  {
+    id: 'rijksmuseum',
+    nome: 'Rijksmuseum — Collezione Amsterdam',
+    endpoint: 'https://www.rijksmuseum.nl/api/en/collection',
+    formato: 'JSON (GET — key + query)',
+    auth: 'API key gratuita (data.rijksmuseum.nl)',
+    alimenta: 'Editoria',
+    stato: 'in_sviluppo',
+    motivoBlocco: 'Richiede RIJKSMUSEUM_API_KEY in ScriptProperties',
+    limiteRate: '10.000 req/giorno',
+    mappaCampi: 'title->Titolo, principalOrFirstMaker->Autore, links.web->Link'
+  },
+  {
+    id: 'va_museum',
+    nome: 'V&A Museum — Collezione Londra',
+    endpoint: 'https://api.vam.ac.uk/v2/objects/search',
+    formato: 'JSON (GET — pubblica)',
+    auth: 'Nessuna (API pubblica)',
+    alimenta: 'Editoria',
+    stato: 'in_sviluppo',
+    motivoBlocco: '',
+    limiteRate: 'Non documentato',
+    mappaCampi: '_primaryTitle->Titolo, _primaryMaker.name->Autore, systemNumber->Link'
+  },
+  {
+    id: 'smk_dk',
+    nome: 'SMK — Statens Museum for Kunst (Danimarca)',
+    endpoint: 'https://api.smk.dk/api/v1/art/search/',
+    formato: 'JSON (GET — pubblica)',
+    auth: 'Nessuna (API pubblica)',
+    alimenta: 'Editoria',
+    stato: 'in_sviluppo',
+    motivoBlocco: '',
+    limiteRate: 'Non documentato',
+    mappaCampi: 'titles[0].title->Titolo, production[0].creator->Autore, object_number->Link'
+  },
+  {
+    id: 'science_museum',
+    nome: 'Science Museum Group — Collezione UK',
+    endpoint: 'https://collection.sciencemuseumgroup.org.uk/search/objects',
+    formato: 'JSON (GET — pubblica)',
+    auth: 'Nessuna (API pubblica)',
+    alimenta: 'Editoria',
+    stato: 'in_sviluppo',
+    motivoBlocco: '',
+    limiteRate: 'Non documentato',
+    mappaCampi: 'attributes.summary.title->Titolo, lifecycle.creation[0].maker->Autore, links.self->Link'
+  },
   {
     id: 'bdncp_pubblicita',
     nome: 'BDNCP — Pubblicità Legale ANAC (sotto-soglia)',
@@ -1006,6 +1067,8 @@ var FAS_OPENCOESIONE = {
 var FAS_CKAN_PORTALS = [
   // ── NAZIONALE ──────────────────────────────────────────────────────────
   { nome: 'dati.gov.it — Open Data PA',     base: 'https://www.dati.gov.it/opendata/api/3/action',          query: 'bandi cultura musei patrimonio',       ambito: 1, livello: 'Nazionale', regione: '' },
+  // v4.27.57 — Portale dati aperti UE (CKAN-compatible)
+  { nome: 'data.europa.eu — Open Data UE',  base: 'https://data.europa.eu/api/hub/search',                  query: 'cultural heritage museum',             ambito: 1, livello: 'Europeo',   regione: '' },
 
   // ── REGIONALI FUNZIONANTI (HTTP 200 testati 17/06/2026) ────────────────
   { nome: 'Trentino-AA Open Data',           base: 'https://dati.trentino.it/api/3/action',                  query: 'bandi cultura patrimonio musei',       ambito: 1, livello: 'Regionale', regione: 'Trentino-AA' },

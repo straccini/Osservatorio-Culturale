@@ -130,6 +130,9 @@ const FONTI_ARTICOLI_ARTE = [
   { nome:'My Modern Met',        url:'https://mymodernmet.com/feed/',             ambito:'Arte & Design',      priorita:2 },
   { nome:'ArtNews',              url:'https://www.artnews.com/feed/',             ambito:'Arte & Mercato',     priorita:2 },
   { nome:'Artforum',             url:'https://www.artforum.com/feed/',            ambito:'Arte Contemporanea', priorita:3 },
+  // v4.27.57 — Testate europee arte contemporanea
+  { nome:'Contemporary Lynx',   url:'https://contemporarylynx.co.uk/feed',       ambito:'Arte Contemporanea', priorita:2 },
+  { nome:'Spike Art Magazine',   url:'https://www.spikeartmagazine.com/feed',     ambito:'Arte Contemporanea', priorita:2 },
 ];
 
 // ==================================================================
