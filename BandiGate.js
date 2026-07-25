@@ -239,9 +239,9 @@ function bandiGateFinale_(arr) {
 function bandiGateSelfTest() {
   var casi = [
     // --- CULTURA: devono PASSARE ---
-    { in:{ titolo:'Restauro del Museo Civico e allestimento nuove sale', settore:'patrimonio', sommario:'', cpv:'92521000', link:'https://comune.esempio.it/bandi/restauro-museo-2026-id12345' }, attesoIn:true, attesoTipo:'diretto', nome:'Museo con link diretto' },
-    { in:{ titolo:'Servizi di biblioteca e catalogazione', settore:'', sommario:'gestione emeroteca', cpv:'', link:'https://biblioteca.esempio.it' }, attesoIn:true, attesoTipo:'generico', nome:'Biblioteca con homepage' },
-    { in:{ titolo:'Festival teatrale estivo — direzione artistica', settore:'spettacolo', sommario:'', cpv:'', link:'' }, attesoIn:true, attesoTipo:'consulta', nome:'Teatro senza link' },
+    { in:{ titolo:'Restauro del Museo Civico e allestimento nuove sale', settore:'patrimonio', sommario:'', cpv:'92521000', link:'https://comune.esempio.it/bandi/restauro-museo-2026-id12345', giorni:30 }, attesoIn:true, attesoTipo:'diretto', nome:'Museo con link diretto' },
+    { in:{ titolo:'Servizi di biblioteca e catalogazione', settore:'', sommario:'gestione emeroteca e archivio storico comunale', cpv:'', link:'https://biblioteca.esempio.it', giorni:15 }, attesoIn:true, attesoTipo:'generico', nome:'Biblioteca con homepage' },
+    { in:{ titolo:'Festival teatrale estivo — direzione artistica', settore:'spettacolo', sommario:'', cpv:'', link:'', giorni:45 }, attesoIn:true, attesoTipo:'consulta', nome:'Teatro senza link' },
     // --- NON CULTURA: devono essere SCARTATI ---
     { in:{ titolo:'Fornitura di ambulanze e presidi sanitari per ASL', settore:'sanità', sommario:'pronto soccorso', cpv:'34114121', link:'https://asl.esempio.it/bando' }, attesoIn:false, nome:'Ambulanze (sanità)' },
     { in:{ titolo:'Servizio di raccolta rifiuti urbani e nettezza urbana', settore:'ambiente', sommario:'', cpv:'90511000', link:'' }, attesoIn:false, nome:'Rifiuti (ambiente)' },
