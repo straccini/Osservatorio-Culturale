@@ -83,6 +83,10 @@ function adminRunTool(tool, token) {
       case 'enrichRadarApply':   r = arricchisciBandiRadar({ cap: 20 }); break;
       case 'enrichDeepDry':      r = enrichBandiDeep({ dryRun: true }); break;
       case 'enrichDeepApply':    r = enrichBandiDeep({ cap: 15 }); break;
+      case 'puliziaNonBandoDry': r = puliziaRecordNonBando({ dryRun: true }); break;
+      case 'puliziaNonBandoApply': r = puliziaRecordNonBando({ dryRun: false }); break;
+      case 'archiviaVecchiDry':  r = archiviaVecchiSenzaScadenza({ dryRun: true }); break;
+      case 'archiviaVecchiApply': r = archiviaVecchiSenzaScadenza({ dryRun: false }); break;
       case 'enrichRadarBatch':   r = enrichBandiRadarBatch(); break;
 
       // ── Diagnostica / test (non scrivono nulla) ──────────────────────────

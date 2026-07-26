@@ -51,7 +51,7 @@ function _bandiUrlValido_(u) {
 
 // Titoli che NON sono bandi ma voci di navigazione/legali scrapate dai siti
 // (soprattutto portali GAL): privacy, cookie, credits, "chi siamo", ecc.
-var _BANDO_JUNK_RE = /^\s*(accetto\s+privacy|informativa(?:\s+privacy)?|privacy(?:\s*[-–&]|\s+e\s+cookie|\s+policy|\s*$)|cookie|credits?\b|crediti\b|organizzazione\s*&?\s*soci|associarsi\b|diventa\s+socio|chi\s+siamo|contatti\b|dove\s+siamo|come\s+raggiungerci|mappa\s+del\s+sito|mappa\s+dei\s+finanziamenti|area\s+riservata|accedi\b|log\s*in|iscriviti\b|newsletter\b|note\s+legali|termini\s+e\s+condizioni|amministrazione\s+trasparente)/i;
+var _BANDO_JUNK_RE = /^\s*(accetto\s+privacy|informativa(?:\s+privacy)?|privacy(?:\s*[-–&]|\s+e\s+cookie|\s+policy|\s*$)|cookie|credits?\b|crediti\b|organizzazione\s*[&]?\s*soci|associarsi\b|diventa\s+socio|chi\s+siamo|contatti\b|dove\s+siamo|come\s+raggiungerci|mappa\s+del\s+sito|mappa\s+dei\s+finanziamenti|area\s+riservata|accedi\b|log\s*in|iscriviti\b|newsletter\b|note\s+legali|termini\s+e\s+condizioni|amministrazione\s+trasparente|disposizioni\s+generali|osservatorio\s+del\s+paesaggio|ipa[\s-]+intesa\s+programmatica|masterplan\s+dell|assemblea\s+dei\s+soci|programmazione\s+\d{4}|copia\s+shortlink|visualizza\s+articolo|condividi\s+(su|questo)|stampa\s+questo|aggiungi\s+(ai|un)\s+|cerca\s+nel\s+sito|risultati\s+di\s+ricerca|pagina\s+non\s+trovata|errore\s+404|benvenut[oai]\s)/i;
 
 // v4.27.49 — Titoli con natura di PUBBLICAZIONE/REPORT/EVENTO, non di bando.
 // Casi reali dal report qualità del 21/07 (entrati e poi archiviati ogni

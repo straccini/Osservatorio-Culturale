@@ -404,7 +404,18 @@ function enrichBandiDeep(opts) {
     var url = String(row[COL_B.URL_BANDO - 1] || '').trim();
     if (!url || !/^https?:\/\//i.test(url)) continue;
     var titolo = String(row[COL_B.TITOLO - 1] || '').trim();
+    // Decodifica entità HTML prima del filtro
+    titolo = titolo.replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
+                   .replace(/&quot;/gi, '"').replace(/&#\d+;/g, '').replace(/&[a-z]+;/gi, ' ').trim();
     if (!titolo || /^(?:ted\s+notice\s+)?\d{3,}[-\/]?\d*$/i.test(titolo)) continue;
+    if (titolo.length < 12) continue; // titoli troppo corti = voci di menu/navigazione
+    // Riusa il filtro anti-spazzatura di BandiGate
+    if (typeof _bandiNonBando_ === 'function' && _bandiNonBando_({ titolo: titolo })) continue;
+    // Filtro aggiuntivo deep: homepage GAL, pagine WordPress UI, sezioni generiche
+    if (/\bGAL$/i.test(titolo) && titolo.split(/\s+/).length <= 4) continue; // "Torre Natisone GAL", "Carso GAL"
+    if (/^\w+\s+patrimonio$/i.test(titolo)) continue; // "Jesolo Patrimonio"
+    if (/^SRG\d/i.test(titolo)) continue; // codici strategia LEADER
+    if (/^\d{1,2}\s+(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\s+\d{4}\s/i.test(titolo)) continue; // titoli che iniziano con una data = eventi/news, non bandi
 
     var rawScad = row[COL_B.SCADENZA - 1];
     var hasScad = false;
@@ -508,10 +519,12 @@ function enrichBandiDeep(opts) {
 
       if (!c.hasScad && parsed.scadenza && String(parsed.scadenza) !== 'null') {
         var dScad = new Date(parsed.scadenza);
-        if (!isNaN(dScad.getTime()) && dScad > new Date()) {
+        if (!isNaN(dScad.getTime())) {
           sheet.getRange(c.rowIdx, COL_B.SCADENZA).setValue(dScad);
           report.scadenzeTrovate++;
           aggiornato = true;
+          // Se scaduto, l'agente qualità lo archivierà nel prossimo run
+          if (dScad < new Date()) report.scadutePassate = (report.scadutePassate || 0) + 1;
         }
       }
 
@@ -558,6 +571,180 @@ function enrichBandiDeepBatch() {
   var result = enrichBandiDeep({ cap: 15 });
   Logger.log('enrichBandiDeepBatch: ' + JSON.stringify(result));
   return result;
+}
+
+
+/**
+ * v4.27.58 — PULIZIA DI MASSA: archivia i record "non-bando" che sono entrati
+ * nel foglio Bandi_v5 come artefatti di scraping (allegati PDF, pagine GAL,
+ * voci di navigazione WordPress, documenti amministrativi, schede tecniche).
+ *
+ * Criteri di archiviazione (conservativi — in dubbio lascia):
+ * - Titolo riconosciuto come junk da _bandiNonBando_ (BandiGate.js)
+ * - URL che punta a wp-content/uploads (allegato, non pagina bando)
+ * - Titolo = codice allegato (es. "BANDO 16.4.1.4.1_ALLEGATO_...")
+ * - Titolo = riferimento documento (es. "003 All.2) SCHEDA TECNICA")
+ * - Titolo troppo corto (<12 char) o troppo generico
+ * - Titolo inizia con data evento (es. "20 maggio 2026...")
+ *
+ * @param {Object} [opts] {dryRun:true}
+ * @return {Object} {ok, archiviati, totScansionati, dettagli[]}
+ */
+function puliziaRecordNonBando(opts) {
+  opts = opts || {};
+  var dryRun = (opts.dryRun !== false); // default dry-run per sicurezza
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Bandi_v5');
+  if (!sheet) return { ok: false, error: 'Foglio Bandi_v5 non trovato' };
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return { ok: true, archiviati: 0 };
+
+  var data = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+
+  // Regex per artefatti di scraping GAL/WordPress
+  var _ALLEGATO_RE = /^(bando\s+[\d.]+[_-]allegat|allegat[oi]\s+\d|all\.\d|\d{3}\s+all\.\d|bozza\s+accord|dichiarazione\s+(iva|sostitutiva)|scheda\s+tecnica\s+bando|modulistic|fac[\s-]*simile)/i;
+  var _PAGINA_GAL_RE = /^(la\s+strategia\s+di\s+sviluppo|verso\s+la\s+nuova\s+ssl|presentata\s+a\s+|amm\.?\s+trasparente|bilancio\s+\d{4}|il\s+(gal|territorio)|storia\s+del\s+gal|i\s+nostri\s+(progetti|partner)|organigramma|staff\b|sede\b|statuto\b|regolamento\b|SRG\d|aree\s+di\s+intervent|eventi\s+e\s+appuntament|i\s+progetti\s+finanziat|comunicati\s+stampa|cooperazione\s+leader|smart\s+village|supporto\s+preparatori|regia\s+dirett|progetti\s+a\s+convenzion|graduatori[ea]\b|leader\s+\d{4})/i;
+  var _DATA_EVENTO_RE = /^\d{1,2}\s+(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\s+\d{4}\s/i;
+  var _WP_UI_RE = /^(copia\s+shortlink|visualizza\s+articolo|condividi\s|stampa\s+questo|lascia\s+un\s+commento|commenti\s+chiusi|articoli\s+recenti|archivi|categorie\s*$|tag\s*$|cerca\s*$|menu\s*$|home\s*$)/i;
+
+  var candidati = [];
+  for (var r = 0; r < data.length; r++) {
+    var row = data[r];
+    if (!row[0]) continue;
+    var stato = String(row[COL_B.STATO_RECORD - 1] || '').toLowerCase();
+    if (stato === 'archiviato') continue; // già archiviato
+
+    var rawTitolo = String(row[COL_B.TITOLO - 1] || '').trim();
+    // Decodifica entità HTML
+    var titolo = rawTitolo.replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
+                          .replace(/&quot;/gi, '"').replace(/&#\d+;/g, '').replace(/&[a-z]+;/gi, ' ').trim();
+    var url = String(row[COL_B.URL_BANDO - 1] || '').trim();
+    var motivo = '';
+
+    // 1. Titolo vuoto o troppo corto
+    if (!titolo || titolo.length < 10) { motivo = 'titolo-corto'; }
+    // 2. Filtro BandiGate standard
+    else if (typeof _bandiNonBando_ === 'function' && _bandiNonBando_({ titolo: titolo })) { motivo = 'junk-bandigate'; }
+    // 3. Allegati e modulistica
+    else if (_ALLEGATO_RE.test(titolo)) { motivo = 'allegato-modulistica'; }
+    // 4. Pagine GAL generiche
+    else if (_PAGINA_GAL_RE.test(titolo)) { motivo = 'pagina-gal'; }
+    // 5. Titoli che iniziano con una data (eventi/news)
+    else if (_DATA_EVENTO_RE.test(titolo)) { motivo = 'data-evento'; }
+    // 6. Artefatti WordPress UI
+    else if (_WP_UI_RE.test(titolo)) { motivo = 'wordpress-ui'; }
+    // 7. URL che punta a wp-content/uploads (allegato)
+    else if (/wp-content\/uploads/i.test(url)) { motivo = 'url-allegato-wp'; }
+    // 8. URL da siti GAL con path organizzativo (chi-siamo, leader, oldsite, info)
+    else if (/\bgal[a-z]*\.(it|eu|net|com|org)\b/i.test(url) && /\/(chi-siamo|oldsite|info-e-materiali|la-comunicazione|la-parola-ai|progetti\/?$|leader-\d{4})/i.test(url)) { motivo = 'gal-pagina-org'; }
+    // 9. Titoli con codici misura/azione GAL (A.2.4.a, B.1.1.a, 19.3.2, FEP)
+    else if (/^[A-Z]\.\d+\.\d+\.[a-z]/i.test(titolo) || /^(?:19\.\d|FEP\s)/i.test(titolo)) { motivo = 'codice-misura-gal'; }
+    // 10. Titoli sezione GAL non coperti sopra
+    else if (/^(materiali\s+utili|i\s+progetti\s+realizz|animazione\s+e\s+comunic|la\s+parola\s+ai\s+beneficiari|programma\s+leader)/i.test(titolo)) { motivo = 'sezione-gal'; }
+    // 11. Titolo = solo nome ente/luogo senza verbo/azione (troppo generico, <3 parole)
+    else if (titolo.split(/\s+/).length <= 2 && !/bando|avviso|concorso|gara|finanziament/i.test(titolo)) { motivo = 'titolo-generico-2parole'; }
+
+    if (motivo) {
+      candidati.push({ rowIdx: r + 2, titolo: titolo.substring(0, 60), motivo: motivo });
+    }
+  }
+
+  var report = { ok: true, archiviati: 0, totScansionati: data.length, totCandidati: candidati.length };
+
+  if (dryRun) {
+    report.dryRun = true;
+    // Conta per motivo
+    var perMotivo = {};
+    candidati.forEach(function(c) { perMotivo[c.motivo] = (perMotivo[c.motivo] || 0) + 1; });
+    report.perMotivo = perMotivo;
+    report.anteprima = candidati.slice(0, 30).map(function(c) {
+      return { riga: c.rowIdx, titolo: c.titolo, motivo: c.motivo };
+    });
+    return report;
+  }
+
+  // Applica: marca come "archiviato"
+  for (var i = 0; i < candidati.length; i++) {
+    try {
+      sheet.getRange(candidati[i].rowIdx, COL_B.STATO_RECORD).setValue('archiviato');
+      report.archiviati++;
+    } catch (e) {
+      Logger.log('[pulizia] errore riga ' + candidati[i].rowIdx + ': ' + e.message);
+    }
+  }
+
+  Logger.log('[pulizia] completata: ' + report.archiviati + ' archiviati su ' + candidati.length + ' candidati');
+  return report;
+}
+
+
+/**
+ * v4.27.58 — Archivia bandi SENZA SCADENZA rilevati da più di N giorni.
+ * Un bando senza scadenza rilevato mesi fa è quasi certamente scaduto o
+ * non più attivo. Libera il foglio dalla zavorra storica.
+ *
+ * @param {Object} [opts] {dryRun:true, giorniSoglia:90}
+ * @return {Object} report
+ */
+function archiviaVecchiSenzaScadenza(opts) {
+  opts = opts || {};
+  var dryRun = (opts.dryRun !== false);
+  var soglia = opts.giorniSoglia || 90;
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Bandi_v5');
+  if (!sheet) return { ok: false, error: 'Foglio Bandi_v5 non trovato' };
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return { ok: true, archiviati: 0 };
+
+  var data = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  var cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - soglia);
+  var candidati = [];
+
+  for (var r = 0; r < data.length; r++) {
+    var row = data[r];
+    if (!row[0]) continue;
+    var stato = String(row[COL_B.STATO_RECORD - 1] || '').toLowerCase();
+    if (stato === 'archiviato') continue;
+
+    // Ha scadenza? → skip
+    var rawScad = row[COL_B.SCADENZA - 1];
+    if (rawScad instanceof Date && !isNaN(rawScad.getTime())) continue;
+    if (rawScad && String(rawScad).trim()) continue;
+
+    // Data rilevamento più vecchia della soglia?
+    var dataRil = row[COL_B.DATA_RILEVAMENTO - 1];
+    if (!(dataRil instanceof Date) || isNaN(dataRil.getTime())) continue;
+    if (dataRil > cutoff) continue; // troppo recente
+
+    var titolo = String(row[COL_B.TITOLO - 1] || '').trim();
+    candidati.push({
+      rowIdx: r + 2,
+      titolo: titolo.substring(0, 60),
+      dataRil: Utilities.formatDate(dataRil, 'Europe/Rome', 'yyyy-MM-dd'),
+      giorniDalRilevamento: Math.round((new Date() - dataRil) / 86400000)
+    });
+  }
+
+  var report = { ok: true, archiviati: 0, totCandidati: candidati.length, soglia: soglia + ' giorni' };
+
+  if (dryRun) {
+    report.dryRun = true;
+    report.anteprima = candidati.slice(0, 20);
+    return report;
+  }
+
+  for (var i = 0; i < candidati.length; i++) {
+    try {
+      sheet.getRange(candidati[i].rowIdx, COL_B.STATO_RECORD).setValue('archiviato');
+      report.archiviati++;
+    } catch (e) {
+      Logger.log('[archiviaVecchi] errore riga ' + candidati[i].rowIdx + ': ' + e.message);
+    }
+  }
+
+  Logger.log('[archiviaVecchi] ' + report.archiviati + ' bandi senza scadenza (>' + soglia + 'gg) archiviati');
+  return report;
 }
 
 // [22 funzioni diagnostica/migrazione estratte in DiagnosticaMigrazione.js]
