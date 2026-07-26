@@ -133,6 +133,15 @@ const FONTI_ARTICOLI_ARTE = [
   // v4.27.57 — Testate europee arte contemporanea
   { nome:'Contemporary Lynx',   url:'https://contemporarylynx.co.uk/feed',       ambito:'Arte Contemporanea', priorita:2 },
   { nome:'Spike Art Magazine',   url:'https://www.spikeartmagazine.com/feed',     ambito:'Arte Contemporanea', priorita:2 },
+  // v4.27.58 — Testate internazionali arte e cultura (batch 2)
+  { nome:'Hyperallergic',        url:'https://hyperallergic.com/feed/',           ambito:'Arte & Cultura',     priorita:1 },
+  { nome:'ArtReview',            url:'https://artreview.com/feed/',               ambito:'Arte Contemporanea', priorita:1 },
+  { nome:'e-flux',               url:'https://www.e-flux.com/feed/',              ambito:'Arte Contemporanea', priorita:1 },
+  { nome:'Juliet Art Magazine',  url:'https://www.juliet-artmagazine.com/en/feed/', ambito:'Arte Contemporanea', priorita:1 },
+  { nome:'Aesthetica Magazine',  url:'https://aestheticamagazine.com/feed/',      ambito:'Arte & Cultura',     priorita:2 },
+  { nome:'Studio International', url:'https://www.studiointernational.com/feed/', ambito:'Arte Contemporanea', priorita:2 },
+  { nome:'Sleek Magazine',       url:'https://www.sleek-mag.com/feed/',           ambito:'Arte & Cultura',     priorita:2 },
+  { nome:'Aperture',             url:'https://aperture.org/feed/',                ambito:'Fotografia & Cultura', priorita:2 },
 ];
 
 // ==================================================================
