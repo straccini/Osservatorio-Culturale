@@ -4344,9 +4344,9 @@
           var txt = $('homeEditTesto');
           var cap = $('homeEditCapolettera');
           if (tit) tit.textContent = ed.titolo || '';
-          // Tronca a 100 battute + "..."
+          // v4.27.66 — anteprima 260 battute (impaginato a due colonne piu' ampio)
           var testoFull = String(ed.testo || '');
-          var testoTrunc = testoFull.length > 100 ? testoFull.substring(0, 100).replace(/\s+\S*$/, '') + '...' : testoFull;
+          var testoTrunc = testoFull.length > 260 ? testoFull.substring(0, 260).replace(/\s+\S*$/, '') + '...' : testoFull;
           if (txt) txt.textContent = testoTrunc;
           // Capolettera: prima lettera del titolo
           if (cap && ed.titolo) cap.textContent = ed.titolo.charAt(0).toUpperCase();
