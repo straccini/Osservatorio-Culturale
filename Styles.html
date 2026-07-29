@@ -20,11 +20,13 @@
 :root{
   /* v4.27.3 — Palette OKLCH: La Regola della Carta (mai bianco puro, mai nero puro) */
 
-  /* Neutri caldi — arriccio del museo */
-  --paper:oklch(0.98 0.005 70);        /* #FAFAF7 equiv — carta museale */
-  --paper-2:oklch(0.97 0.007 70);      /* #F7F5F0 equiv — carta calda */
-  --surface:oklch(0.96 0.008 70);      /* #F5F3EE equiv — superficie */
-  --surface-2:oklch(0.94 0.008 70);    /* #EDEBE6 equiv — superficie profonda */
+  /* v4.27.61 — SFONDO BIANCO UNIFORME (richiesta Silvano 29/07): tutti i
+     neutri di fondo collassano sul bianco puro; la struttura la danno i
+     filetti (--rule) e i bordi delle card, non piu' i cambi di tono. */
+  --paper:#FFFFFF;
+  --paper-2:#FFFFFF;
+  --surface:#FFFFFF;
+  --surface-2:#FFFFFF;
   --rule:oklch(0.91 0.004 260);        /* #E5E5E7 equiv — riga */
   --rule-2:oklch(0.85 0.004 260);      /* #D2D2D7 equiv — riga forte */
   --rule-strong:oklch(0.14 0.005 70);  /* #101010 equiv — riga massima */
@@ -205,17 +207,19 @@
 [data-fontsize="xlarge"] .sw-tile-date    { font-size: 12px; }
 
 [data-theme="dark"]{
-  /* v4.27.3 — Dark mode OKLCH: neutri caldi tintati, mai nero puro */
-  --paper:oklch(0.13 0.008 55);
-  --paper-2:oklch(0.16 0.010 55);
-  --surface:oklch(0.16 0.010 55);
-  --surface-2:oklch(0.20 0.010 55);
-  --rule:oklch(0.25 0.012 55);
-  --rule-2:oklch(0.30 0.012 55);
-  --rule-strong:oklch(0.97 0.005 70);
+  /* v4.27.61 — VERSIONE BLACK UNIFORME (richiesta Silvano 29/07): fondo nero
+     pieno su tutta l'app, font bianchi; la struttura la danno i filetti
+     (leggermente rialzati per reggere il nero pieno). */
+  --paper:#000000;
+  --paper-2:#000000;
+  --surface:#000000;
+  --surface-2:#000000;
+  --rule:oklch(0.28 0.010 55);
+  --rule-2:oklch(0.34 0.010 55);
+  --rule-strong:#FFFFFF;
 
-  --ink:oklch(0.97 0.005 70);
-  --ink-2:oklch(0.91 0.004 260);
+  --ink:#FFFFFF;
+  --ink-2:oklch(0.93 0.004 260);
   --ink-3:oklch(0.68 0.006 260);
   --ink-4:oklch(0.62 0.006 260);       /* v4.27.37 — fix contrasto dark: ~5.0:1 su dark paper */
   --ink-5:oklch(0.40 0.006 260);
