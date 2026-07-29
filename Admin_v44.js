@@ -246,6 +246,13 @@ function _generateDigestDraftCore_(opts) {
     video    = ddFilterNotSent('generalista', 'video',   video);
     libri    = ddFilterNotSent('generalista', 'libro',   libri);
   }
+  // v4.27.59 — MAX 2 PER FONTE: mai più di 2 contenuti dalla stessa testata
+  // in una sezione del digest (eleganza editoriale, richiesta 29/07).
+  if (typeof ddCapPerFonte === 'function') {
+    news = ddCapPerFonte(news, 2);
+    pod  = ddCapPerFonte(pod, 2);
+    video = ddCapPerFonte(video, 2);
+  }
 
   // 2) Oggetto draft
   var now    = new Date();

@@ -133,6 +133,23 @@ function ddTipoCoerente(tipo, item) {
   return true;
 }
 
+/**
+ * v4.27.59 — MAX N CONTENUTI PER FONTE (richiesta Silvano 29/07): in un digest
+ * non devono uscire più di 2 pezzi dalla stessa testata — non è elegante.
+ * Mantiene l'ordine di ingresso (già ordinato per rilevanza a monte) e tiene
+ * i primi N per fonte; le risorse senza fonte non vengono limitate.
+ */
+function ddCapPerFonte(items, maxPerFonte) {
+  var cap = Number(maxPerFonte) || 2;
+  var visti = {};
+  return (items || []).filter(function (it) {
+    var f = String((it && (it.fonte || it.Fonte)) || '').trim().toLowerCase();
+    if (!f) return true;
+    visti[f] = (visti[f] || 0) + 1;
+    return visti[f] <= cap;
+  });
+}
+
 /** Pulizia registro: elimina le righe più vecchie di N giorni (default 180). */
 function ddPrune(giorni) {
   giorni = Number(giorni) || 180;

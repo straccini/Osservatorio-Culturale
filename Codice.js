@@ -165,6 +165,12 @@ function doGet(e) {
   // LandingPublic.html resta disponibile via ?landing=1 se serve.
   if (params.landing === '1') return _doGetLanding();
 
+  // v4.27.59 — Trend: esito approvazione da link Telegram (?trend=ok|no&id=&tk=)
+  if (params.trend === 'ok' || params.trend === 'no') {
+    try { return _trRenderEsitoPage_(params); }
+    catch (eTr) { return HtmlService.createHtmlOutput('<p>Errore: ' + String(eTr.message).replace(/</g, '&lt;') + '</p>'); }
+  }
+
   // v4.27.39 — Diagnostica contatori NEW via URL (?diag=contatori): solo conteggi
   // aggregati e titoli di concorsi pubblici GU — nessun dato sensibile. Serve a
   // verificare i badge settimanali senza passare dall'editor GAS.

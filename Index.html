@@ -2662,6 +2662,16 @@
             <button class="btn btn-secondary" onclick="OC.adminTool('segOgImage', this)" style="font-size:12px;padding:6px 12px" title="Estrae le miniature (og:image) dei link delle segnalazioni pubblicate">Miniature segnalazioni</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('digestAssets', this)" style="font-size:12px;padding:6px 12px" title="One-shot: carica logo OCS e masthead 'traiettorie sottotraccia' su Drive per le email del digest">🖼 Asset grafici digest</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('diagContatori', this)" style="font-size:12px;padding:6px 12px" title="Diagnosi: contatori NEW settimanali + stato reale dei concorsi lavoro in Bandi_v5">🧪 Diagnosi contatori</button>
+          </div>
+          <!-- v4.27.59 — GESTIONE TREND: proposte notizia in evidenza (approvazione Telegram) -->
+          <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--rule,#E5E5E7)">
+            <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin-bottom:8px">Gestione Trend &middot; notizia in evidenza</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+              <button class="btn btn-secondary" onclick="OC.adminTool('trendProponi', this)" style="font-size:12px;padding:6px 12px" title="Seleziona subito la miglior news delle ultime 72h e invia la proposta su Telegram (ignora la cadenza dei 2 giorni)">📈 Proponi trend ora</button>
+              <button class="btn btn-secondary" onclick="OC.trendLoad(this)" style="font-size:12px;padding:6px 12px" title="Carica l'elenco delle proposte trend e lo stato dell'evidenza corrente">🔄 Carica proposte</button>
+              <button class="btn btn-secondary" onclick="OC.trendRimuoviEvidenza(this)" style="font-size:12px;padding:6px 12px" title="Toglie la notizia in evidenza dalla home (torna una news normale)">✖ Rimuovi evidenza</button>
+            </div>
+            <div id="trendAdminList" style="font-size:12.5px;color:var(--ink-2)"></div>
             <button class="btn btn-secondary" onclick="OC.adminTool('lavoroScanDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima scanner GU Concorsi con i filtri ampliati (dry-run, nessuna scrittura)">🔎 Lavoro scan anteprima</button>
             <button class="btn btn-secondary" onclick="if(confirm('Aggiungere 50 osservatori culturali internazionali come fonti RSS?'))OC.adminTool('fontiOsservatori', this)" style="font-size:12px;padding:6px 12px" title="54 osservatori culturali da uMap Global Mapping (EU, Americhe, Asia)">+ Osservatori culturali</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('fontiDesignArte', this)" style="font-size:12px;padding:6px 12px" title="8 feed design/arte internazionale verificati (Designboom, ArchDaily, Artsy, Galerie, Sole 24 Ore EN, Dezeen, Archpaper) — idempotente">+ Design &amp; arte intl</button>
@@ -3504,6 +3514,9 @@
         } catch(_e){}
       })
       .getHomePayload();
+
+    // v4.27.59 — Notizia in evidenza (Trend approvata) nello slot dedicato
+    try { _loadTrendHome_(); } catch(_){}
 
     // Carica conteggi settimanali NEW per sidebar badges
     google.script.run
@@ -4422,6 +4435,25 @@
   }
 
   // ---- Ultimi bandi monitorati — lista riga con ambito, descrizione, date ----
+  // v4.27.59 — Notizia in evidenza (Trend): card piena sopra la griglia bandi/news
+  function _loadTrendHome_(){
+    if (!hasGAS()) return;
+    google.script.run.withSuccessHandler(function(ev){
+      var slot = $('homeTrendSlot');
+      if (!slot) return;
+      if (!ev || !ev.titolo) { slot.hidden = true; slot.innerHTML = ''; return; }
+      var link = ev.url ? ' onclick="OC.openUrl(\'' + esc(ev.url) + '\')" style="cursor:pointer"' : '';
+      slot.innerHTML =
+        '<div class="home-list-row"' + link + ' style="border:1px solid var(--rule);border-left:3px solid var(--accent,#935851);border-radius:12px;padding:16px 20px;background:var(--paper,#fff)">'
+        + '<div class="hlr-left">'
+        + '<div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent,#935851);font-weight:700;margin-bottom:6px">In evidenza &middot; Trend</div>'
+        + '<p class="hlr-title" style="font-size:16px">' + esc(ev.titolo) + '</p>'
+        + (ev.fonte ? '<div class="hlr-meta"><span>' + esc(ev.fonte) + '</span></div>' : '')
+        + '</div></div>';
+      slot.hidden = false;
+    }).withFailureHandler(function(){}).getTrendInEvidenza();
+  }
+
   function renderUltimiBandiHome(list){
     var wrap = $('homeUltimiBandi'); if (!wrap) return;
     list = (list || []).slice(0, 4); // v4.27.38 — max 4 in home (bilanciamento estetico)
@@ -12007,6 +12039,69 @@
         cb.parentElement.style.opacity = stato ? '1' : '0.45';
       });
       OC.toggleBandiTipo();
+    },
+    // v4.27.59 — GESTIONE TREND (notizia in evidenza con approvazione Telegram)
+    trendLoad: function(btn){
+      var box = document.getElementById('trendAdminList');
+      if (!box) return;
+      box.textContent = '⏳ carico…';
+      if (btn) btn.disabled = true;
+      var tk = (window.OC_SESSION && OC_SESSION.token) || '';
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (btn) btn.disabled = false;
+          if (!r || !r.ok) { box.textContent = '❌ ' + ((r && r.error) || 'errore'); return; }
+          var html = '';
+          if (r.evidenza && r.evidenza.titolo) {
+            html += '<div style="margin-bottom:10px;padding:8px 10px;border:1px solid var(--rule);border-radius:8px"><b>In evidenza ora:</b> ' + esc(r.evidenza.titolo) + ' <span style="color:var(--ink-3)">(' + esc(r.evidenza.fonte||'') + ')</span></div>';
+          } else {
+            html += '<div style="margin-bottom:10px;color:var(--ink-3)">Nessuna notizia in evidenza al momento.</div>';
+          }
+          if (!r.proposte || !r.proposte.length) { html += '<div style="color:var(--ink-3)">Nessuna proposta registrata.</div>'; }
+          else {
+            r.proposte.forEach(function(p){
+              var badge = p.stato === 'pubblicata' ? '<span style="color:var(--success,#0F7B5A);font-weight:700">pubblicata</span>'
+                       : p.stato === 'scartata' ? '<span style="color:var(--ink-3)">scartata</span>'
+                       : '<span style="color:var(--accent,#935851);font-weight:700">in attesa</span>';
+              html += '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:7px 0;border-bottom:1px solid var(--rule)">'
+                + '<span style="flex:1;min-width:200px">' + esc(p.titolo) + ' <span style="color:var(--ink-3);font-size:11px">' + esc(p.fonte||'') + ' · ' + esc(p.data||'') + '</span></span>'
+                + badge
+                + (p.stato === 'proposta' ? '<button class="btn btn-secondary" style="font-size:11px;padding:3px 9px" onclick="OC.trendAzione(\'' + esc(p.id) + '\',\'pubblica\',this)">✅ Pubblica</button><button class="btn btn-secondary" style="font-size:11px;padding:3px 9px" onclick="OC.trendAzione(\'' + esc(p.id) + '\',\'scarta\',this)">✖ Scarta</button>' : '')
+                + '<button class="btn btn-secondary" style="font-size:11px;padding:3px 9px" onclick="OC.trendAzione(\'' + esc(p.id) + '\',\'elimina\',this)">🗑</button>'
+                + '</div>';
+            });
+          }
+          box.innerHTML = html;
+        })
+        .withFailureHandler(function(e){ if (btn) btn.disabled=false; box.textContent = '❌ ' + (e && e.message || e); })
+        .getTrendProposte(tk);
+    },
+    trendAzione: function(id, azione, btn){
+      if (azione === 'elimina' && !confirm('Eliminare definitivamente questa proposta?')) return;
+      if (btn) btn.disabled = true;
+      var tk = (window.OC_SESSION && OC_SESSION.token) || '';
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (typeof showToast==='function') showToast(r && r.ok ? ('Trend: ' + azione + ' ok') : ('Trend: ' + ((r&&r.error)||'errore')), r && r.ok ? 'ok' : 'err');
+          OC.trendLoad(null);
+          if (azione === 'pubblica') { try { _loadTrendHome_(); } catch(_){} }
+        })
+        .withFailureHandler(function(e){ if (btn) btn.disabled=false; if (typeof showToast==='function') showToast('Trend: ' + (e && e.message || e), 'err'); })
+        .trendEsegui(id, azione, { adminToken: tk });
+    },
+    trendRimuoviEvidenza: function(btn){
+      if (!confirm('Togliere la notizia in evidenza dalla home?')) return;
+      if (btn) btn.disabled = true;
+      var tk = (window.OC_SESSION && OC_SESSION.token) || '';
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (btn) btn.disabled = false;
+          if (typeof showToast==='function') showToast(r && r.ok ? 'Evidenza rimossa' : ((r&&r.error)||'errore'), r && r.ok ? 'ok' : 'err');
+          var slot = document.getElementById('homeTrendSlot'); if (slot) { slot.hidden = true; slot.innerHTML=''; }
+          OC.trendLoad(null);
+        })
+        .withFailureHandler(function(e){ if (btn) btn.disabled=false; })
+        .trendRimuoviEvidenza(tk);
     },
     // v4.25.18 — Strumenti admin: lancia una funzione one-shot via backend gated
     adminTool: function(tool, btn){

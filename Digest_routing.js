@@ -287,6 +287,13 @@ function sendDigestAuto2coorti(opts) {
       if (items.length < _preDD) Logger.log('[DIGEST] dedup registro: ' + (_preDD - items.length) + ' item già usciti esclusi');
       hasItems = items.length > 0;
     }
+    // v4.27.59 — max 2 contenuti per fonte (eleganza editoriale)
+    if (typeof ddCapPerFonte === 'function' && items.length) {
+      var _preCap = items.length;
+      items = ddCapPerFonte(items, 2);
+      if (items.length < _preCap) Logger.log('[DIGEST] cap per fonte: ' + (_preCap - items.length) + ' item oltre i 2 per testata esclusi');
+      hasItems = items.length > 0;
+    }
     if (!hasItems) Logger.log('sendDigestAuto2coorti: nessuna news inclusa — invio solo digest Matrix personalizzati.');
 
     // 2. Recipients per coorte

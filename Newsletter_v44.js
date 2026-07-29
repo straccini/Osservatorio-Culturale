@@ -91,25 +91,28 @@ function buildNewsletterHtml_(draft) {
   // v4.27.46 — impaginazione rivista (feedback Silvano 20/07): etichetta con lo
   // STESSO stile delle altre sezioni (via _nlSectionHeader_, niente emoji né
   // evidenziazione), foto ridotta a 170px in colonna accanto al testo.
+  // v4.27.59 — restyling (richiesta 29/07): NESSUNA evidenziazione — via fondo
+  // colorato, bordo e bottone pieno. Stessa grammatica grafica delle altre
+  // sezioni: titolo Georgia, testo grigio, link testuale terra, filetto sotto.
   if (draft.segnalazione && draft.segnalazione.titolo) {
     var _sg = draft.segnalazione;
     parts.push(_nlSectionHeader_('Dalla community · Segnalazione della settimana'));
     parts.push('<tr><td style="padding:0 28px 8px 28px;">');
-    parts.push('<div style="background:#F4F1EB;border:1px solid #111111;padding:14px 16px;">');
     parts.push('<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>');
     if (_sg.og_image) {
-      parts.push('<td width="170" style="vertical-align:top;"><img src="' + _sg.og_image + '" alt="" width="170" style="width:170px;max-width:170px;height:auto;display:block;" /></td>');
-      parts.push('<td style="vertical-align:top;padding-left:14px;">');
+      parts.push('<td width="150" style="vertical-align:top;"><img src="' + _sg.og_image + '" alt="" width="150" style="width:150px;max-width:150px;height:auto;display:block;" /></td>');
+      parts.push('<td style="vertical-align:top;padding-left:16px;">');
     } else {
       parts.push('<td style="vertical-align:top;">');
     }
-    parts.push('<div style="font-family:Georgia,serif;font-size:15px;font-weight:700;color:#111111;line-height:1.4;margin-bottom:6px;">' + _h_(_sg.titolo) + '</div>');
-    if (_sg.descrizione) parts.push('<p style="margin:0 0 10px;font-size:13px;line-height:1.55;color:#3A3A3C;">' + _h_(_sg.descrizione) + '</p>');
+    parts.push('<div style="font-family:Georgia,serif;font-size:15.5px;font-weight:700;color:#111111;line-height:1.4;margin-bottom:6px;">' + _h_(_sg.titolo) + '</div>');
+    if (_sg.descrizione) parts.push('<p style="margin:0 0 8px;font-size:13px;line-height:1.55;color:#3A3A3C;">' + _h_(_sg.descrizione) + '</p>');
     var _sgFirma = _sg.autore ? '<span style="font-size:12px;color:#8A8578;font-style:italic;">segnalata da ' + _h_(_sg.autore) + '</span>' : '';
-    if (_sg.url) parts.push('<a href="' + _h_(_sg.url) + '" style="display:inline-block;background:#A65138;color:#ffffff;text-decoration:none;padding:7px 16px;font-size:12px;font-weight:700;margin-right:10px;">Approfondisci &rarr;</a>' + _sgFirma);
+    if (_sg.url) parts.push('<a href="' + _h_(_sg.url) + '" style="font-size:13px;font-weight:700;color:#A65138;text-decoration:none;">Approfondisci &rarr;</a>' + (_sgFirma ? '&nbsp;&nbsp;' + _sgFirma : ''));
     else if (_sgFirma) parts.push(_sgFirma);
     parts.push('</td></tr></table>');
-    parts.push('</div></td></tr>');
+    parts.push('<div style="border-bottom:1px solid #E5E5E7;margin-top:14px;font-size:0">&nbsp;</div>');
+    parts.push('</td></tr>');
   }
 
   // v4.24 — Dedup cross-sezione esatto + fuzzy: nessun titolo duplicato o simile nella newsletter
@@ -509,20 +512,23 @@ function _nlMastheadHtml_(dataLabel) {
   var masthead = assets.masthead
     ? '<img src="' + assets.masthead + '" alt="traiettorie sottotraccia" width="301" height="78" style="display:block;border:0" />'
     : '<div style="font-family:Georgia,serif;font-size:34px;color:#111111;text-align:left;line-height:1.1">traiettorie<br>sottotraccia</div>';
+  // v4.27.59 — REVISIONE TESTATA (richiesta Silvano 29/07): lockup «traiettorie
+  // sottotraccia» CENTRATO in prima riga (il logo OCS resta nel footer), UN solo
+  // filetto terra (via il secondo che incorniciava il vecchio blocco logo),
+  // data centrata sotto il lockup, riga unica ordinata con tutti i link di
+  // accesso: nav + social, centrati e spaziati regolarmente.
   var p = [];
-  p.push('<tr><td style="padding:24px 28px 0;background:#FFFFFF"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>');
-  p.push('<td align="left" style="vertical-align:middle">' + logo + '</td>');
-  p.push('<td align="right" style="vertical-align:middle;font-size:13px;font-weight:700;color:#1F3F8F">' + _h_(dataLabel || '') + '</td>');
-  p.push('</tr></table></td></tr>');
+  p.push('<tr><td align="center" style="padding:26px 28px 4px;background:#FFFFFF">' + masthead + '</td></tr>');
+  p.push('<tr><td align="center" style="padding:4px 28px 0;background:#FFFFFF;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#1F3F8F">' + _h_(dataLabel || '') + '</td></tr>');
   p.push('<tr><td style="padding:14px 28px 0;background:#FFFFFF"><div style="border-top:2px solid #A65138;font-size:0;line-height:0">&nbsp;</div></td></tr>');
-  p.push('<tr><td align="left" style="padding:14px 28px 6px;background:#FFFFFF">' + masthead + '</td></tr>');
-  p.push('<tr><td style="padding:8px 28px 0;background:#FFFFFF"><div style="border-top:2px solid #A65138;font-size:0;line-height:0">&nbsp;</div></td></tr>');
-  p.push('<tr><td style="padding:12px 28px 0;background:#FFFFFF"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>');
-  p.push('<td align="left" style="font-size:14px;font-weight:700"><a href="' + sito + '" style="color:#1F3F8F;text-decoration:none">Osservatorio</a></td>');
-  p.push('<td align="center" style="font-size:14px;font-weight:700"><a href="' + appUrl + '?goto=segnala" style="color:#1F3F8F;text-decoration:none">Segnala</a></td>');
-  p.push('<td align="right" style="font-size:14px;font-weight:700"><a href="' + appUrl + '?goto=consulenza" style="color:#1F3F8F;text-decoration:none">Contattaci</a></td>');
-  p.push('</tr></table></td></tr>');
-  p.push('<tr><td align="center" style="padding:14px 28px 18px;background:#FFFFFF">');
+  p.push('<tr><td align="center" style="padding:14px 28px 4px;background:#FFFFFF;font-size:14px;font-weight:700">');
+  p.push('<a href="' + sito + '" style="color:#1F3F8F;text-decoration:none">Osservatorio</a>');
+  p.push('<span style="color:#A65138;padding:0 12px">&middot;</span>');
+  p.push('<a href="' + appUrl + '?goto=segnala" style="color:#1F3F8F;text-decoration:none">Segnala</a>');
+  p.push('<span style="color:#A65138;padding:0 12px">&middot;</span>');
+  p.push('<a href="' + appUrl + '?goto=consulenza" style="color:#1F3F8F;text-decoration:none">Contattaci</a>');
+  p.push('</td></tr>');
+  p.push('<tr><td align="center" style="padding:10px 28px 18px;background:#FFFFFF">');
   p.push('<a href="' + linkedin + '" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:6px;text-align:center;font-size:13px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">in</a>');
   p.push('<a href="' + instagram + '" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:8px;text-align:center;font-size:12px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">IG</a>');
   p.push('<a href="' + sito + '" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:50%;text-align:center;font-size:14px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">&#8853;</a>');

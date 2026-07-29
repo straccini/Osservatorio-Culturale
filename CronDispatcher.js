@@ -79,7 +79,10 @@ var OC_CRON_EXTRA = [
   // v4.27.52 — social: i post APPROVATI in coda vengono pubblicati (se le API
   // sono configurate) o inoltrati pronti su Telegram (ponte). Mar+ven 10:00.
   { fn: 'socialPubblicaApprovati', tipo: 'weekly', giorno: ScriptApp.WeekDay.TUESDAY, ora: 10, desc: 'Social: pubblica/inoltra i post approvati (martedì)' },
-  { fn: 'socialPubblicaApprovati', tipo: 'weekly', giorno: ScriptApp.WeekDay.FRIDAY,  ora: 10, desc: 'Social: pubblica/inoltra i post approvati (venerdì)' }
+  { fn: 'socialPubblicaApprovati', tipo: 'weekly', giorno: ScriptApp.WeekDay.FRIDAY,  ora: 10, desc: 'Social: pubblica/inoltra i post approvati (venerdì)' },
+  // v4.27.59 — Trend: proposta notizia in evidenza ogni ~2 giorni (guardia 44h
+  // interna alla funzione) + pulizia proposte non confermate >14gg
+  { fn: 'trendProponi', tipo: 'daily', ora: 9, desc: 'Trend: proponi notizia in evidenza via Telegram (ogni ~2gg)' }
 ];
 
 /** Schedule consolidato = approvato (SetupMaster) + nuovi. */
