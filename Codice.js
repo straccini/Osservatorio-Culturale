@@ -165,6 +165,15 @@ function doGet(e) {
   // LandingPublic.html resta disponibile via ?landing=1 se serve.
   if (params.landing === '1') return _doGetLanding();
 
+  // v4.27.59 — Trend: lancio proposta via URL (?trend=proponi). SENZA force:
+  // la guardia delle 44h dentro trendProponi rende l'endpoint non abusabile
+  // (al massimo anticipa una proposta già dovuta).
+  if (params.trend === 'proponi') {
+    var _tp;
+    try { _tp = trendProponi(); } catch (eTp) { _tp = { ok: false, errore: eTp.message }; }
+    return ContentService.createTextOutput(JSON.stringify(_tp, null, 2)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   // v4.27.59 — Trend: esito approvazione da link Telegram (?trend=ok|no&id=&tk=)
   if (params.trend === 'ok' || params.trend === 'no') {
     try { return _trRenderEsitoPage_(params); }
