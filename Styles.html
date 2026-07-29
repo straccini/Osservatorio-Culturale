@@ -1285,16 +1285,8 @@ body.is-home-page .topbar-search{display:none}
 /* v4.27.62 — enfasi hero allineata alla stessa convenzione dei titoli sezione */
 .home-headline em{font-family:var(--font-serif);font-style:italic;font-weight:400;letter-spacing:0}
 
-/* v4.27.62 — la polvere di sinopia respira: deriva lentissima, quasi
-   impercettibile (26s per ciclo), per suggerire che qualcosa si muove.
-   overflow:hidden del frame contiene la scala; niente GIF: zero peso. */
-@keyframes sinopiaDrift{
-  0%  {transform:scale(1.03) translateX(0);opacity:.90}
-  50% {transform:scale(1.11) translateX(-2.6%);opacity:1}
-  100%{transform:scale(1.06) translateX(2.2%);opacity:.93}
-}
-#heroSinopiaImg{animation:sinopiaDrift 14s ease-in-out infinite alternate;transform-origin:60% 65%;will-change:transform}
-@media (prefers-reduced-motion: reduce){ #heroSinopiaImg{animation:none} }
+/* v4.27.64 — animazione polvere di sinopia RIMOSSA (provata in v4.27.62-63,
+   giudicata non efficace): l'immagine torna ferma. */
 .section-action{
   font-family:var(--font-ui);
   font-size:0.75rem; font-weight:600;

@@ -4350,6 +4350,12 @@
           if (txt) txt.textContent = testoTrunc;
           // Capolettera: prima lettera del titolo
           if (cap && ed.titolo) cap.textContent = ed.titolo.charAt(0).toUpperCase();
+          // v4.27.64 — miniatura foto editoriale (se caricata con l'editoriale)
+          var fw = $('homeEditFotoWrap'), fi = $('homeEditFoto');
+          if (fw && fi) {
+            if (ed.foto) { fi.src = ed.foto; fw.hidden = false; }
+            else { fw.hidden = true; }
+          }
           // Salva testo completo per overlay
           window._approfondimentoData = { titolo: ed.titolo, testo: testoFull };
           box.hidden = false;
