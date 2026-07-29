@@ -1262,7 +1262,9 @@ body.is-home-page .topbar-search{display:none}
 /* v4.27.5 — Section heads: spacing asimmetrico (piu margine sopra, meno sotto) */
 .section-head{
   display:flex; justify-content:space-between; align-items:flex-end;
-  border-bottom:1px solid var(--rule-strong);
+  /* v4.27.65 — filetti di sezione nel VERMIGLIO del logo (come la testata
+     della newsletter): un solo linguaggio cromatico in tutta l'app */
+  border-bottom:2px solid var(--accent);
   padding-bottom:10px;
   margin-top:44px;
   margin-bottom:18px;
@@ -2158,8 +2160,10 @@ body.is-home-page .topbar-search{display:none}
 .page-head{
   margin-bottom:32px;
   padding:28px 32px;
-  background:var(--surface);
+  background:var(--paper);
   border:1px solid var(--rule);
+  /* v4.27.65 — filetto vermiglio del logo sul bordo alto delle testate di pagina */
+  border-top:3px solid var(--accent);
   border-radius:var(--r-md);
   display:block;
 }
@@ -4075,13 +4079,21 @@ button:focus-visible:not(.btn):not(.br-act):not(.nav-item):not(.filter-chip):not
 [data-theme="dark"] .topbar-user-menu-item:hover { background:var(--rule); }
 /* Sidebar: sezione strumenti museo arancio */
 /* v4.27.5 — Strumenti analisi: bordo accent discreto (no sfondo pieno arancione) */
-.nav-item.nav-item-bordered { background:var(--accent-soft); border:1.5px solid var(--accent); border-radius:8px; margin-bottom:6px; color:var(--ink) !important; }
-.nav-item.nav-item-bordered:hover { background:var(--surface-2); border-color:var(--accent-hover); }
+/* v4.27.65 — Strumenti di analisi: via la velatura rosa indecisa. Fondo pieno
+   (bianco/nero come il resto dell'app), identita' dai COLORI DEL LOGO:
+   vermiglio per il profilo, cobalto per Matrix; la tinta appare solo su hover. */
+.nav-item.nav-item-bordered { background:var(--paper); border:1.5px solid var(--accent); border-radius:8px; margin-bottom:6px; color:var(--ink) !important; }
+.nav-item.nav-item-bordered:hover { background:var(--accent-soft); border-color:var(--accent-hover); }
 .nav-item.nav-item-bordered .lbl { font-weight:600; color:var(--ink); }
 .nav-item.nav-item-bordered svg { stroke:var(--accent); }
 .nav-item.nav-item-bordered .matrix-tag { color:var(--ink-3); background:transparent; border:none; font-weight:600; padding:0; }
-[data-theme="dark"] .nav-item.nav-item-bordered { background:var(--accent-soft); border-color:var(--accent); }
-[data-theme="dark"] .nav-item.nav-item-bordered:hover { background:var(--surface-2); }
+.nav-item.nav-item-bordered[data-page="matrix"] { border-color:var(--cobalt); }
+.nav-item.nav-item-bordered[data-page="matrix"] svg { stroke:var(--cobalt); }
+.nav-item.nav-item-bordered[data-page="matrix"]:hover { background:var(--cobalt-soft); border-color:var(--cobalt); }
+[data-theme="dark"] .nav-item.nav-item-bordered { background:var(--paper); border-color:var(--accent); }
+[data-theme="dark"] .nav-item.nav-item-bordered:hover { background:var(--accent-soft); }
+[data-theme="dark"] .nav-item.nav-item-bordered[data-page="matrix"] { border-color:var(--cobalt); }
+[data-theme="dark"] .nav-item.nav-item-bordered[data-page="matrix"]:hover { background:var(--cobalt-soft); }
 
 /* ============================================================
    v4.27.10 — DARK MODE: copertura completa
