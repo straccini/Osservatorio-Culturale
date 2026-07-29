@@ -56,7 +56,7 @@ function adminRunTool(tool, token) {
       case 'segOgImage':         r = segBackfillOgImage({ cap: 20 }); break; // miniature segnalazioni
       case 'digestAssets':       r = digestAssetsSetup(); break; // one-shot: logo+masthead digest su Drive
       case 'diagContatori':      r = diagContatoriBadge(); break; // diagnosi badge NEW + stato lavoro
-      case 'trendProponi':       r = trendProponi({ force: true }); break; // proponi trend ora (ignora guardia 44h)
+      case 'trendProponi':       r = trendProponi({ force: true, sostituisciPendente: true }); break; // proponi trend ora (scarta l'eventuale pendente e rivaluta)
       case 'lavoroScanDry':      r = fasParserGuS4Cultura({ dryRun: true, deepCap: 40 }); break; // anteprima filtri nuovi
 
       // ── Contenuti: scansioni "adesso" ────────────────────────────────────

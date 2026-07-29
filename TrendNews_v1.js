@@ -82,13 +82,23 @@ function trendProponi(opts) {
         return out;
       }
     }
-    // una sola proposta pendente alla volta
+    // una sola proposta pendente alla volta (con sostituisciPendente la
+    // pendente viene scartata e si rivaluta — usato dal rilancio manuale)
     var sh = _trSheet_();
     var v = sh.getDataRange().getValues();
     var proposteIds = {};
     for (var i = 1; i < v.length; i++) {
+      if (String(v[i][6] || '') === 'proposta') {
+        if (opts.sostituisciPendente) {
+          sh.getRange(i + 1, 7).setValue('scartata');
+          sh.getRange(i + 1, 9).setValue(new Date());
+          out.sostituita = String(v[i][0]);
+          continue; // l'item resta riproponibile: non lo aggiungo a proposteIds
+        }
+        out.motivoSkip = 'proposta gia pendente: ' + v[i][0];
+        return out;
+      }
       proposteIds[String(v[i][1] || '')] = true;
-      if (String(v[i][6] || '') === 'proposta') { out.motivoSkip = 'proposta gia pendente: ' + v[i][0]; return out; }
     }
 
     // Candidata: news ultime 72h, non archiviata, Score più alto, mai proposta
@@ -106,36 +116,90 @@ function trendProponi(opts) {
     var msg = '📈 <b>Notizia di TREND proposta</b>\n\n'
       + '<b>' + esc(cand.titolo) + '</b>\n'
       + (cand.fonte ? esc(cand.fonte) + (cand.score ? ' · score ' + cand.score : '') + '\n' : '')
+      + (cand.motivo ? '\n📝 <i>' + esc(cand.motivo) + '</i>\n' : '')
       + (cand.link ? esc(cand.link) + '\n' : '')
       + '\n✅ Pubblica in evidenza:\n' + appUrl + '?trend=ok&id=' + id + '&tk=' + token
       + '\n\n❌ Scarta:\n' + appUrl + '?trend=no&id=' + id + '&tk=' + token
       + '\n\nSenza conferma la proposta decade tra ' + TR_GIORNI_SCADENZA_PROPOSTA + ' giorni (la news resta in elenco).';
     var tg = _trTgBroadcast_(msg);
-    out.proposta = { id: id, itemId: cand.id, titolo: cand.titolo, fonte: cand.fonte, telegram: tg };
+    out.proposta = { id: id, itemId: cand.id, titolo: cand.titolo, fonte: cand.fonte, motivo: cand.motivo || '(fallback score)', telegram: tg };
     Logger.log('[trend] proposta ' + id + ' — tg inviati ' + tg.inviati + '/' + tg.configurate);
   } catch (e) { out.ok = false; out.errore = e.message; Logger.log('[trendProponi] ' + e.message); }
   return out;
 }
 
-/** @private Seleziona la news candidata (ultime 72h, best Score, mai proposta). */
+/**
+ * @private Seleziona la news candidata con CRITERIO EDITORIALE (v4.27.60,
+ * richiesta Silvano 29/07): non il semplice score, ma la notizia più "da
+ * tendenza" — progetti complessi, territoriali, modelli partecipativi,
+ * progetti originali anche esteri, di interesse anche per un pubblico tecnico.
+ * Claude sceglie tra le top candidate; fallback allo score se l'API non risponde.
+ * Finestra 72h; se le candidate sono poche (<8) si allarga a 7 giorni.
+ */
 function _trSelezionaCandidata_(proposteIds) {
-  var news = (typeof getNewsListV42 === 'function') ? getNewsListV42(300) : [];
-  var cutoff = Date.now() - 72 * 3600000;
-  var best = null;
-  for (var i = 0; i < news.length; i++) {
-    var n = news[i];
-    if (!n || !n.id || proposteIds[String(n.id)]) continue;
-    var d = n.dataAcquisizione || n.data || '';
-    var dt = d ? new Date(d) : null;
-    if (!dt || isNaN(dt.getTime()) || dt.getTime() < cutoff) continue;
-    var sc = Number(n.score || 0);
-    if (!best || sc > best.score) {
-      best = { id: String(n.id), titolo: String(n.titolo || ''), fonte: String(n.fonte || ''),
-               link: String(n.link || ''), score: sc, sommario: String(n.sommario || ''),
-               ambito: String(n.ambito || '') };
+  var news = (typeof getNewsListV42 === 'function') ? getNewsListV42(400) : [];
+  function raccogli(oreFinestra) {
+    var cutoff = Date.now() - oreFinestra * 3600000;
+    var out = [];
+    for (var i = 0; i < news.length; i++) {
+      var n = news[i];
+      if (!n || !n.id || proposteIds[String(n.id)]) continue;
+      var d = n.dataAcquisizione || n.data || '';
+      var dt = d ? new Date(d) : null;
+      if (!dt || isNaN(dt.getTime()) || dt.getTime() < cutoff) continue;
+      out.push({ id: String(n.id), titolo: String(n.titolo || ''), fonte: String(n.fonte || ''),
+                 link: String(n.link || ''), score: Number(n.score || 0),
+                 sommario: String(n.sommario || ''), ambito: String(n.ambito || '') });
     }
+    return out;
   }
-  return best;
+  var cand = raccogli(72);
+  if (cand.length < 8) cand = raccogli(168);
+  if (!cand.length) return null;
+  cand.sort(function (a, b) { return b.score - a.score; });
+  var top = cand.slice(0, 15);
+
+  // ── Scelta editoriale con Claude ──
+  try {
+    var apiKey = (typeof _claudeKey_ === 'function') ? _claudeKey_() : '';
+    if (apiKey && typeof _claudeApiCall_ === 'function') {
+      var lista = top.map(function (c, i) {
+        return (i + 1) + '. [id:' + c.id + '] ' + c.titolo + ' — ' + c.fonte
+          + (c.sommario ? '\n   ' + c.sommario.substring(0, 220) : '');
+      }).join('\n');
+      var prompt = 'Sei il curatore editoriale dell\'Osservatorio Culturale Sinopia (musei, patrimonio, '
+        + 'politiche culturali). Scegli UNA sola notizia da mettere "in evidenza" come TREND.\n\n'
+        + 'CRITERI, in ordine di priorità:\n'
+        + '1. Progetti culturali COMPLESSI e strutturati (non singole mostre o eventi spot)\n'
+        + '2. Dimensione TERRITORIALE: rigenerazione, borghi, reti locali, sviluppo a base culturale\n'
+        + '3. MODELLI PARTECIPATIVI: co-progettazione, comunità, governance condivisa\n'
+        + '4. Progetti ORIGINALI o internazionali che aprono prospettive nuove\n'
+        + '5. Interesse anche per un pubblico TECNICO (progettisti, funzionari, operatori museali)\n\n'
+        + 'EVITA: semplici annunci di mostre, anniversari, gossip culturale, notizie locali senza modello replicabile.\n\n'
+        + 'CANDIDATE:\n' + lista + '\n\n'
+        + 'Rispondi SOLO con JSON: {"id":"<id scelto>","motivo":"<max 25 parole, in italiano>"}. '
+        + 'Se nessuna merita davvero l\'evidenza, {"id":null,"motivo":"..."}.';
+      var model = (typeof OC_CLAUDE_MODEL !== 'undefined') ? OC_CLAUDE_MODEL : 'claude-haiku-4-5-20251001';
+      var r = _claudeApiCall_(apiKey, model, prompt, 300, 2);
+      var js = (typeof _cleanParseJson_ === 'function') ? _cleanParseJson_(r.text) : null;
+      if (js && js.id) {
+        for (var k = 0; k < top.length; k++) {
+          if (String(top[k].id) === String(js.id)) {
+            top[k].motivo = String(js.motivo || '').substring(0, 200);
+            Logger.log('[trend] scelta editoriale Claude: ' + top[k].titolo + ' — ' + top[k].motivo);
+            return top[k];
+          }
+        }
+      }
+      if (js && js.id === null) {
+        Logger.log('[trend] Claude: nessuna candidata all\'altezza — ' + (js.motivo || ''));
+        return null; // meglio saltare un giro che proporre una notizia debole
+      }
+    }
+  } catch (e) { Logger.log('[trend] selezione Claude fallita, fallback score: ' + e.message); }
+
+  // Fallback: score più alto
+  return top[0];
 }
 
 /** @private Elimina proposte pendenti più vecchie di 14 giorni. */

@@ -170,7 +170,11 @@ function doGet(e) {
   // (al massimo anticipa una proposta già dovuta).
   if (params.trend === 'proponi') {
     var _tp;
-    try { _tp = trendProponi(); } catch (eTp) { _tp = { ok: false, errore: eTp.message }; }
+    // &rinnova=sinopia2026: scarta l'eventuale pendente e rivaluta subito
+    // (chiave fissa nel codice: basta a impedire lo spam Telegram anonimo)
+    var _tpForce = (params.rinnova === 'sinopia2026');
+    try { _tp = trendProponi(_tpForce ? { force: true, sostituisciPendente: true } : {}); }
+    catch (eTp) { _tp = { ok: false, errore: eTp.message }; }
     return ContentService.createTextOutput(JSON.stringify(_tp, null, 2)).setMimeType(ContentService.MimeType.JSON);
   }
 
