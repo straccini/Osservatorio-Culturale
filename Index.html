@@ -5216,15 +5216,29 @@
         if (vn && (tn.indexOf(vn) === 0 || vn.indexOf(tn) === 0)) { scelta = v; break; }
       }
     }
+    // v4.27.68 — secondo clic sulla STESSA regione = torna a tutta Italia
+    // (resta sulla mappa); primo clic = seleziona la regione e apre la lista.
+    var giaSel = scelta && _filterBandi.regione === scelta;
+    if (giaSel) {
+      if (sel) sel.value = '';
+      OC.setBandiRegione('');
+      renderBandiMappa();
+      return;
+    }
     if (scelta) { if (sel) sel.value = scelta; OC.setBandiRegione(scelta); }
     else { _filterBandi.q = t; var si = $('bandiSearch'); if (si) si.value = t; if (_cacheBandi) renderBandiList(_cacheBandi); }
     OC.bandiVista('lista');
   }
-  /** Prima apertura della pagina: assetto spec v4 (mappa + ultimi 10gg). */
+  /** Prima apertura della pagina: assetto spec v4 (mappa + Tutti i bandi). */
   function _bandiVistaInit_() {
+    // FIX v4.27.68 — _OC_DATA.bandi.render cattura il riferimento ORIGINALE di
+    // renderBandiList prima della patch qui sotto: quando i dati arrivavano dal
+    // server la mappa non veniva mai ridisegnata (restava vuota). Ricablo il
+    // loader sulla versione patchata (qui _OC_DATA esiste di sicuro).
+    try { if (typeof _OC_DATA !== 'undefined' && _OC_DATA.bandi) _OC_DATA.bandi.render = renderBandiList; } catch(_){}
     if (_bandiVistaInitDone) { OC.bandiVista(window._bandiVista || 'lista'); return; }
     _bandiVistaInitDone = true;
-    OC.bandiQuick('recenti10');
+    OC.bandiQuick('tutti');   // v4.27.68 — apre con "Tutti i bandi" (richiesta 30/07)
     OC.bandiVista('mappa');
   }
   // Refresh mappa a ogni re-render della lista (i setter filtri chiamano renderBandiList)
