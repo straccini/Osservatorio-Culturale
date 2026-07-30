@@ -1284,6 +1284,29 @@ body.is-home-page .topbar-search{display:none}
   display:flex; align-items:center; gap:10px;
 }
 .section-title em{font-family:var(--font-serif);font-style:italic;font-weight:400}
+
+/* ============================================================
+   v4.27.67 — RADAR BANDI SU MAPPA (spec v4) + menu ⋯ card
+   ============================================================ */
+.bm-reg{fill:var(--paper);stroke:var(--ink-3);stroke-width:.7;cursor:pointer;transition:fill .15s}
+.bm-reg:hover{fill:var(--accent-soft)}
+.bm-reg.bm-sel{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.6}
+.bm-bub{fill:var(--accent);cursor:pointer;opacity:.92}
+.bm-bubt{fill:#fff;font-size:13px;font-weight:800;text-anchor:middle;pointer-events:none;font-family:var(--font-ui)}
+.bm-mini{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.2}
+#homeMiniMappa:hover{border-color:var(--accent)}
+/* menu a tre puntini sulle card risorsa */
+.br-acts-dots{display:flex;justify-content:flex-end;position:relative;margin-top:6px}
+.br-dots{border:1px solid var(--rule);background:transparent;color:var(--ink-3);border-radius:8px;width:32px;height:30px;font-size:16px;line-height:1;cursor:pointer;font-weight:700}
+.br-dots:hover{border-color:var(--ink-3);color:var(--ink)}
+.br-menu{position:absolute;right:0;bottom:36px;background:var(--paper);border:1px solid var(--rule);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.16);z-index:50;min-width:190px;overflow:hidden}
+.br-menu button{display:block;width:100%;text-align:left;border:none;background:transparent;color:var(--ink-2);padding:9px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+.br-menu button:hover{background:var(--accent-soft)}
+.br-menu .br-menu-del{color:var(--accent);border-top:1px solid var(--rule)}
+/* riga categorie discreta dopo il titolo (niente chip, niente icone) */
+.br-catline{font-size:11.5px;color:var(--ink-3);letter-spacing:.03em;margin:3px 0 5px}
+.br-catline .br-cat-urg{color:var(--accent);font-weight:700}
+.br-catline .br-cat-new{color:var(--success,#0F7B5A);font-weight:700}
 /* v4.27.62 — enfasi hero allineata alla stessa convenzione dei titoli sezione */
 .home-headline em{font-family:var(--font-serif);font-style:italic;font-weight:400;letter-spacing:0}
 

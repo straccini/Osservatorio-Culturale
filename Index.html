@@ -589,6 +589,23 @@
           <input type="search" id="bandiSearch" aria-label="Cerca bandi" placeholder="Cerca per titolo, ente, settore, regione o parola chiave…" oninput="OC.searchBandi(this.value)" style="width:100%;padding:14px 18px 14px 48px;border:1.5px solid var(--rule-2,#D2D2D7);border-radius:18px;background:#fff;font-size:16px;color:var(--ink,#101010);font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04)" />
         </div>
       </div>
+      <!-- v4.27.67 — SPEC V4 (confermata 30/07): riga vista Lista/Mappa + filtri
+           rapidi; i controlli completi stanno sotto "Altri filtri" e quando si
+           aprono la riga rapida scompare (e viceversa). -->
+      <div id="bandiVistaRow" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px">
+        <span style="display:inline-flex;border:1.5px solid var(--cobalt,#1E3A8A);border-radius:999px;overflow:hidden">
+          <button id="bandiVtLista" onclick="OC.bandiVista('lista')" style="border:none;background:transparent;color:var(--cobalt,#1E3A8A);font-size:12.5px;font-weight:700;padding:6px 16px;cursor:pointer;font-family:inherit">Lista</button>
+          <button id="bandiVtMappa" onclick="OC.bandiVista('mappa')" style="border:none;background:transparent;color:var(--cobalt,#1E3A8A);font-size:12.5px;font-weight:700;padding:6px 16px;cursor:pointer;font-family:inherit">Mappa</button>
+        </span>
+        <span id="bandiQuickChips" style="display:inline-flex;gap:8px;flex-wrap:wrap">
+          <button class="filter-chip" data-quick="recenti10" onclick="OC.bandiQuick('recenti10')">Ultimi bandi rilevati (10gg)</button>
+          <button class="filter-chip" data-quick="scad15" onclick="OC.bandiQuick('scad15')">In scadenza &le;15gg</button>
+          <button class="filter-chip" data-quick="tutti" onclick="OC.bandiQuick('tutti')">Tutti i bandi</button>
+        </span>
+        <button id="bandiAltriBtn" onclick="OC.bandiAltriFiltri()" style="margin-left:auto;border:1.5px solid var(--cobalt,#1E3A8A);background:transparent;color:var(--cobalt,#1E3A8A);border-radius:999px;padding:6px 16px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">Altri filtri &#9662;</button>
+      </div>
+
+      <div id="bandiFiltriAvanzati" hidden>
       <!-- v4.25.3 — Tipo bando: dropdown con checkbox multi-select + conteggi -->
       <div id="bandiTipoDropdown" style="position:relative;display:inline-block;margin-bottom:10px">
         <button id="bandiTipoBtn" onclick="OC.toggleTipoDropdown()" style="padding:8px 16px;border:2px solid var(--accent,#8B3A1F);border-radius:14px;background:var(--paper);font-size:13px;color:var(--ink,#101010);cursor:pointer;font-weight:600;display:flex;align-items:center;gap:6px">
@@ -655,9 +672,17 @@
           <option value="rilev-desc">Ordina: Più recenti</option>
           <option value="titolo-asc">Ordina: Titolo A–Z</option>
         </select>
-        <button class="filter-chip" onclick="OC.exportBandiCSV()" title="Scarica i bandi filtrati in CSV" style="white-space:nowrap;padding:8px 14px">⤓&nbsp;Esporta CSV</button>
       </div>
-      <!-- TipoBando filter è il primo select nella barra filtri sopra -->
+      </div><!-- /bandiFiltriAvanzati (v4.27.67 — CSV spostato in fondo alla lista) -->
+
+      <!-- v4.27.67 — VISTA MAPPA: bolle per regione + contatore bandi UE -->
+      <div id="bandiMappaWrap" hidden style="position:relative;border:1px solid var(--rule);border-radius:14px;overflow:hidden;margin-bottom:14px;background:var(--paper)">
+        <div id="bandiMappaReg" style="position:absolute;left:14px;top:12px;font-family:var(--font-serif,Georgia);font-size:17px;font-weight:700;color:var(--accent)"></div>
+        <svg id="bandiMappaSvg" viewBox="0 0 760 900" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:560px"></svg>
+        <button id="bandiMappaEu" onclick="OC.bandiMappaEu()" style="position:absolute;top:14px;right:14px;background:var(--cobalt,#1E3A8A);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12.5px;font-weight:700;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.18);text-align:left;font-family:inherit">&#127466;&#127482; <span id="bandiMappaEuCnt">0</span> bandi europei<small style="display:block;font-weight:400;font-size:10.5px;opacity:.85">clic per vedere solo UE</small></button>
+        <div style="position:absolute;left:14px;bottom:10px;font-size:11px;color:var(--ink-3)">Bolle = bandi con i filtri attivi &middot; clic su una regione &rarr; lista filtrata</div>
+      </div>
+
       <div id="bandiList" aria-live="polite">
         <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
       </div>
@@ -668,6 +693,10 @@
         Nessun bando corrisponde ai filtri.
         <span class="empty-hint">Prova a rimuovere un filtro o torna alla vista completa.</span>
         <button class="empty-cta" onclick="OC.go('bandi')">Mostra tutti i bandi</button>
+      </div>
+      <!-- v4.27.67 — Esporta CSV in fondo alla lista filtrata (spec v4) -->
+      <div id="bandiCsvBottom" style="text-align:center;padding:16px 0 4px">
+        <button class="filter-chip" onclick="OC.exportBandiCSV()" title="Scarica in CSV esattamente i bandi mostrati dai filtri attivi" style="white-space:nowrap;padding:9px 20px">&#8681;&nbsp;Esporta CSV — lista filtrata</button>
       </div>
     </section>
 
@@ -3116,7 +3145,7 @@
 
     if (page==='chisiamo') loadChiSiamoContent();
     if (page==='lavoro') loadLavoro();  // v4.25.15 — pagina Lavoro cultura
-    if (page==='bandi')    loadBandiList(false);
+    if (page==='bandi')    { loadBandiList(false); try { _bandiVistaInit_(); } catch(_){} }
     if (page==='news')     loadNewsList(false);
     if (page==='podcast')  loadPodcastList(false);
     if (page==='video')    loadVideoList(false);
@@ -3517,6 +3546,14 @@
 
     // v4.27.59 — Notizia in evidenza (Trend approvata) nello slot dedicato
     try { _loadTrendHome_(); } catch(_){}
+
+    // v4.27.67 — mini-mappa cliccabile in home + chiusura menu ⋯ al click fuori
+    try { _drawMiniMappaHome_(); } catch(_){}
+    document.addEventListener('click', function(e){
+      if (!e.target.closest('.br-acts-dots')) {
+        document.querySelectorAll('.br-menu').forEach(function(m){ m.hidden = true; });
+      }
+    });
 
     // Carica conteggi settimanali NEW per sidebar badges
     google.script.run
@@ -5071,15 +5108,139 @@
     if (typeof _ocLivello === 'function' && _ocLivello() < 1) return '';
     var cfg = _CARD_CFG[tipo] || _CARD_CFG.item;
     var wt = cfg.wfTipo, eid = esc(String(id));
-    // v4.27.45 — GESTIONE RISORSE (Archivia/Cestina) solo per redattori e admin
-    // (livello >= 2). Letto e Salva restano per tutti i registrati.
-    var canManage = typeof _ocLivello === 'function' && _ocLivello() >= 2;
-    return '<div class="br-acts">'
-      + '<button class="br-act br-act-read" onclick="event.stopPropagation();OC.markItemRead(\'' + wt + '\',\'' + eid + '\',this)">&#10003;&nbsp;' + cfg.readLabel + '</button>'
-      + '<button class="br-act br-act-save' + (salvato ? ' br-act-save-on' : '') + '" title="' + (salvato ? 'Rimuovi dai salvati' : 'Salva') + '" onclick="event.stopPropagation();OC.saveCard(\'' + wt + '\',\'' + eid + '\',this)">' + (salvato ? '&#9733; Salvato' : '&#9734; Salva') + '</button>'
-      + (canManage ? '<button class="br-act br-act-arch" onclick="event.stopPropagation();OC.archiveItem(\'' + wt + '\',\'' + eid + '\',this)">&#8659;&nbsp;Arch.</button>' : '')
-      + (canManage && cfg.hasTrash ? '<button class="br-act br-act-trash" onclick="event.stopPropagation();OC.trashItem(\'' + wt + '\',\'' + eid + '\',this)">&#128465;&nbsp;Cestina</button>' : '')
-      + '</div>';
+    // v4.27.67 — SPEC V4: menu a TRE PUNTINI al posto della fila di bottoni.
+    // Letto e Salva per tutti i registrati; Archivia e Cestina SOLO admin/
+    // superadmin (liv>=3): gli archiviati escono dalle viste e vengono
+    // ripuliti periodicamente dalla funzione dedicata.
+    var admin = typeof _ocLivello === 'function' && _ocLivello() >= 3;
+    return '<div class="br-acts-dots">'
+      + '<button class="br-dots" title="Azioni" aria-haspopup="true" onclick="event.stopPropagation();OC.cardMenuToggle(this)">&#8943;</button>'
+      + '<div class="br-menu" hidden>'
+      +   '<button onclick="event.stopPropagation();OC.cardMenuClose(this);OC.markItemRead(\'' + wt + '\',\'' + eid + '\',this)">&#10003;&nbsp;' + cfg.readLabel + '</button>'
+      +   '<button onclick="event.stopPropagation();OC.cardMenuClose(this);OC.saveCard(\'' + wt + '\',\'' + eid + '\',this)">' + (salvato ? '&#9733;&nbsp;Rimuovi dai salvati' : '&#9734;&nbsp;Salva nella mia area') + '</button>'
+      +   (admin ? '<button onclick="event.stopPropagation();OC.cardMenuClose(this);OC.archiveItem(\'' + wt + '\',\'' + eid + '\',this)">&#8659;&nbsp;Archivia</button>' : '')
+      +   (admin && cfg.hasTrash ? '<button class="br-menu-del" onclick="event.stopPropagation();OC.cardMenuClose(this);OC.trashItem(\'' + wt + '\',\'' + eid + '\',this)">&#128465;&nbsp;Cestina</button>' : '')
+      + '</div></div>';
+  }
+
+  // ============================================================
+  // v4.27.67 — RADAR BANDI SU MAPPA (spec v4 confermata 30/07)
+  // ============================================================
+  window._bandiVista = 'lista';
+  var _bandiVistaInitDone = false;
+
+  /** Rilevato entro N giorni? (per il preset rapido "Ultimi rilevati 10gg") */
+  function _rilEntroGiorni_(b, n) {
+    var d = _parseDate_(b.dataRil);
+    if (!d) return false;
+    return (Date.now() - d) <= n * 86400000;
+  }
+  function _bandoEU_(b) {
+    var liv = String(b.livello||'').toLowerCase();
+    return liv === 'eu' || /europ|ted\b|creative europe|horizon/i.test(String(b.settore||'').toLowerCase() + ' ' + String(b.ente||'').toLowerCase());
+  }
+  /** Stessi filtri di renderBandiList ma SENZA il filtro regione (la mappa la mostra). */
+  function _bandoPassaFiltriMappa_(b) {
+    var giorni = b.giorni != null ? parseInt(b.giorni, 10) : null;
+    var preset = _filterBandi.preset || 'tutti';
+    if (preset === 'esiti') { if (!b.esito) return false; } else if (b.esito) return false;
+    if (String(b.tipoBando || '') === 'lavoro') return false;
+    var ambN = _ambNum_(b.ambito) || _ambNum_(b.settore) || 0;
+    if (!_identFilterItem_(ambN, b.regione)) return false;
+    var fAmb = _filterBandi.amb || 0;
+    if (fAmb > 0 && ambN !== fAmb) return false;
+    if (preset === 'recenti'   && !b.isRecente) return false;
+    if (preset === 'urgenti10' && !(giorni !== null && giorni >= 0 && giorni <= 10)) return false;
+    if (preset === 'salvati'   && !b.salvato) return false;
+    if (preset === 'recenti10' && !_rilEntroGiorni_(b, 10)) return false;
+    if (preset === 'scad15'    && !(giorni !== null && giorni >= 0 && giorni <= 15)) return false;
+    var q = String(_filterBandi.q || '').trim().toLowerCase();
+    if (q) {
+      var hay = (String(b.titolo||'') + ' ' + String(b.ente||'') + ' ' + String(b.settore||'') + ' ' + String(b.regione||'') + ' ' + String(b.descrizione||b.sommario||b.note||'')).toLowerCase();
+      if (hay.indexOf(q) < 0) return false;
+    }
+    if (_filterBandi.cpv && !_cpvCulturaMatch_(b, _filterBandi.cpv)) return false;
+    if (_filterBandiTipiAttivo) {
+      var bt = b.tipoBando || '';
+      if (!bt) { if (!_filterBandiTipi['_senza']) return false; }
+      else if (!_filterBandiTipi[bt]) return false;
+    }
+    if (_filterBandiSettore && !_cpvCulturaMatch_(b, _filterBandiSettore)) return false;
+    return true;
+  }
+  function _regNorm_(s) { return String(s||'').toLowerCase().replace(/[^a-z]/g, ''); }
+
+  function renderBandiMappa() {
+    var svg = $('bandiMappaSvg');
+    if (!svg || typeof OC_GEO_ITALIA === 'undefined') return;
+    var GEO = OC_GEO_ITALIA;
+    var counts = {}, euCnt = 0;
+    (_cacheBandi || []).forEach(function(b){
+      if (!_bandoPassaFiltriMappa_(b)) return;
+      if (_bandoEU_(b)) { euCnt++; return; }
+      var rn = _regNorm_(b.regione);
+      if (!rn || rn === 'vari' || rn === 'tutte') return;
+      for (var name in GEO.paths) {
+        var gn = _regNorm_(name);
+        if (gn.indexOf(rn) === 0 || rn.indexOf(gn) === 0) { counts[name] = (counts[name]||0) + 1; break; }
+      }
+    });
+    var selReg = (_filterBandi.regione && _filterBandi.regione.charAt(0) !== '_') ? _filterBandi.regione : null;
+    var selN = _regNorm_(selReg);
+    var s = '';
+    for (var r in GEO.paths) {
+      var isSel = selN && (_regNorm_(r).indexOf(selN) === 0 || selN.indexOf(_regNorm_(r)) === 0);
+      s += '<path class="bm-reg' + (isSel ? ' bm-sel' : '') + '" d="' + GEO.paths[r] + '" data-reg="' + esc(r) + '"><title>' + esc(r) + ' — ' + (counts[r]||0) + ' bandi</title></path>';
+    }
+    for (var r2 in GEO.paths) {
+      var n = counts[r2] || 0;
+      if (!n) continue;
+      var c = GEO.centroidi[r2], rad = 10 + Math.min(n, 9) * 1.6;
+      s += '<circle class="bm-bub" cx="' + c[0] + '" cy="' + c[1] + '" r="' + rad + '" data-reg="' + esc(r2) + '"/>'
+         + '<text class="bm-bubt" x="' + c[0] + '" y="' + (c[1]+4.5) + '">' + n + '</text>';
+    }
+    svg.innerHTML = s;
+    var euEl = $('bandiMappaEuCnt'); if (euEl) euEl.textContent = euCnt;
+    var regEl = $('bandiMappaReg');
+    if (regEl) regEl.textContent = _filterBandi.regione === '_europa' ? 'Bandi europei' : (selReg || '');
+  }
+  function _bandiMappaClick_(e) {
+    var t = e.target.getAttribute('data-reg');
+    if (!t) return;
+    var sel = $('bandiRegione'), scelta = null, tn = _regNorm_(t);
+    if (sel) {
+      for (var i = 0; i < sel.options.length; i++) {
+        var v = sel.options[i].value;
+        if (!v || v.charAt(0) === '_') continue;
+        var vn = _regNorm_(v);
+        if (vn && (tn.indexOf(vn) === 0 || vn.indexOf(tn) === 0)) { scelta = v; break; }
+      }
+    }
+    if (scelta) { if (sel) sel.value = scelta; OC.setBandiRegione(scelta); }
+    else { _filterBandi.q = t; var si = $('bandiSearch'); if (si) si.value = t; if (_cacheBandi) renderBandiList(_cacheBandi); }
+    OC.bandiVista('lista');
+  }
+  /** Prima apertura della pagina: assetto spec v4 (mappa + ultimi 10gg). */
+  function _bandiVistaInit_() {
+    if (_bandiVistaInitDone) { OC.bandiVista(window._bandiVista || 'lista'); return; }
+    _bandiVistaInitDone = true;
+    OC.bandiQuick('recenti10');
+    OC.bandiVista('mappa');
+  }
+  // Refresh mappa a ogni re-render della lista (i setter filtri chiamano renderBandiList)
+  var _renderBandiListCore_ = renderBandiList;
+  renderBandiList = function(list) {
+    _renderBandiListCore_(list);
+    try { if (window._bandiVista === 'mappa') renderBandiMappa(); } catch(_){}
+  };
+
+  /** Mini-mappa cliccabile in home (colonna Bandi) — silhouette, nessun conteggio. */
+  function _drawMiniMappaHome_() {
+    var svg = $('homeMiniMappaSvg');
+    if (!svg || svg.childNodes.length || typeof OC_GEO_ITALIA === 'undefined') return;
+    var s = '';
+    for (var r in OC_GEO_ITALIA.paths) s += '<path class="bm-mini" d="' + OC_GEO_ITALIA.paths[r] + '"/>';
+    svg.innerHTML = s;
   }
 
   // v4.25 — Badge tipo bando
@@ -5192,20 +5353,25 @@
     var salvato = !!b.salvato;
     var acts = _cardActionsHtml_('bando', id, salvato);
 
+    // v4.27.67 — SPEC V4: categorie DISCRETE dopo il titolo, senza chip
+    // colorati ne' micro-icone: riga grigia con separatori a punto.
+    var _catTipo = { finanziamento:'Finanziamento', servizio_fornitura:'Servizi e forniture', servizio:'Servizio', fornitura:'Fornitura', lavori:'Lavori' }[b.tipoBando] || '';
+    var _catCpv  = { musei:'Musei e patrimonio', biblioteche:'Biblioteche e archivi', patrimonio:'Patrimonio e restauro', spettacolo:'Spettacolo dal vivo', archeologia:'Archeologia' }[(b.settoreCultura||'').toLowerCase()] || '';
+    var _catLine = [
+      _catTipo || esc(temaLabel),
+      _catCpv,
+      (b.tipoAppalto ? esc(b.tipoAppalto) : ''),
+      (_bandoEU_(b) ? 'Unione Europea' : ''),
+      (isUrgent ? '<span class="br-cat-urg">Urgente</span>' : (b.isRecente ? '<span class="br-cat-new">Nuovo</span>' : ''))
+    ].filter(function(x){ return x; }).join(' &middot; ');
+
     return '<div class="br-row' + (isUrgent ? ' br-urgent' : '') + '" role="button" tabindex="0" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
       // — SINISTRA —
       + '<div class="br-left">'
-      +   '<div class="br-tags">'
-      +     '<span class="br-tema' + temaCls + '">' + esc(temaLabel) + '</span>'
-      +     (b.tipoBando ? '<span class="br-tipo-badge br-tipo-' + esc(b.tipoBando) + '">' + _tipoBadgeLabel_(b.tipoBando) + '</span>' : '')
-      +     (b.tipoAppalto ? '<span class="br-tipo-badge" style="background:var(--surface-2);color:var(--ink-2)">' + esc(b.tipoAppalto) + '</span>' : '')
-      +     (isUrgent ? '<span class="br-badge-urgent">&#9889;&nbsp;Urgente</span>' : '')
-      +     (b.isRecente && !isUrgent ? '<span class="br-badge-new">Nuovo</span>' : '')
-      +     (b.settoreCultura ? '<span class="nr-fonte" style="font-size:11px">' + (CPV_CULTURA_LABELS[(b.settoreCultura||'').toLowerCase()] || b.settoreCultura) + '</span>' : '')
-      +   '</div>'
       +   '<p class="br-title"' + (url ? ' onclick="OC.openUrl(\'' + esc(url) + '\')" title="Apri scheda ufficiale"' : '') + '>'
       +     esc(b.titolo || '(senza titolo)')
       +   '</p>'
+      +   (_catLine ? '<div class="br-catline">' + _catLine + '</div>' : '')
       +   (sommario ? '<p class="br-summary">' + esc(trunc(sommario, 180)) + '</p>' : '')
       +   _brCpvLine_(b)
       +   '<div class="br-meta">'
@@ -5525,6 +5691,9 @@
       if (preset === 'recenti'   && !b.isRecente) return;
       if (preset === 'urgenti10' && !(giorni !== null && giorni >= 0 && giorni <= 10)) return;
       if (preset === 'salvati'   && !b.salvato) return;
+      // v4.27.67 — preset rapidi spec v4: rilevati entro 10gg / scadenza entro 15gg
+      if (preset === 'recenti10' && !_rilEntroGiorni_(b, 10)) return;
+      if (preset === 'scad15'    && !(giorni !== null && giorni >= 0 && giorni <= 15)) return;
 
       // v4.18.8 — Ricerca testuale: titolo, ente, settore, regione, sommario
       if (q) {
@@ -5559,7 +5728,9 @@
     if (cnt) {
       if (preset === 'salvati')    cnt.textContent = shown + ' salvati';
       else if (preset === 'recenti')    cnt.textContent = shown + ' rilevati negli ultimi 30gg';
+      else if (preset === 'recenti10')  cnt.textContent = shown + ' rilevati negli ultimi 10gg';
       else if (preset === 'urgenti10')  cnt.textContent = shown + ' in scadenza entro 10gg';
+      else if (preset === 'scad15')     cnt.textContent = shown + ' in scadenza entro 15gg';
       else if (preset === 'esiti')      cnt.textContent = shown + ' esiti / aggiudicazioni';
       else cnt.textContent = shown < total ? shown + ' di ' + total + ' bandi' : total + ' bandi monitorati';
     }
@@ -12046,6 +12217,57 @@
       });
       OC.toggleBandiTipo();
     },
+    // v4.27.67 — RADAR BANDI SU MAPPA (spec v4)
+    bandiVista: function(v){
+      window._bandiVista = v;
+      var mw = $('bandiMappaWrap'), bl = $('bandiList'), cs = $('bandiCsvBottom'), be = $('bandiEmpty');
+      if (mw) mw.hidden = (v !== 'mappa');
+      if (bl) bl.style.display = (v === 'mappa') ? 'none' : '';
+      if (cs) cs.style.display = (v === 'mappa') ? 'none' : '';
+      if (be && v === 'mappa') be.hidden = true;
+      var a = $('bandiVtLista'), b = $('bandiVtMappa');
+      function st(el, on){ if (!el) return; el.style.background = on ? 'var(--cobalt,#1E3A8A)' : 'transparent'; el.style.color = on ? '#fff' : 'var(--cobalt,#1E3A8A)'; }
+      st(a, v === 'lista'); st(b, v === 'mappa');
+      if (v === 'mappa') {
+        var svg = $('bandiMappaSvg');
+        if (svg && !svg._wired) { svg._wired = true; svg.addEventListener('click', _bandiMappaClick_); }
+        renderBandiMappa();
+      }
+    },
+    bandiQuick: function(p){
+      _filterBandi.preset = p;
+      document.querySelectorAll('#bandiQuickChips .filter-chip').forEach(function(c){
+        c.classList.toggle('active', c.getAttribute('data-quick') === p);
+      });
+      var ps = $('bandiPreset'); if (ps && p === 'tutti') ps.value = 'tutti';
+      if (_cacheBandi) renderBandiList(_cacheBandi);
+    },
+    bandiAltriFiltri: function(){
+      var av = $('bandiFiltriAvanzati'), qc = $('bandiQuickChips'), btn = $('bandiAltriBtn');
+      var apre = av && av.hidden;
+      if (av) av.hidden = !apre;
+      if (qc) qc.style.display = apre ? 'none' : '';
+      if (btn) btn.innerHTML = apre ? '&#9652; Filtri rapidi' : 'Altri filtri &#9662;';
+      if (!apre) {
+        // tornando ai rapidi si riapplica il quick evidenziato (spec v4)
+        var act = document.querySelector('#bandiQuickChips .filter-chip.active');
+        OC.bandiQuick(act ? act.getAttribute('data-quick') : 'recenti10');
+      }
+    },
+    bandiMappaEu: function(){
+      var sel = $('bandiRegione'); if (sel) sel.value = '_europa';
+      OC.setBandiRegione('_europa');
+      OC.bandiVista('lista');
+    },
+    cardMenuToggle: function(btn){
+      var menu = btn && btn.parentNode ? btn.parentNode.querySelector('.br-menu') : null;
+      document.querySelectorAll('.br-menu').forEach(function(m){ if (m !== menu) m.hidden = true; });
+      if (menu) menu.hidden = !menu.hidden;
+    },
+    cardMenuClose: function(el){
+      var m = el ? el.closest('.br-menu') : null;
+      if (m) m.hidden = true;
+    },
     // v4.27.59 — GESTIONE TREND (notizia in evidenza con approvazione Telegram)
     trendLoad: function(btn){
       var box = document.getElementById('trendAdminList');
@@ -13959,6 +14181,7 @@
 
 <!-- Sprint 2 (2026-04-30): include modulo MuseMu Matrix (questionario + report) -->
 <?!= include('MatrixApp'); ?>
+<?!= include('MappaItalia'); ?>
 
 <!-- v4.19.0 — contenuto profilo iniettato dinamicamente via JS in OC.loadProfiloPro -->
 <div id="page-profilo-pro-tpl" hidden>
