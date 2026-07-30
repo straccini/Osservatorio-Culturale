@@ -651,7 +651,9 @@
       <!-- v4.27.67 — VISTA MAPPA: bolle per regione + contatore bandi UE -->
       <div id="bandiMappaWrap" hidden style="position:relative;border:1px solid var(--rule);border-radius:14px;overflow:hidden;margin-bottom:14px;background:var(--paper)">
         <div id="bandiMappaReg" style="position:absolute;left:14px;top:12px;font-family:var(--font-serif,Georgia);font-size:17px;font-weight:700;color:var(--accent)"></div>
-        <svg id="bandiMappaSvg" viewBox="0 0 760 900" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:440px"></svg>
+        <svg id="bandiMappaSvg" viewBox="0 0 760 900" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:min(72vh,720px)"></svg>
+        <!-- v4.27.72 — contatore risultati DENTRO il box mappa -->
+        <div id="bandiMappaCnt" style="position:absolute;left:14px;bottom:34px;font-family:var(--font-serif,Georgia);font-size:15px;font-weight:700;color:var(--ink)"></div>
         <button id="bandiMappaEu" onclick="OC.bandiMappaEu()" style="position:absolute;top:14px;right:14px;background:var(--cobalt,#1E3A8A);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12.5px;font-weight:700;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.18);text-align:left;font-family:inherit">&#127466;&#127482; <span id="bandiMappaEuCnt">0</span> bandi europei<small style="display:block;font-weight:400;font-size:10.5px;opacity:.85">clic per vedere solo UE</small></button>
         <div style="position:absolute;left:14px;bottom:10px;font-size:11px;color:var(--ink-3)">Bolle = bandi con i filtri attivi &middot; clic su una regione &rarr; lista filtrata</div>
       </div>
@@ -5178,6 +5180,20 @@
     var euEl = $('bandiMappaEuCnt'); if (euEl) euEl.textContent = euCnt;
     var regEl = $('bandiMappaReg');
     if (regEl) regEl.textContent = _filterBandi.regione === '_europa' ? 'Bandi europei' : (selReg || '');
+    // v4.27.72 — contatore risultati nel box mappa: rispecchia la lista sotto
+    var cEl = $('bandiMappaCnt');
+    if (cEl) {
+      var tot = 0;
+      (_cacheBandi || []).forEach(function(b){
+        if (!_bandoPassaFiltriMappa_(b)) return;
+        if (_filterBandi.regione && !_regioneMatch_(b, _filterBandi.regione)) return;
+        tot++;
+      });
+      var dove = _filterBandi.regione === '_europa' ? 'Unione Europea'
+               : _filterBandi.regione === '_italia' ? 'Italia (nazionali)'
+               : (selReg || 'tutta Italia');
+      cEl.textContent = tot + (tot === 1 ? ' bando' : ' bandi') + ' · ' + dove;
+    }
   }
   function _bandiMappaClick_(e) {
     var t = e.target.getAttribute('data-reg');
