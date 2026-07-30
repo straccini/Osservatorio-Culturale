@@ -5352,7 +5352,7 @@
       (isUrgent ? '<span class="br-cat-urg">Urgente</span>' : (b.isRecente ? '<span class="br-cat-new">Nuovo</span>' : ''))
     ].filter(function(x){ return x; }).join(' &middot; ');
 
-    return '<div class="br-row' + (isUrgent ? ' br-urgent' : '') + '" role="button" tabindex="0" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
+    return '<div class="br-row" role="button" tabindex="0" data-amb="' + ambN + '" data-id="' + esc(id) + '">'
       // — SINISTRA —
       + '<div class="br-left">'
       +   '<p class="br-title"' + (url ? ' onclick="OC.openUrl(\'' + esc(url) + '\')" title="Apri scheda ufficiale"' : '') + '>'
@@ -5368,13 +5368,12 @@
       +     (b.dataRil ? '<span class="br-sep">&middot;</span><span class="br-rilev">Rilev. ' + esc(b.dataRil) + '</span>' : '')
       +   '</div>'
       + '</div>'
-      // — DESTRA —
+      // — DESTRA — v4.27.71: come nella demo, i tre puntini stanno IN ALTO A
+      // DESTRA accanto alla scadenza (prima erano una riga separata sotto)
       + '<div class="br-right">'
-      +   scadHtml
+      +   '<div class="br-right-top">' + scadHtml + acts + '</div>'
       +   linkHtml
       + '</div>'
-      // — AZIONI sotto, a tutta larghezza (v5.2) —
-      +   acts
       + '</div>';
   }
 
@@ -5634,11 +5633,8 @@
     // v4.27.29 — Nuovi bandi (isRecente) sempre per primi, qualsiasi ordinamento
     var sortedList = list.slice();
     sortedList.sort(function(a, b){
-      // Nuovi (rilevati di recente) sempre in cima
-      var nA = a.isRecente ? 0 : 1;
-      var nB = b.isRecente ? 0 : 1;
-      if (nA !== nB) return nA - nB;
-
+      // v4.27.71 — ordinamento PURO come nella demo (niente "nuovi in cima":
+      // il Nuovo vive nella riga categorie; l'ordine e' quello scelto)
       if (sort === 'importo-desc') {
         var iA = _parseImporto_(a.importo), iB = _parseImporto_(b.importo);
         return iB - iA;
@@ -5707,11 +5703,9 @@
       }
 
       shown++;
-      // Sezione urgenti solo se sort è default e preset compatibile
-      if (sort === 'scadenza-asc' && isUrgent && (preset === 'tutti' || preset === 'urgenti10'))
-        urgenti.push({ b:b, giorni:giorni });
-      else
-        altri.push({ b:b, giorni:giorni });
+      // v4.27.71 — flusso UNICO come nella demo: niente sezione urgenti
+      // separata; l'urgenza vive nel badge giorni e nella riga categorie
+      altri.push({ b:b, giorni:giorni });
     });
 
     if (cnt) {
@@ -5754,15 +5748,9 @@
     }
     if (em) em.hidden = true;
 
+    // v4.27.71 — impaginazione demo: un solo flusso ordinato, nessuna banda
     var html = '';
-    if (urgenti.length) {
-      html += '<div style="background:linear-gradient(135deg,#C2410C,#DC6B20);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:700;margin:16px 0 12px;text-align:center;letter-spacing:.02em">&#9889; IN SCADENZA ENTRO 7 GIORNI</div>';
-      urgenti.forEach(function(x){ html += _brRowHtml_(x.b); });
-    }
-    if (altri.length) {
-      if (urgenti.length) html += '<div class="section-divider"><span>Tutti i bandi monitorati</span></div>';
-      altri.forEach(function(x){ html += _brRowHtml_(x.b); });
-    }
+    altri.forEach(function(x){ html += _brRowHtml_(x.b); });
     wrap.innerHTML = html;
   }
   // ---- Scadenzario bandi — vista timeline per scadenza ----

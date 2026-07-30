@@ -1296,10 +1296,12 @@ body.is-home-page .topbar-search{display:none}
 .bm-mini{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.2}
 #homeMiniMappa:hover{border-color:var(--accent)}
 /* menu a tre puntini sulle card risorsa */
-.br-acts-dots{display:flex;justify-content:flex-end;position:relative;margin-top:6px}
+/* v4.27.71 — impaginazione demo: scadenza + tre puntini in alto a destra */
+.br-right-top{display:flex;align-items:flex-start;justify-content:flex-end;gap:10px}
+.br-acts-dots{position:relative;flex-shrink:0}
 .br-dots{border:1px solid var(--rule);background:transparent;color:var(--ink-3);border-radius:8px;width:32px;height:30px;font-size:16px;line-height:1;cursor:pointer;font-weight:700}
 .br-dots:hover{border-color:var(--ink-3);color:var(--ink)}
-.br-menu{position:absolute;right:0;bottom:36px;background:var(--paper);border:1px solid var(--rule);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.16);z-index:50;min-width:190px;overflow:hidden}
+.br-menu{position:absolute;right:0;top:34px;background:var(--paper);border:1px solid var(--rule);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.16);z-index:50;min-width:190px;overflow:hidden}
 .br-menu button{display:block;width:100%;text-align:left;border:none;background:transparent;color:var(--ink-2);padding:9px 14px;font-size:13px;cursor:pointer;font-family:inherit}
 .br-menu button:hover{background:var(--accent-soft)}
 .br-menu .br-menu-del{color:var(--accent);border-top:1px solid var(--rule)}
@@ -2664,8 +2666,8 @@ body.is-home-page .topbar-search{display:none}
 }
 .br-row:hover { background: var(--surface-2); margin: 0 -14px; padding-left: 14px; padding-right: 14px; border-radius: var(--r-sm, 6px); }
 /* v4.27.3 — Urgenti: tint sfondo + bordo sottile (no side-stripe) */
-.br-row.br-urgent { background: oklch(0.97 0.015 25); border-bottom-color: oklch(0.88 0.04 25); }
-.br-row.br-urgent:hover { background: oklch(0.95 0.02 25); }
+.br-row.br-urgent { background: transparent; }  /* v4.27.71 — niente tint arancione */
+.br-row.br-urgent:hover { background: var(--surface-2); }
 
 /* ── SINISTRA ── */
 .br-left { min-width: 0; }
@@ -4165,8 +4167,8 @@ button:focus-visible:not(.btn):not(.br-act):not(.nav-item):not(.filter-chip):not
 [data-theme="dark"] .pd-show-badge { background:oklch(0.25 0.04 80); }
 
 /* Bandi urgenti: dark tint */
-[data-theme="dark"] .br-row.br-urgent { background:oklch(0.18 0.02 25); border-bottom-color:oklch(0.25 0.04 25); }
-[data-theme="dark"] .br-row.br-urgent:hover { background:oklch(0.22 0.03 25); }
+[data-theme="dark"] .br-row.br-urgent { background:transparent; }
+[data-theme="dark"] .br-row.br-urgent:hover { background:var(--surface-2); }
 
 /* Action buttons: dark badge tints */
 [data-theme="dark"] .br-badge-urgent { background:oklch(0.22 0.04 25); }
