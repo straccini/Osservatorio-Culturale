@@ -606,73 +606,46 @@
       </div>
 
       <div id="bandiFiltriAvanzati" hidden>
-      <!-- v4.25.3 — Tipo bando: dropdown con checkbox multi-select + conteggi -->
-      <div id="bandiTipoDropdown" style="position:relative;display:inline-block;margin-bottom:10px">
-        <button id="bandiTipoBtn" onclick="OC.toggleTipoDropdown()" style="padding:8px 16px;border:2px solid var(--accent,#8B3A1F);border-radius:14px;background:var(--paper);font-size:13px;color:var(--ink,#101010);cursor:pointer;font-weight:600;display:flex;align-items:center;gap:6px">
-          Tipo bando ▾ <span id="bandiTipoCountBadge" style="background:var(--accent,#8B3A1F);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px">tutti</span>
-        </button>
-        <div id="bandiTipoMenu" style="display:none;position:absolute;top:100%;left:0;z-index:100;background:#fff;border:1px solid var(--rule-2,#D2D2D7);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px 0;min-width:260px;margin-top:4px">
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--warning);border-bottom:1px solid var(--rule)">
-            <input type="checkbox" value="finanziamento" onchange="OC.toggleBandiTipo()" checked style="accent-color:#D97706;width:16px;height:16px"> 💰 Finanziamenti <span id="cnt_finanziamento" style="margin-left:auto;font-size:11px;color:var(--ink-4)"></span>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--amb-3);border-bottom:1px solid var(--rule)">
-            <input type="checkbox" value="servizio_fornitura" onchange="OC.toggleBandiTipo()" checked style="accent-color:#3B82F6;width:16px;height:16px"> 🔧 Servizi e Forniture <span id="cnt_servizio_fornitura" style="margin-left:auto;font-size:11px;color:var(--ink-4)"></span>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--success);border-bottom:1px solid var(--rule)">
-            <input type="checkbox" value="lavori" onchange="OC.toggleBandiTipo()" checked style="accent-color:#059669;width:16px;height:16px"> 🏗 Lavori <span id="cnt_lavori" style="margin-left:auto;font-size:11px;color:var(--ink-4)"></span>
-          </label>
-          <!-- v4.25.15 — checkbox "Lavoro e Concorsi" rimossa: i concorsi hanno la pagina dedicata "Lavoro cultura" -->
-
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:500;color:var(--warning);background:oklch(0.98 0.03 90)">
-            <input type="checkbox" value="_senza" onchange="OC.toggleBandiTipo()" checked style="accent-color:#EAB308;width:16px;height:16px"> ⚠ Senza categoria <span id="cnt_senza" style="margin-left:auto;font-size:11px;color:var(--ink-4)"></span>
-          </label>
-          <div style="padding:6px 16px;border-top:1px solid var(--rule);display:flex;gap:8px">
-            <button onclick="OC.selezionaTuttiBandiTipo(true)" style="flex:1;padding:4px;border:1px solid var(--rule);border-radius:6px;background:var(--surface);cursor:pointer;font-size:11px">Seleziona tutti</button>
-            <button onclick="OC.selezionaTuttiBandiTipo(false)" style="flex:1;padding:4px;border:1px solid var(--rule);border-radius:6px;background:var(--surface);cursor:pointer;font-size:11px">Deseleziona</button>
-          </div>
+        <!-- v4.27.69 — STRUTTURA FILTRI DEL MODELLO V4: 1 Categoria (scelta
+             singola) · 2 Settore cultura CPV (multi-selezione, "Tutti" azzera)
+             · 3-4 Vista + Ordinamento a tendina. -->
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 8px">
+          <span class="bfa-lab">1 &middot; Categoria</span>
+          <button class="filter-chip active" data-bcat="tutti" onclick="OC.bandiCat('tutti')">Tutti</button>
+          <button class="filter-chip" data-bcat="finanziamento" onclick="OC.bandiCat('finanziamento')">Finanziamenti</button>
+          <button class="filter-chip" data-bcat="servizio_fornitura" onclick="OC.bandiCat('servizio_fornitura')">Servizi e forniture</button>
+          <button class="filter-chip" data-bcat="lavori" onclick="OC.bandiCat('lavori')">Lavori</button>
         </div>
-      </div>
-      <div class="filters filters-tools" id="bandiTools" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">
-        <select id="bandiTema" class="filter-select" onchange="OC.setBandiTema(this.value)" title="Filtra i bandi mostrati per area tematica (ambito 01-05 della tassonomia Osservatorio)" style="padding:8px 14px;border:1px solid var(--rule-2,#D2D2D7);border-radius:14px;background:#fff;font-size:13px;color:var(--ink,#101010);cursor:pointer">
-          <option value="0">Tutte le tematiche</option>
-          <option value="1">01 · Identità e narrazione</option>
-          <option value="2">02 · Inclusione e accessibilità</option>
-          <option value="3">03 · Programma, mostre e collezioni</option>
-          <option value="4">04 · Comunità e welfare culturale</option>
-          <option value="5">05 · Digital, AI e governance</option>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 8px">
+          <span class="bfa-lab">2 &middot; Settore</span>
+          <button class="filter-chip active" data-bset="tutti" onclick="OC.bandiSettore('tutti')">Tutti</button>
+          <button class="filter-chip" data-bset="musei" onclick="OC.bandiSettore('musei')">Musei e patrimonio</button>
+          <button class="filter-chip" data-bset="biblioteche" onclick="OC.bandiSettore('biblioteche')">Biblioteche e archivi</button>
+          <button class="filter-chip" data-bset="patrimonio" onclick="OC.bandiSettore('patrimonio')">Patrimonio e restauro</button>
+          <button class="filter-chip" data-bset="spettacolo" onclick="OC.bandiSettore('spettacolo')">Spettacolo dal vivo</button>
+          <button class="filter-chip" data-bset="archeologia" onclick="OC.bandiSettore('archeologia')">Archeologia</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px">
+          <span class="bfa-lab">3-4 &middot; Vista</span>
+          <select id="bandiVistaSel" class="filter-select" onchange="OC.bandiVistaSel(this.value)" style="padding:8px 14px;border:1px solid var(--rule-2,#D2D2D7);border-radius:14px;background:var(--paper);font-size:13px;color:var(--ink,#101010);cursor:pointer">
+            <option value="tutti">Tutti i bandi</option>
+            <option value="esiti">Esiti e aggiudicazioni</option>
+            <option value="salvati">Salvati &#9733; (la mia area)</option>
+          </select>
+          <select id="bandiSort" class="filter-select" onchange="OC.sortBandi(this.value)" style="padding:8px 14px;border:1px solid var(--rule-2,#D2D2D7);border-radius:14px;background:var(--paper);font-size:13px;color:var(--ink,#101010);cursor:pointer">
+            <option value="scadenza-asc">Ordina: Scadenza &#8593;</option>
+            <option value="rilev-desc">Ordina: Rilevazione &#8595;</option>
+          </select>
+        </div>
+        <!-- select regioni NASCOSTO: serve alla mappa per mappare il clic
+             regione -> filtro (setBandiRegione) senza duplicare la lista -->
+        <span style="display:none">
+        <select id="bandiRegione" onchange="OC.setBandiRegione(this.value)">
+          <option value=""></option>
+          <option value="_europa">_europa</option><option value="_italia">_italia</option>
+          <option>Abruzzo</option><option>Basilicata</option><option>Calabria</option><option>Campania</option><option>Emilia-Romagna</option><option>Friuli-Venezia Giulia</option><option>Lazio</option><option>Liguria</option><option>Lombardia</option><option>Marche</option><option>Molise</option><option>Piemonte</option><option>Puglia</option><option>Sardegna</option><option>Sicilia</option><option>Toscana</option><option>Trentino-Alto Adige</option><option>Umbria</option><option>Valle d'Aosta</option><option>Veneto</option>
         </select>
-        <select id="bandiCpv" class="filter-select" onchange="OC.setBandiCpv(this.value)" title="Filtra per sotto-settore culturale (codici CPV): musei, biblioteche/archivi, patrimonio e restauro, spettacolo dal vivo, archeologia" style="padding:8px 14px;border:1px solid var(--rule-2,#D2D2D7);border-radius:14px;background:#fff;font-size:13px;color:var(--ink,#101010);cursor:pointer">
-          <option value="">Tutti i settori cultura</option>
-          <option value="musei">Musei · CPV 9252x</option>
-          <option value="biblioteche">Biblioteche e archivi · CPV 9251x</option>
-          <option value="patrimonio">Patrimonio e restauro · CPV 92522/45454</option>
-          <option value="spettacolo">Spettacolo dal vivo · CPV 92312/92320</option>
-          <option value="archeologia">Archeologia · CPV 45112450</option>
-        </select>
-        <select id="bandiRegione" class="filter-select" onchange="OC.setBandiRegione(this.value)" title="Filtra per ambito geografico: Europa (bandi UE), Italia (bandi nazionali), oppure per singola regione" style="padding:8px 14px;border:1px solid var(--rule-2,#D2D2D7);border-radius:14px;background:#fff;font-size:13px;color:var(--ink,#101010);cursor:pointer">
-          <option value="">UE / It / Regione</option>
-          <optgroup label="Ambito geografico">
-            <option value="_europa">🇪🇺 Europa (bandi UE)</option>
-            <option value="_italia">🇮🇹 Italia (nazionali)</option>
-          </optgroup>
-          <optgroup label="Regioni italiane">
-            <option>Abruzzo</option><option>Basilicata</option><option>Calabria</option><option>Campania</option><option>Emilia-Romagna</option><option>Friuli-Venezia Giulia</option><option>Lazio</option><option>Liguria</option><option>Lombardia</option><option>Marche</option><option>Molise</option><option>Piemonte</option><option>Puglia</option><option>Sardegna</option><option>Sicilia</option><option>Toscana</option><option>Trentino-Alto Adige</option><option>Umbria</option><option>Valle d'Aosta</option><option>Veneto</option>
-          </optgroup>
-        </select>
-        <select id="bandiPreset" class="filter-select" onchange="OC.setBandiPreset(this.value)" title="Filtro rapido: tutti i bandi / solo urgenti (scadenza ≤10gg) / solo gli ultimi 30gg rilevati / solo quelli che hai marcato con ★" style="padding:8px 14px;border:1px solid var(--rule-2,#D2D2D7);border-radius:14px;background:#fff;font-size:13px;color:var(--ink,#101010);cursor:pointer">
-          <option value="tutti">Tutti i bandi</option>
-          <option value="urgenti10">In scadenza ≤ 10 gg</option>
-          <option value="recenti">Ultimi rilevati 30gg</option>
-          <option value="salvati">★ Salvati</option>
-          <option value="esiti">🏆 Esiti / Aggiudicazioni</option>
-        </select>
-        <select id="bandiSort" class="filter-select" onchange="OC.sortBandi(this.value)" title="Ordina i bandi: per scadenza crescente (urgenti prima) · per importo decrescente · per data di rilevamento dello scanner · alfabetico" style="padding:8px 14px;border:1px solid var(--rule-2,#D2D2D7);border-radius:14px;background:#fff;font-size:13px;color:var(--ink,#101010);cursor:pointer">
-          <option value="scadenza-asc">Ordina: Scadenza ↑</option>
-          <option value="importo-desc">Ordina: Importo ↓</option>
-          <option value="rilev-desc">Ordina: Più recenti</option>
-          <option value="titolo-asc">Ordina: Titolo A–Z</option>
-        </select>
-      </div>
+        </span>
       </div><!-- /bandiFiltriAvanzati (v4.27.67 — CSV spostato in fondo alla lista) -->
 
       <!-- v4.27.67 — VISTA MAPPA: bolle per regione + contatore bandi UE -->
@@ -5127,6 +5100,7 @@
   // v4.27.67 — RADAR BANDI SU MAPPA (spec v4 confermata 30/07)
   // ============================================================
   window._bandiVista = 'lista';
+  window._bandiCpvMulti = [];   // v4.27.69 — settori CPV selezionati (multi)
   var _bandiVistaInitDone = false;
 
   /** Rilevato entro N giorni? (per il preset rapido "Ultimi rilevati 10gg") */
@@ -5160,6 +5134,7 @@
       if (hay.indexOf(q) < 0) return false;
     }
     if (_filterBandi.cpv && !_cpvCulturaMatch_(b, _filterBandi.cpv)) return false;
+    if (window._bandiCpvMulti && _bandiCpvMulti.length && !_bandiCpvMulti.some(function(k){ return _cpvCulturaMatch_(b, k); })) return false;
     if (_filterBandiTipiAttivo) {
       var bt = b.tipoBando || '';
       if (!bt) { if (!_filterBandiTipi['_senza']) return false; }
@@ -5717,6 +5692,8 @@
 
       // v5.4 — filtro CPV cultura + regione
       if (_filterBandi.cpv && !_cpvCulturaMatch_(b, _filterBandi.cpv)) return;
+      // v4.27.69 — settori CPV in MULTI-selezione (struttura filtri modello v4)
+      if (window._bandiCpvMulti && _bandiCpvMulti.length && !_bandiCpvMulti.some(function(k){ return _cpvCulturaMatch_(b, k); })) return;
       if (_filterBandi.regione && !_regioneMatch_(b, _filterBandi.regione)) return;
 
       // v4.25.4 — Filtro tipo bando multi-select (conteggi già calcolati sopra)
@@ -12272,6 +12249,36 @@
       var sel = $('bandiRegione'); if (sel) sel.value = '_europa';
       OC.setBandiRegione('_europa');
       OC.bandiVista('lista');
+    },
+    // v4.27.69 — STRUTTURA FILTRI MODELLO V4
+    bandiCat: function(cat){
+      document.querySelectorAll('[data-bcat]').forEach(function(c){
+        c.classList.toggle('active', c.getAttribute('data-bcat') === cat);
+      });
+      if (cat === 'tutti') { _filterBandiTipiAttivo = false; }
+      else {
+        _filterBandiTipiAttivo = true;
+        _filterBandiTipi = { finanziamento:false, servizio_fornitura:false, servizio:false, fornitura:false, lavori:false, _senza:false };
+        _filterBandiTipi[cat] = true;
+        if (cat === 'servizio_fornitura') { _filterBandiTipi.servizio = true; _filterBandiTipi.fornitura = true; }
+      }
+      if (_cacheBandi) renderBandiList(_cacheBandi);
+    },
+    bandiSettore: function(k){
+      if (k === 'tutti') { window._bandiCpvMulti = []; }
+      else {
+        var i = _bandiCpvMulti.indexOf(k);
+        if (i >= 0) _bandiCpvMulti.splice(i, 1); else _bandiCpvMulti.push(k);
+      }
+      document.querySelectorAll('[data-bset]').forEach(function(c){
+        var v = c.getAttribute('data-bset');
+        c.classList.toggle('active', v === 'tutti' ? _bandiCpvMulti.length === 0 : _bandiCpvMulti.indexOf(v) >= 0);
+      });
+      if (_cacheBandi) renderBandiList(_cacheBandi);
+    },
+    bandiVistaSel: function(v){
+      _filterBandi.preset = v;
+      if (_cacheBandi) renderBandiList(_cacheBandi);
     },
     cardMenuToggle: function(btn){
       var menu = btn && btn.parentNode ? btn.parentNode.querySelector('.br-menu') : null;
