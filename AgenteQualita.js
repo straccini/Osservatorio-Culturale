@@ -102,10 +102,15 @@ function agenteQualitaBandi(opts) {
         var titoloNum = !titolo.trim() || /^(?:ted\s+notice\s+)?\d{3,}[-\/]?\d*$/i.test(titolo.trim());
         var senzaScad = !(scad && !isNaN(scad.getTime()));
         if (titoloNum || (senzaScad && descrRow.length < 20)) motivo = 'senzaInfo';
+        // v4.27.73 — senza scadenza il titolo deve dichiarare la natura di bando
+        if (!motivo && senzaScad && typeof _BANDO_SEGNALE_RE !== 'undefined' && !_BANDO_SEGNALE_RE.test(titolo)) motivo = 'senzaInfo';
       }
 
-      // b) NON PERTINENTE — junk (voci menu) poi non-cultura
-      if (!motivo && typeof _bandiNonBando_ === 'function' && _bandiNonBando_({ titolo: titolo })) motivo = 'junk';
+      // b) NON PERTINENTE — junk (voci menu, auguri/avvisi, frammenti HTML) poi non-cultura
+      // v4.27.73 — passa anche sommario/descrizione: gli auguri e lo sporco di
+      // scraping stanno spesso nel corpo, non nel titolo.
+      if (!motivo && typeof _bandiNonBando_ === 'function'
+          && _bandiNonBando_({ titolo: titolo, sommario: String(row[iSom]||'') })) motivo = 'junk';
       if (!motivo && typeof isBandoCulturale === 'function') {
         var cpv = iCPV >= 0 ? String(row[iCPV]||'') : '';
         if (!isBandoCulturale(titolo, String(row[iSet]||''), String(row[iSom]||''), cpv)) motivo = 'nonCultura';

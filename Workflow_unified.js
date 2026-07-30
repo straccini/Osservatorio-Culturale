@@ -205,6 +205,25 @@ function _wfIsEditorOrAdmin_(token) {
   return false;
 }
 
+/**
+ * v4.27.73 — Imposta StatoRecord su una riga di Bandi_v5 (fonte reale dei bandi).
+ * @param {number} riga indice riga del foglio (1-based, come l'id servito)
+ * @param {string} stato 'archiviato' | 'attivo'
+ */
+function _wfArchiviaBandoV5_(riga, stato) {
+  try {
+    if (!riga || riga < 2) return { ok:false, error:'riga non valida: ' + riga };
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName('Bandi_v5');
+    if (!sh) return { ok:false, error:'foglio Bandi_v5 assente' };
+    if (riga > sh.getLastRow()) return { ok:false, error:'riga fuori range' };
+    var col = (typeof COL_B !== 'undefined' && COL_B.STATO_RECORD) ? COL_B.STATO_RECORD : 24;
+    sh.getRange(riga, col).setValue(stato);
+    Logger.log('[wf] Bandi_v5 riga ' + riga + ' → ' + stato);
+    return { ok:true, riga: riga, stato: stato };
+  } catch (e) { return { ok:false, error:e.message }; }
+}
+
 function archive(tipo, id, token) {
   // v4.27.45 — solo redattori/admin (prima bastava essere registrati)
   if (!_wfIsEditorOrAdmin_(token)) {
@@ -214,10 +233,14 @@ function archive(tipo, id, token) {
     var c = _wfConfig_(tipo);
 
     if (tipo === 'bando' || tipo === 'bandi') {
-      // Riusa archiviaRecord esistente
-      if (typeof archiviaRecord === 'function') {
-        return archiviaRecord({ id: id });
-      }
+      // v4.27.73 — FIX CRITICO: la fonte dei bandi è Bandi_v5 (getBandiV5) e
+      // l'id è l'INDICE DI RIGA di quel foglio. archiviaRecord() scriveva
+      // invece sul vecchio foglio RADAR alla stessa riga → il bando non
+      // spariva mai (e si toccava un record diverso). Ora si archivia su
+      // Bandi_v5; RADAR resta come fallback per gli id legacy 'rNN'.
+      var idStr = String(id || '');
+      if (/^\d+$/.test(idStr)) return _wfArchiviaBandoV5_(Number(idStr), 'archiviato');
+      if (typeof archiviaRecord === 'function') return archiviaRecord({ id: idStr });
     }
 
     if (c.statoMode === 'boolean') {
@@ -249,9 +272,10 @@ function restore(tipo, id, token) {
     var c = _wfConfig_(tipo);
 
     if (tipo === 'bando' || tipo === 'bandi') {
-      if (typeof ripristinaRecord === 'function') {
-        return ripristinaRecord({ id: id });
-      }
+      // v4.27.73 — come archive(): id numerico = riga di Bandi_v5
+      var idStrR = String(id || '');
+      if (/^\d+$/.test(idStrR)) return _wfArchiviaBandoV5_(Number(idStrR), 'attivo');
+      if (typeof ripristinaRecord === 'function') return ripristinaRecord({ id: idStrR });
     }
 
     if (c.statoMode === 'boolean') {

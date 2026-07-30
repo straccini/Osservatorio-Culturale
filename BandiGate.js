@@ -63,6 +63,13 @@ var _BANDO_PUBBLICAZIONE_RE = /^\s*(rapporto\s|report\s+(annuale|sociale)\b|mini
  * true se il record NON è un vero bando (voce di menu/legale/navigazione,
  * titolo-URL, titolo vuoto o titolo con natura di pubblicazione/report).
  */
+// v4.27.73 — AVVISI ISTITUZIONALI E AUGURI: titoli scrapati dai siti degli enti
+// (GAL, comuni) che non sono bandi. Caso reale 30/07: "AUGURI BUONA PASQUA",
+// "CHIUSURA UFFICIO TERRITORIALE SORRENTO" esposti tra i bandi.
+var _BANDO_NON_PERTINENTE_RE = /(auguri\b|buona\s+pasqua|buone\s+feste|buon\s+(natale|anno|ferragosto)|felice\s+anno|chiusura\s+(uffici|ufficio|estiva|natalizia|sede)|orari\s+(di\s+)?apertura|convocazione\s+(assemblea|consiglio)|verbale\b|elezioni\b|nomina\s+del|comunicato\s+stampa|in\s+memoria\s+di|lutto\b|sciopero\b|giornata\s+(mondiale|nazionale)\s+del)/i;
+// Frammenti HTML/scraping nel titolo o nel sommario: record sporco, non esporlo
+var _BANDO_HTML_JUNK_RE = /(<\s*\/?\s*(a|h[1-6]|div|span|p|br|img|li)\b|rel\s*=\s*"|href\s*=\s*"|&#\d+;\s*(pubblicat|privato)?\s*$|\bscarl\/"|<\s*h\s*$)/i;
+
 function _bandiNonBando_(b) {
   var t = String((b && b.titolo) || '').trim();
   if (!t) return true;                        // titolo vuoto
@@ -70,8 +77,18 @@ function _bandiNonBando_(b) {
   if (/\bgdpr\b/i.test(t)) return true;       // "... GDPR Compliance"
   if (_BANDO_JUNK_RE.test(t)) return true;    // voce di navigazione/legale
   if (_BANDO_PUBBLICAZIONE_RE.test(t)) return true; // v4.27.49 — pubblicazione/report
+  // v4.27.73 — auguri/avvisi istituzionali e record con frammenti HTML
+  if (_BANDO_NON_PERTINENTE_RE.test(t)) return true;
+  if (_BANDO_HTML_JUNK_RE.test(t)) return true;
+  var somm = String((b && b.sommario) || '') + ' ' + String((b && b.descrizione) || '');
+  if (_BANDO_HTML_JUNK_RE.test(somm)) return true;
+  if (_BANDO_NON_PERTINENTE_RE.test(somm) && !_BANDO_SEGNALE_RE.test(t)) return true;
   return false;
 }
+
+// v4.27.73 — un vero bando, se NON ha scadenza, deve almeno dichiararsi tale
+// nel titolo. Serve a bloccare i titoli generici scrapati senza data.
+var _BANDO_SEGNALE_RE = /(bando|avviso|manifestazione\s+d.?interesse|gara\b|procedura\s+(aperta|negoziata|ristretta)|call\b|invito\s+a\s+presentare|selezione\s+(pubblica|per)|concorso\b|contribut|finanziament|sovvenzion|sostegno\s+(a|per|alle|ai)|premio\b|borsa\b|residenz|affidamento\b|appalto\b|concessione\b|graduatoria\b|proroga\b|riapertura\b|sportello\b)/i;
 
 /**
  * v4.27.49 — GATE D'INGRESSO (scanner → foglio Bandi_v5): blocca al
@@ -161,6 +178,9 @@ function _bandiMotivoScarto_(b) {
   if (g !== null && g < 0) return 'scaduto';
   var descr = String((b && b.sommario) || '').replace(/\s+/g, ' ').trim();
   if (g === null && descr.length < 20) return 'senza-scadenza-e-senza-descrizione';
+  // v4.27.73 — senza scadenza il titolo deve dichiarare la natura di bando
+  // (blocca i titoli generici scrapati: "AUGURI...", "BANDI GAL 2019 ...").
+  if (g === null && !_BANDO_SEGNALE_RE.test(tit)) return 'senza-scadenza-e-titolo-non-bando';
   return '';
 }
 
@@ -251,7 +271,12 @@ function bandiGateSelfTest() {
     { in:{ titolo:'Credits: Alea.pro', settore:'', sommario:'', cpv:'', link:'' }, attesoIn:false, nome:'Junk: credits' },
     { in:{ titolo:'Organizzazione & Soci', settore:'', sommario:'', cpv:'', link:'' }, attesoIn:false, nome:'Junk: organizzazione' },
     { in:{ titolo:'Associarsi a VeGAL', settore:'', sommario:'', cpv:'', link:'' }, attesoIn:false, nome:'Junk: associarsi' },
-    { in:{ titolo:'https://agriculture.ec.europa.eu/common-agricultural-policy', settore:'', sommario:'', cpv:'', link:'' }, attesoIn:false, nome:'Junk: titolo-URL' }
+    { in:{ titolo:'https://agriculture.ec.europa.eu/common-agricultural-policy', settore:'', sommario:'', cpv:'', link:'' }, attesoIn:false, nome:'Junk: titolo-URL' },
+    // --- v4.27.73 — NON PERTINENTI visti in produzione il 30/07 ---
+    { in:{ titolo:'AUGURI BUONA PASQUA', settore:'', sommario:'centi CHIUSURA UFFICIO TERRITORIALE SORRENTO AUGURI BUONA PASQUA AVVISO PARTENARIATO PUBBLICO <a...', cpv:'', link:'https://gal.esempio.it/notizie' }, attesoIn:false, nome:'Auguri di Pasqua (GAL)' },
+    { in:{ titolo:'CHIUSURA UFFICIO TERRITORIALE SORRENTO', settore:'', sommario:'comunicazione di servizio agli utenti del territorio', cpv:'', link:'https://gal.esempio.it/notizie' }, attesoIn:false, nome:'Avviso chiusura uffici' },
+    { in:{ titolo:'BANDI GAL 2019 — PUBBLICATE LE GRADUATORIE DELLA TI 6.4.1.', settore:'', sommario:'scarl/" rel="next">AVVISO PARTENARIATO PUBBLICO PRIVATO DEL GAL <h', cpv:'', link:'https://gal.esempio.it/x' }, attesoIn:false, nome:'Sommario con frammenti HTML' },
+    { in:{ titolo:'Sportello contributi per biblioteche di pubblica lettura', settore:'biblioteche', sommario:'Sportello sempre aperto: contributi per le biblioteche del territorio', cpv:'', link:'https://regione.esempio.it/bandi/sportello-biblioteche-2026' }, attesoIn:true, attesoTipo:'diretto', nome:'Sportello senza scadenza (deve passare)' }
   ];
 
   var risultati = [];
