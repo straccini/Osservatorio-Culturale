@@ -1,6 +1,6 @@
 {
   "version": "0.0.1",
-  "_comment": "Sinopia/OC è una webapp Google Apps Script senza dev server locali. L'unica config con porta TCP reale è python http.server (preview HTML raw, gli scriptlets GAS non vengono valutati). Le altre 3 sono processi di sync/deploy verso GAS remoto (port=0 = no binding locale).",
+  "_comment": "Sinopia/OC è una webapp Google Apps Script senza dev server locali. L'unica config con porta TCP reale è python http.server (preview HTML raw, gli scriptlets GAS non vengono valutati). Rimossa v4.27.66: sync-oc-to-gas.ps1 (la cartella target 'Osservatorio Culturale - codice' non esiste più; il push si fa direttamente da oc-codebase con clasp, protocollo anti-clobber in CLAUDE.md).",
   "configurations": [
     {
       "name": "Static preview HTML (porta 8765)",
@@ -18,12 +18,6 @@
       "name": "clasp push --watch (sync continuo verso GAS, no porta)",
       "runtimeExecutable": "clasp",
       "runtimeArgs": ["push", "--watch"],
-      "port": 0
-    },
-    {
-      "name": "sync-oc-to-gas.ps1 (sync + deploy one-shot)",
-      "runtimeExecutable": "powershell",
-      "runtimeArgs": ["-File", "C:\\Users\\sstra\\Desktop\\01_DUEMILAMUSEI_PROGETTI\\musemu matrix\\sync-oc-to-gas.ps1"],
       "port": 0
     },
     {
