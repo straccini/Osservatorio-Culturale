@@ -651,7 +651,7 @@
       <!-- v4.27.67 — VISTA MAPPA: bolle per regione + contatore bandi UE -->
       <div id="bandiMappaWrap" hidden style="position:relative;border:1px solid var(--rule);border-radius:14px;overflow:hidden;margin-bottom:14px;background:var(--paper)">
         <div id="bandiMappaReg" style="position:absolute;left:14px;top:12px;font-family:var(--font-serif,Georgia);font-size:17px;font-weight:700;color:var(--accent)"></div>
-        <svg id="bandiMappaSvg" viewBox="0 0 760 900" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:560px"></svg>
+        <svg id="bandiMappaSvg" viewBox="0 0 760 900" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:440px"></svg>
         <button id="bandiMappaEu" onclick="OC.bandiMappaEu()" style="position:absolute;top:14px;right:14px;background:var(--cobalt,#1E3A8A);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12.5px;font-weight:700;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.18);text-align:left;font-family:inherit">&#127466;&#127482; <span id="bandiMappaEuCnt">0</span> bandi europei<small style="display:block;font-weight:400;font-size:10.5px;opacity:.85">clic per vedere solo UE</small></button>
         <div style="position:absolute;left:14px;bottom:10px;font-size:11px;color:var(--ink-3)">Bolle = bandi con i filtri attivi &middot; clic su una regione &rarr; lista filtrata</div>
       </div>
@@ -5191,18 +5191,16 @@
         if (vn && (tn.indexOf(vn) === 0 || vn.indexOf(tn) === 0)) { scelta = v; break; }
       }
     }
-    // v4.27.68 — secondo clic sulla STESSA regione = torna a tutta Italia
-    // (resta sulla mappa); primo clic = seleziona la regione e apre la lista.
+    // v4.27.70 — la mappa RESTA visibile: il clic regione filtra la lista
+    // sotto; secondo clic sulla stessa regione = torna a tutta Italia.
     var giaSel = scelta && _filterBandi.regione === scelta;
     if (giaSel) {
       if (sel) sel.value = '';
       OC.setBandiRegione('');
-      renderBandiMappa();
       return;
     }
     if (scelta) { if (sel) sel.value = scelta; OC.setBandiRegione(scelta); }
     else { _filterBandi.q = t; var si = $('bandiSearch'); if (si) si.value = t; if (_cacheBandi) renderBandiList(_cacheBandi); }
-    OC.bandiVista('lista');
   }
   /** Prima apertura della pagina: assetto spec v4 (mappa + Tutti i bandi). */
   function _bandiVistaInit_() {
@@ -12210,12 +12208,11 @@
     },
     // v4.27.67 — RADAR BANDI SU MAPPA (spec v4)
     bandiVista: function(v){
+      // v4.27.70 — vista "Mappa" = mappa FISSA in prima riga + lista sotto
+      // (assetto della demo, richiesto 30/07); "Lista" = solo lista.
       window._bandiVista = v;
-      var mw = $('bandiMappaWrap'), bl = $('bandiList'), cs = $('bandiCsvBottom'), be = $('bandiEmpty');
+      var mw = $('bandiMappaWrap');
       if (mw) mw.hidden = (v !== 'mappa');
-      if (bl) bl.style.display = (v === 'mappa') ? 'none' : '';
-      if (cs) cs.style.display = (v === 'mappa') ? 'none' : '';
-      if (be && v === 'mappa') be.hidden = true;
       var a = $('bandiVtLista'), b = $('bandiVtMappa');
       function st(el, on){ if (!el) return; el.style.background = on ? 'var(--cobalt,#1E3A8A)' : 'transparent'; el.style.color = on ? '#fff' : 'var(--cobalt,#1E3A8A)'; }
       st(a, v === 'lista'); st(b, v === 'mappa');
@@ -12246,9 +12243,10 @@
       }
     },
     bandiMappaEu: function(){
-      var sel = $('bandiRegione'); if (sel) sel.value = '_europa';
-      OC.setBandiRegione('_europa');
-      OC.bandiVista('lista');
+      // v4.27.70 — toggle: clic = solo UE (lista sotto, mappa resta); riclic = tutti
+      var giaEu = _filterBandi.regione === '_europa';
+      var sel = $('bandiRegione'); if (sel) sel.value = giaEu ? '' : '_europa';
+      OC.setBandiRegione(giaEu ? '' : '_europa');
     },
     // v4.27.69 — STRUTTURA FILTRI MODELLO V4
     bandiCat: function(cat){
