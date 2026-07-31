@@ -187,6 +187,30 @@ function doGet(e) {
   // v4.27.39 — Diagnostica contatori NEW via URL (?diag=contatori): solo conteggi
   // aggregati e titoli di concorsi pubblici GU — nessun dato sensibile. Serve a
   // verificare i badge settimanali senza passare dall'editor GAS.
+  // v4.27.73 — Diagnostica gate bandi (?diag=bandi): SOLA LETTURA. Esegue il
+  // self-test del gate e verifica quanti bandi realmente serviti verrebbero
+  // scartati dai filtri (auguri/junk/senza-info), con esempi.
+  if (params.diag === 'bandi') {
+    var _dgB = { versione: (typeof OC_VERSION !== 'undefined' ? OC_VERSION : '?') };
+    try { _dgB.selfTest = (typeof bandiGateSelfTest === 'function') ? bandiGateSelfTest() : 'assente'; }
+    catch (e1) { _dgB.selfTestErrore = e1.message; }
+    try {
+      var _serviti = (typeof getBandiListV42 === 'function') ? getBandiListV42(2000) : [];
+      var _scarti = { junk: 0, motivo: 0, esempi: [] };
+      _serviti.forEach(function (b) {
+        var j = (typeof _bandiNonBando_ === 'function') && _bandiNonBando_(b);
+        var m = (typeof _bandiMotivoScarto_ === 'function') ? _bandiMotivoScarto_(b) : '';
+        if (j || m) {
+          if (j) _scarti.junk++; else _scarti.motivo++;
+          if (_scarti.esempi.length < 12) _scarti.esempi.push(String(b.titolo || '').substring(0, 70) + ' [' + (j ? 'junk' : m) + ']');
+        }
+      });
+      _dgB.serviti = _serviti.length;
+      _dgB.nonPertinentiAncoraEsposti = _scarti;
+    } catch (e2) { _dgB.scanErrore = e2.message; }
+    return ContentService.createTextOutput(JSON.stringify(_dgB, null, 2)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (params.diag === 'contatori') {
     var _dg;
     try { _dg = (typeof diagContatoriBadge === 'function') ? diagContatoriBadge() : { errore: 'tool assente' }; }
