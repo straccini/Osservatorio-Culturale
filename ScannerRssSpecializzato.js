@@ -32,6 +32,23 @@ var _RSS_SCAN_LOG_PREFIX_ = '[ScannerRSS] ';
  * @param {Object} [opts] {maxFonti: number, dryRun: boolean, verbose: boolean}
  * @return {Object} {ok, fontiProcessate, nuoviBandi, errori, skipDuplicati, dettagli[]}
  */
+/**
+ * v4.27.80 — ENTRY-POINT SCHEDULATO del canale RSS bandi.
+ * Perché esiste: scanFontiUnifiedRss non era wirato in nessun trigger, quindi
+ * le 167 fonti di FontiBandi_v5 non venivano mai scansionate (ultimo bando RSS
+ * in produzione: 04/06/2026, verificato il 31/07). Qui si aggiunge solo la
+ * ROTAZIONE, per non sforare il limite di 6 minuti: ogni run prende le fonti
+ * non scansionate da più tempo.
+ * @param {Object} [opts] { maxFonti:45, dryRun:false }
+ */
+function bandiRssScanRotazione(opts) {
+  opts = opts || {};
+  var max = Number(opts.maxFonti) || 45;
+  var rep = scanFontiUnifiedRss({ maxFonti: max, dryRun: !!opts.dryRun, ordinaPerVecchie: true });
+  Logger.log('[bandiRssScanRotazione] fonti=' + (rep && rep.fontiProcessate) + ' nuovi=' + (rep && rep.nuoviBandi) + ' errori=' + (rep && rep.errori));
+  return rep;
+}
+
 function scanFontiUnifiedRss(opts) {
   opts = opts || {};
   var maxFonti = opts.maxFonti || 999;
@@ -58,6 +75,25 @@ function scanFontiUnifiedRss(opts) {
       return report;
     }
     if (verbose) Logger.log(_RSS_SCAN_LOG_PREFIX_ + fontiRss.length + ' fonti RSS attive trovate. Max: ' + maxFonti);
+
+    // v4.27.80 — ROTAZIONE: senza ordinamento, un cap su 167 fonti scansiona
+    // sempre le stesse prime N e le altre restano al buio per sempre. Qui si
+    // mettono davanti quelle non scansionate da più tempo (UltimaScan nel
+    // foglio fonti); a parità, prima le fonti di tier alto.
+    if (opts.ordinaPerVecchie) {
+      try {
+        var _mapScan = _rssMappaUltimaScan_();
+        var _ordTier = { A: 0, B: 1, C: 2 };
+        fontiRss.sort(function (a, b) {
+          var ta = _mapScan[String(a.nome || '').toLowerCase()] || 0;
+          var tb = _mapScan[String(b.nome || '').toLowerCase()] || 0;
+          if (ta !== tb) return ta - tb;                       // più vecchia prima
+          var pa = _ordTier[(typeof frTierDaFonte === 'function') ? frTierDaFonte(a.nome, a.url) : 'C'];
+          var pb = _ordTier[(typeof frTierDaFonte === 'function') ? frTierDaFonte(b.nome, b.url) : 'C'];
+          return pa - pb;
+        });
+      } catch (eOrd) { Logger.log(_RSS_SCAN_LOG_PREFIX_ + 'ordinamento rotazione: ' + eOrd.message); }
+    }
 
     // 2. Carica URL bandi esistenti per dedup
     var existingUrls = _loadExistingBandiUrls_();
@@ -212,34 +248,37 @@ function _scanSingleRssFeed_(fonte, existingUrls, dryRun) {
         var dataIso = normalizzaDataRss(pubDate);
         var sommario = _pulisciHtml_(descr).substring(0, 500);
 
-        bandiSheet.appendRow([
-          id,                                        // ID
-          '',                                        // Fingerprint
-          new Date(),                                // DataRilevamento
-          titolo.trim().substring(0, 300),            // Titolo
-          fonte.enteDefault || fonte.nome || '',      // Ente
-          fonte.livello || 'Vari',                   // Livello
-          '',                                        // Regione
-          fonte.categoria || 'Cultura',              // Settore
-          '',                                        // Soggetti
-          '',                                        // Importo
-          '',                                        // Cofin
-          dataIso || '',                             // Scadenza (placeholder da triage)
-          fonte.id || '',                            // FonteID
-          fonte.nome || '',                          // FonteNome
-          link,                                      // UrlBando
-          '',                                        // UrlEnte
-          '',                                        // UrlValidato
-          '',                                        // DataValidazione
-          sommario,                                  // Sommario
-          '',                                        // Ambito
-          '',                                        // PrioritaRegionale
-          'nuovo_da_triage',                         // Status
-          'attivo',                                  // StatoRecord
-          false,                                     // Letto
-          false,                                     // Salvato
-          ''                                         // Note
-        ]);
+        // v4.27.80 — FIX CRITICO: qui c'era un array POSIZIONALE di 26 valori
+        // su 27 colonne. Mancava TipoBando (COL_B 9, aggiunta in v4.25) e
+        // tutto slittava di una posizione dalla colonna 9 in poi:
+        //   Scadenza  → Cofin        (il bando risultava SENZA SCADENZA)
+        //   UrlBando  → FonteNome    (il bando risultava SENZA LINK)
+        //   Status/StatoRecord/Letto/Salvato tutti spostati
+        // È lo stesso difetto già corretto in _fasSaveBando_ (v4.25.11) ma mai
+        // propagato qui. Ora la riga si costruisce PER INDICE via COL_B, quindi
+        // resta corretta anche se lo schema cambierà ancora.
+        var _nCol = (typeof COL_B_HEADERS !== 'undefined') ? COL_B_HEADERS.length : 27;
+        var _riga = new Array(_nCol);
+        for (var _i = 0; _i < _nCol; _i++) _riga[_i] = '';
+        _riga[COL_B.ID - 1]               = id;
+        _riga[COL_B.DATA_RILEVAMENTO - 1] = new Date();
+        _riga[COL_B.TITOLO - 1]           = titolo.trim().substring(0, 300);
+        _riga[COL_B.ENTE - 1]             = fonte.enteDefault || fonte.nome || '';
+        _riga[COL_B.LIVELLO - 1]          = fonte.livello || 'Vari';
+        _riga[COL_B.SETTORE - 1]          = fonte.categoria || 'Cultura';
+        _riga[COL_B.TIPO_BANDO - 1]       = (typeof _classificaTipoBando_ === 'function')
+                                            ? _classificaTipoBando_({ titolo: titolo, settore: fonte.categoria, sommario: sommario, fonteNome: fonte.nome })
+                                            : '';
+        _riga[COL_B.SCADENZA - 1]         = dataIso || '';
+        _riga[COL_B.FONTE_ID - 1]         = fonte.id || '';
+        _riga[COL_B.FONTE_NOME - 1]       = fonte.nome || '';
+        _riga[COL_B.URL_BANDO - 1]        = link;
+        _riga[COL_B.SOMMARIO - 1]         = sommario;
+        _riga[COL_B.STATUS - 1]           = 'nuovo_da_triage';
+        _riga[COL_B.STATO_RECORD - 1]     = 'attivo';
+        _riga[COL_B.LETTO - 1]            = false;
+        _riga[COL_B.SALVATO - 1]          = false;
+        bandiSheet.appendRow(_riga);
         existingUrls[link.toLowerCase()] = true; // aggiorna dedup intra-scan
       }
       result.nuovi++;
@@ -308,6 +347,31 @@ function normalizzaDataRss(dateString) {
  * Carica fonti RSS attive dal foglio FontiBandi_v5.
  * @private
  */
+/**
+ * @private v4.27.80 — {nomeFonteLower: timestampUltimaScan} da FontiBandi_v5.
+ * Serve alla rotazione: 0 = mai scansionata (va per prima).
+ */
+function _rssMappaUltimaScan_() {
+  var m = {};
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName('FontiBandi_v5');
+    if (!sh || sh.getLastRow() < 2) return m;
+    var vals = sh.getDataRange().getValues();
+    var head = vals[0].map(function (h) { return String(h || '').trim(); });
+    var iNome = head.indexOf('Nome'), iScan = head.indexOf('UltimaScan');
+    if (iNome < 0 || iScan < 0) return m;
+    for (var r = 1; r < vals.length; r++) {
+      var n = String(vals[r][iNome] || '').trim().toLowerCase();
+      if (!n) continue;
+      var d = vals[r][iScan];
+      var dt = (d instanceof Date) ? d : (d ? new Date(d) : null);
+      m[n] = (dt && !isNaN(dt.getTime())) ? dt.getTime() : 0;
+    }
+  } catch (e) { Logger.log('[rssMappaUltimaScan] ' + e.message); }
+  return m;
+}
+
 function _loadFontiRssAttive_() {
   try {
     // Usa getFontiUnified se disponibile

@@ -250,6 +250,96 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(_dgB, null, 2)).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // v4.27.80 — ANALISI FONTI E SCADENZE (?diag=fonti): sola lettura.
+  // Risponde a tre domande con i DATI, non con le colonne di servizio:
+  //  1) da quali fonti sono arrivati bandi, e QUANDO l'ultimo (la colonna
+  //     UltimaScan non è affidabile: i connettori API non la aggiornano)
+  //  2) i bandi attivi hanno la scadenza? quanti sono scaduti davvero?
+  //  3) i fogli fonti sono allineati o ce ne sono di morti?
+  if (params.diag === 'fonti') {
+    var _f = { versione: (typeof OC_VERSION !== 'undefined' ? OC_VERSION : '?') };
+    try {
+      var _ssf = getMainSS();
+      // -- 1) fogli fonti esistenti e loro stato
+      _f.fogliFonti = {};
+      ['FontiBandi_v5', 'FontiFeed', 'Fonti', 'FontiBandi', 'FontiAgenti'].forEach(function (n) {
+        var s = _ssf.getSheetByName(n);
+        if (!s) { _f.fogliFonti[n] = 'ASSENTE'; return; }
+        var lr = s.getLastRow();
+        var info = { righe: Math.max(0, lr - 1), scan7gg: 0, scan30gg: 0, maiScansionate: 0 };
+        if (lr > 1) {
+          var vv = s.getDataRange().getValues();
+          var hh = vv[0].map(function (x) { return String(x || '').trim(); });
+          var iS = hh.indexOf('UltimaScan'); if (iS < 0) iS = hh.indexOf('UltimaScansione');
+          if (iS >= 0) {
+            var now = Date.now();
+            for (var q = 1; q < vv.length; q++) {
+              var dd = vv[q][iS];
+              var dt = (dd instanceof Date) ? dd : (dd ? new Date(dd) : null);
+              if (!dt || isNaN(dt.getTime())) { info.maiScansionate++; continue; }
+              var age = now - dt.getTime();
+              if (age <= 7 * 86400000) info.scan7gg++;
+              if (age <= 30 * 86400000) info.scan30gg++;
+            }
+          } else info.nota = 'colonna UltimaScan assente';
+        }
+        _f.fogliFonti[n] = info;
+      });
+
+      // -- 2) bandi ATTIVI in Bandi_v5: scadenze e freschezza per fonte
+      var shB = _ssf.getSheetByName('Bandi_v5');
+      var perFonte = {}, scad = { conScadenza: 0, senzaScadenza: 0, scaduti: 0, futuri: 0 };
+      var oggi0 = new Date(); oggi0.setHours(0, 0, 0, 0);
+      if (shB && shB.getLastRow() > 1) {
+        var vb = shB.getDataRange().getValues();
+        for (var rb = 1; rb < vb.length; rb++) {
+          var row = vb[rb];
+          if (!row[COL_B.ID - 1]) continue;
+          if (String(row[COL_B.STATO_RECORD - 1] || '').toLowerCase() === 'archiviato') continue;
+          var fn = String(row[COL_B.FONTE_NOME - 1] || row[COL_B.FONTE_ID - 1] || '(senza fonte)').trim() || '(senza fonte)';
+          if (!perFonte[fn]) perFonte[fn] = { attivi: 0, ultimoRilev: '', _ts: 0, conScad: 0, scaduti: 0 };
+          var P = perFonte[fn];
+          P.attivi++;
+          var dr = row[COL_B.DATA_RILEVAMENTO - 1];
+          var drt = (dr instanceof Date) ? dr : (dr ? new Date(dr) : null);
+          if (drt && !isNaN(drt.getTime()) && drt.getTime() > P._ts) {
+            P._ts = drt.getTime();
+            P.ultimoRilev = Utilities.formatDate(drt, 'Europe/Rome', 'dd/MM/yyyy');
+          }
+          var sc = row[COL_B.SCADENZA - 1];
+          var sct = (sc instanceof Date) ? sc : (sc ? new Date(sc) : null);
+          if (sct && !isNaN(sct.getTime())) {
+            scad.conScadenza++; P.conScad++;
+            if (sct.getTime() < oggi0.getTime()) { scad.scaduti++; P.scaduti++; } else scad.futuri++;
+          } else scad.senzaScadenza++;
+        }
+      }
+      var elenco = Object.keys(perFonte).map(function (k) {
+        var P = perFonte[k];
+        return { fonte: k.substring(0, 46), attivi: P.attivi, ultimoRilev: P.ultimoRilev,
+                 conScadenza: P.conScad, scaduti: P.scaduti,
+                 tier: (typeof frTierDaFonte === 'function') ? frTierDaFonte(k, '') : '?' };
+      }).sort(function (a, b) { return b.attivi - a.attivi; });
+      _f.bandiAttiviPerFonte = elenco.slice(0, 25);
+      _f.scadenze = scad;
+      _f.fontiConBandiAttivi = elenco.length;
+      // quante fonti hanno prodotto negli ultimi 7 e 30 giorni (dato REALE)
+      var n7 = 0, n30 = 0, now2 = Date.now();
+      elenco.forEach(function (e) {
+        if (!e.ultimoRilev) return;
+        var p = e.ultimoRilev.split('/');
+        var t = new Date(+p[2], +p[1] - 1, +p[0]).getTime();
+        if (now2 - t <= 7 * 86400000) n7++;
+        if (now2 - t <= 30 * 86400000) n30++;
+      });
+      _f.fontiProduttive = { ultimi7gg: n7, ultimi30gg: n30 };
+      // v4.27.80 — quante righe hanno la firma dello schema slittato
+      try { _f.schemaSlittato = (typeof bcvRiparaSlittate === 'function') ? bcvRiparaSlittate({ dryRun: true, cap: 5000 }) : 'modulo assente'; }
+      catch (eRip) { _f.riparaErrore = eRip.message; }
+    } catch (eF) { _f.errore = eF.message; }
+    return ContentService.createTextOutput(JSON.stringify(_f, null, 2)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (params.diag === 'contatori') {
     var _dg;
     try { _dg = (typeof diagContatoriBadge === 'function') ? diagContatoriBadge() : { errore: 'tool assente' }; }

@@ -86,7 +86,14 @@ var OC_CRON_EXTRA = [
   // v4.27.74 — normalizza il campo Regione dei bandi (riempie la mappa del Radar)
   { fn: 'bcvNormalizzaRegione', tipo: 'daily', ora: 2, desc: 'Bandi: normalizza campo Regione (mappa Radar)' },
   // v4.27.75 — assegna il tier di priorità alle fonti nuove (idempotente)
-  { fn: 'frBackfillTier', tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 4, desc: 'Regia fonti: tier di priorità alle fonti nuove' }
+  { fn: 'frBackfillTier', tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 4, desc: 'Regia fonti: tier di priorità alle fonti nuove' },
+  // v4.27.80 — CANALE RSS BANDI RIATTIVATO. Le 167 fonti di FontiBandi_v5
+  // non erano scansionate da NESSUN job: l'ultimo bando RSS risaliva al
+  // 04/06. scanFontiUnifiedRss esisteva ma non era mai stato schedulato.
+  // Due finestre al giorno, 45 fonti per run: ciclo completo in ~2 giorni
+  // restando dentro il limite di 6 minuti per esecuzione.
+  { fn: 'bandiRssScanRotazione', tipo: 'daily', ora: 6,  desc: 'Bandi: scansione RSS fonti (rotazione 45/run)' },
+  { fn: 'bandiRssScanRotazione', tipo: 'daily', ora: 18, desc: 'Bandi: scansione RSS fonti (2ª finestra)' }
 ];
 
 /** Schedule consolidato = approvato (SetupMaster) + nuovi. */

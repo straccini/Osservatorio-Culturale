@@ -68,6 +68,11 @@ function adminRunTool(tool, token) {
       case 'fontiTierApply':     r = frBackfillTier({}); break;
       case 'fontiSalute':        r = frSaluteFonti(); break;
       case 'frSelfTest':         r = frSelfTest(); break;
+      // ── Canale RSS bandi + riparazione schema (v4.27.80) ────────────────
+      case 'rssBandiDry':        r = bandiRssScanRotazione({ maxFonti: 10, dryRun: true }); break;
+      case 'rssBandiScan':       r = bandiRssScanRotazione({ maxFonti: 45 }); break;
+      case 'riparaSlittateDry':  r = bcvRiparaSlittate({ dryRun: true }); break;
+      case 'riparaSlittateApply':r = bcvRiparaSlittate({}); break;
       case 'trendProponi':       r = trendProponi({ force: true, sostituisciPendente: true }); break; // proponi trend ora (scarta l'eventuale pendente e rivaluta)
       case 'lavoroScanDry':      r = fasParserGuS4Cultura({ dryRun: true, deepCap: 40 }); break; // anteprima filtri nuovi
 

@@ -286,6 +286,77 @@ function bcvNormalizzaRegione(opts) {
   return rep;
 }
 
+// ============================================================================
+//  RIPARAZIONE RECORD SLITTATI (v4.27.80)
+//  ScannerRssSpecializzato scriveva un array posizionale di 26 valori su 27
+//  colonne: mancava TipoBando (col 9) e tutto slittava di uno da lì in poi.
+//  Firma del difetto, verificabile riga per riga:
+//     Cofin (12)      contiene una DATA  → è la Scadenza
+//     Scadenza (13)   contiene un ID/testo fonte (non una data)
+//     FonteNome (15)  contiene un URL    → è UrlBando
+//  La riparazione rimette a posto SOLO le righe con questa firma esatta.
+// ============================================================================
+
+/** @private true se il valore sembra un URL */
+function _bcvPareUrl_(v) { return /^https?:\/\//i.test(String(v || '').trim()); }
+
+/**
+ * Ripara le righe scritte con lo schema slittato.
+ * @param {Object} [opts] { dryRun:false, cap:500 }
+ */
+function bcvRiparaSlittate(opts) {
+  opts = opts || {};
+  var cap = Number(opts.cap) || 500;
+  var rep = { ok: true, dryRun: !!opts.dryRun, esaminate: 0, riparate: 0, esempi: [] };
+  try {
+    var sh = _bcvSheet_();
+    if (!sh || sh.getLastRow() < 2) return rep;
+    var vals = sh.getDataRange().getValues();
+    for (var r = 1; r < vals.length && rep.riparate < cap; r++) {
+      var row = vals[r];
+      if (!row[COL_B.ID - 1]) continue;
+      // v4.27.80 — RIPARARE SOLO DOVE SI GUADAGNA QUALCOSA. Una prima firma
+      // più larga intercettava 785 righe, quasi tutte vecchi avvisi TED già
+      // archiviati e destinati alla purge: 785 scritture per nessun beneficio
+      // reale, con il rischio di toccare righe sane. Ora si interviene solo
+      // sui bandi ATTIVI in cui Cofin contiene davvero una data (= la
+      // scadenza perduta) e la Scadenza attuale non è una data.
+      if (String(row[COL_B.STATO_RECORD - 1] || '').toLowerCase() === 'archiviato') continue;
+      rep.esaminate++;
+      var cofin = row[COL_B.COFIN - 1];
+      var scadCorrente = row[COL_B.SCADENZA - 1];
+      var fonteNome = row[COL_B.FONTE_NOME - 1];
+      var urlBando = row[COL_B.URL_BANDO - 1];
+      var cofinData = _bcvData_(cofin);
+      var scadNonData = !_bcvData_(scadCorrente);
+      var urlInFonte = _bcvPareUrl_(fonteNome);
+      if (!cofinData) continue;        // nessuna scadenza da recuperare
+      if (!scadNonData) continue;      // la scadenza è già a posto
+      if (!urlInFonte) continue;       // manca la firma dello slittamento
+      // ricostruzione: sposta indietro di una posizione i campi dalla 12 in poi
+      var nuoviValori = {};
+      nuoviValori[COL_B.SCADENZA] = cofinData ? cofinData : '';
+      nuoviValori[COL_B.FONTE_ID] = String(scadCorrente || '');
+      nuoviValori[COL_B.FONTE_NOME] = '';
+      nuoviValori[COL_B.URL_BANDO] = String(fonteNome || '');
+      nuoviValori[COL_B.COFIN] = '';
+      // il nome fonte vero era slittato in UrlBando
+      if (!_bcvPareUrl_(urlBando) && String(urlBando || '').trim()) nuoviValori[COL_B.FONTE_NOME] = String(urlBando);
+      if (rep.esempi.length < 8) {
+        rep.esempi.push(String(row[COL_B.TITOLO - 1] || '').substring(0, 45)
+          + ' | scad→' + (cofinData ? Utilities.formatDate(cofinData, 'Europe/Rome', 'dd/MM/yyyy') : '(vuota)')
+          + ' | link→' + String(fonteNome || '').substring(0, 30));
+      }
+      if (!opts.dryRun) {
+        for (var col in nuoviValori) sh.getRange(r + 1, Number(col)).setValue(nuoviValori[col]);
+      }
+      rep.riparate++;
+    }
+  } catch (e) { rep.ok = false; rep.errore = e.message; }
+  Logger.log('[bcvRiparaSlittate] riparate=' + rep.riparate + '/' + rep.esaminate);
+  return rep;
+}
+
 /** Self-test senza scritture: verifica il riconoscimento regione. */
 function bcvSelfTest() {
   var casi = [
