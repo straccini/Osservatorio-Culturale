@@ -333,11 +333,51 @@ function doGet(e) {
         if (now2 - t <= 30 * 86400000) n30++;
       });
       _f.fontiProduttive = { ultimi7gg: n7, ultimi30gg: n30 };
+      // v4.27.83 — INGRESSI RECENTI su TUTTE le righe (archiviate incluse):
+      // l'analisi sui soli bandi attivi nasconde i record che entrano e
+      // vengono archiviati la notte stessa dall'agente qualità.
+      try {
+        var _shI = _ssf.getSheetByName('Bandi_v5');
+        var _ing = { ultimi7gg: 0, ultimi30gg: 0, di_cui_archiviati7gg: 0, perStato7gg: {}, ultimoIngresso: '' };
+        if (_shI && _shI.getLastRow() > 1) {
+          var _vi = _shI.getDataRange().getValues();
+          var _now = Date.now(), _tsMaxI = 0;
+          for (var _ri = 1; _ri < _vi.length; _ri++) {
+            if (!_vi[_ri][COL_B.ID - 1]) continue;
+            var _d = _vi[_ri][COL_B.DATA_RILEVAMENTO - 1];
+            var _dt = (_d instanceof Date) ? _d : (_d ? new Date(_d) : null);
+            if (!_dt || isNaN(_dt.getTime())) continue;
+            if (_dt.getTime() > _tsMaxI) _tsMaxI = _dt.getTime();
+            var _age = _now - _dt.getTime();
+            if (_age <= 30 * 86400000) _ing.ultimi30gg++;
+            if (_age <= 7 * 86400000) {
+              _ing.ultimi7gg++;
+              var _st = String(_vi[_ri][COL_B.STATO_RECORD - 1] || '(vuoto)').toLowerCase();
+              _ing.perStato7gg[_st] = (_ing.perStato7gg[_st] || 0) + 1;
+              if (_st === 'archiviato') _ing.di_cui_archiviati7gg++;
+            }
+          }
+          if (_tsMaxI) _ing.ultimoIngresso = Utilities.formatDate(new Date(_tsMaxI), 'Europe/Rome', 'dd/MM/yyyy HH:mm');
+        }
+        _f.ingressiRecenti = _ing;
+      } catch (eIng) { _f.ingressiErrore = eIng.message; }
+
       // v4.27.80 — quante righe hanno la firma dello schema slittato
       try { _f.schemaSlittato = (typeof bcvRiparaSlittate === 'function') ? bcvRiparaSlittate({ dryRun: true, cap: 5000 }) : 'modulo assente'; }
       catch (eRip) { _f.riparaErrore = eRip.message; }
     } catch (eF) { _f.errore = eF.message; }
     return ContentService.createTextOutput(JSON.stringify(_f, null, 2)).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // v4.27.82 — Freschezza dei feed bandi (?diag=rss&n=12): SOLA LETTURA
+  // (dryRun, nessuna scrittura). Serve a distinguere "feed fermo" da "dedup
+  // che scarta a torto" guardando la data dell'item più recente nel feed.
+  if (params.diag === 'rss') {
+    var _n = Math.min(Number(params.n) || 12, 40);
+    var _r;
+    try { _r = bandiRssScanRotazione({ maxFonti: _n, dryRun: true }); }
+    catch (eR) { _r = { ok: false, errore: eR.message }; }
+    return ContentService.createTextOutput(JSON.stringify(_r, null, 2)).setMimeType(ContentService.MimeType.JSON);
   }
 
   if (params.diag === 'contatori') {

@@ -114,7 +114,12 @@ function scanFontiUnifiedRss(opts) {
           report.dettagli.push({ fonte: fonte.nome, errore: result.errore, failConsec: result.failConsec });
           if (result.disabilitata) report.fontiDisabilitate++;
         } else {
-          report.dettagli.push({ fonte: fonte.nome, nuovi: result.nuovi, duplicati: result.duplicati, items: result.itemsTotali });
+          report.dettagli.push({ fonte: fonte.nome, nuovi: result.nuovi, duplicati: result.duplicati,
+            items: result.itemsTotali, nonProcessati: result.nonProcessati || 0,
+            ultimoItem: result.ultimoItem, giorniDaUltimoItem: result.giorniDaUltimoItem,
+            linkCampione: String(result.linkCampione || '').substring(0, 90),
+            linkTuttiUguali: (result.linkDiversi ? false : true),
+            tier: (typeof frTierDaFonte === 'function') ? frTierDaFonte(fonte.nome, fonte.url) : '?' });
         }
         // Aggiorna contatori sulla fonte
         if (!dryRun) {
@@ -216,6 +221,11 @@ function _scanSingleRssFeed_(fonte, existingUrls, dryRun) {
   // Processa max 30 item per feed
   var bandiSheet = dryRun ? null : _getBandiGrezziSheet_();
   var maxItems = Math.min(items.length, 30);
+  // v4.27.82 — DIAGNOSI FRESCHEZZA: "tutto duplicato" ha due spiegazioni
+  // opposte (feed fermo / dedup sbagliato). L'unica prova è la data
+  // dell'item più recente nel feed: se è vecchia, la fonte non pubblica più.
+  result.nonProcessati = Math.max(0, items.length - maxItems);
+  var _tsMax = 0;
 
   for (var j = 0; j < maxItems; j++) {
     try {
@@ -235,6 +245,19 @@ function _scanSingleRssFeed_(fonte, existingUrls, dryRun) {
 
       if (!titolo || !link) continue;
       link = link.trim();
+
+      // v4.27.82 — traccia la data più recente vista nel feed (diagnosi freschezza)
+      try {
+        var _dIso = normalizzaDataRss(pubDate);
+        var _dt = _dIso ? new Date(_dIso) : null;
+        if (_dt && !isNaN(_dt.getTime()) && _dt.getTime() > _tsMax) _tsMax = _dt.getTime();
+      } catch (_eD) {}
+
+      // v4.27.83 — campione del link confrontato: se tutti gli item di un feed
+      // producono lo STESSO link, l'estrazione è sbagliata (si sta leggendo il
+      // link del canale, non quello dell'articolo) e il dedup scarta tutto.
+      if (!result.linkCampione) result.linkCampione = link;
+      if (result.linkCampione !== link) result.linkDiversi = true;
 
       // Dedup
       if (existingUrls[link.toLowerCase()]) {
@@ -285,6 +308,15 @@ function _scanSingleRssFeed_(fonte, existingUrls, dryRun) {
     } catch(eItem) {
       Logger.log(_RSS_SCAN_LOG_PREFIX_ + 'Item error in ' + fonte.nome + ': ' + eItem.message);
     }
+  }
+
+  // v4.27.82 — esito diagnosi freschezza del feed
+  if (_tsMax) {
+    result.ultimoItem = Utilities.formatDate(new Date(_tsMax), 'Europe/Rome', 'dd/MM/yyyy');
+    result.giorniDaUltimoItem = Math.floor((Date.now() - _tsMax) / 86400000);
+  } else {
+    result.ultimoItem = '(nessuna data nel feed)';
+    result.giorniDaUltimoItem = null;
   }
 
   // Reset fail counter on success
