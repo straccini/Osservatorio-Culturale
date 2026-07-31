@@ -2667,6 +2667,20 @@
             <button class="btn btn-secondary" onclick="OC.adminTool('digestAssets', this)" style="font-size:12px;padding:6px 12px" title="One-shot: carica logo OCS e masthead 'traiettorie sottotraccia' su Drive per le email del digest">🖼 Asset grafici digest</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('diagContatori', this)" style="font-size:12px;padding:6px 12px" title="Diagnosi: contatori NEW settimanali + stato reale dei concorsi lavoro in Bandi_v5">🧪 Diagnosi contatori</button>
           </div>
+          <!-- v4.27.75 — CICLO DI VITA BANDI e REGIA FONTI -->
+          <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--rule,#E5E5E7)">
+            <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin-bottom:8px">Radar Bandi &middot; ciclo di vita e fonti</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-secondary" onclick="OC.adminTool('archivioBandi', this)" style="font-size:12px;padding:6px 12px" title="Quanti bandi ci sono in archivio e i primi 10">📦 Archivio: stato</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('purgeArchivioDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quanti archiviati da oltre 20 giorni verrebbero cancellati definitivamente">🔎 Purge 20gg (anteprima)</button>
+              <button class="btn btn-secondary" onclick="if(confirm('Cancellazione DEFINITIVA degli archiviati da oltre 20 giorni (max 400 per esecuzione). Procedere?')) OC.adminTool('purgeArchivioApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Cancella definitivamente gli archiviati oltre i 20 giorni (a lotti di 400)">🗑 Purge 20gg (applica)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('regioneDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quante regioni mancanti sono deducibili da ente/titolo">🔎 Regione (anteprima)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('regioneApply', this)" style="font-size:12px;padding:6px 12px" title="Compila il campo Regione dove mancante (serve alla mappa)">🗺 Regione (applica)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('fontiTierDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima della classificazione fonti in tier A (nazionali/UE/MEPA), B (regionali/fondazioni), C (GAL/locali)">🔎 Fonti: tier (anteprima)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('fontiTierApply', this)" style="font-size:12px;padding:6px 12px" title="Assegna il tier di priorità a tutte le fonti bandi">🏅 Fonti: tier (applica)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('fontiSalute', this)" style="font-size:12px;padding:6px 12px" title="Fonti silenti o in errore, raggruppate per tier di priorità">🩺 Fonti: salute</button>
+            </div>
+          </div>
           <!-- v4.27.59 — GESTIONE TREND: proposte notizia in evidenza (approvazione Telegram) -->
           <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--rule,#E5E5E7)">
             <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin-bottom:8px">Gestione Trend &middot; notizia in evidenza</div>
@@ -11157,7 +11171,20 @@
     var tipoCol = { news:'nr', bando:'bando', podcast:'pd', video:'vd', libro:'lb' }[tipo] || 'nr';
     var badge   = it.fonte || it.ente || it.serie || it.canale || it.editore || '';
     var sub     = it.sommario ? esc(trunc(it.sommario, 120)) : '';
-    var meta    = it.data || it.anno || '';
+    // v4.27.75 — per i bandi mostra QUANDO è stato archiviato e fra quanto
+    // verrà cancellato: la purge automatica elimina dopo 20 giorni.
+    var meta    = it.dataArch ? ('Archiviato il ' + it.dataArch) : (it.data || it.anno || '');
+    var purgeInfo = '';
+    if (tipo === 'bando' && it.dataArch) {
+      var _p = it.dataArch.split('/');
+      var _dt = (_p.length === 3) ? new Date(+_p[2], +_p[1] - 1, +_p[0]) : null;
+      if (_dt && !isNaN(_dt.getTime())) {
+        var _gg = 20 - Math.floor((Date.now() - _dt.getTime()) / 86400000);
+        purgeInfo = (_gg > 0)
+          ? '<span class="tag low" style="margin-left:6px;color:var(--ink-3)">cancellazione tra ' + _gg + 'gg</span>'
+          : '<span class="tag low" style="margin-left:6px;color:var(--accent)">in cancellazione</span>';
+      }
+    }
     // v4.27.45 — Ripristina dall'archivio solo per redattori/admin
     var restoreBtn = (typeof _ocLivello === 'function' && _ocLivello() >= 2)
       ? '<button class="act-btn" onclick="OC.restoreFromArchivio(\''
@@ -11178,6 +11205,7 @@
       + '</div>'
       + '<div class="br-right">'
       +   (meta ? '<span class="br-date">' + esc(String(meta)) + '</span>' : '')
+      +   purgeInfo
       +   (link ? '<a class="br-link" href="' + link + '" target="_blank" rel="noopener">Apri &rarr;</a>' : '')
       +   '<div class="item-actions" style="margin-top:6px">' + restoreBtn + '</div>'
       + '</div>'

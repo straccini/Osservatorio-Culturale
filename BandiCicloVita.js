@@ -138,7 +138,11 @@ function bcvPurgeArchiviati(opts) {
   opts = opts || {};
   var gg = (opts.giorni != null) ? Number(opts.giorni) : BCV_PURGE_GIORNI;
   var dryRun = !!opts.dryRun;
-  var rep = { ok: true, giorni: gg, dryRun: dryRun, archiviatiTotali: 0, cancellati: 0, troppoRecenti: 0, senzaData: 0, esempi: [] };
+  // v4.27.75 — CAP per esecuzione: deleteRow costa ~100ms, oltre ~400 righe si
+  // sfora il limite di 6 minuti di GAS. L'arretrato (2261 righe il 31/07) viene
+  // drenato dalle esecuzioni notturne successive, senza timeout.
+  var cap = dryRun ? 1e9 : (Number(opts.cap) || 400);
+  var rep = { ok: true, giorni: gg, dryRun: dryRun, cap: cap, archiviatiTotali: 0, cancellati: 0, troppoRecenti: 0, senzaData: 0, residui: 0, esempi: [] };
   try {
     var sh = _bcvSheet_();
     if (!sh || sh.getLastRow() < 2) return rep;
@@ -154,6 +158,7 @@ function bcvPurgeArchiviati(opts) {
       if (!d) d = _bcvData_(row[COL_B.DATA_RILEVAMENTO - 1]); // archiviati prima della colonna
       if (!d) { rep.senzaData++; continue; }
       if (d.getTime() >= soglia) { rep.troppoRecenti++; continue; }
+      if (rep.cancellati >= cap) { rep.residui++; continue; }
       if (rep.esempi.length < 10) rep.esempi.push(String(row[COL_B.TITOLO - 1] || '').substring(0, 60));
       if (!dryRun) sh.deleteRow(r + 1);
       rep.cancellati++;
@@ -184,7 +189,23 @@ var BCV_CITTA_REGIONE = {
   'siracusa':'Sicilia','verona':'Veneto','padova':'Veneto','brescia':'Lombardia','bergamo':'Lombardia',
   'modena':'Emilia-Romagna','parma':'Emilia-Romagna','ravenna':'Emilia-Romagna','siena':'Toscana',
   'pisa':'Toscana','lucca':'Toscana','lecce':'Puglia','taranto':'Puglia','salerno':'Campania',
-  'sassari':'Sardegna','nuoro':'Sardegna','grottaglie':'Puglia','deruta':'Umbria'
+  'sassari':'Sardegna','nuoro':'Sardegna','grottaglie':'Puglia','deruta':'Umbria',
+  // v4.27.75 — aggiunte dai valori sporchi trovati in produzione il 31/07
+  'piombino':'Toscana','livorno':'Toscana','arezzo':'Toscana','prato':'Toscana','grosseto':'Toscana',
+  'pordenone':'Friuli-Venezia Giulia','gorizia':'Friuli-Venezia Giulia',
+  'reggio emilia':'Emilia-Romagna','ferrara':'Emilia-Romagna','forl':'Emilia-Romagna','rimini':'Emilia-Romagna',
+  'piacenza':'Emilia-Romagna','cesena':'Emilia-Romagna','vicenza':'Veneto','treviso':'Veneto',
+  'belluno':'Veneto','rovigo':'Veneto','como':'Lombardia','pavia':'Lombardia','mantova':'Lombardia',
+  'cremona':'Lombardia','varese':'Lombardia','monza':'Lombardia','lecco':'Lombardia','sondrio':'Lombardia',
+  'novara':'Piemonte','asti':'Piemonte','alessandria':'Piemonte','cuneo':'Piemonte','biella':'Piemonte',
+  'vercelli':'Piemonte','savona':'Liguria','imperia':'Liguria','la spezia':'Liguria',
+  'macerata':'Marche','fermo':'Marche','ascoli':'Marche','viterbo':'Lazio','latina':'Lazio',
+  'frosinone':'Lazio','rieti':'Lazio','caserta':'Campania','benevento':'Campania','avellino':'Campania',
+  'sorrento':'Campania','foggia':'Puglia','brindisi':'Puglia','barletta':'Puglia','andria':'Puglia',
+  'messina':'Sicilia','trapani':'Sicilia','agrigento':'Sicilia','ragusa':'Sicilia','enna':'Sicilia',
+  'caltanissetta':'Sicilia','oristano':'Sardegna','olbia':'Sardegna','teramo':'Abruzzo','chieti':'Abruzzo',
+  'isernia':'Molise','cosenza':'Calabria','crotone':'Calabria','vibo':'Calabria','spoleto':'Umbria',
+  'assisi':'Umbria','foligno':'Umbria','gubbio':'Umbria','orvieto':'Umbria'
 };
 
 /** @private normalizza per confronto (solo lettere minuscole) */
@@ -194,22 +215,51 @@ function _bcvNorm_(s) { return String(s || '').toLowerCase().replace(/[^a-zà-ù
  * Riempie la colonna Regione dove vuota, deducendola da ente/titolo/sommario.
  * @param {Object} [opts] { dryRun:false, cap:400 }
  */
+/**
+ * @private true se il valore è già una regione riconoscibile dalla mappa.
+ * Confronto per PREFISSO, non per uguaglianza: le geometrie ISTAT usano le
+ * forme bilingui ("Trentino-Alto Adige/Südtirol", "Valle d'Aosta/Vallée
+ * d'Aoste") che sono corrette e non vanno "corrette" in altro.
+ */
+function _bcvRegioneValida_(v) {
+  var k = _bcvNorm_(v);
+  if (!k) return false;
+  for (var i = 0; i < BCV_REGIONI.length; i++) {
+    var g = _bcvNorm_(BCV_REGIONI[i]);
+    if (k.indexOf(g) === 0 || g.indexOf(k) === 0) return true;
+  }
+  return false;
+}
+
+/** @private valori che indicano "nessun territorio specifico" (non sono errori) */
+var BCV_REGIONE_NEUTRA = { 'tutte':1,'tutto il territorio':1,'vari':1,'varie':1,'nazionale':1,'italia':1,'europa':1,'ue':1,'estero':1,'internazionale':1 };
+
 function bcvNormalizzaRegione(opts) {
   opts = opts || {};
   var cap = Number(opts.cap) || 400;
-  var rep = { ok: true, dryRun: !!opts.dryRun, esaminati: 0, compilati: 0, nonDedotti: 0, esempi: [] };
+  var rep = { ok: true, dryRun: !!opts.dryRun, esaminati: 0, compilati: 0, corretti: 0, nonDedotti: 0, esempi: [], esempiCorretti: [] };
   try {
     var sh = _bcvSheet_();
     if (!sh || sh.getLastRow() < 2) return rep;
     var vals = sh.getDataRange().getValues();
     var regNorm = BCV_REGIONI.map(function (r) { return { nome: r, k: _bcvNorm_(r) }; });
-    for (var r = 1; r < vals.length && rep.compilati < cap; r++) {
+    for (var r = 1; r < vals.length && (rep.compilati + rep.corretti) < cap; r++) {
       var row = vals[r];
       if (!row[COL_B.ID - 1]) continue;
       if (String(row[COL_B.STATO_RECORD - 1] || '').toLowerCase() === 'archiviato') continue;
-      if (String(row[COL_B.REGIONE - 1] || '').trim()) continue;
+      // v4.27.75 — non basta riempire i vuoti: il campo conteneva valori
+      // NON-REGIONE (città 'Udine'/'Modena'/'PIOMBINO', sigle 'SE') che la
+      // mappa non sa disegnare. Quelli vanno CONVERTITI in regione.
+      var _att = String(row[COL_B.REGIONE - 1] || '').trim();
+      var _daCorreggere = false;
+      if (_att) {
+        if (_bcvRegioneValida_(_att)) continue;                    // già a posto
+        if (BCV_REGIONE_NEUTRA[_att.toLowerCase()]) continue;      // senza territorio: lasciare
+        _daCorreggere = true;
+      }
       rep.esaminati++;
-      var testoRaw = String(row[COL_B.ENTE - 1] || '') + ' ' + String(row[COL_B.TITOLO - 1] || '') + ' ' + String(row[COL_B.SOMMARIO - 1] || '');
+      // il valore sporco (es. 'Udine') è il primo indizio, poi ente/titolo/sommario
+      var testoRaw = _att + ' ' + String(row[COL_B.ENTE - 1] || '') + ' ' + String(row[COL_B.TITOLO - 1] || '') + ' ' + String(row[COL_B.SOMMARIO - 1] || '');
       var testoLow = testoRaw.toLowerCase();
       var testoNorm = _bcvNorm_(testoRaw);
       var trovata = '';
@@ -222,12 +272,17 @@ function bcvNormalizzaRegione(opts) {
         }
       }
       if (!trovata) { rep.nonDedotti++; continue; }
-      if (rep.esempi.length < 10) rep.esempi.push(String(row[COL_B.ENTE - 1] || '').substring(0, 40) + ' → ' + trovata);
       if (!opts.dryRun) sh.getRange(r + 1, COL_B.REGIONE).setValue(trovata);
-      rep.compilati++;
+      if (_daCorreggere) {
+        if (rep.esempiCorretti.length < 10) rep.esempiCorretti.push(_att + ' → ' + trovata);
+        rep.corretti++;
+      } else {
+        if (rep.esempi.length < 10) rep.esempi.push(String(row[COL_B.ENTE - 1] || '').substring(0, 40) + ' → ' + trovata);
+        rep.compilati++;
+      }
     }
   } catch (e) { rep.ok = false; rep.errore = e.message; }
-  Logger.log('[bcvNormalizzaRegione] compilati=' + rep.compilati + ' nonDedotti=' + rep.nonDedotti);
+  Logger.log('[bcvNormalizzaRegione] compilati=' + rep.compilati + ' corretti=' + rep.corretti + ' nonDedotti=' + rep.nonDedotti);
   return rep;
 }
 

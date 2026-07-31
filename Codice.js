@@ -231,6 +231,21 @@ function doGet(e) {
       _dgB.purgeSimulata = (typeof bcvPurgeArchiviati === 'function') ? bcvPurgeArchiviati({ dryRun: true }) : 'modulo assente';
       _dgB.regioneSimulata = (typeof bcvNormalizzaRegione === 'function') ? bcvNormalizzaRegione({ dryRun: true, cap: 2000 }) : 'modulo assente';
       _dgB.bcvSelfTest = (typeof bcvSelfTest === 'function') ? bcvSelfTest() : 'modulo assente';
+      _dgB.frSelfTest = (typeof frSelfTest === 'function') ? frSelfTest() : 'modulo assente';
+      _dgB.tierFonti = (typeof frBackfillTier === 'function') ? frBackfillTier({ dryRun: true }) : 'modulo assente';
+      _dgB.saluteFonti = (typeof frSaluteFonti === 'function') ? frSaluteFonti() : 'modulo assente';
+      // distribuzione REALE dei valori Regione tra i bandi serviti: serve a
+      // capire perché la mappa mostra poche bolle
+      var _srv = (typeof getBandiListV42 === 'function') ? getBandiListV42(2000) : [];
+      var _dist = {}, _tierDist = {};
+      _srv.forEach(function (b) {
+        var k = String(b.regione || '(vuoto)').trim() || '(vuoto)';
+        _dist[k] = (_dist[k] || 0) + 1;
+        var t = (typeof frTierBando === 'function') ? frTierBando(b) : '?';
+        _tierDist[t] = (_tierDist[t] || 0) + 1;
+      });
+      _dgB.regioniServiti = _dist;
+      _dgB.tierServiti = _tierDist;
     } catch (e5) { _dgB.cicloVitaErrore = e5.message; }
     return ContentService.createTextOutput(JSON.stringify(_dgB, null, 2)).setMimeType(ContentService.MimeType.JSON);
   }

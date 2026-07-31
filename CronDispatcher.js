@@ -84,7 +84,9 @@ var OC_CRON_EXTRA = [
   // interna alla funzione) + pulizia proposte non confermate >14gg
   { fn: 'trendProponi', tipo: 'daily', ora: 9, desc: 'Trend: proponi notizia in evidenza via Telegram (ogni ~2gg)' },
   // v4.27.74 — normalizza il campo Regione dei bandi (riempie la mappa del Radar)
-  { fn: 'bcvNormalizzaRegione', tipo: 'daily', ora: 2, desc: 'Bandi: normalizza campo Regione (mappa Radar)' }
+  { fn: 'bcvNormalizzaRegione', tipo: 'daily', ora: 2, desc: 'Bandi: normalizza campo Regione (mappa Radar)' },
+  // v4.27.75 — assegna il tier di priorità alle fonti nuove (idempotente)
+  { fn: 'frBackfillTier', tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 4, desc: 'Regia fonti: tier di priorità alle fonti nuove' }
 ];
 
 /** Schedule consolidato = approvato (SetupMaster) + nuovi. */

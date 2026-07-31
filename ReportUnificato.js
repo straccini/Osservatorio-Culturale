@@ -37,6 +37,45 @@ function reportUnificatoGiornaliero() {
   try {
     esiti.fonti = _frEsegui_();
     sezioni.push(_ruSezione_('2 · Fonti e aggregatori', _frEmailHtml_(esiti.fonti)));
+
+    // v4.27.75 — Salute fonti bandi per TIER di priorità. Distingue una fonte
+    // istituzionale ferma (grave) da un GAL silente (fisiologico).
+    try {
+      if (typeof frSaluteFonti === 'function') {
+        var _sal = frSaluteFonti();
+        esiti.saluteFonti = _sal;
+        if (_sal && _sal.ok) {
+          var _lbl = { A: 'A · nazionali / UE / MEPA', B: 'B · regionali e fondazioni', C: 'C · GAL e locali' };
+          var _righe = ['A', 'B', 'C'].map(function (t) {
+            var T = _sal.perTier[t] || {};
+            var allarme = (t !== 'C' && (T.silenti > 0 || T.inErrore > 0));
+            return '<tr>'
+              + '<td style="padding:5px 9px;border-bottom:1px solid #eee">' + _lbl[t] + '</td>'
+              + '<td style="padding:5px 9px;border-bottom:1px solid #eee">' + (T.attive || 0) + '/' + (T.fonti || 0) + '</td>'
+              + '<td style="padding:5px 9px;border-bottom:1px solid #eee">' + (T.scan7gg || 0) + '</td>'
+              + '<td style="padding:5px 9px;border-bottom:1px solid #eee' + (allarme ? ';color:#B91C1C;font-weight:700' : '') + '">'
+              + (T.silenti || 0) + (T.inErrore ? ' (+' + T.inErrore + ' in errore)' : '') + '</td></tr>';
+          }).join('');
+          var _html = '<table style="border-collapse:collapse;font-size:13px;width:100%">'
+            + '<tr>'
+            + '<th style="text-align:left;padding:5px 9px;border-bottom:2px solid #333">Tier</th>'
+            + '<th style="text-align:left;padding:5px 9px;border-bottom:2px solid #333">Attive</th>'
+            + '<th style="text-align:left;padding:5px 9px;border-bottom:2px solid #333">Scan 7gg</th>'
+            + '<th style="text-align:left;padding:5px 9px;border-bottom:2px solid #333">Silenti</th></tr>'
+            + _righe + '</table>';
+          var _att = _sal.silenti.filter(function (s) { return s.tier !== 'C'; }).slice(0, 8);
+          if (_att.length) {
+            _html += '<p style="font-size:12.5px;color:#B91C1C;margin:10px 0 0"><b>Da attenzionare</b> (fonti di priorità alta senza record): '
+              + _att.map(function (s) { return '[' + s.tier + '] ' + s.nome; }).join(' · ') + '</p>';
+          }
+          if (_sal.inErrore.length) {
+            _html += '<p style="font-size:12px;color:#666;margin:6px 0 0">In errore da 3+ tentativi: '
+              + _sal.inErrore.slice(0, 6).map(function (s) { return '[' + s.tier + '] ' + s.nome; }).join(' · ') + '</p>';
+          }
+          sezioni.push(_ruSezione_('2-bis · Salute fonti bandi per priorità', _html));
+        }
+      }
+    } catch (eSal) { Logger.log('[RU] salute fonti: ' + eSal.message); }
   } catch (e2) { esiti.errori.push('fonti: ' + e2.message); }
 
   // ── 3) QA CONTENUTI — conteggi, integrità fogli, salute scansioni ─────────

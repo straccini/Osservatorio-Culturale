@@ -181,6 +181,15 @@ function _bandiMotivoScarto_(b) {
   // v4.27.73 — senza scadenza il titolo deve dichiarare la natura di bando
   // (blocca i titoli generici scrapati: "AUGURI...", "BANDI GAL 2019 ...").
   if (g === null && !_BANDO_SEGNALE_RE.test(tit)) return 'senza-scadenza-e-titolo-non-bando';
+  // v4.27.75 — SOGLIA PER TIER DELLA FONTE. Le fonti locali (GAL, associazioni)
+  // sono quelle che producono voci di menu: il 31/07 hanno generato 274 scarti
+  // su 408. Per loro serve più prova che sia un bando vero. Le istituzionali
+  // (TED, MiC, ANAC, MEPA, Creative Europe) restano permissive: non pubblicano
+  // rumore, e stringere lì significherebbe perdere bandi buoni.
+  if (typeof frTierBando === 'function') {
+    var tier = frTierBando(b);
+    if (tier === 'C' && g === null && descr.length < 120) return 'tierC-prove-insufficienti';
+  }
   return '';
 }
 
@@ -276,7 +285,11 @@ function bandiGateSelfTest() {
     { in:{ titolo:'AUGURI BUONA PASQUA', settore:'', sommario:'centi CHIUSURA UFFICIO TERRITORIALE SORRENTO AUGURI BUONA PASQUA AVVISO PARTENARIATO PUBBLICO <a...', cpv:'', link:'https://gal.esempio.it/notizie' }, attesoIn:false, nome:'Auguri di Pasqua (GAL)' },
     { in:{ titolo:'CHIUSURA UFFICIO TERRITORIALE SORRENTO', settore:'', sommario:'comunicazione di servizio agli utenti del territorio', cpv:'', link:'https://gal.esempio.it/notizie' }, attesoIn:false, nome:'Avviso chiusura uffici' },
     { in:{ titolo:'BANDI GAL 2019 — PUBBLICATE LE GRADUATORIE DELLA TI 6.4.1.', settore:'', sommario:'scarl/" rel="next">AVVISO PARTENARIATO PUBBLICO PRIVATO DEL GAL <h', cpv:'', link:'https://gal.esempio.it/x' }, attesoIn:false, nome:'Sommario con frammenti HTML' },
-    { in:{ titolo:'Sportello contributi per biblioteche di pubblica lettura', settore:'biblioteche', sommario:'Sportello sempre aperto: contributi per le biblioteche del territorio', cpv:'', link:'https://regione.esempio.it/bandi/sportello-biblioteche-2026' }, attesoIn:true, attesoTipo:'diretto', nome:'Sportello senza scadenza (deve passare)' }
+    { in:{ titolo:'Sportello contributi per biblioteche di pubblica lettura', settore:'biblioteche', sommario:'Sportello sempre aperto: contributi per le biblioteche del territorio', cpv:'', link:'https://regione.esempio.it/bandi/sportello-biblioteche-2026', fonteNome:'Regione Toscana' }, attesoIn:true, attesoTipo:'diretto', nome:'Sportello tier B senza scadenza (deve passare)' },
+    // --- v4.27.75 — SOGLIA PER TIER ---
+    { in:{ titolo:'Bando pubblico qualificazione attività commerciali', settore:'musei', sommario:'Breve nota di quaranta caratteri circa.', cpv:'', link:'https://galesempio.it/bando', fonteNome:'GAL Terra Protetta' }, attesoIn:false, nome:'Tier C: senza scadenza + descrizione corta' },
+    { in:{ titolo:'Bando pubblico per la valorizzazione del patrimonio museale', settore:'musei', sommario:'Avviso rivolto a musei ed ecomusei del territorio per interventi di valorizzazione, allestimento e servizi educativi al pubblico. Dotazione complessiva 500.000 euro, domande a sportello fino a esaurimento delle risorse disponibili.', cpv:'', link:'https://galesempio.it/bandi/valorizzazione-patrimonio-museale-2026', fonteNome:'GAL Terra Protetta' }, attesoIn:true, nome:'Tier C: senza scadenza ma descrizione ricca (passa)' },
+    { in:{ titolo:'Avviso PNRR digitalizzazione dei musei', settore:'musei', sommario:'Avviso del Ministero della Cultura.', cpv:'', link:'https://cultura.gov.it/avviso-digital-2026', fonteNome:'MiC — Ministero della Cultura' }, attesoIn:true, attesoTipo:'diretto', nome:'Tier A permissivo (MiC, descrizione breve)' }
   ];
 
   var risultati = [];

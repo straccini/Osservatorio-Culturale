@@ -63,6 +63,11 @@ function adminRunTool(tool, token) {
       case 'regioneDry':         r = bcvNormalizzaRegione({ dryRun: true }); break;
       case 'regioneApply':       r = bcvNormalizzaRegione({}); break;
       case 'bcvSelfTest':        r = bcvSelfTest(); break;
+      // ── Regia fonti per tier (v4.27.75) ─────────────────────────────────
+      case 'fontiTierDry':       r = frBackfillTier({ dryRun: true }); break;
+      case 'fontiTierApply':     r = frBackfillTier({}); break;
+      case 'fontiSalute':        r = frSaluteFonti(); break;
+      case 'frSelfTest':         r = frSelfTest(); break;
       case 'trendProponi':       r = trendProponi({ force: true, sostituisciPendente: true }); break; // proponi trend ora (scarta l'eventuale pendente e rivaluta)
       case 'lavoroScanDry':      r = fasParserGuS4Cultura({ dryRun: true, deepCap: 40 }); break; // anteprima filtri nuovi
 
