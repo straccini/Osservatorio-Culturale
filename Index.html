@@ -604,6 +604,10 @@
         </span>
         <button id="bandiAltriBtn" onclick="OC.bandiAltriFiltri()" style="margin-left:auto;border:1.5px solid var(--cobalt,#1E3A8A);background:transparent;color:var(--cobalt,#1E3A8A);border-radius:999px;padding:6px 16px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">Altri filtri &#9662;</button>
       </div>
+      <!-- v4.27.78 — filtri attivi sempre visibili e removibili: il filtro
+           regione impostato dalla mappa restava applicato senza che si
+           vedesse (3 bandi su 103 con "Tutti i bandi" selezionato). -->
+      <div id="bandiFiltriAttivi" hidden style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 10px"></div>
 
       <div id="bandiFiltriAvanzati" hidden>
         <!-- v4.27.69 — STRUTTURA FILTRI DEL MODELLO V4: 1 Categoria (scelta
@@ -5249,7 +5253,123 @@
   renderBandiList = function(list) {
     _renderBandiListCore_(list);
     try { if (window._bandiVista === 'mappa') renderBandiMappa(); } catch(_){}
+    try { _bandiAggiornaFiltriUI_(); } catch(_){}
   };
+
+  /**
+   * v4.27.78 — FILTRI ATTIVI: elenco leggibile di ciò che sta restringendo la
+   * lista. Nato da un difetto reale: il filtro regione impostato dalla mappa
+   * restava attivo ma invisibile (3 bandi su 103 con "Tutti i bandi" acceso).
+   * Alimenta sia la barra dei chip removibili sia il contatore sul pulsante
+   * "Altri filtri".
+   */
+  /**
+   * v4.27.78 — IMPORTO: nel foglio alcune celle importo contengono una DATA
+   * (l'epoca zero di Excel/Sheets: "Sat Dec 30 1899"), non un valore. Mostrare
+   * "€ Sat Dec 30 1899 01:00:00 GMT+0100" è peggio che non mostrare nulla.
+   */
+  /**
+   * @private Numero da stringa importo, gestendo ENTRAMBE le convenzioni:
+   * italiana "1.234.567,89" e inglese "1234567.89" (TED pubblica così).
+   * Regola: se compaiono sia punto sia virgola, l'ULTIMO è il decimale;
+   * se ne compare uno solo ed è seguito da 1-2 cifre, è decimale.
+   */
+  function _importoNum_(v) {
+    var s = String(v == null ? '' : v).replace(/[^0-9.,-]/g, '');
+    if (!s) return NaN;
+    var iP = s.lastIndexOf('.'), iV = s.lastIndexOf(',');
+    if (iP >= 0 && iV >= 0) {
+      if (iP > iV) s = s.replace(/,/g, '');                 // 1,234,567.89
+      else s = s.replace(/\./g, '').replace(',', '.');      // 1.234.567,89
+    } else if (iV >= 0) {
+      s = (s.length - iV - 1) <= 2 ? s.replace(',', '.') : s.replace(/,/g, '');
+    } else if (iP >= 0) {
+      var dec = s.length - iP - 1;
+      var soloUno = s.indexOf('.') === iP;
+      if (!(soloUno && dec >= 1 && dec <= 2)) s = s.replace(/\./g, '');
+    }
+    return parseFloat(s);
+  }
+  function _importoValido_(v) {
+    if (v === null || v === undefined || v === '') return false;
+    if (v instanceof Date) return false;
+    var s = String(v).trim();
+    if (!s) return false;
+    if (/\b(18|19|20)\d{2}\b.*(GMT|:\d{2}:\d{2})/i.test(s)) return false;      // data serializzata
+    if (/^(sat|sun|mon|tue|wed|thu|fri)\s/i.test(s)) return false;             // "Sat Dec 30 1899"
+    if (!/\d/.test(s)) return false;                                          // nessuna cifra
+    var num = _importoNum_(s);
+    return !isNaN(num) && num > 0;
+  }
+  function _importoFmt_(v) {
+    var num = _importoNum_(v);
+    if (isNaN(num)) return String(v);
+    try { return num.toLocaleString('it-IT', { maximumFractionDigits: 0 }); } catch (_) { return String(Math.round(num)); }
+  }
+
+  var _SET_LBL_BANDI = { musei:'Musei e patrimonio', biblioteche:'Biblioteche e archivi', patrimonio:'Patrimonio e restauro', spettacolo:'Spettacolo dal vivo', archeologia:'Archeologia' };
+  var _CAT_LBL_BANDI = { finanziamento:'Finanziamenti', servizio_fornitura:'Servizi e forniture', lavori:'Lavori' };
+  var _VISTA_LBL_BANDI = { esiti:'Esiti e aggiudicazioni', salvati:'Salvati' };
+
+  function _bandiFiltriAttivi_() {
+    var out = [];
+    var reg = String(_filterBandi.regione || '');
+    if (reg) {
+      var lbl = reg === '_europa' ? 'Unione Europea' : reg === '_italia' ? 'Italia (nazionali)' : reg;
+      out.push({ k: 'regione', v: reg, lbl: lbl });
+    }
+    if (_filterBandiTipiAttivo) {
+      var attiviCat = Object.keys(_filterBandiTipi || {}).filter(function (k) { return _filterBandiTipi[k]; });
+      var catPrinc = attiviCat.filter(function (k) { return _CAT_LBL_BANDI[k]; })[0];
+      if (catPrinc) out.push({ k: 'cat', v: catPrinc, lbl: _CAT_LBL_BANDI[catPrinc] });
+    }
+    (window._bandiCpvMulti || []).forEach(function (s) {
+      out.push({ k: 'settore', v: s, lbl: _SET_LBL_BANDI[s] || s });
+    });
+    var preset = _filterBandi.preset || 'tutti';
+    if (_VISTA_LBL_BANDI[preset]) out.push({ k: 'vista', v: preset, lbl: _VISTA_LBL_BANDI[preset] });
+    var amb = Number(_filterBandi.amb || 0);
+    if (amb > 0) out.push({ k: 'tema', v: String(amb), lbl: 'Ambito ' + ('0' + amb).slice(-2) });
+    var q = String(_filterBandi.q || '').trim();
+    if (q) out.push({ k: 'q', v: q, lbl: '"' + q + '"' });
+    return out;
+  }
+
+  function _bandiAggiornaFiltriUI_() {
+    var attivi = _bandiFiltriAttivi_();
+    // 1) pulsante "Altri filtri": cambia colore e mostra il numero
+    var btn = $('bandiAltriBtn');
+    if (btn) {
+      var aperto = !!window._bandiFiltriAperti;
+      var etichetta = aperto ? '&#9652; Filtri rapidi' : 'Altri filtri &#9662;';
+      if (attivi.length) {
+        btn.innerHTML = etichetta + ' <span style="display:inline-block;min-width:17px;height:17px;line-height:17px;border-radius:999px;background:#fff;color:var(--accent);font-size:11px;font-weight:800;text-align:center;margin-left:6px;padding:0 4px">' + attivi.length + '</span>';
+        btn.style.background = 'var(--accent)';
+        btn.style.borderColor = 'var(--accent)';
+        btn.style.color = '#fff';
+        btn.title = 'Filtri attivi: ' + attivi.map(function (a) { return a.lbl; }).join(' · ');
+      } else {
+        btn.innerHTML = etichetta;
+        btn.style.background = 'transparent';
+        btn.style.borderColor = 'var(--cobalt,#1E3A8A)';
+        btn.style.color = 'var(--cobalt,#1E3A8A)';
+        btn.title = 'Apri i filtri completi';
+      }
+    }
+    // 2) barra dei filtri attivi, ognuno removibile
+    var bar = $('bandiFiltriAttivi');
+    if (!bar) return;
+    if (!attivi.length) { bar.hidden = true; bar.innerHTML = ''; return; }
+    var html = '<span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3)">Filtri attivi</span>';
+    attivi.forEach(function (a) {
+      html += '<button onclick="OC.bandiRimuoviFiltro(\'' + a.k + '\',\'' + esc(String(a.v)).replace(/'/g, "\\'") + '\')" '
+        + 'style="border:1px solid var(--accent);background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" '
+        + 'title="Rimuovi questo filtro">' + esc(a.lbl) + ' &times;</button>';
+    });
+    html += '<button onclick="OC.bandiAzzeraFiltri()" style="border:none;background:transparent;color:var(--cobalt,#1E3A8A);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:4px">Azzera tutti</button>';
+    bar.innerHTML = html;
+    bar.hidden = false;
+  }
 
   /** Mini-mappa cliccabile in home (colonna Bandi) — silhouette, nessun conteggio. */
   function _drawMiniMappaHome_() {
@@ -5394,7 +5514,7 @@
       +   '<div class="br-meta">'
       +     (b.ente    ? '<span class="br-ente">' + esc(b.ente) + '</span>' : '')
       +     (b.regione ? '<span class="br-sep">&middot;</span><span>' + esc(b.regione) + '</span>' : '')
-      +     (b.importo ? '<span class="br-sep">&middot;</span><span class="br-importo-inline">&#8364;&nbsp;' + esc(b.importo) + '</span>' : '')
+      +     (_importoValido_(b.importo) ? '<span class="br-sep">&middot;</span><span class="br-importo-inline">&#8364;&nbsp;' + esc(_importoFmt_(b.importo)) + '</span>' : '')
       +     (b.dataRil ? '<span class="br-sep">&middot;</span><span class="br-rilev">Rilev. ' + esc(b.dataRil) + '</span>' : '')
       +   '</div>'
       + '</div>'
@@ -12263,16 +12383,40 @@
       if (_cacheBandi) renderBandiList(_cacheBandi);
     },
     bandiAltriFiltri: function(){
-      var av = $('bandiFiltriAvanzati'), qc = $('bandiQuickChips'), btn = $('bandiAltriBtn');
+      var av = $('bandiFiltriAvanzati'), qc = $('bandiQuickChips');
       var apre = av && av.hidden;
       if (av) av.hidden = !apre;
       if (qc) qc.style.display = apre ? 'none' : '';
-      if (btn) btn.innerHTML = apre ? '&#9652; Filtri rapidi' : 'Altri filtri &#9662;';
+      window._bandiFiltriAperti = apre;
       if (!apre) {
         // tornando ai rapidi si riapplica il quick evidenziato (spec v4)
         var act = document.querySelector('#bandiQuickChips .filter-chip.active');
-        OC.bandiQuick(act ? act.getAttribute('data-quick') : 'recenti10');
+        OC.bandiQuick(act ? act.getAttribute('data-quick') : 'tutti');
+      } else {
+        _bandiAggiornaFiltriUI_();
       }
+    },
+    /** v4.27.78 — rimuove un singolo filtro attivo dalla barra */
+    bandiRimuoviFiltro: function(chiave, valore){
+      if (chiave === 'regione') { var s = $('bandiRegione'); if (s) s.value = ''; OC.setBandiRegione(''); return; }
+      if (chiave === 'cat')     { OC.bandiCat('tutti'); return; }
+      if (chiave === 'settore') { OC.bandiSettore(valore); return; }   // toggle: lo toglie
+      if (chiave === 'vista')   { var v = $('bandiVistaSel'); if (v) v.value = 'tutti'; OC.bandiVistaSel('tutti'); return; }
+      if (chiave === 'tema')    { var t = $('bandiTema'); if (t) t.value = '0'; OC.setBandiTema('0'); return; }
+      if (chiave === 'q')       { var q = $('bandiSearch'); if (q) q.value = ''; OC.searchBandi(''); return; }
+    },
+    bandiAzzeraFiltri: function(){
+      var s = $('bandiRegione'); if (s) s.value = '';
+      _filterBandi.regione = '';
+      _filterBandi.q = ''; var q = $('bandiSearch'); if (q) q.value = '';
+      _filterBandi.amb = 0; var t = $('bandiTema'); if (t) t.value = '0';
+      _filterBandi.cpv = ''; window._bandiCpvMulti = [];
+      _filterBandiTipiAttivo = false;
+      _filterBandiSettore = '';
+      var v = $('bandiVistaSel'); if (v) v.value = 'tutti';
+      document.querySelectorAll('[data-bset]').forEach(function(x){ x.classList.toggle('active', x.getAttribute('data-bset') === 'tutti'); });
+      document.querySelectorAll('[data-bcat]').forEach(function(x){ x.classList.toggle('active', x.getAttribute('data-bcat') === 'tutti'); });
+      OC.bandiQuick('tutti');
     },
     bandiMappaEu: function(){
       // v4.27.70 — toggle: clic = solo UE (lista sotto, mappa resta); riclic = tutti
