@@ -56,6 +56,13 @@ function adminRunTool(tool, token) {
       case 'segOgImage':         r = segBackfillOgImage({ cap: 20 }); break; // miniature segnalazioni
       case 'digestAssets':       r = digestAssetsSetup(); break; // one-shot: logo+masthead digest su Drive
       case 'diagContatori':      r = diagContatoriBadge(); break; // diagnosi badge NEW + stato lavoro
+      // ── Ciclo di vita bandi (v4.27.74) ──────────────────────────────────
+      case 'archivioBandi':      r = { totale: bcvArchiviati(1000).length, primi: bcvArchiviati(10) }; break;
+      case 'purgeArchivioDry':   r = bcvPurgeArchiviati({ dryRun: true }); break;
+      case 'purgeArchivioApply': r = bcvPurgeArchiviati({}); break;
+      case 'regioneDry':         r = bcvNormalizzaRegione({ dryRun: true }); break;
+      case 'regioneApply':       r = bcvNormalizzaRegione({}); break;
+      case 'bcvSelfTest':        r = bcvSelfTest(); break;
       case 'trendProponi':       r = trendProponi({ force: true, sostituisciPendente: true }); break; // proponi trend ora (scarta l'eventuale pendente e rivaluta)
       case 'lavoroScanDry':      r = fasParserGuS4Cultura({ dryRun: true, deepCap: 40 }); break; // anteprima filtri nuovi
 

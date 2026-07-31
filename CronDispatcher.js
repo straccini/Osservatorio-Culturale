@@ -82,7 +82,9 @@ var OC_CRON_EXTRA = [
   { fn: 'socialPubblicaApprovati', tipo: 'weekly', giorno: ScriptApp.WeekDay.FRIDAY,  ora: 10, desc: 'Social: pubblica/inoltra i post approvati (venerdì)' },
   // v4.27.59 — Trend: proposta notizia in evidenza ogni ~2 giorni (guardia 44h
   // interna alla funzione) + pulizia proposte non confermate >14gg
-  { fn: 'trendProponi', tipo: 'daily', ora: 9, desc: 'Trend: proponi notizia in evidenza via Telegram (ogni ~2gg)' }
+  { fn: 'trendProponi', tipo: 'daily', ora: 9, desc: 'Trend: proponi notizia in evidenza via Telegram (ogni ~2gg)' },
+  // v4.27.74 — normalizza il campo Regione dei bandi (riempie la mappa del Radar)
+  { fn: 'bcvNormalizzaRegione', tipo: 'daily', ora: 2, desc: 'Bandi: normalizza campo Regione (mappa Radar)' }
 ];
 
 /** Schedule consolidato = approvato (SetupMaster) + nuovi. */

@@ -178,9 +178,15 @@ function sasRun() {
       Logger.log('[SAS] MA5 archivio bandi scaduti: ' + (ma5 && ma5.archiviati || 0));
     }
     // v4.20 — Cancella definitivamente bandi archiviati da >90 giorni
-    if (typeof _purgeBandiArchiviatiVecchi_ === 'function') {
-      var purge = _purgeBandiArchiviatiVecchi_(90);
-      if (purge && purge.cancellati > 0) report.azioni.push('MA5: cancellati ' + purge.cancellati + ' bandi archiviati >90gg');
+    // v4.27.74 — purge a 20gg misurata sulla DataArchiviazione. La vecchia
+    // _purgeBandiArchiviatiVecchi_(90) usava la SCADENZA come eta': i 274
+    // archiviati "senza scadenza" del 31/07 non sarebbero mai stati eliminati.
+    if (typeof bcvPurgeArchiviati === 'function') {
+      var purge = bcvPurgeArchiviati({ giorni: BCV_PURGE_GIORNI });
+      if (purge && purge.cancellati > 0) report.azioni.push('MA5: cancellati ' + purge.cancellati + ' bandi archiviati >' + BCV_PURGE_GIORNI + 'gg');
+    } else if (typeof _purgeBandiArchiviatiVecchi_ === 'function') {
+      var purgeOld = _purgeBandiArchiviatiVecchi_(90);
+      if (purgeOld && purgeOld.cancellati > 0) report.azioni.push('MA5: cancellati ' + purgeOld.cancellati + ' bandi (fallback)');
     }
   } catch(e) {
     report.errori.push('MA5: ' + e.message);

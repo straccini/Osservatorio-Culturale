@@ -208,6 +208,30 @@ function doGet(e) {
       _dgB.serviti = _serviti.length;
       _dgB.nonPertinentiAncoraEsposti = _scarti;
     } catch (e2) { _dgB.scanErrore = e2.message; }
+    // v4.27.74 — DANNO DA SCHEMA MISTO: il vecchio schema COL (indici del
+    // foglio RADAR) veniva applicato a Bandi_v5, che ha COL_B. Collisioni:
+    // COL.LETTO_BANDO=20 → COL_B.SOMMARIO (il "letto" cancellava la
+    // descrizione), COL.STATO_RECORD=18 → COL_B.URL_VALIDATO.
+    try {
+      var _ss = getMainSS(), _sh = _ss.getSheetByName('Bandi_v5');
+      if (_sh && _sh.getLastRow() > 1) {
+        var _v = _sh.getDataRange().getValues();
+        var _d = { righe: _v.length - 1, sommarioBooleano: 0, urlValidatoStato: 0, header20: String(_v[0][19]||''), header18: String(_v[0][17]||'') };
+        for (var _r = 1; _r < _v.length; _r++) {
+          var _som = _v[_r][COL_B.SOMMARIO - 1];
+          if (_som === true || _som === false || /^(true|false)$/i.test(String(_som||''))) _d.sommarioBooleano++;
+          var _uv = String(_v[_r][COL_B.URL_VALIDATO - 1] || '').toLowerCase();
+          if (_uv === 'archiviato' || _uv === 'attivo') _d.urlValidatoStato++;
+        }
+        _dgB.dannoSchemaMisto = _d;
+      }
+    } catch (e4) { _dgB.dannoErrore = e4.message; }
+    try {
+      _dgB.archivio = (typeof bcvArchiviati === 'function') ? { totale: bcvArchiviati(2000).length, primi: bcvArchiviati(3) } : 'modulo assente';
+      _dgB.purgeSimulata = (typeof bcvPurgeArchiviati === 'function') ? bcvPurgeArchiviati({ dryRun: true }) : 'modulo assente';
+      _dgB.regioneSimulata = (typeof bcvNormalizzaRegione === 'function') ? bcvNormalizzaRegione({ dryRun: true, cap: 2000 }) : 'modulo assente';
+      _dgB.bcvSelfTest = (typeof bcvSelfTest === 'function') ? bcvSelfTest() : 'modulo assente';
+    } catch (e5) { _dgB.cicloVitaErrore = e5.message; }
     return ContentService.createTextOutput(JSON.stringify(_dgB, null, 2)).setMimeType(ContentService.MimeType.JSON);
   }
 

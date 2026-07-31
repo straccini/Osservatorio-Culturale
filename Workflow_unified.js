@@ -52,11 +52,17 @@ function _wfConfig_(tipo) {
     case 'bando':
       return {
         getSheet: function() { return getSheetRadar(); },
-        colLetto:    (typeof COL !== 'undefined' && COL.LETTO_BANDO)    ? COL.LETTO_BANDO    : null,
-        colSalvato:  (typeof COL !== 'undefined' && COL.SALVATO)        ? COL.SALVATO        : null,
-        // Bandi usano colonna STATO_RECORD con valori 'attivo'/'archiviato' (testo).
+        // v4.27.74 — SCHEMA COL_B (Bandi_v5), non piu' COL (vecchio RADAR).
+        // Le collisioni erano gravi: COL.LETTO_BANDO=20 cadeva su
+        // COL_B.SOMMARIO (il "letto" avrebbe cancellato la descrizione del
+        // bando) e COL.STATO_RECORD=18 su COL_B.URL_VALIDATO (archiviazione
+        // mai registrata). Verificato il 31/07: 0 righe corrotte su 2421,
+        // quindi nessun recupero dati necessario.
+        colLetto:    (typeof COL_B !== 'undefined' && COL_B.LETTO)         ? COL_B.LETTO         : 25,
+        colSalvato:  (typeof COL_B !== 'undefined' && COL_B.SALVATO)       ? COL_B.SALVATO       : 26,
+        // Bandi usano colonna StatoRecord con valori 'attivo'/'archiviato' (testo).
         statoMode: 'text',
-        colStato:    (typeof COL !== 'undefined' && COL.STATO_RECORD)   ? COL.STATO_RECORD   : null,
+        colStato:    (typeof COL_B !== 'undefined' && COL_B.STATO_RECORD)  ? COL_B.STATO_RECORD  : 24,
         valArch:  'archiviato',
         valAttivo:'attivo',
         // Per archiviazione automatica/eliminazione bulk (riusa funzioni esistenti).
@@ -211,6 +217,9 @@ function _wfIsEditorOrAdmin_(token) {
  * @param {string} stato 'archiviato' | 'attivo'
  */
 function _wfArchiviaBandoV5_(riga, stato) {
+  // v4.27.74 — delega a BandiCicloVita, che traccia anche DataArchiviazione
+  // (senza quella data la purge non sa quando scadono gli archiviati).
+  if (typeof bcvSetStato === 'function') return bcvSetStato(riga, stato);
   try {
     if (!riga || riga < 2) return { ok:false, error:'riga non valida: ' + riga };
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
@@ -219,7 +228,6 @@ function _wfArchiviaBandoV5_(riga, stato) {
     if (riga > sh.getLastRow()) return { ok:false, error:'riga fuori range' };
     var col = (typeof COL_B !== 'undefined' && COL_B.STATO_RECORD) ? COL_B.STATO_RECORD : 24;
     sh.getRange(riga, col).setValue(stato);
-    Logger.log('[wf] Bandi_v5 riga ' + riga + ' → ' + stato);
     return { ok:true, riga: riga, stato: stato };
   } catch (e) { return { ok:false, error:e.message }; }
 }
@@ -582,21 +590,12 @@ function getArchivedItems(tipo) {
       }
     }
     if (tipo === 'bando') {
-      var shb = getSheetRadar();
-      if (!shb || shb.getLastRow() < 2) return { ok: true, items: [] };
-      var rowsb = shb.getDataRange().getValues();
-      var hb = rowsb[0];
-      var statoColB = hb.indexOf('STATO_RECORD');
-      if (statoColB < 0) statoColB = 17;
-      for (var j = 1; j < rowsb.length; j++) {
-        var stato = String(rowsb[j][statoColB] || '').toLowerCase();
-        if (stato === 'archiviato') {
-          items.push({
-            id: rowsb[j][0], titolo: rowsb[j][0], ente: rowsb[j][1],
-            settore: rowsb[j][2], scadenza: rowsb[j][4], tipo: 'bando'
-          });
-        }
-      }
+      // v4.27.74 — FIX ARCHIVIO SEMPRE VUOTO: qui si cercava l'header
+      // 'STATO_RECORD' (Bandi_v5 lo chiama 'StatoRecord') e in mancanza si
+      // ripiegava sull'indice 17 = UrlValidato, dove 'archiviato' non c'è
+      // mai. Anche i campi erano letti con indici del vecchio RADAR.
+      // Unico lettore ora: bcvArchiviati (schema COL_B).
+      if (typeof bcvArchiviati === 'function') items = items.concat(bcvArchiviati(limit || 200));
     }
     if (tipo === 'podcast') {
       var shp = ss.getSheetByName('Podcast');
