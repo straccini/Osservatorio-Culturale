@@ -844,3 +844,69 @@ git commit -m "feat(bandi): regia fonti per tier + ciclo di vita archivio — v4
 - [ ] Un titolo di menu da fonte GAL senza scadenza non viene esposto; lo stesso titolo con descrizione ricca sì
 - [ ] Il report giornaliero contiene la tabella "Salute fonti bandi per priorità"
 - [ ] Il numero di bandi esposti senza link scende sotto il 15% (oggi 34%)
+
+---
+
+# APPENDICE — Estendere il controllo a TUTTE le sezioni (01/08/2026)
+
+**Richiesta Silvano:** «dobbiamo controllare fonti relative ai podcast, video, leggi,
+pubblicazioni e libri e norme **sempre**» — non un controllo una tantum, ma
+permanente, come quello costruito per i bandi.
+
+## Evidenza già raccolta (verifica del 01/08, ore 08:44)
+
+Nuovi contenuti nella settimana corrente, per sezione:
+
+| Sezione | Nuovi 7gg | Stato |
+|---|---|---|
+| News | 988 | sano |
+| Norme | 15 | sano |
+| **Bandi** | 0 | in ripartenza (canale RSS riattivato il 31/07) |
+| **Podcast** | 0 | **da verificare** |
+| **Video** | 0 | **da verificare** |
+| **Libri / Pubblicazioni** | 0 | **da verificare** |
+| **Lavoro cultura** | 0 | atteso: la GU pubblica a ondate |
+| **Capitali & candidature** | 0 | **da verificare** |
+| **Social** | 0 | **da verificare** |
+
+Dato aggiuntivo dal report QA del 31/07: *«Feed attivi: 113 rss / 12 pod / **0 video**»*
+e *«Fonti RSS a 0 record (candidate morte): 19»*. Lo zero sui video non è un caso:
+i canali YouTube potrebbero non essere registrati come fonti attive.
+
+## Ipotesi da verificare, in ordine di probabilità
+
+Sono le stesse quattro cause trovate sui bandi — vanno cercate su ogni canale:
+
+1. **Scanner non schedulato** — è successo per il canale RSS bandi (167 fonti mai
+   scansionate). Controllare che `scanPodcastBisettimanale` copra davvero podcast
+   *e* video, e che esista un job per Pubblicazioni e Capitali.
+2. **Schema di scrittura disallineato** — è successo due volte (`_fasSaveBando_` nel
+   2026-04, `ScannerRssSpecializzato` il 31/07): array posizionale che slitta di una
+   colonna e rende i record inutilizzabili. Verificare l'append di ogni scanner
+   rispetto allo schema del foglio di destinazione.
+3. **Fonti morte non sostituite** — sui bandi ne sono emerse 5 (una ferma dal 2024).
+   Serve la stessa misura di freschezza: data dell'item più recente per feed.
+4. **Contatore che guarda il foglio sbagliato** — è successo per il badge "lavoro"
+   (leggeva un foglio inesistente). Verificare che ogni contatore legga la fonte
+   realmente servita.
+
+## Cosa riusare (già scritto e collaudato sui bandi)
+
+- `frSaluteFonti()` — KPI per tier: attive, scansionate 7gg, silenti, in errore.
+  Va generalizzata al foglio fonti di ciascun canale.
+- `frNaturaFonte()` — separazione bandi/news. Per gli altri canali serve l'equivalente:
+  una fonte podcast non deve finire tra i video e viceversa.
+- Diagnosi di freschezza dello scanner RSS (`ultimoItem`, `giorniDaUltimoItem`) —
+  è la misura che ha smascherato le fonti morte: replicarla per podcast/video.
+- Endpoint `?diag=tutto` — aggiungere una sezione per sezione con: fonti attive,
+  ultimo contenuto entrato, contenuti esposti, contenuti scartati e perché.
+
+## Criterio di accettazione
+
+Per ogni sezione (podcast, video, libri, norme, capitali, social) si deve poter
+rispondere a tre domande **con un numero**, non con un'impressione:
+1. quante fonti attive ha, e quante hanno prodotto negli ultimi 7 giorni
+2. quando è entrato l'ultimo contenuto
+3. quanti contenuti sono esposti e quanti scartati, con il motivo
+
+Finché una sezione non risponde a queste tre domande, non è governata.
