@@ -93,7 +93,12 @@ var OC_CRON_EXTRA = [
   // Due finestre al giorno, 45 fonti per run: ciclo completo in ~2 giorni
   // restando dentro il limite di 6 minuti per esecuzione.
   { fn: 'bandiRssScanRotazione', tipo: 'daily', ora: 6,  desc: 'Bandi: scansione RSS fonti (rotazione 45/run)' },
-  { fn: 'bandiRssScanRotazione', tipo: 'daily', ora: 18, desc: 'Bandi: scansione RSS fonti (2ª finestra)' }
+  { fn: 'bandiRssScanRotazione', tipo: 'daily', ora: 18, desc: 'Bandi: scansione RSS fonti (2ª finestra)' },
+  // v4.27.92 — terza finestra di deep enrichment: dopo la ripulitura delle
+  // scadenze false (1057 azzerate il 01/08) restano ~89 bandi attivi senza
+  // scadenza. A 15 per esecuzione servivano 3 giorni; con tre finestre
+  // (01, 04, 22) la coda si smaltisce in circa 24 ore.
+  { fn: 'enrichBandiDeepBatch', tipo: 'daily', ora: 22, desc: 'Deep enrichment bandi: 3ª finestra (recupero scadenze)' }
 ];
 
 /** Schedule consolidato = approvato (SetupMaster) + nuovi. */
