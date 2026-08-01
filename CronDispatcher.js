@@ -33,7 +33,12 @@ var OC_CRON_EXTRA = [
   //   qaNotturnaGAS (daily 23) + fontiReportGiornaliero (daily 8) +
   //   agenteQualitaBandi (daily 5) → reportUnificatoGiornaliero (daily 8).
   // Le 3 funzioni restano lanciabili a mano dal pannello admin.
-  { fn: 'reportUnificatoGiornaliero', tipo: 'daily', ora: 8, desc: 'Report giornaliero unificato: qualità bandi + fonti + QA contenuti (1 email)' },
+  // v4.27.94 — REPORT GIORNALIERO SOSPESO (decisione Silvano 01/08): va
+  // riprogettato lunedì. La riga resta qui, disattivata, per riattivarlo
+  // togliendo il commento: le funzioni sottostanti (agenteQualitaBandi,
+  // _frEsegui_, _qaEsegui_) NON sono toccate e continuano a girare dentro
+  // sasRun, quindi archiviazione e pulizia proseguono normalmente.
+  // { fn: 'reportUnificatoGiornaliero', tipo: 'daily', ora: 8, desc: 'Report giornaliero unificato: qualità bandi + fonti + QA contenuti (1 email)' },
   { fn: 'scanNewsletterGmail',   tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 6, desc: 'Ingestione newsletter da Gmail (settimanale)' },
   { fn: 'agenteFontiMute',       tipo: 'monthdays', giorniMese: [1, 6, 11, 16, 21, 26], ora: 7, desc: 'Fonti mute: diagnosi per-fonte ogni 5 giorni + email' },
   // v4.25.10 — FRESCHEZZA NEWS: run multipli/giorno. Il run delle 07:00 arriva dal

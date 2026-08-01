@@ -387,6 +387,45 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(_r, null, 2)).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // v4.27.94 — VERIFICA COMPLESSIVA (?diag=tutto): esegue in SOLA LETTURA
+  // tutte le suite di self-test più i controlli di stato del sistema.
+  // Nessuna scrittura: serve a fotografare lo stato prima di una pausa.
+  if (params.diag === 'tutto') {
+    var _v = { versione: (typeof OC_VERSION !== 'undefined' ? OC_VERSION : '?'),
+               eseguito: Utilities.formatDate(new Date(), 'Europe/Rome', 'dd/MM/yyyy HH:mm') };
+    // 1) self-test di tutte le suite registrate
+    try { _v.selfTest = (typeof ocRunAllTests === 'function') ? ocRunAllTests() : 'runner assente'; }
+    catch (e1) { _v.selfTestErrore = e1.message; }
+    // 2) stato bandi: esposizione, archivio, ciclo di vita
+    try {
+      var _serviti = (typeof getBandiListV42 === 'function') ? getBandiListV42(3000) : [];
+      var _conScad = 0, _senzaScad = 0, _senzaLink = 0;
+      _serviti.forEach(function (b) {
+        if (b.scadenza) _conScad++; else _senzaScad++;
+        if (!String(b.link || b.url || '').trim()) _senzaLink++;
+      });
+      _v.bandi = { esposti: _serviti.length, conScadenza: _conScad, senzaScadenza: _senzaScad, senzaLink: _senzaLink };
+      _v.archivio = (typeof bcvArchiviati === 'function') ? { totale: bcvArchiviati(3000).length } : 'modulo assente';
+      _v.purgeInAttesa = (typeof bcvPurgeArchiviati === 'function') ? bcvPurgeArchiviati({ dryRun: true }).cancellati : '?';
+    } catch (e2) { _v.bandiErrore = e2.message; }
+    // 3) fonti: canale, tier, salute
+    try {
+      _v.canali = (typeof frSeparaCanali === 'function') ? frSeparaCanali({ dryRun: true }) : 'modulo assente';
+      _v.saluteFonti = (typeof frSaluteFonti === 'function') ? frSaluteFonti() : 'modulo assente';
+      _v.fontiDaRipristinare = (typeof frRipristinaFontiBandi === 'function') ? frRipristinaFontiBandi({ dryRun: true }) : 'modulo assente';
+      _v.duplicati = (typeof frTrovaDuplicati === 'function') ? frTrovaDuplicati() : 'modulo assente';
+    } catch (e3) { _v.fontiErrore = e3.message; }
+    // 4) contatori sezioni
+    try { _v.contatori = (typeof getWeeklyNewCounts === 'function') ? getWeeklyNewCounts() : 'assente'; }
+    catch (e4) { _v.contatoriErrore = e4.message; }
+    // 5) trigger attivi
+    try {
+      var _trg = ScriptApp.getProjectTriggers();
+      _v.trigger = { totale: _trg.length, funzioni: _trg.map(function (t) { return t.getHandlerFunction(); }) };
+    } catch (e5) { _v.triggerErrore = e5.message; }
+    return ContentService.createTextOutput(JSON.stringify(_v, null, 2)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (params.diag === 'contatori') {
     var _dg;
     try { _dg = (typeof diagContatoriBadge === 'function') ? diagContatoriBadge() : { errore: 'tool assente' }; }

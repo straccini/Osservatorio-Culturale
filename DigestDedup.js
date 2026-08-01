@@ -186,5 +186,7 @@ function ddSelfTest() {
   ];
   var falliti = casi.filter(function (c) { return !c.ok; });
   Logger.log('[ddSelfTest] ' + (casi.length - falliti.length) + '/' + casi.length + ' ok' + (falliti.length ? ' — FALLITI: ' + falliti.map(function (c) { return c.nome; }).join(', ') : ''));
-  return { ok: falliti.length === 0, totale: casi.length, falliti: falliti.map(function (c) { return c.nome; }) };
+  // v4.27.94 — pass/fail numerici per il runner unificato (mostrava 0/0)
+  return { ok: falliti.length === 0, pass: casi.length - falliti.length, fail: falliti.length,
+           totale: casi.length, falliti: falliti.map(function (c) { return c.nome; }) };
 }

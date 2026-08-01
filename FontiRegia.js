@@ -452,5 +452,7 @@ function frSelfTest() {
     if (eff === c.att) passN++; else falliti.push('[natura] ' + c.n + ' → ' + eff + ' (atteso ' + c.att + ')');
   });
   Logger.log('[frSelfTest] tier ' + pass + '/' + casi.length + ' · natura ' + passN + '/' + casiNat.length);
-  return { ok: falliti.length === 0, tier: pass + '/' + casi.length, natura: passN + '/' + casiNat.length, falliti: falliti };
+  // v4.27.94 — pass/fail numerici per il runner unificato (prima mostrava 0/0)
+  return { ok: falliti.length === 0, pass: pass + passN, fail: falliti.length,
+           tier: pass + '/' + casi.length, natura: passN + '/' + casiNat.length, falliti: falliti };
 }

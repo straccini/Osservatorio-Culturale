@@ -36,6 +36,22 @@ var _OC_TEST_SUITES = [
     name: 'discovery',
     fn: 'discoverySelfTest',
     description: 'Classificatore rilevanza podcast/pubblicazioni (PubDiscovery)'
+  },
+  // v4.27.94 — suite aggiunte con il lavoro sul Radar Bandi (31/07-01/08)
+  {
+    name: 'fontiRegia',
+    fn: 'frSelfTest',
+    description: 'Tier di priorità delle fonti (A/B/C) e natura del canale (bandi/news)'
+  },
+  {
+    name: 'cicloVitaBandi',
+    fn: 'bcvSelfTest',
+    description: 'Riconoscimento regione per la mappa del Radar'
+  },
+  {
+    name: 'dedupDigest',
+    fn: 'ddSelfTest',
+    description: 'Registro anti-ripetizione digest e coerenza tipologica'
   }
 ];
 

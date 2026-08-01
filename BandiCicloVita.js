@@ -445,8 +445,12 @@ function bcvSelfTest() {
     { t: 'Regione Toscana — Direzione Cultura', att: 'Toscana' },
     { t: 'Comune di Grottaglie', att: 'Puglia' },
     { t: 'Fondazione Musei Civici di Venezia', att: 'Veneto' },
-    { t: 'GAL Terra Protetta — Sorrento', att: '' },
-    { t: 'Ministero della Cultura', att: '' }
+    // v4.27.94 — Sorrento è entrata nella tabella città→regione: la deduzione
+    // corretta ora è Campania (il test precedente si aspettava "nessuna").
+    { t: 'GAL Terra Protetta — Sorrento', att: 'Campania' },
+    { t: 'Ministero della Cultura', att: '' },
+    { t: 'Comune di Piombino', att: 'Toscana' },
+    { t: 'Commissione Europea', att: '' }
   ];
   var pass = 0, fail = [];
   casi.forEach(function (c) {
@@ -462,5 +466,7 @@ function bcvSelfTest() {
     if (trovata === c.att) pass++; else fail.push(c.t + ' → "' + trovata + '" (atteso "' + c.att + '")');
   });
   Logger.log('[bcvSelfTest] ' + pass + '/' + casi.length);
-  return { ok: fail.length === 0, pass: pass, totale: casi.length, falliti: fail };
+  // v4.27.94 — il runner unificato legge r.pass e r.fail: senza 'fail'
+  // numerico mostrava "4/4 KO", nascondendo quale caso non passava.
+  return { ok: fail.length === 0, pass: pass, fail: fail.length, totale: casi.length, falliti: fail };
 }
