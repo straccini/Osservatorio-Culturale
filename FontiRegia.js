@@ -193,7 +193,13 @@ function _frData_(v) {
 // fonte di bandi per definizione (le sue voci: "Gara per illuminazione Parco
 // Archeologico", "PR Puglia FESR - Avviso"). Ora il confine è PRIMA: prende
 // "Bandi", "BandiUp", "bandi-cultura" e non prende "bandiera"/"abbandono".
-var FR_NATURA_BANDI_RE = /(\bband[oi](?:up)?\b|\bbandi[- ]|avvis[oi]\b|opportunit|finanziament|contribut|\bgare?\b|appalt|concors|\bcall\b|tender|grant|funding|sovvenzion|\bpremi\b|\bborse?\b|graduatori|progettare\s+in\s+europa|obiettivo\s+europa|europroget)/i;
+// v4.27.93 — "bandi" va riconosciuto ovunque compaia nei nomi composti:
+//   BandiUp        → all'inizio  (serve il confine PRIMA)
+//   IndiceBandi    → alla fine   (serve il confine DOPO)
+// Entrambe le forme sono fonti di bandi ed entrambe erano state scartate.
+// L'unione delle due condizioni le prende; il lookahead (?!era) evita
+// "Bandiera", e "abbandono/contrabbando" non hanno confine né prima né dopo.
+var FR_NATURA_BANDI_RE = /((?:\bband[oi](?!era)|band[oi]\b)|\bbandi[- ]|avvis[oi]\b|opportunit|finanziament|contribut|\bgare?\b|appalt|concors|\bcall\b|tender|grant|funding|sovvenzion|\bpremi\b|\bborse?\b|graduatori|progettare\s+in\s+europa|obiettivo\s+europa|europroget)/i;
 
 /** Testate/magazine/blog: canale NEWS, non bandi. */
 var FR_NATURA_NEWS_RE = /(magazine|journal\b|giornale|quotidian|rivista|newspaper|news\b|notizie|notiziario|rassegna\s+stampa|blog\b|diary|press\b|approfondiment|editorial|artribune$|exibart|artforum|flash\s*art|doppiozero|tafter|finestre\s+sull|atp\s+diary|artuu|treccani|frizzifrizzi|we\s+make\s+money|agenda\s+digitale|il\s+giornale\s+dell|apollo\b|hyperallergic|domus|abitare)/i;
@@ -324,6 +330,44 @@ function frForzaCanale(nomeFonte, canale) {
 }
 
 /**
+ * v4.27.93 — RIPRISTINO. La separazione dei canali disattiva le fonti
+ * riconosciute come testate; se la regola di riconoscimento viene poi
+ * corretta (è successo con "IndiceBandi - Cultura", disattivata perché
+ * "bandi" alla fine di una parola composta non veniva visto), le fonti
+ * ingiustamente escluse vanno riaccese. Qui si riesaminano SOLO quelle
+ * disattivate dalla separazione (marcate [spostata-su-news]) e si
+ * riattivano quelle che oggi risultano di natura bandi.
+ * @param {Object} [opts] { dryRun:false }
+ */
+function frRipristinaFontiBandi(opts) {
+  opts = opts || {};
+  var rep = { ok: true, dryRun: !!opts.dryRun, esaminate: 0, riattivate: 0, elenco: [] };
+  try {
+    var sh = _frSheet_();
+    if (!sh || sh.getLastRow() < 2) return { ok: false, error: 'foglio fonti assente' };
+    var vals = sh.getDataRange().getValues();
+    var head = vals[0].map(function (h) { return String(h || '').trim(); });
+    var iNome = head.indexOf('Nome'), iUrl = head.indexOf('URL'), iAtt = head.indexOf('Attiva'), iTag = head.indexOf('Tag');
+    for (var r = 1; r < vals.length; r++) {
+      var nome = String(vals[r][iNome] || '').trim();
+      if (!nome) continue;
+      var tag = String(vals[r][iTag] || '');
+      if (tag.indexOf('[spostata-su-news') < 0) continue;   // non toccata dalla separazione
+      rep.esaminate++;
+      if (frNaturaFonte(nome, vals[r][iUrl], tag) !== 'bandi') continue;
+      if (!opts.dryRun) {
+        sh.getRange(r + 1, iAtt + 1).setValue(true);
+        sh.getRange(r + 1, iTag + 1).setValue(tag.replace(/\[spostata-su-news[^\]]*\]/gi, '').trim() + ' [ripristinata v4.27.93]');
+      }
+      rep.riattivate++;
+      if (rep.elenco.length < 30) rep.elenco.push(nome.substring(0, 46));
+    }
+  } catch (e) { rep.ok = false; rep.errore = e.message; }
+  Logger.log('[frRipristinaFontiBandi] riattivate=' + rep.riattivate + '/' + rep.esaminate);
+  return rep;
+}
+
+/**
  * v4.27.89 — Fonti duplicate nel foglio (stesso nome o stesso URL): il
  * censimento del 01/08 ha mostrato "Tafter Journal" due volte.
  */
@@ -390,6 +434,8 @@ function frSelfTest() {
     { n: 'OpenCoesione — Cultura/Turismo (API CKAN)', att: 'bandi' },
     // v4.27.91 — casi dell'anteprima pulizia del 01/08
     { n: 'BandiUp — Cultura aperti (API)', att: 'bandi' },
+    { n: 'IndiceBandi - Cultura', att: 'bandi' },
+    { n: 'Bandiera Blu Magazine', att: 'news' },
     { n: 'BandiUp — Musei (API)', att: 'bandi' },
     { n: 'BandiUp — Cultura aperti pag.2 (API)', att: 'bandi' },
     { n: 'Obiettivo Europa - Arte', att: 'bandi' },

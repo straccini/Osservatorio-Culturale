@@ -81,6 +81,8 @@ function adminRunTool(tool, token) {
       case 'scadenzeFalseDry':   r = bcvAzzeraScadenzeFalse({ dryRun: true }); break;
       case 'scadenzeFalseApply': r = bcvAzzeraScadenzeFalse({}); break;
       case 'fontiDuplicate':     r = frTrovaDuplicati(); break;
+      case 'ripristinaFontiDry': r = frRipristinaFontiBandi({ dryRun: true }); break;
+      case 'ripristinaFonti':    r = frRipristinaFontiBandi({}); break;
       // forzatura canale: adminRunTool(tool, token) non passa parametri liberi,
       // quindi i casi di confine hanno una voce dedicata ciascuno (v4.27.89)
       case 'canaleBandi_progettareEuropa': r = frForzaCanale('Progettare in Europa', 'bandi'); break;
