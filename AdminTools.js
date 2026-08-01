@@ -80,6 +80,14 @@ function adminRunTool(tool, token) {
       case 'puliziaNewsApply':   r = bcvPuliziaCanaleNews({}); break;
       case 'scadenzeFalseDry':   r = bcvAzzeraScadenzeFalse({ dryRun: true }); break;
       case 'scadenzeFalseApply': r = bcvAzzeraScadenzeFalse({}); break;
+      case 'fontiDuplicate':     r = frTrovaDuplicati(); break;
+      // forzatura canale: adminRunTool(tool, token) non passa parametri liberi,
+      // quindi i casi di confine hanno una voce dedicata ciascuno (v4.27.89)
+      case 'canaleBandi_progettareEuropa': r = frForzaCanale('Progettare in Europa', 'bandi'); break;
+      case 'canaleBandi_aib':              r = frForzaCanale('AIB', 'bandi'); break;
+      case 'canaleBandi_nemo':             r = frForzaCanale('NEMO - European Museum Network', 'bandi'); break;
+      case 'canaleBandi_ccw':              r = frForzaCanale('CCW', 'bandi'); break;
+      case 'canaleBandi_gu':               r = frForzaCanale('Gazzetta Ufficiale', 'bandi'); break;
       case 'trendProponi':       r = trendProponi({ force: true, sostituisciPendente: true }); break; // proponi trend ora (scarta l'eventuale pendente e rivaluta)
       case 'lavoroScanDry':      r = fasParserGuS4Cultura({ dryRun: true, deepCap: 40 }); break; // anteprima filtri nuovi
 

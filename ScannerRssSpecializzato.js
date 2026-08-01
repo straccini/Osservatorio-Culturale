@@ -107,7 +107,7 @@ function scanFontiUnifiedRss(opts) {
       // Tafter, The Art Newspaper...) alimentano la sezione News, non i bandi.
       // Un bando ha una scadenza certa e un ente che lo pubblica; un articolo
       // no. Qui si fermano prima di entrare.
-      if (typeof frNaturaFonte === 'function' && frNaturaFonte(fonte.nome, fonte.url) === 'news') {
+      if (typeof frNaturaFonte === 'function' && frNaturaFonte(fonte.nome, fonte.url, fonte.tag) === 'news') {
         report.saltateNews++;
         continue;
       }

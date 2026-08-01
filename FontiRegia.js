@@ -214,7 +214,23 @@ var FR_NATURA_ENTE_RE = /(fondazione|agenzia|art-?er\b|regione|provincia|comune\
  *      convegno pubblicato da una fondazione non passa lo stesso
  *   4) in dubbio → NEWS (esporre un articolo tra i bandi è peggio che perderlo)
  */
-function frNaturaFonte(nome, url) {
+/**
+ * v4.27.89 — OVERRIDE MANUALE. La classificazione automatica sbaglia sui casi
+ * di confine (associazioni e portali che pubblicano sia notizie sia bandi).
+ * Scrivendo [canale:bandi] o [canale:news] nella colonna Tag della fonte, la
+ * scelta umana vince sempre: nessuna modifica al codice per correggere una
+ * singola fonte.
+ */
+function frNaturaDaTag(tag) {
+  var t = String(tag || '').toLowerCase();
+  if (t.indexOf('[canale:bandi]') >= 0) return 'bandi';
+  if (t.indexOf('[canale:news]') >= 0) return 'news';
+  return '';
+}
+
+function frNaturaFonte(nome, url, tag) {
+  var forzata = frNaturaDaTag(tag);
+  if (forzata) return forzata;
   var n = String(nome || '');
   var t = n + ' ' + String(url || '');
   // 1) dichiarazione esplicita di bandi (nome o URL: /bandi/, /avvisi/…)
@@ -253,10 +269,12 @@ function frSeparaCanali(opts) {
       var attiva = (attivaRaw === true || String(attivaRaw).toLowerCase() === 'true');
       if (!attiva) continue;
       rep.esaminate++;
-      var nat = frNaturaFonte(nome, vals[r][iUrl]);
-      if (nat === 'bandi') { rep.bandi++; continue; }
+      var tagRiga = (iTag >= 0) ? vals[r][iTag] : '';
+      var nat = frNaturaFonte(nome, vals[r][iUrl], tagRiga);
+      var forzata = frNaturaDaTag(tagRiga);
+      if (nat === 'bandi') { rep.bandi++; if (forzata) rep.forzateBandi = (rep.forzateBandi || 0) + 1; continue; }
       rep.news++;
-      if (rep.elencoNews.length < 40) rep.elencoNews.push(nome.substring(0, 46));
+      if (rep.elencoNews.length < 60) rep.elencoNews.push(nome.substring(0, 46) + (forzata ? ' [forzata]' : ''));
       if (opts.disattiva && !opts.dryRun) {
         sh.getRange(r + 1, iAtt + 1).setValue(false);
         if (iTag >= 0) sh.getRange(r + 1, iTag + 1).setValue(String(vals[r][iTag] || '') + ' [spostata-su-news v4.27.84]');
@@ -265,6 +283,62 @@ function frSeparaCanali(opts) {
     }
   } catch (e) { rep.ok = false; rep.errore = e.message; }
   Logger.log('[frSeparaCanali] bandi=' + rep.bandi + ' news=' + rep.news + ' disattivate=' + rep.disattivate);
+  return rep;
+}
+
+/**
+ * v4.27.89 — Scrive [canale:bandi] o [canale:news] nel Tag di una fonte:
+ * la decisione umana batte la classificazione automatica.
+ * @param {string} nomeFonte  nome esatto (o frammento) della fonte
+ * @param {string} canale     'bandi' | 'news'
+ */
+function frForzaCanale(nomeFonte, canale) {
+  canale = String(canale || '').toLowerCase();
+  if (canale !== 'bandi' && canale !== 'news') return { ok: false, error: "canale deve essere 'bandi' o 'news'" };
+  var cerca = String(nomeFonte || '').trim().toLowerCase();
+  if (!cerca) return { ok: false, error: 'nome fonte mancante' };
+  try {
+    var sh = _frSheet_();
+    if (!sh || sh.getLastRow() < 2) return { ok: false, error: 'foglio fonti assente' };
+    var vals = sh.getDataRange().getValues();
+    var head = vals[0].map(function (h) { return String(h || '').trim(); });
+    var iNome = head.indexOf('Nome'), iTag = head.indexOf('Tag'), iAtt = head.indexOf('Attiva');
+    if (iTag < 0) return { ok: false, error: 'colonna Tag assente' };
+    var toccate = [];
+    for (var r = 1; r < vals.length; r++) {
+      var nome = String(vals[r][iNome] || '').trim();
+      if (!nome || nome.toLowerCase().indexOf(cerca) < 0) continue;
+      var tag = String(vals[r][iTag] || '').replace(/\[canale:(bandi|news)\]/gi, '').trim();
+      sh.getRange(r + 1, iTag + 1).setValue((tag ? tag + ' ' : '') + '[canale:' + canale + ']');
+      // riattiva se la si riporta sui bandi dopo una disattivazione
+      if (canale === 'bandi' && iAtt >= 0) sh.getRange(r + 1, iAtt + 1).setValue(true);
+      toccate.push(nome);
+    }
+    Logger.log('[frForzaCanale] ' + canale + ' → ' + toccate.join(', '));
+    return { ok: true, canale: canale, fonti: toccate, totale: toccate.length };
+  } catch (e) { return { ok: false, error: e.message }; }
+}
+
+/**
+ * v4.27.89 — Fonti duplicate nel foglio (stesso nome o stesso URL): il
+ * censimento del 01/08 ha mostrato "Tafter Journal" due volte.
+ */
+function frTrovaDuplicati() {
+  var rep = { ok: true, perNome: [], perUrl: [] };
+  try {
+    var sh = _frSheet_();
+    if (!sh || sh.getLastRow() < 2) return rep;
+    var vals = sh.getDataRange().getValues();
+    var head = vals[0].map(function (h) { return String(h || '').trim(); });
+    var iNome = head.indexOf('Nome'), iUrl = head.indexOf('URL');
+    var vistiN = {}, vistiU = {};
+    for (var r = 1; r < vals.length; r++) {
+      var n = String(vals[r][iNome] || '').trim().toLowerCase();
+      var u = String(vals[r][iUrl] || '').trim().toLowerCase().replace(/\/+$/, '');
+      if (n) { if (vistiN[n]) { if (rep.perNome.indexOf(n) < 0) rep.perNome.push(n); } else vistiN[n] = true; }
+      if (u) { if (vistiU[u]) { if (rep.perUrl.indexOf(u) < 0) rep.perUrl.push(u.substring(0, 60)); } else vistiU[u] = true; }
+    }
+  } catch (e) { rep.ok = false; rep.errore = e.message; }
   return rep;
 }
 
