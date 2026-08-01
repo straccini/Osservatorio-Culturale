@@ -201,7 +201,7 @@ var FR_NATURA_NEWS_RE = /(magazine|journal\b|giornale|quotidian|rivista|newspape
  * fonti come "SCP — Servizio Contratti Pubblici (MIT)" e "ART-ER Emilia-
  * Romagna", che sono portali di bandi a tutti gli effetti.
  */
-var FR_NATURA_ENTE_RE = /(fondazione|agenzia|art-?er\b|regione|provincia|comune\b|ministero|\bmit\b|servizio\s+contratti|contratti\s+pubblici|portale|consorzio|camera\s+di\s+commercio|universit|politecnico|accademia|sviluppo|invitalia|unioncamere|ales\b|arti\b|sistema\s+museale|distretto)/i;
+var FR_NATURA_ENTE_RE = /(fondazione|agenzia|art-?er\b|regione|provincia|comune\b|ministero|\bmit\b|servizio\s+contratti|contratti\s+pubblici|portale|consorzio|camera\s+di\s+commercio|universit|politecnico|accademia|sviluppo|invitalia|unioncamere|ales\b|arti\b|sistema\s+museale|distretto|opencoesione|coesione|\bckan\b|open\s*data|dati\s+aperti|fesr|fse\b|psr\b|leader\b|\bgal\b)/i;
 
 /**
  * Natura di una fonte: 'bandi' | 'news'.
@@ -380,7 +380,14 @@ function frSelfTest() {
     { n: 'Exibart', att: 'news' },
     { n: 'Flash Art Italia', att: 'news' },
     { n: 'Agenda Digitale', att: 'news' },
-    { n: 'Fondazione Symbola - Notizie', att: 'news' }
+    { n: 'Fondazione Symbola - Notizie', att: 'news' },
+    // v4.27.90 — casi dell'anteprima 01/08: portali istituzionali di
+    // finanziamento che finivano tra le testate
+    { n: 'OpenCoesione — Cultura/Turismo (API CKAN)', att: 'bandi' },
+    { n: 'GAL Terre di Argil', att: 'bandi' },
+    { n: 'MAXXI - Programma', att: 'news' },
+    { n: 'Google Arts & Culture Blog', att: 'news' },
+    { n: 'Domus - Arte e Architettura', att: 'news' }
   ];
   var passN = 0;
   casiNat.forEach(function (c) {
