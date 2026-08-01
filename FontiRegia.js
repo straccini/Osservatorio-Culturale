@@ -189,7 +189,11 @@ function _frData_(v) {
 // ============================================================================
 
 /** Feed che pubblicano BANDI: il nome/URL lo dichiara esplicitamente. */
-var FR_NATURA_BANDI_RE = /(band[oi]\b|avvis[oi]\b|opportunit|finanziament|contribut|gare?\b|appalt|concors|call\b|tender|grant|funding|sovvenzion|premi\b|borse?\b|graduatori)/i;
+// v4.27.91 — il confine di parola DOPO "bandi" escludeva "BandiUp", che è una
+// fonte di bandi per definizione (le sue voci: "Gara per illuminazione Parco
+// Archeologico", "PR Puglia FESR - Avviso"). Ora il confine è PRIMA: prende
+// "Bandi", "BandiUp", "bandi-cultura" e non prende "bandiera"/"abbandono".
+var FR_NATURA_BANDI_RE = /(\bband[oi](?:up)?\b|\bbandi[- ]|avvis[oi]\b|opportunit|finanziament|contribut|\bgare?\b|appalt|concors|\bcall\b|tender|grant|funding|sovvenzion|\bpremi\b|\bborse?\b|graduatori|progettare\s+in\s+europa|obiettivo\s+europa|europroget)/i;
 
 /** Testate/magazine/blog: canale NEWS, non bandi. */
 var FR_NATURA_NEWS_RE = /(magazine|journal\b|giornale|quotidian|rivista|newspaper|news\b|notizie|notiziario|rassegna\s+stampa|blog\b|diary|press\b|approfondiment|editorial|artribune$|exibart|artforum|flash\s*art|doppiozero|tafter|finestre\s+sull|atp\s+diary|artuu|treccani|frizzifrizzi|we\s+make\s+money|agenda\s+digitale|il\s+giornale\s+dell|apollo\b|hyperallergic|domus|abitare)/i;
@@ -384,6 +388,13 @@ function frSelfTest() {
     // v4.27.90 — casi dell'anteprima 01/08: portali istituzionali di
     // finanziamento che finivano tra le testate
     { n: 'OpenCoesione — Cultura/Turismo (API CKAN)', att: 'bandi' },
+    // v4.27.91 — casi dell'anteprima pulizia del 01/08
+    { n: 'BandiUp — Cultura aperti (API)', att: 'bandi' },
+    { n: 'BandiUp — Musei (API)', att: 'bandi' },
+    { n: 'BandiUp — Cultura aperti pag.2 (API)', att: 'bandi' },
+    { n: 'Obiettivo Europa - Arte', att: 'bandi' },
+    { n: 'Progettare in Europa', att: 'bandi' },
+    { n: 'Bandiera Blu Magazine', att: 'news' },
     { n: 'GAL Terre di Argil', att: 'bandi' },
     { n: 'MAXXI - Programma', att: 'news' },
     { n: 'Google Arts & Culture Blog', att: 'news' },
