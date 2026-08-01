@@ -362,6 +362,13 @@ function doGet(e) {
         _f.ingressiRecenti = _ing;
       } catch (eIng) { _f.ingressiErrore = eIng.message; }
 
+      // v4.27.84 — separazione canali e scadenze false (anteprima)
+      try {
+        _f.canali = (typeof frSeparaCanali === 'function') ? frSeparaCanali({ dryRun: true }) : 'modulo assente';
+        _f.recordDaFontiNews = (typeof bcvPuliziaCanaleNews === 'function') ? bcvPuliziaCanaleNews({ dryRun: true }) : 'modulo assente';
+        _f.scadenzeFalse = (typeof bcvAzzeraScadenzeFalse === 'function') ? bcvAzzeraScadenzeFalse({ dryRun: true }) : 'modulo assente';
+      } catch (eCan) { _f.canaliErrore = eCan.message; }
+
       // v4.27.80 — quante righe hanno la firma dello schema slittato
       try { _f.schemaSlittato = (typeof bcvRiparaSlittate === 'function') ? bcvRiparaSlittate({ dryRun: true, cap: 5000 }) : 'modulo assente'; }
       catch (eRip) { _f.riparaErrore = eRip.message; }

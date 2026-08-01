@@ -100,8 +100,17 @@ function scanFontiUnifiedRss(opts) {
 
     // 3. Itera fonti (isolate in try/catch)
     var count = 0;
+    report.saltateNews = 0;
     for (var i = 0; i < fontiRss.length && count < maxFonti; i++) {
       var fonte = fontiRss[i];
+      // v4.27.84 — CANALI SEPARATI: le testate (Finestre sull'Arte, Doppiozero,
+      // Tafter, The Art Newspaper...) alimentano la sezione News, non i bandi.
+      // Un bando ha una scadenza certa e un ente che lo pubblica; un articolo
+      // no. Qui si fermano prima di entrare.
+      if (typeof frNaturaFonte === 'function' && frNaturaFonte(fonte.nome, fonte.url) === 'news') {
+        report.saltateNews++;
+        continue;
+      }
       count++;
       report.fontiProcessate++;
 
@@ -292,7 +301,13 @@ function _scanSingleRssFeed_(fonte, existingUrls, dryRun) {
         _riga[COL_B.TIPO_BANDO - 1]       = (typeof _classificaTipoBando_ === 'function')
                                             ? _classificaTipoBando_({ titolo: titolo, settore: fonte.categoria, sommario: sommario, fonteNome: fonte.nome })
                                             : '';
-        _riga[COL_B.SCADENZA - 1]         = dataIso || '';
+        // v4.27.84 — LA SCADENZA NON SI INVENTA. Qui veniva scritta la data di
+        // PUBBLICAZIONE dell'item RSS: un articolo del 25/07 diventava un bando
+        // "scaduto il 25/07" (437 falsi scaduti il 31/07). Un bando ha una
+        // scadenza certa o non ce l'ha: se il feed non la dichiara, la casella
+        // resta vuota e la compila il deep enrichment leggendo la pagina.
+        _riga[COL_B.SCADENZA - 1]         = '';
+        _riga[COL_B.NOTE - 1]             = dataIso ? ('pubblicato ' + dataIso) : '';
         _riga[COL_B.FONTE_ID - 1]         = fonte.id || '';
         _riga[COL_B.FONTE_NOME - 1]       = fonte.nome || '';
         _riga[COL_B.URL_BANDO - 1]        = link;

@@ -2688,6 +2688,17 @@
               <button class="btn btn-secondary" onclick="OC.adminTool('riparaSlittateDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quanti bandi hanno scadenza e link finiti nelle colonne sbagliate">🔎 Ripara schema (anteprima)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('riparaSlittateApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Rimette scadenza e link nelle colonne giuste sui bandi scritti con lo schema slittato">🔧 Ripara schema (applica)</button>
             </div>
+            <!-- v4.27.87 — separazione canali: i bandi hanno scadenza certa e
+                 ente banditore; le testate vanno nella sezione News -->
+            <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin:14px 0 8px">Separazione canali bandi / news</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-secondary" onclick="OC.adminTool('canaliDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quali fonti del canale bandi sono in realtà testate giornalistiche">🔎 Canali (anteprima)</button>
+              <button class="btn btn-secondary" onclick="if(confirm('Disattiva dal canale bandi le fonti riconosciute come testate. I loro contenuti continuano ad arrivare nella sezione News. Procedere?')) OC.adminTool('canaliApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Disattiva le testate dal canale bandi (restano attive per le News)">📰 Canali (applica)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('puliziaNewsDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quanti record presenti tra i bandi provengono da testate">🔎 Pulizia news (anteprima)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('puliziaNewsApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Archivia i record da testate finiti tra i bandi (la purge a 20gg li rimuoverà)">🧹 Pulizia news (applica)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('scadenzeFalseDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quante scadenze sono in realtà la data di pubblicazione dell'articolo">🔎 Scadenze false (anteprima)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('scadenzeFalseApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Azzera le scadenze che erano la data di pubblicazione: il deep enrichment cercherà quella vera">📅 Scadenze false (applica)</button>
+            </div>
           </div>
           <!-- v4.27.59 — GESTIONE TREND: proposte notizia in evidenza (approvazione Telegram) -->
           <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--rule,#E5E5E7)">

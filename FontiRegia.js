@@ -173,6 +173,101 @@ function _frData_(v) {
   return isNaN(d.getTime()) ? null : d;
 }
 
+// ============================================================================
+//  NATURA DELLA FONTE — v4.27.84 (regola Silvano 31/07)
+// ----------------------------------------------------------------------------
+//  I due canali NON sono intercambiabili:
+//    BANDI — fonti sicure per quella funzione. Ciò che conta è la SCADENZA
+//            CERTA, l'ente che pubblica e le informazioni minime per capire
+//            di cosa si tratta.
+//    NEWS  — testate e magazine. Non hanno scadenza: contano la novità e la
+//            categoria tematica di appartenenza.
+//  Il 31/07 il canale bandi si era riempito di articoli di testate (Finestre
+//  sull'Arte 60, Doppiozero 60, Tafter 30, The Art Newspaper 30, Exibart,
+//  Artforum...): contenuti giusti, canale sbagliato. Quelle fonti alimentano
+//  già la sezione News (4834 record) e qui vanno escluse.
+// ============================================================================
+
+/** Feed che pubblicano BANDI: il nome/URL lo dichiara esplicitamente. */
+var FR_NATURA_BANDI_RE = /(band[oi]\b|avvis[oi]\b|opportunit|finanziament|contribut|gare?\b|appalt|concors|call\b|tender|grant|funding|sovvenzion|premi\b|borse?\b|graduatori)/i;
+
+/** Testate/magazine/blog: canale NEWS, non bandi. */
+var FR_NATURA_NEWS_RE = /(magazine|journal\b|giornale|quotidian|rivista|newspaper|news\b|notizie|notiziario|rassegna\s+stampa|blog\b|diary|press\b|approfondiment|editorial|artribune$|exibart|artforum|flash\s*art|doppiozero|tafter|finestre\s+sull|atp\s+diary|artuu|treccani|frizzifrizzi|we\s+make\s+money|agenda\s+digitale|il\s+giornale\s+dell|apollo\b|hyperallergic|domus|abitare)/i;
+
+/**
+ * ENTI che pubblicano bandi anche senza dirlo nel nome del feed: agenzie
+ * regionali, fondazioni, portali appalti, consorzi, atenei.
+ * Necessario perché una prima versione della regola classificava come "news"
+ * fonti come "SCP — Servizio Contratti Pubblici (MIT)" e "ART-ER Emilia-
+ * Romagna", che sono portali di bandi a tutti gli effetti.
+ */
+var FR_NATURA_ENTE_RE = /(fondazione|agenzia|art-?er\b|regione|provincia|comune\b|ministero|\bmit\b|servizio\s+contratti|contratti\s+pubblici|portale|consorzio|camera\s+di\s+commercio|universit|politecnico|accademia|sviluppo|invitalia|unioncamere|ales\b|arti\b|sistema\s+museale|distretto)/i;
+
+/**
+ * Natura di una fonte: 'bandi' | 'news'.
+ * Ordine delle prove:
+ *   1) il nome dichiara bandi/avvisi/opportunità → BANDI (vale anche per i
+ *      feed di categoria delle testate, es. "Artribune - Bandi")
+ *   2) è una testata giornalistica riconosciuta → NEWS
+ *   3) è un ente/istituzione (tier A/B o pattern ente) → BANDI: il gate di
+ *      contenuto pretende comunque il segnale-bando nel titolo, quindi un
+ *      convegno pubblicato da una fondazione non passa lo stesso
+ *   4) in dubbio → NEWS (esporre un articolo tra i bandi è peggio che perderlo)
+ */
+function frNaturaFonte(nome, url) {
+  var n = String(nome || '');
+  var t = n + ' ' + String(url || '');
+  // 1) dichiarazione esplicita di bandi (nome o URL: /bandi/, /avvisi/…)
+  if (FR_NATURA_BANDI_RE.test(t)) return 'bandi';
+  // 2) testata riconosciuta — SOLO sul NOME. v4.27.87: testare anche l'URL
+  //    classificava come news i portali di bandi il cui feed sta sotto
+  //    /news/ (ART-ER, Progettare in Europa): errore grave, sono fonti bandi.
+  if (FR_NATURA_NEWS_RE.test(n)) return 'news';
+  // 3) ente/istituzione → bandi (il gate di contenuto filtra comunque i
+  //    contenuti che non hanno natura di bando)
+  var tier = frTierDaFonte(nome, url);
+  if (tier === 'A' || tier === 'B') return 'bandi';
+  if (FR_NATURA_ENTE_RE.test(t)) return 'bandi';
+  // 4) in dubbio → news
+  return 'news';
+}
+
+/**
+ * Censimento delle fonti del canale bandi per natura.
+ * @param {Object} [opts] { dryRun:true, disattiva:false }
+ *   disattiva:true → mette Attiva=false sulle fonti di natura 'news'
+ */
+function frSeparaCanali(opts) {
+  opts = opts || {};
+  var rep = { ok: true, dryRun: opts.dryRun !== false, esaminate: 0, bandi: 0, news: 0, disattivate: 0, elencoNews: [] };
+  try {
+    var sh = _frSheet_();
+    if (!sh || sh.getLastRow() < 2) return { ok: false, error: 'foglio ' + FR_SHEET + ' assente' };
+    var vals = sh.getDataRange().getValues();
+    var head = vals[0].map(function (h) { return String(h || '').trim(); });
+    var iNome = head.indexOf('Nome'), iUrl = head.indexOf('URL'), iAtt = head.indexOf('Attiva'), iTag = head.indexOf('Tag');
+    for (var r = 1; r < vals.length; r++) {
+      var nome = String(vals[r][iNome] || '').trim();
+      if (!nome) continue;
+      var attivaRaw = vals[r][iAtt];
+      var attiva = (attivaRaw === true || String(attivaRaw).toLowerCase() === 'true');
+      if (!attiva) continue;
+      rep.esaminate++;
+      var nat = frNaturaFonte(nome, vals[r][iUrl]);
+      if (nat === 'bandi') { rep.bandi++; continue; }
+      rep.news++;
+      if (rep.elencoNews.length < 40) rep.elencoNews.push(nome.substring(0, 46));
+      if (opts.disattiva && !opts.dryRun) {
+        sh.getRange(r + 1, iAtt + 1).setValue(false);
+        if (iTag >= 0) sh.getRange(r + 1, iTag + 1).setValue(String(vals[r][iTag] || '') + ' [spostata-su-news v4.27.84]');
+        rep.disattivate++;
+      }
+    }
+  } catch (e) { rep.ok = false; rep.errore = e.message; }
+  Logger.log('[frSeparaCanali] bandi=' + rep.bandi + ' news=' + rep.news + ' disattivate=' + rep.disattivate);
+  return rep;
+}
+
 /** Self-test del riconoscimento tier (nessuna scrittura). */
 function frSelfTest() {
   var casi = [
@@ -194,6 +289,30 @@ function frSelfTest() {
     var eff = frTierDaFonte(c.n, '');
     if (eff === c.att) pass++; else falliti.push(c.n + ' → ' + eff + ' (atteso ' + c.att + ')');
   });
-  Logger.log('[frSelfTest] ' + pass + '/' + casi.length);
-  return { ok: falliti.length === 0, pass: pass, totale: casi.length, falliti: falliti };
+  // v4.27.84 — natura del canale: casi reali visti in produzione il 31/07
+  var casiNat = [
+    { n: 'Artribune - Bandi', att: 'bandi' },
+    { n: 'Regione Puglia - Bandi', att: 'bandi' },
+    { n: 'IndiceBandi - Cultura', att: 'bandi' },
+    { n: 'SCP - Servizio Contratti Pubblici (MIT)', att: 'bandi' },
+    { n: 'ART-ER Emilia-Romagna', att: 'bandi' },
+    { n: 'Fondazione Marche Cultura', att: 'bandi' },
+    { n: 'ICOM Italia - Opportunità', att: 'bandi' },
+    { n: 'Artribune', att: 'news' },
+    { n: "Finestre sull'Arte", att: 'news' },
+    { n: 'Doppiozero Cultura', att: 'news' },
+    { n: 'Tafter Journal', att: 'news' },
+    { n: 'The Art Newspaper', att: 'news' },
+    { n: 'Exibart', att: 'news' },
+    { n: 'Flash Art Italia', att: 'news' },
+    { n: 'Agenda Digitale', att: 'news' },
+    { n: 'Fondazione Symbola - Notizie', att: 'news' }
+  ];
+  var passN = 0;
+  casiNat.forEach(function (c) {
+    var eff = frNaturaFonte(c.n, '');
+    if (eff === c.att) passN++; else falliti.push('[natura] ' + c.n + ' → ' + eff + ' (atteso ' + c.att + ')');
+  });
+  Logger.log('[frSelfTest] tier ' + pass + '/' + casi.length + ' · natura ' + passN + '/' + casiNat.length);
+  return { ok: falliti.length === 0, tier: pass + '/' + casi.length, natura: passN + '/' + casiNat.length, falliti: falliti };
 }

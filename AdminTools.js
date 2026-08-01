@@ -73,6 +73,13 @@ function adminRunTool(tool, token) {
       case 'rssBandiScan':       r = bandiRssScanRotazione({ maxFonti: 45 }); break;
       case 'riparaSlittateDry':  r = bcvRiparaSlittate({ dryRun: true }); break;
       case 'riparaSlittateApply':r = bcvRiparaSlittate({}); break;
+      // ── Separazione canali bandi/news (v4.27.84) ────────────────────────
+      case 'canaliDry':          r = frSeparaCanali({ dryRun: true }); break;
+      case 'canaliApply':        r = frSeparaCanali({ dryRun: false, disattiva: true }); break;
+      case 'puliziaNewsDry':     r = bcvPuliziaCanaleNews({ dryRun: true }); break;
+      case 'puliziaNewsApply':   r = bcvPuliziaCanaleNews({}); break;
+      case 'scadenzeFalseDry':   r = bcvAzzeraScadenzeFalse({ dryRun: true }); break;
+      case 'scadenzeFalseApply': r = bcvAzzeraScadenzeFalse({}); break;
       case 'trendProponi':       r = trendProponi({ force: true, sostituisciPendente: true }); break; // proponi trend ora (scarta l'eventuale pendente e rivaluta)
       case 'lavoroScanDry':      r = fasParserGuS4Cultura({ dryRun: true, deepCap: 40 }); break; // anteprima filtri nuovi
 

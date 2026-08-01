@@ -357,6 +357,88 @@ function bcvRiparaSlittate(opts) {
   return rep;
 }
 
+/**
+ * v4.27.84 — PULIZIA CANALE: archivia i record entrati in Bandi_v5 da fonti
+ * di natura NEWS (testate/magazine). Non sono bandi: non hanno scadenza certa
+ * né ente banditore, e la loro sede è la sezione News.
+ * Archivia (non cancella): la purge a 20gg li rimuoverà da sola.
+ * @param {Object} [opts] { dryRun:false, cap:800 }
+ */
+function bcvPuliziaCanaleNews(opts) {
+  opts = opts || {};
+  var cap = Number(opts.cap) || 800;
+  var rep = { ok: true, dryRun: !!opts.dryRun, esaminati: 0, archiviati: 0, perFonte: {}, esempi: [] };
+  try {
+    if (typeof frNaturaFonte !== 'function') return { ok: false, error: 'FontiRegia non disponibile' };
+    var sh = _bcvSheet_();
+    if (!sh || sh.getLastRow() < 2) return rep;
+    var vals = sh.getDataRange().getValues();
+    var iArch = bcvEnsureColonnaDataArch();
+    var cacheNatura = {};
+    for (var r = 1; r < vals.length && rep.archiviati < cap; r++) {
+      var row = vals[r];
+      if (!row[COL_B.ID - 1]) continue;
+      if (String(row[COL_B.STATO_RECORD - 1] || '').toLowerCase() === 'archiviato') continue;
+      rep.esaminati++;
+      var fonte = String(row[COL_B.FONTE_NOME - 1] || '').trim();
+      if (!fonte) continue;
+      if (cacheNatura[fonte] === undefined) cacheNatura[fonte] = frNaturaFonte(fonte, '');
+      if (cacheNatura[fonte] !== 'news') continue;
+      rep.perFonte[fonte] = (rep.perFonte[fonte] || 0) + 1;
+      if (rep.esempi.length < 8) rep.esempi.push(fonte + ' — ' + String(row[COL_B.TITOLO - 1] || '').substring(0, 45));
+      if (!opts.dryRun) {
+        sh.getRange(r + 1, COL_B.STATO_RECORD).setValue('archiviato');
+        if (iArch >= 0) sh.getRange(r + 1, iArch + 1).setValue(new Date());
+      }
+      rep.archiviati++;
+    }
+  } catch (e) { rep.ok = false; rep.errore = e.message; }
+  Logger.log('[bcvPuliziaCanaleNews] archiviati=' + rep.archiviati + '/' + rep.esaminati);
+  return rep;
+}
+
+/**
+ * v4.27.84 — SCADENZE FALSE: azzera le scadenze che in realtà erano la data di
+ * PUBBLICAZIONE dell'articolo RSS (lo scanner le scriveva in Scadenza fino al
+ * 31/07). Firma: scadenza <= data di rilevamento, cioè "scaduto prima ancora
+ * di essere rilevato" — impossibile per un bando vero.
+ * @param {Object} [opts] { dryRun:false, cap:1500 }
+ */
+function bcvAzzeraScadenzeFalse(opts) {
+  opts = opts || {};
+  var cap = Number(opts.cap) || 1500;
+  var rep = { ok: true, dryRun: !!opts.dryRun, esaminati: 0, azzerate: 0, esempi: [] };
+  try {
+    var sh = _bcvSheet_();
+    if (!sh || sh.getLastRow() < 2) return rep;
+    var vals = sh.getDataRange().getValues();
+    for (var r = 1; r < vals.length && rep.azzerate < cap; r++) {
+      var row = vals[r];
+      if (!row[COL_B.ID - 1]) continue;
+      rep.esaminati++;
+      var sc = _bcvData_(row[COL_B.SCADENZA - 1]);
+      var dr = _bcvData_(row[COL_B.DATA_RILEVAMENTO - 1]);
+      if (!sc || !dr) continue;
+      // scadenza precedente o uguale al rilevamento = era la data di pubblicazione
+      if (sc.getTime() > dr.getTime()) continue;
+      if (rep.esempi.length < 8) {
+        rep.esempi.push(String(row[COL_B.TITOLO - 1] || '').substring(0, 40)
+          + ' | scad ' + Utilities.formatDate(sc, 'Europe/Rome', 'dd/MM') + ' ≤ rilev ' + Utilities.formatDate(dr, 'Europe/Rome', 'dd/MM'));
+      }
+      if (!opts.dryRun) {
+        sh.getRange(r + 1, COL_B.SCADENZA).setValue('');
+        var note = String(row[COL_B.NOTE - 1] || '');
+        if (note.indexOf('pubblicato') < 0) {
+          sh.getRange(r + 1, COL_B.NOTE).setValue((note ? note + ' · ' : '') + 'pubblicato ' + Utilities.formatDate(sc, 'Europe/Rome', 'dd/MM/yyyy'));
+        }
+      }
+      rep.azzerate++;
+    }
+  } catch (e) { rep.ok = false; rep.errore = e.message; }
+  Logger.log('[bcvAzzeraScadenzeFalse] azzerate=' + rep.azzerate + '/' + rep.esaminati);
+  return rep;
+}
+
 /** Self-test senza scritture: verifica il riconoscimento regione. */
 function bcvSelfTest() {
   var casi = [
