@@ -403,12 +403,30 @@ function scanPodcastDiretto() {
 
   var tutteLeFonti = getFeedSources('podcast').filter(function(f){ return f.priorita !== 2 || settimanaAnno % 2 === 0; });
 
-  Logger.log('scanPodcastDiretto: ' + tutteLeFonti.length + ' fonti totali');
+  // v4.28.11 — ROTAZIONE A BUDGET. Le fonti podcast sono passate da 12 a 97
+  // (migrazione del 02/08): una scansione sequenziale con attesa fra una fonte
+  // e l'altra non sta nei 6 minuti di GAS e morirebbe PRIMA di arrivare ai
+  // video. Ogni run copre una fetta partendo da dove si era fermato il run
+  // precedente; il checkpoint garantisce che nel giro di pochi run tutte le
+  // fonti siano coperte, senza che nessuna resti sistematicamente scoperta.
+  var _t0Pod = Date.now();
+  var _budgetPod = (typeof scanPodcastDiretto.budgetMs === 'number') ? scanPodcastDiretto.budgetMs : 180000;
+  var _propsPod = PropertiesService.getScriptProperties();
+  var _idxPod = Number(_propsPod.getProperty('OC_POD_RR_IDX') || 0);
+  if (_idxPod >= tutteLeFonti.length) _idxPod = 0;
+  var _ordinate = tutteLeFonti.slice(_idxPod).concat(tutteLeFonti.slice(0, _idxPod));
+  var _esaminate = 0;
+  tutteLeFonti = _ordinate;
+
+  Logger.log('scanPodcastDiretto: ' + tutteLeFonti.length + ' fonti, riparto da indice ' + _idxPod);
 
   // v4.25 — Rimosso raiplaysound.it dalla blocklist (feed RSS funzionanti, molti contenuti culturali)
   var SKIP_DOMAINS = ['feeds.spreaker.com/user'];
 
   tutteLeFonti.forEach(function(fonte) {
+    // budget: quando scade si esce e il prossimo run riparte da qui
+    if (Date.now() - _t0Pod > _budgetPod) return;
+    _esaminate++;
     var skipThis = SKIP_DOMAINS.some(function(d) { return fonte.url.indexOf(d) !== -1; });
     if (skipThis) { Logger.log(' SKIP (dominio bloccato): ' + fonte.nome + ' — ' + fonte.url); return; }
     try {
@@ -418,11 +436,15 @@ function scanPodcastDiretto() {
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; OsservatorioRadar/4.0)' }
       });
       if (resp.getResponseCode() !== 200) {
-        Logger.log('  ! HTTP ' + resp.getResponseCode()); return;
+        Logger.log('  ! HTTP ' + resp.getResponseCode());
+        // v4.28.11 — l'esito si REGISTRA sempre: senza questo una fonte in
+        // errore resta indistinguibile da una che non è mai stata guardata
+        _podStat_(fonte, 'HTTP_' + resp.getResponseCode(), 0, 'HTTP ' + resp.getResponseCode());
+        return;
       }
       var xml = resp.getContentText().slice(0, 100000);
       var items = _parseRSSItems_(xml);
-      if (!items.length) { Logger.log('  -> 0 episodi'); return; }
+      if (!items.length) { Logger.log('  -> 0 episodi'); _podStat_(fonte, 'NON_RSS', 0, 'nessun item nel feed'); return; }
       var nuovi = 0;
       items.slice(0, 20).forEach(function(ep) {
         if (!ep.titolo) return;
@@ -442,15 +464,29 @@ function scanPodcastDiretto() {
         Utilities.sleep(50);
       });
       Logger.log('  -> ' + nuovi + ' nuovi da ' + fonte.nome);
+      _podStat_(fonte, nuovi > 0 ? 'OK' : 'EMPTY', nuovi, '');
       totalNuovi += nuovi;
     } catch(e) {
       Logger.log('  ERR ' + fonte.nome + ': ' + e.message);
+      _podStat_(fonte, 'ERROR', 0, e.message);
     }
     Utilities.sleep(300);
   });
 
-  Logger.log('=== scanPodcastDiretto completato: ' + totalNuovi + ' nuovi episodi ===');
+  // checkpoint per il run successivo
+  _propsPod.setProperty('OC_POD_RR_IDX', String((_idxPod + _esaminate) % Math.max(1, _ordinate.length)));
+  Logger.log('=== scanPodcastDiretto: ' + totalNuovi + ' nuovi episodi da ' + _esaminate + '/' +
+             _ordinate.length + ' fonti esaminate (checkpoint salvato) ===');
   return totalNuovi;
+}
+
+/** v4.28.11 — registra l'esito di scansione di una fonte podcast/video. */
+function _podStat_(fonte, esito, nRecord, errore) {
+  try {
+    if (typeof updateFeedSourceStats === 'function') {
+      updateFeedSourceStats(fonte.tipo === 'video' ? 'video' : 'podcast', fonte, esito, nRecord, errore);
+    }
+  } catch (e) { Logger.log('  [stat] ' + e.message); }
 }
 
 // ==================================================================
@@ -491,10 +527,21 @@ function scanVideoYoutube() {
     Logger.log('scanVideoYoutube: nessuna fonte video');
     return 0;
   }
-  Logger.log('scanVideoYoutube: ' + fontiVideo.length + ' canali da scansionare');
+  // v4.28.11 — stessa rotazione a budget dei podcast (da 0 a 27 canali)
+  var _t0Vid = Date.now();
+  var _budgetVid = (typeof scanVideoYoutube.budgetMs === 'number') ? scanVideoYoutube.budgetMs : 120000;
+  var _propsVid = PropertiesService.getScriptProperties();
+  var _idxVid = Number(_propsVid.getProperty('OC_VID_RR_IDX') || 0);
+  if (_idxVid >= fontiVideo.length) _idxVid = 0;
+  fontiVideo = fontiVideo.slice(_idxVid).concat(fontiVideo.slice(0, _idxVid));
+  var _esamVid = 0;
+
+  Logger.log('scanVideoYoutube: ' + fontiVideo.length + ' canali, riparto da indice ' + _idxVid);
 
   var totalNuovi = 0;
   fontiVideo.forEach(function(fonte) {
+    if (Date.now() - _t0Vid > _budgetVid) return;
+    _esamVid++;
     try {
       Logger.log(' Video: ' + fonte.nome);
       var resp = UrlFetchApp.fetch(fonte.url, {
@@ -503,11 +550,18 @@ function scanVideoYoutube() {
       });
       if (resp.getResponseCode() !== 200) {
         Logger.log('  ! HTTP ' + resp.getResponseCode() + ' per ' + fonte.url);
+        _podStat_({ nome: fonte.nome, urlFeed: fonte.url || fonte.urlFeed, tipo: 'video', ID: fonte.id },
+                  'HTTP_' + resp.getResponseCode(), 0, 'HTTP ' + resp.getResponseCode());
         return;
       }
       var xml = resp.getContentText().slice(0, 80000);
       var entries = _parseYoutubeAtom_(xml);
-      if (!entries.length) { Logger.log('  -> 0 video estratti'); return; }
+      if (!entries.length) {
+        Logger.log('  -> 0 video estratti');
+        _podStat_({ nome: fonte.nome, urlFeed: fonte.url || fonte.urlFeed, tipo: 'video', ID: fonte.id },
+                  'NON_ATOM', 0, 'feed non parsabile come Atom YouTube');
+        return;
+      }
       var nuovi = 0;
       entries.forEach(function(v) {
         if (!v.titolo || !v.link) return;
@@ -526,14 +580,20 @@ function scanVideoYoutube() {
         Utilities.sleep(50);
       });
       Logger.log('  -> ' + nuovi + ' nuovi video da ' + fonte.nome);
+      _podStat_({ nome: fonte.nome, urlFeed: fonte.url || fonte.urlFeed, tipo: 'video', ID: fonte.id },
+                nuovi > 0 ? 'OK' : 'EMPTY', nuovi, '');
       totalNuovi += nuovi;
     } catch(e) {
       Logger.log('  ERR ' + fonte.nome + ': ' + e.message);
+      _podStat_({ nome: fonte.nome, urlFeed: fonte.url || fonte.urlFeed, tipo: 'video', ID: fonte.id },
+                'ERROR', 0, e.message);
     }
     Utilities.sleep(500);
   });
 
-  Logger.log('=== scanVideoYoutube completato: ' + totalNuovi + ' nuovi video ===');
+  _propsVid.setProperty('OC_VID_RR_IDX', String((_idxVid + _esamVid) % Math.max(1, fontiVideo.length)));
+  Logger.log('=== scanVideoYoutube: ' + totalNuovi + ' nuovi video da ' + _esamVid + '/' +
+             fontiVideo.length + ' canali (checkpoint salvato) ===');
   return totalNuovi;
 }
 

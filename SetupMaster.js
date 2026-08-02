@@ -138,13 +138,22 @@ function scanPodcastBisettimanale() {
   // v4.25 — Rimosso filtro giorno: scan quotidiano per podcast e video
   Logger.log('[scanPodcastBisettimanale] Scan podcast+video quotidiano');
   var risultati = { podcast: 0, video: 0 };
-  // Podcast RSS
+  // v4.28.11 — BUDGET RIPARTITO. Dopo la migrazione del 02/08 le fonti sono
+  // passate da 12 a 97 (podcast) e da 0 a 27 (video): senza un tetto per il
+  // primo scanner, il secondo non verrebbe MAI raggiunto entro i 6 minuti di
+  // GAS e i video resterebbero fermi. Entrambi ruotano su checkpoint, quindi
+  // ciò che non entra in un run viene coperto dal successivo.
+  var _t0 = Date.now(), _TOT = 300000;   // 5 minuti, margine sotto il limite
   try {
-    risultati.podcast = (typeof scanPodcastDiretto === 'function') ? scanPodcastDiretto() : scanPodcast();
+    if (typeof scanPodcastDiretto === 'function') {
+      scanPodcastDiretto.budgetMs = 170000;          // ~2:50 ai podcast
+      risultati.podcast = scanPodcastDiretto();
+    } else risultati.podcast = scanPodcast();
   } catch(e) { Logger.log('scanPodcast err: ' + e.message); }
-  // Video YouTube (Atom feeds, no API key)
+  // Video YouTube (Atom feeds, no API key) — riceve il tempo residuo
   try {
     if (typeof scanVideoYoutube === 'function') {
+      scanVideoYoutube.budgetMs = Math.max(40000, _TOT - (Date.now() - _t0));
       risultati.video = scanVideoYoutube();
     }
   } catch(e) { Logger.log('scanVideoYoutube err: ' + e.message); }
