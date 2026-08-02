@@ -285,15 +285,21 @@ function rfLeggi(categoria) {
     if (String(row[iCat]).toLowerCase() !== categoria) continue;
     if (String(row[iStato]).toLowerCase() !== 'attiva') continue;
     if (String(row[iForm]).toLowerCase() === 'api') continue;  // scanner dedicati
-    var o = {
+    // v4.28.5 — VERIFICA COMPATIBILITÀ (02/08 sera): la forma DEVE passare per
+    // _ffShape_, che fornisce anche gli alias MAIUSCOLI (Nome, RSSURL, URL,
+    // Ambito) letti da scanSources. Senza, con il flag acceso le news si
+    // sarebbero fermate in silenzio. rfLeggi restituisce ESATTAMENTE la stessa
+    // forma di FontiFeed: risultati identici, cambia solo la sorgente.
+    var base = {
       id: row[iId], nome: String(row[iNome] || ''), gruppo: String(row[iEnte] || row[iNome] || ''),
       tipo: categoria, urlFeed: String(row[iUrl] || '').trim(), urlSito: String(row[iSito] || ''),
-      ambito: String(row[iAmb] || ''), categoria: '', tier: String(row[iTier] || 'B'),
-      priorita: (String(row[iTier]) === 'A') ? 1 : 2, attiva: true,
-      ultimaScan: row[iScan] || '', nRecTot: Number(row[iNTot] || 0), note: ''
+      ambito: String(row[iAmb] || ''), categoria: '',
+      priorita: (String(row[iTier]) === 'A') ? 1 : 2, attiva: true
     };
-    o.url = o.urlFeed;           // alias per gli scanner podcast/video
-    o.tematica = o.ambito;       // alias legacy
+    var o = (typeof _ffShape_ === 'function') ? _ffShape_(base) : base;
+    o.tier = String(row[iTier] || 'B');
+    o.ultimaScan = row[iScan] || '';
+    o.nRecTot = Number(row[iNTot] || 0);
     out.push(o);
   }
   return out;
@@ -323,6 +329,47 @@ function rfAggiornaScan(urlFeed, esito, nNuovi, errore) {
     }
     return;
   }
+}
+
+// ---------------------------------------------------------------------------
+// CANCELLO DI PARITÀ — v4.28.5
+// Lo switch al registro NON deve modificare i risultati (requisito Silvano
+// 02/08 sera): questa funzione confronta, per ogni tipo, ciò che gli scanner
+// vedrebbero OGGI (FontiFeed) con ciò che vedrebbero DOPO (RegistroFonti).
+// Lo switch è autorizzato solo quando mancanti=0 per ogni tipo.
+// ---------------------------------------------------------------------------
+
+function rfConfronto() {
+  var out = { ok: true, verdetto: '', perTipo: {} };
+  var MAPPA = { rss: 'news', podcast: 'podcast', video: 'video' };
+  var pronte = 0, tipi = 0;
+  Object.keys(MAPPA).forEach(function (tipo) {
+    tipi++;
+    var vecchie = [], nuove = [];
+    try { vecchie = _ffReadFromFeed_(tipo); } catch (e) {}
+    try { nuove = rfLeggi(MAPPA[tipo]); } catch (e2) {}
+    function setDi(arr) {
+      var s = {};
+      arr.forEach(function (f) { var k = _rfNorm_(f.urlFeed || f.url); if (k) s[k] = f.nome || ''; });
+      return s;
+    }
+    var sv = setDi(vecchie), sn = setDi(nuove);
+    var mancanti = [], extra = [];
+    Object.keys(sv).forEach(function (k) { if (!(k in sn)) mancanti.push(sv[k] || k); });
+    Object.keys(sn).forEach(function (k) { if (!(k in sv)) extra.push(sn[k] || k); });
+    var parita = mancanti.length === 0;
+    if (parita) pronte++;
+    out.perTipo[tipo] = {
+      fontiOggi: vecchie.length, fontiRegistro: nuove.length,
+      mancantiNelRegistro: mancanti.length, esempiMancanti: mancanti.slice(0, 6),
+      inPiuNelRegistro: extra.length, esempiInPiu: extra.slice(0, 6),
+      parita: parita
+    };
+  });
+  out.verdetto = (pronte === tipi)
+    ? 'PRONTO: nessuna fonte attiva mancherebbe. Lo switch non modifica i risultati.'
+    : 'NON PRONTO: ' + (tipi - pronte) + ' tipo/i con fonti mancanti nel registro. Eseguire prima la migrazione.';
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -386,5 +433,14 @@ function rfSelfTest() {
   // categorie: tutte le API seed hanno categoria valida
   var catKo = RF_FONTI_API.filter(function (a) { return RF_CATEGORIE.indexOf(a.categoria) < 0; }).length;
   eq('API seed con categoria valida', 0, catKo);
+  // REGRESSIONE v4.28.5: la forma di rfLeggi deve includere gli alias
+  // MAIUSCOLI (Nome, RSSURL, URL) che scanSources legge. Senza il passaggio
+  // per _ffShape_, con il flag acceso le news si fermavano in silenzio.
+  if (typeof _ffShape_ === 'function') {
+    var forma = _ffShape_({ id: 'T', nome: 'Prova', tipo: 'news', urlFeed: 'https://x.it/f' });
+    eq('alias RSSURL presente', 'https://x.it/f', forma.RSSURL);
+    eq('alias Nome presente', 'Prova', forma.Nome);
+    eq('alias url presente', 'https://x.it/f', forma.url);
+  }
   return { ok: fail === 0, pass: pass, fail: fail, totale: pass + fail, falliti: falliti };
 }

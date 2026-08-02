@@ -554,6 +554,15 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(_s, null, 2)).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // v4.28.5 — CANCELLO DI PARITÀ (?diag=confronto): certifica che lo switch
+  // al RegistroFonti non cambierebbe i risultati degli scanner. Sola lettura.
+  if (params.diag === 'confronto') {
+    var _cf = { versione: (typeof OC_VERSION !== 'undefined' ? OC_VERSION : '?') };
+    try { _cf.confronto = (typeof rfConfronto === 'function') ? rfConfronto() : 'modulo assente'; }
+    catch (eCf) { _cf.errore = eCf.message; }
+    return ContentService.createTextOutput(JSON.stringify(_cf, null, 2)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (params.diag === 'contatori') {
     var _dg;
     try { _dg = (typeof diagContatoriBadge === 'function') ? diagContatoriBadge() : { errore: 'tool assente' }; }

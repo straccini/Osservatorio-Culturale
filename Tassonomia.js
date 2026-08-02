@@ -176,7 +176,8 @@ function _txBersagli_() {
   try {
     var shB = (typeof getSheetRadar === 'function') ? getSheetRadar() : null;
     if (shB) lista.push({
-      nome: 'bandi', sh: shB, colId: 'ID', colTitolo: 'Titolo', colTesto: 'Descrizione',
+      // v4.28.5 — il testo dei bandi sta in 'Sommario' (COL_B_HEADERS), non 'Descrizione'
+      nome: 'bandi', sh: shB, colId: 'ID', colTitolo: 'Titolo', colTesto: 'Sommario',
       filtro: function (row, h) {
         var st = String(row[h.indexOf('StatoRecord')] || '').toLowerCase();
         return st !== 'archiviato' && st !== 'cestinato';

@@ -34,8 +34,11 @@ function redBandiStato() {
   var v = sh.getDataRange().getValues();
   var h = v[0].map(function (x) { return String(x || '').trim(); });
   function c(n) { return h.indexOf(n); }
-  var iStato = c('StatoRecord'), iLink = c('Link'), iScad = c('Scadenza'),
-      iDescr = c('Descrizione'), iImp = c('Importo'), iReg = c('Regione'), iTit = c('Titolo');
+  // v4.28.5 — VERIFICA COMPATIBILITÀ: i nomi REALI delle colonne Bandi_v5
+  // sono UrlBando e Sommario (COL_B_HEADERS), non Link/Descrizione. Con i
+  // nomi sbagliati indexOf tornava -1 e "senza link" risultava SEMPRE 0.
+  var iStato = c('StatoRecord'), iLink = c('UrlBando'), iScad = c('Scadenza'),
+      iDescr = c('Sommario'), iImp = c('Importo'), iReg = c('Regione'), iTit = c('Titolo');
   var attivi = 0, senzaLink = 0, senzaScadenza = 0, senzaDescr = 0, senzaImporto = 0, senzaRegione = 0;
   var esempiCritici = [];
   for (var r = 1; r < v.length; r++) {
@@ -181,5 +184,15 @@ function redSelfTest() {
   // ordine di importanza bandi documentato: link e scadenza imprescindibili
   var st = { imprescindibili: { senzaLink: 0, senzaScadenza: 0 } };
   eq('schema stato bandi', true, 'senzaLink' in st.imprescindibili && 'senzaScadenza' in st.imprescindibili);
+  // REGRESSIONE v4.28.5: redBandiStato deve usare i nomi REALI delle colonne
+  // Bandi_v5. Con 'Link'/'Descrizione' (inesistenti) indexOf tornava -1 e
+  // "senza link" risultava SEMPRE 0 — il difetto più silenzioso possibile.
+  if (typeof COL_B_HEADERS !== 'undefined') {
+    eq('colonna UrlBando esiste', true, COL_B_HEADERS.indexOf('UrlBando') >= 0);
+    eq('colonna Sommario esiste', true, COL_B_HEADERS.indexOf('Sommario') >= 0);
+    eq('colonna Scadenza esiste', true, COL_B_HEADERS.indexOf('Scadenza') >= 0);
+    eq('colonna StatoRecord esiste', true, COL_B_HEADERS.indexOf('StatoRecord') >= 0);
+    eq('Link NON è una colonna reale', -1, COL_B_HEADERS.indexOf('Link'));
+  }
   return { ok: fail === 0, pass: pass, fail: fail, totale: pass + fail, falliti: falliti };
 }

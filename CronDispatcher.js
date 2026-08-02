@@ -61,6 +61,9 @@ var OC_CRON_EXTRA = [
   { fn: 'normeAutoPopolaRun',    tipo: 'weekly', giorno: ScriptApp.WeekDay.THURSDAY,  ora: 9, desc: 'Auto-popolamento sezione Norme (settimanale)' },
   // v4.28.1 — TASSONOMIA T1-T10: classificazione notturna dei contenuti attivi
   // senza tipologia (60/run; Claude Haiku con fallback euristico)
+  // v4.28.5 — ordine ora 02: prima il job veloce (regione, secondi), poi la
+  // tassonomia (minuti di API); il budget 300s del dispatcher li serve entrambi
+  { fn: 'bcvNormalizzaRegione', tipo: 'daily', ora: 2, desc: 'Bandi: normalizza campo Regione (mappa Radar)' },
   { fn: 'txBatchNotturno',       tipo: 'daily', ora: 2, desc: 'Tassonomia T1-T10: classifica contenuti attivi (batch notturno)' },
   // v4.28.3 — FASE 3 SCOUT FONTI (spec Silvano 02/08 sera): lavoro continuo
   // e graduale (piccole quote/giorno), ciclo settimanale conferma/scarto,
@@ -103,7 +106,6 @@ var OC_CRON_EXTRA = [
   // interna alla funzione) + pulizia proposte non confermate >14gg
   { fn: 'trendProponi', tipo: 'daily', ora: 9, desc: 'Trend: proponi notizia in evidenza via Telegram (ogni ~2gg)' },
   // v4.27.74 — normalizza il campo Regione dei bandi (riempie la mappa del Radar)
-  { fn: 'bcvNormalizzaRegione', tipo: 'daily', ora: 2, desc: 'Bandi: normalizza campo Regione (mappa Radar)' },
   // v4.27.75 — assegna il tier di priorità alle fonti nuove (idempotente)
   { fn: 'frBackfillTier', tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 4, desc: 'Regia fonti: tier di priorità alle fonti nuove' },
   // v4.27.80 — CANALE RSS BANDI RIATTIVATO. Le 167 fonti di FontiBandi_v5

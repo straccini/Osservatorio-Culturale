@@ -91,6 +91,7 @@ function adminRunTool(tool, token) {
       case 'rfAttiva':           r = rfAttiva(); break;
       case 'rfDisattiva':        r = rfDisattiva(); break;
       case 'rfSelfTest':         r = rfSelfTest(); break;
+      case 'rfConfronto':        r = rfConfronto(); break;   // cancello di parità pre-switch
       // ── Tassonomia T1-T10 (v4.28.1 — Fase 2 regia fonti) ────────────────
       case 'txBatchDry':         r = txBatchNotturno({ dryRun: true }); break;
       case 'txBatchApply':       r = txBatchNotturno({ cap: 60 }); break;

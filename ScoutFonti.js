@@ -38,7 +38,7 @@ var SC_BLACKLIST_RE = /(facebook\.|youtube\.|youtu\.be|twitter\.|x\.com|instagra
 // Sono SEED del canale università: passano comunque dalla coda di approvazione.
 var SC_UNIVERSITA = [
   { nome: 'Università di Bologna — Magazine', url: 'https://magazine.unibo.it' },
-  { nome: 'Ca\' Foscari Venezia — News', url: 'https://www.unive.it/news' },
+  { nome: 'Ca\' Foscari Venezia', url: 'https://www.unive.it' },   // v4.28.5: /news era 404 (verifica online)
   { nome: 'IULM Milano', url: 'https://www.iulm.it' },
   { nome: 'Università di Macerata', url: 'https://www.unimc.it' },
   { nome: 'Federico II Napoli', url: 'https://www.unina.it' },
