@@ -246,6 +246,17 @@ function _ffReadFromFeed_(tipo) {
  */
 function getFeedSources(tipo) {
   tipo = String(tipo || 'rss').toLowerCase();
+
+  // v4.28.0 — REGISTRO UNICO: se il flag USE_REGISTRO_FONTI è acceso, tutte
+  // le categorie non-bandi si leggono da RegistroFonti. FontiFeed resta il
+  // fallback finché la migrazione non è verificata (piano 2026-08-02).
+  if (typeof isRegistroFontiEnabled_ === 'function' && isRegistroFontiEnabled_()) {
+    var categoria = (tipo === 'rss') ? 'news' : tipo;
+    var daRegistro = rfLeggi(categoria);
+    if (daRegistro.length) return daRegistro;
+    Logger.log('[getFeedSources] registro attivo ma vuoto per "' + categoria + '": fallback su FontiFeed');
+  }
+
   if (isFontiFeedEnabled_(tipo)) return _ffReadFromFeed_(tipo);
 
   // OFF — replica la sorgente attuale del tipo
@@ -280,6 +291,15 @@ function updateFeedSourceStats(tipo, fonte, esito, nRecord, errore) {
   tipo = String(tipo || 'rss').toLowerCase();
   nRecord = Number(nRecord || 0);
   esito = esito || (nRecord > 0 ? 'OK' : 'EMPTY');
+
+  // v4.28.0 — con il registro unico attivo i contatori si scrivono LÌ, per
+  // tutte le categorie (chiude il buco storico: per podcast/video legacy
+  // erano un no-op e non esisteva storico di salute).
+  if (typeof isRegistroFontiEnabled_ === 'function' && isRegistroFontiEnabled_() &&
+      fonte && fonte.urlFeed) {
+    try { rfAggiornaScan(fonte.urlFeed, esito, nRecord, errore); } catch (e) {}
+    return;
+  }
 
   if (!isFontiFeedEnabled_(tipo)) {
     if (tipo === 'rss' && typeof updateFonteLastScan === 'function' && fonte && fonte.ID) {

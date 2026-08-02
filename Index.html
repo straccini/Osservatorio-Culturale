@@ -2638,15 +2638,10 @@
             <button class="btn btn-secondary" onclick="OC.adminTool('validaBandiDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quanti bandi scaduti / senza info / non-cultura verrebbero archiviati">🔎 Valida bandi · anteprima</button>
             <button class="btn btn-warning" onclick="if(confirm('Archiviare i bandi scaduti, senza info base e non pertinenti da Bandi_v5?'))OC.adminTool('validaBandiApply', this)" style="font-size:12px;padding:6px 12px" title="Archivia scaduti / senza-scadenza-e-descrizione / titolo-numero / non-cultura">🧹 Valida e pulisci bandi</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('enrichV5Apply', this)" style="font-size:12px;padding:6px 12px" title="Genera descrizione e tipo (Claude) per i bandi con scadenza ma senza descrizione">✨ Arricchisci bandi (30)</button>
-            <button class="btn btn-secondary" onclick="OC.adminTool('tedMalformatiDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima dei TED con titolo-numero o [object Object]">TED malformati · anteprima</button>
-            <button class="btn btn-secondary" onclick="if(confirm('Archiviare i bandi TED malformati?'))OC.adminTool('tedMalformatiApply', this)" style="font-size:12px;padding:6px 12px">TED malformati · archivia</button>
-            <button class="btn btn-secondary" onclick="if(confirm('Ri-classificare cultura e archiviare i non-culturali?'))OC.adminTool('backfillCultura', this)" style="font-size:12px;padding:6px 12px" title="Ricalcola SettoreCultura e archivia i non-cultura">Backfill cultura</button>
-            <button class="btn btn-secondary" onclick="if(confirm('Archiviare i bandi TED vuoti (solo numero, senza scadenza)?'))OC.adminTool('tedVuoti', this)" style="font-size:12px;padding:6px 12px">TED vuoti · archivia</button>
           </div>
 
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;margin:12px 0 6px">Arricchimento bandi (v4.27)</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
-            <button class="btn btn-secondary" onclick="OC.adminTool('enrichRadarSetup', this)" style="font-size:12px;padding:6px 12px" title="Aggiunge colonne Descrizione e TipoAppalto al foglio RADAR (idempotente)">Setup colonne</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('enrichRadarDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quanti bandi verrebbero arricchiti">Arricchimento &middot; anteprima</button>
             <button class="btn btn-warning" onclick="if(confirm('Arricchire fino a 20 bandi con Claude AI?'))OC.adminTool('enrichRadarApply', this)" style="font-size:12px;padding:6px 12px" title="Usa Claude Haiku per aggiungere descrizione e tipo appalto ai bandi">Arricchisci bandi</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('puliziaNonBandoDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: identifica record non-bando (allegati, pagine GAL, voci di menu) da archiviare">Pulizia non-bando &middot; anteprima</button>
@@ -2660,12 +2655,6 @@
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;margin:12px 0 6px">Fonti</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
             <button class="btn btn-secondary" onclick="OC.adminTool('fontiDiagnosi', this)" style="font-size:12px;padding:6px 12px" title="Flag e conteggi fonti per capire cosa legge lo scanner">Diagnosi scanner fonti</button>
-            <button class="btn btn-secondary" onclick="OC.adminTool('fontiEstero', this)" style="font-size:12px;padding:6px 12px">+ Fonti estere</button>
-            <button class="btn btn-secondary" onclick="OC.adminTool('fontiNormativa', this)" style="font-size:12px;padding:6px 12px">+ Fonti normativa</button>
-            <button class="btn btn-secondary" onclick="OC.adminTool('fontiPrimarie', this)" style="font-size:12px;padding:6px 12px">+ Fonti primarie</button>
-            <button class="btn btn-primary" onclick="OC.adminTool('fontiPodcastSocial', this)" style="font-size:12px;padding:6px 14px;background:var(--amb-5,#0E7490)" title="Attiva in un clic le 4 fonti podcast + le 4 fonti social Mastodon">▶ Attiva fonti podcast + social</button>
-            <button class="btn btn-secondary" onclick="OC.adminTool('fontiPodcast', this)" style="font-size:12px;padding:6px 12px" title="4 podcast museali/culturali verificati">+ Podcast cultura</button>
-            <button class="btn btn-secondary" onclick="OC.adminTool('fontiSocial', this)" style="font-size:12px;padding:6px 12px" title="Feed Mastodon #CulturalHeritage/#GLAM/#digitalheritage">+ Social (Mastodon)</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('podcastAudit', this)" style="font-size:12px;padding:6px 12px" title="Quante fonti podcast/video sono mute">Audit podcast/video</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('segOgImage', this)" style="font-size:12px;padding:6px 12px" title="Estrae le miniature (og:image) dei link delle segnalazioni pubblicate">Miniature segnalazioni</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('digestAssets', this)" style="font-size:12px;padding:6px 12px" title="One-shot: carica logo OCS e masthead 'traiettorie sottotraccia' su Drive per le email del digest">🖼 Asset grafici digest</button>
@@ -2685,8 +2674,6 @@
               <button class="btn btn-secondary" onclick="OC.adminTool('fontiSalute', this)" style="font-size:12px;padding:6px 12px" title="Fonti silenti o in errore, raggruppate per tier di priorità">🩺 Fonti: salute</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('rssBandiDry', this)" style="font-size:12px;padding:6px 12px" title="Prova la scansione RSS bandi su 10 fonti senza salvare nulla">🔎 Scan RSS bandi (prova)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('rssBandiScan', this)" style="font-size:12px;padding:6px 12px" title="Scansiona ora 45 fonti RSS bandi (le meno recenti) e salva i nuovi">📡 Scan RSS bandi (adesso)</button>
-              <button class="btn btn-secondary" onclick="OC.adminTool('riparaSlittateDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quanti bandi hanno scadenza e link finiti nelle colonne sbagliate">🔎 Ripara schema (anteprima)</button>
-              <button class="btn btn-secondary" onclick="OC.adminTool('riparaSlittateApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Rimette scadenza e link nelle colonne giuste sui bandi scritti con lo schema slittato">🔧 Ripara schema (applica)</button>
             </div>
             <!-- v4.27.87 — separazione canali: i bandi hanno scadenza certa e
                  ente banditore; le testate vanno nella sezione News -->
@@ -2696,8 +2683,6 @@
               <button class="btn btn-secondary" onclick="if(confirm('Disattiva dal canale bandi le fonti riconosciute come testate. I loro contenuti continuano ad arrivare nella sezione News. Procedere?')) OC.adminTool('canaliApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Disattiva le testate dal canale bandi (restano attive per le News)">📰 Canali (applica)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('puliziaNewsDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quanti record presenti tra i bandi provengono da testate">🔎 Pulizia news (anteprima)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('puliziaNewsApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Archivia i record da testate finiti tra i bandi (la purge a 20gg li rimuoverà)">🧹 Pulizia news (applica)</button>
-              <button class="btn btn-secondary" onclick="OC.adminTool('scadenzeFalseDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quante scadenze sono in realtà la data di pubblicazione dell'articolo">🔎 Scadenze false (anteprima)</button>
-              <button class="btn btn-secondary" onclick="OC.adminTool('scadenzeFalseApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Azzera le scadenze che erano la data di pubblicazione: il deep enrichment cercherà quella vera">📅 Scadenze false (applica)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('fontiDuplicate', this)" style="font-size:12px;padding:6px 12px" title="Fonti presenti due volte nel foglio (stesso nome o stesso URL)">👥 Fonti duplicate</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('ripristinaFonti', this)" style="font-size:12px;padding:6px 12px;border-color:var(--success,#0F7B5A);color:var(--success,#0F7B5A)" title="Riattiva le fonti disattivate per errore dalla separazione dei canali (es. IndiceBandi)">♻ Ripristina fonti bandi</button>
             </div>
@@ -2715,15 +2700,19 @@
               <button class="btn btn-secondary" onclick="OC.adminTool('scanPodcastVideo', this)" style="font-size:12px;padding:6px 12px" title="Lancia subito la scansione podcast + video per verificare il ripristino">▶ Scan podcast+video (adesso)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('pubScan', this)" style="font-size:12px;padding:6px 12px" title="Discovery pubblicazioni: pool query ampliato da 6 a 20 (era esaurito)">📚 Libri: discovery (adesso)</button>
             </div>
-            <!-- v4.27.89 — casi di confine: la decisione umana batte la
-                 classificazione automatica (scrive [canale:bandi] nel Tag) -->
-            <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin:14px 0 8px">Riporta sui bandi (casi di confine)</div>
+            <!-- v4.28.0 — REGISTRO FONTI UNICO (Fase 1 regia fonti):
+                 FontiBandi_v5 resta dedicato al Radar; tutte le altre
+                 categorie (news, lavoro, podcast, video, norme, libri,
+                 social) convergono in RegistroFonti. Il flag si accende
+                 solo dopo la verifica della migrazione. -->
+            <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin:14px 0 8px">Registro fonti unico</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn btn-secondary" onclick="OC.adminTool('canaleBandi_progettareEuropa', this)" style="font-size:12px;padding:6px 12px" title="Portale di europrogettazione: pubblica bandi UE">↩ Progettare in Europa</button>
-              <button class="btn btn-secondary" onclick="OC.adminTool('canaleBandi_aib', this)" style="font-size:12px;padding:6px 12px" title="Associazione Italiana Biblioteche: pubblica concorsi e bandi">↩ AIB Biblioteche</button>
-              <button class="btn btn-secondary" onclick="OC.adminTool('canaleBandi_nemo', this)" style="font-size:12px;padding:6px 12px" title="Rete musei europei: pubblica opportunità di finanziamento">↩ NEMO (rete musei)</button>
-              <button class="btn btn-secondary" onclick="OC.adminTool('canaleBandi_ccw', this)" style="font-size:12px;padding:6px 12px" title="Cultural Welfare Center: pubblica call e avvisi">↩ CCW Cultural Welfare</button>
-              <button class="btn btn-secondary" onclick="OC.adminTool('canaleBandi_gu', this)" style="font-size:12px;padding:6px 12px" title="Gazzetta Ufficiale: avvisi e bandi ufficiali">↩ Gazzetta Ufficiale</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('rfSetup', this)" style="font-size:12px;padding:6px 12px" title="Crea il foglio RegistroFonti con lo schema formale a 24 colonne (idempotente)">🗂 Registro: setup</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('rfMigraDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quante fonti verrebbero migrate da FontiFeed, SocialFonti, FontiPodcast e Fonti legacy, per categoria">🔎 Registro: migra (anteprima)</button>
+              <button class="btn btn-secondary" onclick="if(confirm('Copia tutte le fonti dei fogli storici nel RegistroFonti (dedup per URL). I fogli storici NON vengono toccati. Procedere?')) OC.adminTool('rfMigraApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Esegue la migrazione nel registro unico">🗂 Registro: migra (applica)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('rfStato', this)" style="font-size:12px;padding:6px 12px" title="Numeri per categoria: attive, quarantena, morte, scansioni 7gg, contenuto 30gg, in errore">📊 Registro: stato</button>
+              <button class="btn btn-secondary" onclick="if(confirm('Da questo momento gli scanner news/podcast/video leggeranno le fonti dal RegistroFonti. Attivare?')) OC.adminTool('rfAttiva', this)" style="font-size:12px;padding:6px 12px;border-color:var(--success,#0F7B5A);color:var(--success,#0F7B5A)" title="Accende il flag USE_REGISTRO_FONTI: gli scanner passano al registro unico">⚡ Registro: attiva</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('rfDisattiva', this)" style="font-size:12px;padding:6px 12px" title="Torna ai fogli precedenti (FontiFeed) senza perdere nulla">↩ Registro: disattiva</button>
             </div>
           </div>
           <!-- v4.27.59 — GESTIONE TREND: proposte notizia in evidenza (approvazione Telegram) -->
@@ -2736,11 +2725,6 @@
             </div>
             <div id="trendAdminList" style="font-size:12.5px;color:var(--ink-2)"></div>
             <button class="btn btn-secondary" onclick="OC.adminTool('lavoroScanDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima scanner GU Concorsi con i filtri ampliati (dry-run, nessuna scrittura)">🔎 Lavoro scan anteprima</button>
-            <button class="btn btn-secondary" onclick="if(confirm('Aggiungere 50 osservatori culturali internazionali come fonti RSS?'))OC.adminTool('fontiOsservatori', this)" style="font-size:12px;padding:6px 12px" title="54 osservatori culturali da uMap Global Mapping (EU, Americhe, Asia)">+ Osservatori culturali</button>
-            <button class="btn btn-secondary" onclick="OC.adminTool('fontiDesignArte', this)" style="font-size:12px;padding:6px 12px" title="8 feed design/arte internazionale verificati (Designboom, ArchDaily, Artsy, Galerie, Sole 24 Ore EN, Dezeen, Archpaper) — idempotente">+ Design &amp; arte intl</button>
-            <button class="btn btn-secondary" onclick="OC.adminTool('fontiArteEU', this)" style="font-size:12px;padding:6px 12px" title="RSS arte contemporanea europea: Contemporary Lynx, Spike Art Magazine + tutte le fonti FONTI_ARTICOLI_ARTE — idempotente">+ Arte EU</button>
-            <button class="btn btn-secondary" onclick="OC.adminTool('videoIntl', this)" style="font-size:12px;padding:6px 12px" title="4 canali YouTube internazionali ad alta cadenza (Louisiana Channel, ARoS, MoMA, Tate) — risoluzione channel-id lato server, idempotente">+ Video intl</button>
-            <button class="btn btn-secondary" onclick="OC.adminTool('podcastAttivi', this)" style="font-size:12px;padding:6px 12px" title="2 podcast internazionali a cadenza settimanale verificati (The Week in Art, Talk Art) — i podcast in parco sono fermi da mesi">+ Podcast attivi</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('socialEditoriale', this)" style="font-size:12px;padding:6px 12px" title="Genera ORA la bozza IG+LinkedIn dall'editoriale approvato corrente (idempotente per settimana; parte anche in automatico all'invio della newsletter)">📣 Editoriale → social</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('rassegnaTop', this)" style="font-size:12px;padding:6px 12px" title="Diagnostica: referenze multi-fonte (rassegna stampa) delle 5 news con score più alto della settimana">🗞 Rassegna top news</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('socialStato', this)" style="font-size:12px;padding:6px 12px" title="Stato canali social: ponte Telegram, credenziali Instagram/LinkedIn, post in attesa di pubblicazione">📊 Stato canali social</button>

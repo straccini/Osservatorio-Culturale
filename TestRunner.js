@@ -33,6 +33,11 @@ var _OC_TEST_SUITES = [
     description: 'Classificatore concorsi/opportunita lavoro cultura (GU 4a Serie)'
   },
   {
+    name: 'registroFonti',
+    fn: 'rfSelfTest',
+    description: 'Registro fonti unico: schema, scrittura per nome colonna, dedup URL'
+  },
+  {
     name: 'fontiSezioni',
     fn: 'fsSelfTest',
     description: 'Riallineamento fonti podcast/video su FontiFeed (scrittura per nome colonna)'

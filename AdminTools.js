@@ -83,6 +83,14 @@ function adminRunTool(tool, token) {
       case 'fontiDuplicate':     r = frTrovaDuplicati(); break;
       case 'ripristinaFontiDry': r = frRipristinaFontiBandi({ dryRun: true }); break;
       case 'ripristinaFonti':    r = frRipristinaFontiBandi({}); break;
+      // ── Registro fonti unico (v4.28.0 — Fase 1 regia fonti) ─────────────
+      case 'rfSetup':            r = rfSetup(); break;
+      case 'rfMigraDry':         r = rfMigra({ dryRun: true }); break;
+      case 'rfMigraApply':       r = rfMigra({}); break;
+      case 'rfStato':            r = rfStato(); break;
+      case 'rfAttiva':           r = rfAttiva(); break;
+      case 'rfDisattiva':        r = rfDisattiva(); break;
+      case 'rfSelfTest':         r = rfSelfTest(); break;
       // ── Fonti podcast/video: riallineamento su FontiFeed (v4.27.97) ──────
       case 'sezioniAnteprima':   r = fsAnteprima(); break;
       case 'podcastMigraDry':    r = fsRiallineaPodcast({ dryRun: true }); break;
