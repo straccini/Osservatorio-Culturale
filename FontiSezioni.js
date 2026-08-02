@@ -130,8 +130,12 @@ function fsAnteprima() {
   if (shp && shp.getLastRow() > 1) {
     var vp = shp.getDataRange().getValues();
     var hp = vp[0].map(function (x) { return String(x || '').trim(); });
-    var pNome = hp.indexOf('Nome'), pUrl = hp.indexOf('URL_RSS'),
-        pTema = hp.indexOf('Tematica'), pAtt = hp.indexOf('Attiva');
+    // v4.28.9 — schema FU17: URL/Categoria. Si accettano entrambi i nomi,
+    // altrimenti le 121 fonti del foglio legacy restano invisibili.
+    var pNome = hp.indexOf('Nome'),
+        pUrl = (hp.indexOf('URL_RSS') >= 0 ? hp.indexOf('URL_RSS') : hp.indexOf('URL')),
+        pTema = (hp.indexOf('Tematica') >= 0 ? hp.indexOf('Tematica') : hp.indexOf('Categoria')),
+        pAtt = hp.indexOf('Attiva');
     for (var r = 1; r < vp.length; r++) {
       var u = String(vp[r][pUrl] || '').trim();
       if (!u) continue;
@@ -176,8 +180,12 @@ function fsRiallineaPodcast(opts) {
   if (shp && shp.getLastRow() > 1) {
     var vp = shp.getDataRange().getValues();
     var hp = vp[0].map(function (x) { return String(x || '').trim(); });
-    var pNome = hp.indexOf('Nome'), pUrl = hp.indexOf('URL_RSS'),
-        pTema = hp.indexOf('Tematica'), pAtt = hp.indexOf('Attiva');
+    // v4.28.9 — schema FU17: URL/Categoria. Si accettano entrambi i nomi,
+    // altrimenti le 121 fonti del foglio legacy restano invisibili.
+    var pNome = hp.indexOf('Nome'),
+        pUrl = (hp.indexOf('URL_RSS') >= 0 ? hp.indexOf('URL_RSS') : hp.indexOf('URL')),
+        pTema = (hp.indexOf('Tematica') >= 0 ? hp.indexOf('Tematica') : hp.indexOf('Categoria')),
+        pAtt = hp.indexOf('Attiva');
     for (var r = 1; r < vp.length; r++) {
       var u = String(vp[r][pUrl] || '').trim();
       if (!u) continue;
@@ -286,6 +294,21 @@ function fsSelfTest() {
   var visti = {}, dup = 0;
   FS_CANALI_VIDEO.forEach(function (c) { if (visti[c.url]) dup++; visti[c.url] = true; });
   eq('catalogo video senza duplicati', 0, dup);
+
+  // 5. REGRESSIONE v4.28.9 — la normalizzazione NON deve buttare via la query:
+  // i feed YouTube si distinguono solo da channel_id. Con la vecchia versione
+  // tutti i canali collassavano su una chiave sola e ffImportFromLegacy li
+  // scartava come duplicati: causa dei 21 canali spariti e dello scanner video
+  // fermo 87 giorni. Questi casi impediscono che il difetto rientri.
+  var y1 = 'https://www.youtube.com/feeds/videos.xml?channel_id=UCaaa';
+  var y2 = 'https://www.youtube.com/feeds/videos.xml?channel_id=UCbbb';
+  eq('canali YouTube diversi = chiavi diverse', true, _fsNorm_(y1) !== _fsNorm_(y2));
+  eq('stesso canale = stessa chiave', true, _fsNorm_(y1) === _fsNorm_(y1.replace('https://www.', 'http://')));
+  // i parametri di tracciamento non devono creare doppioni
+  eq('utm ignorato', true, _fsNorm_('https://x.it/feed?utm_source=nl') === _fsNorm_('https://x.it/feed'));
+  eq('ordine parametri irrilevante', true,
+     _fsNorm_('https://x.it/f?b=2&a=1') === _fsNorm_('https://x.it/f?a=1&b=2'));
+  eq('query significativa conservata', true, _fsNorm_('https://x.it/f?a=1') !== _fsNorm_('https://x.it/f'));
 
   return { ok: fail === 0, pass: pass, fail: fail, totale: pass + fail, falliti: falliti };
 }

@@ -505,6 +505,25 @@ function doGet(e) {
         }
         _s.fontiPerTipo = perTipo;
         _s.fontiAttiveSenzaRecord = mute;
+
+        // v4.28.8 — I FEED YOUTUBE DENTRO FontiFeed: l'anteprima Scout mostra
+        // che 21 dei 25 canali sono già presenti (dedup per URL), quindi non
+        // erano "spariti": sono lì con un Tipo che non è 'video', ed è per
+        // questo che getFeedSources('video') torna 0. Qui li si vede uno per
+        // uno con tipo e stato reali, per correggere invece di riseminare.
+        var iU2 = hf.indexOf('URL_Feed');
+        var yt = [];
+        for (var ry = 1; ry < vf.length; ry++) {
+          var uy = String(vf[ry][iU2] || '');
+          if (uy.indexOf('youtube.com') < 0) continue;
+          yt.push({
+            nome: String(vf[ry][iNome] || '').substring(0, 40),
+            tipo: String(vf[ry][iT] || '(vuoto)'),
+            attiva: String(vf[ry][iA]),
+            record: Number(vf[ry][iN] || 0)
+          });
+        }
+        _s.feedYoutubeInFontiFeed = { quanti: yt.length, righe: yt.slice(0, 30) };
       } else _s.fontiPerTipo = 'foglio FontiFeed assente';
 
       // (c) flag per tipo: se OFF, podcast/video leggono FontiPodcast (legacy)
@@ -548,6 +567,7 @@ function doGet(e) {
           }
         }
         _s.fontiPodcastLegacy = legacy;
+        _s.fontiPodcastLegacy.intestazione = hp;   // v4.28.8: i lettori cercano URL_RSS
         _s.feedYoutubeNonEtichettatiVideo = { quanti: ytMalEtichettati, esempi: ytEsempi };
       } else _s.fontiPodcastLegacy = 'foglio FontiPodcast assente o vuoto';
     } catch (eS) { _s.errore = eS.message; }

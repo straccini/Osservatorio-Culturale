@@ -215,8 +215,13 @@ function rfMigra(opts) {
   if (shP && shP.getLastRow() > 1) {
     var vp = shP.getDataRange().getValues();
     var hp = vp[0].map(function (x) { return String(x || '').trim(); });
-    var pNome = hp.indexOf('Nome'), pUrl = hp.indexOf('URL_RSS'), pTema = hp.indexOf('Tematica'),
-        pAtt = hp.indexOf('Attiva'), pTipo = hp.indexOf('TipoContenuto'), pNum = hp.indexOf('NumEpisodi');
+    // v4.28.9 — schema FU17 (URL/Categoria/NRecordTotali) oltre a quello
+    // storico: senza questo la migrazione ignorava tutte le fonti del foglio.
+    var pNome = hp.indexOf('Nome'),
+        pUrl = (hp.indexOf('URL_RSS') >= 0 ? hp.indexOf('URL_RSS') : hp.indexOf('URL')),
+        pTema = (hp.indexOf('Tematica') >= 0 ? hp.indexOf('Tematica') : hp.indexOf('Categoria')),
+        pAtt = hp.indexOf('Attiva'), pTipo = hp.indexOf('TipoContenuto'),
+        pNum = (hp.indexOf('NumEpisodi') >= 0 ? hp.indexOf('NumEpisodi') : hp.indexOf('NRecordTotali'));
     for (var r3 = 1; r3 < vp.length; r3++) {
       var rp = vp[r3]; if (!rp[pUrl]) continue;
       var tipoC = (pTipo >= 0 && String(rp[pTipo]).toLowerCase() === 'video') ? 'video' : 'podcast';

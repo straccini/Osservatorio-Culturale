@@ -79,12 +79,33 @@ function _ffShape_(o) {
   };
 }
 
+// v4.28.9 — DIFETTO CRITICO CORRETTO (02/08 sera): la versione precedente
+// buttava via l'INTERA query string (`s.split('?')[0]`). Ma i feed YouTube si
+// distinguono SOLO dalla query:
+//     youtube.com/feeds/videos.xml?channel_id=UC_Uffizi
+//     youtube.com/feeds/videos.xml?channel_id=UC_Brera
+// Tutti i canali collassavano quindi su UNA SOLA chiave. Poiché
+// ffImportFromLegacy deduplica con questa funzione, il primo feed YouTube
+// importato (Rai Cultura) si è preso la chiave e TUTTI i canali museali sono
+// stati scartati come duplicati: è la causa dei 21 canali video spariti e
+// dello scanner video fermo dal 07/05 (87 giorni).
+// Ora si rimuovono solo i parametri di tracciamento, che non identificano la
+// risorsa; il resto della query viene conservato e ordinato per stabilità.
+var _FEED_PARAM_TRACKING_RE = /^(utm_[a-z_]*|fbclid|gclid|mc_cid|mc_eid|ref|ref_src|source|_ga)$/i;
+
 function _normalizeFeedUrl_(url) {
   var s = String(url || '').trim().toLowerCase();
   if (!s) return '';
   s = s.replace(/^https?:\/\//, '').replace(/^www\./, '');
-  s = s.split('?')[0].split('#')[0];
-  return s.replace(/\/+$/, '');
+  s = s.split('#')[0];
+  var i = s.indexOf('?');
+  if (i < 0) return s.replace(/\/+$/, '');
+  var base = s.substring(0, i).replace(/\/+$/, '');
+  var utili = s.substring(i + 1).split('&').filter(function (p) {
+    if (!p) return false;
+    return !_FEED_PARAM_TRACKING_RE.test(p.split('=')[0]);
+  }).sort();
+  return utili.length ? (base + '?' + utili.join('&')) : base;
 }
 
 // ============================================================================
@@ -146,8 +167,17 @@ function _ffReadFontiPodcast_(wanted) {
   var v = sh.getDataRange().getValues();
   var h = v[0].map(function(x){ return String(x || '').trim(); });
   function c(n){ return h.indexOf(n); }
-  var iNome=c('Nome'), iUrl=c('URL_RSS'), iTema=c('Tematica'), iAtt=c('Attiva'),
-      iTipo=c('TipoContenuto'), iScan=c('UltimaScan'), iNum=c('NumEpisodi');
+  // v4.28.9 — il foglio FontiPodcast è stato migrato allo schema FU17 e la
+  // colonna si chiama URL (non più URL_RSS), Categoria (non più Tematica),
+  // NRecordTotali (non più NumEpisodi). Cercando i vecchi nomi, iUrl restava
+  // -1 e le 121 fonti risultavano INVISIBILI: nessun errore, solo lista vuota.
+  // Si accettano entrambi gli schemi.
+  var iNome=c('Nome'),
+      iUrl=(c('URL_RSS') >= 0 ? c('URL_RSS') : c('URL')),
+      iTema=(c('Tematica') >= 0 ? c('Tematica') : c('Categoria')),
+      iAtt=c('Attiva'),
+      iTipo=c('TipoContenuto'), iScan=c('UltimaScan'),
+      iNum=(c('NumEpisodi') >= 0 ? c('NumEpisodi') : c('NRecordTotali'));
   var out = [];
   for (var r=1; r<v.length; r++) {
     var row = v[r]; if (iUrl<0 || !row[iUrl]) continue;
