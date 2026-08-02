@@ -313,14 +313,35 @@ var ENRICH_KEYWORDS_RE = /(scadenz\w*|termine\s+(?:di\s+)?(?:presentazione|ultim
  * mobile): "BANDI BANDI Bandi Bandi Concorsi Concorsi...". Collassa le
  * ripetizioni immediate di 1-4 parole, in più passate per le catene lunghe.
  */
+// v4.28.7 (code review I8) — il backreference con gruppo variabile ha costo di
+// backtracking marcato: girava sulla pagina INTERA (anche centinaia di KB) ×4
+// passate ×15 bandi per finestra notturna, con rischio concreto di superare i
+// 6 minuti GAS. Ora si lavora su un tetto di 40k caratteri (il menu duplicato
+// da eliminare sta sempre all'inizio) e si esce appena il guadagno è marginale.
+var ENRICH_COLLASSO_MAX = 40000;
+
+// v4.28.7 — FIX di un difetto della v4.27.95: `\b` in JavaScript è definito su
+// [A-Za-z0-9_], quindi DOPO una lettera accentata non esiste confine di parola.
+// Le parole italiane che terminano in accento — NOVITÀ, ATTIVITÀ, UNIVERSITÀ,
+// CITTÀ, PERCHÉ — non venivano MAI deduplicate: proprio il caso della pagina
+// GAL che aveva motivato il fix ("NOVITÀ NOVITÀ L'ASSOCIAZIONE..."). Qui i
+// confini sono espliciti sulla classe estesa: gruppo iniziale al posto del
+// lookbehind (compatibilità), lookahead negativo in coda.
+var ENRICH_RIPETIZIONE_RE = /(^|[^\wÀ-ÿ'’])([\wÀ-ÿ'’]{2,}(?:\s+[\wÀ-ÿ'’]{2,}){0,3})\s+\2(?![\wÀ-ÿ'’])/gi;
+
 function _enrichCollassaRipetizioni_(s) {
-  var prev = null, out = s, giri = 0;
-  while (out !== prev && giri < 4) {
+  // Il backreference con gruppo variabile ha costo di backtracking marcato:
+  // si lavora su un tetto di caratteri (il menu duplicato sta sempre in testa)
+  // per non mettere a rischio il limite dei 6 minuti nelle finestre notturne.
+  var testa = String(s || '').substring(0, ENRICH_COLLASSO_MAX);
+  var coda = String(s || '').substring(ENRICH_COLLASSO_MAX);
+  var prev = null, out = testa, giri = 0;
+  while (out !== prev && giri < 6) {
     prev = out;
-    out = out.replace(/\b([\wÀ-ÿ'’]{2,}(?:\s+[\wÀ-ÿ'’]{2,}){0,3})\s+\1\b/gi, '$1');
+    out = out.replace(ENRICH_RIPETIZIONE_RE, '$1$2');
     giri++;
   }
-  return out;
+  return out + coda;
 }
 
 /**

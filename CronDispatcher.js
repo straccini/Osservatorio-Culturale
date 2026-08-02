@@ -68,8 +68,8 @@ var OC_CRON_EXTRA = [
   // v4.28.3 — FASE 3 SCOUT FONTI (spec Silvano 02/08 sera): lavoro continuo
   // e graduale (piccole quote/giorno), ciclo settimanale conferma/scarto,
   // memoria permanente delle decisioni. Nessuna fonte attiva senza approvazione.
-  { fn: 'scMinerRun',            tipo: 'daily', ora: 5, desc: 'Scout-Miner: link nelle news + bibliografie pubblicazioni (quote graduali)' },
-  { fn: 'scUniversitaRun',       tipo: 'weekly', giorno: ScriptApp.WeekDay.TUESDAY, ora: 5, desc: 'Scout-Università: atenei cultura/turismo (6/run, giro in ~4 settimane)' },
+  { fn: 'scMinerRun',            tipo: 'daily', ora: 21, desc: 'Scout-Miner: link nelle news + bibliografie pubblicazioni (ora libera: le 05 sono congestionate da fas+agr+sasRunWeekly)' },
+  { fn: 'scUniversitaRun',       tipo: 'weekly', giorno: ScriptApp.WeekDay.TUESDAY, ora: 20, desc: 'Scout-Università: atenei cultura/turismo (6/run, giro in ~4 settimane)' },
   { fn: 'scSettimanale',         tipo: 'weekly', giorno: ScriptApp.WeekDay.SUNDAY, ora: 17, desc: 'Scout: riepilogo settimanale candidate da confermare/scartare' },
   // Flusso redazionale (Redazionale_v1.js, spec 2026-07-10): creazione ven 18 →
   // revisione admin → richiesta invio a superadmin lun 10 (o conferma anticipata)

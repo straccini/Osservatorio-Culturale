@@ -439,7 +439,7 @@ function scApplicaDecisioni() {
   function c(n) { return h.indexOf(n); }
   var iStato = c('Stato'), iDec = c('DataDecisione'), iNome = c('Nome'), iFeed = c('FeedRilevato'),
       iUrlP = c('URLPagina'), iMet = c('Metodo'), iCat = c('CategoriaProposta'), iDa = c('TrovataDa'), iNote = c('Note');
-  var approvate = 0, scartate = 0, senzaFeed = [];
+  var approvate = 0, scartate = 0, senzaFeed = [], nonApplicate = [];
 
   for (var r = 1; r < v.length; r++) {
     var stato = String(v[r][iStato] || '').toLowerCase().trim();
@@ -449,10 +449,16 @@ function scApplicaDecisioni() {
     if (stato === 'approvata') {
       var metodo = String(v[r][iMet] || 'nessuno');
       var urlFeed = String(v[r][iFeed] || '');
+      var scritta = false;
       if (metodo === 'rss' && urlFeed) {
         // nel registro unico, in QUARANTENA (contenuti non esposti finché
         // la fonte non dimostra 2 settimane di produzione pulita)
-        var shR = getMainSS().getSheetByName('RegistroFonti');
+        // v4.28.7 (code review C4) — il registro si CREA se manca: prima, con
+        // il foglio assente la fonte approvata non veniva scritta da nessuna
+        // parte MA veniva sigillata, e il dominio in memoria permanente la
+        // rendeva irriproponibile. Perdita silenziosa e irreversibile.
+        var shR = (typeof _rfSheet_ === 'function') ? _rfSheet_(true)
+                                                    : getMainSS().getSheetByName('RegistroFonti');
         if (shR && typeof RF_HEADERS !== 'undefined') {
           var hr = shR.getRange(1, 1, 1, shR.getLastColumn()).getValues()[0].map(function (x) { return String(x || '').trim(); });
           // v4.28.6 SICUREZZA: ri-sanifica alla copia — il foglio candidate è
@@ -467,6 +473,13 @@ function scApplicaDecisioni() {
             note: _scSafe_(String(v[r][iNote] || ''))
           });
           shR.getRange(shR.getLastRow() + 1, 1, 1, hr.length).setValues([riga]);
+          scritta = true;
+        }
+        if (!scritta) {
+          // niente scrittura riuscita: NON sigillare, così il prossimo run
+          // riprova invece di perdere la fonte per sempre
+          nonApplicate.push(String(v[r][iNome] || '') + ' → registro non scrivibile, riprovare');
+          continue;
         }
       } else if (metodo === 'newsletter') {
         senzaFeed.push(String(v[r][iNome] || '') + ' → iscrizione manuale: ' + String(v[r][iNote] || ''));
@@ -479,7 +492,8 @@ function scApplicaDecisioni() {
     }
     sh.getRange(r + 1, iDec + 1).setValue(new Date());
   }
-  var rep = { ok: true, approvate: approvate, scartate: scartate, daGestireManualmente: senzaFeed };
+  var rep = { ok: nonApplicate.length === 0, approvate: approvate, scartate: scartate,
+              daGestireManualmente: senzaFeed, nonApplicate: nonApplicate };
   Logger.log('[scApplicaDecisioni] ' + JSON.stringify(rep));
   return rep;
 }

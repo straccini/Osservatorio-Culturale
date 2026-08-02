@@ -22,9 +22,14 @@ var RF_SHEET = 'RegistroFonti';
 var RF_FLAG_PROP = 'USE_REGISTRO_FONTI';
 
 // Schema formale — 24 colonne. Le righe si scrivono SEMPRE per nome colonna.
+// v4.28.7 — code review: mancavano Priorita e Tematica. Senza Priorita ogni
+// fonte migrata finiva a priorita 2 e il filtro di scanPodcastDiretto
+// (NewsScanner.js:404) svuotava la lista nelle settimane dispari; senza
+// Tematica i filtri di 2° livello di Podcast e Video si svuotavano.
 var RF_HEADERS = [
   'ID', 'Categoria', 'Nome', 'Ente', 'URL_Feed', 'URL_Sito',
-  'Formato', 'Lingua', 'Copertura', 'Tier', 'Tipologie', 'Ambiti',
+  'Formato', 'Lingua', 'Copertura', 'Tier', 'Priorita', 'Tematica',
+  'Tipologie', 'Ambiti',
   'Stato', 'Origine', 'DataAggiunta', 'ApprovataDa',
   'UltimaScan', 'UltimoEsito', 'UltimoContenuto',
   'NRecordTotali', 'NRecord30gg', 'FailConsecutivi', 'UltimoErrore', 'Note'
@@ -70,6 +75,17 @@ function _rfSheet_(creaSeManca) {
       .setFontWeight('bold').setBackground('#1E3A8A').setFontColor('#fff');
     sh.setFrozenRows(1);
     Logger.log('[RegistroFonti] foglio creato (' + RF_HEADERS.length + ' colonne)');
+  } else if (sh && creaSeManca) {
+    // v4.28.7 — se lo schema si arricchisce, aggiunge le colonne mancanti IN
+    // CODA senza toccare i dati esistenti (le righe si scrivono per nome).
+    var hAttuale = sh.getRange(1, 1, 1, Math.max(1, sh.getLastColumn())).getValues()[0]
+      .map(function (x) { return String(x || '').trim(); });
+    var mancanti = RF_HEADERS.filter(function (n) { return hAttuale.indexOf(n) < 0; });
+    if (mancanti.length) {
+      sh.getRange(1, hAttuale.length + 1, 1, mancanti.length).setValues([mancanti])
+        .setFontWeight('bold').setBackground('#1E3A8A').setFontColor('#fff');
+      Logger.log('[RegistroFonti] colonne aggiunte: ' + mancanti.join(', '));
+    }
   }
   return sh;
 }
@@ -83,6 +99,10 @@ function _rfRiga_(header, o) {
   set('Ente', o.ente || ''); set('URL_Feed', o.urlFeed); set('URL_Sito', o.urlSito || '');
   set('Formato', o.formato || 'rss'); set('Lingua', o.lingua || 'it');
   set('Copertura', o.copertura || ''); set('Tier', o.tier || 'B');
+  // v4.28.7 — priorità e tematica sono dati OPERATIVI letti dagli scanner:
+  // priorità 1 = ogni scansione, 2 = settimane pari (NewsScanner.js:404).
+  set('Priorita', Number(o.priorita) || 1);
+  set('Tematica', o.tematica || '');
   set('Tipologie', o.tipologie || ''); set('Ambiti', o.ambiti || '');
   set('Stato', o.stato || 'attiva'); set('Origine', o.origine || 'seed');
   set('DataAggiunta', o.dataAggiunta || new Date()); set('ApprovataDa', o.approvataDa || '');
@@ -143,6 +163,7 @@ function rfMigra(opts) {
     function cf(n) { return hf.indexOf(n); }
     var fTipo = cf('Tipo'), fNome = cf('Nome'), fGr = cf('Gruppo'), fUrl = cf('URL_Feed'),
         fSito = cf('URL_Sito'), fAmb = cf('Ambito'), fCat = cf('Categoria'), fAtt = cf('Attiva'),
+        fPri = cf('Priorita'),
         fScan = cf('UltimaScan'), fNTot = cf('NRecordTotali'), fNote = cf('Note');
     var MAPPA_TIPO = { rss: 'news', podcast: 'podcast', video: 'video' };
     for (var r = 1; r < vf.length; r++) {
@@ -156,10 +177,14 @@ function rfMigra(opts) {
         urlFeed: String(row[fUrl] || '').trim(), urlSito: String(row[fSito] || ''),
         formato: cat === 'video' ? 'youtube' : 'rss',
         ambiti: String(row[fAmb] || ''), stato: attiva ? 'attiva' : 'sospesa',
+        // v4.28.7 — priorità e tematica COPIATE, non dedotte: la priorità
+        // governa la cadenza di scansione dei podcast, la tematica alimenta
+        // i filtri di 2° livello delle pagine Podcast e Video
+        priorita: Number(row[fPri]) || 1,
+        tematica: String((fCat >= 0 ? row[fCat] : '') || ''),
         origine: 'migrazione:FontiFeed', ultimaScan: row[fScan] || '',
         nRecordTotali: Number(row[fNTot] || 0),
         note: String(row[fNote] || ''),
-        // le categorie tematiche del vecchio foglio finiscono in Note se presenti
         tipologie: ''
       }, 'FontiFeed');
     }
@@ -202,7 +227,9 @@ function rfMigra(opts) {
         formato: tipoC === 'video' ? 'youtube' : 'rss',
         stato: attP ? 'attiva' : 'sospesa', origine: 'migrazione:FontiPodcast',
         nRecordTotali: Number((pNum >= 0 ? rp[pNum] : 0) || 0),
-        note: String((pTema >= 0 ? rp[pTema] : '') || '')
+        tematica: String((pTema >= 0 ? rp[pTema] : '') || ''),   // v4.28.7
+        priorita: 1,
+        note: ''
       }, 'FontiPodcast');
     }
   }
@@ -278,7 +305,8 @@ function rfLeggi(categoria) {
   function c(n) { return h.indexOf(n); }
   var iCat = c('Categoria'), iNome = c('Nome'), iEnte = c('Ente'), iUrl = c('URL_Feed'),
       iSito = c('URL_Sito'), iForm = c('Formato'), iTier = c('Tier'), iAmb = c('Ambiti'),
-      iStato = c('Stato'), iScan = c('UltimaScan'), iNTot = c('NRecordTotali'), iId = c('ID');
+      iStato = c('Stato'), iScan = c('UltimaScan'), iNTot = c('NRecordTotali'), iId = c('ID'),
+      iPri = c('Priorita'), iTema = c('Tematica');
   var out = [];
   for (var r = 1; r < v.length; r++) {
     var row = v[r];
@@ -290,11 +318,18 @@ function rfLeggi(categoria) {
     // Ambito) letti da scanSources. Senza, con il flag acceso le news si
     // sarebbero fermate in silenzio. rfLeggi restituisce ESATTAMENTE la stessa
     // forma di FontiFeed: risultati identici, cambia solo la sorgente.
+    // v4.28.7 (code review C1+C2) — priorità e tematica si LEGGONO dalla riga,
+    // non si deducono dal Tier: dedurle faceva finire tutte le fonti migrate a
+    // priorita 2 (scanner podcast a vuoto nelle settimane dispari) e svuotava
+    // la tematica (filtri di 2° livello di Podcast e Video). _ffShape_ mappa
+    // categoria → tematica, quindi la tematica va passata come `categoria`.
     var base = {
       id: row[iId], nome: String(row[iNome] || ''), gruppo: String(row[iEnte] || row[iNome] || ''),
       tipo: categoria, urlFeed: String(row[iUrl] || '').trim(), urlSito: String(row[iSito] || ''),
-      ambito: String(row[iAmb] || ''), categoria: '',
-      priorita: (String(row[iTier]) === 'A') ? 1 : 2, attiva: true
+      ambito: String(row[iAmb] || ''),
+      categoria: (iTema >= 0) ? String(row[iTema] || '') : '',
+      priorita: (iPri >= 0 && Number(row[iPri])) ? Number(row[iPri]) : 1,
+      attiva: true
     };
     var o = (typeof _ffShape_ === 'function') ? _ffShape_(base) : base;
     o.tier = String(row[iTier] || 'B');
@@ -343,32 +378,74 @@ function rfConfronto() {
   var out = { ok: true, verdetto: '', perTipo: {} };
   var MAPPA = { rss: 'news', podcast: 'podcast', video: 'video' };
   var pronte = 0, tipi = 0;
+
   Object.keys(MAPPA).forEach(function (tipo) {
     tipi++;
+    var box = { flagFontiFeed: null, baseline: '', fontiOggi: 0, fontiRegistro: 0,
+                mancantiNelRegistro: 0, esempiMancanti: [], inPiuNelRegistro: 0,
+                campiDiversi: 0, esempiCampiDiversi: [], parita: false };
+
+    // v4.28.7 (code review C3) — BASELINE CORRETTA: la sorgente che gli
+    // scanner usano OGGI dipende dal flag per tipo. Se FontiFeed è OFF la
+    // produzione legge i fogli legacy, quindi confrontare con _ffReadFromFeed_
+    // darebbe un verde falso. Si usa getFeedSources neutralizzando SOLO il
+    // flag registro, così la baseline è davvero ciò che gira adesso.
+    var props = PropertiesService.getScriptProperties();
+    var flagPrec = props.getProperty(RF_FLAG_PROP);
     var vecchie = [], nuove = [];
-    try { vecchie = _ffReadFromFeed_(tipo); } catch (e) {}
-    try { nuove = rfLeggi(MAPPA[tipo]); } catch (e2) {}
-    function setDi(arr) {
-      var s = {};
-      arr.forEach(function (f) { var k = _rfNorm_(f.urlFeed || f.url); if (k) s[k] = f.nome || ''; });
-      return s;
+    try {
+      box.flagFontiFeed = (typeof isFontiFeedEnabled_ === 'function') ? isFontiFeedEnabled_(tipo) : null;
+      props.setProperty(RF_FLAG_PROP, 'false');       // baseline = stato attuale
+      vecchie = getFeedSources(tipo);
+      box.baseline = box.flagFontiFeed ? 'FontiFeed' : 'legacy';
+    } catch (e) { box.errore = e.message; }
+    finally { props.setProperty(RF_FLAG_PROP, flagPrec === null ? 'false' : flagPrec); }
+
+    try { nuove = rfLeggi(MAPPA[tipo]); } catch (e2) { box.errore = (box.errore || '') + ' ' + e2.message; }
+    box.fontiOggi = vecchie.length;
+    box.fontiRegistro = nuove.length;
+
+    function indice(arr) {
+      var m = {};
+      arr.forEach(function (f) { var k = _rfNorm_(f.urlFeed || f.url); if (k) m[k] = f; });
+      return m;
     }
-    var sv = setDi(vecchie), sn = setDi(nuove);
-    var mancanti = [], extra = [];
-    Object.keys(sv).forEach(function (k) { if (!(k in sn)) mancanti.push(sv[k] || k); });
-    Object.keys(sn).forEach(function (k) { if (!(k in sv)) extra.push(sn[k] || k); });
-    var parita = mancanti.length === 0;
-    if (parita) pronte++;
-    out.perTipo[tipo] = {
-      fontiOggi: vecchie.length, fontiRegistro: nuove.length,
-      mancantiNelRegistro: mancanti.length, esempiMancanti: mancanti.slice(0, 6),
-      inPiuNelRegistro: extra.length, esempiInPiu: extra.slice(0, 6),
-      parita: parita
-    };
+    var mv = indice(vecchie), mn = indice(nuove);
+
+    // (a) fonti che sparirebbero
+    Object.keys(mv).forEach(function (k) {
+      if (!(k in mn)) {
+        box.mancantiNelRegistro++;
+        if (box.esempiMancanti.length < 6) box.esempiMancanti.push(mv[k].nome || k);
+      }
+    });
+    Object.keys(mn).forEach(function (k) { if (!(k in mv)) box.inPiuNelRegistro++; });
+
+    // (b) fonti presenti in entrambe ma con CAMPI OPERATIVI diversi: la
+    // priorità governa la cadenza di scansione, la tematica i filtri di 2°
+    // livello, l'ambito lo smistamento. Un solo campo diverso = risultati
+    // diversi, anche con l'elenco delle URL identico.
+    Object.keys(mv).forEach(function (k) {
+      if (!(k in mn)) return;
+      var a = mv[k], b = mn[k], diff = [];
+      if ((Number(a.priorita) || 1) !== (Number(b.priorita) || 1)) diff.push('priorita ' + a.priorita + '→' + b.priorita);
+      if (String(a.tematica || '') !== String(b.tematica || '')) diff.push('tematica "' + (a.tematica || '') + '"→"' + (b.tematica || '') + '"');
+      if (String(a.ambito || '') !== String(b.ambito || '')) diff.push('ambito "' + (a.ambito || '') + '"→"' + (b.ambito || '') + '"');
+      if (diff.length) {
+        box.campiDiversi++;
+        if (box.esempiCampiDiversi.length < 6) box.esempiCampiDiversi.push((a.nome || k) + ': ' + diff.join(', '));
+      }
+    });
+
+    box.parita = (box.mancantiNelRegistro === 0 && box.campiDiversi === 0);
+    if (box.parita) pronte++;
+    out.perTipo[tipo] = box;
   });
+
   out.verdetto = (pronte === tipi)
-    ? 'PRONTO: nessuna fonte attiva mancherebbe. Lo switch non modifica i risultati.'
-    : 'NON PRONTO: ' + (tipi - pronte) + ' tipo/i con fonti mancanti nel registro. Eseguire prima la migrazione.';
+    ? 'PRONTO: nessuna fonte sparirebbe e nessun campo operativo cambia (priorità, tematica, ambito). Lo switch non modifica i risultati.'
+    : 'NON PRONTO: ' + (tipi - pronte) + ' tipo/i con differenze. Vedi mancantiNelRegistro e campiDiversi.';
+  out.nota = 'La baseline è la sorgente che gli scanner usano ADESSO (flag FontiFeed per tipo), non FontiFeed a prescindere.';
   return out;
 }
 

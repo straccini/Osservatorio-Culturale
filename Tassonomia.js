@@ -252,9 +252,18 @@ function txBatchNotturno(opts) {
         lotto.forEach(function (c) {
           var e = esiti[c.id];
           if (!e) {
+            // v4.28.7 (code review I1) — l'aderenza EURISTICA non deve mai
+            // cadere sotto la soglia di archiviazione di redCoerenza (30):
+            // se una notte l'API non risponde, l'intero lotto finirebbe
+            // "fuori tema" e verrebbe archiviato pur essendo pertinente.
+            // Il pavimento a 45 lo rende un dato provvisorio, non una condanna.
             var eur = _txEuristica_(String(c.titolo || '') + ' ' + String(c.testo || ''));
-            if (!eur.tipologia) return;
-            e = { tipologia: eur.tipologia, aderenza: Math.min(35, eur.punteggio * 10) };
+            // (I2) senza tipologia si scrive comunque un marcatore: altrimenti
+            // le righe non classificabili tornano in testa alla coda ogni
+            // notte e il batch non avanza più, in silenzio.
+            e = eur.tipologia
+              ? { tipologia: eur.tipologia, aderenza: Math.max(45, Math.min(60, eur.punteggio * 10)) }
+              : { tipologia: 'T10', aderenza: 45 };
           }
           b.sh.getRange(c.riga, cols.iTip + 1).setValue(e.tipologia);
           b.sh.getRange(c.riga, cols.iAde + 1).setValue(e.aderenza);
@@ -324,6 +333,13 @@ function txSelfTest() {
   eq('norm valida', 'T5', (_txNormalizza_({ tipologia: 't5', aderenza: 80 }) || {}).tipologia);
   eq('norm clamp >100', '100', (_txNormalizza_({ tipologia: 'T9', aderenza: 250 }) || {}).aderenza);
   eq('norm clamp <0', '0', (_txNormalizza_({ tipologia: 'T9', aderenza: -5 }) || {}).aderenza);
+  // REGRESSIONE v4.28.7 (code review I1): il pavimento dell'aderenza
+  // euristica deve stare SOPRA la soglia di archiviazione del Redattore,
+  // altrimenti un'API muta per una notte fa archiviare contenuti pertinenti.
+  var pavimento = 45;
+  var sogliaArch = (typeof RED_ADERENZA_MIN !== 'undefined') ? RED_ADERENZA_MIN : 30;
+  eq('pavimento euristico sopra soglia archivio', true, pavimento > sogliaArch);
+  eq('euristica 1 match non archiviabile', true, Math.max(45, Math.min(60, 1 * 10)) > sogliaArch);
   eq('T4 inesistente rifiutato', 'null', String(_txNormalizza_({ tipologia: 'T4', aderenza: 50 })));
   eq('codice inventato rifiutato', 'null', String(_txNormalizza_({ tipologia: 'T99', aderenza: 50 })));
   // catalogo: T4 assente, T10 presente
