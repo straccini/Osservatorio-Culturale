@@ -82,6 +82,26 @@ fail persistente; "quarantena" = fonte nuova in osservazione.
 - [ ] Filtri UI per tipologia nelle sezioni
 
 ### Fase 3 — Agenti Scout e Redattori
+**Specifiche confermate (02/08 sera)**: miner su TUTTE le fonti con
+gradualità (quote piccole, lavoro continuo); ciclo SETTIMANALE di
+conferma/scarto; memoria permanente (scartata/integrata = mai più
+riproposta); università italiane news+ricerca; newsletter = l'agente
+propone con link pronto, iscrive l'admin; Candidature = perimetro ampio
++ ANCI (verificato 02/08: vivo su www.anci.it/rss, il dominio senza www
+non risolve; feed di categoria vuoti → generale con filtro a valle).
+
+**Stato: Scout CONSEGNATO (v4.28.3)** — `ScoutFonti.js`:
+- [x] Foglio `FontiCandidate` (14 col) + memoria permanente decisioni
+- [x] scMinerNews (link nelle news, puntatore rotante, 8 articoli/gg)
+- [x] scMinerBiblio (bibliografie via Crossref references, 4 DOI/gg)
+- [x] scUniversitaRun (22 atenei seed, 6/settimana, giro in ~4 sett.)
+- [x] Feed autodiscovery (link alternate + percorsi comuni) + rilevamento
+      newsletter (proposta manuale, MAI iscrizione automatica)
+- [x] scSettimanale (domenica 17: riepilogo email+Telegram) +
+      scApplicaDecisioni (approvata→Registro in quarantena; scartata→sigillo)
+- [x] scRiparaAnci + blacklist piattaforme + self-test 10 casi
+- [ ] Redattore: compilazione campi completa per categoria (prossimo passo)
+- [ ] Repository ricerca atenei via OpenAIRE (seconda battuta)
 - [ ] `AgenteScout.js`: per categoria, settimanale; genera candidate
       (directory di settore, OPML, indici podcast, ricerche mirate),
       valida tecnicamente (feed vivo? produce? che qualità?), scrive in

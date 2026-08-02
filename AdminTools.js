@@ -96,6 +96,14 @@ function adminRunTool(tool, token) {
       case 'txBatchApply':       r = txBatchNotturno({ cap: 60 }); break;
       case 'txStato':            r = txStato(); break;
       case 'txSelfTest':         r = txSelfTest(); break;
+      // ── Scout fonti (v4.28.3 — Fase 3) ──────────────────────────────────
+      case 'scStato':            r = scStato(); break;
+      case 'scMinerNow':         r = scMinerRun(); break;
+      case 'scUniversitaNow':    r = scUniversitaRun({}); break;
+      case 'scSettimanaleNow':   r = scSettimanale(); break;
+      case 'scApplicaDecisioni': r = scApplicaDecisioni(); break;
+      case 'scRiparaAnci':       r = scRiparaAnci(); break;
+      case 'scSelfTest':         r = scSelfTest(); break;
       // ── Fonti podcast/video: riallineamento su FontiFeed (v4.27.97) ──────
       case 'sezioniAnteprima':   r = fsAnteprima(); break;
       case 'podcastMigraDry':    r = fsRiallineaPodcast({ dryRun: true }); break;

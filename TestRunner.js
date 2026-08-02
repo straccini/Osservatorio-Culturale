@@ -33,6 +33,11 @@ var _OC_TEST_SUITES = [
     description: 'Classificatore concorsi/opportunita lavoro cultura (GU 4a Serie)'
   },
   {
+    name: 'scoutFonti',
+    fn: 'scSelfTest',
+    description: 'Scout fonti: normalizzazione domini, blacklist, catalogo atenei'
+  },
+  {
     name: 'tassonomia',
     fn: 'txSelfTest',
     description: 'Tassonomia T1-T10: euristica, normalizzazione risposta modello, catalogo'
