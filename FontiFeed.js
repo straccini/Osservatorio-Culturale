@@ -181,8 +181,12 @@ function _ffReadFontiPodcast_(wanted) {
   var out = [];
   for (var r=1; r<v.length; r++) {
     var row = v[r]; if (iUrl<0 || !row[iUrl]) continue;
-    var tipoC = iTipo>=0 ? String(row[iTipo] || '').toLowerCase() : '';
-    var match = (wanted === 'video') ? (tipoC === 'video') : (tipoC === 'audio' || tipoC === '');
+    // v4.28.10 — tipo dedotto dall'URL: il foglio contiene canali YouTube
+    // etichettati 'audio'. Un feed youtube.com/feeds/videos.xml è video.
+    var tipoReale = (typeof fsTipoDaUrl === 'function')
+      ? fsTipoDaUrl(row[iUrl], (iTipo >= 0 ? row[iTipo] : ''))
+      : ((iTipo >= 0 && String(row[iTipo]).toLowerCase() === 'video') ? 'video' : 'podcast');
+    var match = (wanted === 'video') ? (tipoReale === 'video') : (tipoReale === 'podcast');
     if (!match) continue;
     out.push({
       nome: String(row[iNome] || ''), gruppo: String(row[iNome] || ''),

@@ -224,7 +224,13 @@ function rfMigra(opts) {
         pNum = (hp.indexOf('NumEpisodi') >= 0 ? hp.indexOf('NumEpisodi') : hp.indexOf('NRecordTotali'));
     for (var r3 = 1; r3 < vp.length; r3++) {
       var rp = vp[r3]; if (!rp[pUrl]) continue;
-      var tipoC = (pTipo >= 0 && String(rp[pTipo]).toLowerCase() === 'video') ? 'video' : 'podcast';
+      // v4.28.10 — il tipo si deduce dall'URL, non dall'etichetta: il foglio
+      // legacy contiene canali YouTube marcati 'audio' (Brera, MAXXI, MART,
+      // Cariplo, Sandretto...). Marcarli podcast li manderebbe al parser
+      // sbagliato e nella sezione sbagliata.
+      var tipoC = (typeof fsTipoDaUrl === 'function')
+        ? fsTipoDaUrl(u, (pTipo >= 0 ? rp[pTipo] : ''))
+        : ((pTipo >= 0 && String(rp[pTipo]).toLowerCase() === 'video') ? 'video' : 'podcast');
       var attP = !(rp[pAtt] === false || String(rp[pAtt]).toLowerCase() === 'false');
       proponi({
         id: 'RFPOD_' + r3, categoria: tipoC,

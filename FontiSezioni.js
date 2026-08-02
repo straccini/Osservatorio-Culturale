@@ -68,6 +68,22 @@ function _fsNorm_(u) {
   return String(u || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '');
 }
 
+/**
+ * v4.28.10 — TIPO REALE dedotto dall'URL, non dall'etichetta.
+ * Il foglio FontiPodcast contiene decine di canali YouTube etichettati
+ * 'audio' (verificato 02/08: Brera, MAXXI, MART, Cariplo, Sandretto...).
+ * Migrarli come podcast li manderebbe al parser RSS invece che a quello
+ * Atom di YouTube, e li esporrebbe nella sezione sbagliata. Un feed
+ * youtube.com/feeds/videos.xml È un feed video, qualunque cosa dica la
+ * colonna: l'URL vince sull'etichetta.
+ */
+function fsTipoDaUrl(url, etichetta) {
+  var u = String(url || '').toLowerCase();
+  if (u.indexOf('youtube.com/feeds/videos.xml') >= 0 || u.indexOf('youtube.com/feeds') >= 0) return 'video';
+  var e = String(etichetta || '').toLowerCase();
+  return (e === 'video') ? 'video' : 'podcast';
+}
+
 function _fsFogliFeed_() {
   var ss = getMainSS();
   var sh = ss.getSheetByName(FS_FOGLIO_FEED);
@@ -185,7 +201,8 @@ function fsRiallineaPodcast(opts) {
     var pNome = hp.indexOf('Nome'),
         pUrl = (hp.indexOf('URL_RSS') >= 0 ? hp.indexOf('URL_RSS') : hp.indexOf('URL')),
         pTema = (hp.indexOf('Tematica') >= 0 ? hp.indexOf('Tematica') : hp.indexOf('Categoria')),
-        pAtt = hp.indexOf('Attiva');
+        pAtt = hp.indexOf('Attiva'),
+        pTipoC = hp.indexOf('TipoContenuto');
     for (var r = 1; r < vp.length; r++) {
       var u = String(vp[r][pUrl] || '').trim();
       if (!u) continue;
@@ -193,20 +210,30 @@ function fsRiallineaPodcast(opts) {
       var k = _fsNorm_(u);
       if (idx.urls[k]) continue;
       idx.urls[k] = true;   // dedup anche all'interno del legacy stesso
-      daMigrare.push({ nome: String(vp[r][pNome] || ''), url: u, categoria: String(vp[r][pTema] || '') });
+      daMigrare.push({
+        nome: String(vp[r][pNome] || ''), url: u, categoria: String(vp[r][pTema] || ''),
+        // v4.28.10 — il tipo si deduce dall'URL: il foglio legacy contiene
+        // canali YouTube etichettati 'audio' che vanno al canale VIDEO
+        tipo: fsTipoDaUrl(u, (pTipoC >= 0 ? vp[r][pTipoC] : ''))
+      });
       if (daMigrare.length >= cap) break;
     }
   }
 
+  var nVideo = daMigrare.filter(function (x) { return x.tipo === 'video'; }).length;
   var rep = { ok: true, dryRun: dryRun, trovate: daMigrare.length, scritte: 0,
-              esempi: daMigrare.slice(0, 10).map(function (x) { return x.nome; }) };
+              comeVideo: nVideo, comePodcast: daMigrare.length - nVideo,
+              esempiVideo: daMigrare.filter(function (x) { return x.tipo === 'video'; })
+                                    .slice(0, 8).map(function (x) { return x.nome; }),
+              esempi: daMigrare.slice(0, 10).map(function (x) { return x.nome + ' [' + x.tipo + ']'; }) };
   if (dryRun || !daMigrare.length) return rep;
 
   var righe = daMigrare.map(function (x, i) {
     return _fsRigaFeed_(idx.header, {
-      id: 'FFP' + Date.now() + '_' + i, nome: x.nome, tipo: 'podcast',
+      id: (x.tipo === 'video' ? 'FFV' : 'FFP') + Date.now() + '_' + i,
+      nome: x.nome, tipo: x.tipo,
       urlFeed: x.url, categoria: x.categoria, priorita: 1,
-      note: 'migrata da ' + FS_FOGLIO_POD + ' (v4.27.97)'
+      note: 'migrata da ' + FS_FOGLIO_POD + ' (tipo dedotto dall URL, v4.28.10)'
     });
   });
   sh.getRange(sh.getLastRow() + 1, 1, righe.length, idx.header.length).setValues(righe);
@@ -309,6 +336,17 @@ function fsSelfTest() {
   eq('ordine parametri irrilevante', true,
      _fsNorm_('https://x.it/f?b=2&a=1') === _fsNorm_('https://x.it/f?a=1&b=2'));
   eq('query significativa conservata', true, _fsNorm_('https://x.it/f?a=1') !== _fsNorm_('https://x.it/f'));
+
+  // 6. v4.28.10 — TIPO DALL'URL: il foglio legacy ha canali YouTube marcati
+  // 'audio'. Migrarli come podcast li manderebbe al parser RSS invece che
+  // all'Atom di YouTube, esponendoli nella sezione sbagliata.
+  eq('youtube marcato audio → video', 'video',
+     fsTipoDaUrl('https://www.youtube.com/feeds/videos.xml?channel_id=UCxxx', 'audio'));
+  eq('youtube senza etichetta → video', 'video',
+     fsTipoDaUrl('https://www.youtube.com/feeds/videos.xml?channel_id=UCxxx', ''));
+  eq('rss vero → podcast', 'podcast', fsTipoDaUrl('https://feeds.buzzsprout.com/123.rss', 'audio'));
+  eq('etichetta video rispettata', 'video', fsTipoDaUrl('https://vimeo.com/feed', 'video'));
+  eq('default podcast', 'podcast', fsTipoDaUrl('https://ilbolive.unipd.it/it/feed/podcast', ''));
 
   return { ok: fail === 0, pass: pass, fail: fail, totale: pass + fail, falliti: falliti };
 }
