@@ -1107,9 +1107,12 @@ function apiScanTutto() {
   var report = { bandi: {}, editoria: {} };
 
   try {
-    // Scan bandi TED
-    report.bandi = apiScanBandi();
-    Utilities.sleep(API_SLEEP_MS);
+    // v4.28.2 — TED RIMOSSO dal giro settimanale (revisione trigger 02/08):
+    // fasRunCompleto lo scandisce già OGNI GIORNO alle 05:15 (fasParserTedApiPost)
+    // con filtro cultura e dedup. La doppia scansione produceva solo lavoro
+    // duplicato. Resta il giro editoria (iTunes + DOAJ + YouTube), che non ha
+    // altri canali. Per un run TED manuale: apiScanBandi() dall'editor.
+    report.bandi = { saltato: 'TED coperto da fasRunCompleto daily 05:15' };
 
     // Scan editoria
     report.editoria = apiScanEditoria({});
@@ -1117,7 +1120,6 @@ function apiScanTutto() {
     // Salva timestamp
     var ora = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
     var props = PropertiesService.getScriptProperties();
-    props.setProperty('API_LAST_SCAN_BANDI', ora);
     props.setProperty('API_LAST_SCAN_EDITORIA', ora);
 
     // Riepilogo Telegram

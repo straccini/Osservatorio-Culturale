@@ -40,6 +40,20 @@ var AGENT_SCAN_HEADERS = [
  */
 function scanAgente(agenteId, opts) {
   opts = opts || {};
+
+  // v4.28.2 — AGENTI SOSPESI PER RICONVERSIONE (decisione Silvano 02/08):
+  // gli scan tematici AG1-AG5 si sovrapponevano alla pipeline principale
+  // (bandi: rotazione RSS + API; news: scanSources 4×/gg). L'infrastruttura
+  // (config, prompt, fonti, destinatari opt-in) sarà la base degli agenti
+  // Scout/Redattori della Fase 3 (piano 2026-08-02). I trigger restano ma
+  // escono subito. Riattivazione temporanea: ScriptProperty
+  // OC_AGENTI_ATTIVI = 'true' (o opts.force dall'editor).
+  var attivi = String(PropertiesService.getScriptProperties().getProperty('OC_AGENTI_ATTIVI')) === 'true';
+  if (!attivi && !opts.force) {
+    Logger.log('[scanAgente ' + agenteId + '] SOSPESO per riconversione Fase 3 (OC_AGENTI_ATTIVI non attivo)');
+    return { ok: true, sospeso: true, agente: agenteId };
+  }
+
   var t0 = Date.now();
   var agent = getAgentConfig(agenteId);
   if (!agent) return { ok: false, error: 'Agente ' + agenteId + ' non trovato' };

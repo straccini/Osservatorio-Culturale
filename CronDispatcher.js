@@ -40,7 +40,10 @@ var OC_CRON_EXTRA = [
   // sasRun, quindi archiviazione e pulizia proseguono normalmente.
   // { fn: 'reportUnificatoGiornaliero', tipo: 'daily', ora: 8, desc: 'Report giornaliero unificato: qualità bandi + fonti + QA contenuti (1 email)' },
   { fn: 'scanNewsletterGmail',   tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 6, desc: 'Ingestione newsletter da Gmail (settimanale)' },
-  { fn: 'agenteFontiMute',       tipo: 'monthdays', giorniMese: [1, 6, 11, 16, 21, 26], ora: 7, desc: 'Fonti mute: diagnosi per-fonte ogni 5 giorni + email' },
+  // v4.28.2 — SOSPESO (revisione trigger 02/08): la diagnosi fonti per email
+  // è resa ridondante dal RegistroFonti (rfStato) e confluirà nel report
+  // unico riprogettato lunedì. Riattivare togliendo il commento.
+  // { fn: 'agenteFontiMute',       tipo: 'monthdays', giorniMese: [1, 6, 11, 16, 21, 26], ora: 7, desc: 'Fonti mute: diagnosi per-fonte ogni 5 giorni + email' },
   // v4.25.10 — FRESCHEZZA NEWS: run multipli/giorno. Il run delle 07:00 arriva dal
   // base schedule (scanSourcesBisettimanale, ora quotidiano); questi 3 completano
   // il giro round-robin → tutte le fonti coperte più volte al giorno.
@@ -70,20 +73,22 @@ var OC_CRON_EXTRA = [
   { fn: 'enrichBandiDeepBatch',  tipo: 'daily',  ora: 1,  desc: 'Deep enrichment bandi: fetch pagina + estrazione scadenza/descrizione (15/run, ore 01)' },
   { fn: 'enrichBandiDeepBatch',  tipo: 'daily',  ora: 4,  desc: 'Deep enrichment bandi: seconda finestra notturna (15/run, ore 04)' },
   // v4.27 — apiScanTutto compattato: era trigger standalone lun 07:00 (ApiConnettori.js)
-  { fn: 'apiScanTutto',          tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 7, desc: 'API connettori: TED + iTunes + DOAJ + YouTube (lunedi)' },
+  { fn: 'apiScanTutto',          tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 7, desc: 'API connettori editoria: iTunes + DOAJ + YouTube (lunedi; TED e quotidiano via fasRunCompleto)' },
   // Tappa P — audit mensile salute fonti podcast/video (email all'admin, giorno 1)
   // [ri-innestato v4.27.6: perso nel clobber tra sessioni parallele]
-  { fn: 'podcastAuditMensile',   tipo: 'monthdays', giorniMese: [1], ora: 9, desc: 'Audit mensile fonti podcast/video mute (email)' },
+  // v4.28.2 — SOSPESO (revisione trigger 02/08): l'audit podcast/video per
+  // email confluisce nel report unico + salute del RegistroFonti.
+  // { fn: 'podcastAuditMensile',   tipo: 'monthdays', giorniMese: [1], ora: 9, desc: 'Audit mensile fonti podcast/video mute (email)' },
   // Attivazione una tantum fonti podcast+social (auto-disabilita dopo il 1° run)
-  { fn: 'discoveryAutoSeedOnce',  tipo: 'daily', ora: 8, desc: 'Attiva una tantum le nuove fonti podcast + social' },
   // v4.27.42 — attivazione una tantum fonti design/arte internazionale (segnalazione 2026-07)
-  { fn: 'fontiDesignArteSeedOnce', tipo: 'daily', ora: 8, desc: 'Attiva una tantum le fonti design & arte internazionale' },
   // v4.27.47 — attivazione una tantum canali video internazionali (Louisiana, ARoS, MoMA, Tate)
-  { fn: 'videoIntlSeedOnce', tipo: 'daily', ora: 8, desc: 'Attiva una tantum i canali video internazionali' },
   // v4.27.48 — pulizia mensile registro anti-ripetizione digest (righe >180gg)
+  // v4.28.2 — RIMOSSI i 4 seed one-shot (revisione trigger 02/08): gia'
+  // eseguiti (flag OC_*_SEEDED settati), giravano ogni giorno alle 8 a vuoto.
+  // discoveryAutoSeedOnce, fontiDesignArteSeedOnce, videoIntlSeedOnce,
+  // podcastAttiviSeedOnce — le funzioni restano nel codice.
   { fn: 'ddPrune', tipo: 'monthdays', giorniMese: [1], ora: 4, desc: 'Pulizia registro DigestInviati (>180gg)' },
   // v4.27.50 — attivazione una tantum podcast attivi (The Week in Art, Talk Art)
-  { fn: 'podcastAttiviSeedOnce', tipo: 'daily', ora: 8, desc: 'Attiva una tantum i podcast internazionali attivi' },
   // v4.27.52 — social: i post APPROVATI in coda vengono pubblicati (se le API
   // sono configurate) o inoltrati pronti su Telegram (ponte). Mar+ven 10:00.
   { fn: 'socialPubblicaApprovati', tipo: 'weekly', giorno: ScriptApp.WeekDay.TUESDAY, ora: 10, desc: 'Social: pubblica/inoltra i post approvati (martedì)' },

@@ -121,6 +121,49 @@ Regola: si tolgono i BOTTONI dal pannello; le funzioni restano nel codice
 (richiamabili dall'editor GAS in emergenza) finché la Fase 5 non conferma
 che possono sparire del tutto.
 
+## Revisione trigger (02/08 sera, v4.28.2 — decisioni Silvano)
+
+Censimento: ~40 attività schedulate, 3 gruppi di intervento.
+
+**Rimossi (ridondanza pura):**
+- 4 seed one-shot (discoveryAutoSeed, fontiDesignArteSeed, videoIntlSeed,
+  podcastAttiviSeed): già eseguiti, giravano ogni giorno alle 8 a vuoto
+- `lunediMattina` ridotto al SOLO sendWeeklyAlert (Telegram scadenze):
+  ogni altro passo era duplicato (sasRun notturno, rotazione RSS bandi,
+  scan podcast/news quotidiani, flusso redazionale)
+- TED tolto dal giro settimanale apiScanTutto (già quotidiano via
+  fasRunCompleto 05:15); resta l'editoria iTunes+DOAJ+YouTube
+
+**Sospesi in attesa del report unico (riattivabili scommentando):**
+- `agenteFontiMute` (email ogni 5gg) e `podcastAuditMensile` (email
+  mensile): ridondanti col RegistroFonti, confluiranno nel report nuovo
+
+**Riconversione Fase 3 (property OC_AGENTI_ATTIVI='true' per riattivare):**
+- AG1–AG5 (scan tematici Claude lun–ven) sospesi: si sovrapponevano alla
+  pipeline principale. Config, prompt, fonti e destinatari opt-in saranno
+  la base degli agenti Scout/Redattori
+- Email agenti quotidiane sospese; INTATTI: digest Coorte B martedì,
+  digest Matrix domenica sera, social draft, flusso redazionale
+
+**Restano attivi (verificati non sovrapposti):** sasRun (igiene+purge 20gg,
+04:30), fasRunCompleto (API bandi, 05:15), agrRunOggi (regioni), galRunOggi
+(GAL), bandiRssScanRotazione (06/18), scanSources (07/11/15/19),
+scanPodcastBisettimanale (07:30), enrichBandiDeep (01/04/22),
+enrichBandiRadar (03), txBatchNotturno (02), bcvNormalizzaRegione (02),
+pubDiscoveryScan (mer+sab), lavoroCulturaMonitor (mer+sab),
+normeAutoPopolaRun (gio), trendProponi (09), redazionale (ven+lun),
+socialPubblicaApprovati (mar+ven), scanNewsletterGmail (lun), frBackfillTier
+(lun), ddPrune (mensile), cronGenerateDigestWeekly (dom — pubblico Matrix).
+
+### Input per il report unico di lunedì (fonti e schede)
+Il report riprogettato dovrà consolidare in UNA email ciò che facevano
+reportUnificato + agenteFontiMute + podcastAuditMensile, leggendo dalle
+nuove viste: `rfStato()` (registro per categoria), `frSaluteFonti()` (bandi
+per tier), `txStato()` (copertura tassonomia + aderenza debole),
+`?diag=sezioni` (contenuti per sezione). Principio: per ogni sezione i 3
+numeri (fonti attive/produttive, ultimo ingresso, esposti vs scartati) —
+mai impressioni.
+
 ## Vincoli permanenti
 
 - "Meglio un bando in meno che uno scaduto o senza le informazioni base"

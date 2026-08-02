@@ -82,7 +82,7 @@ var OC_TRIGGER_SCHEDULE = [
   { fn: 'fasRunCompleto',               tipo: 'daily',    ora: 5,  min: 15,  desc: 'Fonti API strutturate: fase1 fetch + fase2 analisi (daily 05:15)' },
   { fn: 'agrRunOggi',                   tipo: 'daily',    ora: 5,  min: 30,  desc: 'Monitor regionale (4 regioni/giorno)' },
   { fn: 'sasRunWeekly',                 tipo: 'weekly',   giorno: ScriptApp.WeekDay.MONDAY, ora: 5, min: 30, desc: 'Supervisore settimanale + backup + social draft + digest queue' },
-  { fn: 'lunediMattina',               tipo: 'weekly',   giorno: ScriptApp.WeekDay.MONDAY, ora: 6, min: 0,  desc: 'Scan completo fonti lunedi' },
+  { fn: 'lunediMattina',               tipo: 'weekly',   giorno: ScriptApp.WeekDay.MONDAY, ora: 6, min: 0,  desc: 'Alert Telegram scadenze bandi (v4.28.2: ex scan completo, passi duplicati rimossi)' },
   { fn: 'galRunOggi',                   tipo: 'daily',    ora: 6,  min: 15,  desc: 'Monitor GAL (10/giorno)' },
 
   // === DIGEST — Opzione B (revisione prima dell'invio) ===
@@ -92,7 +92,7 @@ var OC_TRIGGER_SCHEDULE = [
   // Il martedì, sendDigestProfilatiMartedi invia Coorte B (Matrix) + email agenti.
   // v4.24: sendDigestProfilatiMartedi è DAILY — sostituisce sendAgentEmails.
   // Mar: Coorte B (profilati) + agenti. Altri gg: solo agenti (check interno isAgentEmailDay).
-  { fn: 'sendDigestProfilatiMartedi',   tipo: 'daily',    ora: 7,  min: 30,  desc: 'Daily: mar=profilati+agenti, altri gg=solo agenti' },
+  { fn: 'sendDigestProfilatiMartedi',   tipo: 'daily',    ora: 7,  min: 30,  desc: 'Daily: mar=digest profilati Matrix + social draft (email agenti sospese v4.28.2)' },
 
   // === MATTINA (scan contenuti) ===
   { fn: 'scanSourcesBisettimanale',     tipo: 'daily',    ora: 7,  min: 0,   desc: 'Scan RSS news quotidiano 07:00 (v4.25.10; +run 11/15/19 via dispatcher)' },
@@ -103,11 +103,14 @@ var OC_TRIGGER_SCHEDULE = [
   { fn: 'outreachRunDaily',              tipo: 'daily',    ora: 9,  min: 0,   desc: 'Outreach: sequenze follow-up 14gg' },
 
   // === AGENTI SCAN (scacchiera settimanale v4.20) ===
-  { fn: 'scanAgente1',                  tipo: 'weekly',   giorno: ScriptApp.WeekDay.MONDAY,    ora: 7, min: 0,  desc: 'AG1 Bandi (lunedi)' },
-  { fn: 'scanAgente2',                  tipo: 'weekly',   giorno: ScriptApp.WeekDay.TUESDAY,   ora: 7, min: 0,  desc: 'AG2 Normativa (martedi)' },
-  { fn: 'scanAgente3',                  tipo: 'weekly',   giorno: ScriptApp.WeekDay.WEDNESDAY, ora: 7, min: 0,  desc: 'AG3 Innovazione (mercoledi)' },
-  { fn: 'scanAgente4',                  tipo: 'weekly',   giorno: ScriptApp.WeekDay.THURSDAY,  ora: 7, min: 0,  desc: 'AG4 Comunita (giovedi)' },
-  { fn: 'scanAgente5',                  tipo: 'weekly',   giorno: ScriptApp.WeekDay.FRIDAY,    ora: 7, min: 0,  desc: 'AG5 Digital (venerdi)' }
+  // v4.28.2 — AG1-AG5 SOSPESI per riconversione negli agenti Scout/Redattori
+  // di Fase 3 (decisione Silvano 02/08). scanAgente() esce subito se
+  // OC_AGENTI_ATTIVI non e' 'true'. Le entry restano commentate per memoria.
+  // { fn: 'scanAgente1',                  tipo: 'weekly',   giorno: ScriptApp.WeekDay.MONDAY,    ora: 7, min: 0,  desc: 'AG1 Bandi (lunedi)' },
+  // { fn: 'scanAgente2',                  tipo: 'weekly',   giorno: ScriptApp.WeekDay.TUESDAY,   ora: 7, min: 0,  desc: 'AG2 Normativa (martedi)' },
+  // { fn: 'scanAgente3',                  tipo: 'weekly',   giorno: ScriptApp.WeekDay.WEDNESDAY, ora: 7, min: 0,  desc: 'AG3 Innovazione (mercoledi)' },
+  // { fn: 'scanAgente4',                  tipo: 'weekly',   giorno: ScriptApp.WeekDay.THURSDAY,  ora: 7, min: 0,  desc: 'AG4 Comunita (giovedi)' },
+  // { fn: 'scanAgente5',                  tipo: 'weekly',   giorno: ScriptApp.WeekDay.FRIDAY,    ora: 7, min: 0,  desc: 'AG5 Digital (venerdi)' }
 ];
 
 // ============================================================================

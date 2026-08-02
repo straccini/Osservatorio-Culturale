@@ -147,6 +147,23 @@ function preparaBozzaDigestLunedi() {
 // Sostituisce COMPLETAMENTE la funzione lunediMattina() esistente
 // ==================================================================
 function lunediMattina() {
+  // v4.28.2 — REVISIONE TRIGGER (decisione Silvano 02/08): questo mega-job
+  // del lunedì è stato ridotto al SOLO alert Telegram delle scadenze, perché
+  // ogni altro passo è duplicato altrove:
+  //   - cleanupBandiV5Scaduti  → sasRun MA5 (ogni notte 04:30)
+  //   - autoArchiviaNotizieVecchie → sasRun MA4 (ogni notte)
+  //   - scanBandiAutomatico (legacy) → bandiRssScanRotazione 2×/gg + fasRunCompleto daily
+  //   - scanPodcast → scanPodcastBisettimanale (ogni giorno 07:30)
+  //   - scanSources → già 4 run/giorno (07/11/15/19)
+  //   - preparaBozzaDigestLunedi → flusso redazionale ven 18:00 → lun 10:00
+  // La versione integrale resta nella history git (tag v4.28.1).
+  _initLegacyConsts_();
+  Logger.log('=== LUNEDI MATTINA (solo alert scadenze, v4.28.2) ===');
+  try { sendWeeklyAlert(); } catch (e) { Logger.log('sendWeeklyAlert: ' + e.message); }
+  Logger.log('=== LUNEDI COMPLETATO ===');
+}
+
+function lunediMattina_integrale_DISMESSO_() {
   _initLegacyConsts_(); // v4.22 — trigger entry point
   Logger.log('=== LUNEDI MATTINA v4.2 - OSSERVATORIO CULTURALE ===');
 

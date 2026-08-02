@@ -782,7 +782,12 @@ function sendDigestProfilatiMartedi(opts) {
     // Invio agenti solo a chi ha opt-in agente ma NON è in Coorte B.
     // Altri giorni: invio agenti normalmente (AG3 mer, AG5 gio, ecc.).
     Logger.log('[DigestProfilati] Check email agenti per ' + report.giorno + ' (esclusi ' + coorteBEmails.length + ' gia serviti)...');
-    if (!opts.dryRun && typeof sendAgentEmails === 'function') {
+    // v4.28.2 — email agenti SOSPESE per riconversione Fase 3 (con gli scan
+    // AG1-AG5 fermi si svuoterebbero comunque). Il digest Coorte B del martedì
+    // (punto 1) e il social draft (punto 3) NON sono toccati.
+    var _agAttivi = String(PropertiesService.getScriptProperties().getProperty('OC_AGENTI_ATTIVI')) === 'true';
+    if (!_agAttivi) Logger.log('[DigestProfilati] email agenti sospese (OC_AGENTI_ATTIVI non attivo)');
+    if (!opts.dryRun && _agAttivi && typeof sendAgentEmails === 'function') {
       var agResults = sendAgentEmails();
       if (Array.isArray(agResults)) {
         agResults.forEach(function(r) {
