@@ -56,6 +56,9 @@ var OC_CRON_EXTRA = [
   { fn: 'lavoroCulturaMonitor',  tipo: 'weekly', giorno: ScriptApp.WeekDay.SATURDAY,  ora: 8, desc: 'Lavoro cultura: scansione GU S4 e salvataggio concorsi (sabato)' },
   // T3 Normativa — auto-popola il foglio Norme dal flusso news (filtro normativa+cultura)
   { fn: 'normeAutoPopolaRun',    tipo: 'weekly', giorno: ScriptApp.WeekDay.THURSDAY,  ora: 9, desc: 'Auto-popolamento sezione Norme (settimanale)' },
+  // v4.28.1 — TASSONOMIA T1-T10: classificazione notturna dei contenuti attivi
+  // senza tipologia (60/run; Claude Haiku con fallback euristico)
+  { fn: 'txBatchNotturno',       tipo: 'daily', ora: 2, desc: 'Tassonomia T1-T10: classifica contenuti attivi (batch notturno)' },
   // Flusso redazionale (Redazionale_v1.js, spec 2026-07-10): creazione ven 18 →
   // revisione admin → richiesta invio a superadmin lun 10 (o conferma anticipata)
   { fn: 'redazionaleVenerdi',    tipo: 'weekly', giorno: ScriptApp.WeekDay.FRIDAY, ora: 18, desc: 'Redazionale: crea editoriale+bozza digest e avvisa gli admin' },

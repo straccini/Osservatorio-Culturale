@@ -33,6 +33,11 @@ var _OC_TEST_SUITES = [
     description: 'Classificatore concorsi/opportunita lavoro cultura (GU 4a Serie)'
   },
   {
+    name: 'tassonomia',
+    fn: 'txSelfTest',
+    description: 'Tassonomia T1-T10: euristica, normalizzazione risposta modello, catalogo'
+  },
+  {
     name: 'registroFonti',
     fn: 'rfSelfTest',
     description: 'Registro fonti unico: schema, scrittura per nome colonna, dedup URL'

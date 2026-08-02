@@ -91,6 +91,11 @@ function adminRunTool(tool, token) {
       case 'rfAttiva':           r = rfAttiva(); break;
       case 'rfDisattiva':        r = rfDisattiva(); break;
       case 'rfSelfTest':         r = rfSelfTest(); break;
+      // ── Tassonomia T1-T10 (v4.28.1 — Fase 2 regia fonti) ────────────────
+      case 'txBatchDry':         r = txBatchNotturno({ dryRun: true }); break;
+      case 'txBatchApply':       r = txBatchNotturno({ cap: 60 }); break;
+      case 'txStato':            r = txStato(); break;
+      case 'txSelfTest':         r = txSelfTest(); break;
       // ── Fonti podcast/video: riallineamento su FontiFeed (v4.27.97) ──────
       case 'sezioniAnteprima':   r = fsAnteprima(); break;
       case 'podcastMigraDry':    r = fsRiallineaPodcast({ dryRun: true }); break;

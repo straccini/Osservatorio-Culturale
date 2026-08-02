@@ -2714,6 +2714,15 @@
               <button class="btn btn-secondary" onclick="if(confirm('Da questo momento gli scanner news/podcast/video leggeranno le fonti dal RegistroFonti. Attivare?')) OC.adminTool('rfAttiva', this)" style="font-size:12px;padding:6px 12px;border-color:var(--success,#0F7B5A);color:var(--success,#0F7B5A)" title="Accende il flag USE_REGISTRO_FONTI: gli scanner passano al registro unico">⚡ Registro: attiva</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('rfDisattiva', this)" style="font-size:12px;padding:6px 12px" title="Torna ai fogli precedenti (FontiFeed) senza perdere nulla">↩ Registro: disattiva</button>
             </div>
+            <!-- v4.28.1 — TASSONOMIA T1-T10 (Fase 2): ogni contenuto riceve
+                 una tipologia + grado di aderenza 0-100. Batch notturno 02:00
+                 sui contenuti attivi; qui la versione manuale con anteprima. -->
+            <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin:14px 0 8px">Tassonomia T1&#8211;T10</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-secondary" onclick="OC.adminTool('txBatchDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quanti contenuti attivi sono ancora senza tipologia, per sezione">🔎 Classifica (anteprima)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('txBatchApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Classifica fino a 60 contenuti adesso (Claude, con fallback a parole chiave)">🏷 Classifica (adesso)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('txStato', this)" style="font-size:12px;padding:6px 12px" title="Copertura per sezione: classificati, da fare, aderenza debole, distribuzione per tipologia">📊 Tassonomia: stato</button>
+            </div>
           </div>
           <!-- v4.27.59 — GESTIONE TREND: proposte notizia in evidenza (approvazione Telegram) -->
           <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--rule,#E5E5E7)">
