@@ -30,13 +30,39 @@ var _PUB_CLAUDE_BATCH_SIZE_ = 20;          // send top N candidates to Claude
 var _PUB_CLAUDE_DAILY_CAP_ = 10;           // max filter calls per day (each = 1 batch)
 var _PUB_CLAUDE_CAP_PROP_ = 'PUB_CLAUDE_CALLS_';
 
+// v4.27.97 — pool ampliato da 6 a 20 query. Con sole 6 ricerche fisse la
+// rotazione ripeteva le stesse interrogazioni ogni pochi giorni: i risultati
+// erano già tutti in archivio e la deduplica li scartava, quindi la sezione
+// Libri risultava ferma (ultimo ingresso 06/07/2026) pur senza alcun errore.
+// Le nuove query coprono i cinque ambiti dell'Osservatorio e alternano
+// italiano e inglese sulle tre API.
 var _PUB_QUERIES_ = [
   { api: 'openlibrary',  q: 'museologia patrimonio culturale museo' },
   { api: 'openalex',     q: 'museum heritage digital AI Italy' },
   { api: 'crossref',     q: 'cultural heritage accessibility' },
   { api: 'openalex',     q: 'audience engagement community museum' },
   { api: 'openlibrary',  q: 'accessibilita museo inclusione' },
-  { api: 'crossref',     q: 'museum digital transformation' }
+  { api: 'crossref',     q: 'museum digital transformation' },
+  // Ambito 1 — identità e narrazione
+  { api: 'openlibrary',  q: 'allestimento museale narrazione mostra' },
+  { api: 'crossref',     q: 'museum storytelling interpretation exhibition' },
+  // Ambito 2 — inclusione e accessibilità
+  { api: 'crossref',     q: 'universal design cultural institutions disability' },
+  { api: 'openalex',     q: 'sign language easy to read museum accessibility' },
+  // Ambito 3 — collezioni, mostre, conservazione
+  { api: 'openlibrary',  q: 'conservazione restauro beni culturali' },
+  { api: 'openalex',     q: 'collection management provenance digitisation' },
+  // Ambito 4 — comunità e welfare culturale
+  { api: 'crossref',     q: 'participatory heritage co-creation community' },
+  { api: 'openalex',     q: 'culture health wellbeing museums social prescribing' },
+  { api: 'openlibrary',  q: 'educazione museale mediazione culturale pubblico' },
+  // Ambito 5 — digitale, AI, governance
+  { api: 'openalex',     q: 'artificial intelligence galleries libraries archives museums' },
+  { api: 'crossref',     q: 'cultural policy governance funding evaluation' },
+  { api: 'openlibrary',  q: 'management economia della cultura' },
+  // Trasversali
+  { api: 'openalex',     q: 'cultural tourism heritage territory regeneration' },
+  { api: 'crossref',     q: 'museum visitor studies evaluation impact' }
 ];
 
 var _PUB_KEYWORDS_ = [

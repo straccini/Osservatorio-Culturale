@@ -83,6 +83,15 @@ function adminRunTool(tool, token) {
       case 'fontiDuplicate':     r = frTrovaDuplicati(); break;
       case 'ripristinaFontiDry': r = frRipristinaFontiBandi({ dryRun: true }); break;
       case 'ripristinaFonti':    r = frRipristinaFontiBandi({}); break;
+      // ── Fonti podcast/video: riallineamento su FontiFeed (v4.27.97) ──────
+      case 'sezioniAnteprima':   r = fsAnteprima(); break;
+      case 'podcastMigraDry':    r = fsRiallineaPodcast({ dryRun: true }); break;
+      case 'podcastMigraApply':  r = fsRiallineaPodcast({}); break;
+      case 'videoRiseminaDry':   r = fsRiseminaVideo({ dryRun: true }); break;
+      case 'videoRiseminaApply': r = fsRiseminaVideo({}); break;
+      case 'fsSelfTest':         r = fsSelfTest(); break;
+      case 'scanPodcastVideo':   r = scanPodcastBisettimanale(); break;
+      case 'pubScan':            r = pubDiscoveryScan({ queryCount: 5 }); break;
       // forzatura canale: adminRunTool(tool, token) non passa parametri liberi,
       // quindi i casi di confine hanno una voce dedicata ciascuno (v4.27.89)
       case 'canaleBandi_progettareEuropa': r = frForzaCanale('Progettare in Europa', 'bandi'); break;

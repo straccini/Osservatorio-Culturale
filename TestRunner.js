@@ -33,6 +33,11 @@ var _OC_TEST_SUITES = [
     description: 'Classificatore concorsi/opportunita lavoro cultura (GU 4a Serie)'
   },
   {
+    name: 'fontiSezioni',
+    fn: 'fsSelfTest',
+    description: 'Riallineamento fonti podcast/video su FontiFeed (scrittura per nome colonna)'
+  },
+  {
     name: 'discovery',
     fn: 'discoverySelfTest',
     description: 'Classificatore rilevanza podcast/pubblicazioni (PubDiscovery)'

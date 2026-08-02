@@ -436,6 +436,124 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(_re, null, 2)).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // v4.27.96 — MAPPA SEZIONI (?diag=sezioni): per ogni canale — podcast,
+  // video, libri, norme, news — risponde con NUMERI alle tre domande del
+  // piano: quante fonti attive, quando è entrato l'ultimo contenuto, quanti
+  // contenuti ci sono. Sola lettura.
+  if (params.diag === 'sezioni') {
+    var _s = { versione: (typeof OC_VERSION !== 'undefined' ? OC_VERSION : '?'),
+               eseguito: Utilities.formatDate(new Date(), 'Europe/Rome', 'dd/MM/yyyy HH:mm'), sezioni: {} };
+    try {
+      var _sss = getMainSS();
+      // (a) contenuti per foglio: righe, ultimo ingresso, ultimi 7/30gg
+      function _cont_(nomeFoglio, colData, filtro) {
+        var sh = _sss.getSheetByName(nomeFoglio);
+        if (!sh) return { foglio: nomeFoglio, stato: 'FOGLIO ASSENTE' };
+        var lr = sh.getLastRow();
+        if (lr < 2) return { foglio: nomeFoglio, righe: 0 };
+        var v = sh.getDataRange().getValues();
+        var head = v[0].map(function (h) { return String(h || '').trim(); });
+        var iD = -1;
+        (colData || []).forEach(function (n) { if (iD < 0) iD = head.indexOf(n); });
+        var tot = 0, g7 = 0, g30 = 0, tsMax = 0, ora = Date.now();
+        for (var r = 1; r < v.length; r++) {
+          if (!v[r][0]) continue;
+          if (filtro && !filtro(v[r], head)) continue;
+          tot++;
+          if (iD < 0) continue;
+          var d = v[r][iD];
+          var dt = (d instanceof Date) ? d : (d ? new Date(d) : null);
+          if (!dt || isNaN(dt.getTime())) continue;
+          if (dt.getTime() > tsMax) tsMax = dt.getTime();
+          var age = ora - dt.getTime();
+          if (age <= 7 * 86400000) g7++;
+          if (age <= 30 * 86400000) g30++;
+        }
+        return { foglio: nomeFoglio, righe: tot, ultimi7gg: g7, ultimi30gg: g30,
+                 colonnaData: iD >= 0 ? head[iD] : 'NON TROVATA',
+                 ultimoIngresso: tsMax ? Utilities.formatDate(new Date(tsMax), 'Europe/Rome', 'dd/MM/yyyy') : '—' };
+      }
+      var _isVid = function (row) { return String(row[0]).indexOf('VID') === 0; };
+      _s.sezioni.podcast = _cont_('Podcast', ['DataRilevamento', 'Data_Rilevamento'], function (r) { return !_isVid(r); });
+      _s.sezioni.video   = _cont_('Podcast', ['DataRilevamento', 'Data_Rilevamento'], _isVid);
+      _s.sezioni.libri   = _cont_('Pubblicazioni', ['DataAggiunta', 'DataRilevamento']);
+      _s.sezioni.norme   = _cont_('Norme', ['DataAggiunta', 'DataRilevamento']);
+      _s.sezioni.news    = _cont_('Items', ['DataAcquisizione', 'DataPubblicazione']);
+
+      // (b) fonti per tipo dal foglio FontiFeed: attive e scansionate di recente
+      var shF = _sss.getSheetByName('FontiFeed');
+      if (shF && shF.getLastRow() > 1) {
+        var vf = shF.getDataRange().getValues();
+        var hf = vf[0].map(function (h) { return String(h || '').trim(); });
+        var iT = hf.indexOf('Tipo'), iA = hf.indexOf('Attiva'), iS = hf.indexOf('UltimaScan'),
+            iN = hf.indexOf('NRecordTotali'), iNome = hf.indexOf('Nome');
+        var perTipo = {}, ora2 = Date.now(), mute = [];
+        for (var rf = 1; rf < vf.length; rf++) {
+          var tipo = String(vf[rf][iT] || '(senza tipo)').toLowerCase().trim() || '(senza tipo)';
+          if (!perTipo[tipo]) perTipo[tipo] = { totali: 0, attive: 0, scan7gg: 0, conRecord: 0 };
+          var P = perTipo[tipo];
+          P.totali++;
+          var att = vf[rf][iA];
+          if (!(att === true || String(att).toLowerCase() === 'true')) continue;
+          P.attive++;
+          var ds = (iS >= 0) ? vf[rf][iS] : null;
+          var dts = (ds instanceof Date) ? ds : (ds ? new Date(ds) : null);
+          if (dts && !isNaN(dts.getTime()) && (ora2 - dts.getTime()) <= 7 * 86400000) P.scan7gg++;
+          var nrec = Number(vf[rf][iN] || 0);
+          if (nrec > 0) P.conRecord++;
+          else if (mute.length < 25) mute.push({ tipo: tipo, nome: String(vf[rf][iNome] || '').substring(0, 42) });
+        }
+        _s.fontiPerTipo = perTipo;
+        _s.fontiAttiveSenzaRecord = mute;
+      } else _s.fontiPerTipo = 'foglio FontiFeed assente';
+
+      // (c) flag per tipo: se OFF, podcast/video leggono FontiPodcast (legacy)
+      // e NON aggiornano i contatori (updateFeedSourceStats è no-op). Senza
+      // questo dato i numeri del punto (b) sarebbero fuorvianti.
+      _s.flagFontiFeed = {};
+      ['rss', 'podcast', 'video'].forEach(function (t) {
+        try { _s.flagFontiFeed[t] = (typeof isFontiFeedEnabled_ === 'function') ? isFontiFeedEnabled_(t) : '?'; }
+        catch (eF) { _s.flagFontiFeed[t] = 'errore'; }
+      });
+
+      // (d) sorgente realmente usata dagli scanner podcast/video
+      try {
+        _s.fontiScanner = {
+          podcast: (typeof getFeedSources === 'function') ? getFeedSources('podcast').length : '?',
+          video:   (typeof getFeedSources === 'function') ? getFeedSources('video').length : '?'
+        };
+      } catch (eG) { _s.fontiScanner = { errore: eG.message }; }
+
+      var shP = _sss.getSheetByName('FontiPodcast');
+      if (shP && shP.getLastRow() > 1) {
+        var vp = shP.getDataRange().getValues();
+        var hp = vp[0].map(function (h) { return String(h || '').trim(); });
+        var pT = hp.indexOf('TipoContenuto'), pA = hp.indexOf('Attiva'), pN = hp.indexOf('NumEpisodi');
+        var pU = hp.indexOf('URL_RSS');
+        var legacy = { audio: { totali: 0, attive: 0, conEpisodi: 0 }, video: { totali: 0, attive: 0, conEpisodi: 0 } };
+        // Sospetto: _ensureFontiPodTipoContenuto_ marca 'audio' TUTTE le righe
+        // preesistenti quando crea la colonna. I feed YouTube etichettati
+        // 'audio' sono fonti video invisibili allo scanner.
+        var ytMalEtichettati = 0, ytEsempi = [];
+        for (var rp = 1; rp < vp.length; rp++) {
+          var tc = String(vp[rp][pT] || '').toLowerCase();
+          var box = (tc === 'video') ? legacy.video : legacy.audio;
+          box.totali++;
+          if (!(vp[rp][pA] === false || String(vp[rp][pA]).toLowerCase() === 'false')) box.attive++;
+          if (Number(vp[rp][pN] || 0) > 0) box.conEpisodi++;
+          var urlp = (pU >= 0) ? String(vp[rp][pU] || '') : '';
+          if (urlp.indexOf('youtube.com') >= 0 && tc !== 'video') {
+            ytMalEtichettati++;
+            if (ytEsempi.length < 6) ytEsempi.push(String(vp[rp][hp.indexOf('Nome')] || '').substring(0, 40) + ' [' + (tc || 'vuoto') + ']');
+          }
+        }
+        _s.fontiPodcastLegacy = legacy;
+        _s.feedYoutubeNonEtichettatiVideo = { quanti: ytMalEtichettati, esempi: ytEsempi };
+      } else _s.fontiPodcastLegacy = 'foglio FontiPodcast assente o vuoto';
+    } catch (eS) { _s.errore = eS.message; }
+    return ContentService.createTextOutput(JSON.stringify(_s, null, 2)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (params.diag === 'contatori') {
     var _dg;
     try { _dg = (typeof diagContatoriBadge === 'function') ? diagContatoriBadge() : { errore: 'tool assente' }; }

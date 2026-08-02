@@ -2701,6 +2701,20 @@
               <button class="btn btn-secondary" onclick="OC.adminTool('fontiDuplicate', this)" style="font-size:12px;padding:6px 12px" title="Fonti presenti due volte nel foglio (stesso nome o stesso URL)">👥 Fonti duplicate</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('ripristinaFonti', this)" style="font-size:12px;padding:6px 12px;border-color:var(--success,#0F7B5A);color:var(--success,#0F7B5A)" title="Riattiva le fonti disattivate per errore dalla separazione dei canali (es. IndiceBandi)">♻ Ripristina fonti bandi</button>
             </div>
+            <!-- v4.27.97 — le altre sezioni: i flag FontiFeed sono accesi per
+                 podcast e video, ma le fonti non erano state travasate (video
+                 a zero dal 07/05). Gli scanner con lista vuota restituiscono 0
+                 in silenzio: da qui si ripristinano e si verifica subito. -->
+            <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin:14px 0 8px">Fonti podcast, video e libri</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-secondary" onclick="OC.adminTool('sezioniAnteprima', this)" style="font-size:12px;padding:6px 12px" title="Quante fonti vede lo scanner per podcast e video, e quante ne mancano">🔎 Fonti sezioni (stato)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('podcastMigraDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: fonti podcast rimaste sul vecchio foglio e invisibili allo scanner">🔎 Podcast: migra (anteprima)</button>
+              <button class="btn btn-secondary" onclick="if(confirm('Copia su FontiFeed le fonti podcast rimaste sul foglio legacy. Il vecchio foglio non viene toccato. Procedere?')) OC.adminTool('podcastMigraApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Copia le fonti podcast mancanti su FontiFeed (dedup per URL)">🎧 Podcast: migra (applica)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('videoRiseminaDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: canali YouTube da ripristinare come fonti video">🔎 Video: ripristina (anteprima)</button>
+              <button class="btn btn-secondary" onclick="if(confirm('Ripristina i 25 canali YouTube come fonti video su FontiFeed. Procedere?')) OC.adminTool('videoRiseminaApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Riscrive le fonti video su FontiFeed (erano sparite: sezione ferma dal 07/05)">🎬 Video: ripristina (applica)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('scanPodcastVideo', this)" style="font-size:12px;padding:6px 12px" title="Lancia subito la scansione podcast + video per verificare il ripristino">▶ Scan podcast+video (adesso)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('pubScan', this)" style="font-size:12px;padding:6px 12px" title="Discovery pubblicazioni: pool query ampliato da 6 a 20 (era esaurito)">📚 Libri: discovery (adesso)</button>
+            </div>
             <!-- v4.27.89 — casi di confine: la decisione umana batte la
                  classificazione automatica (scrive [canale:bandi] nel Tag) -->
             <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin:14px 0 8px">Riporta sui bandi (casi di confine)</div>
