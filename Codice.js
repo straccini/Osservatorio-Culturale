@@ -426,6 +426,16 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(_v, null, 2)).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // v4.27.95 — Diagnosi del deep enrichment (?diag=enrich&n=3): fa fetch e
+  // estrazione sui primi N bandi senza scadenza ma NON scrive nulla.
+  if (params.diag === 'enrich') {
+    var _ne = Math.min(Number(params.n) || 3, 6);
+    var _re;
+    try { _re = (typeof enrichBandiDeep === 'function') ? enrichBandiDeep({ cap: _ne, diagnostica: true }) : 'funzione assente'; }
+    catch (eE) { _re = { ok: false, errore: eE.message }; }
+    return ContentService.createTextOutput(JSON.stringify(_re, null, 2)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (params.diag === 'contatori') {
     var _dg;
     try { _dg = (typeof diagContatoriBadge === 'function') ? diagContatoriBadge() : { errore: 'tool assente' }; }

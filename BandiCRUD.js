@@ -299,6 +299,47 @@ function enrichBandiRadarBatch() {
  * @param {string} html
  * @return {string}
  */
+var ENRICH_MAX_CHARS = 8000;
+
+/**
+ * Parole che segnalano dove si trova la scadenza (o l'importo) nel testo.
+ * Servono a COMPORRE l'estratto attorno a quelle posizioni invece di prendere
+ * ciecamente l'inizio della pagina.
+ */
+var ENRICH_KEYWORDS_RE = /(scadenz\w*|termine\s+(?:di\s+)?(?:presentazione|ultimo)|entro\s+(?:il|le|e\s+non\s+oltre)|scade\s+il|presentazione\s+delle\s+domande|domande?\s+(?:di\s+partecipazione|dovranno|dovra)|ore\s+\d{1,2}[:.]\d{2}|dotazione\s+finanziaria|importo\s+(?:complessivo|massimo)|euro\s?[\d.,]{4,}|€\s?[\d.,]{4,}|contributo\s+(?:massimo|concedibile))/gi;
+
+/**
+ * @private I menu dei CMS compaiono due volte nell'HTML (versione desktop e
+ * mobile): "BANDI BANDI Bandi Bandi Concorsi Concorsi...". Collassa le
+ * ripetizioni immediate di 1-4 parole, in più passate per le catene lunghe.
+ */
+function _enrichCollassaRipetizioni_(s) {
+  var prev = null, out = s, giri = 0;
+  while (out !== prev && giri < 4) {
+    prev = out;
+    out = out.replace(/\b([\wÀ-ÿ'’]{2,}(?:\s+[\wÀ-ÿ'’]{2,}){0,3})\s+\1\b/gi, '$1');
+    giri++;
+  }
+  return out;
+}
+
+/**
+ * Estrae testo utile da HTML grezzo.
+ *
+ * v4.27.95 — RISCRITTA. La versione precedente prendeva i primi 3000 caratteri:
+ * su un CMS con menu lungo (caso reale GAL Valle Umbra, 02/08) quei 3000
+ * caratteri erano TUTTI menu duplicato, e il modello non vedeva mai il bando.
+ * Risultato: tre notti di enrichment con zero scadenze recuperate.
+ * Ora: (1) si collassano le ripetizioni di menu, (2) il tetto sale a 8000,
+ * (3) se il testo eccede, l'estratto si COMPONE con l'inizio (titolo e
+ * contesto) più le finestre attorno alle parole chiave di scadenza e importo.
+ * Verificato sulla pagina reale: la vecchia non conteneva alcun riferimento
+ * temporale, la nuova contiene "l'inoltro della domanda dovrà avvenire entro
+ * il 30/12/2025".
+ *
+ * @param {string} html
+ * @return {string}
+ */
 function _enrichExtractText_(html) {
   if (!html) return '';
   var s = String(html);
@@ -309,16 +350,34 @@ function _enrichExtractText_(html) {
   s = s.replace(/<footer[\s\S]*?<\/footer>/gi, ' ');
   s = s.replace(/<header[\s\S]*?<\/header>/gi, ' ');
   s = s.replace(/<aside[\s\S]*?<\/aside>/gi, ' ');
+  s = s.replace(/<form[\s\S]*?<\/form>/gi, ' ');
   s = s.replace(/<!--[\s\S]*?-->/g, ' ');
   // Rimuovi tutti i tag HTML
   s = s.replace(/<[^>]+>/g, ' ');
   // Decode entità comuni
   s = s.replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<')
        .replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&#\d+;/g, ' ');
-  // Collassa whitespace
+  // Collassa whitespace e menu duplicati
   s = s.replace(/\s+/g, ' ').trim();
-  // Tronca a 3000 char (sufficiente per Claude, dentro budget token)
-  return s.substring(0, 3000);
+  s = _enrichCollassaRipetizioni_(s);
+  if (s.length <= ENRICH_MAX_CHARS) return s;
+
+  // Testo lungo: estratto mirato (inizio + finestre attorno alle parole chiave)
+  var pezzi = [s.substring(0, 1200)];
+  var usati = 1200, m, viste = [];
+  ENRICH_KEYWORDS_RE.lastIndex = 0;
+  while ((m = ENRICH_KEYWORDS_RE.exec(s)) !== null && usati < ENRICH_MAX_CHARS) {
+    var da = Math.max(0, m.index - 400), a = Math.min(s.length, m.index + 500);
+    var sovrapposta = false;
+    for (var v = 0; v < viste.length; v++) {
+      if (da < viste[v][1] && a > viste[v][0]) { sovrapposta = true; break; }
+    }
+    if (sovrapposta) continue;
+    viste.push([da, a]);
+    pezzi.push(s.substring(da, a));
+    usati += (a - da);
+  }
+  return pezzi.join(' … ').substring(0, ENRICH_MAX_CHARS);
 }
 
 /**
@@ -513,6 +572,32 @@ function enrichBandiDeep(opts) {
       var jm = txt.match(/\{[\s\S]*\}/);
       if (!jm) { report.errori++; continue; }
       var parsed = JSON.parse(jm[0]);
+
+      // v4.27.95 — MODALITÀ DIAGNOSTICA: esegue fetch + estrazione ma NON
+      // scrive, e riporta cosa ha restituito il modello per ogni bando.
+      // Serve perché il dryRun esce prima del fetch: se il termometro
+      // "bandi con scadenza" resta fermo (28 il 01 e il 02/08, dopo tre
+      // finestre notturne) non si distingue se il punto debole è la pagina,
+      // il modello o la scrittura sul foglio.
+      if (opts.diagnostica) {
+        report.estrazioni = report.estrazioni || [];
+        report.estrazioni.push({
+          titolo: c.titolo.substring(0, 55),
+          url: c.url,
+          mancava: { scadenza: !c.hasScad, descrizione: !c.hasDescr },
+          caratteriPagina: (typeof pageText === 'string') ? pageText.length : null,
+          // il campione mostra COSA VEDE il modello: se qui compaiono menu,
+          // cookie banner o "pagina non trovata", il problema è la pagina,
+          // non l'estrazione
+          campioneTesto: (typeof pageText === 'string') ? pageText.substring(0, 320) : '',
+          paginaErrore: (typeof pageText === 'string') &&
+            /(pagina non trovata|non esiste|page not found|error 404|errore 404)/i.test(pageText),
+          estratto: { scadenza: parsed.scadenza || null,
+                      descrizione: parsed.descrizione ? String(parsed.descrizione).substring(0, 70) : null,
+                      importo: parsed.importo || null }
+        });
+        continue;
+      }
 
       // 4. Aggiorna solo campi vuoti
       var aggiornato = false;
