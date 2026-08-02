@@ -100,8 +100,22 @@ non risolve; feed di categoria vuoti → generale con filtro a valle).
 - [x] scSettimanale (domenica 17: riepilogo email+Telegram) +
       scApplicaDecisioni (approvata→Registro in quarantena; scartata→sigillo)
 - [x] scRiparaAnci + blacklist piattaforme + self-test 10 casi
-- [ ] Redattore: compilazione campi completa per categoria (prossimo passo)
+- [x] Redattore CONSEGNATO (v4.28.4) — politica a due livelli (spec 02/08):
+      BANDI = recupero attivo in ordine di importanza (pertinenza, scadenza,
+      link imprescindibili; redBandiStato + redBandiRecupero orchestrano il
+      deep enrichment esistente); ALTRE CATEGORIE = si soprassiede sui campi
+      ma coerenza tematica garantita (redCoerenza: aderenza <30 = fuori tema,
+      anteprima obbligatoria). Nessun nuovo trigger: recupero bandi già 3×/
+      notte, coerenza dal pannello dopo controllo
 - [ ] Repository ricerca atenei via OpenAIRE (seconda battuta)
+
+### Fase 4 — Candidature: decisioni prese (02/08 sera)
+- Perimetro AMPIO: Capitali (italiana/europea/libro/arte contemporanea),
+  UNESCO (WHL, Creative Cities, MoW, immateriale), riconoscimenti minori
+  (Città che legge, European Heritage Label, Bandiere arancioni, borghi)
+- Struttura: ENTRAMBE le viste — lista avvisi con filtro per tipo +
+  schede candidatura con timeline a fasi — con schemi chiari e dedicati
+- ANCI: fonte chiave verificata (www.anci.it/rss, filtro a valle)
 - [ ] `AgenteScout.js`: per categoria, settimanale; genera candidate
       (directory di settore, OPML, indici podcast, ricerche mirate),
       valida tecnicamente (feed vivo? produce? che qualità?), scrive in

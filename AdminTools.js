@@ -104,6 +104,13 @@ function adminRunTool(tool, token) {
       case 'scApplicaDecisioni': r = scApplicaDecisioni(); break;
       case 'scRiparaAnci':       r = scRiparaAnci(); break;
       case 'scSelfTest':         r = scSelfTest(); break;
+      // ── Redattore (v4.28.4 — Fase 3, politica a due livelli) ────────────
+      case 'redBandiStato':      r = redBandiStato(); break;
+      case 'redBandiRecuperoDry':r = redBandiRecupero({ dryRun: true }); break;
+      case 'redBandiRecupero':   r = redBandiRecupero({ cap: 15 }); break;
+      case 'redCoerenzaDry':     r = redCoerenza({ dryRun: true }); break;
+      case 'redCoerenzaApply':   r = redCoerenza({ dryRun: false }); break;
+      case 'redSelfTest':        r = redSelfTest(); break;
       // ── Fonti podcast/video: riallineamento su FontiFeed (v4.27.97) ──────
       case 'sezioniAnteprima':   r = fsAnteprima(); break;
       case 'podcastMigraDry':    r = fsRiallineaPodcast({ dryRun: true }); break;

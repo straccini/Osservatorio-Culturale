@@ -2738,6 +2738,18 @@
               <button class="btn btn-secondary" onclick="if(confirm('Applica le decisioni prese sul foglio FontiCandidate: le approvate entrano nel Registro in quarantena, le scartate vengono sigillate per sempre. Procedere?')) OC.adminTool('scApplicaDecisioni', this)" style="font-size:12px;padding:6px 12px;border-color:var(--success,#0F7B5A);color:var(--success,#0F7B5A)" title="Processa le righe con Stato = approvata / scartata">✅ Scout: applica decisioni</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('scRiparaAnci', this)" style="font-size:12px;padding:6px 12px" title="ANCI verificato il 02/08: vivo su www.anci.it/rss (il dominio senza www non risolve). Corregge l'URL ovunque">🔧 Ripara fonte ANCI</button>
             </div>
+            <!-- v4.28.4 — REDATTORE (Fase 3): politica a due livelli.
+                 Bandi: link fonte e scadenza IMPRESCINDIBILI, recupero attivo.
+                 Altre categorie: sui campi si soprassiede, la coerenza
+                 tematica si garantisce (aderenza < 30 = fuori tema). -->
+            <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin:14px 0 8px">Redattore &middot; qualit&agrave; delle informazioni</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-secondary" onclick="OC.adminTool('redBandiStato', this)" style="font-size:12px;padding:6px 12px" title="Completezza dei bandi attivi campo per campo, in ordine di importanza: link, scadenza, descrizione, importo, regione">📋 Bandi: completezza</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('redBandiRecuperoDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima del recupero orchestrato (deep enrichment + regione)">🔎 Bandi: recupero (anteprima)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('redBandiRecupero', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Lancia subito il recupero: 15 bandi al deep enrichment (priorità senza-scadenza) + normalizza regione">🛠 Bandi: recupero (adesso)</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('redCoerenzaDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: contenuti esposti chiaramente fuori tema (aderenza sotto 30) in news, podcast, video, libri">🔎 Coerenza tematica (anteprima)</button>
+              <button class="btn btn-secondary" onclick="if(confirm('Archivia i contenuti chiaramente fuori tema (aderenza sotto 30). Controllare prima l\'anteprima. Procedere?')) OC.adminTool('redCoerenzaApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Archivia i fuori tema confermati dall'anteprima">🧭 Coerenza tematica (applica)</button>
+            </div>
           </div>
           <!-- v4.27.59 — GESTIONE TREND: proposte notizia in evidenza (approvazione Telegram) -->
           <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--rule,#E5E5E7)">

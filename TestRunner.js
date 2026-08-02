@@ -33,6 +33,11 @@ var _OC_TEST_SUITES = [
     description: 'Classificatore concorsi/opportunita lavoro cultura (GU 4a Serie)'
   },
   {
+    name: 'redattore',
+    fn: 'redSelfTest',
+    description: 'Redattore: politica due livelli (bandi imprescindibili, coerenza tematica)'
+  },
+  {
     name: 'scoutFonti',
     fn: 'scSelfTest',
     description: 'Scout fonti: normalizzazione domini, blacklist, catalogo atenei'
