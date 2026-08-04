@@ -373,18 +373,35 @@ function fasParserTedApiPost(opts) {
   // Query 1: CPV 925xx (biblioteche, archivi, musei, servizi culturali)
   // Query 2: CPV 454xx (restauro monumenti, scavi archeologici, musei)
   // Query 3: fulltext + scope culturale per catturare bandi con CPV non standard
+  // v4.28.14 — DUE CORREZIONI VERIFICATE DAL VIVO (03/08/2026):
+  //
+  // 1. notice-type IN (cn-standard cn-social) — senza questo filtro la query
+  //    ingeriva anche gli avvisi di AGGIUDICAZIONE (can-standard/can-social),
+  //    che sono ESITI di gara e per natura non hanno scadenza. Sul campione
+  //    reale erano 41 su 79 (52%): finivano nel Radar come bandi senza data,
+  //    non venivano mai esposti e affollavano la coda dell'enrichment.
+  //    Con il filtro: 0 avvisi senza scadenza su 50 esaminati.
+  //
+  // 2. publication-date >= finestra — i risultati arrivano dal più vecchio,
+  //    quindi senza finestra si pescava dal 2016. Con 45 giorni: 470 avvisi
+  //    disponibili nel perimetro CPV, 23 con scadenza futura nel primo
+  //    centinaio.
+  var _fasDa = new Date(Date.now() - 45 * 86400000);
+  var _fasYmd = Utilities.formatDate(_fasDa, 'Europe/Rome', 'yyyyMMdd');
+  var _fasCoda = ' AND notice-type IN (cn-standard cn-social) AND publication-date >= ' + _fasYmd;
+
   var payloads = [
     {
       label: 'CPV-925-Cultura',
-      query: 'PC = "92500000" OR PC = "92510000" OR PC = "92511000" OR PC = "92512000" OR PC = "92520000" OR PC = "92521000" OR PC = "92521100" OR PC = "92521200" OR PC = "92522000" OR PC = "92522100" OR PC = "92522200"'
+      query: '(PC = "92500000" OR PC = "92510000" OR PC = "92511000" OR PC = "92512000" OR PC = "92520000" OR PC = "92521000" OR PC = "92521100" OR PC = "92521200" OR PC = "92522000" OR PC = "92522100" OR PC = "92522200")' + _fasCoda
     },
     {
       label: 'CPV-923-Spettacolo',
-      query: 'PC = "92300000" OR PC = "92310000" OR PC = "92311000" OR PC = "92312000" OR PC = "92312100" OR PC = "92320000"'
+      query: '(PC = "92300000" OR PC = "92310000" OR PC = "92311000" OR PC = "92312000" OR PC = "92312100" OR PC = "92320000")' + _fasCoda
     },
     {
       label: 'CPV-454-Restauro',
-      query: 'PC = "45454100" OR PC = "45212350" OR PC = "45212310" OR PC = "45212313" OR PC = "45112450"'
+      query: '(PC = "45454100" OR PC = "45212350" OR PC = "45212310" OR PC = "45212313" OR PC = "45112450")' + _fasCoda
     }
   ];
 
@@ -396,7 +413,13 @@ function fasParserTedApiPost(opts) {
         scope: 'ACTIVE',
         // v5.5 — campi REALI TED v3: notice-title = oggetto dell'appalto (multilingua),
         // buyer-name = ente, notice-type = tipologia, classification-cpv per descrizione.
-        fields: ['publication-number', 'notice-title', 'buyer-name', 'notice-type', 'classification-cpv', 'deadline-receipt-tender-date-lot']
+        // v4.28.14 — CAMPO SCADENZA CORRETTO. Il nome usato finora
+        // ('deadline-receipt-tender-date-lot') NON esiste nell'API TED v3:
+        // verificato il 03/08/2026, restituisce null su OGNI avviso, mentre
+        // 'deadline-receipt-request' è popolato al 100%. È il motivo per cui
+        // TUTTI i bandi TED arrivavano senza scadenza e quindi non venivano
+        // mai esposti (la regola richiede scadenza certa).
+        fields: ['publication-number', 'notice-title', 'buyer-name', 'notice-type', 'classification-cpv', 'deadline-receipt-request']
       };
 
       var resp = UrlFetchApp.fetch('https://api.ted.europa.eu/v3/notices/search', {
@@ -463,7 +486,11 @@ function fasParserTedApiPost(opts) {
           pubNumber ? ('Pubblicazione TED ' + pubNumber) : ''
         ].filter(Boolean).join(' · ');
 
-        var scad = _fasNormalizzaData_(n['deadline-receipt-tender-date-lot'] || '');
+        // v4.28.14 — l'API restituisce un ARRAY di date (una per lotto):
+        // si prende la prima. Fallback sul vecchio nome per sicurezza.
+        var _dl = n['deadline-receipt-request'] || n['deadline-receipt-tender-date-lot'] || '';
+        if (Object.prototype.toString.call(_dl) === '[object Array]') _dl = _dl.length ? _dl[0] : '';
+        var scad = _fasNormalizzaData_(_dl);
 
         if (!dryRun) {
           _fasSaveBando_({
