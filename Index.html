@@ -2899,6 +2899,43 @@
       </div>
       <!-- TAB SEGNALAZIONI (v4.19.1) -->
       <div class="settings-tab-content" data-tab-content="segnalazioni" hidden>
+
+        <!-- v4.28.21 — TREND: notizia in evidenza. Il modulo esisteva (v4.27.60)
+             ma viveva solo negli Strumenti admin e su Telegram. Qui la redazione
+             lo governa dall'app: admin e redattori nominati in OC_EDITOR_EMAILS. -->
+        <div class="admin-card" style="margin-bottom:14px">
+          <h3>Notizia in evidenza &middot; trend</h3>
+          <p class="hint">Ogni due giorni il sistema propone una notizia per la home. La proposta resta qui e su Telegram: <strong>compare in home solo dopo l&rsquo;approvazione</strong> di un admin o di un redattore abilitato.</p>
+
+          <div id="trendEvidenzaBox" style="margin:12px 0"></div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <button class="btn btn-secondary" onclick="OC.trendRedLoad(this)" style="font-size:12px;padding:7px 14px">Carica proposte</button>
+            <button class="btn btn-secondary" onclick="OC.adminTool('trendProponi', this)" style="font-size:12px;padding:7px 14px" title="Valuta subito le candidate e invia una nuova proposta, scartando l'eventuale pendente">Proponi adesso</button>
+            <button class="btn btn-secondary" onclick="OC.trendRedCriterio(this)" style="font-size:12px;padding:7px 14px" title="Mostra la griglia editoriale con cui il sistema sceglie">Criterio editoriale</button>
+          </div>
+
+          <div id="trendRedList" style="font-size:13px;color:var(--ink-2)"></div>
+        </div>
+
+        <!-- Canale di approvazione: chi riceve le proposte su Telegram -->
+        <div class="admin-card" style="margin-bottom:14px">
+          <h3>Chi pu&ograve; approvare</h3>
+          <p class="hint">Gli approvatori ricevono la proposta su Telegram con i pulsanti Pubblica e Scarta. Per aggiungere una persona serve il suo <em>chat-id</em>: si ottiene facendogli scrivere un messaggio qualsiasi al bot, poi leggendolo qui.</p>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <button class="btn btn-secondary" onclick="OC.trendApprovatori(this)" style="font-size:12px;padding:7px 14px">Stato approvatori</button>
+            <button class="btn btn-secondary" onclick="OC.trendMittenti(this)" style="font-size:12px;padding:7px 14px" title="Legge gli ultimi messaggi ricevuti dal bot e mostra i chat-id dei mittenti">Leggi chi ha scritto al bot</button>
+          </div>
+
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+            <input id="trendChatIdRiccardo" placeholder="chat-id di Riccardo (solo numeri)" style="padding:8px 10px;border:1px solid var(--rule,#D5D0C4);font-size:13px;min-width:230px" />
+            <button class="btn btn-primary" onclick="OC.trendRegistraRiccardo(this)" style="font-size:12px;padding:8px 16px">Registra Riccardo</button>
+          </div>
+
+          <div id="trendApprovatoriBox" style="font-size:12.5px;color:var(--ink-2)"></div>
+        </div>
+
         <div class="admin-card" style="margin-bottom:14px;border-left:4px solid var(--amb-2,#3F7A5E)">
           <h3>Moderazione segnalazioni</h3>
           <p class="hint">Coda segnalazioni inviate dalla community. Approva, rifiuta o pubblica. Le segnalazioni pubblicate vengono promosse nel feed Items e notificate su Telegram.</p>
@@ -12560,6 +12597,150 @@
         })
         .withFailureHandler(function(e){ if (btn) btn.disabled=false; box.textContent = '❌ ' + (e && e.message || e); })
         .getTrendProposte(tk);
+    },
+    // v4.28.21 — TREND IN REDAZIONE (sezione Segnalazioni). Il modulo esisteva
+    // dalla v4.27.60 ma viveva solo negli Strumenti admin e su Telegram: qui la
+    // redazione lo governa dall'app. Il gate accetta anche i redattori nominati.
+    _esc: function(x){ return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); },
+    trendRedLoad: function(btn){
+      var box = document.getElementById('trendRedList');
+      var ev  = document.getElementById('trendEvidenzaBox');
+      if (!box) return;
+      if (btn) btn.disabled = true;
+      box.textContent = 'Carico...';
+      var tk = (window.OC_SESSION && OC_SESSION.token) || '';
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (btn) btn.disabled = false;
+          if (!r || !r.ok) { box.textContent = (r && r.error === 'forbidden')
+            ? 'Non hai i permessi per gestire i trend: serve il ruolo admin oppure essere fra i redattori abilitati.'
+            : ('Errore: ' + ((r&&r.error)||'sconosciuto')); return; }
+          if (ev) {
+            ev.innerHTML = r.evidenza
+              ? '<div style="border-top:2px solid var(--ink,#1D1D1F);padding-top:10px">'
+                + '<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent,#B8351A);font-weight:700;margin-bottom:4px">In evidenza sulla home</div>'
+                + '<div style="font-family:Georgia,serif;font-size:15px;line-height:1.35">' + OC._esc(r.evidenza.titolo||'') + '</div>'
+                + '<button class="btn btn-secondary" style="font-size:11px;padding:5px 12px;margin-top:8px" onclick="OC.trendRimuoviEvidenza(this)">Togli dalla home</button>'
+                + '</div>'
+              : '<div style="font-size:12.5px;color:var(--ink-3,#6E6A62);border-top:1px solid var(--rule,#E8E4DC);padding-top:10px">Nessuna notizia in evidenza in questo momento.</div>';
+          }
+          var ps = r.proposte || [];
+          if (!ps.length) { box.innerHTML = '<div style="color:var(--ink-3,#6E6A62)">Nessuna proposta in elenco. Usa <em>Proponi adesso</em> per valutare le candidate.</div>'; return; }
+          var html = '';
+          ps.forEach(function(p){
+            var attesa = (p.stato === 'proposta' || !p.stato);
+            html += '<div style="border-bottom:1px solid var(--rule,#E8E4DC);padding:12px 0">'
+              + '<div style="font-size:11px;color:var(--ink-3,#6E6A62);margin-bottom:4px">'
+              + OC._esc(p.data||'') + (p.fonte ? ' &middot; ' + OC._esc(p.fonte) : '')
+              + ' &middot; <strong style="color:' + (attesa ? 'var(--accent,#B8351A)' : 'var(--ink-3,#6E6A62)') + '">' + OC._esc(p.stato||'proposta') + '</strong></div>'
+              + '<div style="font-family:Georgia,serif;font-size:15px;line-height:1.35;margin-bottom:6px">'
+              + (p.url ? '<a href="' + OC._esc(p.url) + '" target="_blank" rel="noopener" style="color:var(--ink,#1D1D1F);text-decoration:none">' + OC._esc(p.titolo||'') + '</a>' : OC._esc(p.titolo||''))
+              + '</div>';
+            if (attesa) {
+              html += '<button class="btn btn-primary" style="font-size:11px;padding:6px 14px;margin-right:6px" onclick="OC.trendRedAzione(\'' + p.id + '\',\'pubblica\',this)">Pubblica in home</button>'
+                    + '<button class="btn btn-secondary" style="font-size:11px;padding:6px 14px;margin-right:6px" onclick="OC.trendRedAzione(\'' + p.id + '\',\'scarta\',this)">Scarta</button>';
+            }
+            html += '<button class="btn btn-secondary" style="font-size:11px;padding:6px 14px" onclick="OC.trendRedAzione(\'' + p.id + '\',\'elimina\',this)">Elimina</button>'
+              + '</div>';
+          });
+          box.innerHTML = html;
+        })
+        .withFailureHandler(function(e){ if (btn) btn.disabled=false; box.textContent = 'Errore: ' + (e && e.message || e); })
+        .trProposteRedazione(tk);
+    },
+    trendRedAzione: function(id, azione, btn){
+      if (azione === 'elimina' && !confirm('Eliminare definitivamente questa proposta?')) return;
+      if (azione === 'pubblica' && !confirm('Pubblicare questa notizia in evidenza sulla home?')) return;
+      if (btn) btn.disabled = true;
+      var tk = (window.OC_SESSION && OC_SESSION.token) || '';
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (typeof showToast==='function') showToast(r && r.ok ? ('Trend: ' + azione) : ('Trend: ' + ((r&&r.error)||'errore')), r && r.ok ? 'ok' : 'err');
+          OC.trendRedLoad(null);
+          if (azione === 'pubblica') { try { _loadTrendHome_(); } catch(_){} }
+        })
+        .withFailureHandler(function(e){ if (btn) btn.disabled=false; if (typeof showToast==='function') showToast('Trend: ' + (e && e.message || e), 'err'); })
+        .trAzioneRedazione(id, azione, tk);
+    },
+    trendRedCriterio: function(btn){
+      var box = document.getElementById('trendRedList');
+      if (!box) return;
+      var tk = (window.OC_SESSION && OC_SESSION.token) || '';
+      google.script.run.withSuccessHandler(function(r){
+        if (!r || !r.ok || !r.criterio) { box.textContent = 'Criterio non disponibile.'; return; }
+        var c = r.criterio;
+        var h = '<div style="border-top:2px solid var(--ink,#1D1D1F);padding-top:12px">'
+          + '<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--ink-3,#6E6A62);margin-bottom:8px">Criterio editoriale ' + OC._esc(c.versione) + '</div><ol style="margin:0 0 10px 18px;padding:0;line-height:1.7">';
+        c.priorita.forEach(function(x){ h += '<li>' + OC._esc(x) + '</li>'; });
+        h += '</ol><div style="font-size:12.5px;color:var(--ink-3,#6E6A62);line-height:1.6">'
+          + '<strong>Esclusi:</strong> ' + OC._esc(c.esclusioni) + '<br>'
+          + '<strong>Facolt&agrave;:</strong> ' + OC._esc(c.facolta) + '<br>'
+          + '<strong>Se l&rsquo;API non risponde:</strong> ' + OC._esc(c.fallback) + '</div></div>';
+        box.innerHTML = h;
+      }).withFailureHandler(function(e){ box.textContent = 'Errore: ' + (e && e.message || e); })
+        .trProposteRedazione(tk);
+    },
+    trendApprovatori: function(btn){
+      var box = document.getElementById('trendApprovatoriBox');
+      if (!box) return;
+      if (btn) btn.disabled = true;
+      box.textContent = 'Carico...';
+      var tk = (window.OC_SESSION && OC_SESSION.token) || '';
+      google.script.run.withSuccessHandler(function(r){
+        if (btn) btn.disabled = false;
+        if (!r || !r.ok) { box.textContent = 'Errore: ' + ((r&&r.error)||'sconosciuto'); return; }
+        box.innerHTML = '<div style="border-top:1px solid var(--rule,#E8E4DC);padding-top:10px;line-height:1.8">'
+          + '<div>Bot Telegram: <strong>' + OC._esc(r.bot) + '</strong></div>'
+          + '<div>Silvano: <strong>' + OC._esc(r.silvano) + '</strong></div>'
+          + '<div>Riccardo: <strong>' + OC._esc(r.riccardo) + '</strong></div>'
+          + '<div>Redattori abilitati nell&rsquo;app: ' + OC._esc(r.redattoriAbilitati) + '</div>'
+          + '<div style="font-size:12px;color:var(--ink-3,#6E6A62);margin-top:6px">' + OC._esc(r.nota) + '</div></div>';
+      }).withFailureHandler(function(e){ if (btn) btn.disabled=false; box.textContent = 'Errore: ' + (e && e.message || e); })
+        .trStatoApprovatori(tk);
+    },
+    trendMittenti: function(btn){
+      var box = document.getElementById('trendApprovatoriBox');
+      if (!box) return;
+      if (btn) btn.disabled = true;
+      box.textContent = 'Leggo i messaggi ricevuti dal bot...';
+      var tk = (window.OC_SESSION && OC_SESSION.token) || '';
+      google.script.run.withSuccessHandler(function(r){
+        if (btn) btn.disabled = false;
+        if (!r || !r.ok) { box.textContent = 'Errore: ' + ((r&&r.error)||'sconosciuto'); return; }
+        var h = '<div style="border-top:1px solid var(--rule,#E8E4DC);padding-top:10px">';
+        if (!r.mittenti.length) {
+          h += '<div style="color:var(--ink-3,#6E6A62)">' + OC._esc(r.nota) + '</div>';
+        } else {
+          r.mittenti.forEach(function(m){
+            h += '<div style="padding:8px 0;border-bottom:1px solid var(--rule,#E8E4DC)">'
+              + '<strong>' + OC._esc(m.nome) + '</strong> ' + OC._esc(m.username)
+              + (m.gia_registrato ? ' <span style="color:var(--ink-3,#6E6A62)">(gi&agrave; registrato come ' + OC._esc(m.gia_registrato) + ')</span>' : '')
+              + '<br><code style="font-size:12px">' + OC._esc(m.chatId) + '</code>'
+              + ' <button class="btn btn-secondary" style="font-size:10px;padding:3px 10px;margin-left:6px" onclick="document.getElementById(\'trendChatIdRiccardo\').value=\'' + m.chatId + '\'">Usa questo</button>'
+              + '</div>';
+          });
+          h += '<div style="font-size:12px;color:var(--ink-3,#6E6A62);margin-top:8px">' + OC._esc(r.nota) + '</div>';
+        }
+        box.innerHTML = h + '</div>';
+      }).withFailureHandler(function(e){ if (btn) btn.disabled=false; box.textContent = 'Errore: ' + (e && e.message || e); })
+        .trTelegramMittenti(tk);
+    },
+    trendRegistraRiccardo: function(btn){
+      var inp = document.getElementById('trendChatIdRiccardo');
+      var box = document.getElementById('trendApprovatoriBox');
+      if (!inp || !inp.value.trim()) { if (typeof showToast==='function') showToast('Inserisci il chat-id', 'err'); return; }
+      if (btn) btn.disabled = true;
+      var tk = (window.OC_SESSION && OC_SESSION.token) || '';
+      google.script.run.withSuccessHandler(function(r){
+        if (btn) btn.disabled = false;
+        if (!r || !r.ok) { if (typeof showToast==='function') showToast('Errore: ' + ((r&&r.error)||''), 'err'); return; }
+        if (typeof showToast==='function') showToast('Riccardo registrato', 'ok');
+        if (box) box.innerHTML = '<div style="border-top:1px solid var(--rule,#E8E4DC);padding-top:10px;line-height:1.7">'
+          + '<div>Chat-id registrato: <strong>' + OC._esc(r.chatIdRegistrato) + '</strong></div>'
+          + '<div>Messaggio di prova: <strong>' + OC._esc(r.messaggioDiProva) + '</strong></div>'
+          + '<div style="font-size:12px;color:var(--ink-3,#6E6A62);margin-top:6px">' + OC._esc(r.nota) + '</div></div>';
+      }).withFailureHandler(function(e){ if (btn) btn.disabled=false; if (typeof showToast==='function') showToast('Errore: ' + (e && e.message || e), 'err'); })
+        .trRegistraRiccardo(inp.value.trim(), tk);
     },
     trendAzione: function(id, azione, btn){
       if (azione === 'elimina' && !confirm('Eliminare definitivamente questa proposta?')) return;

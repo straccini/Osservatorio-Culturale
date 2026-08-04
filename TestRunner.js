@@ -38,6 +38,11 @@ var _OC_TEST_SUITES = [
     description: 'Testata newsletter: angoli vivi, palette del marchio, pulsanti veri'
   },
   {
+    name: 'trendRedazione',
+    fn: 'trSelfTest',
+    description: 'Trend redazione: criterio editoriale e validazione chat-id Telegram'
+  },
+  {
     name: 'digestSezioni',
     fn: 'dsSelfTest',
     description: 'Sezioni newsletter: escape, troncamento, conformita Graticcio (no radius/ombre/bordi laterali)'
