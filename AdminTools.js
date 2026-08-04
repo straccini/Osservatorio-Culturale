@@ -112,6 +112,9 @@ function adminRunTool(tool, token) {
       case 'redCoerenzaDry':     r = redCoerenza({ dryRun: true }); break;
       case 'redCoerenzaApply':   r = redCoerenza({ dryRun: false }); break;
       case 'redSelfTest':        r = redSelfTest(); break;
+      // ── Newsletter: sezioni complete (v4.28.15) ─────────────────────────
+      case 'digestSezioniStato': r = digestSezioniStato(); break;
+      case 'dsSelfTest':         r = dsSelfTest(); break;
       // ── Fonti podcast/video: riallineamento su FontiFeed (v4.27.97) ──────
       case 'sezioniAnteprima':   r = fsAnteprima(); break;
       case 'podcastMigraDry':    r = fsRiallineaPodcast({ dryRun: true }); break;

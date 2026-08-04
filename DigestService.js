@@ -262,30 +262,62 @@ function buildDigestHTML(items, dest, readerUrl, filterAmbiti) {
   var _logoFoot = _assets.logo
     ? `<a href="${_sito}" style="text-decoration:none"><img src="${_assets.logo}" alt="OCS" width="60" height="42" style="display:block;border:0" /></a>`
     : '';
+  // v4.28.15 — TESTATA RIDISEGNATA, direzione «Graticcio» (DESIGN.md §7).
+  // Prima: logo a sinistra e data a destra su una riga, masthead allineato a
+  // sinistra, tre link in blu (#1F3F8F, estraneo alla palette) sparsi su una
+  // riga giustificata, tre pastiglie social con raggi diversi (6px, 8px, 50%).
+  // Il disordine nasceva da lì: due famiglie di colore, tre geometrie, nessun
+  // asse comune.
+  // Ora: un solo asse centrale — logo, data, masthead, navigazione. Angoli
+  // vivi ovunque, accento vermiglio del marchio, cobalto solo per la data
+  // (è un dato). I pulsanti ripetono quelli della home: fondo pieno vermiglio
+  // per l'azione, bordo inchiostro per le secondarie.
+  var _dataOggi = formatDate(new Date());
+  function _btnNav(href, testo, primario) {
+    return primario
+      ? `<a href="${href}" style="display:inline-block;background:#B8351A;color:#ffffff;text-decoration:none;padding:9px 20px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif">${testo}</a>`
+      : `<a href="${href}" style="display:inline-block;background:#ffffff;color:#1D1D1F;text-decoration:none;padding:8px 19px;border:1px solid #1D1D1F;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif">${testo}</a>`;
+  }
   var _headerHtml =
-    `<tr><td style="padding:24px 36px 0"><table width="100%" cellpadding="0" cellspacing="0"><tr>`
-    + `<td align="left" style="vertical-align:middle">${_logoTop}</td>`
-    + `<td align="right" style="vertical-align:middle;font-size:14px;font-weight:700;color:#1F3F8F">${formatDate(new Date())}</td>`
+    // logo centrato, da solo: è il primo segno che si vede
+    `<tr><td align="center" style="padding:30px 36px 0">${_logoTop}</td></tr>`
+    // data in cobalto, maiuscoletto spaziato: dato, non titolo
+    + `<tr><td align="center" style="padding:10px 36px 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1E3A8A">${_dataOggi}</td></tr>`
+    + `<tr><td style="padding:16px 36px 0"><div style="border-top:2px solid #1D1D1F;font-size:0;line-height:0">&nbsp;</div></td></tr>`
+    // masthead centrato sullo stesso asse del logo
+    + `<tr><td align="center" style="padding:20px 36px 18px">${_masthead}</td></tr>`
+    + `<tr><td style="padding:0 36px"><div style="border-top:1px solid #D5D0C4;font-size:0;line-height:0">&nbsp;</div></td></tr>`
+    // navigazione: pulsanti veri, centrati, come nella home del sito
+    + `<tr><td align="center" style="padding:18px 36px 0">`
+    + `<table cellpadding="0" cellspacing="0" style="margin:0 auto"><tr>`
+    + `<td style="padding:0 5px">${_btnNav(_sito, 'Osservatorio', true)}</td>`
+    + `<td style="padding:0 5px">${_btnNav(_appUrl + '?goto=segnala', 'Segnala', false)}</td>`
+    + `<td style="padding:0 5px">${_btnNav(_appUrl + '?goto=consulenza', 'Contattaci', false)}</td>`
     + `</tr></table></td></tr>`
-    + `<tr><td style="padding:14px 36px 0"><div style="border-top:2px solid #A65138;font-size:0;line-height:0">&nbsp;</div></td></tr>`
-    + `<tr><td align="left" style="padding:14px 36px 6px">${_masthead}</td></tr>`
-    + `<tr><td style="padding:8px 36px 0"><div style="border-top:2px solid #A65138;font-size:0;line-height:0">&nbsp;</div></td></tr>`
-    + `<tr><td style="padding:12px 36px 0"><table width="100%" cellpadding="0" cellspacing="0"><tr>`
-    + `<td align="left" style="font-size:14px;font-weight:700"><a href="${_sito}" style="color:#1F3F8F;text-decoration:none">Osservatorio</a></td>`
-    + `<td align="center" style="font-size:14px;font-weight:700"><a href="${_appUrl}?goto=segnala" style="color:#1F3F8F;text-decoration:none">Segnala</a></td>`
-    + `<td align="right" style="font-size:14px;font-weight:700"><a href="${_appUrl}?goto=consulenza" style="color:#1F3F8F;text-decoration:none">Contattaci</a></td>`
-    + `</tr></table></td></tr>`
-    + `<tr><td align="center" style="padding:14px 36px 20px">`
-    + `<a href="${_linkedin}" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:6px;text-align:center;font-size:13px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">in</a>`
-    + `<a href="${_instagram}" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:8px;text-align:center;font-size:12px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">IG</a>`
-    + `<a href="${_sito}" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:50%;text-align:center;font-size:14px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">&#8853;</a>`
+    // social: una sola geometria, quadrata come tutto il resto
+    + `<tr><td align="center" style="padding:16px 36px 22px">`
+    + `<a href="${_linkedin}" style="display:inline-block;width:26px;height:24px;border:1px solid #6E6A62;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;color:#6E6A62;text-decoration:none;line-height:24px;margin:0 5px">in</a>`
+    + `<a href="${_instagram}" style="display:inline-block;width:26px;height:24px;border:1px solid #6E6A62;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:#6E6A62;text-decoration:none;line-height:24px;margin:0 5px">IG</a>`
     + `</td></tr>`;
   var _footerLogoHtml =
     `<tr><td style="padding:16px 36px 4px"><table width="100%" cellpadding="0" cellspacing="0"><tr>`
     + `<td align="left" style="vertical-align:middle">${_logoFoot}</td>`
     + `<td align="left" style="vertical-align:middle;padding-left:10px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#8A8578">Osservatorio Culturale Sinopia</td>`
     + `</tr></table></td></tr>`;
-  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Digest</title></head><body style="margin:0;padding:0;background:#E4E0D8;font-family:Arial,Helvetica,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#E4E0D8" style="padding:28px 0"><tr><td align="center"><table width="640" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #cfc9be">${_headerHtml}${editorialeBlock}${readerBtn}<tr><td style="padding:4px 36px 36px"><table width="100%" cellpadding="0" cellspacing="0">${sectionsHTML}</table>${lavoroBlock}${capitaleCta}</td></tr><tr><td style="border-top:2px solid #111111">${_footerLogoHtml}${unsubFooter}</td></tr></table></td></tr></table></body></html>`;
+  // v4.28.15 — SEZIONI COMPLETE. Finora il digest conteneva SOLO le news
+  // raggruppate per ambito: bandi, norme, podcast, video, pubblicazioni e
+  // segnalazioni non entravano affatto (salvo un bando lavoro). Era una
+  // rassegna stampa, non il digest dell'Osservatorio.
+  // Additivo e difensivo: ogni sezione è indipendente e, se vuota o in
+  // errore, semplicemente non compare — le altre restano.
+  var sezioniExtra = '';
+  try {
+    sezioniExtra = (typeof digestSezioniComplete === 'function')
+      ? digestSezioniComplete(_appUrl, (typeof _digestMixCorrente_ === 'function') ? _digestMixCorrente_() : null)
+      : '';
+  } catch (_sezErr) { Logger.log('[DigestService] sezioni extra: ' + _sezErr.message); }
+
+  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Digest</title></head><body style="margin:0;padding:0;background:#E4E0D8;font-family:Arial,Helvetica,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#E4E0D8" style="padding:28px 0"><tr><td align="center"><table width="640" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #cfc9be">${_headerHtml}${editorialeBlock}${readerBtn}<tr><td style="padding:4px 36px 36px"><table width="100%" cellpadding="0" cellspacing="0">${sectionsHTML}${sezioniExtra}</table>${lavoroBlock}${capitaleCta}</td></tr><tr><td style="border-top:2px solid #111111">${_footerLogoHtml}${unsubFooter}</td></tr></table></td></tr></table></body></html>`;
 }
 
 /**
