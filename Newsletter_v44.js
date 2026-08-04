@@ -56,10 +56,10 @@ function buildNewsletterHtml_(draft) {
 
   var parts = [];
   parts.push('<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+_h_(draft.soggetto)+'</title></head>');
-  parts.push('<body style="margin:0;padding:0;background:#F4F4F6;font-family:Inter,Helvetica,Arial,sans-serif;color:#1D1D1F;">');
-  parts.push('<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#F4F4F6;padding:24px 0;">');
+  parts.push('<body style="margin:0;padding:0;background:#E4E0D8;font-family:Inter,Helvetica,Arial,sans-serif;color:#1D1D1F;">');
+  parts.push('<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#E4E0D8;padding:24px 0;">');
   parts.push('<tr><td align="center">');
-  parts.push('<table role="presentation" width="640" cellspacing="0" cellpadding="0" border="0" style="max-width:640px;background:#FFFFFF;border-radius:12px;overflow:hidden;">');
+  parts.push('<table role="presentation" width="640" cellspacing="0" cellpadding="0" border="0" style="max-width:640px;background:#FFFFFF">');
 
   // v4.27.43 — Testata design «traiettorie sottotraccia» approvato 2026-07-18
   // (fondo bianco, logo a SX, data a DX, filetti terra, masthead, nav, social).
@@ -72,7 +72,7 @@ function buildNewsletterHtml_(draft) {
   if (_editoriale && _editoriale.testo) {
     parts.push('<tr><td style="padding:20px 28px 4px 28px;">');
     // v4.25.14 — RIPRISTINO regressione 1ff01773: foto banner + firma (da 2775252c)
-    if (_editoriale.foto) parts.push('<img src="' + String(_editoriale.foto) + '" alt="" width="564" style="width:100%;max-width:564px;border-radius:10px;display:block;margin-bottom:14px"/>');
+    if (_editoriale.foto) parts.push('<img src="' + String(_editoriale.foto) + '" alt="" width="564" style="width:100%;max-width:564px;display:block;margin-bottom:14px"/>');
     parts.push('<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8B3A1F;font-weight:700;margin-bottom:8px;">Approfondimento della settimana</div>');
     parts.push('<div style="font-size:16px;font-weight:700;color:#1D1D1F;margin-bottom:10px;">' + _h_(_editoriale.titolo) + '</div>');
     parts.push('<p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C;">' + _h_(_editoriale.testo).replace(/\n/g, '<br>') + '</p>');
@@ -219,16 +219,16 @@ function buildNewsletterHtml_(draft) {
   // CTA
   if (webUrl) {
     parts.push('<tr><td style="padding:24px 28px;text-align:center;">');
-    parts.push('<a href="' + _h_(webUrl) + '" style="display:inline-block;background:#1D1D1F;color:#FFFFFF;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">Apri Osservatorio Culturale →</a>');
+    parts.push('<a href="' + _h_(webUrl) + '" style="display:inline-block;background:#B8351A;color:#FFFFFF;padding:13px 30px;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif">Apri l&#39;Osservatorio</a>');
     parts.push('</td></tr>');
   }
 
   // Social links
   parts.push('<tr><td style="padding:16px 28px 4px;text-align:center;border-top:1px solid #ECECEE;">');
   parts.push('<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8E;margin-bottom:10px;">Seguici</div>');
-  parts.push('<a href="https://www.linkedin.com/company/sinopiaconsulting/" style="display:inline-block;background:#0A66C2;color:#fff;padding:8px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:0 4px;">LinkedIn</a>');
-  parts.push('<a href="https://www.instagram.com/sinopia_osservatorio?igsh=MTFhdjY2ZXZubzVpYg==" style="display:inline-block;background:#C13584;color:#fff;padding:8px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:0 4px;">Instagram</a>');
-  parts.push('<a href="mailto:sinopiaconsulting@gmail.com" style="display:inline-block;background:#5A5A5E;color:#fff;padding:8px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:0 4px;">Email</a>');
+  parts.push('<a href="https://www.linkedin.com/company/sinopiaconsulting/" style="display:inline-block;background:#FFFFFF;color:#1D1D1F;border:1px solid #1D1D1F;padding:8px 20px;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;margin:0 4px">LinkedIn</a>');
+  parts.push('<a href="https://www.instagram.com/sinopia_osservatorio?igsh=MTFhdjY2ZXZubzVpYg==" style="display:inline-block;background:#FFFFFF;color:#1D1D1F;border:1px solid #1D1D1F;padding:8px 20px;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;margin:0 4px">Instagram</a>');
+  parts.push('<a href="mailto:sinopiaconsulting@gmail.com" style="display:inline-block;background:#FFFFFF;color:#1D1D1F;border:1px solid #1D1D1F;padding:8px 20px;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;margin:0 4px">Email</a>');
   parts.push('</td></tr>');
 
   // Footer
@@ -328,12 +328,12 @@ function _nlBandoCard_(b, urgent) {
   if (scad) {
     scadText = 'Scadenza: ' + _h_(scad);
     if (urgent && giorni != null) {
-      scadText += ' <span style="background:' + amb.bg + ';color:' + amb.fg + ';padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">' + (giorni <= 0 ? 'oggi' : giorni + 'gg') + '</span>';
+      scadText += ' <span style="color:#B8351A;font-size:11px;font-weight:700;letter-spacing:.04em">' + (giorni <= 0 ? 'oggi' : giorni + 'gg') + '</span>';
     }
   }
 
   return '<tr><td style="padding:8px 28px;">' +
-         '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:' + amb.bg + '40;border-left:3px solid ' + stripe + ';border-radius:6px;">' +
+         '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FFFFFF;border-bottom:1px solid #E8E4DC">' +
          '<tr><td style="padding:12px 14px;">' +
            '<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:' + amb.fg + ';font-weight:700;">' + _h_(amb.label) + '</div>' +
            '<div style="font-size:15px;line-height:1.35;color:#1D1D1F;font-weight:600;margin-top:3px;">' +
@@ -353,7 +353,7 @@ function _nlNewsCard_(n) {
   var url    = n.url   || n.URL   || n.link || '';
 
   return '<tr><td style="padding:8px 28px;">' +
-         '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:' + amb.bg + '40;border-left:3px solid ' + amb.fg + ';border-radius:6px;">' +
+         '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FFFFFF;border-bottom:1px solid #E8E4DC">' +
          '<tr><td style="padding:12px 14px;">' +
            '<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:' + amb.fg + ';font-weight:700;">' + _h_(amb.label) + '</div>' +
            '<div style="font-size:15px;line-height:1.35;color:#1D1D1F;font-weight:600;margin-top:3px;">' +
@@ -372,7 +372,7 @@ function _nlPodcastCard_(p) {
   var url    = p.url    || p.URL    || p.link || '';
 
   return '<tr><td style="padding:8px 28px;">' +
-         '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:' + amb.bg + '40;border-left:3px solid ' + amb.fg + ';border-radius:6px;">' +
+         '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FFFFFF;border-bottom:1px solid #E8E4DC">' +
          '<tr><td style="padding:12px 14px;">' +
            '<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:' + amb.fg + ';font-weight:700;">' + _h_(amb.label) + '</div>' +
            '<div style="font-size:15px;line-height:1.35;color:#1D1D1F;font-weight:600;margin-top:3px;">' +
@@ -517,23 +517,111 @@ function _nlMastheadHtml_(dataLabel) {
   // filetto terra (via il secondo che incorniciava il vecchio blocco logo),
   // data centrata sotto il lockup, riga unica ordinata con tutti i link di
   // accesso: nav + social, centrati e spaziati regolarmente.
+  // v4.28.16 — TESTATA RIDISEGNATA (richiesta Silvano 04/08: "sotto il logo
+  // c'è disordine, font e colori; logo al centro; pulsanti eleganti che
+  // richiamano la home"). Direzione «Graticcio» (DESIGN.md §7, autoritativa).
+  //
+  // Il disordine aveva cause precise, non generiche:
+  //   · due famiglie di colore — data e link in #1F3F8F, un blu ESTRANEO alla
+  //     palette del marchio, accanto ai filetti in #A65138
+  //   · tre geometrie nelle sole pastiglie social: raggi 6px, 8px e 50%
+  //   · nessun pulsante vero: le tre voci erano testo blu separato da punti
+  //   · il logo OCS non compariva affatto in testata
+  //
+  // Ora: un solo asse centrale (logo, data, masthead, navigazione), angoli
+  // vivi ovunque, vermiglio del marchio per l'azione, cobalto solo per la
+  // data (è un dato, non un titolo), pulsanti pieni/bordati come nella home,
+  // una sola geometria per i social. Nessuna ombra, nessun gradiente.
+  var VERMIGLIO = '#B8351A', COBALTO = '#1E3A8A', INCHIOSTRO = '#1D1D1F', BORDO = '#D5D0C4';
+  function btn(href, testo, primario) {
+    return primario
+      ? '<a href="' + href + '" style="display:inline-block;background:' + VERMIGLIO + ';color:#ffffff;text-decoration:none;padding:9px 20px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif">' + testo + '</a>'
+      : '<a href="' + href + '" style="display:inline-block;background:#ffffff;color:' + INCHIOSTRO + ';text-decoration:none;padding:8px 19px;border:1px solid ' + INCHIOSTRO + ';font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif">' + testo + '</a>';
+  }
   var p = [];
-  p.push('<tr><td align="center" style="padding:26px 28px 4px;background:#FFFFFF">' + masthead + '</td></tr>');
-  p.push('<tr><td align="center" style="padding:4px 28px 0;background:#FFFFFF;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#1F3F8F">' + _h_(dataLabel || '') + '</td></tr>');
-  p.push('<tr><td style="padding:14px 28px 0;background:#FFFFFF"><div style="border-top:2px solid #A65138;font-size:0;line-height:0">&nbsp;</div></td></tr>');
-  p.push('<tr><td align="center" style="padding:14px 28px 4px;background:#FFFFFF;font-size:14px;font-weight:700">');
-  p.push('<a href="' + sito + '" style="color:#1F3F8F;text-decoration:none">Osservatorio</a>');
-  p.push('<span style="color:#A65138;padding:0 12px">&middot;</span>');
-  p.push('<a href="' + appUrl + '?goto=segnala" style="color:#1F3F8F;text-decoration:none">Segnala</a>');
-  p.push('<span style="color:#A65138;padding:0 12px">&middot;</span>');
-  p.push('<a href="' + appUrl + '?goto=consulenza" style="color:#1F3F8F;text-decoration:none">Contattaci</a>');
-  p.push('</td></tr>');
-  p.push('<tr><td align="center" style="padding:10px 28px 18px;background:#FFFFFF">');
-  p.push('<a href="' + linkedin + '" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:6px;text-align:center;font-size:13px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">in</a>');
-  p.push('<a href="' + instagram + '" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:8px;text-align:center;font-size:12px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">IG</a>');
-  p.push('<a href="' + sito + '" style="display:inline-block;width:28px;height:26px;border:2px solid #111111;border-radius:50%;text-align:center;font-size:14px;font-weight:800;color:#111111;text-decoration:none;line-height:26px;margin:0 8px">&#8853;</a>');
+  // il logo apre la testata, centrato: è il primo segno del marchio
+  p.push('<tr><td align="center" style="padding:28px 28px 0;background:#FFFFFF">' + logo + '</td></tr>');
+  p.push('<tr><td align="center" style="padding:10px 28px 0;background:#FFFFFF;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:' + COBALTO + '">' + _h_(dataLabel || '') + '</td></tr>');
+  p.push('<tr><td style="padding:16px 28px 0;background:#FFFFFF"><div style="border-top:2px solid ' + INCHIOSTRO + ';font-size:0;line-height:0">&nbsp;</div></td></tr>');
+  // il lockup sullo stesso asse del logo
+  p.push('<tr><td align="center" style="padding:20px 28px 18px;background:#FFFFFF">' + masthead + '</td></tr>');
+  p.push('<tr><td style="padding:0 28px;background:#FFFFFF"><div style="border-top:1px solid ' + BORDO + ';font-size:0;line-height:0">&nbsp;</div></td></tr>');
+  // navigazione a pulsanti, come nella home del sito
+  p.push('<tr><td align="center" style="padding:18px 28px 0;background:#FFFFFF">');
+  p.push('<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto"><tr>');
+  p.push('<td style="padding:0 5px">' + btn(sito, 'Osservatorio', true) + '</td>');
+  p.push('<td style="padding:0 5px">' + btn(appUrl + '?goto=segnala', 'Segnala', false) + '</td>');
+  p.push('<td style="padding:0 5px">' + btn(appUrl + '?goto=consulenza', 'Contattaci', false) + '</td>');
+  p.push('</tr></table></td></tr>');
+  // social: una sola geometria, quadrata come tutto il resto
+  p.push('<tr><td align="center" style="padding:16px 28px 20px;background:#FFFFFF">');
+  p.push('<a href="' + linkedin + '" style="display:inline-block;width:26px;height:24px;border:1px solid #6E6A62;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;color:#6E6A62;text-decoration:none;line-height:24px;margin:0 5px">in</a>');
+  p.push('<a href="' + instagram + '" style="display:inline-block;width:26px;height:24px;border:1px solid #6E6A62;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:#6E6A62;text-decoration:none;line-height:24px;margin:0 5px">IG</a>');
   p.push('</td></tr>');
   return p.join('');
+}
+
+/**
+ * v4.28.16 — DIAGNOSI DELLA BOZZA: quante voci porta OGGI ciascuna sezione
+ * della newsletter, interrogando gli stessi provider che usa il generatore.
+ * Serve a distinguere "sezione vuota perché non ci sono dati" da "sezione
+ * esclusa dal mix" da "provider in errore" — senza doverlo dedurre dal
+ * risultato finale.
+ */
+function nlDiagnosiBozza() {
+  function prova(nome, fn) {
+    try {
+      var r = fn();
+      var n = Array.isArray(r) ? r.length : (r ? 1 : 0);
+      return { voci: n, esito: n > 0 ? 'ok' : 'vuoto' };
+    } catch (e) { return { voci: 0, esito: 'ERRORE', errore: e.message }; }
+  }
+  var home = null;
+  try { home = getHomepageDataV42(); } catch (e) { home = { _errore: e.message }; }
+  return {
+    ok: true,
+    versione: (typeof OC_VERSION !== 'undefined' ? OC_VERSION : '?'),
+    nota: 'La preview mostra una BOZZA SALVATA: finché non la si rigenera, resta com\'era al momento della creazione.',
+    daHomepage: {
+      news:    (home && home.news) ? home.news.length : 0,
+      podcast: (home && home.podcast) ? home.podcast.length : 0,
+      bandiUrgenti: (home && home.bandiUrgenti) ? home.bandiUrgenti.length : 0,
+      errore: home && home._errore ? home._errore : null
+    },
+    bandiRecenti: prova('bandi', function () { return getUltimiBandiMonitorati(8); }),
+    video:        prova('video', function () { return getVideoListV42(4); }),
+    libri:        prova('libri', function () { return getLibriListV42(4); }),
+    segnalazioni: prova('segnalazioni', function () {
+      var r = getSegnalazioniPubblicate(3);
+      return (r && r.segnalazioni) ? r.segnalazioni : r;
+    }),
+    segnalazioniGiaInviate: (function () {
+      try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('OC_DIGEST_SEGN_SENT') || '[]').length; }
+      catch (e) { return 'n/d'; }
+    })()
+  };
+}
+
+/**
+ * v4.28.16 — Verifica che la testata rispetti il design system.
+ * Controlla il codice GENERATO, non le intenzioni: è il modo per accorgersi
+ * di una regressione grafica senza doverla vedere.
+ */
+function nlTestataSelfTest() {
+  var pass = 0, fail = 0, falliti = [];
+  function ok(nome, cond) { if (cond) pass++; else { fail++; falliti.push(nome); } }
+  var h = '';
+  try { h = _nlMastheadHtml_('4 agosto 2026'); } catch (e) { return { ok: false, pass: 0, fail: 1, falliti: ['errore: ' + e.message] }; }
+  ok('nessun border-radius (angoli vivi)', h.indexOf('border-radius') < 0);
+  ok('nessuna ombra', h.indexOf('box-shadow') < 0);
+  ok('nessun gradiente', h.indexOf('gradient') < 0);
+  ok('blu estraneo #1F3F8F rimosso', h.indexOf('1F3F8F') < 0);
+  ok('accento vermiglio presente', h.indexOf('B8351A') > 0);
+  ok('cobalto sulla data', h.indexOf('1E3A8A') > 0);
+  ok('pulsanti veri (non testo)', h.indexOf('padding:9px 20px') > 0);
+  ok('tre voci di navigazione', (h.match(/goto=segnala|goto=consulenza|sinopia\.netlify/g) || []).length >= 3);
+  ok('due social, non tre', (h.match(/linkedin|instagram/g) || []).length === 2);
+  return { ok: fail === 0, pass: pass, fail: fail, totale: pass + fail, falliti: falliti };
 }
 
 // ============================================================================
@@ -552,10 +640,10 @@ function buildDigestHeaderOnlyHtml_() {
 
   var parts = [];
   parts.push('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Osservatorio Culturale — Digest</title></head>');
-  parts.push('<body style="margin:0;padding:0;background:#F4F4F6;font-family:Inter,Helvetica,Arial,sans-serif;color:#1D1D1F;">');
-  parts.push('<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#F4F4F6;padding:24px 0;">');
+  parts.push('<body style="margin:0;padding:0;background:#E4E0D8;font-family:Inter,Helvetica,Arial,sans-serif;color:#1D1D1F;">');
+  parts.push('<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#E4E0D8;padding:24px 0;">');
   parts.push('<tr><td align="center">');
-  parts.push('<table role="presentation" width="640" cellspacing="0" cellpadding="0" border="0" style="max-width:640px;background:#FFFFFF;border-radius:12px;overflow:hidden;">');
+  parts.push('<table role="presentation" width="640" cellspacing="0" cellpadding="0" border="0" style="max-width:640px;background:#FFFFFF">');
 
   // v4.27.43 — Testata design «traiettorie sottotraccia» (helper condiviso)
   parts.push(_nlMastheadHtml_(data));
@@ -565,7 +653,7 @@ function buildDigestHeaderOnlyHtml_() {
   try { if (typeof getEditorialeCorrente === 'function') _editoriale = getEditorialeCorrente(); } catch(_){}
   if (_editoriale && _editoriale.testo) {
     parts.push('<tr><td style="padding:20px 28px 4px 28px;">');
-    if (_editoriale.foto) parts.push('<img src="' + String(_editoriale.foto) + '" alt="" width="564" style="width:100%;max-width:564px;border-radius:10px;display:block;margin-bottom:14px"/>');
+    if (_editoriale.foto) parts.push('<img src="' + String(_editoriale.foto) + '" alt="" width="564" style="width:100%;max-width:564px;display:block;margin-bottom:14px"/>');
     parts.push('<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8B3A1F;font-weight:700;margin-bottom:8px;">Approfondimento della settimana</div>');
     parts.push('<div style="font-size:16px;font-weight:700;color:#1D1D1F;margin-bottom:10px;">' + _h_(_editoriale.titolo) + '</div>');
     parts.push('<p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C;">' + _h_(_editoriale.testo).replace(/\n/g, '<br>') + '</p>');
@@ -577,16 +665,16 @@ function buildDigestHeaderOnlyHtml_() {
   // CTA webapp
   if (webUrl) {
     parts.push('<tr><td style="padding:24px 28px 12px;text-align:center;">');
-    parts.push('<a href="' + _h_(webUrl) + '" style="display:inline-block;background:#1D1D1F;color:#FFFFFF;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">Apri Osservatorio Culturale →</a>');
+    parts.push('<a href="' + _h_(webUrl) + '" style="display:inline-block;background:#B8351A;color:#FFFFFF;padding:13px 30px;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif">Apri l&#39;Osservatorio</a>');
     parts.push('</td></tr>');
   }
 
   // Social links
   parts.push('<tr><td style="padding:12px 28px 8px;text-align:center;">');
   parts.push('<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8A8A8E;margin-bottom:10px;">Seguici</div>');
-  parts.push('<a href="https://www.linkedin.com/company/sinopiaconsulting/" style="display:inline-block;background:#0A66C2;color:#fff;padding:8px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:0 4px;">LinkedIn</a>');
-  parts.push('<a href="https://www.instagram.com/sinopia_osservatorio?igsh=MTFhdjY2ZXZubzVpYg==" style="display:inline-block;background:#C13584;color:#fff;padding:8px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:0 4px;">Instagram</a>');
-  parts.push('<a href="mailto:sinopiaconsulting@gmail.com" style="display:inline-block;background:#5A5A5E;color:#fff;padding:8px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;margin:0 4px;">Email</a>');
+  parts.push('<a href="https://www.linkedin.com/company/sinopiaconsulting/" style="display:inline-block;background:#FFFFFF;color:#1D1D1F;border:1px solid #1D1D1F;padding:8px 20px;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;margin:0 4px">LinkedIn</a>');
+  parts.push('<a href="https://www.instagram.com/sinopia_osservatorio?igsh=MTFhdjY2ZXZubzVpYg==" style="display:inline-block;background:#FFFFFF;color:#1D1D1F;border:1px solid #1D1D1F;padding:8px 20px;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;margin:0 4px">Instagram</a>');
+  parts.push('<a href="mailto:sinopiaconsulting@gmail.com" style="display:inline-block;background:#FFFFFF;color:#1D1D1F;border:1px solid #1D1D1F;padding:8px 20px;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;margin:0 4px">Email</a>');
   parts.push('</td></tr>');
 
   // Footer

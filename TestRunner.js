@@ -33,6 +33,11 @@ var _OC_TEST_SUITES = [
     description: 'Classificatore concorsi/opportunita lavoro cultura (GU 4a Serie)'
   },
   {
+    name: 'testataNewsletter',
+    fn: 'nlTestataSelfTest',
+    description: 'Testata newsletter: angoli vivi, palette del marchio, pulsanti veri'
+  },
+  {
     name: 'digestSezioni',
     fn: 'dsSelfTest',
     description: 'Sezioni newsletter: escape, troncamento, conformita Graticcio (no radius/ombre/bordi laterali)'

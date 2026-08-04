@@ -632,6 +632,35 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(_a, null, 2)).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // v4.28.17 — TESTATA DAL VIVO (?diag=testata): rende la sola intestazione
+  // della newsletter come la produce il codice in produzione ADESSO. Serve a
+  // distinguere "il codice non è aggiornato" da "sto guardando una pagina in
+  // cache o una bozza salvata".
+  if (params.diag === 'testata') {
+    var _t = '';
+    try {
+      _t = (typeof _nlMastheadHtml_ === 'function') ? _nlMastheadHtml_('lunedì 10 agosto 2026') : '<p>helper assente</p>';
+    } catch (eT) { _t = '<p>errore: ' + eT.message + '</p>'; }
+    return HtmlService.createHtmlOutput(
+      '<div style="font-family:Arial;padding:12px;background:#E4E0D8">'
+      + '<div style="font-size:12px;color:#555;margin-bottom:10px">Testata generata in questo momento &middot; '
+      + (typeof OC_VERSION !== 'undefined' ? OC_VERSION : '?') + '</div>'
+      + '<table width="640" cellpadding="0" cellspacing="0" style="background:#fff;border:1px solid #cfc9be;margin:0 auto">'
+      + _t + '</table></div>'
+    ).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
+  // v4.28.19 — PERCHÉ LA NEWSLETTER HA SOLO BANDI (?diag=bozza): interroga
+  // gli stessi provider che alimentano la bozza e riporta quante voci porta
+  // ciascuno ADESSO. Distingue "non ci sono dati" da "provider in errore"
+  // da "sezione esclusa" — senza dedurlo dal risultato finale. Sola lettura.
+  if (params.diag === 'bozza') {
+    var _b = {};
+    try { _b = (typeof nlDiagnosiBozza === 'function') ? nlDiagnosiBozza() : { errore: 'helper assente' }; }
+    catch (eB) { _b = { errore: eB.message }; }
+    return ContentService.createTextOutput(JSON.stringify(_b, null, 2)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (params.diag === 'contatori') {
     var _dg;
     try { _dg = (typeof diagContatoriBadge === 'function') ? diagContatoriBadge() : { errore: 'tool assente' }; }

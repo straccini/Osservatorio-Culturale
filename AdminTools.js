@@ -115,6 +115,8 @@ function adminRunTool(tool, token) {
       // ── Newsletter: sezioni complete (v4.28.15) ─────────────────────────
       case 'digestSezioniStato': r = digestSezioniStato(); break;
       case 'dsSelfTest':         r = dsSelfTest(); break;
+      case 'nlDiagnosiBozza':    r = nlDiagnosiBozza(); break;
+      case 'nlTestataSelfTest':  r = nlTestataSelfTest(); break;
       // ── Fonti podcast/video: riallineamento su FontiFeed (v4.27.97) ──────
       case 'sezioniAnteprima':   r = fsAnteprima(); break;
       case 'podcastMigraDry':    r = fsRiallineaPodcast({ dryRun: true }); break;

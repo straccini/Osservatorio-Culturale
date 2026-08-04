@@ -50,14 +50,31 @@ function _ddChiave_(tipo, item) {
 }
 
 /** Set delle chiavi già inviate a una coorte (snapshot per esecuzione). */
+// v4.28.20 — FINESTRA ANTI-RIPETIZIONE. Prima il filtro escludeva TUTTO ciò
+// che era uscito negli ultimi 180 giorni (la durata del registro). Con news,
+// podcast, video e libri che ruotano poco, dopo qualche settimana ogni sezione
+// si svuotava e la newsletter restava con i soli bandi — verificato il 04/08:
+// i provider restituivano 5 news, 3 podcast, 4 video, 4 libri, e il digest
+// mostrava solo bandi.
+// La richiesta originale (31/07) era non ripubblicare la STESSA cosa nei
+// numeri ravvicinati: 45 giorni la rispettano pienamente e tengono piena la
+// newsletter. Il registro continua a conservare 180 giorni di storico.
+var DD_FINESTRA_GIORNI = 45;
+
 function _ddSentSet_(coorte) {
   if (!_DD_CACHE_) {
     _DD_CACHE_ = {};
     try {
       var sh = _ddSheet_();
       if (sh.getLastRow() > 1) {
-        var v = sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues();
+        // colonne: Chiave, Tipo, Coorte, DataInvio
+        var v = sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues();
+        var limite = Date.now() - DD_FINESTRA_GIORNI * 86400000;
         for (var i = 0; i < v.length; i++) {
+          var d = v[i][3];
+          var dt = (d instanceof Date) ? d : (d ? new Date(d) : null);
+          // senza data valida si resta prudenti e si considera "già inviato"
+          if (dt && !isNaN(dt.getTime()) && dt.getTime() < limite) continue;
           var co = String(v[i][2] || '');
           if (!_DD_CACHE_[co]) _DD_CACHE_[co] = {};
           _DD_CACHE_[co][String(v[i][0] || '')] = true;
@@ -172,6 +189,8 @@ function ddPrune(giorni) {
 
 /** Self-test della sola logica (nessuna scrittura su foglio). */
 function ddSelfTest() {
+  // v4.28.20 — la finestra deve essere piu' corta della durata del registro:
+  // se fossero uguali, il filtro tornerebbe a svuotare le sezioni.
   var casi = [
     { nome: 'chiave da url normalizzato', ok: _ddChiave_('news', { link: 'https://www.exibart.com/articolo/?utm=x' }) === 'news|exibart.com/articolo' },
     { nome: 'chiave da id senza url',     ok: _ddChiave_('bando', { id: 'B123' }) === 'bando|B123' },
