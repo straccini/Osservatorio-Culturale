@@ -762,6 +762,39 @@ var FAS_API_REGISTRY = [
     motivoBlocco: '',
     limiteRate: 'Non documentato (cortesia 300ms/keyword)',
     mappaCampi: 'metadata.descrizione->Titolo, soggetti_sa[0].denominazione->Ente, dataScadenza->Scadenza, documenti_di_gara_link->Link'
+  },
+  // v4.28.13 — ANAC e OpenCUP hanno i parser (fasParserAnac, fasParserOpenCup,
+  // Fase 2b) ma NON erano dichiarate qui: il report cercava il loro stato, non
+  // lo trovava e stampava "undefined". Ora sono dichiarate con lo stato REALE,
+  // verificato dal vivo il 03/08/2026.
+  {
+    id: 'anac_ocds',
+    nome: 'ANAC — Open Data contratti (OCDS/CKAN)',
+    endpoint: 'https://dati.anticorruzione.it/opendata/api/3/action/package_search',
+    formato: 'JSON (CKAN)',
+    auth: 'Nessuna (pubblica)',
+    alimenta: 'Bandi',
+    stato: 'bloccata',
+    motivoBlocco: 'WAF: risponde HTTP 200 ma con pagina HTML "Request Rejected" invece del JSON ' +
+                  '(verificato 03/08/2026, content-type text/plain). Il parser non trova dati e riporta ' +
+                  'zero SENZA errore. Alternativa da valutare: export OCDS bulk (file) invece della API.',
+    limiteRate: 'n/d',
+    mappaCampi: 'result.results[].title->Titolo (quando raggiungibile)'
+  },
+  {
+    id: 'opencup',
+    nome: 'OpenCUP — Investimenti pubblici cultura',
+    endpoint: 'https://www.dati.gov.it/opendata/api/3/action/package_search (proxy CKAN)',
+    formato: 'JSON (CKAN)',
+    auth: 'Nessuna (pubblica)',
+    alimenta: 'Bandi',
+    stato: 'in_sviluppo',
+    motivoBlocco: 'Endpoint raggiungibile (HTTP 200) ma inadatto allo scopo: interroga il CATALOGO ' +
+                  'open data e restituisce descrittori di dataset (8 risultati), non bandi con scadenza ' +
+                  '(verificato 03/08/2026). OpenCUP non espone una API REST pubblica di progetti: ' +
+                  'serve un canale diverso o va sostituita.',
+    limiteRate: 'n/d',
+    mappaCampi: 'n/d — endpoint da ridefinire'
   }
 ];
 

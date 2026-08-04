@@ -79,8 +79,10 @@ var OC_CRON_EXTRA = [
   // ai bandi che ne sono privi. 50 per run, daily ore 3 → ~50/giorno, ~48gg per 2400.
   { fn: 'enrichBandiRadarBatch', tipo: 'daily',  ora: 3,  desc: 'Arricchimento bandi RADAR via Claude AI (50/run)' },
   // v4.27.58 — Deep enrichment: fetch URL + Claude per scadenza/descrizione/importo
-  { fn: 'enrichBandiDeepBatch',  tipo: 'daily',  ora: 1,  desc: 'Deep enrichment bandi: fetch pagina + estrazione scadenza/descrizione (15/run, ore 01)' },
-  { fn: 'enrichBandiDeepBatch',  tipo: 'daily',  ora: 4,  desc: 'Deep enrichment bandi: seconda finestra notturna (15/run, ore 04)' },
+  // v4.28.13 — 4 finestre × 40 = 160 tentativi/notte sui bandi senza scadenza
+  { fn: 'enrichBandiDeepBatch',  tipo: 'daily',  ora: 1,  desc: 'Deep enrichment bandi: fetch pagina + estrazione scadenza (40/run, ore 01)' },
+  { fn: 'enrichBandiDeepBatch',  tipo: 'daily',  ora: 4,  desc: 'Deep enrichment bandi: seconda finestra notturna (40/run, ore 04)' },
+  { fn: 'enrichBandiDeepBatch',  tipo: 'daily',  ora: 23, desc: 'Deep enrichment bandi: quarta finestra (40/run, ore 23)' },
   // v4.27 — apiScanTutto compattato: era trigger standalone lun 07:00 (ApiConnettori.js)
   { fn: 'apiScanTutto',          tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 7, desc: 'API connettori editoria: iTunes + DOAJ + YouTube (lunedi; TED e quotidiano via fasRunCompleto)' },
   // Tappa P — audit mensile salute fonti podcast/video (email all'admin, giorno 1)

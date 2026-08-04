@@ -583,6 +583,55 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(_cf, null, 2)).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // v4.28.12 — ARCHIVIATI RECUPERABILI (?diag=archiviati): bandi archiviati
+  // che hanno ancora una SCADENZA FUTURA. Sono i casi in cui il sistema ha
+  // tolto dall'esposizione qualcosa di potenzialmente valido — la spiegazione
+  // più probabile della newsletter senza bandi. Per ciascuno si mostra cosa
+  // direbbero OGGI le regole di scarto, così si vede QUALE ha deciso.
+  if (params.diag === 'archiviati') {
+    var _a = { versione: (typeof OC_VERSION !== 'undefined' ? OC_VERSION : '?') };
+    try {
+      var _sha = getSheetRadar();
+      var _va = _sha.getDataRange().getValues();
+      var _oggi = new Date(); _oggi.setHours(0, 0, 0, 0);
+      var conScadFutura = 0, totArch = 0, perFonte = {}, perMotivo = {}, campioni = [];
+      for (var ra = 1; ra < _va.length; ra++) {
+        var row = _va[ra];
+        if (!row[COL_B.ID - 1]) continue;
+        if (String(row[COL_B.STATO_RECORD - 1] || '').toLowerCase() !== 'archiviato') continue;
+        totArch++;
+        var sc = row[COL_B.SCADENZA - 1];
+        var dt = (sc instanceof Date) ? sc : (sc ? new Date(sc) : null);
+        if (!dt || isNaN(dt.getTime()) || dt.getTime() < _oggi.getTime()) continue;
+        conScadFutura++;
+        var titolo = String(row[COL_B.TITOLO - 1] || '');
+        var fonte = String(row[COL_B.FONTE_NOME - 1] || '(vuota)');
+        var somm = String(row[COL_B.SOMMARIO - 1] || '');
+        perFonte[fonte] = (perFonte[fonte] || 0) + 1;
+        // quale regola lo scarterebbe OGGI?
+        var motivo = 'nessuna regola lo scarta — recuperabile';
+        try {
+          if (typeof frNaturaFonte === 'function' && frNaturaFonte(fonte, '') === 'news') motivo = 'puliziaCanaleNews (fonte classificata news)';
+          else if (typeof _bandiNonBando_ === 'function' && _bandiNonBando_({ titolo: titolo, sommario: somm })) motivo = 'junk';
+          else if (typeof isBandoCulturale === 'function' &&
+                   !isBandoCulturale(titolo, String(row[COL_B.SETTORE - 1] || ''), somm, '')) motivo = 'nonCultura';
+        } catch (eM) { motivo = 'errore valutazione: ' + eM.message; }
+        perMotivo[motivo] = (perMotivo[motivo] || 0) + 1;
+        if (campioni.length < 15) campioni.push({
+          titolo: titolo.substring(0, 70), fonte: fonte.substring(0, 32),
+          scadenza: Utilities.formatDate(dt, 'Europe/Rome', 'dd/MM/yyyy'),
+          motivo: motivo
+        });
+      }
+      _a.archiviatiTotali = totArch;
+      _a.conScadenzaFutura = conScadFutura;
+      _a.perMotivo = perMotivo;
+      _a.perFonte = perFonte;
+      _a.campioni = campioni;
+    } catch (eA) { _a.errore = eA.message; }
+    return ContentService.createTextOutput(JSON.stringify(_a, null, 2)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (params.diag === 'contatori') {
     var _dg;
     try { _dg = (typeof diagContatoriBadge === 'function') ? diagContatoriBadge() : { errore: 'tool assente' }; }

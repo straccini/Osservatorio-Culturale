@@ -674,7 +674,16 @@ function enrichBandiDeep(opts) {
  * v4.27.58 — Wrapper per CronDispatcher: deep enrichment notturno (15/run).
  */
 function enrichBandiDeepBatch() {
-  var result = enrichBandiDeep({ cap: 15 });
+  // v4.28.13 — ENRICHMENT INTENSIVO (decisione Silvano 03/08). Il collo di
+  // bottiglia dell'esposizione sono i 118 bandi attivi SENZA scadenza: la
+  // regola "niente bandi senza informazioni base" li tiene fuori, e dopo poco
+  // vengono archiviati e cancellati. Con sole 15 estrazioni per finestra
+  // servivano giorni per un solo giro. Portato a 40: con 4 finestre notturne
+  // sono 160 tentativi a notte, quindi l'intero arretrato viene coperto in
+  // una notte sola. La priorità ai senza-scadenza è già nel selettore.
+  // Il fetch ha deadline propria e il cap è un tetto, non un obbligo:
+  // se le pagine sono lente il run finisce prima senza rompere nulla.
+  var result = enrichBandiDeep({ cap: 40 });
   Logger.log('enrichBandiDeepBatch: ' + JSON.stringify(result));
   return result;
 }
