@@ -708,7 +708,10 @@ function doGet(e) {
       var _bandi = (typeof getBandiRadar === 'function') ? getBandiRadar() : [];
       _an.esposti = _bandi.length;
       var _oggi = new Date(); _oggi.setHours(0, 0, 0, 0);
-      var _REG_IT = /^(abruzzo|basilicata|calabria|campania|emilia|friuli|lazio|liguria|lombardia|marche|molise|piemonte|puglia|sardegna|sicilia|toscana|trentino|umbria|valle|veneto|tutte)/i;
+      // v4.28.32 — 'Unione Europea' è un valore VOLUTO dalla v4.28.27, non
+      // un'anomalia: segnalarlo faceva dire al rapporto una cosa falsa
+      // (42 "regioni non italiane" che erano invece etichette corrette).
+      var _REG_IT = /^(abruzzo|basilicata|calabria|campania|emilia|friuli|lazio|liguria|lombardia|marche|molise|piemonte|puglia|sardegna|sicilia|toscana|trentino|umbria|valle|veneto|tutte|unione europea|italia|nazionale)/i;
       var _titoli = {};
       _bandi.forEach(function (b) {
         var tit = String(b.titolo || '');
