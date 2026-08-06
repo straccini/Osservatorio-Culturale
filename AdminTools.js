@@ -63,6 +63,9 @@ function adminRunTool(tool, token) {
       case 'regioneDry':         r = bcvNormalizzaRegione({ dryRun: true }); break;
       case 'regioneApply':       r = bcvNormalizzaRegione({}); break;
       case 'bcvSelfTest':        r = bcvSelfTest(); break;
+      // Pulizia copie archivio (v4.28.30)
+      case 'dedupArchivioDry':   r = bcvDeduplicaArchivio({ dryRun: true }); break;
+      case 'dedupArchivioApply': r = bcvDeduplicaArchivio({ dryRun: false, cap: 400 }); break;
       // ── Regia fonti per tier (v4.27.75) ─────────────────────────────────
       case 'fontiTierDry':       r = frBackfillTier({ dryRun: true }); break;
       case 'fontiTierApply':     r = frBackfillTier({}); break;

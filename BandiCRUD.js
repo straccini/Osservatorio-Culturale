@@ -863,13 +863,54 @@ function archiviaVecchiSenzaScadenza(opts) {
 }
 
 // [22 funzioni diagnostica/migrazione estratte in DiagnosticaMigrazione.js]
+// v4.28.26 — IL FALLBACK CIECO ERA LA VERA CAUSA. Quando un nome di colonna
+// non veniva trovato, la mappa ripiegava sull'indice dello schema LEGACY —
+// che nello schema Bandi_v5 punta a una colonna DIVERSA, non a niente. Così
+// un campo assente non restava vuoto: prendeva silenziosamente il valore di
+// un altro campo. È il difetto che riempiva di date il campo link.
+//
+// Ora: se il foglio è Bandi_v5 (lo si riconosce da colonne che solo lui ha),
+// un nome non trovato resta VUOTO. Meglio un campo assente che uno sbagliato:
+// lo stesso principio che vale per i bandi senza scadenza.
 function buildColMap(headers) {
   const map={};
+  const norm = headers.map(h=>String(h).trim().toLowerCase());
+  const isV5 = norm.indexOf('fingerprint')>=0 || norm.indexOf('urlbando')>=0;
   Object.entries(COL_NAMES).forEach(([key,aliases])=>{
     const idx=headers.findIndex(h=>aliases.some(a=>String(h).trim().toLowerCase()===a.toLowerCase()));
-    map[key]=idx>=0?idx+1:COL[key];
+    if (idx>=0) map[key]=idx+1;
+    else map[key]= isV5 ? 0 : COL[key];   // 0 = campo assente, g() restituisce ''
   });
   return map;
+}
+
+/**
+ * v4.28.26 — Verifica che la mappa colonne non inventi valori.
+ * Il caso reale: 'Link' non esiste in Bandi_v5 (si chiama UrlBando) e la
+ * mappa restituiva l'indice 13, cioè Scadenza.
+ */
+function bandiColMapSelfTest() {
+  var pass=0, fail=0, falliti=[];
+  function ok(nome,cond){ if(cond) pass++; else {fail++; falliti.push(nome);} }
+  var hV5 = (typeof COL_B_HEADERS!=='undefined') ? COL_B_HEADERS.slice()
+          : ['ID','Fingerprint','DataRilevamento','Titolo','Ente','Livello','Regione','Settore',
+             'TipoBando','Soggetti','Importo','Cofin','Scadenza','FonteID','FonteNome','UrlBando',
+             'UrlEnte','UrlValidato','DataValidazione','Sommario','Ambito','PrioritaRegionale',
+             'Status','StatoRecord','Letto','Salvato','Note'];
+  var m = buildColMap(hV5);
+  ok('LINK trova UrlBando', m.LINK === hV5.indexOf('UrlBando')+1);
+  ok('LINK non punta a Scadenza', m.LINK !== hV5.indexOf('Scadenza')+1);
+  ok('TITOLO corretto', m.TITOLO === hV5.indexOf('Titolo')+1);
+  ok('SCADENZA corretta', m.SCADENZA === hV5.indexOf('Scadenza')+1);
+  ok('FONTE trova FonteNome', m.FONTE === hV5.indexOf('FonteNome')+1);
+  ok('URL_ENTE corretto', m.URL_ENTE === hV5.indexOf('UrlEnte')+1);
+  // campi che in Bandi_v5 NON esistono: devono restare vuoti, non rubare colonne
+  ok('CLIENTE assente resta vuoto', !m.CLIENTE);
+  ok('NASCOSTO assente resta vuoto', !m.NASCOSTO);
+  // sullo schema legacy il fallback deve continuare a funzionare
+  var mLeg = buildColMap(['Data','Titolo','Ente']);
+  ok('legacy: fallback attivo', mLeg.LINK === COL.LINK);
+  return { ok: fail===0, pass:pass, fail:fail, totale:pass+fail, falliti:falliti };
 }
 
 function getBandiRadar() {

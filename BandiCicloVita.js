@@ -232,7 +232,21 @@ function _bcvRegioneValida_(v) {
 }
 
 /** @private valori che indicano "nessun territorio specifico" (non sono errori) */
-var BCV_REGIONE_NEUTRA = { 'tutte':1,'tutto il territorio':1,'vari':1,'varie':1,'nazionale':1,'italia':1,'europa':1,'ue':1,'estero':1,'internazionale':1 };
+var BCV_REGIONE_NEUTRA = { 'tutte':1,'tutto il territorio':1,'vari':1,'varie':1,'nazionale':1,'italia':1,'europa':1,'ue':1,'estero':1,'internazionale':1,'unione europea':1 };
+
+// v4.28.27 — COPERTURA SOVRA-REGIONALE. La deduzione conosceva solo regioni e
+// città italiane: per un bando di Invitalia o della Commissione Europea non
+// aveva risposta e lasciava il campo VUOTO. Risultato misurato il 04/08:
+// 38 bandi esposti su 49 senza regione, quindi assenti dalla mappa del Radar.
+// Un bando nazionale non ha una regione perché vale per TUTTE: dirlo è più
+// onesto che lasciare vuoto. Stesso ragionamento per quelli europei.
+var BCV_ENTI_NAZIONALI_RE = /(invitalia|ministero|\bmic\b|\bmibact\b|\banac\b|consip|agenzia del demanio|demanio|pnrr|italia domani|cassa depositi|\bcdp\b|\bales\b|presidenza del consiglio|dipartimento|agenzia delle entrate|\binps\b|\bistat\b|segretariato generale|direzione generale|soprintendenza nazionale|fondazione scuola.*patrimonio)/i;
+
+var BCV_ENTI_EUROPEI_RE = /(commissione europea|european commission|\beu funding\b|sedia|creative europe|europa creativa|horizon|erasmus|interreg|\bcinea\b|\beacea\b|\bted\b|european union|unione europea|parlamento europeo|consiglio d'europa|council of europe|\bunesco\b|europeana)/i;
+
+// Sigle di Paese che il campo Regione non dovrebbe contenere: la mappa
+// italiana non sa disegnarle. Diventano una sola etichetta leggibile.
+var BCV_SIGLE_PAESE = /^(uk|gb|ie|se|no|dk|fi|de|fr|es|pt|nl|be|at|pl|cz|hu|ro|gr|hr|si|sk|bg|lt|lv|ee|lu|mt|cy|ch|is|ma|tn|us|ca)$/i;
 
 function bcvNormalizzaRegione(opts) {
   opts = opts || {};
@@ -270,6 +284,19 @@ function bcvNormalizzaRegione(opts) {
         for (var citta in BCV_CITTA_REGIONE) {
           if (testoLow.indexOf(citta) >= 0) { trovata = BCV_CITTA_REGIONE[citta]; break; }
         }
+      }
+      // v4.28.27 — ultimo passaggio prima di arrendersi: il bando potrebbe non
+      // avere una regione perché vale per tutto il Paese o per l'Europa.
+      // L'ordine conta: prima l'Europa, perché un bando della Commissione può
+      // nominare un ministero italiano fra i partner senza per questo essere
+      // nazionale.
+      if (!trovata) {
+        var _ente = String(row[COL_B.ENTE - 1] || '');
+        var _fonte = String(row[COL_B.FONTE_NOME - 1] || '');
+        var _campo = _ente + ' ' + _fonte;
+        if (BCV_SIGLE_PAESE.test(_att)) trovata = 'Unione Europea';
+        else if (BCV_ENTI_EUROPEI_RE.test(_campo)) trovata = 'Unione Europea';
+        else if (BCV_ENTI_NAZIONALI_RE.test(_campo)) trovata = 'Tutte';
       }
       if (!trovata) { rep.nonDedotti++; continue; }
       if (!opts.dryRun) sh.getRange(r + 1, COL_B.REGIONE).setValue(trovata);
@@ -439,6 +466,133 @@ function bcvAzzeraScadenzeFalse(opts) {
   return rep;
 }
 
+// ============================================================================
+//  DEDUPLICAZIONE ARCHIVIO (v4.28.30)
+//  Misura del 04/08 su 972 righe: 165 duplicati dentro l'archivio (22%),
+//  7 fra i bandi ATTIVI — cioè visibili al pubblico — e 2 risorse presenti
+//  sia archiviate sia attive.
+//
+//  REGOLE DI DECISIONE (richiesta Silvano: «le copie devono essere annullate
+//  o rese inattive»):
+//    · due ATTIVI uguali    → si tiene il migliore, l'altro viene ARCHIVIATO
+//                             (reso inattivo, non cancellato: è prudenza)
+//    · due ARCHIVIATI uguali→ si cancella la copia peggiore (è già fuori
+//                             esposizione, la copia è solo peso)
+//    · attivo + archiviato  → si cancella la copia ARCHIVIATA, l'attivo resta
+//
+//  QUALE COPIA È LA MIGLIORE, in ordine: ha il link, ha la scadenza, ha il
+//  sommario più lungo, è entrata per ultima. Non si perde mai informazione:
+//  la copia che sopravvive è sempre quella più completa.
+// ============================================================================
+
+/** @private Chiave di identità: URL normalizzata, altrimenti il titolo. */
+function _bcvChiaveDup_(url, titolo) {
+  var u = String(url || '').trim().toLowerCase()
+    .replace(/^https?:\/\//, '').replace(/^www\./, '').split('#')[0].replace(/\/+$/, '');
+  if (u) return 'u:' + u;
+  var t = String(titolo || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  return t ? 't:' + t.substring(0, 120) : '';
+}
+
+/** @private Punteggio di completezza: più alto = copia da tenere. */
+function _bcvPunteggioCopia_(row) {
+  var p = 0;
+  if (String(row[COL_B.URL_BANDO - 1] || '').trim()) p += 1000;
+  if (row[COL_B.SCADENZA - 1]) p += 500;
+  p += Math.min(200, String(row[COL_B.SOMMARIO - 1] || '').length);
+  if (String(row[COL_B.ENTE - 1] || '').trim()) p += 50;
+  if (String(row[COL_B.REGIONE - 1] || '').trim()) p += 25;
+  return p;
+}
+
+/**
+ * Elimina le copie dei bandi, dentro l'archivio e fra gli attivi.
+ * @param {Object} [opts] {dryRun:true, cap:400}
+ */
+function bcvDeduplicaArchivio(opts) {
+  opts = opts || {};
+  var dryRun = opts.dryRun !== false;          // prudente: anteprima di default
+  var cap = Number(opts.cap) || 400;
+  var rep = { ok: true, dryRun: dryRun, esaminate: 0,
+              attiviResiInattivi: 0, copieArchiviateCancellate: 0, copieAttivoCancellate: 0,
+              esempi: [] };
+  try {
+    var sh = _bcvSheet_();
+    if (!sh || sh.getLastRow() < 2) return rep;
+    var vals = sh.getDataRange().getValues();
+
+    // 1. raggruppa per chiave, tenendo riga, stato e punteggio
+    var gruppi = {};
+    for (var r = 1; r < vals.length; r++) {
+      var row = vals[r];
+      if (!row[COL_B.ID - 1]) continue;
+      var tit = String(row[COL_B.TITOLO - 1] || '').trim();
+      if (!tit) continue;
+      var k = _bcvChiaveDup_(row[COL_B.URL_BANDO - 1], tit);
+      if (!k) continue;
+      rep.esaminate++;
+      if (!gruppi[k]) gruppi[k] = [];
+      gruppi[k].push({
+        riga: r + 1,
+        archiviato: String(row[COL_B.STATO_RECORD - 1] || '').toLowerCase() === 'archiviato',
+        punti: _bcvPunteggioCopia_(row),
+        titolo: tit
+      });
+    }
+
+    // 2. decide, gruppo per gruppo. Le cancellazioni si raccolgono e si
+    //    eseguono dal fondo: cancellare mentre si scorre sposta gli indici.
+    var daCancellare = [], daArchiviare = [];
+    Object.keys(gruppi).forEach(function (k) {
+      var g = gruppi[k];
+      if (g.length < 2) return;
+      // il migliore in assoluto: prima gli attivi, poi il più completo
+      g.sort(function (a, b) {
+        if (a.archiviato !== b.archiviato) return a.archiviato ? 1 : -1;
+        if (b.punti !== a.punti) return b.punti - a.punti;
+        return b.riga - a.riga;
+      });
+      var tenuto = g[0];
+      for (var i = 1; i < g.length; i++) {
+        var c = g[i];
+        if (c.archiviato) {
+          daCancellare.push(c);                         // copia già inattiva
+        } else {
+          daArchiviare.push(c);                         // copia attiva → inattiva
+        }
+        if (rep.esempi.length < 12) {
+          rep.esempi.push((c.archiviato ? 'cancella copia archiviata: ' : 'rende inattiva copia attiva: ')
+            + c.titolo.substring(0, 52));
+        }
+      }
+      if (!tenuto.archiviato) { /* l'originale attivo resta esposto */ }
+    });
+
+    rep.copieArchiviateCancellate = daCancellare.filter(function (c) { return c.archiviato; }).length;
+    rep.attiviResiInattivi = daArchiviare.length;
+    rep.totaleInterventi = daCancellare.length + daArchiviare.length;
+
+    if (!dryRun) {
+      // prima gli archivi (scrittura leggera), poi le cancellazioni dal fondo
+      daArchiviare.slice(0, cap).forEach(function (c) {
+        sh.getRange(c.riga, COL_B.STATO_RECORD).setValue('archiviato');
+        var iA = bcvEnsureColonnaDataArch();
+        if (iA >= 0) sh.getRange(c.riga, iA + 1).setValue(new Date());
+      });
+      daCancellare.sort(function (a, b) { return b.riga - a.riga; });
+      var fatti = 0;
+      daCancellare.forEach(function (c) {
+        if (fatti >= cap) { rep.residui = (rep.residui || 0) + 1; return; }
+        sh.deleteRow(c.riga);
+        fatti++;
+      });
+      rep.eseguiti = fatti + Math.min(cap, daArchiviare.length);
+    }
+  } catch (e) { rep.ok = false; rep.errore = e.message; }
+  Logger.log('[bcvDeduplicaArchivio] interventi=' + rep.totaleInterventi + ' dryRun=' + rep.dryRun);
+  return rep;
+}
+
 /** Self-test senza scritture: verifica il riconoscimento regione. */
 function bcvSelfTest() {
   var casi = [
@@ -448,10 +602,26 @@ function bcvSelfTest() {
     // v4.27.94 — Sorrento è entrata nella tabella città→regione: la deduzione
     // corretta ora è Campania (il test precedente si aspettava "nessuna").
     { t: 'GAL Terra Protetta — Sorrento', att: 'Campania' },
-    { t: 'Ministero della Cultura', att: '' },
+    // v4.28.27 — prima questi due restavano SENZA etichetta: un bando
+    // nazionale o europeo non ha una regione, ma dirlo è meglio che tacere.
+    // Erano 38 su 49 gli esposti senza regione il 04/08, quindi fuori mappa.
+    { t: 'Ministero della Cultura', att: 'Tutte' },
+    { t: 'Invitalia', att: 'Tutte' },
+    { t: 'Agenzia del Demanio', att: 'Tutte' },
     { t: 'Comune di Piombino', att: 'Toscana' },
-    { t: 'Commissione Europea', att: '' }
+    { t: 'Commissione Europea', att: 'Unione Europea' },
+    { t: 'Creative Europe Desk Italia', att: 'Unione Europea' }
   ];
+  // v4.28.30 — deduplicazione: la chiave preferisce l'URL, e il punteggio
+  // deve premiare la copia PIU COMPLETA (con link e scadenza).
+  var _dupKo = [];
+  if (_bcvChiaveDup_('https://www.x.it/b/1', 'T') !== _bcvChiaveDup_('http://x.it/b/1/', 'T')) _dupKo.push('chiave URL non normalizzata');
+  if (_bcvChiaveDup_('', 'Bando Musei') !== 't:bando musei') _dupKo.push('chiave da titolo');
+  if (_bcvChiaveDup_('', '') !== '') _dupKo.push('chiave vuota');
+  var _rowPiena = []; _rowPiena[COL_B.URL_BANDO-1]='http://x'; _rowPiena[COL_B.SCADENZA-1]=new Date(); _rowPiena[COL_B.SOMMARIO-1]='descrizione';
+  var _rowVuota = []; _rowVuota[COL_B.SOMMARIO-1]='';
+  if (!(_bcvPunteggioCopia_(_rowPiena) > _bcvPunteggioCopia_(_rowVuota))) _dupKo.push('punteggio non premia la copia completa');
+
   var pass = 0, fail = [];
   casi.forEach(function (c) {
     var testoNorm = _bcvNorm_(c.t), testoLow = c.t.toLowerCase(), trovata = '';
@@ -463,10 +633,19 @@ function bcvSelfTest() {
         if (testoLow.indexOf(citta) >= 0) { trovata = BCV_CITTA_REGIONE[citta]; break; }
       }
     }
+    // stesso ordine della funzione vera: prima l'Europa, poi il nazionale
+    if (!trovata) {
+      if (BCV_SIGLE_PAESE.test(c.t)) trovata = 'Unione Europea';
+      else if (BCV_ENTI_EUROPEI_RE.test(c.t)) trovata = 'Unione Europea';
+      else if (BCV_ENTI_NAZIONALI_RE.test(c.t)) trovata = 'Tutte';
+    }
     if (trovata === c.att) pass++; else fail.push(c.t + ' → "' + trovata + '" (atteso "' + c.att + '")');
   });
-  Logger.log('[bcvSelfTest] ' + pass + '/' + casi.length);
+  _dupKo.forEach(function(x){ fail.push('dedup: ' + x); });
+  pass += (5 - _dupKo.length);
+  Logger.log('[bcvSelfTest] ' + pass + '/' + (casi.length + 5));
   // v4.27.94 — il runner unificato legge r.pass e r.fail: senza 'fail'
   // numerico mostrava "4/4 KO", nascondendo quale caso non passava.
-  return { ok: fail.length === 0, pass: pass, fail: fail.length, totale: casi.length, falliti: fail };
+  return { ok: fail.length === 0, pass: pass, fail: fail.length, totale: casi.length + 5, falliti: fail };
 }
+

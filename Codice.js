@@ -661,6 +661,176 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(_b, null, 2)).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // v4.28.23 — ELENCO FONTI (?diag=elencofonti): nomi e URL di tutti i
+  // registri, per confrontare un archivio esterno prima di importarlo.
+  // Sola lettura, nessun dato sensibile (le fonti sono pubbliche).
+  if (params.diag === 'elencofonti') {
+    var _ef = { versione: (typeof OC_VERSION !== 'undefined' ? OC_VERSION : '?'), fonti: [] };
+    try {
+      var _ss2 = getMainSS();
+      [['RegistroFonti', ['URL_Feed', 'URL_Sito']],
+       ['FontiFeed', ['URL_Feed', 'URL_Sito']],
+       ['FontiBandi_v5', ['URL', 'RSS_URL', 'URL_Feed']],
+       ['SocialFonti', ['URL']],
+       ['FontiPodcast', ['URL', 'URL_RSS']],
+       ['FontiCandidate', ['URLPagina', 'FeedRilevato']]].forEach(function (spec) {
+        var sh = _ss2.getSheetByName(spec[0]);
+        if (!sh || sh.getLastRow() < 2) return;
+        var v = sh.getDataRange().getValues();
+        var h = v[0].map(function (x) { return String(x || '').trim(); });
+        var iN = h.indexOf('Nome');
+        var cols = spec[1].map(function (c) { return h.indexOf(c); }).filter(function (i) { return i >= 0; });
+        for (var r = 1; r < v.length; r++) {
+          var urls = cols.map(function (i) { return String(v[r][i] || ''); }).filter(Boolean);
+          if (!urls.length) continue;
+          _ef.fonti.push({ f: spec[0], n: (iN >= 0 ? String(v[r][iN] || '') : '').substring(0, 48), u: urls });
+        }
+      });
+      _ef.totale = _ef.fonti.length;
+    } catch (eE) { _ef.errore = eE.message; }
+    return ContentService.createTextOutput(JSON.stringify(_ef)).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // v4.28.25 — ANOMALIE DEI BANDI ESPOSTI (?diag=anomalie): passa in rassegna
+  // ciò che il pubblico vede davvero e segnala i difetti concreti, con il
+  // titolo del bando accanto. Serve a sostituire "molti bandi hanno anomalie"
+  // con un elenco di casi verificabili. Sola lettura.
+  if (params.diag === 'anomalie') {
+    var _an = { versione: (typeof OC_VERSION !== 'undefined' ? OC_VERSION : '?'), esposti: 0, anomalie: {}, esempi: {} };
+    function _segna(tipo, titolo, dettaglio) {
+      _an.anomalie[tipo] = (_an.anomalie[tipo] || 0) + 1;
+      if (!_an.esempi[tipo]) _an.esempi[tipo] = [];
+      if (_an.esempi[tipo].length < 6) {
+        _an.esempi[tipo].push(String(titolo || '').substring(0, 62) + (dettaglio ? ' → ' + dettaglio : ''));
+      }
+    }
+    try {
+      var _bandi = (typeof getBandiRadar === 'function') ? getBandiRadar() : [];
+      _an.esposti = _bandi.length;
+      var _oggi = new Date(); _oggi.setHours(0, 0, 0, 0);
+      var _REG_IT = /^(abruzzo|basilicata|calabria|campania|emilia|friuli|lazio|liguria|lombardia|marche|molise|piemonte|puglia|sardegna|sicilia|toscana|trentino|umbria|valle|veneto|tutte)/i;
+      var _titoli = {};
+      _bandi.forEach(function (b) {
+        var tit = String(b.titolo || '');
+        var ente = String(b.ente || '');
+        var reg = String(b.regione || '').trim();
+        var link = String(b.link || '');
+
+        // titolo
+        if (!tit.trim()) _segna('titoloVuoto', '(riga senza titolo)', b.id);
+        else if (tit.length < 15) _segna('titoloTroppoCorto', tit);
+        else if (/^\d+[\s\-\/]*\d*$/.test(tit.trim())) _segna('titoloSoloNumeri', tit);
+        else if (/<[a-z\/][^>]*>|&[a-z]+;|\[object|undefined|null/i.test(tit)) _segna('titoloConScorie', tit);
+        // stessa notizia esposta due volte
+        var kt = tit.trim().toLowerCase().replace(/\s+/g, ' ');
+        if (kt && _titoli[kt]) _segna('titoloDuplicato', tit); else _titoli[kt] = 1;
+
+        // ente
+        if (!ente.trim()) _segna('enteMancante', tit);
+        else if (ente.trim().toLowerCase() === tit.trim().toLowerCase()) _segna('enteUgualeAlTitolo', tit);
+
+        // regione: serve alla mappa del Radar
+        if (!reg) _segna('regioneMancante', tit, ente.substring(0, 30));
+        else if (!_REG_IT.test(reg)) _segna('regioneNonItaliana', tit, reg);
+
+        // scadenza
+        if (b.scadenza) {
+          var ds = new Date(b.scadenza);
+          if (isNaN(ds.getTime())) _segna('scadenzaIllegibile', tit, String(b.scadenza));
+          else {
+            var anni = (ds.getTime() - _oggi.getTime()) / (365 * 86400000);
+            if (anni > 4) _segna('scadenzaTroppoLontana', tit, Utilities.formatDate(ds, 'Europe/Rome', 'dd/MM/yyyy'));
+          }
+        } else _segna('senzaScadenza', tit, ente.substring(0, 30));
+
+        // link
+        if (!link) _segna('senzaLink', tit);
+        else if (!/^https?:\/\//i.test(link)) _segna('linkMalformato', tit, link.substring(0, 40));
+        else if (/^https?:\/\/[^\/]+\/?$/.test(link)) _segna('linkSoloHomepage', tit, link);
+
+        // importo
+        if (b.importo) {
+          var imp = Number(b.importo);
+          if (isNaN(imp)) _segna('importoIllegibile', tit, String(b.importo).substring(0, 24));
+          else if (imp > 0 && imp < 500) _segna('importoSospettoBasso', tit, String(imp));
+          else if (imp > 5000000000) _segna('importoSospettoAlto', tit, String(imp));
+        }
+
+        // lingua: un radar per musei italiani con titoli solo in inglese
+        if (/^(ireland|germany|belgium|spain|france|poland|sweden|norway|denmark|netherlands|finland|austria|portugal|greece|romania|hungary|czech)/i.test(tit)) {
+          _segna('bandoEsteroInEvidenza', tit, reg || '(senza regione)');
+        }
+      });
+      _an.totaleAnomalie = 0;
+      Object.keys(_an.anomalie).forEach(function (k) { _an.totaleAnomalie += _an.anomalie[k]; });
+    } catch (eAn) { _an.errore = eAn.message; }
+    return ContentService.createTextOutput(JSON.stringify(_an, null, 2)).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // v4.28.29 — SALUTE DELL'ARCHIVIO (?diag=archivio): duplicati, copie fra
+  // archivio e attivi, residui da purgare, righe senza contenuto utile.
+  // Sola lettura: conta e mostra, non tocca nulla.
+  if (params.diag === 'archivio') {
+    var _ar = { versione: (typeof OC_VERSION !== 'undefined' ? OC_VERSION : '?') };
+    try {
+      var _sha2 = getSheetRadar();
+      var _v2 = _sha2.getDataRange().getValues();
+      function _k(u, t) {
+        var s = String(u || '').trim().toLowerCase()
+          .replace(/^https?:\/\//, '').replace(/^www\./, '').split('#')[0].replace(/\/+$/, '');
+        if (s) return 'u:' + s;
+        return 't:' + String(t || '').trim().toLowerCase().replace(/\s+/g, ' ').substring(0, 120);
+      }
+      var attivi = {}, archivio = {}, dupArch = 0, dupAttivi = 0, copieIncrociate = 0;
+      var nArch = 0, nAtt = 0, senzaTitolo = 0, senzaTuttoArch = 0;
+      var esDupArch = [], esCopie = [], esVuoti = [];
+      for (var r = 1; r < _v2.length; r++) {
+        var row = _v2[r];
+        if (!row[COL_B.ID - 1]) continue;
+        var tit = String(row[COL_B.TITOLO - 1] || '').trim();
+        var url = String(row[COL_B.URL_BANDO - 1] || '');
+        var arch = String(row[COL_B.STATO_RECORD - 1] || '').toLowerCase() === 'archiviato';
+        var key = _k(url, tit);
+        if (!tit) { senzaTitolo++; continue; }
+        if (arch) {
+          nArch++;
+          // riga senza nulla di utile: né link né scadenza né sommario
+          if (!url && !row[COL_B.SCADENZA - 1] && String(row[COL_B.SOMMARIO - 1] || '').length < 20) {
+            senzaTuttoArch++;
+            if (esVuoti.length < 6) esVuoti.push(tit.substring(0, 58));
+          }
+          if (archivio[key]) { dupArch++; if (esDupArch.length < 8) esDupArch.push(tit.substring(0, 58)); }
+          else archivio[key] = r + 1;
+        } else {
+          nAtt++;
+          if (attivi[key]) dupAttivi++;
+          else attivi[key] = r + 1;
+        }
+      }
+      // stessa risorsa presente sia archiviata sia attiva: la copia archiviata
+      // è inutile e confonde i conteggi
+      Object.keys(attivi).forEach(function (k) {
+        if (archivio[k]) {
+          copieIncrociate++;
+          if (esCopie.length < 8) esCopie.push(k.substring(0, 70));
+        }
+      });
+      _ar.righeTotali = _v2.length - 1;
+      _ar.attivi = nAtt;
+      _ar.archiviati = nArch;
+      _ar.senzaTitolo = senzaTitolo;
+      _ar.duplicatiDentroArchivio = dupArch;
+      _ar.duplicatiFraAttivi = dupAttivi;
+      _ar.copieArchivioSuAttivi = copieIncrociate;
+      _ar.archiviatiSenzaContenuto = senzaTuttoArch;
+      _ar.esempi = { duplicatiArchivio: esDupArch, copieIncrociate: esCopie, senzaContenuto: esVuoti };
+      _ar.purgeSimulata = (typeof bcvPurgeArchiviati === 'function')
+        ? (function () { var p = bcvPurgeArchiviati({ dryRun: true }); return { cancellerebbe: p.cancellati, troppoRecenti: p.troppoRecenti, senzaData: p.senzaData }; })()
+        : 'modulo assente';
+    } catch (eAr) { _ar.errore = eAr.message; }
+    return ContentService.createTextOutput(JSON.stringify(_ar, null, 2)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (params.diag === 'contatori') {
     var _dg;
     try { _dg = (typeof diagContatoriBadge === 'function') ? diagContatoriBadge() : { errore: 'tool assente' }; }

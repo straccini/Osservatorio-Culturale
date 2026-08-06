@@ -168,9 +168,13 @@ const COL_NAMES = {
   SCADENZA:['Scadenza','scadenza','Deadline'],
   STATUS:['Status','status','Stato'],
   CLIENTE:['Cliente','cliente'],
-  LINK:['Link','link','URL','url','Fonte URL','Link Bando'],
+  // v4.28.26 — MANCAVA 'UrlBando', il nome REALE della colonna nello schema
+  // Bandi_v5. Senza l'alias, buildColMap non trovava la colonna e ripiegava
+  // sull'indice legacy 13 — che in Bandi_v5 è SCADENZA. Risultato: il link di
+  // OGNI bando esposto conteneva una data. Verificato il 04/08: 49 su 49.
+  LINK:['UrlBando','urlBando','url_bando','URL_BANDO','Link','link','URL','url','Fonte URL','Link Bando'],
   NOTE:['Note','note','Descrizione'],
-  FONTE:['Fonte','fonte','Sorgente'],
+  FONTE:['FonteNome','fonteNome','Fonte','fonte','Sorgente'],
   PRIORITA:['Priorita','priorita','Priorita','priorita'],
   NASCOSTO:['Nascosto','nascosto','Hidden'],
   STATO_RECORD:['StatoRecord','statoRecord','stato_record','STATO_RECORD'],

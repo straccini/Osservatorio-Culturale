@@ -18,6 +18,11 @@
  */
 var _OC_TEST_SUITES = [
   {
+    name: 'mappaColonneBandi',
+    fn: 'bandiColMapSelfTest',
+    description: 'Mappa colonne bandi: nessun campo assente deve rubare la colonna di un altro'
+  },
+  {
     name: 'bandiGate',
     fn: 'bandiGateSelfTest',
     description: 'Classificatore cultura/non-cultura per bandi (isBandoCulturale)'

@@ -233,6 +233,23 @@ function _impDominio_(u) {
   return m ? m[1].toLowerCase().replace(/^www\./, '') : '';
 }
 
+// v4.28.24 — PIATTAFORME DI HOSTING: non sono fonti, sono contenitori. Due
+// podcast diversi su Buzzsprout condividono il dominio ma non hanno nulla in
+// comune. Segnalarli come "stesso sito" è un falso positivo — verificato sul
+// campo il 04/08: "Radical Museums" risultava sovrapposto a "Artribune
+// Podcast" solo perché entrambi stanno su feeds.buzzsprout.com.
+var IMP_PIATTAFORME = [
+  'feeds.buzzsprout.com', 'buzzsprout.com', 'medium.com', 'rss.com', 'anchor.fm',
+  'feedburner.com', 'feeds.feedburner.com', 'substack.com', 'spreaker.com',
+  'feeds.simplecast.com', 'libsyn.com', 'podbean.com', 'blogspot.com',
+  'wordpress.com', 'youtube.com', 'vimeo.com', 'soundcloud.com'
+];
+
+function _impEPiattaforma_(dominio) {
+  var d = String(dominio || '').toLowerCase();
+  return IMP_PIATTAFORME.some(function (p) { return d === p || d.indexOf('.' + p) > 0; });
+}
+
 /**
  * Indice di TUTTO l'esistente: per URL normalizzata e per dominio.
  * Il secondo serve a scoprire le sovrapposizioni, che i controlli per URL
@@ -256,7 +273,7 @@ function _impEsistente_() {
         var k = _impNorm_(u);
         if (k && !perUrl[k]) perUrl[k] = etichetta + ': ' + nome;
         var d = _impDominio_(u);
-        if (d && !perDominio[d]) perDominio[d] = etichetta + ': ' + nome;
+        if (d && !_impEPiattaforma_(d) && !perDominio[d]) perDominio[d] = etichetta + ': ' + nome;
       });
     }
   }
@@ -338,7 +355,7 @@ function impAnteprima(token) {
     }
 
     // 4. sovrapposizione di dominio: entra, ma segnalata
-    var sovrapp = esistente.perDominio[dom] || '';
+    var sovrapp = _impEPiattaforma_(dom) ? '' : (esistente.perDominio[dom] || '');
     if (sovrapp) rep.sovrapposizioni.push({ riga: rigaN, nome: nome, dominio: dom, esistente: sovrapp });
 
     rep.perCategoria[cat] = (rep.perCategoria[cat] || 0) + 1;
@@ -491,7 +508,7 @@ function _impRileggiImportabili_(token) {
       categoria: cat, nome: nome, url: url, ente: g('Ente'), sito: g('SitoWeb'),
       copertura: g('Copertura'), regione: g('Regione'), lingua: g('Lingua') || 'it',
       tipologie: g('Tipologie'), ambiti: g('Ambiti'), note: g('Note'),
-      sovrapposizione: esistente.perDominio[_impDominio_(url)] || ''
+      sovrapposizione: _impEPiattaforma_(_impDominio_(url)) ? '' : (esistente.perDominio[_impDominio_(url)] || '')
     });
   }
   return { ok: true, importabili: out };
@@ -558,6 +575,11 @@ function impSelfTest() {
   ok('stessa fonte, stessa chiave', _impNorm_('http://x.it/feed/') === _impNorm_('https://www.x.it/feed'));
   ok('categoria inventata rifiutata', IMP_CATEGORIE.indexOf('pippo') < 0);
   ok('schema URL: solo http(s)', !/^https?:\/\//i.test('javascript:alert(1)'));
+  // v4.28.24 — le piattaforme di hosting non sono fonti: due podcast diversi
+  // su Buzzsprout non sono lo stesso sito (falso positivo visto il 04/08)
+  ok('buzzsprout e piattaforma', _impEPiattaforma_('feeds.buzzsprout.com'));
+  ok('medium e piattaforma', _impEPiattaforma_('medium.com'));
+  ok('sito museale NON e piattaforma', !_impEPiattaforma_('chicagohistory.org'));
 
   // CSV — i casi che si presentano davvero quando il file arriva da fuori
   var conVirgola = 'Categoria,Nome,URL\nnews,Test,https://x.it/feed';
