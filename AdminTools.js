@@ -117,6 +117,14 @@ function adminRunTool(tool, token) {
       case 'dsSelfTest':         r = dsSelfTest(); break;
       case 'trStatoApprovatori': r = trStatoApprovatori(token); break;
       case 'trSelfTest':         r = trSelfTest(); break;
+      // Import fonti da archivio esterno (v4.28.22)
+      case 'impCreaModello':     r = impCreaModello(); break;
+      case 'impModelloCsv':      r = impModelloCsv(); break;
+      case 'impAnteprima':       r = impAnteprima(token); break;
+      case 'impApplica':         r = impApplica(token, {}); break;
+      case 'impApplicaConSovr':  r = impApplica(token, { includiSovrapposte: true }); break;
+      case 'impVerificaTecnica': r = impVerificaTecnica(token, {}); break;
+      case 'impSelfTest':        r = impSelfTest(); break;
       case 'nlDiagnosiBozza':    r = nlDiagnosiBozza(); break;
       case 'nlTestataSelfTest':  r = nlTestataSelfTest(); break;
       // ── Fonti podcast/video: riallineamento su FontiFeed (v4.27.97) ──────

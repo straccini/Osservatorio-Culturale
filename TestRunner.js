@@ -38,6 +38,11 @@ var _OC_TEST_SUITES = [
     description: 'Testata newsletter: angoli vivi, palette del marchio, pulsanti veri'
   },
   {
+    name: 'importFonti',
+    fn: 'impSelfTest',
+    description: 'Import fonti: parser CSV (separatori, virgolette, BOM) e dedup URL'
+  },
+  {
     name: 'trendRedazione',
     fn: 'trSelfTest',
     description: 'Trend redazione: criterio editoriale e validazione chat-id Telegram'

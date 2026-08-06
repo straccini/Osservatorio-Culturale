@@ -1,0 +1,4 @@
+Categoria;Nome;URL;Ente;SitoWeb;Copertura;Regione;Lingua;Tipologie;Ambiti;Note
+bandi;Fondazione Esempio — Bandi cultura;https://esempio.it/bandi/feed;Fondazione Esempio;https://esempio.it;nazionale;;it;"T1,T5";"3,4";riga di esempio: cancellare
+news;Rivista Esempio;https://rivista.esempio.it/rss;Rivista Esempio;;internazionale;;en;T9;1;riga di esempio: cancellare
+podcast;Podcast Esempio;https://feeds.esempio.it/podcast.rss;Radio Esempio;;nazionale;;it;T9;1;riga di esempio: cancellare
