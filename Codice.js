@@ -824,6 +824,10 @@ function doGet(e) {
       _ar.copieArchivioSuAttivi = copieIncrociate;
       _ar.archiviatiSenzaContenuto = senzaTuttoArch;
       _ar.esempi = { duplicatiArchivio: esDupArch, copieIncrociate: esCopie, senzaContenuto: esVuoti };
+      // v4.28.31 — anteprima della deduplicazione sui dati veri, per poterla
+      // analizzare prima di autorizzarla. Non scrive: dryRun è il default.
+      _ar.dedupSimulata = (typeof bcvDeduplicaArchivio === 'function')
+        ? bcvDeduplicaArchivio({ dryRun: true }) : 'modulo assente';
       _ar.purgeSimulata = (typeof bcvPurgeArchiviati === 'function')
         ? (function () { var p = bcvPurgeArchiviati({ dryRun: true }); return { cancellerebbe: p.cancellati, troppoRecenti: p.troppoRecenti, senzaData: p.senzaData }; })()
         : 'modulo assente';

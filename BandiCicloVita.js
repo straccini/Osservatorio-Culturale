@@ -514,7 +514,7 @@ function bcvDeduplicaArchivio(opts) {
   var dryRun = opts.dryRun !== false;          // prudente: anteprima di default
   var cap = Number(opts.cap) || 400;
   var rep = { ok: true, dryRun: dryRun, esaminate: 0,
-              attiviResiInattivi: 0, copieArchiviateCancellate: 0, copieAttivoCancellate: 0,
+              attiviResiInattivi: 0, copieArchiviateCancellate: 0,
               esempi: [] };
   try {
     var sh = _bcvSheet_();
@@ -568,25 +568,37 @@ function bcvDeduplicaArchivio(opts) {
       if (!tenuto.archiviato) { /* l'originale attivo resta esposto */ }
     });
 
-    rep.copieArchiviateCancellate = daCancellare.filter(function (c) { return c.archiviato; }).length;
+    rep.copieArchiviateCancellate = daCancellare.length;   // per costruzione sono tutte archiviate
     rep.attiviResiInattivi = daArchiviare.length;
     rep.totaleInterventi = daCancellare.length + daArchiviare.length;
 
     if (!dryRun) {
-      // prima gli archivi (scrittura leggera), poi le cancellazioni dal fondo
-      daArchiviare.slice(0, cap).forEach(function (c) {
-        sh.getRange(c.riga, COL_B.STATO_RECORD).setValue('archiviato');
-        var iA = bcvEnsureColonnaDataArch();
-        if (iA >= 0) sh.getRange(c.riga, iA + 1).setValue(new Date());
-      });
-      daCancellare.sort(function (a, b) { return b.riga - a.riga; });
-      var fatti = 0;
-      daCancellare.forEach(function (c) {
-        if (fatti >= cap) { rep.residui = (rep.residui || 0) + 1; return; }
-        sh.deleteRow(c.riga);
-        fatti++;
-      });
-      rep.eseguiti = fatti + Math.min(cap, daArchiviare.length);
+      // v4.28.31 — l'indice della colonna DataArchiviazione si legge UNA volta:
+      // chiamare bcvEnsureColonnaDataArch dentro il ciclo significava rileggere
+      // l'intestazione del foglio a ogni riga (165 letture inutili, rischio
+      // di sforare i 6 minuti).
+      var _iArch = bcvEnsureColonnaDataArch();
+      var _budget = cap;   // UN solo tetto per l'intera esecuzione, non uno per fase
+
+      // 1. copie attive → rese inattive (scrittura leggera, indici ancora validi)
+      for (var a = 0; a < daArchiviare.length && _budget > 0; a++) {
+        sh.getRange(daArchiviare[a].riga, COL_B.STATO_RECORD).setValue('archiviato');
+        if (_iArch >= 0) sh.getRange(daArchiviare[a].riga, _iArch + 1).setValue(new Date());
+        rep.attiviResiInattivi_eseguiti = (rep.attiviResiInattivi_eseguiti || 0) + 1;
+        _budget--;
+      }
+
+      // 2. copie archiviate → cancellate, DAL FONDO: cancellando dall'alto gli
+      //    indici slittano e si finirebbe per eliminare righe sbagliate.
+      daCancellare.sort(function (x, y) { return y.riga - x.riga; });
+      for (var c2 = 0; c2 < daCancellare.length; c2++) {
+        if (_budget <= 0) { rep.residui = (rep.residui || 0) + 1; continue; }
+        sh.deleteRow(daCancellare[c2].riga);
+        rep.copieCancellate_eseguite = (rep.copieCancellate_eseguite || 0) + 1;
+        _budget--;
+      }
+      rep.eseguiti = (rep.attiviResiInattivi_eseguiti || 0) + (rep.copieCancellate_eseguite || 0);
+      if (rep.residui) rep.notaResidui = 'Rilanciare per completare: ' + rep.residui + ' copie ancora da rimuovere.';
     }
   } catch (e) { rep.ok = false; rep.errore = e.message; }
   Logger.log('[bcvDeduplicaArchivio] interventi=' + rep.totaleInterventi + ' dryRun=' + rep.dryRun);
