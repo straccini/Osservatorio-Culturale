@@ -310,28 +310,6 @@ function _autoRegisterUser_(email, nome, source) {
   }
 }
 
-/**
- * Wrapper PUBBLICO di _autoRegisterUser_.
- *
- * QA 2026-08-14 — il modal di registrazione chiamava direttamente
- * google.script.run._autoRegisterUser_(...): in Apps Script le funzioni con
- * underscore finale sono private e NON sono invocabili da google.script.run,
- * quindi la registrazione finiva sempre in withFailureHandler. Serve un nome
- * pubblico.
- *
- * NOTA: questa funzione registra l'utente nel foglio Utenti ma NON crea una
- * sessione e NON invia il magic-link. Chi si registra dal modal resta quindi a
- * livello 0 finche' non passa da Matrix o da una prenotazione. Collegare qui
- * createSessione() e' una scelta di prodotto, non una correzione: va decisa.
- *
- * @param {string} email
- * @param {string} [nome]
- * @param {string} [source]
- */
-function autoRegisterUser(email, nome, source) {
-  return _autoRegisterUser_(email, nome, source);
-}
-
 // ============================================================================
 // RICHIESTA ACCESSO (utenti non autorizzati)
 // ============================================================================

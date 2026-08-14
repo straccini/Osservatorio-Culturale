@@ -6847,7 +6847,7 @@
         .withFailureHandler(function(e) {
           if (msg) { msg.textContent = 'Errore: ' + (e.message || e); msg.style.color = 'var(--danger,#C2410C)'; }
         })
-        .autoRegisterUser(email, nomeCompleto, 'registrazione');
+        ._autoRegisterUser_(email, nomeCompleto, 'registrazione');
     }
   }
 
