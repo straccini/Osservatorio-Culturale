@@ -407,18 +407,9 @@ function isBandiV5Active() {
   } catch(e) { return false; }
 }
 
-/**
- * Imposta la flag di switchover a Bandi v5.
- */
-function enableBandiV5() {
-  PropertiesService.getScriptProperties().setProperty(BANDI_V5_FLAG_PROP, 'true');
-  Logger.log('Flag USE_BANDI_V5 = true');
-}
-
-function disableBandiV5() {
-  PropertiesService.getScriptProperties().setProperty(BANDI_V5_FLAG_PROP, 'false');
-  Logger.log('Flag USE_BANDI_V5 = false (rollback a Scannerbandi v4)');
-}
+// QA 2026-08-14 — rimosse le duplicate enableBandiV5()/disableBandiV5() definite qui.
+// Erano sovrascritte dalle omonime piu' complete a fine file (~riga 1917), quindi codice morto.
+// Stesso difetto gia' corretto in v4.18.7 per isBandiV5Active().
 
 /**
  * Restituisce la versione attuale del modulo Bandi v5.
@@ -802,10 +793,10 @@ function _parseFonteRSS_(fonte) {
   }
 
   items.slice(0, 30).forEach(function(item) {
-    var titolo = _xmlText_(item, 'title') || _xmlText_(item, 'title', XmlService.getNamespace('http://www.w3.org/2005/Atom'));
-    var link   = _xmlText_(item, 'link')  || _xmlText_(item, 'link',  XmlService.getNamespace('http://www.w3.org/2005/Atom'));
-    var descr  = _xmlText_(item, 'description') || _xmlText_(item, 'summary') || '';
-    var pubDate= _xmlText_(item, 'pubDate') || _xmlText_(item, 'published') || _xmlText_(item, 'updated') || '';
+    var titolo = _xmlChildText_(item, 'title') || _xmlChildText_(item, 'title', XmlService.getNamespace('http://www.w3.org/2005/Atom'));
+    var link   = _xmlChildText_(item, 'link')  || _xmlChildText_(item, 'link',  XmlService.getNamespace('http://www.w3.org/2005/Atom'));
+    var descr  = _xmlChildText_(item, 'description') || _xmlChildText_(item, 'summary') || '';
+    var pubDate= _xmlChildText_(item, 'pubDate') || _xmlChildText_(item, 'published') || _xmlChildText_(item, 'updated') || '';
 
     if (!titolo || !link) return;
     risultati.push({
@@ -825,7 +816,7 @@ function _parseFonteRSS_(fonte) {
   return risultati;
 }
 
-function _xmlText_(el, tagName, ns) {
+function _xmlChildText_(el, tagName, ns) {
   try {
     var child = ns ? el.getChild(tagName, ns) : el.getChild(tagName);
     return child ? child.getValue() : null;
@@ -879,7 +870,7 @@ function _parseFonteSitemap_(fonte) {
   // Filtra solo URL che contengono parole chiave bandi
   var keywords = ['bando', 'bandi', 'avviso', 'avvisi', 'finanziamento', 'contributo', 'grant'];
   urls.slice(0, 200).forEach(function(urlEl) {
-    var loc = _xmlText_(urlEl, 'loc', smNs) || _xmlText_(urlEl, 'loc') || '';
+    var loc = _xmlChildText_(urlEl, 'loc', smNs) || _xmlChildText_(urlEl, 'loc') || '';
     var locLow = loc.toLowerCase();
     var rilevante = keywords.some(function(k) { return locLow.indexOf(k) >= 0; });
     if (!rilevante) return;

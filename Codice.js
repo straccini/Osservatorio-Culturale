@@ -80,6 +80,15 @@ function _doGetSurvey(params) {
 }
 
 function _doGetReader(params) {
+  // QA 2026-08-14 — qui si cercava renderDigestReaderPage(), che non e' definita in
+  // nessun file: il ramo era sempre falso e il reader serviva solo lo stub qui sotto.
+  // La pagina vera esiste gia' (_serveDigestReader + Digestreader.html) ma non era
+  // collegata. _serveDigestReader ha una propria pagina di errore, quindi il try/catch
+  // qui serve solo da rete di sicurezza verso lo stub.
+  if (typeof _serveDigestReader === 'function') {
+    try { return _serveDigestReader(params.t); }
+    catch (eReader) { Logger.log('_doGetReader fallback: ' + eReader.message); }
+  }
   if (typeof renderDigestReaderPage === 'function') {
     return renderDigestReaderPage(params.t);
   }
@@ -472,7 +481,9 @@ function include(filename) {
 function _serveDigestReader(token) {
   try {
     var data = _getDigestByToken(token);
-    var page = HtmlService.createHtmlOutputFromFile('DigestReader');
+    // QA 2026-08-14 — il file si chiama Digestreader.html: createHtmlOutputFromFile
+    // e' case-sensitive, con 'DigestReader' lanciava sempre eccezione.
+    var page = HtmlService.createHtmlOutputFromFile('Digestreader');
     var html = page.getContent()
       .replace('READER_DATA_PLACEHOLDER', JSON.stringify(data))
       .replace('GAS_URL_PLACEHOLDER', ScriptApp.getService().getUrl());
@@ -2222,7 +2233,13 @@ function saveMailing(body) {
     var idCol = h.indexOf('ID');
     for (var i = 1; i < rows.length; i++) {
       if (rows[i][idCol] === body.id) {
-        sh.getRange(i+1, 1, 1, h.length).setValues([[body.id, body.nome||'', email, body.ruolo||'lettore', body.attivo!==false, rows[i][h.indexOf('DataIscrizione')],
+        // QA 2026-08-14 — SICUREZZA: il Ruolo non si accetta piu' dal client.
+        // saveMailing e' un endpoint pubblico (iscrizione newsletter) e authenticate()
+        // accetta l'email come token restituendo proprio questo Ruolo: con body.ruolo
+        // libero, chiunque poteva iscriversi come 'admin' e poi usare doPost da admin.
+        // In update si conserva il ruolo gia' presente sulla riga.
+        var _ruoloEsistente = rows[i][h.indexOf('Ruolo')] || 'lettore';
+        sh.getRange(i+1, 1, 1, h.length).setValues([[body.id, body.nome||'', email, _ruoloEsistente, body.attivo!==false, rows[i][h.indexOf('DataIscrizione')],
           rows[i][h.indexOf('Token')]||'', rows[i][h.indexOf('TokenExpiry')]||'', rows[i][h.indexOf('DigestIds')]||'',
           body.ConsensoGDPR||rows[i][h.indexOf('ConsensoGDPR')]||false,
           body.TimestampConsenso||rows[i][h.indexOf('TimestampConsenso')]||'',
@@ -2244,7 +2261,10 @@ function saveMailing(body) {
 
   // New subscriber
   var id = 'M' + Date.now();
-  var newRow = [id, body.nome||'', email, body.ruolo||'lettore', true, new Date()];
+  // QA 2026-08-14 — SICUREZZA: ruolo forzato a 'lettore', mai preso da body.ruolo
+  // (vedi nota nel ramo di update poco sopra). Le promozioni si fanno dal pannello
+  // Utenti, non dall'iscrizione alla newsletter.
+  var newRow = [id, body.nome||'', email, 'lettore', true, new Date()];
   // Pad for Token, TokenExpiry, DigestIds (may already exist)
   while (newRow.length < h.indexOf('ConsensoGDPR')) newRow.push('');
   // GDPR fields
