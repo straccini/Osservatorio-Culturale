@@ -1,0 +1,325 @@
+// ============================================================================
+//  BandiGate.js — Gate FINALE di esposizione bandi (cultura + link)
+// ----------------------------------------------------------------------------
+//  Osservatorio Culturale — Sinopia / Silvano Straccini · 2026-07-05
+//
+//  PROBLEMA RISOLTO
+//  ----------------
+//  Prima di questo modulo, la classificazione culturale (isBandoCulturale) era
+//  applicata SOLO nel backfill one-shot backfillSettoreCultura() che archivia.
+//  I bandi non ancora ri-classificati (o classificati male) sfuggivano al filtro
+//  e finivano esposti in home/pagina bandi. Analogamente, i bandi con link
+//  mancante venivano mostrati con un pulsante "Apri" vuoto.
+//
+//  SOLUZIONE
+//  ---------
+//  bandiGateFinale_(arr) è un cancello UNICO applicato a valle di TUTTE le
+//  funzioni che espongono bandi al frontend (getBandiV5, getUltimiBandiV5, e i
+//  rami RADAR di getBandiListV42 / getUltimiBandiMonitorati). Per ogni bando:
+//
+//   1) FILTRO CULTURA — isBandoCulturale(titolo, settore, sommario, cpv):
+//      se il bando è chiaramente NON culturale (sanità, trasporti, rifiuti,
+//      pulizie, ...) viene SCARTATO dall'esposizione (rete di sicurezza live,
+//      indipendente dal backfill).
+//
+//   2) NORMALIZZAZIONE LINK — ogni bando esce SEMPRE con un link cliccabile:
+//      - linkDiretto : URL specifico del bando (se il link punta alla pagina
+//                      del bando e non a una homepage/sezione generica);
+//      - linkConsulta: URL da usare per "consultare il sito" — il link diretto
+//                      se disponibile, altrimenti l'URL generico dell'ente,
+//                      altrimenti una ricerca web mirata su titolo+ente;
+//      - linkTipo    : 'diretto' | 'generico' | 'consulta' (nessun link reale).
+//      - link        : compat retro — resta valorizzato con il miglior URL
+//                      disponibile, così i pulsanti esistenti continuano a
+//                      funzionare senza modifiche al frontend.
+//
+//  NOTA su "controllare che siano attivi"
+//  --------------------------------------
+//  Un bando esposto è ATTIVO per costruzione: le funzioni a monte scartano già
+//  i bandi scaduti e quelli senza scadenza futura certa. Una verifica HTTP live
+//  per-bando in fase di render non è praticabile (UrlFetchApp × N bandi manda in
+//  timeout la doGet). L'attività è quindi garantita dalla scadenza futura; il
+//  link "consulta" assicura comunque un accesso utile anche quando il link
+//  diretto non è disponibile.
+// ============================================================================
+
+/** true se url è un http(s) valido. */
+function _bandiUrlValido_(u) {
+  u = String(u || '').trim();
+  return /^https?:\/\/\S+/i.test(u) ? u : '';
+}
+
+// Titoli che NON sono bandi ma voci di navigazione/legali scrapate dai siti
+// (soprattutto portali GAL): privacy, cookie, credits, "chi siamo", ecc.
+var _BANDO_JUNK_RE = /^\s*(accetto\s+privacy|informativa(?:\s+privacy)?|privacy(?:\s*[-–&]|\s+e\s+cookie|\s+policy|\s*$)|cookie|credits?\b|crediti\b|organizzazione\s*[&]?\s*soci|associarsi\b|diventa\s+socio|chi\s+siamo|contatti\b|dove\s+siamo|come\s+raggiungerci|mappa\s+del\s+sito|mappa\s+dei\s+finanziamenti|area\s+riservata|accedi\b|log\s*in|iscriviti\b|newsletter\b|note\s+legali|termini\s+e\s+condizioni|amministrazione\s+trasparente|disposizioni\s+generali|osservatorio\s+del\s+paesaggio|ipa[\s-]+intesa\s+programmatica|masterplan\s+dell|assemblea\s+dei\s+soci|programmazione\s+\d{4}|copia\s+shortlink|visualizza\s+articolo|condividi\s+(su|questo)|stampa\s+questo|aggiungi\s+(ai|un)\s+|cerca\s+nel\s+sito|risultati\s+di\s+ricerca|pagina\s+non\s+trovata|errore\s+404|benvenut[oai]\s)/i;
+
+// v4.27.49 — Titoli con natura di PUBBLICAZIONE/REPORT/EVENTO, non di bando.
+// Casi reali dal report qualità del 21/07 (entrati e poi archiviati ogni
+// giorno dall'agente): 'Rapporto sociale 2024', 'Minicifre della cultura',
+// 'Performance dei Musei Civici', 'Aggiunti al Calendario di Timely'.
+var _BANDO_PUBBLICAZIONE_RE = /^\s*(rapporto\s|report\s+(annuale|sociale)\b|minicifre\b|newsletter\b|calendario\s|bilancio\s+(sociale|di\s+missione)\b|atti\s+del\b|aggiunti\s+al\b|performance\s+dei\b|programma\s+(annuale|culturale)\s*\d*\s*$)/i;
+
+/**
+ * true se il record NON è un vero bando (voce di menu/legale/navigazione,
+ * titolo-URL, titolo vuoto o titolo con natura di pubblicazione/report).
+ */
+// v4.27.73 — AVVISI ISTITUZIONALI E AUGURI: titoli scrapati dai siti degli enti
+// (GAL, comuni) che non sono bandi. Caso reale 30/07: "AUGURI BUONA PASQUA",
+// "CHIUSURA UFFICIO TERRITORIALE SORRENTO" esposti tra i bandi.
+var _BANDO_NON_PERTINENTE_RE = /(auguri\b|buona\s+pasqua|buone\s+feste|buon\s+(natale|anno|ferragosto)|felice\s+anno|chiusura\s+(uffici|ufficio|estiva|natalizia|sede)|orari\s+(di\s+)?apertura|convocazione\s+(assemblea|consiglio)|verbale\b|elezioni\b|nomina\s+del|comunicato\s+stampa|in\s+memoria\s+di|lutto\b|sciopero\b|giornata\s+(mondiale|nazionale)\s+del)/i;
+// Frammenti HTML/scraping nel titolo o nel sommario: record sporco, non esporlo
+var _BANDO_HTML_JUNK_RE = /(<\s*\/?\s*(a|h[1-6]|div|span|p|br|img|li)\b|rel\s*=\s*"|href\s*=\s*"|&#\d+;\s*(pubblicat|privato)?\s*$|\bscarl\/"|<\s*h\s*$)/i;
+
+function _bandiNonBando_(b) {
+  var t = String((b && b.titolo) || '').trim();
+  if (!t) return true;                        // titolo vuoto
+  if (/^https?:\/\//i.test(t)) return true;   // titolo = URL → voce di menu
+  if (/\bgdpr\b/i.test(t)) return true;       // "... GDPR Compliance"
+  if (_BANDO_JUNK_RE.test(t)) return true;    // voce di navigazione/legale
+  if (_BANDO_PUBBLICAZIONE_RE.test(t)) return true; // v4.27.49 — pubblicazione/report
+  // v4.27.73 — auguri/avvisi istituzionali e record con frammenti HTML
+  if (_BANDO_NON_PERTINENTE_RE.test(t)) return true;
+  if (_BANDO_HTML_JUNK_RE.test(t)) return true;
+  var somm = String((b && b.sommario) || '') + ' ' + String((b && b.descrizione) || '');
+  if (_BANDO_HTML_JUNK_RE.test(somm)) return true;
+  if (_BANDO_NON_PERTINENTE_RE.test(somm) && !_BANDO_SEGNALE_RE.test(t)) return true;
+  return false;
+}
+
+// v4.27.73 — un vero bando, se NON ha scadenza, deve almeno dichiararsi tale
+// nel titolo. Serve a bloccare i titoli generici scrapati senza data.
+var _BANDO_SEGNALE_RE = /(bando|avviso|manifestazione\s+d.?interesse|gara\b|procedura\s+(aperta|negoziata|ristretta)|call\b|invito\s+a\s+presentare|selezione\s+(pubblica|per)|concorso\b|contribut|finanziament|sovvenzion|sostegno\s+(a|per|alle|ai)|premio\b|borsa\b|residenz|affidamento\b|appalto\b|concessione\b|graduatoria\b|proroga\b|riapertura\b|sportello\b)/i;
+
+/**
+ * v4.27.49 — GATE D'INGRESSO (scanner → foglio Bandi_v5): blocca al
+ * SALVATAGGIO i record senza natura di bando, invece di lasciarli entrare e
+ * farli archiviare il giorno dopo dall'agente qualità (15 archiviati il
+ * 21/07). Conservativo: in dubbio lascia passare — l'agente qualità e il
+ * gate di esposizione restano come seconda e terza rete.
+ */
+function bandoIngressoValido_(b) {
+  if (!b) return false;
+  var t = String(b.titolo || '').trim();
+  if (!t || t.length < 8) return false;                    // titolo assente/troppo corto
+  if (_bandiNonBando_({ titolo: t })) return false;        // junk/nav/pubblicazione
+  if (_BANDO_TITOLO_NUMERO_RE.test(t)) return false;       // titolo solo-numero
+  return true;
+}
+
+/**
+ * Classifica un URL come 'diretto' (pagina specifica del bando) o 'generico'
+ * (homepage / sezione). Riusa l'euristica già validata _frLinkGenerico_ di
+ * FontiReport.js; se assente, usa un fallback locale equivalente.
+ */
+function _bandiLinkTipo_(url) {
+  var u = _bandiUrlValido_(url);
+  if (!u) return 'assente';
+  if (typeof _frLinkGenerico_ === 'function') {
+    return _frLinkGenerico_(u) ? 'generico' : 'diretto';
+  }
+  // Fallback locale (stessa logica di _frLinkGenerico_)
+  var senzaProto = u.replace(/^https?:\/\//i, '').replace(/[?#].*$/, '').replace(/\/+$/, '');
+  var parti = senzaProto.split('/');
+  if (parti.length <= 1) return 'generico';
+  var path = parti.slice(1).join('/');
+  var haId = /\d{2,}/.test(path) || /[a-z0-9-]{12,}/i.test(parti[parti.length - 1]);
+  if (path.length < 6 || !haId) return 'generico';
+  return 'diretto';
+}
+
+// v4.27.50 — Pagine UFFICIALI dei programmi UE ricorrenti: quando un bando non
+// ha alcun link reale (i "senza link" del report qualità: Europa Creativa,
+// Culture Moves Europe, ...), meglio la pagina ufficiale del programma che una
+// ricerca Google. URL stabili di primo livello, verificati.
+var _BANDI_EU_PROGRAMMI = [
+  { re: /culture\s+moves\s+europe/i,                 url: 'https://culture.ec.europa.eu/creative-europe/culture-moves-europe' },
+  { re: /europa\s+creativa|creative\s+europe/i,      url: 'https://culture.ec.europa.eu/creative-europe' },
+  { re: /horizon\s+europe|orizzonte\s+europa/i,      url: 'https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/programmes/horizon' },
+  { re: /erasmus\s*\+|erasmus\s+plus/i,              url: 'https://erasmus-plus.ec.europa.eu/opportunities/opportunities-for-organisations' },
+  { re: /new\s+european\s+bauhaus|nuovo\s+bauhaus/i, url: 'https://new-european-bauhaus.europa.eu/funding-and-support_en' },
+  { re: /\binterreg\b/i,                             url: 'https://interreg.eu/' }
+];
+
+/** URL ufficiale del programma UE se il titolo/ente lo identifica, altrimenti ''. */
+function _bandiLinkUfficialeEU_(b) {
+  var t = String((b && b.titolo) || '') + ' ' + String((b && b.ente) || '');
+  for (var i = 0; i < _BANDI_EU_PROGRAMMI.length; i++) {
+    if (_BANDI_EU_PROGRAMMI[i].re.test(t)) return _BANDI_EU_PROGRAMMI[i].url;
+  }
+  return '';
+}
+
+/** Link di ricerca web mirato — "consulta il sito" quando manca un URL reale. */
+function _bandiLinkRicerca_(b) {
+  var titolo = String((b && b.titolo) || '').slice(0, 120);
+  var ente = String((b && b.ente) || '').slice(0, 80);
+  var q = (titolo ? ('"' + titolo + '"') : '') + (ente ? (' ' + ente) : '');
+  q = q.trim() || 'bandi cultura';
+  return 'https://www.google.com/search?q=' + encodeURIComponent(q);
+}
+
+// v4.27.24 — Titolo "solo numero" (TED Notice rotto): NNNNN, NNNNN-YYYY, ecc.
+var _BANDO_TITOLO_NUMERO_RE = /^(?:ted\s+notice\s+)?\d{3,}[-\/]?\d*$/i;
+
+/**
+ * v4.27.24 — VALIDATORE DI ESPOSIZIONE (spec Silvano: "meglio un bando in meno
+ * che uno scaduto o senza informazioni base"). Ritorna false se il bando NON
+ * deve essere mostrato:
+ *  - titolo solo-numero (parse TED fallito) → MAI;
+ *  - scaduto (giorni < 0) → MAI;
+ *  - senza scadenza E senza una descrizione utile → MAI (nessuna info base).
+ * I bandi senza scadenza ma CON descrizione (es. finanziamenti a sportello)
+ * restano ammessi. Ritorna anche il motivo per il report.
+ */
+function _bandiMotivoScarto_(b) {
+  var tit = String((b && b.titolo) || '').trim();
+  if (!tit || _BANDO_TITOLO_NUMERO_RE.test(tit)) return 'titolo-non-informativo';
+  var g = (b && b.giorni !== undefined) ? b.giorni : null;
+  if (g !== null && g < 0) return 'scaduto';
+  var descr = String((b && b.sommario) || '').replace(/\s+/g, ' ').trim();
+  if (g === null && descr.length < 20) return 'senza-scadenza-e-senza-descrizione';
+  // v4.27.73 — senza scadenza il titolo deve dichiarare la natura di bando
+  // (blocca i titoli generici scrapati: "AUGURI...", "BANDI GAL 2019 ...").
+  if (g === null && !_BANDO_SEGNALE_RE.test(tit)) return 'senza-scadenza-e-titolo-non-bando';
+  // v4.27.75 — SOGLIA PER TIER DELLA FONTE. Le fonti locali (GAL, associazioni)
+  // sono quelle che producono voci di menu: il 31/07 hanno generato 274 scarti
+  // su 408. Per loro serve più prova che sia un bando vero. Le istituzionali
+  // (TED, MiC, ANAC, MEPA, Creative Europe) restano permissive: non pubblicano
+  // rumore, e stringere lì significherebbe perdere bandi buoni.
+  if (typeof frTierBando === 'function') {
+    var tier = frTierBando(b);
+    if (tier === 'C' && g === null && descr.length < 120) return 'tierC-prove-insufficienti';
+  }
+  return '';
+}
+
+/**
+ * GATE FINALE — validazione + filtro cultura + normalizzazione link su un array
+ * di bandi GIÀ mappati. Idempotente (proprietà __gated). Ritorna i soli bandi
+ * VALIDI e culturali.
+ *
+ * @param {Array<Object>} arr
+ * @return {Array<Object>}
+ */
+function bandiGateFinale_(arr) {
+  if (!arr || !arr.length) return arr || [];
+  var out = [];
+  var scartatiCultura = 0;
+  var scartatiJunk = 0;
+  var scartatiInvalidi = 0;
+  for (var i = 0; i < arr.length; i++) {
+    var b = arr[i];
+    if (!b) continue;
+
+    if (b.__gated) { out.push(b); continue; }
+
+    // 0) FILTRO ANTI-SPAZZATURA (voci di menu/legali scrapate, non bandi)
+    if (_bandiNonBando_(b)) { scartatiJunk++; continue; }
+
+    // 0-bis) VALIDAZIONE ESPOSIZIONE (scaduti / senza-info / titolo-numero)
+    if (_bandiMotivoScarto_(b)) { scartatiInvalidi++; continue; }
+
+    // 1) FILTRO CULTURA (rete di sicurezza live)
+    if (typeof isBandoCulturale === 'function') {
+      var okCultura = isBandoCulturale(b.titolo, b.settore, b.sommario, b.cpv);
+      if (!okCultura) { scartatiCultura++; continue; }
+    }
+
+    // 2) NORMALIZZAZIONE LINK
+    var urlRaw = _bandiUrlValido_(b.link);
+    var tipo = urlRaw ? _bandiLinkTipo_(urlRaw) : 'assente';
+    if (tipo === 'diretto') {
+      b.linkDiretto = urlRaw;
+      b.linkConsulta = urlRaw;
+      b.linkTipo = 'diretto';
+      b.link = urlRaw;
+    } else if (tipo === 'generico') {
+      b.linkDiretto = '';
+      b.linkConsulta = urlRaw;      // usabile per "consulta il sito"
+      b.linkTipo = 'generico';
+      b.link = urlRaw;
+    } else {
+      // nessun link reale → prima la pagina UFFICIALE del programma UE (se
+      // riconosciuto), poi la ricerca web mirata (v4.27.50)
+      var ufficiale = _bandiLinkUfficialeEU_(b);
+      var ricerca = ufficiale || _bandiLinkRicerca_(b);
+      b.linkDiretto = '';
+      b.linkConsulta = ricerca;
+      b.linkTipo = 'consulta';
+      b.link = ricerca;             // il frontend ha comunque un link cliccabile
+    }
+
+    b.__gated = true;
+    out.push(b);
+  }
+  if (scartatiCultura > 0 || scartatiJunk > 0 || scartatiInvalidi > 0) {
+    Logger.log('[bandiGateFinale_] scartati: ' + scartatiJunk + ' non-bando + ' +
+      scartatiInvalidi + ' invalidi (scaduti/senza-info) + ' +
+      scartatiCultura + ' non-cultura / ' + arr.length);
+  }
+  return out;
+}
+
+// ============================================================================
+//  AUTO-TEST — eseguibile dall'editor GAS: bandiGateSelfTest()
+//  Verifica il comportamento del gate su casi campione. Ritorna un report e
+//  logga PASS/FAIL per ogni asserzione. Nessuna scrittura sui fogli.
+// ============================================================================
+function bandiGateSelfTest() {
+  var casi = [
+    // --- CULTURA: devono PASSARE ---
+    { in:{ titolo:'Restauro del Museo Civico e allestimento nuove sale', settore:'patrimonio', sommario:'', cpv:'92521000', link:'https://comune.esempio.it/bandi/restauro-museo-2026-id12345', giorni:30 }, attesoIn:true, attesoTipo:'diretto', nome:'Museo con link diretto' },
+    { in:{ titolo:'Servizi di biblioteca e catalogazione', settore:'', sommario:'gestione emeroteca e archivio storico comunale', cpv:'', link:'https://biblioteca.esempio.it', giorni:15 }, attesoIn:true, attesoTipo:'generico', nome:'Biblioteca con homepage' },
+    { in:{ titolo:'Festival teatrale estivo — direzione artistica', settore:'spettacolo', sommario:'', cpv:'', link:'', giorni:45 }, attesoIn:true, attesoTipo:'consulta', nome:'Teatro senza link' },
+    // --- NON CULTURA: devono essere SCARTATI ---
+    { in:{ titolo:'Fornitura di ambulanze e presidi sanitari per ASL', settore:'sanità', sommario:'pronto soccorso', cpv:'34114121', link:'https://asl.esempio.it/bando' }, attesoIn:false, nome:'Ambulanze (sanità)' },
+    { in:{ titolo:'Servizio di raccolta rifiuti urbani e nettezza urbana', settore:'ambiente', sommario:'', cpv:'90511000', link:'' }, attesoIn:false, nome:'Rifiuti (ambiente)' },
+    { in:{ titolo:'Manutenzione stradale e segnaletica orizzontale', settore:'', sommario:'asfaltatura', cpv:'45233141', link:'' }, attesoIn:false, nome:'Strade (lavori)' },
+    // --- SPAZZATURA (voci di menu/legali): devono essere SCARTATE ---
+    { in:{ titolo:'Accetto Privacy - GDPR Compliance', settore:'', sommario:'', cpv:'', link:'' }, attesoIn:false, nome:'Junk: privacy/GDPR' },
+    { in:{ titolo:'Credits: Alea.pro', settore:'', sommario:'', cpv:'', link:'' }, attesoIn:false, nome:'Junk: credits' },
+    { in:{ titolo:'Organizzazione & Soci', settore:'', sommario:'', cpv:'', link:'' }, attesoIn:false, nome:'Junk: organizzazione' },
+    { in:{ titolo:'Associarsi a VeGAL', settore:'', sommario:'', cpv:'', link:'' }, attesoIn:false, nome:'Junk: associarsi' },
+    { in:{ titolo:'https://agriculture.ec.europa.eu/common-agricultural-policy', settore:'', sommario:'', cpv:'', link:'' }, attesoIn:false, nome:'Junk: titolo-URL' },
+    // --- v4.27.73 — NON PERTINENTI visti in produzione il 30/07 ---
+    { in:{ titolo:'AUGURI BUONA PASQUA', settore:'', sommario:'centi CHIUSURA UFFICIO TERRITORIALE SORRENTO AUGURI BUONA PASQUA AVVISO PARTENARIATO PUBBLICO <a...', cpv:'', link:'https://gal.esempio.it/notizie' }, attesoIn:false, nome:'Auguri di Pasqua (GAL)' },
+    { in:{ titolo:'CHIUSURA UFFICIO TERRITORIALE SORRENTO', settore:'', sommario:'comunicazione di servizio agli utenti del territorio', cpv:'', link:'https://gal.esempio.it/notizie' }, attesoIn:false, nome:'Avviso chiusura uffici' },
+    { in:{ titolo:'BANDI GAL 2019 — PUBBLICATE LE GRADUATORIE DELLA TI 6.4.1.', settore:'', sommario:'scarl/" rel="next">AVVISO PARTENARIATO PUBBLICO PRIVATO DEL GAL <h', cpv:'', link:'https://gal.esempio.it/x' }, attesoIn:false, nome:'Sommario con frammenti HTML' },
+    { in:{ titolo:'Sportello contributi per biblioteche di pubblica lettura', settore:'biblioteche', sommario:'Sportello sempre aperto: contributi per le biblioteche del territorio', cpv:'', link:'https://regione.esempio.it/bandi/sportello-biblioteche-2026', fonteNome:'Regione Toscana' }, attesoIn:true, attesoTipo:'diretto', nome:'Sportello tier B senza scadenza (deve passare)' },
+    // --- v4.27.75 — SOGLIA PER TIER ---
+    { in:{ titolo:'Bando pubblico qualificazione attività commerciali', settore:'musei', sommario:'Breve nota di quaranta caratteri circa.', cpv:'', link:'https://galesempio.it/bando', fonteNome:'GAL Terra Protetta' }, attesoIn:false, nome:'Tier C: senza scadenza + descrizione corta' },
+    { in:{ titolo:'Bando pubblico per la valorizzazione del patrimonio museale', settore:'musei', sommario:'Avviso rivolto a musei ed ecomusei del territorio per interventi di valorizzazione, allestimento e servizi educativi al pubblico. Dotazione complessiva 500.000 euro, domande a sportello fino a esaurimento delle risorse disponibili.', cpv:'', link:'https://galesempio.it/bandi/valorizzazione-patrimonio-museale-2026', fonteNome:'GAL Terra Protetta' }, attesoIn:true, nome:'Tier C: senza scadenza ma descrizione ricca (passa)' },
+    { in:{ titolo:'Avviso PNRR digitalizzazione dei musei', settore:'musei', sommario:'Avviso del Ministero della Cultura.', cpv:'', link:'https://cultura.gov.it/avviso-digital-2026', fonteNome:'MiC — Ministero della Cultura' }, attesoIn:true, attesoTipo:'diretto', nome:'Tier A permissivo (MiC, descrizione breve)' }
+  ];
+
+  var risultati = [];
+  var pass = 0, fail = 0;
+  for (var i = 0; i < casi.length; i++) {
+    var c = casi[i];
+    var gated = bandiGateFinale_([JSON.parse(JSON.stringify(c.in))]);
+    var passato = gated.length === 1;
+    var okIn = (passato === c.attesoIn);
+    var okTipo = true;
+    if (c.attesoIn && passato && c.attesoTipo) {
+      okTipo = (gated[0].linkTipo === c.attesoTipo);
+    }
+    var ok = okIn && okTipo;
+    if (ok) pass++; else fail++;
+    var dett = {
+      caso: c.nome,
+      atteso_esposto: c.attesoIn,
+      effettivo_esposto: passato,
+      atteso_linkTipo: c.attesoTipo || '—',
+      effettivo_linkTipo: (passato ? gated[0].linkTipo : '—'),
+      esito: ok ? 'PASS' : 'FAIL'
+    };
+    risultati.push(dett);
+    Logger.log('[selftest] ' + dett.esito + ' — ' + c.nome +
+      ' | esposto atteso=' + c.attesoIn + ' effettivo=' + passato +
+      ' | linkTipo atteso=' + (c.attesoTipo||'—') + ' effettivo=' + dett.effettivo_linkTipo);
+  }
+  var report = { ok: fail === 0, pass: pass, fail: fail, totale: casi.length, dettagli: risultati };
+  Logger.log('=== bandiGateSelfTest: ' + pass + '/' + casi.length + ' PASS ===');
+  Logger.log(JSON.stringify(report, null, 2));
+  return report;
+}

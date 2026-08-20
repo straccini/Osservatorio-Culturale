@@ -1,0 +1,2325 @@
+<!--
+  ============================================================================
+   MatrixApp.html — Frontend MuseMu Matrix (Sprint 2 — 2026-04-30)
+  ============================================================================
+   Questionario adattivo + report finale, integrato nell'Osservatorio Culturale.
+
+   ARCHITETTURA:
+   - Si monta in #matrix-mount dentro Index.html
+   - Si auto-inizializza alla prima apertura della pagina (#page-matrix) chiamata
+     da Navigation.html: window.OC_Matrix.init()
+   - Carica lo schema dal backend (getMatrixSchema)
+   - Renderizza dinamicamente: anagrafica → 43 domande core (gateway+skip) →
+     sezione 11 (auto-prioritizzazione) → sezione 12 (follow-up) → REPORT
+   - Salva al termine via saveMatrixResponse → riceve scoring/profilo/top3
+   - Mostra report con cross-link agli ambiti dell'OC
+
+   BACKEND DEPENDENCIES (Matrix_v1.gs):
+     getMatrixSchema()        — schema 43 domande
+     saveMatrixResponse(data) — salva + calcola
+     saveMatrixContact(data)  — opt-in follow-up
+     getMatrixReport(id)      — pacchetto report
+
+   PRIVACY:
+   - response_id = UUID generato server-side
+   - dati personali: nessuno obbligatorio (museo name optional)
+   - email: solo se opt-in Sezione 12 (tabella separata)
+
+  ============================================================================
+-->
+
+<!-- ====================== STILI MATRIX ====================== -->
+<style>
+  /* ============================================================
+     MATRIX APP — Direzione C Curatoriale Sans v5.0 (24/05/2026)
+     Uniformato al sistema di design v5.0 (Styles.html)
+     Copre sia questionario completo (43 domande) sia sondaggi
+     mirati brevi (8 domande, state.surveyMode attivo).
+     ============================================================ */
+  .mx-app { font-family: var(--font-ui); color: var(--ink); padding-bottom: 60px; }
+
+  /* === HERO === */
+  .mx-hero {
+    background: var(--paper);
+    color: var(--ink);
+    padding: 48px 0 40px;
+    border: none;
+    border-bottom: 2px solid var(--ink);
+    border-radius: 0;
+    margin-bottom: 32px;
+  }
+  .mx-hero h1 {
+    margin: 0 0 14px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 40px;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    max-width: 22ch;
+  }
+  .mx-hero h1 em {
+    font-style: normal;
+    color: var(--ink-4);
+    font-weight: 500;
+  }
+  .mx-hero .mx-eyebrow {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 18px;
+  }
+  .mx-hero p {
+    margin: 14px 0 0;
+    font-size: 15px;
+    line-height: 1.55;
+    max-width: 560px;
+    color: var(--ink-3);
+  }
+
+  /* === PROGRESS BAR === */
+  .mx-progress {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0 0 18px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .mx-progress-track {
+    flex: 1;
+    height: 3px;
+    background: var(--surface-2);
+    border-radius: 0;
+    overflow: hidden;
+  }
+  .mx-progress-fill {
+    height: 100%;
+    background: var(--ink);
+    transition: width .3s ease;
+  }
+  .mx-progress-text {
+    font-family: var(--font-display);
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    font-variant-numeric: tabular-nums;
+    min-width: 64px;
+    text-align: right;
+  }
+
+  /* === CARD SEZIONE === */
+  .mx-section {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-lg);
+    padding: 36px 40px;
+    margin-bottom: 16px;
+  }
+  .mx-section h2 {
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 26px;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+  }
+  .mx-section h2 em {
+    font-style: normal;
+    color: var(--ink-4);
+    font-weight: 500;
+  }
+  .mx-section .mx-section-sub {
+    color: var(--ink-3);
+    font-size: 14px;
+    margin: 0 0 28px;
+    line-height: 1.55;
+    max-width: 64ch;
+  }
+
+  /* === DOMANDA === */
+  .mx-q {
+    padding: 28px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .mx-q:last-child { border-bottom: none; padding-bottom: 4px; }
+  .mx-q:first-child { padding-top: 8px; }
+  .mx-q-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .mx-q-code {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-3);
+    background: var(--surface);
+    padding: 4px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.06em;
+    border: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .mx-q-gateway {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 4px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: none;
+  }
+  .mx-q-text {
+    flex: 1 1 100%;
+    font-family: var(--font-display);
+    font-size: 21px;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 8px 0 0;
+    font-weight: 500;
+  }
+  .mx-help-btn {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--ink-3);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 13px;
+    transition: all .15s;
+    margin-left: auto;
+  }
+  .mx-help-btn:hover {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .mx-help-box {
+    background: var(--surface);
+    border: none;
+    border-left: 2px solid var(--ink);
+    padding: 18px 22px;
+    border-radius: 0 var(--r-sm) var(--r-sm) 0;
+    margin: 14px 0 18px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+  .mx-help-box .mx-help-label {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    display: block;
+    margin-bottom: 10px;
+  }
+  .mx-help-box p { margin: 6px 0; }
+  .mx-help-box em { color: var(--ink-3); font-style: italic; }
+
+  /* === LIKERT (5 livelli evolutivi) === */
+  .mx-likert {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .mx-likert-btn {
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    padding: 18px 10px 14px;
+    border-radius: var(--r-md);
+    cursor: pointer;
+    transition: all .15s ease;
+    text-align: center;
+    font-family: var(--font-ui);
+    color: var(--ink-2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .mx-likert-btn:hover {
+    border-color: var(--ink);
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .mx-likert-btn.selected {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .mx-likert-num {
+    font-family: var(--font-display);
+    display: inline-block;
+    width: auto;
+    height: auto;
+    border: none;
+    text-align: center;
+    line-height: 1;
+    font-weight: 600;
+    font-size: 22px;
+    margin-bottom: 0;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: inherit;
+    background: transparent;
+  }
+  .mx-likert-btn.selected .mx-likert-num {
+    border: none;
+    color: var(--paper);
+    background: transparent;
+  }
+  .mx-likert-label {
+    display: block;
+    font-size: 11px;
+    line-height: 1.3;
+    color: var(--ink-3);
+    font-weight: 500;
+  }
+  .mx-likert-btn.selected .mx-likert-label { color: rgba(255,255,255,0.72); }
+
+  /* === MULTISELECT === */
+  .mx-multiselect {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .mx-ms-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    transition: all .15s ease;
+    background: var(--paper);
+  }
+  .mx-ms-item:hover { border-color: var(--ink-3); }
+  .mx-ms-item.selected {
+    background: var(--surface);
+    border-color: var(--ink);
+  }
+  .mx-ms-check {
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--ink-4);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: transparent;
+    transition: all .15s;
+  }
+  .mx-ms-item:hover .mx-ms-check { border-color: var(--ink); }
+  .mx-ms-item.selected .mx-ms-check {
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+  .mx-ms-item.selected .mx-ms-check::after {
+    content: '\2713';
+    color: var(--paper);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .mx-ms-label {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    flex: 1;
+  }
+  .mx-ms-item.selected .mx-ms-label { color: var(--ink); }
+  .mx-ms-other {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border: 1px dashed var(--rule);
+    border-radius: var(--r-md);
+    margin-top: 4px;
+  }
+  .mx-ms-other span { font-size: 13px; color: var(--ink-3); flex-shrink: 0; }
+  .mx-ms-other input {
+    flex: 1;
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    border-radius: 0;
+    padding: 6px 2px;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    background: transparent;
+    outline: none;
+    color: var(--ink);
+    transition: border-color .15s;
+  }
+  .mx-ms-other input:focus { border-bottom-color: var(--ink); }
+  .mx-ms-hint {
+    color: var(--ink-3);
+    font-size: 13px;
+    margin: 0 0 12px;
+    font-style: normal;
+  }
+
+  /* === FACTUAL (scelta singola) === */
+  .mx-factual {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .mx-factual-item {
+    padding: 14px 20px;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    background: var(--paper);
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--ink-2);
+    transition: all .15s;
+  }
+  .mx-factual-item:hover { border-color: var(--ink-3); }
+  .mx-factual-item.selected {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+    font-weight: 500;
+  }
+
+  /* === ANAGRAFICA === */
+  .mx-anag-row { margin-bottom: 20px; display: flex; flex-direction: column; gap: 6px; }
+  .mx-anag-row label {
+    font-family: var(--font-ui);
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-3);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .mx-anag-row select,
+  .mx-anag-row input[type=text] {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    background: var(--paper);
+    outline: none;
+    color: var(--ink);
+    transition: all .15s;
+  }
+  .mx-anag-row select:focus,
+  .mx-anag-row input[type=text]:focus {
+    border-color: var(--ink);
+    background: var(--surface);
+  }
+  .mx-anag-row select { cursor: pointer; }
+
+  /* === SKIP MESSAGE === */
+  .mx-skip-message {
+    background: var(--amb-2-soft);
+    border-left: 2px solid var(--success);
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-radius: 0 var(--r-sm) var(--r-sm) 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--success);
+    font-style: normal;
+  }
+
+  /* === BOTTONI NAVIGAZIONE === */
+  .mx-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule);
+  }
+  .mx-btn {
+    padding: 13px 26px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s ease;
+    letter-spacing: -0.005em;
+    text-transform: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.2;
+    min-height: 40px;
+  }
+  .mx-btn-primary {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .mx-btn-primary:hover { background: #000; border-color: #000; }
+  .mx-btn-primary:disabled {
+    background: var(--ink-4);
+    border-color: var(--ink-4);
+    cursor: not-allowed;
+  }
+  .mx-btn-secondary {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--rule);
+  }
+  .mx-btn-secondary:hover { border-color: var(--ink); background: var(--surface); }
+  .mx-btn-accent {
+    background: var(--accent);
+    color: var(--paper);
+    border-color: var(--accent);
+  }
+  .mx-btn-accent:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+  /* === REPORT — HERO === */
+  .mx-report-hero {
+    background: var(--paper);
+    color: var(--ink);
+    padding: 48px 0 40px;
+    border: none;
+    border-bottom: 2px solid var(--ink);
+    border-radius: 0;
+    margin-bottom: 32px;
+    text-align: left;
+  }
+  .mx-report-hero .mx-eyebrow {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 18px;
+  }
+  .mx-report-hero .mx-profile-code {
+    font-family: var(--font-display);
+    font-style: normal;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    line-height: 1.2;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+  }
+  .mx-report-hero .mx-profile-name {
+    font-family: var(--font-display);
+    font-size: 38px;
+    font-weight: 600;
+    opacity: 1;
+    margin-bottom: 28px;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    max-width: 22ch;
+  }
+  .mx-report-hero .mx-synth-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .mx-report-hero .mx-synth-score {
+    font-family: var(--font-display);
+    font-size: 80px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--ink);
+    letter-spacing: -0.04em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .mx-report-hero .mx-synth-label {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    opacity: 1;
+    color: var(--ink-3);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin: 0;
+    padding-bottom: 14px;
+  }
+
+  /* === RADAR + DIM BARS === */
+  .mx-dim-bars {
+    display: grid;
+    gap: 10px;
+    background: var(--surface);
+    padding: 24px;
+    border-radius: var(--r-lg);
+  }
+  .mx-dim-row {
+    display: grid;
+    grid-template-columns: 220px 1fr 56px;
+    gap: 16px;
+    align-items: center;
+  }
+  .mx-dim-name {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .mx-dim-bar-track {
+    background: var(--paper);
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+  .mx-dim-bar-fill {
+    height: 100%;
+    transition: width .8s ease;
+    border-radius: 3px;
+    background: var(--ink);
+  }
+  .mx-dim-bar-fill.low { background: var(--accent); }
+  .mx-dim-bar-fill.mid { background: var(--amb-8); }
+  .mx-dim-bar-fill.high { background: var(--success); }
+  .mx-dim-score {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* === TOP 3 OPPORTUNITÀ === */
+  .mx-opp-list { display: flex; flex-direction: column; gap: 0; margin-top: 8px; }
+  .mx-opp-card {
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    border-radius: 0;
+    padding: 28px 0;
+    background: transparent;
+    display: flex;
+    gap: 24px;
+  }
+  .mx-opp-card:last-child { border-bottom: none; }
+  .mx-opp-card .mx-opp-rank {
+    font-family: var(--font-display);
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    min-width: 140px;
+    padding-top: 4px;
+  }
+  .mx-opp-card .mx-opp-body { flex: 1; }
+  .mx-opp-card h3 {
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .mx-opp-card .mx-opp-meta {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    color: var(--ink-3);
+    margin-bottom: 10px;
+  }
+  .mx-opp-card .mx-opp-meta b {
+    color: var(--ink);
+    font-weight: 600;
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+  }
+  .mx-opp-card .mx-opp-reading {
+    font-size: 14px;
+    color: var(--ink-2);
+    line-height: 1.6;
+  }
+
+  /* === SERVIZI RACCOMANDATI === */
+  .mx-services { display: grid; gap: 10px; }
+  .mx-service-card {
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    padding: 18px 20px;
+    background: var(--paper);
+    transition: all .15s;
+  }
+  .mx-service-card:hover { border-color: var(--ink-3); }
+  .mx-service-card .mx-service-code {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .mx-service-card h4 {
+    margin: 6px 0 4px;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+  }
+  .mx-service-card p {
+    margin: 0;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--ink-3);
+    line-height: 1.55;
+  }
+
+  /* === ROADMAP FASI === */
+  .mx-roadmap { display: grid; gap: 12px; }
+  .mx-phase {
+    padding: 22px 24px;
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    border-left: 2px solid var(--ink);
+    border-radius: 0 var(--r-lg) var(--r-lg) 0;
+  }
+  .mx-phase-1 { background: var(--amb-8-soft); border-left-color: var(--amb-8); }
+  .mx-phase-2 { background: var(--accent-soft); border-left-color: var(--accent); }
+  .mx-phase-3 { background: var(--amb-3-soft); border-left-color: var(--amb-6); }
+  .mx-phase h4 {
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+  }
+  .mx-phase p {
+    margin: 4px 0;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--ink-2);
+    line-height: 1.55;
+  }
+
+  /* === CTA FINALE === */
+  .mx-cta {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 40px 44px;
+    border-radius: var(--r-lg);
+    margin-top: 32px;
+    text-align: left;
+  }
+  .mx-cta h3 {
+    margin: 0 0 12px;
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    max-width: 32ch;
+  }
+  .mx-cta p {
+    margin: 0 0 22px;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    color: rgba(255,255,255,0.72);
+    max-width: 48ch;
+    line-height: 1.55;
+  }
+  .mx-cta .mx-btn-primary {
+    background: var(--accent);
+    color: var(--paper);
+    border-color: var(--accent);
+  }
+  .mx-cta .mx-btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+  /* === LOADING / ERRORI === */
+  .mx-loading {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--ink-3);
+    font-family: var(--font-ui);
+    font-size: 14px;
+  }
+  .mx-error {
+    background: var(--accent-soft);
+    color: var(--danger);
+    padding: 18px 22px;
+    border-radius: var(--r-md);
+    margin: 12px 0;
+    font-size: 13px;
+    border-left: 2px solid var(--danger);
+    line-height: 1.55;
+  }
+
+  /* === MOBILE === */
+  @media (max-width: 720px) {
+    .mx-section { padding: 24px 22px; }
+    .mx-hero { padding: 32px 0 28px; }
+    .mx-hero h1 { font-size: 30px; }
+    .mx-section h2 { font-size: 22px; }
+    .mx-q-text { font-size: 18px; }
+    .mx-likert { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+    .mx-likert-btn { padding: 12px 4px 10px; }
+    .mx-likert-num { font-size: 18px; }
+    .mx-likert-label { font-size: 10px; }
+    .mx-dim-row { grid-template-columns: 1fr; gap: 4px; }
+    .mx-dim-name { font-size: 12px; }
+    .mx-dim-bar-track { grid-column: 1; }
+    .mx-report-hero .mx-profile-name { font-size: 28px; }
+    .mx-report-hero .mx-synth-score { font-size: 56px; }
+    .mx-opp-card { flex-direction: column; gap: 8px; }
+    .mx-opp-card .mx-opp-rank { min-width: auto; }
+    .mx-cta { padding: 28px 24px; }
+    .mx-cta h3 { font-size: 20px; }
+  }
+</style>
+
+<!-- ====================== CHART.JS (S3.2 2026-05-11) ====================== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- ====================== JAVASCRIPT MATRIX ====================== -->
+<script>
+(function() {
+  'use strict';
+
+  // ====== STATO ======
+  var state = {
+    initialized: false,
+    schema: null,
+    currentStep: 'intro', // intro | anagrafica | questions | section11 | section12 | report
+    currentDimensionIndex: 0, // per mostrare dimensione per dimensione
+    currentSection11Item: 0,
+    responses: {},        // { "D1.1": 4, "D2.4": ["iccd_schede"], ... }
+    section11: {},
+    section12: { preferences: {}, email: '', nome: '', consent: false },
+    museumProfile: {},
+    museumName: '',
+    tooltipOpened: [],
+    timeStart: null,
+    timePerQuestion: {},
+    questionStartTime: null,
+    responseId: null,
+    report: null,
+    // v4.18.37 — opt-in valutazione MiC SM-LUQV ministeriale (default disattivata)
+    includeMiC: false,
+    micReport: null  // popolato dopo submitMic se includeMiC=true
+  };
+
+  // ====== HELPERS ======
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function el(html) { var d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function hasGAS() { return typeof google !== 'undefined' && google.script && google.script.run; }
+
+  // v4.18.68 — Auto-save bozza in localStorage
+  var DRAFT_KEY = 'oc_matrix_draft';
+
+  function _saveDraft_() {
+    try {
+      var draft = {
+        responses: state.responses,
+        section11: state.section11,
+        museumProfile: state.museumProfile,
+        museumName: state.museumName,
+        currentStep: state.currentStep,
+        currentDimensionIndex: state.currentDimensionIndex,
+        surveyMode: state.surveyMode || null,
+        savedAt: new Date().toISOString()
+      };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch(_){}
+  }
+
+  function _loadDraft_() {
+    try {
+      var raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return null;
+      var draft = JSON.parse(raw);
+      // Verifica che la bozza sia per la stessa modalita (completa vs survey)
+      if (draft.surveyMode !== (state.surveyMode || null)) return null;
+      // Verifica che non sia troppo vecchia (max 7 giorni)
+      if (draft.savedAt) {
+        var age = (Date.now() - new Date(draft.savedAt).getTime()) / 86400000;
+        if (age > 7) { localStorage.removeItem(DRAFT_KEY); return null; }
+      }
+      return draft;
+    } catch(_){ return null; }
+  }
+
+  function _clearDraft_() {
+    try { localStorage.removeItem(DRAFT_KEY); } catch(_){}
+  }
+
+  function _restoreDraft_(draft) {
+    if (!draft) return false;
+    state.responses = draft.responses || {};
+    state.section11 = draft.section11 || {};
+    state.museumProfile = draft.museumProfile || {};
+    state.museumName = draft.museumName || '';
+    state.currentStep = draft.currentStep || 'intro';
+    state.currentDimensionIndex = draft.currentDimensionIndex || 0;
+    return true;
+  }
+
+  function _showDraftToast_() {
+    var el = document.createElement('div');
+    el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink,#101010);color:var(--paper,#FFFFFF);padding:12px 20px;border-radius:8px;font-size:13px;font-family:var(--font-ui,sans-serif);z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.15);display:flex;align-items:center;gap:12px';
+    el.innerHTML = 'Bozza precedente ripristinata <button onclick="this.parentElement.remove()" style="background:rgba(255,255,255,.2);color:#fff;border:none;padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-family:inherit">OK</button>';
+    document.body.appendChild(el);
+    setTimeout(function(){ if (el.parentElement) el.remove(); }, 5000);
+  }
+
+  function checkActiveCondition(condition) {
+    if (!condition) return true; // gateway
+    // condition es. "D1.1>=3" o "D1.1=5"
+    var m = condition.match(/^(D\d+\.\d+)(>=|<=|=|>|<)(\d+)$/);
+    if (!m) return true;
+    var qCode = m[1], op = m[2], val = parseInt(m[3], 10);
+    var resp = state.responses[qCode];
+    if (resp === undefined || resp === null) return false;
+    var n = Number(resp);
+    if (isNaN(n)) return false;
+    if (op === '>=') return n >= val;
+    if (op === '<=') return n <= val;
+    if (op === '=') return n === val;
+    if (op === '>') return n > val;
+    if (op === '<') return n < val;
+    return true;
+  }
+
+  // ====== INIT ======
+  // Supporta modalità survey: OC_Matrix.init({survey:'D7'}) carica solo 1 dimensione
+  function init(opts) {
+    opts = opts || {};
+    var newSurvey = opts.survey || null;
+    // Permetti re-init se il survey mode cambia (es. da completo a survey:D7)
+    if (state.initialized && state.surveyMode === newSurvey) return;
+    state.initialized = true;
+    state.timeStart = new Date().toISOString();
+    state.responses = {};
+    state.section11 = {};
+    state.museumProfile = {};
+    state.responseId = null;
+    state.surveyMode = newSurvey;
+
+    var mount = $('#matrix-mount');
+    if (!mount) return;
+    mount.innerHTML = '<div class="mx-app"><div class="mx-loading">Caricamento ' + (state.surveyMode ? 'sondaggio' : 'questionario') + ' in corso…</div></div>';
+    if (!hasGAS()) {
+      mount.innerHTML = '<div class="mx-app"><div class="mx-error">Impossibile collegarsi al server. Apri questa pagina dalla webapp Sinopia &middot; Osservatorio Culturale.</div></div>';
+      return;
+    }
+
+    var onSchema = function(schema) {
+      if (!schema || !schema.questions) {
+        mount.innerHTML = '<div class="mx-app"><div class="mx-error">Schema non valido. Contatta l\'amministratore.</div></div>';
+        return;
+      }
+      state.schema = schema;
+      // v4.18.68 — Ripristino bozza da localStorage
+      var draft = _loadDraft_();
+      if (draft && _restoreDraft_(draft)) {
+        _showDraftToast_();
+        // Riposiziona sull'ultimo step
+        if (state.currentStep === 'questions') {
+          renderQuestionsForDimension();
+        } else if (state.currentStep === 'anagrafica') {
+          renderAnagrafica();
+        } else if (state.currentStep === 'section11') {
+          renderSection11();
+        } else {
+          renderIntro();
+        }
+        return;
+      }
+      renderIntro();
+    };
+    var onError = function(err) {
+      mount.innerHTML = '<div class="mx-app"><div class="mx-error">Errore caricamento: ' + esc(err && err.message || err) + '</div></div>';
+    };
+
+    if (state.surveyMode) {
+      // Modalità sondaggio mirato: carica solo subset schema
+      google.script.run.withSuccessHandler(onSchema).withFailureHandler(onError)
+        .getMatrixSurveySchema(state.surveyMode);
+    } else {
+      // Modalità completa standard
+      google.script.run.withSuccessHandler(onSchema).withFailureHandler(onError)
+        .getMatrixSchema();
+    }
+  }
+
+  // ====== RENDER INTRO ======
+  function renderIntro() {
+    var mount = $('#matrix-mount');
+    var s = state.schema;
+    var isSurvey = s.mode === 'survey';
+    var dimNames = isSurvey ? s.dimensions.map(function(d){ return d.name; }).join(' + ') : '';
+
+    if (isSurvey) {
+      // Intro breve per sondaggio mirato
+      mount.innerHTML = ''
+        + '<div class="mx-app">'
+        + '  <div class="mx-hero">'
+        + '    <div class="mx-eyebrow">DUEMILAMUSEI · Sondaggio Mirato</div>'
+        + '    <h1>' + esc(dimNames) + '</h1>'
+        + '    <p>Pre-valutazione rapida gratuita. Solo <b>' + s.metadata.totalQuestions + ' domande</b> focalizzate su questa area. Tempo stimato: <b>' + esc(s.metadata.estimatedCompletionTime) + '</b>. Compilazione anonima.</p>'
+        + '  </div>'
+        + '  <div class="mx-section">'
+        + '    <p style="font-size:14px;line-height:1.6;color:#444">Rispondi alle domande in modo sincero: non esiste una risposta giusta. Al termine riceverai una <b>diagnosi immediata</b> sulla dimensione analizzata e suggerimenti operativi personalizzati.</p>'
+        + '    <div style="background:var(--accent-soft,#F0E6E4);padding:14px 18px;border-radius:8px;font-size:13px;color:#555;margin-top:16px">'
+        + '      <b>Privacy.</b> Compilazione anonima (UUID). Nessun dato personale obbligatorio. Conforme GDPR.'
+        + '    </div>'
+        + '  </div>'
+        + '  <div class="mx-nav">'
+        + '    <span></span>'
+        + '    <button class="mx-btn mx-btn-primary" id="mxStartBtn">Inizia il sondaggio →</button>'
+        + '  </div>'
+        + '</div>';
+      $('#mxStartBtn').addEventListener('click', function() {
+        state.includeMiC = false;
+        state.currentStep = 'anagrafica';
+        renderAnagrafica();
+      });
+      return;
+    }
+
+    // Intro standard (questionario completo)
+    mount.innerHTML = ''
+      + '<div class="mx-app">'
+      + '  <div class="mx-hero">'
+      + '    <div class="mx-eyebrow">DUEMILAMUSEI · MuseMu Matrix ' + esc(s.metadata.modelVersion) + '</div>'
+      + '    <h1>Valuta il tuo museo</h1>'
+      + '    <p>Strumento gratuito di autovalutazione per musei e luoghi della cultura. Misura il vostro museo su 10 dimensioni complementari, calibrate sulla Definizione ICOM 2022 e sul framework Musei Sensibili. Tempo di compilazione: 5-10 minuti. Compilazione completamente <b>anonima</b>.</p>'
+      + '  </div>'
+      + '  <div class="mx-section">'
+      + '    <h2>Come funziona</h2>'
+      + '    <p class="mx-section-sub">Il questionario è adattivo: se siete all\'inizio del percorso su una dimensione, il sistema salta gli approfondimenti. Niente domande inutili.</p>'
+      + '    <div style="display:grid;gap:14px;margin:18px 0">'
+      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:var(--amb-6,#1D4ED8);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">1</div><div><b>Anagrafica</b> · 5 dati anonimi sull\'istituzione (~1 min)</div></div>'
+      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:var(--amb-6,#1D4ED8);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">2</div><div><b>43 domande</b> sulle 10 dimensioni · adattive · linguaggio costruttivo, mai giudicante (~7-10 min)</div></div>'
+      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:var(--amb-6,#1D4ED8);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">3</div><div><b>Le vostre priorità</b> · 6 domande di riflessione (~2 min)</div></div>'
+      + '      <div style="display:flex;gap:14px;align-items:flex-start"><div style="background:var(--success,#0F7B5A);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">✓</div><div><b>Report personalizzato</b> · profilo del vostro museo + 3 opportunità di sviluppo prioritarie + servizi pertinenti</div></div>'
+      + '    </div>'
+      + '    <div style="background:var(--accent-soft,#F0E6E4);padding:14px 18px;border-radius:8px;font-size:13px;color:#555;margin-top:16px">'
+      + '      <b>Privacy.</b> La compilazione è completamente anonima (UUID generato automaticamente). Nessun dato personale obbligatorio. Solo se al termine vorrete ricevere informazioni di follow-up vi sarà chiesta un\'email, conservata in tabella separata. Trattamento dati conforme al Regolamento UE 2016/679 (GDPR).'
+      + '    </div>'
+
+      // v4.18.37 — Opt-in MiC SM-LUQV (default disattivato)
+      + '    <div style="margin-top:18px;padding:16px 20px;background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-left:3px solid var(--accent,#935851);border-radius:8px">'
+      + '      <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-family:inherit">'
+      + '        <input type="checkbox" id="mxOptInMiC" style="margin-top:3px;width:18px;height:18px;cursor:pointer;flex-shrink:0;accent-color:var(--accent,#935851)" />'
+      + '        <span style="flex:1;font-size:13.5px;line-height:1.55;color:var(--ink-2,#3A3A3C)">'
+      + '          <b style="display:block;font-size:14px;margin-bottom:4px;color:var(--accent-hover,#7A4940);letter-spacing:.02em"> Aggiungi la valutazione ministeriale (opzionale)</b>'
+      + '          Vuoi anche il <b>secondo report sui requisiti minimi del MiC</b> (autovalutazione SM-LUQV — DM 113/2018, Allegato A4)? Il sistema riusa <b>22 risposte su 29</b> dal Matrix e ti chiede solo <b>7 informazioni aggiuntive</b> al termine. Tempo extra: ~3 minuti. Riceverai una sezione aggiuntiva nel PDF finale con la percentuale di compliance e i gap critici.'
+      + '        </span>'
+      + '      </label>'
+      + '    </div>'
+
+      + '  </div>'
+      + '  <div class="mx-nav">'
+      + '    <span></span>'
+      + '    <button class="mx-btn mx-btn-primary" id="mxStartBtn">Inizia il questionario →</button>'
+      + '  </div>'
+      + '</div>';
+    $('#mxStartBtn').addEventListener('click', function() {
+      // v4.18.37 — Salva opt-in MiC nello state per uso post-Matrix
+      var optMic = document.getElementById('mxOptInMiC');
+      state.includeMiC = !!(optMic && optMic.checked);
+      state.currentStep = 'anagrafica';
+      renderAnagrafica();
+    });
+  }
+
+  // ====== RENDER ANAGRAFICA ======
+  function renderAnagrafica() {
+    var mount = $('#matrix-mount');
+    var s = state.schema;
+    var html = '<div class="mx-app">' + renderProgress(0.05);
+    html += '<div class="mx-section">';
+    html += '<h2>Anagrafica</h2>';
+    html += '<p class="mx-section-sub">5 dati anonimi sulla vostra istituzione. Servono per calibrare il benchmark di confronto. Il nome del museo è opzionale.</p>';
+    s.anagrafica.forEach(function(a) {
+      html += '<div class="mx-anag-row">';
+      html += '<label>' + esc(a.text) + (a.required ? ' *' : '') + '</label>';
+      if (a.type === 'single') {
+        html += '<select data-anag="' + esc(a.code) + '">';
+        html += '<option value="">— seleziona —</option>';
+        (a.options || []).forEach(function(opt) {
+          html += '<option value="' + esc(opt) + '">' + esc(opt) + '</option>';
+        });
+        html += '</select>';
+      } else if (a.type === 'open') {
+        html += '<input type="text" data-anag="' + esc(a.code) + '" placeholder="Opzionale — può restare vuoto" />';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '<div class="mx-nav">';
+    html += '<button class="mx-btn mx-btn-secondary" id="mxBackBtn">← Indietro</button>';
+    html += '<button class="mx-btn mx-btn-primary" id="mxNextBtn">Inizia le domande →</button>';
+    html += '</div>';
+    html += '</div>';
+    mount.innerHTML = html;
+
+    // Event listeners
+    document.querySelectorAll('[data-anag]').forEach(function(el) {
+      el.addEventListener('change', function() {
+        var code = this.getAttribute('data-anag');
+        if (code === 'A_OPT_NAME') state.museumName = this.value.trim();
+        else state.museumProfile[code] = this.value;
+      });
+    });
+    $('#mxBackBtn').addEventListener('click', function() { state.currentStep = 'intro'; renderIntro(); });
+    $('#mxNextBtn').addEventListener('click', function() {
+      var required = s.anagrafica.filter(function(a) { return a.required; });
+      var missing = required.filter(function(a) { return !state.museumProfile[a.code]; });
+      if (missing.length > 0) {
+        alert('Completa i campi obbligatori: ' + missing.map(function(m) { return m.text; }).join(', '));
+        return;
+      }
+      state.currentStep = 'questions';
+      state.currentDimensionIndex = 0;
+      _saveDraft_();
+      renderQuestionsForDimension();
+    });
+  }
+
+  // ====== RENDER DOMANDE PER DIMENSIONE ======
+  function renderQuestionsForDimension() {
+    var s = state.schema;
+    var dim = s.dimensions[state.currentDimensionIndex];
+    if (!dim) {
+      // Dimensioni terminate → passa a Sezione 11
+      state.currentStep = 'section11';
+      state.currentSection11Item = 0;
+      renderSection11();
+      return;
+    }
+    // Filtra domande della dimensione che sono attive
+    var allDimQ = s.questions.filter(function(q) { return q.dimension === dim.code; });
+    var visibleQ = allDimQ.filter(function(q) { return checkActiveCondition(q.activeIf); });
+
+    var totalDim = s.dimensions.length;
+    var progressRatio = 0.05 + 0.65 * ((state.currentDimensionIndex + 0.5) / totalDim);
+
+    var html = '<div class="mx-app">' + renderProgress(progressRatio);
+    html += '<div class="mx-section">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px">';
+    html += '<h2>' + esc(dim.code) + ' — ' + esc(dim.name) + '</h2>';
+    html += '<span style="color:var(--ink-3,#6E6E73);font-size:12px">Dimensione ' + (state.currentDimensionIndex + 1) + ' di ' + totalDim + '</span>';
+    html += '</div>';
+    html += '<p class="mx-section-sub">' + esc(dim.subDimensions.join(' · ')) + '</p>';
+
+    visibleQ.forEach(function(q) { html += renderQuestionHTML(q); });
+    html += '</div>';
+    html += '<div class="mx-nav">';
+    html += '<button class="mx-btn mx-btn-secondary" id="mxBackBtn">← Indietro</button>';
+    html += '<button class="mx-btn mx-btn-primary" id="mxNextBtn">Avanti →</button>';
+    html += '</div>';
+    html += '</div>';
+    document.querySelector('#matrix-mount').innerHTML = html;
+    attachQuestionListeners();
+    $('#mxBackBtn').addEventListener('click', function() {
+      _saveDraft_();
+      if (state.currentDimensionIndex > 0) {
+        state.currentDimensionIndex--;
+        renderQuestionsForDimension();
+      } else {
+        state.currentStep = 'anagrafica'; renderAnagrafica();
+      }
+    });
+    $('#mxNextBtn').addEventListener('click', function() {
+      // Verifica gateway compilato
+      var gateway = visibleQ.filter(function(q) { return q.isGateway; })[0];
+      if (gateway && (state.responses[gateway.code] === undefined || state.responses[gateway.code] === null)) {
+        alert('Per favore rispondi alla domanda principale prima di proseguire.');
+        return;
+      }
+      _saveDraft_();
+      // Se gateway 1 o 2, mostra messaggio empatico se non ancora mostrato
+      if (gateway && Number(state.responses[gateway.code]) <= 2) {
+        showSkipMessage(dim);
+      } else {
+        state.currentDimensionIndex++;
+        renderQuestionsForDimension();
+      }
+    });
+  }
+
+  function showSkipMessage(dim) {
+    var mount = $('#matrix-mount');
+    var msg = '<div class="mx-app">' + renderProgress(0.05 + 0.65 * ((state.currentDimensionIndex + 1) / state.schema.dimensions.length));
+    msg += '<div class="mx-section">';
+    msg += '<h2>Andiamo avanti</h2>';
+    msg += '<div class="mx-skip-message">';
+    msg += 'Costruire ' + esc(dim.name.toLowerCase()) + ' è un percorso che richiede tempo. Abbiamo soluzioni dedicate per chi sta avviando questo lavoro: ne parleremo nel report finale. Procediamo con la prossima dimensione.';
+    msg += '</div>';
+    msg += '</div>';
+    msg += '<div class="mx-nav"><span></span><button class="mx-btn mx-btn-primary" id="mxNextBtn">Continua →</button></div>';
+    msg += '</div>';
+    mount.innerHTML = msg;
+    $('#mxNextBtn').addEventListener('click', function() {
+      state.currentDimensionIndex++;
+      renderQuestionsForDimension();
+    });
+  }
+
+  function renderQuestionHTML(q) {
+    var html = '<div class="mx-q" data-q="' + esc(q.code) + '">';
+    html += '<div class="mx-q-head">';
+    html += '<span class="mx-q-code">' + esc(q.code) + '</span>';
+    if (q.isGateway) html += '<span class="mx-q-gateway">domanda principale</span>';
+    html += '<button class="mx-help-btn" data-help="' + esc(q.code) + '" title="Aiuto">?</button>';
+    html += '<p class="mx-q-text">' + esc(q.text) + '</p>';
+    html += '</div>';
+    html += '<div class="mx-help-box" id="help-' + esc(q.code) + '" style="display:none">';
+    if (q.tooltip) {
+      html += '<span class="mx-help-label">Aiuto alla compilazione</span>';
+      html += '<p><b>Cosa intendiamo. </b>' + esc(q.tooltip.definition || '') + '</p>';
+      if (q.tooltip.example) html += '<p><em><b>Un esempio. </b>' + esc(q.tooltip.example) + '</em></p>';
+      if (q.tooltip.reference) html += '<p style="color:#888;font-size:11px"><b>Riferimento. </b>' + esc(q.tooltip.reference) + '</p>';
+    }
+    html += '</div>';
+
+    if (q.type === 'likert') {
+      html += '<div class="mx-likert">';
+      (q.labels || []).forEach(function(lbl, idx) {
+        var n = idx + 1;
+        var sel = state.responses[q.code] === n ? 'selected' : '';
+        html += '<button class="mx-likert-btn ' + sel + '" data-likert="' + esc(q.code) + '" data-val="' + n + '">';
+        html += '<span class="mx-likert-num">' + n + '</span>';
+        html += '<span class="mx-likert-label">' + esc(lbl) + '</span>';
+        html += '</button>';
+      });
+      html += '</div>';
+    } else if (q.type === 'multiselect_compositive') {
+      html += '<p class="mx-ms-hint">Le opzioni sono compositive e non esclusive: seleziona tutte quelle che si applicano.</p>';
+      html += '<div class="mx-multiselect">';
+      var current = state.responses[q.code] || [];
+      (q.options || []).forEach(function(opt) {
+        var sel = current.indexOf(opt.value) !== -1 ? 'selected' : '';
+        html += '<div class="mx-ms-item ' + sel + '" data-ms="' + esc(q.code) + '" data-val="' + esc(opt.value) + '">';
+        html += '<div class="mx-ms-check"></div>';
+        html += '<span class="mx-ms-label">' + esc(opt.label) + '</span>';
+        html += '</div>';
+      });
+      if (q.allowOther) {
+        var otherVal = (state.responses[q.code + '_other'] || '');
+        html += '<div class="mx-ms-other"><span style="font-size:13px;color:var(--ink-3,#6E6E73)">Altro non compreso sopra:</span><input type="text" data-ms-other="' + esc(q.code) + '" placeholder="Specifica…" value="' + esc(otherVal) + '"/></div>';
+      }
+      html += '</div>';
+    } else if (q.type === 'factual_single') {
+      html += '<div class="mx-factual">';
+      (q.choices || []).forEach(function(ch) {
+        var sel = state.responses[q.code] === ch.value ? 'selected' : '';
+        html += '<div class="mx-factual-item ' + sel + '" data-factual="' + esc(q.code) + '" data-val="' + esc(ch.value) + '">' + esc(ch.label) + '</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function attachQuestionListeners() {
+    // Help button
+    document.querySelectorAll('[data-help]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        var code = this.getAttribute('data-help');
+        var box = $('#help-' + code);
+        if (box) {
+          var visible = box.style.display !== 'none';
+          box.style.display = visible ? 'none' : 'block';
+          if (!visible && state.tooltipOpened.indexOf(code) === -1) state.tooltipOpened.push(code);
+        }
+      });
+    });
+    // Likert
+    document.querySelectorAll('[data-likert]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        var code = this.getAttribute('data-likert');
+        var val = parseInt(this.getAttribute('data-val'), 10);
+        state.responses[code] = val;
+        // Toggle selected
+        var siblings = document.querySelectorAll('[data-likert="' + code + '"]');
+        siblings.forEach(function(s) { s.classList.remove('selected'); });
+        this.classList.add('selected');
+        // Se è il gateway e cambia il valore, possiamo dover ri-renderizzare per mostrare/nascondere approfondimenti
+        var s = state.schema;
+        var question = s.questions.filter(function(q) { return q.code === code; })[0];
+        if (question && question.isGateway) {
+          // Re-render solo la dimensione corrente per attivare/disattivare approfondimenti
+          renderQuestionsForDimension();
+        }
+      });
+    });
+    // Multiselect items
+    document.querySelectorAll('[data-ms]').forEach(function(item) {
+      item.addEventListener('click', function() {
+        var code = this.getAttribute('data-ms');
+        var val = this.getAttribute('data-val');
+        if (!Array.isArray(state.responses[code])) state.responses[code] = [];
+        var idx = state.responses[code].indexOf(val);
+        if (idx === -1) { state.responses[code].push(val); this.classList.add('selected'); }
+        else { state.responses[code].splice(idx, 1); this.classList.remove('selected'); }
+      });
+    });
+    // Multiselect other text
+    document.querySelectorAll('[data-ms-other]').forEach(function(inp) {
+      inp.addEventListener('input', function() {
+        var code = this.getAttribute('data-ms-other');
+        state.responses[code + '_other'] = this.value;
+      });
+    });
+    // Factual
+    document.querySelectorAll('[data-factual]').forEach(function(item) {
+      item.addEventListener('click', function() {
+        var code = this.getAttribute('data-factual');
+        var val = this.getAttribute('data-val');
+        state.responses[code] = val;
+        var siblings = document.querySelectorAll('[data-factual="' + code + '"]');
+        siblings.forEach(function(s) { s.classList.remove('selected'); });
+        this.classList.add('selected');
+      });
+    });
+  }
+
+  // ====== RENDER SEZIONE 11 ======
+  function renderSection11() {
+    var s = state.schema;
+    var html = '<div class="mx-app">' + renderProgress(0.85);
+    html += '<div class="mx-section">';
+    html += '<h2>Le vostre priorità</h2>';
+    html += '<p class="mx-section-sub">' + esc(s.section11.description) + '</p>';
+    s.section11.items.forEach(function(item) {
+      html += '<div class="mx-q" data-q="' + esc(item.code) + '">';
+      html += '<div class="mx-q-head"><span class="mx-q-code">' + esc(item.code) + '</span><p class="mx-q-text">' + esc(item.text) + '</p></div>';
+      if (item.type === 'multiselect_max3' || item.type === 'multiselect') {
+        html += '<div class="mx-multiselect">';
+        var current = state.section11[item.code] || [];
+        (item.options || []).forEach(function(opt) {
+          var sel = current.indexOf(opt.value) !== -1 ? 'selected' : '';
+          html += '<div class="mx-ms-item ' + sel + '" data-ms11="' + esc(item.code) + '" data-val="' + esc(opt.value) + '"';
+          if (item.type === 'multiselect_max3') html += ' data-max="3"';
+          html += '><div class="mx-ms-check"></div><span class="mx-ms-label">' + esc(opt.label) + '</span></div>';
+        });
+        html += '</div>';
+      } else if (item.type === 'likert') {
+        html += '<div class="mx-likert">';
+        (item.labels || []).forEach(function(lbl, idx) {
+          var n = idx + 1;
+          var sel = state.section11[item.code] === n ? 'selected' : '';
+          html += '<button class="mx-likert-btn ' + sel + '" data-likert11="' + esc(item.code) + '" data-val="' + n + '">';
+          html += '<span class="mx-likert-num">' + n + '</span><span class="mx-likert-label">' + esc(lbl) + '</span></button>';
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '<div class="mx-nav">';
+    html += '<button class="mx-btn mx-btn-secondary" id="mxBackBtn">← Indietro</button>';
+    html += '<button class="mx-btn mx-btn-primary" id="mxNextBtn">Vedi il vostro report →</button>';
+    html += '</div></div>';
+    document.querySelector('#matrix-mount').innerHTML = html;
+
+    // Listeners
+    document.querySelectorAll('[data-ms11]').forEach(function(item) {
+      item.addEventListener('click', function() {
+        var code = this.getAttribute('data-ms11');
+        var val = this.getAttribute('data-val');
+        var max = parseInt(this.getAttribute('data-max') || '0', 10);
+        if (!Array.isArray(state.section11[code])) state.section11[code] = [];
+        var idx = state.section11[code].indexOf(val);
+        if (idx === -1) {
+          if (max > 0 && state.section11[code].length >= max) {
+            alert('Seleziona al massimo ' + max + ' opzioni.');
+            return;
+          }
+          state.section11[code].push(val); this.classList.add('selected');
+        } else {
+          state.section11[code].splice(idx, 1); this.classList.remove('selected');
+        }
+      });
+    });
+    document.querySelectorAll('[data-likert11]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        var code = this.getAttribute('data-likert11');
+        var val = parseInt(this.getAttribute('data-val'), 10);
+        state.section11[code] = val;
+        var siblings = document.querySelectorAll('[data-likert11="' + code + '"]');
+        siblings.forEach(function(s) { s.classList.remove('selected'); });
+        this.classList.add('selected');
+      });
+    });
+    $('#mxBackBtn').addEventListener('click', function() {
+      state.currentStep = 'questions';
+      state.currentDimensionIndex = state.schema.dimensions.length - 1;
+      renderQuestionsForDimension();
+    });
+    $('#mxNextBtn').addEventListener('click', submitAndShowReport);
+  }
+
+  // ====== SUBMIT + REPORT ======
+  function submitAndShowReport() {
+    _clearDraft_(); // v4.18.68 — cancella bozza al submit
+    var mount = $('#matrix-mount');
+    mount.innerHTML = '<div class="mx-app"><div class="mx-loading">Elaborazione del vostro profilo in corso…</div></div>';
+    var payload = {
+      responseId: state.responseId,
+      responses: state.responses,
+      section11: state.section11,
+      museumProfile: state.museumProfile,
+      museumName: state.museumName,
+      timestampInizio: state.timeStart,
+      timestampFine: new Date().toISOString(),
+      tooltipOpened: state.tooltipOpened,
+      timePerQuestion: state.timePerQuestion,
+      completionStatus: state.surveyMode ? 'survey_' + state.surveyMode : 'complete'
+    };
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (!result || !result.ok) {
+          mount.innerHTML = '<div class="mx-app"><div class="mx-error">Errore nel salvataggio: ' + esc(result && result.error || 'sconosciuto') + '</div></div>';
+          return;
+        }
+        state.responseId = result.responseId;
+        // Carica il report completo
+        google.script.run
+          .withSuccessHandler(function(report) {
+            if (!report || !report.ok) {
+              mount.innerHTML = '<div class="mx-app"><div class="mx-error">Errore caricamento report.</div></div>';
+              return;
+            }
+            state.report = report;
+            renderReport();
+          })
+          .withFailureHandler(function(err) {
+            mount.innerHTML = '<div class="mx-app"><div class="mx-error">Errore caricamento report: ' + esc(err) + '</div></div>';
+          })
+          .getMatrixReport(state.responseId);
+      })
+      .withFailureHandler(function(err) {
+        mount.innerHTML = '<div class="mx-app"><div class="mx-error">Errore di salvataggio: ' + esc(err && err.message || err) + '</div></div>';
+      })
+      .saveMatrixResponse(payload);
+  }
+
+  function _mxRenderRadarChart_(scoring, schema) {
+    if (typeof Chart === 'undefined') return;
+    var canvas = document.getElementById('mxRadarChart');
+    if (!canvas) return;
+    var info = document.getElementById('mxRadarBenchInfo');
+    if (info) info.textContent = 'caricamento benchmark...';
+
+    // Labels: codice dimensione (breve per radar leggibile)
+    var dims = (schema && schema.dimensions) ? schema.dimensions : [];
+    var labels = dims.map(function(d){ return d.code; });
+    var userData = dims.map(function(d){ return Number(scoring[d.code] || 0); });
+
+    // Chiede benchmark dinamico al backend (asincrono)
+    if (hasGAS()) {
+      google.script.run
+        .withSuccessHandler(function(r) {
+          var benchData = labels.map(function(){ return null; });
+          var benchN = 0;
+          if (r && r.ok && r.dimensions) {
+            r.dimensions.forEach(function(d, i){ benchData[i] = d.median; });
+            benchN = r.total || 0;
+          }
+          _mxDrawRadar_(canvas, labels, userData, benchData, benchN, info);
+        })
+        .withFailureHandler(function(){ _mxDrawRadar_(canvas, labels, userData, null, 0, info); })
+        .getMatrixCompareWithBenchmark(scoring);
+    } else {
+      _mxDrawRadar_(canvas, labels, userData, null, 0, info);
+    }
+  }
+
+  function _mxDrawRadar_(canvas, labels, userData, benchData, benchN, info) {
+    if (canvas._chartInst) try { canvas._chartInst.destroy(); } catch(e){}
+    var datasets = [{
+      label: 'Il vostro museo',
+      data: userData,
+      backgroundColor: 'rgba(122, 42, 26, 0.15)',
+      borderColor: 'rgba(122, 42, 26, 0.9)',
+      borderWidth: 2.5,
+      pointBackgroundColor: 'rgba(122, 42, 26, 1)',
+      pointRadius: 4,
+      pointHoverRadius: 6
+    }];
+    if (benchData && benchN > 0) {
+      datasets.push({
+        label: 'Mediana ' + benchN + ' musei (benchmark)',
+        data: benchData,
+        backgroundColor: 'rgba(60, 106, 149, 0.0)',
+        borderColor: 'rgba(60, 106, 149, 0.7)',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        pointBackgroundColor: 'rgba(60, 106, 149, 0.8)',
+        pointRadius: 3
+      });
+    }
+    canvas._chartInst = new Chart(canvas, {
+      type: 'radar',
+      data: { labels: labels, datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+          r: {
+            min: 0, max: 100,
+            ticks: { stepSize: 25, color: 'var(--ink-4,#A1A1A6)', font: { size: 10 }, backdropColor: 'transparent' },
+            grid: { color: 'rgba(26,24,21,0.08)' },
+            angleLines: { color: 'rgba(26,24,21,0.10)' },
+            pointLabels: { color: 'var(--ink,#101010)', font: { size: 13, weight: '600' } }
+          }
+        },
+        plugins: {
+          legend: { position: 'bottom', labels: { color: 'var(--ink-2,#3A3A3C)', font: { size: 12 }, padding: 14 } },
+          tooltip: { callbacks: { label: function(ctx){ return ctx.dataset.label + ': ' + ctx.parsed.r; } } }
+        }
+      }
+    });
+    if (info) {
+      info.textContent = benchN > 0
+        ? ('Benchmark calcolato su ' + benchN + ' compilazioni complete')
+        : 'Benchmark non ancora disponibile (servono almeno 3 compilazioni complete)';
+    }
+  }
+
+  function renderReport() {
+    var r = state.report;
+    var s = state.schema;
+    var html = '<div class="mx-app">';
+    // Hero report
+    html += '<div class="mx-report-hero">';
+    html += '<div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.85">Il vostro profilo MuseMu Matrix</div>';
+    if (r.museumName) html += '<div style="font-size:18px;margin-top:6px;opacity:.9">' + esc(r.museumName) + '</div>';
+    html += '<div class="mx-profile-code">' + esc(r.profileAssigned) + '</div>';
+    var profileObj = (s.profiles || []).filter(function(p){ return p.code === r.profileAssigned; })[0];
+    html += '<div class="mx-profile-name">' + esc(profileObj ? profileObj.name : '') + '</div>';
+    html += '<div class="mx-synth-score">' + esc(r.syntheticScore) + ' <span style="font-size:24px;opacity:.7">/100</span></div>';
+    html += '<div class="mx-synth-label">punteggio sintetico complessivo</div>';
+    html += '</div>';
+
+    // Sprint 2 Step 4 — Barra azioni report (PDF download + email)
+    html += '<div class="mx-section" style="background:var(--accent-soft,#F0E6E4);border-left:3px solid var(--amb-8,#B45309);padding:18px 20px;margin-top:18px">';
+    html += '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between">';
+    html += '<div>';
+    html += '<div style="font-size:13px;color:var(--ink-3,#6E6E73);font-weight:600;letter-spacing:.04em;text-transform:uppercase">Il vostro report PDF è pronto</div>';
+    html += '<div style="font-size:13px;color:var(--ink-3,#6E6E73);margin-top:2px">Scaricalo, condividilo internamente o ricevilo via email per archivio.</div>';
+    html += '</div>';
+    html += '<div style="display:flex;gap:10px;flex-wrap:wrap">';
+    html += '<button class="mx-btn mx-btn-primary" id="mxBtnDownloadPDF">📄 Scarica PDF</button>';
+    html += '<button class="mx-btn" id="mxBtnEmailJump" style="background:#fff;border:1px solid var(--amb-8,#B45309);color:var(--ink-3,#6E6E73)">✉️ Inviamelo per email</button>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div id="mxPdfStatus" style="margin-top:10px;font-size:13px;color:var(--ink-3,#6E6E73)"></div>';
+    html += '</div>';
+
+    // Descrizione profilo
+    html += '<div class="mx-section">';
+    html += '<h2>Lettura del vostro profilo</h2>';
+    html += '<p style="font-size:14px;line-height:1.7;color:var(--ink-2,#3A3A3C);margin-top:8px">' + esc(r.profileDescription) + '</p>';
+    html += '</div>';
+
+    // Radar chart Chart.js (S3.2 2026-05-11) — confronto user vs benchmark dinamico
+    html += '<div class="mx-section">';
+    html += '<h2>Mappa decagonale del profilo</h2>';
+    html += '<p class="mx-section-sub">Il vostro punteggio (linea piena) confrontato con la mediana degli altri musei che hanno compilato il questionario (linea tratteggiata).</p>';
+    html += '<div style="max-width:560px;margin:24px auto;position:relative">';
+    html += '<canvas id="mxRadarChart" width="560" height="560" aria-label="Radar chart 10 dimensioni"></canvas>';
+    html += '<div id="mxRadarBenchInfo" style="text-align:center;font-size:11px;color:var(--ink-3);margin-top:8px;letter-spacing:.05em">';
+    html += '</div></div></div>';
+
+    // Mappa decagonale (barre) — mantenuta per accessibilita e dettaglio numerico
+    html += '<div class="mx-section">';
+    html += '<h2>Le 10 dimensioni in dettaglio</h2>';
+    html += '<p class="mx-section-sub">Scoring 0-100 per ogni dimensione del modello.</p>';
+    html += '<div class="mx-dim-bars">';
+    s.dimensions.forEach(function(d) {
+      var sc = r.scoringDimensions[d.code] || 0;
+      var cls = sc < 33 ? 'low' : sc < 66 ? 'mid' : 'high';
+      html += '<div class="mx-dim-row">';
+      html += '<span class="mx-dim-name"><b>' + esc(d.code) + '</b> ' + esc(d.name) + '</span>';
+      html += '<div class="mx-dim-bar-track"><div class="mx-dim-bar-fill ' + cls + '" style="width:' + sc + '%"></div></div>';
+      html += '<span class="mx-dim-score">' + esc(sc) + '</span>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+
+    // Top 3 opportunità
+    if (r.top3Opportunities && r.top3Opportunities.length) {
+      html += '<div class="mx-section">';
+      html += '<h2>Le 3 opportunità di sviluppo prioritarie</h2>';
+      html += '<p class="mx-section-sub">Le 3 dimensioni con maggior margine di crescita: aree dove un investimento mirato può produrre impatto rapido.</p>';
+      html += '<div class="mx-opp-list">';
+      r.top3Opportunities.forEach(function(opp) {
+        html += '<div class="mx-opp-card">';
+        html += '<div class="mx-opp-rank">OPPORTUNITÀ #' + esc(opp.rank) + '</div>';
+        html += '<h3>' + esc(opp.dimensionCode) + ' — ' + esc(opp.dimensionName) + '</h3>';
+        html += '<div class="mx-opp-meta">Scoring attuale: <b>' + esc(opp.score) + '/100</b> · ' + esc(opp.reading) + '</div>';
+        html += '</div>';
+      });
+      html += '</div></div>';
+    }
+
+    // v4.18.68 — Consigli per l'Azione: bandi attivi correlati alle dimensioni carenti
+    if (r.top3Opportunities && r.top3Opportunities.length) {
+      html += '<div class="mx-section">';
+      html += '<h2>Consigli per l\'azione</h2>';
+      html += '<p class="mx-section-sub">Per ciascuna dimensione carente, finanziamenti attivi che potrebbero supportare il vostro sviluppo.</p>';
+      html += '<div id="mxBandiConsigli"><div style="padding:20px;color:var(--ink-3,var(--ink-3,#6E6E73));font-size:13px">Caricamento bandi correlati…</div></div>';
+      html += '</div>';
+    }
+
+    // Servizi raccomandati
+    if (r.serviceRecommendations && r.serviceRecommendations.length) {
+      html += '<div class="mx-section">';
+      html += '<h2>Servizi Sinopia pertinenti</h2>';
+      html += '<p class="mx-section-sub">Per ognuna delle 3 opportunità prioritarie, il servizio del catalogo Sinopia più adatto.</p>';
+      html += '<div class="mx-services">';
+      r.serviceRecommendations.forEach(function(svc) {
+        html += '<div class="mx-service-card">';
+        html += '<div class="mx-service-code">Per opportunità ' + esc(svc.opportunityCode) + ' · ' + esc(svc.serviceCode) + '</div>';
+        html += '<h4>' + esc(svc.serviceName) + '</h4>';
+        html += '<p>' + esc(svc.serviceDescription) + '</p>';
+        // Sprint 2 Step 4 — Cross-link Osservatorio Culturale
+        if (svc.ocLinkLabel && (svc.ocAmbito || svc.ocPage)) {
+          var attr = svc.ocAmbito
+            ? 'data-oc-page="ambito" data-oc-ambito="' + esc(svc.ocAmbito) + '"'
+            : 'data-oc-page="' + esc(svc.ocPage) + '"';
+          html += '<a href="#" class="mx-oc-link" ' + attr + ' style="display:inline-block;margin-top:10px;font-size:12px;color:#0E7490;text-decoration:none;font-weight:600;border-bottom:1px dashed #0E7490;padding-bottom:1px">' + esc(svc.ocLinkLabel) + ' →</a>';
+        }
+        html += '</div>';
+      });
+      html += '</div></div>';
+    }
+
+    // Roadmap
+    if (r.roadmap) {
+      html += '<div class="mx-section">';
+      html += '<h2>La vostra roadmap suggerita</h2>';
+      html += '<p class="mx-section-sub">Percorso a 3 fasi coerente con il framework Musei Sensibili.</p>';
+      html += '<div class="mx-roadmap">';
+      ['phase1','phase2','phase3'].forEach(function(k, idx) {
+        var p = r.roadmap[k];
+        if (!p) return;
+        html += '<div class="mx-phase mx-phase-' + (idx+1) + '">';
+        html += '<h4>' + esc(p.name) + '</h4>';
+        html += '<p><b>Obiettivo:</b> ' + esc(p.objective) + '</p>';
+        if (p.actions && p.actions.length) {
+          html += '<p><b>Azioni:</b> ' + p.actions.map(esc).join(' · ') + '</p>';
+        }
+        html += '</div>';
+      });
+      html += '</div></div>';
+    }
+
+    // Sezione 12 — Follow-up opt-in
+    html += renderSection12HTML();
+
+    // CTA
+    html += '<div class="mx-cta">';
+    html += '<h3>Vuoi diventare un Museo Sensibile?</h3>';
+    html += '<p>Una conversazione di 30-45 minuti, gratuita e senza impegno, per approfondire le opportunità identificate.</p>';
+    var ctaSubject = encodeURIComponent('[MuseMu Matrix] Richiesta primo incontro — ' + (r.museumName || 'struttura'));
+    var ctaBody = encodeURIComponent('Buongiorno,\n\nho completato il questionario MuseMu Matrix (riferimento risposta: ' + r.responseId + ') e desidero fissare un primo incontro per approfondire le opportunità emerse.\n\nGrazie,\n');
+    html += '<a class="mx-btn mx-btn-primary" href="mailto:s.straccini@gmail.com?subject=' + ctaSubject + '&body=' + ctaBody + '" style="text-decoration:none;display:inline-block">Prenota un primo incontro</a>';
+    html += '</div>';
+
+    // ====== v4.18.28 — ESTENSIONE MiC SM-LUQV (DM 113/2018) ======
+    // v4.18.37 — Se l'utente ha scelto opt-in all'inizio, la card opzionale è sostituita da un
+    //            banner di transizione e il wizard MiC parte automaticamente. Altrimenti card standard.
+    html += '<section id="mxMicAnchor" class="mx-section" style="background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7);border-left:4px solid var(--accent,#935851);border-radius:14px;padding:28px 32px;margin-top:24px;position:relative;overflow:hidden">';
+    html += '<span aria-hidden="true" style="position:absolute;top:-30px;right:-10px;font-size:160px;color:var(--accent,#935851);opacity:.06;line-height:1;pointer-events:none"></span>';
+    html += '<div style="position:relative;z-index:1">';
+    if (state.includeMiC) {
+      html += '<div style="font-family:var(--font-ui,sans-serif);font-size:10.5px;color:var(--accent-hover,#7A4940);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Valutazione ministeriale in arrivo</div>';
+      html += '<h3 style="font-family:var(--font-display,Georgia,serif);font-size:1.4rem;line-height:1.2;margin:0 0 12px;color:var(--ink-2,#3A3A3C);font-weight:500">Stiamo preparando la sezione <em>Standard Minimi MiC</em></h3>';
+      html += '<p style="font-family:var(--font-display,Georgia,serif);font-size:14px;color:var(--ink-2,#3A3A3C);line-height:1.6;margin:0 0 8px">Hai scelto di integrare la valutazione ministeriale all\'inizio del questionario. Il sistema sta caricando le risposte pre-compilate dal Matrix e ti chiederà solo le 7 informazioni aggiuntive (statuto, orari, visitatori, segnaletica). La sezione di compliance sarà aggiunta sotto questo report e inclusa nel PDF finale.</p>';
+      html += '<div id="mxMicStatus" style="margin-top:10px;font-size:13px;color:var(--accent-hover,#7A4940);font-weight:600">⏳ Caricamento in corso…</div>';
+    } else {
+      html += '<div style="font-family:var(--font-ui,sans-serif);font-size:10.5px;color:var(--accent-hover,#7A4940);letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Estensione opzionale &middot; Standard ministeriali</div>';
+      html += '<h3 style="font-family:var(--font-display,Georgia,serif);font-size:1.4rem;line-height:1.2;margin:0 0 12px;color:var(--ink-2,#3A3A3C);font-weight:500">Vuoi anche valutarti sugli <em>Standard Minimi di Qualità MiC</em>?</h3>';
+      html += '<p style="font-family:var(--font-display,Georgia,serif);font-size:14px;color:var(--ink-2,#3A3A3C);line-height:1.6;margin:0 0 16px;max-width:680px">Il questionario di autovalutazione del Ministero della Cultura (Allegato A4 · DM 113/2018) verifica i 25 Standard Minimi necessari per il riconoscimento al Sistema Museale Nazionale e per l\'accesso a numerosi bandi MiC. <b>22 risposte su 29 le ricaviamo direttamente dal tuo Matrix</b>; servono solo 7 informazioni aggiuntive (statuto, orari, visitatori, segnaletica). Tempo: ~3 minuti.</p>';
+      html += '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">';
+      html += '<button class="mx-btn mx-btn-primary" id="mxBtnStartMic" style="background:var(--accent,#935851);color:#fff;border:none;padding:12px 26px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.02em">→ Sì, calcola la mia compliance MiC</button>';
+      html += '<button class="mx-btn" id="mxBtnSkipMic" style="background:transparent;color:var(--accent-hover,#7A4940);border:1px solid var(--rule,#E5E5E7);padding:12px 22px;border-radius:8px;font-size:13.5px;font-weight:500;cursor:pointer">No grazie, ho finito</button>';
+      html += '</div>';
+      html += '<div id="mxMicStatus" style="margin-top:10px;font-size:12.5px;color:var(--accent-hover,#7A4940)"></div>';
+    }
+    html += '</div></section>';
+
+    // v4.18.37 — Punto di ancoraggio dove il report MiC sarà appended
+    html += '<div id="mxMicReportMount"></div>';
+
+    html += '</div>';
+    document.querySelector('#matrix-mount').innerHTML = html;
+    // Sprint 3 S3.2 — render radar chart dopo che il DOM e' montato
+    try { _mxRenderRadarChart_(state.report.scoringDimensions, state.schema); } catch(e) { console.warn('radar render fallito:', e); }
+    attachSection12Listeners();
+    attachReportActionsListeners();
+    attachOcCrossLinkListeners();
+    attachMicListeners(); // v4.18.28
+    window.scrollTo({top:0, behavior:'smooth'});
+
+    // v4.18.37 — Se opt-in attivo, lancia automaticamente il wizard MiC
+    if (state.includeMiC) {
+      setTimeout(function(){ startMicCheck(); }, 800);
+    }
+
+    // v4.18.68 — Carica bandi correlati alle dimensioni carenti
+    if (r.top3Opportunities && r.top3Opportunities.length && hasGAS()) {
+      _loadBandiConsigli_(r);
+    }
+  }
+
+  // v4.18.68 — Mapping dimensioni Matrix → ambiti OC per filtrare bandi
+  var _DIM_AMBITO_MAP_ = {
+    'D1': [1],       // Brand & Identity → Identita e narrazione
+    'D2': [3],       // Patrimonio → Programma, mostre e collezioni
+    'D3': [3],       // Spazi → Programma
+    'D4': [3,4],     // Programma educativo → Programma + Comunita
+    'D5': [4],       // Servizi → Comunita e welfare
+    'D6': [5],       // Digital → Digital, AI e governance
+    'D7': [2],       // Accessibilita → Inclusione e accessibilita
+    'D8': [1,4],     // Audience → Identita + Comunita
+    'D9': [5],       // Governance → Digital & governance
+    'D10': [2,4]     // Welfare → Inclusione + Comunita
+  };
+
+  function _loadBandiConsigli_(report) {
+    var box = document.getElementById('mxBandiConsigli');
+    if (!box) return;
+    google.script.run
+      .withSuccessHandler(function(bandi){
+        if (!bandi || !bandi.length) {
+          box.innerHTML = '<div style="color:var(--ink-3,var(--ink-3,#6E6E73));font-size:13px">Nessun bando attivo al momento.</div>';
+          return;
+        }
+        var html = '';
+        report.top3Opportunities.forEach(function(opp) {
+          var dimCode = opp.dimensionCode;
+          var ambiti = _DIM_AMBITO_MAP_[dimCode] || [];
+          // Filtra bandi per ambito corrispondente
+          var matching = bandi.filter(function(b) {
+            return ambiti.indexOf(Number(b.ambito)) >= 0;
+          });
+          // Prendi max 2 bandi per dimensione
+          var top2 = matching.slice(0, 2);
+
+          html += '<div style="margin-bottom:20px">';
+          html += '<div style="font-size:13px;color:var(--ink-2,var(--ink-2,#3A3A3C));line-height:1.6;margin-bottom:10px">';
+          html += 'Il tuo punteggio in <b>' + esc(opp.dimensionName) + '</b> e del <b>' + esc(String(opp.score)) + '%</b>.';
+          if (top2.length > 0) {
+            html += ' Ecco dei finanziamenti attivi che potrebbero interessarti:';
+          } else {
+            html += ' Al momento non ci sono bandi attivi specifici per questa dimensione.';
+          }
+          html += '</div>';
+
+          if (top2.length > 0) {
+            top2.forEach(function(b) {
+              html += '<div style="background:#fff;border:1px solid var(--rule,var(--rule,#E5E5E7));border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">';
+              html += '<div style="flex:1;min-width:0">';
+              html += '<div style="font-size:14px;font-weight:600;color:var(--ink,var(--ink,#101010));line-height:1.3">' + esc(b.titolo || '') + '</div>';
+              if (b.ente) html += '<div style="font-size:12px;color:var(--ink-3,var(--ink-3,#6E6E73));margin-top:3px">' + esc(b.ente) + (b.scadenza ? ' · Scade ' + esc(b.scadenza) : '') + '</div>';
+              html += '</div>';
+              if (b.url || b.link) html += '<a href="' + esc(b.url || b.link) + '" target="_blank" rel="noopener" style="color:var(--amb-3,#2563EB);text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap">Vai al bando ↗</a>';
+              html += '</div>';
+            });
+          }
+          html += '</div>';
+        });
+        box.innerHTML = html;
+      })
+      .withFailureHandler(function(err){
+        if (box) box.innerHTML = '<div style="color:var(--ink-3);font-size:13px">Impossibile caricare i bandi correlati.</div>';
+      })
+      .getBandiListV42(200);
+  }
+
+  // ============================================================================
+  // v4.18.28 — MiC SM-LUQV (DM 113/2018) · estensione opzionale post-Matrix
+  // ============================================================================
+  // Stato dedicato MiC (separato da state Matrix per non inquinare)
+  var stateMic = {
+    precompiled: null,    // array {id, valore, confidence, motivazione, sezione, sottoSez, testo}
+    daSomministrare: null,// array {id, sezione, sottoSez, testo, tipo, opzioni}
+    risposte: {}          // map qId → valore (radio:string | checkbox-multi:array | numero:number | testo:string)
+  };
+
+  function attachMicListeners() {
+    var btnStart = document.getElementById('mxBtnStartMic');
+    var btnSkip  = document.getElementById('mxBtnSkipMic');
+    if (btnStart) btnStart.addEventListener('click', startMicCheck);
+    if (btnSkip)  btnSkip.addEventListener('click', function(){
+      var box = document.getElementById('mxMicStatus');
+      if (box) box.innerHTML = 'OK, hai chiuso senza richiedere la verifica MiC. Puoi sempre richiederla in seguito contattandoci.';
+      btnStart.disabled = true; btnStart.style.opacity = '.4';
+      btnSkip.disabled = true; btnSkip.style.opacity = '.4';
+    });
+  }
+
+  function startMicCheck() {
+    var status = document.getElementById('mxMicStatus');
+    if (status) status.innerHTML = 'Caricamento del questionario MiC e pre-compilazione dalle dimensioni Matrix…';
+    var btn = document.getElementById('mxBtnStartMic');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+    if (!hasGAS()) {
+      if (status) status.innerHTML = '<span style="color:var(--danger,#C2410C)">Backend non disponibile.</span>';
+      return;
+    }
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || !r.ok) {
+          if (status) status.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc(r && r.error || 'sconosciuto') + '</span>';
+          return;
+        }
+        stateMic.precompiled = r.precompiled || [];
+        stateMic.daSomministrare = r.daSomministrare || [];
+        // Pre-carica le risposte dal precompiled (l'utente potrà correggerle)
+        stateMic.risposte = {};
+        stateMic.precompiled.forEach(function(p){ stateMic.risposte[p.id] = p.valore; });
+        renderMicWizard();
+      })
+      .withFailureHandler(function(err){
+        if (status) status.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc(err && err.message || err) + '</span>';
+      })
+      .getMicPrecompiled(state.responseId);
+  }
+
+  function renderMicWizard() {
+    // v4.18.37 — APPEND mode quando opt-in iniziale: wizard inline sotto il report Matrix
+    var appendMode = !!state.includeMiC;
+    var mount = appendMode ? document.querySelector('#mxMicReportMount') : document.querySelector('#matrix-mount');
+    if (!mount) mount = document.querySelector('#matrix-mount');
+    var html = appendMode
+      ? '<section class="mx-app mic-wizard-appended" style="margin-top:32px;padding-top:24px;border-top:3px double var(--rule,#E5E5E7)">'
+      : '<div class="mx-app">';
+
+    // Hero MiC
+    html += '<div class="mx-report-hero" style="background:linear-gradient(135deg,var(--accent,#935851) 0%,var(--accent-hover,#7A4940) 100%)">';
+    html += '<div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.85">' + (appendMode ? 'Sezione aggiuntiva · ' : '') + 'Standard Minimi di Qualità · MiC</div>';
+    html += '<div class="mx-profile-code" style="font-size:32px;margin-top:10px">Compliance MiC SM-LUQV</div>';
+    html += '<div class="mx-profile-name" style="font-size:14px;opacity:.92;font-style:italic;margin-top:6px">DM 113/2018 · Allegato A4 · per musei non accreditati al Sistema Museale Nazionale</div>';
+    html += '</div>';
+
+    // Card statistiche
+    html += '<div class="mx-section" style="background:var(--surface,#F7F7F8);border-left:3px solid var(--accent,#935851);padding:18px 22px;margin-top:18px">';
+    html += '<div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:space-around;text-align:center">';
+    var stats = [
+      { num: stateMic.precompiled.length, lbl: 'Risposte pre-compilate dal Matrix' },
+      { num: stateMic.daSomministrare.length, lbl: 'Domande aggiuntive richieste' },
+      { num: 25, lbl: 'Standard Minimi (SM) valutati' }
+    ];
+    stats.forEach(function(s){
+      html += '<div><div style="font-family:var(--font-display);font-size:32px;font-weight:600;color:var(--accent-hover,#7A4940);line-height:1">' + s.num + '</div><div style="font-size:11.5px;color:var(--ink-2,#3A3A3C);letter-spacing:.04em;margin-top:4px">' + s.lbl + '</div></div>';
+    });
+    html += '</div>';
+    html += '<p style="margin:14px 0 0;font-size:13px;color:var(--ink-2,#3A3A3C);line-height:1.55;text-align:center"><b>Come funziona:</b> rivedi le risposte pre-compilate (puoi correggerle), compila le 7 domande aggiuntive, ottieni la tua percentuale di compliance MiC.</p>';
+    html += '</div>';
+
+    // Sezione 1: domande pre-compilate (raggruppate per sezione)
+    html += '<div class="mx-section">';
+    html += '<h2>1. Risposte ricavate dal Matrix <span style="font-size:13px;color:var(--ink-3);font-weight:400">(rivedi e correggi se necessario)</span></h2>';
+    html += _renderMicQuestionsGrouped_(stateMic.precompiled, true); // true = isPrecompiled
+    html += '</div>';
+
+    // Sezione 2: domande nuove
+    html += '<div class="mx-section">';
+    html += '<h2>2. Domande aggiuntive <span style="font-size:13px;color:var(--ink-3);font-weight:400">(non ricavabili dal Matrix)</span></h2>';
+    html += _renderMicQuestionsGrouped_(stateMic.daSomministrare, false);
+    html += '</div>';
+
+    // Bottoni
+    html += '<div class="mx-section" style="text-align:center;background:transparent;border:none;padding:24px 0">';
+    html += '<button class="mx-btn mx-btn-primary" id="mxBtnCalcMic" style="background:var(--accent,#935851);color:#fff;border:none;padding:14px 34px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:.02em">Calcola la mia compliance MiC →</button>';
+    html += '<div id="mxMicSubmitStatus" style="margin-top:12px;font-size:13px;color:var(--accent-hover,#7A4940)"></div>';
+    html += '</div>';
+
+    html += appendMode ? '</section>' : '</div>';
+    mount.innerHTML = html;
+    // v4.18.37 — In append mode, aggiorna anche il banner di transizione
+    if (appendMode) {
+      var anchorBanner = document.getElementById('mxMicAnchor');
+      if (anchorBanner) {
+        var statusEl = anchorBanner.querySelector('#mxMicStatus');
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--amb-2,#10916D)">✓ Pre-compilazione completata · compila le domande aggiuntive qui sotto</span>';
+      }
+      var newSection = mount.querySelector('.mic-wizard-appended');
+      if (newSection) newSection.scrollIntoView({behavior:'smooth', block:'start'});
+    } else {
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+    _attachMicWizardListeners_();
+  }
+
+  function _renderMicQuestionsGrouped_(list, isPrecompiled) {
+    if (!list || !list.length) return '<p style="color:var(--ink-3);font-style:italic">Nessuna domanda in questo gruppo.</p>';
+    // Raggruppa per sezione
+    var SEZIONI = { '1':'Organizzazione', '2':'Collezioni', '3':'Comunicazione' };
+    var groups = {};
+    list.forEach(function(q){
+      var sez = q.sezione || '?';
+      if (!groups[sez]) groups[sez] = [];
+      groups[sez].push(q);
+    });
+    var html = '';
+    Object.keys(groups).sort().forEach(function(sez){
+      html += '<div style="margin-bottom:24px">';
+      html += '<h3 style="font-family:var(--font-display,Georgia,serif);font-size:1.05rem;color:var(--accent-hover,#7A4940);margin:0 0 12px;border-bottom:1px solid var(--rule,#E5E5E7);padding-bottom:6px">' + esc(sez + '. ' + (SEZIONI[sez] || 'Altro')) + '</h3>';
+      groups[sez].forEach(function(q){
+        html += _renderMicQuestion_(q, isPrecompiled);
+      });
+      html += '</div>';
+    });
+    return html;
+  }
+
+  function _renderMicQuestion_(q, isPrecompiled) {
+    var qId = q.id;
+    var valore = stateMic.risposte[qId];
+    var confidenceLabel = '';
+    if (isPrecompiled && q.confidence) {
+      var bg = q.confidence === 'alta' ? '#D4EDDA' : (q.confidence === 'media' ? '#FFF3CD' : '#F8D7DA');
+      var col = q.confidence === 'alta' ? '#155724' : (q.confidence === 'media' ? '#856404' : '#721C24');
+      var lbl = q.confidence === 'alta' ? '✓ Compilato da Matrix' : (q.confidence === 'media' ? '~ Suggerito (da verificare)' : '? Da verificare');
+      confidenceLabel = '<span style="background:' + bg + ';color:' + col + ';font-family:var(--font-ui);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;margin-left:8px">' + lbl + '</span>';
+    }
+
+    var html = '<div class="mic-q" data-mic-qid="' + esc(qId) + '" style="background:#fff;border:1px solid var(--rule,var(--rule,#E5E5E7));border-radius:8px;padding:14px 18px;margin-bottom:10px">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px">';
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div style="font-family:var(--font-ui);font-size:10.5px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">' + esc(q.sottoSez || '') + ' &middot; <span style="font-family:monospace">' + esc(q.id) + '</span></div>';
+    html += '<div style="font-size:14px;color:var(--ink);line-height:1.45">' + esc(q.testo || '') + '</div>';
+    if (q.motivazione) html += '<div style="font-size:11.5px;color:var(--ink-3);font-style:italic;margin-top:6px">' + esc(q.motivazione) + '</div>';
+    html += '</div>';
+    html += confidenceLabel;
+    html += '</div>';
+
+    // Render input in base al tipo (per le domande precompiled non abbiamo q.tipo nel payload, usiamo opzioni dal schema embedded)
+    var tipo = q.tipo;
+    var opzioni = q.opzioni || [];
+    // Per precompiled, q.tipo è omesso dal backend — assumiamo radio o checkbox a seconda del valore
+    if (!tipo) {
+      if (Array.isArray(valore)) tipo = 'checkbox-multi';
+      else if (typeof valore === 'number') tipo = 'numero';
+      else tipo = 'radio';
+    }
+
+    // Per le precompiled raccogliamo opzioni dallo schema (lo carichiamo una volta in cache)
+    if (!opzioni.length && (tipo === 'radio' || tipo === 'checkbox-multi')) {
+      opzioni = _micGetOpzioni_(qId) || [];
+    }
+
+    html += '<div class="mic-q-input">';
+    if (tipo === 'radio') {
+      opzioni.forEach(function(o){
+        var checked = String(valore) === String(o.valore) ? ' checked' : '';
+        html += '<label style="display:inline-flex;align-items:center;gap:6px;margin:4px 14px 4px 0;font-size:13.5px;cursor:pointer"><input type="radio" name="mic-' + esc(qId) + '" value="' + esc(o.valore) + '"' + checked + ' onchange="OC_Matrix._micUpdate_(\'' + esc(qId) + '\',this.value,\'radio\')"/> ' + esc(o.label) + '</label>';
+      });
+    } else if (tipo === 'checkbox-multi') {
+      var arr = Array.isArray(valore) ? valore : [];
+      opzioni.forEach(function(o){
+        var checked = arr.indexOf(o.valore) >= 0 ? ' checked' : '';
+        html += '<label style="display:inline-flex;align-items:center;gap:6px;margin:4px 14px 4px 0;font-size:13.5px;cursor:pointer"><input type="checkbox" name="mic-' + esc(qId) + '" value="' + esc(o.valore) + '"' + checked + ' onchange="OC_Matrix._micUpdate_(\'' + esc(qId) + '\',this.value,\'checkbox\')"/> ' + esc(o.label) + '</label>';
+      });
+    } else if (tipo === 'numero') {
+      html += '<input type="number" name="mic-' + esc(qId) + '" min="0" value="' + esc(valore || '') + '" oninput="OC_Matrix._micUpdate_(\'' + esc(qId) + '\',this.value,\'numero\')" style="padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13.5px;width:200px"/>';
+    } else if (tipo === 'testo') {
+      html += '<textarea name="mic-' + esc(qId) + '" rows="2" oninput="OC_Matrix._micUpdate_(\'' + esc(qId) + '\',this.value,\'testo\')" style="width:100%;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13.5px;font-family:inherit;resize:vertical">' + esc(valore || '') + '</textarea>';
+    }
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  // Cache opzioni per le domande precompiled (le carichiamo dallo schema embedded server-side al primo render)
+  var _micSchemaCache = null;
+  function _micGetOpzioni_(qId) {
+    if (!_micSchemaCache) return [];
+    var q = _micSchemaCache.filter(function(x){ return x.id === qId; })[0];
+    return q ? (q.opzioni || []) : [];
+  }
+
+  function _attachMicWizardListeners_() {
+    var btn = document.getElementById('mxBtnCalcMic');
+    if (btn) btn.addEventListener('click', submitMic);
+    // Carica schema completo in cache (per opzioni domande pre-compilate)
+    if (hasGAS() && !_micSchemaCache) {
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (r && r.ok && r.domande) {
+            _micSchemaCache = r.domande;
+            // Re-render del wizard con opzioni complete (solo per le pre-compilate)
+            renderMicWizard();
+          }
+        })
+        .getMicSchema();
+    }
+  }
+
+  function _micUpdate_(qId, valore, tipo) {
+    if (tipo === 'checkbox') {
+      var arr = Array.isArray(stateMic.risposte[qId]) ? stateMic.risposte[qId].slice() : [];
+      var idx = arr.indexOf(valore);
+      // valore è il singolo checkbox value: trova checkbox e leggi stato
+      var cb = document.querySelector('input[name="mic-' + qId + '"][value="' + valore + '"]');
+      if (cb && cb.checked) { if (idx < 0) arr.push(valore); }
+      else { if (idx >= 0) arr.splice(idx,1); }
+      stateMic.risposte[qId] = arr;
+    } else if (tipo === 'numero') {
+      stateMic.risposte[qId] = valore === '' ? null : Number(valore);
+    } else {
+      stateMic.risposte[qId] = valore;
+    }
+  }
+
+  function submitMic() {
+    var btn = document.getElementById('mxBtnCalcMic');
+    var status = document.getElementById('mxMicSubmitStatus');
+    if (btn) { btn.disabled = true; btn.textContent = 'Salvataggio…'; }
+    if (status) status.textContent = 'Calcolo della tua compliance MiC in corso…';
+
+    if (!hasGAS()) {
+      if (status) status.innerHTML = '<span style="color:var(--danger,#C2410C)">Backend non disponibile.</span>';
+      return;
+    }
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (!r || !r.ok) {
+          if (status) status.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc(r && r.error || 'sconosciuto') + '</span>';
+          if (btn) { btn.disabled = false; btn.textContent = 'Calcola la mia compliance MiC →'; }
+          return;
+        }
+        renderMicReport(r);
+      })
+      .withFailureHandler(function(err){
+        if (status) status.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore di rete: ' + esc(err && err.message || err) + '</span>';
+        if (btn) { btn.disabled = false; btn.textContent = 'Calcola la mia compliance MiC →'; }
+      })
+      .saveMicResponse({
+        matrixResponseId: state.responseId,
+        risposte: stateMic.risposte,
+        museoNome: state.museumName || '',
+        email: ''
+      });
+  }
+
+  function renderMicReport(result) {
+    // v4.18.37 — Conserva il report MiC nello state (per PDF + altre integrazioni)
+    state.micReport = result;
+
+    var pct = result.complianceScore;
+    var gradePct = pct >= 90 ? 'eccellente' : pct >= 75 ? 'buona' : pct >= 50 ? 'parziale' : 'critica';
+    var gradeCol = pct >= 90 ? 'var(--success,#0F7B5A)' : pct >= 75 ? 'var(--amb-2,#10916D)' : pct >= 50 ? 'var(--accent,#935851)' : 'var(--danger,#C2410C)';
+
+    // v4.18.37 — Modalità APPEND vs REPLACE.
+    // Se l'utente aveva fatto opt-in all'inizio, il MiC è parte naturale del flusso:
+    // il report MiC è una "sezione aggiuntiva" che si appende al report Matrix esistente,
+    // non sostituisce la pagina. Se invece è arrivato qui da "Sì, calcola la mia compliance MiC"
+    // dopo aver visto il report Matrix, manteniamo il comportamento legacy (replace).
+    var appendMode = !!state.includeMiC;
+    var mountAnchor = appendMode ? document.querySelector('#mxMicReportMount') : document.querySelector('#matrix-mount');
+    if (!mountAnchor) mountAnchor = document.querySelector('#matrix-mount');
+
+    var html = appendMode ? '<section class="mx-app mic-appended" style="margin-top:32px;padding-top:24px;border-top:3px double var(--rule,#E5E5E7)">' : '<div class="mx-app">';
+
+    // Hero
+    html += '<div class="mx-report-hero" style="background:linear-gradient(135deg,' + gradeCol + ' 0%,var(--ink-2,#3A3A3C) 100%)">';
+    html += '<div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.85">' + (appendMode ? 'Sezione aggiuntiva · ' : '') + 'Compliance MiC SM-LUQV · Esito</div>';
+    html += '<div class="mx-profile-code" style="font-size:54px;margin-top:14px">' + pct + '<span style="font-size:28px;opacity:.7">%</span></div>';
+    html += '<div class="mx-profile-name" style="font-size:18px;margin-top:6px">Compliance ' + gradePct + ' &middot; ' + result.smRispettati + ' / ' + result.smTotali + ' Standard Minimi rispettati</div>';
+    html += '</div>';
+
+    // Card sintesi
+    html += '<div class="mx-section">';
+    html += '<h2>Lettura del risultato</h2>';
+    var lettura = '';
+    if (pct >= 90) lettura = 'Il vostro museo è sostanzialmente allineato agli Standard Minimi di Qualità ministeriali. Potete con buona fiducia presentare candidatura al Sistema Museale Nazionale (SMN) e accedere agli avvisi MiC che richiedono questo livello di compliance.';
+    else if (pct >= 75) lettura = 'Il vostro museo soddisfa la maggior parte degli Standard Minimi. Restano alcune lacune da colmare, principalmente formali (atti di nomina, documenti programmatici): un percorso di consulenza mirata di 2-3 mesi può portarvi alla soglia di accreditamento.';
+    else if (pct >= 50) lettura = 'Il livello attuale è parziale: alcune funzioni di base sono presenti ma manca la formalizzazione. Per l\'accreditamento SMN o partecipare a bandi MiC strutturali, raccomandiamo un percorso di consulenza accreditamento (3-6 mesi).';
+    else lettura = 'Il vostro museo presenta lacune significative sugli Standard Minimi. È necessario un percorso di rafforzamento istituzionale (5-12 mesi) prima di candidarsi all\'SMN. Possiamo aiutarvi a costruire la roadmap di adeguamento.';
+    html += '<p style="font-size:14px;line-height:1.7;color:var(--ink-2,#3A3A3C);margin-top:8px">' + esc(lettura) + '</p>';
+    html += '</div>';
+
+    // Gap critici
+    if (result.gapCritici && result.gapCritici.length) {
+      html += '<div class="mx-section">';
+      html += '<h2>Standard Minimi non rispettati <span style="font-size:13px;color:var(--ink-3);font-weight:400">(' + result.gapCritici.length + ' lacune)</span></h2>';
+      html += '<p class="mx-section-sub">Gli SM che non risultano rispettati nel tuo museo. Ognuno è un\'azione concreta da affrontare.</p>';
+      // Raggruppa per sezione
+      var SEZIONI = { '1':'Organizzazione', '2':'Collezioni', '3':'Comunicazione' };
+      var groups = {};
+      result.gapCritici.forEach(function(g){
+        var sez = g.sezione || '?';
+        if (!groups[sez]) groups[sez] = [];
+        groups[sez].push(g);
+      });
+      html += '<div style="margin-top:16px">';
+      Object.keys(groups).sort().forEach(function(sez){
+        html += '<div style="margin-bottom:18px">';
+        html += '<h3 style="font-family:var(--font-display);font-size:1.0rem;color:var(--danger,#C2410C);margin:0 0 10px;border-bottom:1px solid #FBD0D0;padding-bottom:5px">' + esc(sez + '. ' + (SEZIONI[sez] || 'Altro')) + ' &middot; ' + groups[sez].length + ' SM da colmare</h3>';
+        groups[sez].forEach(function(g){
+          html += '<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:#FEF6F6;border:1px solid #FBD0D0;border-radius:6px;margin-bottom:6px">';
+          html += '<span style="background:var(--danger,#C2410C);color:#fff;font-family:monospace;font-size:10.5px;padding:2px 6px;border-radius:3px;flex-shrink:0;margin-top:2px">' + esc(g.id) + '</span>';
+          html += '<div style="font-size:13px;line-height:1.5;color:#5C2020"><b>' + esc(g.sottoSez) + '</b> &mdash; ' + esc(g.testo) + '</div>';
+          html += '</div>';
+        });
+        html += '</div>';
+      });
+      html += '</div>';
+      html += '</div>';
+    }
+
+    // CTA consulenza accreditamento
+    html += '<div class="mx-cta" style="background:var(--surface,#F7F7F8);border:1px solid var(--rule,#E5E5E7)">';
+    html += '<h3 style="color:var(--ink-2,#3A3A3C)">Trasformiamo le lacune in roadmap</h3>';
+    html += '<p style="color:var(--ink-2,#3A3A3C)">Una call gratuita di 30-45 minuti per definire insieme il percorso più efficace verso l\'accreditamento SMN o l\'accesso al prossimo bando MiC strutturale.</p>';
+    var ctaSubject = encodeURIComponent('[MuseMu Matrix + MiC] Consulenza accreditamento — ' + (state.museumName || 'struttura'));
+    var ctaBody = encodeURIComponent('Buongiorno,\n\nho completato il MuseMu Matrix e l\'autovalutazione MiC SM-LUQV (compliance: ' + pct + '%, ' + result.smRispettati + '/' + result.smTotali + ' SM rispettati). Vorrei una consulenza sulla roadmap di adeguamento.\n\nRif. Matrix: ' + state.responseId + '\nRif. MiC: ' + result.micId + '\n\nGrazie,\n');
+    html += '<a class="mx-btn mx-btn-primary" href="mailto:s.straccini@gmail.com?subject=' + ctaSubject + '&body=' + ctaBody + '" style="text-decoration:none;display:inline-block;background:var(--accent,#935851)">Prenota consulenza accreditamento</a>';
+    html += '</div>';
+
+    html += appendMode ? '</section>' : '</div>';
+
+    // v4.18.37 — append vs replace
+    if (appendMode) {
+      mountAnchor.innerHTML = html;
+      // Nascondi il banner di transizione (ora il report è sotto)
+      var anchorBanner = document.getElementById('mxMicAnchor');
+      if (anchorBanner) {
+        anchorBanner.innerHTML = '<div style="text-align:center;padding:8px 0;color:var(--ink-2,#3A3A3C);font-family:var(--font-ui,sans-serif);font-size:12px;letter-spacing:.14em;text-transform:uppercase">✓ Sezione MiC SM-LUQV completata &mdash; vedi report sotto</div>';
+        anchorBanner.style.padding = '14px 20px';
+      }
+      // Scrolla alla sezione appena renderizzata
+      var newSection = mountAnchor.querySelector('.mic-appended');
+      if (newSection) newSection.scrollIntoView({behavior:'smooth', block:'start'});
+    } else {
+      var fullMount = document.querySelector('#matrix-mount');
+      if (fullMount) fullMount.innerHTML = html;
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+  }
+
+  // Sprint 2 Step 4 — Listener azioni report PDF/email
+  function attachReportActionsListeners() {
+    var btnDownload = $('#mxBtnDownloadPDF');
+    var btnEmailJump = $('#mxBtnEmailJump');
+    var statusDiv = $('#mxPdfStatus');
+
+    if (btnDownload) btnDownload.addEventListener('click', function() {
+      btnDownload.disabled = true;
+      statusDiv.innerHTML = 'Preparazione del PDF in corso (può richiedere 10-20 secondi)…';
+      google.script.run
+        .withSuccessHandler(function(res) {
+          btnDownload.disabled = false;
+          if (res && res.ok) {
+            statusDiv.innerHTML = '<span style="color:var(--success,#0F7B5A)">✓ PDF pronto.</span> <a href="' + res.fileUrl + '" target="_blank" style="color:#0E7490;font-weight:600">Apri PDF →</a>';
+            window.open(res.fileUrl, '_blank');
+          } else {
+            statusDiv.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc(res && res.error || 'sconosciuto') + '</span>';
+          }
+        })
+        .withFailureHandler(function(err) {
+          btnDownload.disabled = false;
+          statusDiv.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore di rete: ' + esc(err && err.message || err) + '</span>';
+        })
+        .getMatrixReportPDFUrl(state.responseId);
+    });
+
+    if (btnEmailJump) btnEmailJump.addEventListener('click', function() {
+      // Scroll alla sezione 12 e focus sull'email
+      var emailField = $('#mxEmailInput');
+      if (emailField) {
+        emailField.scrollIntoView({behavior:'smooth', block:'center'});
+        setTimeout(function(){ emailField.focus(); }, 600);
+        statusDiv.innerHTML = 'Compila l\'email qui sotto e conferma per ricevere il PDF.';
+      }
+    });
+  }
+
+  // Sprint 2 Step 4 — Cross-link verso pagine Osservatorio Culturale
+  function attachOcCrossLinkListeners() {
+    document.querySelectorAll('.mx-oc-link').forEach(function(a) {
+      a.addEventListener('click', function(ev) {
+        ev.preventDefault();
+        var page = this.getAttribute('data-oc-page');
+        var ambito = this.getAttribute('data-oc-ambito');
+        if (window.OC && typeof window.OC.go === 'function') {
+          window.OC.go(page, ambito ? parseInt(ambito,10) : null);
+        } else {
+          // Fallback: ricarica con hash
+          window.location.hash = '#' + page + (ambito ? '/' + ambito : '');
+        }
+      });
+    });
+  }
+
+  function renderSection12HTML() {
+    var s = state.schema.section12;
+    var html = '<div class="mx-section">';
+    html += '<h2>Vuoi rimanere informato e ricevere il PDF? (opzionale)</h2>';
+    html += '<p class="mx-section-sub">Ricevi gratuitamente bandi, podcast, casi studio e — confermando qui sotto — il <b>report PDF di questa autovalutazione direttamente nella tua casella di posta</b>. Tutto opt-in granulare.</p>';
+
+    var prefs = s.items[0]; // D12.1
+    html += '<div class="mx-q">';
+    html += '<p class="mx-q-text" style="margin:0 0 10px">' + esc(prefs.text) + '</p>';
+    html += '<div class="mx-multiselect">';
+    (prefs.options || []).forEach(function(opt) {
+      var sel = state.section12.preferences[opt.value] ? 'selected' : '';
+      html += '<div class="mx-ms-item ' + sel + '" data-pref="' + esc(opt.value) + '">';
+      html += '<div class="mx-ms-check"></div><span class="mx-ms-label">' + esc(opt.label) + '</span></div>';
+    });
+    html += '</div></div>';
+
+    html += '<div class="mx-anag-row">';
+    html += '<label>Email di contatto (richiesta solo se hai selezionato almeno una preferenza)</label>';
+    html += '<input type="email" id="mxEmailInput" placeholder="es. nome@museo.it" value="' + esc(state.section12.email) + '" />';
+    html += '</div>';
+
+    html += '<label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#555;margin-top:10px;cursor:pointer">';
+    html += '<input type="checkbox" id="mxConsent"' + (state.section12.consent ? ' checked' : '') + ' style="margin-top:3px"/>';
+    html += '<span>Acconsento al trattamento dei miei dati di contatto per le finalità sopra selezionate, ai sensi del Regolamento UE 2016/679 (GDPR). So di poter revocare il consenso in qualunque momento. Il presente consenso non è condizione per consultare il report di autovalutazione.</span>';
+    html += '</label>';
+    html += '<div class="mx-anag-row" style="margin-top:10px">';
+    html += '<label>Nome del referente (opzionale, per personalizzare l\'email)</label>';
+    html += '<input type="text" id="mxNomeInput" placeholder="es. Maria Rossi" value="' + esc(state.section12.nome || '') + '" />';
+    html += '</div>';
+    html += '<button class="mx-btn mx-btn-primary" id="mxSubmitContact" style="margin-top:14px">Conferma iscrizione + ricevi PDF per email</button>';
+    html += '<div id="mxContactResult" style="margin-top:10px;font-size:13px"></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function attachSection12Listeners() {
+    document.querySelectorAll('[data-pref]').forEach(function(item) {
+      item.addEventListener('click', function() {
+        var v = this.getAttribute('data-pref');
+        state.section12.preferences[v] = !state.section12.preferences[v];
+        this.classList.toggle('selected');
+      });
+    });
+    var emailInput = $('#mxEmailInput');
+    if (emailInput) emailInput.addEventListener('input', function(){ state.section12.email = this.value.trim(); });
+    var nomeInput = $('#mxNomeInput');
+    if (nomeInput) nomeInput.addEventListener('input', function(){ state.section12.nome = this.value.trim(); });
+    var consent = $('#mxConsent');
+    if (consent) consent.addEventListener('change', function(){ state.section12.consent = this.checked; });
+    var btn = $('#mxSubmitContact');
+    if (btn) btn.addEventListener('click', submitContact);
+  }
+
+  // Sprint 2 Step 4 — submitContact ora chiama sendMatrixReportEmail
+  // (che internamente salva il contatto e invia il PDF). Una sola RPC.
+  function submitContact() {
+    var prefsKeys = Object.keys(state.section12.preferences).filter(function(k){ return state.section12.preferences[k]; });
+    var resultDiv = $('#mxContactResult');
+    if (prefsKeys.length === 0) {
+      resultDiv.innerHTML = '<span style="color:var(--danger,#C2410C)">Seleziona almeno una preferenza prima di procedere.</span>';
+      return;
+    }
+    if (!state.section12.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(state.section12.email)) {
+      resultDiv.innerHTML = '<span style="color:var(--danger,#C2410C)">Email non valida.</span>';
+      return;
+    }
+    if (!state.section12.consent) {
+      resultDiv.innerHTML = '<span style="color:var(--danger,#C2410C)">Devi acconsentire al trattamento dati per procedere.</span>';
+      return;
+    }
+    var btn = $('#mxSubmitContact');
+    if (btn) btn.disabled = true;
+    resultDiv.innerHTML = 'Generazione PDF e invio email in corso (15-25 secondi)…';
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (btn) btn.disabled = false;
+        if (result && result.ok) {
+          var msg = '<span style="color:var(--success,#0F7B5A)">✓ Iscrizione registrata e report PDF inviato a <b>' + esc(state.section12.email) + '</b>. Controlla la posta in arrivo (anche cartella Spam).</span>';
+          if (result.fileUrl) {
+            msg += '<br><a href="' + result.fileUrl + '" target="_blank" style="color:#0E7490;font-weight:600">Apri il PDF online →</a>';
+          }
+          resultDiv.innerHTML = msg;
+        } else {
+          resultDiv.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc(result && result.error || 'sconosciuto') + '</span>';
+        }
+      })
+      .withFailureHandler(function(err) {
+        if (btn) btn.disabled = false;
+        resultDiv.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore di rete: ' + esc(err && err.message || err) + '</span>';
+      })
+      .sendMatrixReportEmail({
+        responseId: state.responseId,
+        email: state.section12.email,
+        nome: state.section12.nome || null,
+        preferences: state.section12.preferences
+      });
+  }
+
+  function renderProgress(ratio) {
+    var pct = Math.min(100, Math.max(0, ratio * 100));
+    var step = '';
+    if (state.currentStep === 'intro') step = 'Inizio';
+    else if (state.currentStep === 'anagrafica') step = 'Anagrafica';
+    else if (state.currentStep === 'questions') {
+      var dim = state.schema.dimensions[state.currentDimensionIndex];
+      step = dim ? ('Dimensione ' + (state.currentDimensionIndex+1) + '/10 · ' + dim.code) : 'Domande';
+    }
+    else if (state.currentStep === 'section11') step = 'Le vostre priorità';
+    else if (state.currentStep === 'report') step = 'Report';
+    return '<div class="mx-progress"><div class="mx-progress-track"><div class="mx-progress-fill" style="width:' + pct + '%"></div></div><div class="mx-progress-text">' + esc(step) + ' · ' + Math.round(pct) + '%</div></div>';
+  }
+
+  // ====== ESPORTA OGGETTO PUBBLICO ======
+  window.OC_Matrix = {
+    init: init,
+    state: state, // utile per debug
+    // v4.18.28 — MiC SM-LUQV: handler chiamato inline dai radio/checkbox del wizard
+    _micUpdate_: _micUpdate_
+  };
+
+})();
+</script>

@@ -1,0 +1,618 @@
+/**
+ * ============================================================================
+ *  ScannerRssSpecializzato.gs — Parser RSS + ingestione bandi regionali/nazionali
+ * ============================================================================
+ *  v4.18.68 (2026-05-23)
+ *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia
+ *
+ *  Funzioni:
+ *    scanFontiUnifiedRss()       — scansione batch fonti RSS da FontiBandi_v5
+ *    normalizzaDataRss(str)      — converte formati data RSS → YYYY-MM-DD
+ *
+ *  Dipendenze: Fonti_v1.js (FU_COL, getFonteSheet, getFontiUnified)
+ *
+ *  Foglio bandi grezzi: Bandi_v5 (colonna StatoRecord = 'nuovo_da_triage')
+ *  Ogni item RSS nuovo viene salvato come "Nuovo da Triage" per il passaggio
+ *  successivo all'AI di Claude (doppio passaggio in _estraiConClaudeV5_).
+ * ============================================================================
+ */
+
+var _RSS_SCAN_LOG_PREFIX_ = '[ScannerRSS] ';
+
+// ============================================================================
+// 1. SCAN FONTI RSS UNIFICATE
+// ============================================================================
+
+/**
+ * Legge tutte le fonti RSS attive da FontiBandi_v5, scarica i feed,
+ * parsa gli <item> e salva i nuovi bandi come "Nuovo da Triage".
+ *
+ * Ogni iterazione e isolata in try/catch: un feed fallito non blocca gli altri.
+ *
+ * @param {Object} [opts] {maxFonti: number, dryRun: boolean, verbose: boolean}
+ * @return {Object} {ok, fontiProcessate, nuoviBandi, errori, skipDuplicati, dettagli[]}
+ */
+/**
+ * v4.27.80 — ENTRY-POINT SCHEDULATO del canale RSS bandi.
+ * Perché esiste: scanFontiUnifiedRss non era wirato in nessun trigger, quindi
+ * le 167 fonti di FontiBandi_v5 non venivano mai scansionate (ultimo bando RSS
+ * in produzione: 04/06/2026, verificato il 31/07). Qui si aggiunge solo la
+ * ROTAZIONE, per non sforare il limite di 6 minuti: ogni run prende le fonti
+ * non scansionate da più tempo.
+ * @param {Object} [opts] { maxFonti:45, dryRun:false }
+ */
+function bandiRssScanRotazione(opts) {
+  opts = opts || {};
+  var max = Number(opts.maxFonti) || 45;
+  var rep = scanFontiUnifiedRss({ maxFonti: max, dryRun: !!opts.dryRun, ordinaPerVecchie: true });
+  Logger.log('[bandiRssScanRotazione] fonti=' + (rep && rep.fontiProcessate) + ' nuovi=' + (rep && rep.nuoviBandi) + ' errori=' + (rep && rep.errori));
+  return rep;
+}
+
+function scanFontiUnifiedRss(opts) {
+  opts = opts || {};
+  var maxFonti = opts.maxFonti || 999;
+  var dryRun = !!opts.dryRun;
+  var verbose = opts.verbose !== false;
+
+  var report = {
+    ok: true,
+    timestamp: new Date().toISOString(),
+    fontiProcessate: 0,
+    nuoviBandi: 0,
+    errori: 0,
+    skipDuplicati: 0,
+    fontiDisabilitate: 0,
+    dettagli: []
+  };
+
+  try {
+    // 1. Carica fonti RSS attive
+    var fontiRss = _loadFontiRssAttive_();
+    if (!fontiRss || fontiRss.length === 0) {
+      report.dettagli.push({ azione: 'nessuna_fonte_rss', messaggio: 'Nessuna fonte RSS attiva trovata' });
+      Logger.log(_RSS_SCAN_LOG_PREFIX_ + 'Nessuna fonte RSS attiva.');
+      return report;
+    }
+    if (verbose) Logger.log(_RSS_SCAN_LOG_PREFIX_ + fontiRss.length + ' fonti RSS attive trovate. Max: ' + maxFonti);
+
+    // v4.27.80 — ROTAZIONE: senza ordinamento, un cap su 167 fonti scansiona
+    // sempre le stesse prime N e le altre restano al buio per sempre. Qui si
+    // mettono davanti quelle non scansionate da più tempo (UltimaScan nel
+    // foglio fonti); a parità, prima le fonti di tier alto.
+    if (opts.ordinaPerVecchie) {
+      try {
+        var _mapScan = _rssMappaUltimaScan_();
+        var _ordTier = { A: 0, B: 1, C: 2 };
+        fontiRss.sort(function (a, b) {
+          var ta = _mapScan[String(a.nome || '').toLowerCase()] || 0;
+          var tb = _mapScan[String(b.nome || '').toLowerCase()] || 0;
+          if (ta !== tb) return ta - tb;                       // più vecchia prima
+          var pa = _ordTier[(typeof frTierDaFonte === 'function') ? frTierDaFonte(a.nome, a.url) : 'C'];
+          var pb = _ordTier[(typeof frTierDaFonte === 'function') ? frTierDaFonte(b.nome, b.url) : 'C'];
+          return pa - pb;
+        });
+      } catch (eOrd) { Logger.log(_RSS_SCAN_LOG_PREFIX_ + 'ordinamento rotazione: ' + eOrd.message); }
+    }
+
+    // 2. Carica URL bandi esistenti per dedup
+    var existingUrls = _loadExistingBandiUrls_();
+
+    // 3. Itera fonti (isolate in try/catch)
+    var count = 0;
+    report.saltateNews = 0;
+    for (var i = 0; i < fontiRss.length && count < maxFonti; i++) {
+      var fonte = fontiRss[i];
+      // v4.27.84 — CANALI SEPARATI: le testate (Finestre sull'Arte, Doppiozero,
+      // Tafter, The Art Newspaper...) alimentano la sezione News, non i bandi.
+      // Un bando ha una scadenza certa e un ente che lo pubblica; un articolo
+      // no. Qui si fermano prima di entrare.
+      if (typeof frNaturaFonte === 'function' && frNaturaFonte(fonte.nome, fonte.url, fonte.tag) === 'news') {
+        report.saltateNews++;
+        continue;
+      }
+      count++;
+      report.fontiProcessate++;
+
+      try {
+        var result = _scanSingleRssFeed_(fonte, existingUrls, dryRun);
+        report.nuoviBandi += result.nuovi;
+        report.skipDuplicati += result.duplicati;
+        if (result.errore) {
+          report.errori++;
+          report.dettagli.push({ fonte: fonte.nome, errore: result.errore, failConsec: result.failConsec });
+          if (result.disabilitata) report.fontiDisabilitate++;
+        } else {
+          report.dettagli.push({ fonte: fonte.nome, nuovi: result.nuovi, duplicati: result.duplicati,
+            items: result.itemsTotali, nonProcessati: result.nonProcessati || 0,
+            ultimoItem: result.ultimoItem, giorniDaUltimoItem: result.giorniDaUltimoItem,
+            linkCampione: String(result.linkCampione || '').substring(0, 90),
+            linkTuttiUguali: (result.linkDiversi ? false : true),
+            tier: (typeof frTierDaFonte === 'function') ? frTierDaFonte(fonte.nome, fonte.url) : '?' });
+        }
+        // Aggiorna contatori sulla fonte
+        if (!dryRun) {
+          _aggiornaStatoFonte_(fonte, result);
+        }
+      } catch(eFeed) {
+        report.errori++;
+        report.dettagli.push({ fonte: fonte.nome, errore: 'CRASH: ' + eFeed.message });
+        Logger.log(_RSS_SCAN_LOG_PREFIX_ + 'CRASH su ' + fonte.nome + ': ' + eFeed.message);
+        // Incrementa fail sulla fonte
+        if (!dryRun) {
+          try { _incrementFailFonte_(fonte); } catch(_){}
+        }
+      }
+    }
+
+    if (verbose) {
+      Logger.log(_RSS_SCAN_LOG_PREFIX_ + 'Completato: ' + report.fontiProcessate + ' fonti, ' +
+        report.nuoviBandi + ' nuovi, ' + report.skipDuplicati + ' duplicati, ' +
+        report.errori + ' errori, ' + report.fontiDisabilitate + ' disabilitate');
+    }
+    return report;
+  } catch(e) {
+    Logger.log(_RSS_SCAN_LOG_PREFIX_ + 'ERRORE FATALE: ' + e.message);
+    report.ok = false;
+    report.error = e.message;
+    return report;
+  }
+}
+
+// ============================================================================
+// 2. PARSING SINGOLO FEED RSS
+// ============================================================================
+
+/**
+ * Scarica e parsa un singolo feed RSS. Salva nuovi item come bandi grezzi.
+ * @private
+ * @return {Object} {nuovi, duplicati, itemsTotali, errore?, failConsec?, disabilitata?}
+ */
+function _scanSingleRssFeed_(fonte, existingUrls, dryRun) {
+  var result = { nuovi: 0, duplicati: 0, itemsTotali: 0, errore: null, failConsec: 0, disabilitata: false };
+
+  // Fetch
+  var resp;
+  try {
+    resp = UrlFetchApp.fetch(fonte.url, {
+      muteHttpExceptions: true,
+      followRedirects: true,
+      deadline: 10,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0; +https://sinopia.netlify.app)',
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+      }
+    });
+  } catch(eNet) {
+    result.errore = 'NETWORK: ' + eNet.message;
+    result.failConsec = (fonte.failConsec || 0) + 1;
+    return result;
+  }
+
+  var code = resp.getResponseCode();
+  if (code !== 200) {
+    result.errore = 'HTTP_' + code;
+    result.failConsec = (fonte.failConsec || 0) + 1;
+    if (result.failConsec >= 3) result.disabilitata = true;
+    return result;
+  }
+
+  // Parse XML
+  var xmlText = resp.getContentText();
+  var doc;
+  try {
+    doc = XmlService.parse(xmlText);
+  } catch(eXml) {
+    result.errore = 'XML_PARSE: ' + eXml.message;
+    result.failConsec = (fonte.failConsec || 0) + 1;
+    return result;
+  }
+
+  // Estrai items (RSS 2.0 + Atom)
+  var root = doc.getRootElement();
+  var ns = root.getNamespace();
+  var items = [];
+
+  // RSS 2.0: channel > item
+  var channel = root.getChild('channel', ns) || root.getChild('channel');
+  if (channel) {
+    items = channel.getChildren('item') || [];
+  }
+  // Atom: entry
+  if (items.length === 0) {
+    var atomNs = XmlService.getNamespace('http://www.w3.org/2005/Atom');
+    items = root.getChildren('entry', atomNs);
+    if (!items || items.length === 0) items = root.getChildren('entry') || [];
+  }
+
+  result.itemsTotali = items.length;
+
+  // Processa max 30 item per feed
+  var bandiSheet = dryRun ? null : _getBandiGrezziSheet_();
+  var maxItems = Math.min(items.length, 30);
+  // v4.27.82 — DIAGNOSI FRESCHEZZA: "tutto duplicato" ha due spiegazioni
+  // opposte (feed fermo / dedup sbagliato). L'unica prova è la data
+  // dell'item più recente nel feed: se è vecchia, la fonte non pubblica più.
+  result.nonProcessati = Math.max(0, items.length - maxItems);
+  var _tsMax = 0;
+
+  for (var j = 0; j < maxItems; j++) {
+    try {
+      var item = items[j];
+      var titolo = _xmlVal_(item, 'title') || '';
+      var link = _xmlVal_(item, 'link') || '';
+      var descr = _xmlVal_(item, 'description') || _xmlVal_(item, 'summary') || '';
+      var pubDate = _xmlVal_(item, 'pubDate') || _xmlVal_(item, 'published') || _xmlVal_(item, 'updated') || '';
+
+      // Atom: link puo essere attributo href
+      if (!link) {
+        try {
+          var linkEl = item.getChild('link', XmlService.getNamespace('http://www.w3.org/2005/Atom')) || item.getChild('link');
+          if (linkEl && linkEl.getAttribute('href')) link = linkEl.getAttribute('href').getValue();
+        } catch(_){}
+      }
+
+      if (!titolo || !link) continue;
+      link = link.trim();
+
+      // v4.27.82 — traccia la data più recente vista nel feed (diagnosi freschezza)
+      try {
+        var _dIso = normalizzaDataRss(pubDate);
+        var _dt = _dIso ? new Date(_dIso) : null;
+        if (_dt && !isNaN(_dt.getTime()) && _dt.getTime() > _tsMax) _tsMax = _dt.getTime();
+      } catch (_eD) {}
+
+      // v4.27.83 — campione del link confrontato: se tutti gli item di un feed
+      // producono lo STESSO link, l'estrazione è sbagliata (si sta leggendo il
+      // link del canale, non quello dell'articolo) e il dedup scarta tutto.
+      if (!result.linkCampione) result.linkCampione = link;
+      if (result.linkCampione !== link) result.linkDiversi = true;
+
+      // Dedup
+      if (existingUrls[link.toLowerCase()]) {
+        result.duplicati++;
+        continue;
+      }
+
+      // Salva come "Nuovo da Triage"
+      if (!dryRun && bandiSheet) {
+        var id = 'BG' + Date.now() + Math.random().toString(36).substring(2, 4);
+        var dataIso = normalizzaDataRss(pubDate);
+        var sommario = _pulisciHtml_(descr).substring(0, 500);
+
+        // v4.27.80 — FIX CRITICO: qui c'era un array POSIZIONALE di 26 valori
+        // su 27 colonne. Mancava TipoBando (COL_B 9, aggiunta in v4.25) e
+        // tutto slittava di una posizione dalla colonna 9 in poi:
+        //   Scadenza  → Cofin        (il bando risultava SENZA SCADENZA)
+        //   UrlBando  → FonteNome    (il bando risultava SENZA LINK)
+        //   Status/StatoRecord/Letto/Salvato tutti spostati
+        // È lo stesso difetto già corretto in _fasSaveBando_ (v4.25.11) ma mai
+        // propagato qui. Ora la riga si costruisce PER INDICE via COL_B, quindi
+        // resta corretta anche se lo schema cambierà ancora.
+        var _nCol = (typeof COL_B_HEADERS !== 'undefined') ? COL_B_HEADERS.length : 27;
+        var _riga = new Array(_nCol);
+        for (var _i = 0; _i < _nCol; _i++) _riga[_i] = '';
+        _riga[COL_B.ID - 1]               = id;
+        _riga[COL_B.DATA_RILEVAMENTO - 1] = new Date();
+        _riga[COL_B.TITOLO - 1]           = titolo.trim().substring(0, 300);
+        _riga[COL_B.ENTE - 1]             = fonte.enteDefault || fonte.nome || '';
+        _riga[COL_B.LIVELLO - 1]          = fonte.livello || 'Vari';
+        _riga[COL_B.SETTORE - 1]          = fonte.categoria || 'Cultura';
+        _riga[COL_B.TIPO_BANDO - 1]       = (typeof _classificaTipoBando_ === 'function')
+                                            ? _classificaTipoBando_({ titolo: titolo, settore: fonte.categoria, sommario: sommario, fonteNome: fonte.nome })
+                                            : '';
+        // v4.27.84 — LA SCADENZA NON SI INVENTA. Qui veniva scritta la data di
+        // PUBBLICAZIONE dell'item RSS: un articolo del 25/07 diventava un bando
+        // "scaduto il 25/07" (437 falsi scaduti il 31/07). Un bando ha una
+        // scadenza certa o non ce l'ha: se il feed non la dichiara, la casella
+        // resta vuota e la compila il deep enrichment leggendo la pagina.
+        _riga[COL_B.SCADENZA - 1]         = '';
+        _riga[COL_B.NOTE - 1]             = dataIso ? ('pubblicato ' + dataIso) : '';
+        _riga[COL_B.FONTE_ID - 1]         = fonte.id || '';
+        _riga[COL_B.FONTE_NOME - 1]       = fonte.nome || '';
+        _riga[COL_B.URL_BANDO - 1]        = link;
+        _riga[COL_B.SOMMARIO - 1]         = sommario;
+        _riga[COL_B.STATUS - 1]           = 'nuovo_da_triage';
+        _riga[COL_B.STATO_RECORD - 1]     = 'attivo';
+        _riga[COL_B.LETTO - 1]            = false;
+        _riga[COL_B.SALVATO - 1]          = false;
+        bandiSheet.appendRow(_riga);
+        existingUrls[link.toLowerCase()] = true; // aggiorna dedup intra-scan
+      }
+      result.nuovi++;
+    } catch(eItem) {
+      Logger.log(_RSS_SCAN_LOG_PREFIX_ + 'Item error in ' + fonte.nome + ': ' + eItem.message);
+    }
+  }
+
+  // v4.27.82 — esito diagnosi freschezza del feed
+  if (_tsMax) {
+    result.ultimoItem = Utilities.formatDate(new Date(_tsMax), 'Europe/Rome', 'dd/MM/yyyy');
+    result.giorniDaUltimoItem = Math.floor((Date.now() - _tsMax) / 86400000);
+  } else {
+    result.ultimoItem = '(nessuna data nel feed)';
+    result.giorniDaUltimoItem = null;
+  }
+
+  // Reset fail counter on success
+  result.failConsec = 0;
+  return result;
+}
+
+// ============================================================================
+// 3. NORMALIZZAZIONE DATE RSS
+// ============================================================================
+
+/**
+ * Converte formati data RSS in YYYY-MM-DD.
+ * Gestisce:
+ *   - RFC 2822: "Wed, 02 Oct 2024 10:00:00 +0200"
+ *   - ISO 8601: "2024-10-02T10:00:00Z"
+ *   - GG/MM/AAAA: "02/10/2024"
+ *   - Formati italiani: "2 ottobre 2024"
+ *
+ * @param {string} dateString
+ * @return {string} YYYY-MM-DD o stringa vuota se non parsabile
+ */
+function normalizzaDataRss(dateString) {
+  if (!dateString) return '';
+  var s = String(dateString).trim();
+
+  // 1. ISO 8601 (2024-10-02T10:00:00Z)
+  var isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) return isoMatch[1] + '-' + isoMatch[2] + '-' + isoMatch[3];
+
+  // 2. GG/MM/AAAA
+  var slashMatch = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
+  if (slashMatch) return slashMatch[3] + '-' + slashMatch[2].padStart(2, '0') + '-' + slashMatch[1].padStart(2, '0');
+
+  // 3. RFC 2822 (Wed, 02 Oct 2024 10:00:00 +0200)
+  try {
+    var d = new Date(s);
+    if (!isNaN(d.getTime()) && d.getFullYear() > 2000) {
+      return Utilities.formatDate(d, 'Europe/Rome', 'yyyy-MM-dd');
+    }
+  } catch(_){}
+
+  // 4. Mesi italiani
+  var mesiIt = { 'gennaio':'01','febbraio':'02','marzo':'03','aprile':'04','maggio':'05','giugno':'06',
+    'luglio':'07','agosto':'08','settembre':'09','ottobre':'10','novembre':'11','dicembre':'12' };
+  var itMatch = s.match(/(\d{1,2})\s+(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\s+(\d{4})/i);
+  if (itMatch) {
+    var meseNum = mesiIt[itMatch[2].toLowerCase()];
+    if (meseNum) return itMatch[3] + '-' + meseNum + '-' + itMatch[1].padStart(2, '0');
+  }
+
+  return '';
+}
+
+// ============================================================================
+// 4. HELPERS PRIVATI
+// ============================================================================
+
+/**
+ * Carica fonti RSS attive dal foglio FontiBandi_v5.
+ * @private
+ */
+/**
+ * @private v4.27.80 — {nomeFonteLower: timestampUltimaScan} da FontiBandi_v5.
+ * Serve alla rotazione: 0 = mai scansionata (va per prima).
+ */
+function _rssMappaUltimaScan_() {
+  var m = {};
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName('FontiBandi_v5');
+    if (!sh || sh.getLastRow() < 2) return m;
+    var vals = sh.getDataRange().getValues();
+    var head = vals[0].map(function (h) { return String(h || '').trim(); });
+    var iNome = head.indexOf('Nome'), iScan = head.indexOf('UltimaScan');
+    if (iNome < 0 || iScan < 0) return m;
+    for (var r = 1; r < vals.length; r++) {
+      var n = String(vals[r][iNome] || '').trim().toLowerCase();
+      if (!n) continue;
+      var d = vals[r][iScan];
+      var dt = (d instanceof Date) ? d : (d ? new Date(d) : null);
+      m[n] = (dt && !isNaN(dt.getTime())) ? dt.getTime() : 0;
+    }
+  } catch (e) { Logger.log('[rssMappaUltimaScan] ' + e.message); }
+  return m;
+}
+
+function _loadFontiRssAttive_() {
+  try {
+    // Usa getFontiUnified se disponibile
+    if (typeof getFontiUnified === 'function') {
+      var res = getFontiUnified({ tipo: 'bandi', attiva: true });
+      if (res && res.ok) {
+        return res.fonti.filter(function(f) {
+          return String(f.tipoFonte || '').toUpperCase() === 'RSS';
+        });
+      }
+    }
+    // Fallback: lettura diretta
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName('FontiBandi_v5');
+    if (!sh || sh.getLastRow() < 2) return [];
+    var vals = sh.getDataRange().getValues();
+    var head = vals[0];
+    var iId = head.indexOf('ID'), iNome = head.indexOf('Nome'), iUrl = head.indexOf('URL'),
+        iTipo = head.indexOf('Tipo'), iAtt = head.indexOf('Attiva'),
+        iFail = head.indexOf('FailConsecutivi'), iEnte = head.indexOf('EnteDefault'),
+        iLiv = head.indexOf('Livello'), iCat = head.indexOf('Categoria'),
+        iTag = head.indexOf('Tag');
+    var fonti = [];
+    for (var r = 1; r < vals.length; r++) {
+      if (String(vals[r][iTipo] || '').toUpperCase() !== 'RSS') continue;
+      var att = vals[r][iAtt];
+      if (!(att === true || String(att).toUpperCase() === 'TRUE')) continue;
+      fonti.push({
+        id: String(vals[r][iId] || ''),
+        nome: String(vals[r][iNome] || ''),
+        url: String(vals[r][iUrl] || ''),
+        enteDefault: iEnte >= 0 ? String(vals[r][iEnte] || '') : '',
+        livello: iLiv >= 0 ? String(vals[r][iLiv] || '') : '',
+        categoria: iCat >= 0 ? String(vals[r][iCat] || '') : '',
+        tag: iTag >= 0 ? String(vals[r][iTag] || '') : '',
+        failConsec: iFail >= 0 ? Number(vals[r][iFail] || 0) : 0,
+        _row: r + 1
+      });
+    }
+    return fonti;
+  } catch(e) {
+    Logger.log(_RSS_SCAN_LOG_PREFIX_ + '_loadFontiRssAttive_ errore: ' + e.message);
+    return [];
+  }
+}
+
+/**
+ * Carica tutti gli URL bandi esistenti per dedup veloce.
+ * @private
+ */
+function _loadExistingBandiUrls_() {
+  var urls = {};
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName('Bandi_v5');
+    if (!sh || sh.getLastRow() < 2) return urls;
+    var vals = sh.getDataRange().getValues();
+    var head = vals[0];
+    var iUrl = head.indexOf('UrlBando');
+    if (iUrl < 0) iUrl = head.indexOf('URL');
+    if (iUrl < 0) return urls;
+    for (var r = 1; r < vals.length; r++) {
+      var u = String(vals[r][iUrl] || '').trim().toLowerCase();
+      if (u) urls[u] = true;
+    }
+  } catch(e) {
+    Logger.log(_RSS_SCAN_LOG_PREFIX_ + '_loadExistingBandiUrls_ errore: ' + e.message);
+  }
+  return urls;
+}
+
+/**
+ * Accede al foglio Bandi_v5 per salvare bandi grezzi.
+ * @private
+ */
+function _getBandiGrezziSheet_() {
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName('Bandi_v5');
+    if (sh) return sh;
+    // Crea se non esiste (fallback)
+    if (typeof _getOrCreateFontiBandiSheet_ === 'function') return _getOrCreateFontiBandiSheet_();
+    return null;
+  } catch(e) { return null; }
+}
+
+/**
+ * Estrae testo da un elemento XML (RSS/Atom).
+ * @private
+ */
+function _xmlVal_(el, tagName) {
+  try {
+    var child = el.getChild(tagName);
+    if (!child) {
+      // Prova con namespace Atom
+      var atomNs = XmlService.getNamespace('http://www.w3.org/2005/Atom');
+      child = el.getChild(tagName, atomNs);
+    }
+    return child ? child.getValue() : null;
+  } catch(_) { return null; }
+}
+
+/**
+ * Rimuove tag HTML da una stringa.
+ * @private
+ */
+function _pulisciHtml_(html) {
+  if (!html) return '';
+  return String(html)
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Aggiorna stato fonte dopo scan (UltimaScan, UltimoEsito, contatori).
+ * @private
+ */
+function _aggiornaStatoFonte_(fonte, result) {
+  if (!fonte._row) return;
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName('FontiBandi_v5');
+    if (!sh) return;
+    var head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+    var iScan = head.indexOf('UltimaScan');
+    var iEsito = head.indexOf('UltimoEsito');
+    var iRecTot = head.indexOf('NRecordTotali');
+    var iRecUlt = head.indexOf('NRecordUltimo');
+    var iFail = head.indexOf('FailConsecutivi');
+    var iAtt = head.indexOf('Attiva');
+    var iErr = head.indexOf('UltimoErrore');
+
+    var row = fonte._row;
+    // v4.28.36: batch read+write — 1 getValues + 1 setValues anziché 5-8 chiamate singole
+    var lastCol = sh.getLastColumn();
+    var rowData = sh.getRange(row, 1, 1, lastCol).getValues()[0];
+
+    if (iScan >= 0) rowData[iScan] = new Date();
+
+    if (result.errore) {
+      if (iEsito >= 0) rowData[iEsito] = result.errore.substring(0, 50);
+      if (iFail >= 0) rowData[iFail] = result.failConsec;
+      if (iErr >= 0) rowData[iErr] = result.errore;
+      if (result.disabilitata && iAtt >= 0) {
+        rowData[iAtt] = false;
+        Logger.log(_RSS_SCAN_LOG_PREFIX_ + 'DISABILITATA fonte: ' + fonte.nome + ' (' + result.failConsec + ' errori consecutivi)');
+      }
+    } else {
+      if (iEsito >= 0) rowData[iEsito] = 'OK';
+      if (iFail >= 0) rowData[iFail] = 0;
+      if (iErr >= 0) rowData[iErr] = '';
+      if (iRecUlt >= 0) rowData[iRecUlt] = result.nuovi;
+      if (iRecTot >= 0) rowData[iRecTot] = Number(rowData[iRecTot] || 0) + result.nuovi;
+    }
+    sh.getRange(row, 1, 1, lastCol).setValues([rowData]);
+  } catch(e) {
+    Logger.log(_RSS_SCAN_LOG_PREFIX_ + '_aggiornaStatoFonte_ errore: ' + e.message);
+  }
+}
+
+/**
+ * Incrementa fail counter su una fonte dopo un crash.
+ * @private
+ */
+function _incrementFailFonte_(fonte) {
+  if (!fonte._row) return;
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName('FontiBandi_v5');
+    if (!sh) return;
+    var lastCol = sh.getLastColumn();
+    var head = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+    var iFail = head.indexOf('FailConsecutivi');
+    var iAtt = head.indexOf('Attiva');
+    if (iFail >= 0) {
+      // v4.28.36: batch read+write anziché getValue/setValue singoli
+      var rowData = sh.getRange(fonte._row, 1, 1, lastCol).getValues()[0];
+      var fc = Number(rowData[iFail] || 0) + 1;
+      rowData[iFail] = fc;
+      if (fc >= 3 && iAtt >= 0) {
+        rowData[iAtt] = false;
+        Logger.log(_RSS_SCAN_LOG_PREFIX_ + 'DISABILITATA (crash): ' + fonte.nome);
+      }
+      sh.getRange(fonte._row, 1, 1, lastCol).setValues([rowData]);
+    }
+  } catch(_){}
+}
+
+// ============================================================================
+// FINE ScannerRssSpecializzato.gs
+// ============================================================================

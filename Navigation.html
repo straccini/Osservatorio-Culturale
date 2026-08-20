@@ -1,0 +1,409 @@
+<!--
+  ============================================================
+  OSSERVATORIO CULTURALE — NAVIGATION.HTML (v4.2 redesign)
+  ------------------------------------------------------------
+  File GAS: "Navigation"
+  Include nel Index.html DOPO il markup.
+  ------------------------------------------------------------
+  Espone oggetto globale OC con API:
+      OC.go(page, ambitoId)
+      OC.hydrate()              — carica dati iniziali (home + badge)
+      OC.loadAmbito(id)
+      OC.search(query)
+      OC.filterBandi(preset)
+      OC.openBando(id) / openNews(id) / openPodcast(id)
+      OC.setUser(user)          — aggiorna avatar + ruolo + visibilita
+      OC.openGuida() / openNotifiche() / openUserMenu()
+  ============================================================
+-->
+<script>
+(function(){
+  'use strict';
+
+  // -------- Config --------
+  var PAGE_TITLES = {
+    home:'Home', bandi:'Radar Bandi', news:'News', podcast:'Podcast',
+    ambito:'Ambito', digest:'Digest Reader', data:'Gestione Dati',
+    stats:'Statistiche', settings:'Impostazioni'
+  };
+
+  // 5 ambiti reali (coerenti con AMBITO_LABEL/AMBITO_COLOR in Code.gs)
+  var AMBITI = {
+    1:{nome:'Tendenze museali',        color:'var(--amb-1)'},
+    2:{nome:'Accessibilita / Gaming',  color:'var(--amb-2)'},
+    3:{nome:'Mostre / Exhibition',     color:'var(--amb-3)'},
+    4:{nome:'Progetti comunita',       color:'var(--amb-4)'},
+    5:{nome:'AI per la Cultura',       color:'var(--amb-5)'}
+  };
+
+  // -------- Helper sicurezza --------
+  function esc(s){
+    return String(s==null?'':s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function $(id){ return document.getElementById(id); }
+  function $$(sel, root){ return (root||document).querySelectorAll(sel); }
+
+  // ==========================================================
+  //  A) NAVIGAZIONE SPA
+  // ==========================================================
+  function go(page, ambito){
+    // 1. Attiva pagina target
+    var pages = $$('.page');
+    for (var i=0;i<pages.length;i++) pages[i].classList.remove('active');
+    var target = $('page-'+page);
+    if (target) target.classList.add('active');
+
+    // 2. Aggiorna nav-item attivo
+    var navs = $$('.nav-item');
+    for (var j=0;j<navs.length;j++) navs[j].classList.remove('active');
+    var sel = '.nav-item[data-page="'+page+'"]';
+    if (page==='ambito' && ambito) sel += '[data-ambito="'+ambito+'"]';
+    var nav = document.querySelector(sel);
+    if (nav) {
+      nav.classList.add('active');
+      nav.setAttribute('aria-current','page');
+    }
+
+    // 3. Breadcrumb
+    var crumb = $('breadcrumb');
+    if (crumb) {
+      if (page==='ambito' && ambito && AMBITI[ambito]){
+        crumb.innerHTML =
+          '<span>Osservatorio</span><span class="sep">/</span>'+
+          '<span>Ambiti</span><span class="sep">/</span>'+
+          '<b>'+esc(AMBITI[ambito].nome)+'</b>';
+      } else {
+        crumb.innerHTML =
+          '<span>Osservatorio</span><span class="sep">/</span>'+
+          '<b>'+esc(PAGE_TITLES[page]||'Home')+'</b>';
+      }
+    }
+
+    // 4. Aggiorna hero ambito se presente
+    if (page==='ambito' && ambito && AMBITI[ambito]) {
+      var hero = $('ambitoHero');
+      if (hero) hero.style.setProperty('--amb', AMBITI[ambito].color);
+      var e = $('ambitoEyebrow');  if (e) e.textContent = 'Ambito 0'+ambito;
+      var n = $('ambitoName');     if (n) n.textContent = AMBITI[ambito].nome;
+      loadAmbito(ambito);
+    }
+
+    // 5. UX
+    window.scrollTo({top:0, behavior:'smooth'});
+    var sb = $('sidebar');
+    if (sb) sb.classList.remove('open');
+  }
+
+  // ==========================================================
+  //  B) DATA LOADER (google.script.run → Addon_v42.gs)
+  // ==========================================================
+
+  function hasGAS(){
+    return typeof google !== 'undefined' && google.script && google.script.run;
+  }
+
+  function hydrate(){
+    // Popola Home + badge sidebar all'avvio.
+    if (!hasGAS()) { return; }
+    google.script.run
+      .withSuccessHandler(function(data){
+        if (!data) return;
+        renderHome(data);
+        renderSidebarBadges(data.badges || {});
+      })
+      .withFailureHandler(function(err){
+        console.error('getHomepageDataV42:', err);
+      })
+      .getHomepageDataV42();
+  }
+
+  function loadAmbito(ambitoId){
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(renderAmbito)
+      .withFailureHandler(function(err){ console.error('getAmbitoDataV42:',err); })
+      .getAmbitoDataV42(ambitoId);
+  }
+
+  // ==========================================================
+  //  C) RENDERING
+  // ==========================================================
+
+  function renderHome(d){
+    // Data oggi
+    var t = $('homeDataOggi');
+    if (t && d.dataOggi) t.textContent = d.dataOggi;
+
+    // Bandi urgenti
+    renderBandiUrgenti(d.bandiUrgenti || []);
+    var totBandi = (d.badges && d.badges.bandi) != null ? d.badges.bandi : (d.bandiUrgenti||[]).length;
+    var tb = $('homeBandiTotCount'); if (tb) tb.textContent = totBandi;
+
+    // Contatori ambiti
+    renderAmbitiCounters(d.ambiti || []);
+
+    // News
+    renderNewsList(d.news || []);
+
+    // Podcast
+    renderPodcastList(d.podcast || []);
+
+    // Scanner
+    var s = d.scanner || {};
+    var el;
+    el = $('stat-fonti');       if (el) el.textContent = s.fonti || 0;
+    el = $('stat-articoli');    if (el) el.textContent = s.articoliMese || 0;
+    el = $('stat-bandi');       if (el) el.textContent = s.bandiAttivi || 0;
+    el = $('stat-accuratezza'); if (el) el.textContent = (s.accuratezza || 0) + '%';
+  }
+
+  function renderBandiUrgenti(list){
+    var wrap = $('homeBandiUrgenti');
+    if (!wrap) return;
+    if (!list.length) {
+      wrap.innerHTML = '';
+      var em = $('homeBandiEmpty'); if (em) em.hidden = false;
+      return;
+    }
+    var em2 = $('homeBandiEmpty'); if (em2) em2.hidden = true;
+
+    var html = '';
+    list.forEach(function(b){
+      var prioCls = b.priorita==='med' ? 'prio-med' : (b.priorita==='low' ? 'prio-low' : '');
+      var prioLbl = b.priorita==='urgent' ? 'Urgente' : (b.priorita==='med' ? 'Medio' : 'Standard');
+      html += ''
+        + '<div class="bando-card '+prioCls+'" onclick="OC.openBando(\''+esc(b.id)+'\')">'
+        +   '<div class="bando-meta">'
+        +     '<span class="tag '+esc(b.priorita)+'">'+prioLbl+' · '+esc(b.giorni)+' giorni</span>'
+        +     '<span>'+esc(b.ente)+'</span>'
+        +   '</div>'
+        +   '<h3 class="bando-title">'+esc(b.titolo)+'</h3>'
+        +   '<div class="bando-footer">'
+        +     '<span>'+esc(b.settore||b.ambito||'')+(b.importo?' · '+esc(b.importo):'')+'</span>'
+        +     '<span class="days">Scade '+esc(b.scadenza)+'</span>'
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function renderAmbitiCounters(list){
+    list.forEach(function(a){
+      var id = a.id;
+      setCount('news', id, a.news);
+      setCount('bandi', id, a.bandi);
+      setCount('podcast', id, a.podcast);
+
+      var nn = document.querySelector('[data-new="'+id+'"]');
+      if (nn) {
+        if (a.nuoviOggi > 0) { nn.hidden = false; nn.textContent = '+' + a.nuoviOggi + ' oggi'; }
+        else { nn.hidden = true; }
+      }
+    });
+  }
+  function setCount(kind, amb, val){
+    var el = document.querySelector('[data-count="'+kind+'"][data-amb="'+amb+'"]');
+    if (el) el.textContent = val || 0;
+  }
+
+  function renderNewsList(list){
+    var wrap = $('homeNewsList');
+    if (!wrap) return;
+    if (!list.length) {
+      wrap.innerHTML = '';
+      var em = $('homeNewsEmpty'); if (em) em.hidden = false;
+      return;
+    }
+    var em2 = $('homeNewsEmpty'); if (em2) em2.hidden = true;
+
+    var html = '';
+    list.forEach(function(n, idx){
+      var num = String(idx+1); if (num.length<2) num = '0'+num;
+      html += ''
+        + '<div class="news-row" onclick="OC.openNews(\''+esc(n.id)+'\')">'
+        +   '<div class="news-num">'+num+'</div>'
+        +   '<div class="news-body">'
+        +     '<div class="news-tags">'
+        +       '<span class="news-tag" style="background:'+esc(n.ambitoColor)+'">'+esc(n.ambitoLbl)+'</span>'
+        +     '</div>'
+        +     '<h4 class="news-title">'+esc(n.titolo)+'</h4>'
+        +     '<div class="news-meta"><b>'+esc(n.fonte)+'</b> · '+esc(n.data)+' · Lettura '+esc(n.lettura)+' min</div>'
+        +   '</div>'
+        +   '<span class="news-score">AI '+esc(n.score)+'</span>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function renderPodcastList(list){
+    var wrap = $('homePodcastList');
+    if (!wrap) return;
+    if (!list.length) {
+      wrap.innerHTML = '';
+      var em = $('homePodcastEmpty'); if (em) em.hidden = false;
+      return;
+    }
+    var em2 = $('homePodcastEmpty'); if (em2) em2.hidden = true;
+
+    var html = '';
+    list.forEach(function(p){
+      html += ''
+        + '<div class="pod-item" onclick="OC.openPodcast(\''+esc(p.id)+'\')">'
+        +   '<div class="pod-cover">'
+        +     '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>'
+        +   '</div>'
+        +   '<div class="pod-body">'
+        +     '<h4 class="pod-title">'+esc(p.titolo)+'</h4>'
+        +     '<div class="pod-meta">'+esc(p.fonte)+' · '+esc(p.durata)+'</div>'
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function renderSidebarBadges(b){
+    // Badge numerici sidebar (mostra solo se > 0)
+    setBadge('badge-bandi', b.bandi);
+    setBadge('badge-bandi-urgenti', b.bandiUrgenti);
+    setBadge('badge-news', b.news);
+    setBadge('badge-podcast', b.podcast);
+    setBadge('badge-notifiche', b.bandiUrgenti);
+
+    var amb = b.ambiti || {};
+    for (var i=1;i<=5;i++) setBadge('badge-amb-'+i, amb[i]);
+  }
+  function setBadge(id, val){
+    var el = $(id); if (!el) return;
+    val = Number(val||0);
+    if (val > 0) { el.textContent = val; el.hidden = false; }
+    else { el.hidden = true; }
+  }
+
+  function renderAmbito(data){
+    // Callback per pagina ambito: popola liste specifiche se i contenitori esistono.
+    if (!data) return;
+    if (window.console) console.log('Ambito '+data.ambitoId+':', data);
+    var nodeN = $('ambitoNewsList');
+    var nodeB = $('ambitoBandiList');
+    var nodeP = $('ambitoPodcastList');
+    // Implementazione minima — da estendere in AmbitoView.html:
+    if (nodeN) nodeN.setAttribute('data-count', (data.news||[]).length);
+    if (nodeB) nodeB.setAttribute('data-count', (data.bandi||[]).length);
+    if (nodeP) nodeP.setAttribute('data-count', (data.podcast||[]).length);
+  }
+
+  // ==========================================================
+  //  D) GESTIONE UTENTE & RUOLO
+  // ==========================================================
+  function setUser(user){
+    if (!user) return;
+    var ini = user.iniziali || (user.nome ? (user.nome[0]||'·').toUpperCase() : '·');
+    var el;
+    el = $('userInitials');        if (el) el.textContent = ini;
+    el = $('userName');            if (el) el.textContent = user.nome || 'Ospite';
+    el = $('userRole');            if (el) el.textContent = user.ruolo || 'lettore';
+    el = $('topbarUserInitials');  if (el) el.textContent = ini;
+    el = $('topbarUserName');      if (el) el.textContent = user.nome || 'Ospite';
+    el = $('topbarUserRole');      if (el) el.textContent = user.ruolo || 'lettore';
+
+    var ruolo = (user.ruolo||'lettore').toLowerCase();
+    var str = $('nav-strumenti');
+    var anyStrumento = false;
+
+    $$('#nav-strumenti [data-role]').forEach(function(item){
+      var allowed = item.dataset.role.split(',').map(function(s){return s.trim();});
+      if (allowed.indexOf(ruolo) !== -1) { item.hidden = false; anyStrumento = true; }
+      else item.hidden = true;
+    });
+    if (str) str.hidden = !anyStrumento;
+  }
+
+  // ==========================================================
+  //  E) EVENT HANDLERS
+  // ==========================================================
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('[data-page]');
+    if (el) {
+      e.preventDefault();
+      go(el.dataset.page, el.dataset.ambito);
+      return;
+    }
+    el = e.target.closest('[data-goto]');
+    if (el) { e.preventDefault(); go(el.dataset.goto); return; }
+    el = e.target.closest('[data-action]');
+    if (el) {
+      var act = el.dataset.action;
+      if (OC[act] && typeof OC[act]==='function') { e.preventDefault(); OC[act](); }
+    }
+  });
+
+  // Toggle sidebar mobile
+  var tog = $('toggleSidebar');
+  if (tog) tog.addEventListener('click', function(){
+    var sb = $('sidebar'); if (sb) sb.classList.toggle('open');
+  });
+
+  // Keyboard shortcut ⌘K / Ctrl+K
+  document.addEventListener('keydown', function(e){
+    if ((e.metaKey||e.ctrlKey) && e.key && e.key.toLowerCase()==='k'){
+      e.preventDefault();
+      var s = $('globalSearch') || $('heroSearch');
+      if (s) s.focus();
+    }
+    if (e.key==='Escape'){
+      var sb = $('sidebar'); if (sb) sb.classList.remove('open');
+    }
+  });
+
+  // ==========================================================
+  //  F) API pubblica OC
+  // ==========================================================
+  window.OC = {
+    go: go,
+    hydrate: hydrate,
+    loadAmbito: loadAmbito,
+    setUser: setUser,
+
+    search: function(q){
+      if (!q) return;
+      go('news'); // fallback visuale in attesa vista risultati
+      if (hasGAS()) {
+        google.script.run
+          .withSuccessHandler(function(results){
+            console.log('Ricerca "'+q+'":', results);
+            // TODO: renderSearchResults(results) quando pronta una SearchView
+          })
+          .withFailureHandler(console.error)
+          .getGlobalSearchV42(q);
+      }
+    },
+
+    filterBandi: function(preset){
+      go('bandi');
+      setTimeout(function(){
+        var chips = $$('#page-bandi .filter-chip');
+        for (var i=0;i<chips.length;i++){
+          if (chips[i].dataset.filter===preset) chips[i].click();
+        }
+      }, 100);
+    },
+
+    openBando:    function(id){ go('bandi');   },
+    openNews:     function(id){ go('news');    },
+    openPodcast:  function(id){ go('podcast'); },
+    openGuida:    function(){ window.open('https://duemilamusei.it/osservatorio/guida','_blank'); },
+    openNotifiche:function(){ OC.filterBandi('urgenti'); },
+    openUserMenu: function(){ /* dropdown da implementare */ }
+  };
+
+  // Auto-hydrate al DOMContentLoaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', hydrate);
+  } else {
+    hydrate();
+  }
+
+})();
+</script>

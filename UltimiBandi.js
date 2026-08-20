@@ -1,0 +1,709 @@
+/**
+ * ============================================================
+ *  OSSERVATORIO CULTURALE — PATCH v4.3
+ *  Endpoint nuovi:
+ *    - getUltimiBandiMonitorati(n)   → Home: card Ultimi bandi
+ *    - getBandiListV42(limit)        → page-bandi
+ *    - getNewsListV42(limit)         → page-news
+ *    - getPodcastListV42(limit)      → page-podcast
+ *  Da incollare IN CODA ad Addon_v42.gs.
+ * ============================================================
+ */
+
+// v4.22 PERF — timezone hoisted (evita 1 service call per riga bando)
+var _UB_TZ_ = null;
+function _ubTz_() { if (!_UB_TZ_) { try { _UB_TZ_ = Session.getScriptTimeZone(); } catch(_){} _UB_TZ_ = _UB_TZ_ || 'Europe/Rome'; } return _UB_TZ_; }
+
+// ------------------------------------------------------------
+//  1) Ultimi bandi monitorati (card Home)
+// ------------------------------------------------------------
+function getUltimiBandiMonitorati(limit) {
+  // v4.27.32: fonte unica Bandi_v5 — rimosso branch legacy RADAR BANDI
+  return (typeof getUltimiBandiV5 === 'function') ? getUltimiBandiV5(limit) : [];
+}
+
+// ------------------------------------------------------------
+//  2) Elenco completo bandi (page-bandi)
+// ------------------------------------------------------------
+function getBandiListV42(limit) {
+  // v4.27.32: fonte unica Bandi_v5 — rimosso branch legacy RADAR BANDI
+  return (typeof getBandiV5 === 'function') ? getBandiV5(limit) : [];
+}
+
+// ------------------------------------------------------------
+//  3) Elenco news (page-news) — dal foglio Items (SH.ITEMS)
+// ------------------------------------------------------------
+function getNewsListV42(limit) {
+  try {
+    var n = Number(limit) || 500;
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActive();
+    var sheetName = (typeof SH !== 'undefined' && SH && SH.ITEMS) ? SH.ITEMS : 'Items';
+    var sh = ss.getSheetByName(sheetName);
+    if (!sh) return [];
+    var vals = sh.getDataRange().getValues();
+    if (vals.length < 2) return [];
+    var head = vals[0].map(function(h){ return String(h||'').trim(); });
+
+    // Mapping nomi colonne flessibile (Items v3.x)
+    var iTit   = _findCol_(head, ['Titolo','Title','title']);
+    var iLink  = _findCol_(head, ['FonteURL','Link','URL','Url','url']);
+    var iData  = _findCol_(head, ['DataPubblicazione','Data','Data_Rilevamento','PubDate','Pub_Date','Published']);
+    var iFonte = _findCol_(head, ['Fonte','Source','Feed','Pub']);
+    var iSett  = _findCol_(head, ['Settore','Tematica','Category','Categoria']);
+    var iAmb   = _findCol_(head, ['Ambito','Ambito_ID','Ambito_Tematico']);
+    if (iTit < 0) iTit = 1;
+
+    var iArch  = _findCol_(head, ['Archiviato','archiviato','ARCHIVIATO']);
+    var iScore = _findCol_(head, ['Score','score','SCORE','ScoreAI']);
+    var iSomm  = _findCol_(head, ['Sommario','SommarioAI','Descrizione','Description','Summary','Estratto']);
+    var iSalv  = _findCol_(head, ['Salvato','salvato','SALVATO','Saved']);
+    var iReg   = _findCol_(head, ['Regione','regione','REGIONE','Region']);
+    var out = [];
+    var sette_fa = new Date(Date.now() - 7 * 86400000);
+    // v4.18.15 (2026-05-12) D — Dedup news: stessa URL canonicalizzata (fallback titolo+fonte).
+    // Il foglio Items può contenere righe duplicate (lo scanner non garantisce unicità).
+    var seenK = {};
+    for (var r=1; r<vals.length; r++){
+      var row = vals[r];
+      if (!row[iTit]) continue;
+      if (iArch >= 0 && (row[iArch] === true || row[iArch] === 'TRUE' || row[iArch] === 1)) continue;
+      // Calcolo chiave dedup
+      var urlVal = iLink >= 0 ? String(row[iLink] || '').trim().toLowerCase().replace(/\/+$/, '') : '';
+      var fonteVal = iFonte >= 0 ? String(row[iFonte] || '').trim().toLowerCase() : '';
+      var titVal = String(row[iTit] || '').trim().toLowerCase();
+      var key = urlVal || (titVal + '|' + fonteVal);
+      if (key && seenK[key]) continue; // skip duplicato
+      if (key) seenK[key] = true;
+      var rawData = iData >= 0 ? row[iData] : '';
+      var dataObj = (rawData instanceof Date) ? rawData : (rawData ? new Date(rawData) : null);
+      var salvVal = iSalv >= 0 ? row[iSalv] : false;
+      out.push({
+        id     : String(r),
+        titolo : row[iTit],
+        link   : iLink>=0  ? row[iLink]  : '',
+        data   : rawData,
+        dataObj: dataObj,
+        fonte  : iFonte>=0 ? row[iFonte] : '',
+        settore: iSett>=0  ? row[iSett]  : '',
+        ambito : iAmb>=0   ? row[iAmb]   : '',
+        score  : iScore>=0 ? Math.round(Number(row[iScore])||0) : 0,
+        sommario: iSomm>=0 ? String(row[iSomm]||'') : '',
+        salvato: salvVal === true || salvVal === 'TRUE' || salvVal === 1 || String(salvVal).toLowerCase() === 'true',
+        regione: iReg>=0   ? String(row[iReg]||'') : ''
+      });
+    }
+    out.sort(function(a,b){
+      var da = a.dataObj ? a.dataObj.getTime() : 0;
+      var db = b.dataObj ? b.dataObj.getTime() : 0;
+      return db - da;
+    });
+    return out.slice(0, n).map(function(x){
+      var isRecente = x.dataObj && x.dataObj >= sette_fa;
+      return {
+        id       : x.id,
+        titolo   : String(x.titolo||''),
+        link     : String(x.link||''),
+        data     : _fmtBreveUB_(x.data),
+        fonte    : String(x.fonte||''),
+        settore  : String(x.settore||''),
+        ambito   : String(x.ambito||''),
+        score    : x.score,
+        sommario : String(x.sommario||''),
+        isRecente: isRecente,
+        salvato  : !!x.salvato,
+        regione  : String(x.regione||'')
+      };
+    });
+  } catch (e) { Logger.log('getNewsListV42: ' + (e && e.message || e)); return []; }
+}
+
+// ------------------------------------------------------------
+//  4) Elenco podcast (page-podcast) — dal foglio Podcast
+// ------------------------------------------------------------
+function getPodcastListV42(limit) {
+  try {
+    var n = Number(limit) || 300;
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActive();
+    var sheetName = (typeof SH !== 'undefined' && SH && SH.PODCAST) ? SH.PODCAST : 'Podcast';
+    var sh = ss.getSheetByName(sheetName);
+    if (!sh) return [];
+    var vals = sh.getDataRange().getValues();
+    if (vals.length < 2) return [];
+    var head = vals[0].map(function(h){ return String(h||'').trim(); });
+
+    var iTit    = _findCol_(head, ['Titolo','Title','Episodio']);
+    var iShow   = _findCol_(head, ['Serie','Fonte','Podcast','Show','Podcast_Name','Nome_Podcast']);
+    var iLink   = _findCol_(head, ['Link','URL','Url']);
+    var iData   = _findCol_(head, ['DataPubblicazione','Data','Data_Pubblicazione','PubDate']);
+    var iDurata = _findCol_(head, ['Durata','Duration']);
+    var iTema   = _findCol_(head, ['Tematica','Settore','Topic','Category']);
+    var iAmb    = _findCol_(head, ['Ambito','Ambito_ID','Ambito_Tematico']);
+    var iStato  = _findCol_(head, ['StatoRecord','Stato_Record','stato_record','STATO_RECORD']);
+    var iScore  = _findCol_(head, ['Score','score','SCORE']);
+    var iSalv   = _findCol_(head, ['Salvato','salvato','SALVATO','Saved']);
+    if (iTit < 0) iTit = 1;
+
+    var sette_fa = new Date(Date.now() - 7 * 86400000);
+    var out = [];
+    for (var r=1; r<vals.length; r++){
+      var row = vals[r];
+      if (!row[iTit]) continue;
+      // filtra archiviati
+      if (iStato >= 0) {
+        var st = String(row[iStato]||'').toLowerCase();
+        if (st === 'archiviato') continue;
+      }
+      var rawData = iData >= 0 ? row[iData] : '';
+      var salvPod = iSalv >= 0 ? row[iSalv] : false;
+      out.push({
+        id      : String(r),
+        titolo  : row[iTit],
+        show    : iShow>=0   ? row[iShow]   : '',
+        link    : iLink>=0   ? row[iLink]   : '',
+        data    : rawData,
+        durata  : iDurata>=0 ? row[iDurata] : '',
+        tematica: iTema>=0   ? row[iTema]   : '',
+        ambito  : iAmb>=0    ? row[iAmb]    : '',
+        score   : iScore>=0  ? Math.round(Number(row[iScore])||0) : 0,
+        salvato : salvPod === true || salvPod === 'TRUE' || salvPod === 1 || String(salvPod).toLowerCase() === 'true'
+      });
+    }
+    out.sort(function(a,b){
+      var da = a.data instanceof Date ? a.data.getTime() : 0;
+      var db = b.data instanceof Date ? b.data.getTime() : 0;
+      return db - da;
+    });
+    return out.slice(0, n).map(function(x){
+      var dataObj = x.data instanceof Date ? x.data : (x.data ? new Date(x.data) : null);
+      return {
+        id       : x.id,
+        titolo   : String(x.titolo||''),
+        show     : String(x.show||''),
+        link     : String(x.link||''),
+        data     : _fmtBreveUB_(x.data),
+        durata   : String(x.durata||''),
+        tematica : String(x.tematica||''),
+        ambito   : String(x.ambito||''),
+        score    : x.score,
+        isRecente: !!(dataObj && !isNaN(dataObj.getTime()) && dataObj >= sette_fa),
+        salvato  : !!x.salvato
+      };
+    });
+  } catch (e) { Logger.log('getPodcastListV42: ' + (e && e.message || e)); return []; }
+}
+
+// ------------------------------------------------------------
+//  5) Elenco libri/pubblicazioni (page-libri) — dal foglio Pubblicazioni
+// ------------------------------------------------------------
+function getLibriListV42(limit) {
+  try {
+    var n = Number(limit) || 500;
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActive();
+    var sheetName = (typeof SH !== 'undefined' && SH && SH.LIBRI) ? SH.LIBRI : 'Pubblicazioni';
+    var sh = ss.getSheetByName(sheetName);
+    if (!sh) return [];
+    var vals = sh.getDataRange().getValues();
+    if (vals.length < 2) return [];
+    var head = vals[0].map(function(h){ return String(h||'').trim(); });
+
+    var iTit  = _findCol_(head, ['Titolo','Title']);
+    var iAut  = _findCol_(head, ['Autore','Author','Autori']);
+    var iEdit = _findCol_(head, ['Editore','Editrice','Publisher']);
+    var iAnno = _findCol_(head, ['Anno','Year','AnnoPublicazione']);
+    var iAmb  = _findCol_(head, ['Ambito','Ambito_ID']);
+    var iTema = _findCol_(head, ['Tematica','Settore','Topic']);
+    var iDesc = _findCol_(head, ['Descrizione','Description','Sommario','Abstract']);
+    var iLink = _findCol_(head, ['Link','URL','Url']);
+    var iCop  = _findCol_(head, ['Copertina_URL','Cover','Copertina']);
+    var iData = _findCol_(head, ['DataAggiunta','DataAcquisizione','Data']);
+    var iFon  = _findCol_(head, ['Fonte','Source']);
+    var iStat = _findCol_(head, ['Stato','StatoRecord','stato']);
+    var iScor = _findCol_(head, ['Score','score','SCORE']);
+    var iSalv = _findCol_(head, ['Salvato','salvato','SALVATO','Saved']);
+    if (iTit < 0) iTit = 1;
+
+    var trenta_fa = new Date(Date.now() - 30 * 86400000);
+    var out = [];
+    for (var r = 1; r < vals.length; r++) {
+      var row = vals[r];
+      if (!row[iTit]) continue;
+      if (iStat >= 0) {
+        var st = String(row[iStat]||'').toLowerCase();
+        if (st === 'archiviato') continue;
+      }
+      var rawData = iData >= 0 ? row[iData] : '';
+      var dataObj = (rawData instanceof Date) ? rawData : (rawData ? new Date(rawData) : null);
+      var salvLibro = iSalv >= 0 ? row[iSalv] : false;
+      out.push({
+        id         : String(r),
+        titolo     : row[iTit],
+        autore     : iAut>=0  ? row[iAut]  : '',
+        editore    : iEdit>=0 ? row[iEdit] : '',
+        anno       : iAnno>=0 ? row[iAnno] : '',
+        ambito     : iAmb>=0  ? row[iAmb]  : '',
+        tematica   : iTema>=0 ? row[iTema] : '',
+        descrizione: iDesc>=0 ? String(row[iDesc]||'') : '',
+        link       : iLink>=0 ? row[iLink] : '',
+        copertina  : iCop>=0  ? row[iCop]  : '',
+        fonte      : iFon>=0  ? row[iFon]  : '',
+        score      : iScor>=0 ? Math.round(Number(row[iScor])||0) : 0,
+        dataObj    : dataObj,
+        salvato    : salvLibro === true || salvLibro === 'TRUE' || salvLibro === 1 || String(salvLibro).toLowerCase() === 'true'
+      });
+    }
+    out.sort(function(a,b){
+      var da = a.dataObj ? a.dataObj.getTime() : 0;
+      var db = b.dataObj ? b.dataObj.getTime() : 0;
+      return db - da;
+    });
+    return out.slice(0, n).map(function(x){
+      return {
+        id         : x.id,
+        titolo     : String(x.titolo||''),
+        autore     : String(x.autore||''),
+        editore    : String(x.editore||''),
+        anno       : String(x.anno||''),
+        ambito     : String(x.ambito||''),
+        tematica   : String(x.tematica||''),
+        descrizione: String(x.descrizione||''),
+        link       : String(x.link||''),
+        copertina  : String(x.copertina||''),
+        fonte      : String(x.fonte||''),
+        score      : x.score,
+        dataAggiunta: _fmtBreveUB_(x.dataObj),
+        isRecente  : !!(x.dataObj && !isNaN(x.dataObj.getTime()) && x.dataObj >= trenta_fa),
+        salvato    : !!x.salvato
+      };
+    });
+  } catch(e) { Logger.log('getLibriListV42: ' + (e && e.message || e)); return []; }
+}
+
+// ------------------------------------------------------------
+//  6) Elenco video YouTube (page-video) — dal foglio Podcast, ID=VID*
+// ------------------------------------------------------------
+function getVideoListV42(limit) {
+  try {
+    var n = Number(limit) || 300;
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActive();
+    var sheetName = (typeof SH !== 'undefined' && SH && SH.PODCAST) ? SH.PODCAST : 'Podcast';
+    var sh = ss.getSheetByName(sheetName);
+    if (!sh) return [];
+    var vals = sh.getDataRange().getValues();
+    if (vals.length < 2) return [];
+    var head = vals[0].map(function(h){ return String(h||'').trim(); });
+
+    var iTit   = _findCol_(head, ['Titolo','Title']);
+    var iCanale= _findCol_(head, ['Serie','Fonte','Podcast','Show']);
+    var iLink  = _findCol_(head, ['Link','URL','Url']);
+    var iData  = _findCol_(head, ['DataPubblicazione','Data','Data_Pubblicazione','PubDate']);
+    var iTema  = _findCol_(head, ['Tematica','Settore','Topic','Category']);
+    var iAmb   = _findCol_(head, ['Ambito','Ambito_ID','Ambito_Tematico']);
+    var iStato = _findCol_(head, ['StatoRecord','Stato_Record','stato_record','STATO_RECORD']);
+    var iScore = _findCol_(head, ['Score','score','SCORE']);
+    var iSalv  = _findCol_(head, ['Salvato','salvato','SALVATO','Saved']);
+    if (iTit < 0) iTit = 2;
+
+    var sette_fa = new Date(Date.now() - 7 * 86400000);
+    var out = [];
+    for (var r=1; r<vals.length; r++){
+      var row = vals[r];
+      if (!row[iTit]) continue;
+      // solo video (ID inizia con VID)
+      if (String(row[0]).indexOf('VID') !== 0) continue;
+      // filtra archiviati
+      if (iStato >= 0) {
+        var st = String(row[iStato]||'').toLowerCase();
+        if (st === 'archiviato') continue;
+      }
+      var rawData = iData >= 0 ? row[iData] : '';
+      var salvVid = iSalv >= 0 ? row[iSalv] : false;
+      out.push({
+        id     : String(r),
+        titolo : row[iTit],
+        canale : iCanale>=0 ? row[iCanale] : '',
+        link   : iLink>=0   ? row[iLink]   : '',
+        data   : rawData,
+        tematica: iTema>=0  ? row[iTema]   : '',
+        ambito : iAmb>=0    ? row[iAmb]    : '',
+        score  : iScore>=0  ? Math.round(Number(row[iScore])||0) : 0,
+        salvato: salvVid === true || salvVid === 'TRUE' || salvVid === 1 || String(salvVid).toLowerCase() === 'true'
+      });
+    }
+    out.sort(function(a,b){
+      var da = a.data instanceof Date ? a.data.getTime() : 0;
+      var db = b.data instanceof Date ? b.data.getTime() : 0;
+      return db - da;
+    });
+    return out.slice(0, n).map(function(x){
+      var dataObj = x.data instanceof Date ? x.data : (x.data ? new Date(x.data) : null);
+      return {
+        id      : x.id,
+        titolo  : String(x.titolo||''),
+        canale  : String(x.canale||''),
+        link    : String(x.link||''),
+        data    : _fmtBreveUB_(x.data),
+        tematica: String(x.tematica||''),
+        ambito  : String(x.ambito||''),
+        score   : x.score,
+        isRecente: !!(dataObj && !isNaN(dataObj.getTime()) && dataObj >= sette_fa),
+        salvato : !!x.salvato
+      };
+    });
+  } catch (e) { Logger.log('getVideoListV42: ' + (e && e.message || e)); return []; }
+}
+
+// ============================================================
+//  HELPER PRIVATI (nomi con _ finale → non in dropdown esecuzioni)
+// ============================================================
+
+function _radarBandiRows_(sh) {
+  var vals = sh.getDataRange().getValues();
+  if (vals.length < 2) return [];
+  var head = vals[0].map(function(h){ return String(h||'').trim(); });
+  var iData   = _findCol_(head, ['DataRilevamento','Data_Rilevamento','Data']);
+  var iTitolo = _findCol_(head, ['Titolo','TITOLO']);
+  var iEnte   = _findCol_(head, ['Ente','ENTE']);
+  var iSett   = _findCol_(head, ['Settore','SETTORE','Ambito']);
+  var iAmb    = head.indexOf('Ambito');
+  var iScad   = _findCol_(head, ['Scadenza','SCADENZA']);
+  var iLink   = _findCol_(head, ['UrlBando','URL_BANDO','Link','URL']);
+  var iStato  = _findCol_(head, ['StatoRecord','Stato']);
+  var iSomm   = _findCol_(head, ['SommarioAI','Sommario','Note']);
+  var iSalv   = _findCol_(head, ['Salvato','salvato','SALVATO','Saved']);
+  var iRegB   = _findCol_(head, ['Regione','regione','REGIONE','Region']);
+  var iTipoB  = _findCol_(head, ['TipoBando','tipoBando','TIPO_BANDO']);
+  var iSetCul = _findCol_(head, ['SettoreCultura','settoreCultura','SETTORE_CULTURA']);
+  var iCpv    = _findCol_(head, ['CPV','cpv','CpvCode']);
+  var iDescr  = _findCol_(head, ['Descrizione','descrizione','DESCRIZIONE','Description']);
+  var iTipoAp = _findCol_(head, ['TipoAppalto','tipoAppalto','tipo_appalto','TIPO_APPALTO']);
+  if (iTitolo < 0) iTitolo = 1;
+  var oggi = new Date(); oggi.setHours(0,0,0,0);
+  var out = [];
+  for (var r=1; r<vals.length; r++) {
+    var row = vals[r];
+    if (!row[iTitolo]) continue;
+    // filtra archiviati
+    if (iStato >= 0) {
+      var st = String(row[iStato]||'').toLowerCase();
+      if (st === 'archiviato') continue;
+    }
+    var rawScad = iScad >= 0 ? row[iScad] : '';
+    var scadDate = (rawScad instanceof Date) ? rawScad : (rawScad ? new Date(rawScad) : null);
+    // v4.22 — Escludi bandi scaduti E senza scadenza dalla home (solo scadenze future certe)
+    if (!scadDate || isNaN(scadDate.getTime())) continue; // senza scadenza → escluso
+    if (scadDate.getTime() < oggi.getTime()) continue;    // scaduto → escluso
+    var giorni = (scadDate && !isNaN(scadDate.getTime()))
+      ? Math.round((scadDate.getTime() - oggi.getTime()) / 86400000) : null;
+    out.push({
+      idx     : r,
+      dataRil : iData  >= 0 ? row[iData]  : '',
+      titolo  : row[iTitolo],
+      ente    : iEnte  >= 0 ? row[iEnte]  : '',
+      settore : iSett  >= 0 ? row[iSett]  : '',
+      ambito  : iAmb   >= 0 ? row[iAmb]   : '',
+      scadenza: rawScad,
+      giorni  : giorni,
+      link    : iLink  >= 0 ? row[iLink]  : '',
+      sommario: iSomm  >= 0 ? String(row[iSomm]||'') : '',
+      salvato : iSalv  >= 0 ? row[iSalv]  : false,
+      regione : iRegB  >= 0 ? String(row[iRegB]||'') : '',
+      tipoBando: iTipoB >= 0 ? String(row[iTipoB]||'') : '',
+      settoreCultura: iSetCul >= 0 ? String(row[iSetCul]||'') : '',
+      cpv: iCpv >= 0 ? String(row[iCpv]||'') : '',
+      cpvDescrizione: iCpv >= 0 ? (typeof getCpvDescrizione === 'function' ? getCpvDescrizione(String(row[iCpv]||'')) : '') : '',
+      descrizione: iDescr >= 0 ? String(row[iDescr]||'') : '',
+      tipoAppalto: iTipoAp >= 0 ? String(row[iTipoAp]||'') : ''
+    });
+  }
+  return out;
+}
+
+function _mapBando_(x) {
+  var tz = _ubTz_();
+  var scadFmt = '';
+  if (x.scadenza instanceof Date && !isNaN(x.scadenza.getTime())) {
+    scadFmt = Utilities.formatDate(x.scadenza, tz, 'd MMM yyyy');
+  } else if (x.scadenza) {
+    scadFmt = _fmtBreveUB_(x.scadenza);
+  }
+  var isUrgent = x.giorni !== null && x.giorni !== undefined && x.giorni >= 0 && x.giorni <= 7;
+  var dataRilDate = (x.dataRil instanceof Date) ? x.dataRil : (x.dataRil ? new Date(x.dataRil) : null);
+  var trenta_fa = new Date(Date.now() - 30 * 86400000);
+  var isRecente = !!(dataRilDate && !isNaN(dataRilDate.getTime()) && dataRilDate >= trenta_fa);
+  return {
+    id       : String(x.idx),
+    titolo   : String(x.titolo  || ''),
+    ente     : String(x.ente    || ''),
+    settore  : String(x.settore || ''),
+    ambito   : String(x.ambito  || ''),
+    scadenza : scadFmt,
+    giorni   : x.giorni,
+    isUrgent : isUrgent,
+    isRecente: isRecente,
+    dataRil  : _fmtBreveUB_(x.dataRil),
+    link     : String(x.link || ''),
+    sommario: String(x.sommario || ''),
+    salvato : x.salvato === true || x.salvato === 'TRUE' || x.salvato === 1 || String(x.salvato).toLowerCase() === 'true',
+    regione : String(x.regione || ''),
+    tipoBando: String(x.tipoBando || ''),
+    settoreCultura: String(x.settoreCultura || ''),
+    cpv: String(x.cpv || ''),
+    cpvDescrizione: String(x.cpvDescrizione || ''),
+    descrizione: String(x.descrizione || ''),
+    tipoAppalto: String(x.tipoAppalto || '')
+  };
+}
+
+function _findCol_(head, names) {
+  for (var i=0; i<names.length; i++){
+    var ix = head.indexOf(names[i]);
+    if (ix >= 0) return ix;
+  }
+  return -1;
+}
+
+function _fmtBreveUB_(v) {
+  if (v instanceof Date) {
+    return Utilities.formatDate(v, _ubTz_(), 'dd/MM/yyyy');
+  }
+  return v ? String(v) : '';
+}
+// ============================================================
+//  NORME & RIFERIMENTI NORMATIVI
+//  Foglio: "Norme"
+//  Header: ID | Titolo | Fonte | Link | Ambito | Descrizione | DataAggiunta | Stato
+// ============================================================
+
+var SH_NORME = 'Norme';
+var NORME_HEADER = ['ID','Titolo','Fonte','Link','Ambito','Descrizione','DataAggiunta','Stato'];
+
+function setupNormeSheet() {
+  var ss = getMainSS();
+  var sh = ss.getSheetByName(SH_NORME);
+  if (!sh) {
+    sh = ss.insertSheet(SH_NORME);
+    sh.getRange(1,1,1,NORME_HEADER.length).setValues([NORME_HEADER])
+      .setFontWeight('bold').setBackground('#3C6A95').setFontColor('#fff');
+    sh.setFrozenRows(1);
+    sh.setColumnWidth(2, 320);
+    sh.setColumnWidth(4, 200);
+    sh.setColumnWidth(6, 280);
+    // Seed iniziale
+    var seed = [
+      ['NRM001','Codice dei Beni Culturali e del Paesaggio','D.Lgs. 42/2004','https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2004-01-22;42','1','Testo fondamentale per la tutela e valorizzazione del patrimonio culturale italiano.',''+new Date(),'attivo'],
+      ['NRM002','Accessibilità ai siti web e applicazioni mobili della PA','D.Lgs. 106/2018','https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2018-09-10;106','2','Recepimento della Direttiva UE 2016/2102 sull\'accessibilità digitale.',''+new Date(),'attivo'],
+      ['NRM003','Linee Guida WCAG 2.1 per l\'accessibilità web','W3C — AGID','https://www.w3.org/TR/WCAG21/','2','Standard internazionale per l\'accessibilità dei contenuti web. Obbligatorio per PA (livello AA).',''+new Date(),'attivo'],
+      ['NRM004','Piano Nazionale di Ripresa e Resilienza — Missione Cultura','PNRR M1C3','https://www.governo.it/it/articolo/piano-nazionale-di-ripresa-e-resilienza/16782','5','Framework finanziario europeo per la digitalizzazione e valorizzazione del patrimonio culturale 2021-2026.',''+new Date(),'attivo'],
+      ['NRM005','Statuto ICOM 2022 — Definizione di Museo','ICOM','https://icom.museum/en/resources/standards-guidelines/museum-definition/','1','Nuova definizione di museo ICOM adottata a Praga 2022. Riferimento per la missione museale contemporanea.',''+new Date(),'attivo']
+    ];
+    sh.getRange(2,1,seed.length,NORME_HEADER.length).setValues(seed);
+    Logger.log('setupNormeSheet: foglio creato con '+seed.length+' seed');
+  }
+  return { ok:true, sheetName:SH_NORME };
+}
+
+function getNormeList(limit) {
+  var ss = getMainSS();
+  var sh = ss.getSheetByName(SH_NORME);
+  if (!sh || sh.getLastRow() < 2) return [];
+  limit = limit || 200;
+  var data = sh.getRange(2, 1, sh.getLastRow()-1, NORME_HEADER.length).getValues();
+  var out = [];
+  data.forEach(function(r) {
+    if (!r[0] || String(r[7]||'') === 'archiviato') return;
+    out.push({
+      id          : String(r[0]),
+      titolo      : String(r[1]||''),
+      fonte       : String(r[2]||''),
+      link        : String(r[3]||''),
+      ambito      : String(r[4]||'0'),
+      descrizione : String(r[5]||''),
+      dataAggiunta: r[6] ? Utilities.formatDate(new Date(r[6]), _ubTz_(), 'yyyy-MM-dd') : '',
+      stato       : String(r[7]||'attivo')
+    });
+  });
+  return out.slice(0, limit);
+}
+
+function addNorma(body) {
+  if (!body || !body.titolo) return { error: 'Titolo obbligatorio' };
+  var ss = getMainSS();
+  var sh = ss.getSheetByName(SH_NORME);
+  if (!sh) {
+    setupNormeSheet();
+    sh = ss.getSheetByName(SH_NORME);
+  }
+  var id = 'NRM' + Date.now();
+  sh.appendRow([
+    id,
+    String(body.titolo||''),
+    String(body.fonte||''),
+    String(body.link||''),
+    String(body.ambito||'0'),
+    String(body.descrizione||''),
+    new Date(),
+    'attivo'
+  ]);
+  return { ok:true, id:id };
+}
+
+/**
+ * Popola il foglio Norme con il dataset completo delle normative beni culturali.
+ * Include: normativa nazionale, decreti SMN, standard ICOM, accessibilita,
+ * documenti MiBAC, contributi ICOM, quaderni ICOM.
+ * Fonte dati: ICOM Italia (icom-italia.org/documenti-smn/) + normativa nazionale.
+ * Controllo doppioni automatico su titolo normalizzato.
+ * @param {Object} opts { dryRun:bool (default false) }
+ */
+function popolaNormativeICOM(opts) {
+  opts = opts || {};
+  var dryRun = !!opts.dryRun;
+  var ss = getMainSS();
+  var sh = ss.getSheetByName(SH_NORME);
+  if (!sh) { setupNormeSheet(); sh = ss.getSheetByName(SH_NORME); }
+  var oggi = new Date();
+
+  // Raccogli titoli esistenti per dedup
+  var esistenti = {};
+  if (sh.getLastRow() >= 2) {
+    var titoli = sh.getRange(2, 2, sh.getLastRow()-1, 1).getValues();
+    titoli.forEach(function(r) {
+      var k = String(r[0]||'').toLowerCase().trim().replace(/\s+/g,' ');
+      if (k) esistenti[k] = true;
+    });
+  }
+
+  var norme = [
+    // === Normativa nazionale ===
+    ['Codice dei beni culturali e del paesaggio','D.Lgs. 22 gennaio 2004, n. 42','https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2004-01-22;42!vig=','1','Testo unico fondamentale che regola tutela, conservazione e valorizzazione del patrimonio culturale e paesaggistico italiano.'],
+    // === Sistema Museale Nazionale — Decreti ===
+    ['Sistema Museale Nazionale e Livelli Uniformi di Qualita (LUQ)','D.M. 21 febbraio 2018, n. 113','https://www.icom-italia.org/wp-content/uploads/2018/04/ICOMItalia.SMN_.D.M.21FEBBRAIO2018.21febbraio.2018.pdf','5','Istituisce il SMN fissando standard minimi di qualita per musei e luoghi della cultura di appartenenza pubblica.'],
+    ['Decreto istitutivo Commissione SMN','D.M. 1 giugno 2015','https://www.icom-italia.org/wp-content/uploads/2018/06/1513072195304_DM_1_giu_2015_-_istituzione_Commissione_SMN.pdf','5','Decreto che istituisce la Commissione ministeriale di studio per l\'attivazione del Sistema Museale Nazionale.'],
+    ['Organizzazione e funzionamento dei musei statali','D.M. 23 dicembre 2014','http://www.beniculturali.it/mibac/multimedia/MiBAC/documents/feed/pdf/DM%20del%2023%20dicembre%202014-imported-49315.pdf','1','Decreto sulla organizzazione e funzionamento dei musei statali italiani.'],
+    ['Regolamento di organizzazione MiBACT','DPCM 171 del 29 agosto 2014','https://www.icom-italia.org/wp-content/uploads/2018/09/ICOMItalia.DPCM_117_Regolamento-di-organizzazione-MiBACT.29agosto.2004.pdf','5','Regolamento di organizzazione del Ministero dei beni e delle attivita culturali e del turismo.'],
+    ['Commissione per il Sistema Museale Nazionale','D.M. 276 del 18 giugno 2018','https://www.icom-italia.org/wp-content/uploads/2018/07/D.M.-18-GIUGNO-2018-REP.-276-imported-80344.pdf','5','Decreto istitutivo della Commissione per il Sistema Museale Nazionale.'],
+    ['Prime modalita organizzazione e funzionamento SMN','D.M. 542 del 20 giugno 2018','http://musei.beniculturali.it/wp-content/uploads/2018/04/Decreto-20-giugno-2018-Prime-modalita%CC%80-di-organizzazione-e-funzionamento-del-Sistema-museale-nazionale.pdf','5','Prime modalita di organizzazione e funzionamento del Sistema Museale Nazionale.'],
+    ['Nomina costituenti Commissione SMN','D.M. 318 del 9 agosto 2018','https://www.icom-italia.org/wp-content/uploads/2018/09/ICOMItalia.Nomina-Costituenti-CommissioneSMN.9agosto.2018.pdf','5','Nomina dei costituenti della Commissione per il Sistema Museale Nazionale.'],
+    // === Standard ICOM ===
+    ['Codice Etico ICOM per i Musei','ICOM - Edizione 2004','http://www.icom-italia.org/images/documenti/codiceeticoicom.pdf','1','Testo di riferimento internazionale per la deontologia professionale museale: gestione collezioni, etica verso il pubblico.'],
+    ['Carta Nazionale delle Professioni Museali','ICOM Italia, 2005','https://www.icom-italia.org/professioni-museali/','1','Definisce competenze, requisiti e profili professionali per la gestione e il funzionamento dei musei in Italia.'],
+    // === Accessibilita ===
+    ['Linee guida superamento barriere architettoniche nei luoghi di interesse culturale','D.M. 28 marzo 2008','https://www.gazzettaufficiale.it/eli/id/2008/05/16/08A03372/sg','2','Indirizzi tecnico-scientifici per conciliare accessibilita delle persone con disabilita con tutela del patrimonio storico-artistico.'],
+    ['PEBA per i Musei','Circolare DGM n. 26/2018','http://musei.beniculturali.it/wp-content/uploads/2018/06/Circolare-DGM-n.-26-2018-PEBA-nei-musei.pdf','2','Linee guida per programmazione e redazione dei Piani di Eliminazione delle Barriere Architettoniche nei musei.'],
+    ['Convenzione ONU sui diritti delle persone con disabilita','Legge 3 marzo 2009, n. 18','https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2009-03-03;18!vig=','2','Ratifica italiana della Convenzione ONU. Art. 30: diritto delle persone con disabilita a partecipare alla vita culturale.'],
+    ['Legge Stanca - Accessibilita digitale','Legge 9 gennaio 2004, n. 4','https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2004-01-09;4!vig=','2','Legge italiana sull\'accessibilita digitale: siti web, app e postazioni multimediali dei luoghi della cultura pubblici.'],
+    // === Documenti e circolari MiBAC ===
+    ['Statuto e governance musei statali afferenti ai Poli museali','Circolare 27 del 27 agosto 2018','https://www.icom-italia.org/wp-content/uploads/2018/09/ICOMItalia.Musei-statali-Statuti-Circolare-27-Direzione-generale-Musei-27agosto.2018.pdf','5','Circolare su statuto e governance dei musei statali afferenti ai Poli museali.'],
+    ['Direttiva sulla Governance dei Poli Museali','Direttiva 27 agosto 2018','https://www.icom-italia.org/wp-content/uploads/2018/09/ICOMItalia.Direttiva-sulla-governance-dei-Poli-Museali.27agosto.2018.pdf','5','Direttiva ministeriale sulla governance dei Poli Museali italiani.'],
+    ['Modello di statuto per musei statali afferenti ai Poli Museali','Modello MiBAC 2018','https://www.icom-italia.org/wp-content/uploads/2018/09/ICOMItalia.Modello_Statuto_musei-statali-afferenti-ai-Poli-museali_MiBAC.27agosto.2018.docx','5','Modello tipo di statuto per musei statali afferenti ai Poli museali.'],
+    // === Contributi ICOM Italia ===
+    ['Contributo ICOM Italia sull\'attuazione del DM 113/2018','ICOM Italia, giugno 2018','https://www.icom-italia.org/wp-content/uploads/2018/07/ICOMItalia.ContributoSMN.Seminario.Reggello.22-23giugno.2018.pdf','5','Contributo di ICOM Italia sulle modalita per l\'attuazione del DM 113/2018 e attivazione del SMN.'],
+    ['Contributo ICOM Italia sul Sistema Museale Nazionale','ICOM Italia, marzo 2017','https://www.icom-italia.org/wp-content/uploads/2018/06/ICOMItalia.SMN_.ContributoICOMItalia.05marzo.2017.pdf','5','Contributo di ICOM Italia al dibattito sul Sistema Museale Nazionale.'],
+    ['Relazione finale Commissione SMN al Ministro','Relazione Commissione, 2017','https://www.icom-italia.org/wp-content/uploads/2018/06/ICOMItalia.SMN_.RelazioneConclusivaCommissione.2017.pdf','5','Relazione conclusiva della Commissione ministeriale di studio per l\'attivazione del SMN.'],
+    // === Quaderni ICOM ===
+    ['Quaderno 1 - Struttura organizzativa dei Musei','ICOM Italia, giugno 2016','https://www.icom-italia.org/wp-content/uploads/2018/06/ICOMItalia.SMN_.Quaderno1.21giugno.2016.pdf','1','Contributi alla definizione della struttura organizzativa dei Musei e dei compiti attribuiti alle aree funzionali.'],
+    ['Quaderno 2 - Professionalita e funzioni essenziali del museo','ICOM Italia, novembre 2017','https://www.icom-italia.org/wp-content/uploads/2018/06/ICOMItalia.SMN_.Quaderno2.novembre.2017.pdf','1','Approfondimento sulle professionalita e le funzioni essenziali per il funzionamento dei musei.']
+  ];
+
+  var nuove = [], duplicati = 0;
+  norme.forEach(function(n, idx) {
+    var key = n[0].toLowerCase().trim().replace(/\s+/g,' ');
+    if (esistenti[key]) { duplicati++; return; }
+    esistenti[key] = true;
+    nuove.push([
+      'NRM' + Date.now() + '' + idx,
+      n[0], n[1], n[2], n[3], n[4],
+      oggi, 'attivo'
+    ]);
+  });
+
+  if (!dryRun && nuove.length > 0) {
+    sh.getRange(sh.getLastRow() + 1, 1, nuove.length, NORME_HEADER.length).setValues(nuove);
+    SpreadsheetApp.flush();
+  }
+
+  Logger.log('popolaNormativeICOM: inserite=' + (dryRun ? 0 : nuove.length) + ' duplicati=' + duplicati + (dryRun ? ' [DRY-RUN]' : ' [SCRITTE]'));
+  return { ok: true, inserite: dryRun ? 0 : nuove.length, duplicati: duplicati, dryRun: dryRun, candidati: nuove.length };
+}
+
+/**
+ * v4.15 (2026-05-09) — Alias backward-compatibility per chiamate frontend.
+ * Wrapper di setupNormeSheet().
+ */
+function setupNormeSeed() {
+  try {
+    if (typeof setupNormeSheet !== 'function') return { ok: false, error: 'setupNormeSheet non disponibile' };
+    return setupNormeSheet();
+  } catch(e) {
+    Logger.log('setupNormeSeed errore: ' + e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+// ============================================================================
+// DEBUG: debugBandiPipeline() - diagnostica completa caricamento bandi
+// ============================================================================
+function debugBandiPipeline() {
+  var out = {
+    ok: true,
+    generatedAt: new Date().toISOString(),
+    v5Status: {},
+    radarSheet: {},
+    fontiBandi_v5: {},
+    sample: [],
+    errors: []
+  };
+
+  // V5 active check
+  try {
+    out.v5Status.isActive = (typeof isBandiV5Active === 'function') ? isBandiV5Active() : 'fn_missing';
+    out.v5Status.version = (typeof getBandiV5Version === 'function') ? getBandiV5Version() : 'fn_missing';
+  } catch(e) { out.errors.push('v5Status: ' + e.message); }
+
+  // RADAR BANDI sheet
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sheetName = (typeof SHEET_RADAR === 'string' && SHEET_RADAR) ? SHEET_RADAR : 'RADAR BANDI';
+    var sh = ss.getSheetByName(sheetName);
+    if (sh) {
+      out.radarSheet.name = sheetName;
+      out.radarSheet.lastRow = sh.getLastRow();
+      out.radarSheet.lastCol = sh.getLastColumn();
+      if (sh.getLastRow() >= 1) {
+        out.radarSheet.headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+      }
+      // Sample 3 righe
+      if (sh.getLastRow() >= 2) {
+        var samp = sh.getRange(2, 1, Math.min(3, sh.getLastRow()-1), Math.min(8, sh.getLastColumn())).getValues();
+        out.sample = samp.map(function(r){ return r.map(function(c){ return String(c||'').substring(0, 50); }); });
+      }
+    } else {
+      out.radarSheet.error = 'Foglio ' + sheetName + ' NON TROVATO';
+    }
+  } catch(e) { out.errors.push('radarSheet: ' + e.message); }
+
+  // FontiBandi_v5
+  try {
+    var ss2 = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh2 = ss2.getSheetByName('FontiBandi_v5');
+    if (sh2) {
+      out.fontiBandi_v5.exists = true;
+      out.fontiBandi_v5.righe = sh2.getLastRow() - 1;
+    } else {
+      out.fontiBandi_v5.exists = false;
+    }
+  } catch(e) { out.errors.push('fontiBandi_v5: ' + e.message); }
+
+  // Test loading effettivo
+  try {
+    var bandi = (typeof getBandiListV42 === 'function') ? getBandiListV42(5) : null;
+    if (Array.isArray(bandi)) {
+      out.testLoad = { ok: true, count: bandi.length, firstTitolo: bandi[0] ? String(bandi[0].titolo||'').substring(0,80) : null };
+    } else {
+      out.testLoad = { ok: false, returned: typeof bandi };
+    }
+  } catch(e) { out.testLoad = { ok: false, error: e.message }; }
+
+  return out;
+}
+

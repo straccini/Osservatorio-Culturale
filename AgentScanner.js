@@ -1,0 +1,818 @@
+/**
+ * ============================================================================
+ *  AgentScanner.js — Scanner parametrico multi-agente (v4.18.55)
+ * ----------------------------------------------------------------------------
+ *  Legge fonti da FontiAgenti, filtra per agente, applica hash-first
+ *  per evitare call Claude inutili, estrae contenuti, salva risultati.
+ *
+ *  Funzioni pubbliche (trigger):
+ *    scanAgente(agenteId)        — scan tutte le fonti di un agente
+ *    scanAllAgenti()             — scan sequenziale tutti gli agenti
+ *    scanAgente1(), ..., scanAgente5() — alias per trigger GAS
+ *
+ *  Funzioni admin:
+ *    setupAgentTriggers()        — installa trigger per tutti gli agenti
+ *    testAgentScan(agenteId, n)  — scan N fonti di test (senza salvataggio)
+ *
+ *  Dipendenze: AgentConfig.js, Scannerbandi.js (per Claude API)
+ * ============================================================================
+ */
+
+var FONTI_AGENTI_SHEET = 'FontiAgenti';  // v4.18.56 — costante locale (duplicata da AgentSetup per indipendenza)
+var AGENT_SCAN_SHEET = 'AgentScanResults';
+var AGENT_SCAN_HEADERS = [
+  'ID', 'AgenteID', 'Titolo', 'Fonte', 'URL', 'DataPubblicazione',
+  'SommarioAI', 'TagAI', 'Ambito', 'Score', 'Tipo',
+  'FonteNome', 'DataAcquisizione', 'Letto', 'Salvato', 'Archiviato'
+];
+
+// ============================================================================
+// SCAN PER AGENTE
+// ============================================================================
+
+/**
+ * Scansiona tutte le fonti attive di un agente.
+ * Usa hash-first per evitare call Claude duplicate.
+ *
+ * @param {number} agenteId — 1-5
+ * @param {Object} [opts] — {dryRun: bool, maxFonti: number, verbose: bool}
+ * @return {Object} {ok, agenteId, fontiScansionate, nuoviContenuti, errori, tempoMs}
+ */
+function scanAgente(agenteId, opts) {
+  opts = opts || {};
+
+  // v4.28.2 — AGENTI SOSPESI PER RICONVERSIONE (decisione Silvano 02/08):
+  // gli scan tematici AG1-AG5 si sovrapponevano alla pipeline principale
+  // (bandi: rotazione RSS + API; news: scanSources 4×/gg). L'infrastruttura
+  // (config, prompt, fonti, destinatari opt-in) sarà la base degli agenti
+  // Scout/Redattori della Fase 3 (piano 2026-08-02). I trigger restano ma
+  // escono subito. Riattivazione temporanea: ScriptProperty
+  // OC_AGENTI_ATTIVI = 'true' (o opts.force dall'editor).
+  var attivi = String(PropertiesService.getScriptProperties().getProperty('OC_AGENTI_ATTIVI')) === 'true';
+  if (!attivi && !opts.force) {
+    Logger.log('[scanAgente ' + agenteId + '] SOSPESO per riconversione Fase 3 (OC_AGENTI_ATTIVI non attivo)');
+    return { ok: true, sospeso: true, agente: agenteId };
+  }
+
+  var t0 = Date.now();
+  var agent = getAgentConfig(agenteId);
+  if (!agent) return { ok: false, error: 'Agente ' + agenteId + ' non trovato' };
+
+  Logger.log('=== SCAN AGENTE ' + agent.codice + ' — ' + agent.nome + ' ===');
+
+  // Carica fonti da FontiAgenti
+  var fonti = _agentGetFonti_(agenteId);
+  if (fonti.length === 0) {
+    Logger.log('Nessuna fonte attiva per ' + agent.codice);
+    return { ok: true, agenteId: agenteId, fontiScansionate: 0, nuoviContenuti: 0, errori: 0, tempoMs: Date.now() - t0 };
+  }
+
+  if (opts.maxFonti) fonti = fonti.slice(0, opts.maxFonti);
+  Logger.log('Fonti attive: ' + fonti.length);
+
+  // Prepara foglio risultati
+  var resultSheet = opts.dryRun ? null : _agentGetOrCreateResultsSheet_();
+  var existingTitles = opts.dryRun ? [] : _agentGetExistingTitles_(resultSheet, agenteId);
+
+  var stats = { scansionate: 0, nuovi: 0, skip_hash: 0, errori: 0 };
+  var fontiSheet = _agentGetFontiSheet_();
+
+  // v4.20 — Anti-timeout: budget di tempo + cursore di ripresa.
+  // Ogni esecuzione lavora max MAX_MS, poi salva l'indice e riprende al lancio dopo.
+  var MAX_MS = 270000; // ~4.5 min (limite GAS ~6 min)
+  var cursorKey = 'AGENT_CURSOR_' + agenteId;
+  var startIdx = 0;
+  try { startIdx = parseInt(PropertiesService.getScriptProperties().getProperty(cursorKey) || '0', 10) || 0; } catch(eC) {}
+  if (startIdx >= fonti.length || startIdx < 0) startIdx = 0;
+  if (startIdx > 0) Logger.log('  [ripresa] riparto da fonte ' + startIdx + '/' + fonti.length);
+
+  var i = startIdx, interrotto = false;
+  for (; i < fonti.length; i++) {
+    if (Date.now() - t0 > MAX_MS) { interrotto = true; break; }
+    var fonte = fonti[i];
+    try {
+      stats.scansionate++;
+
+      // 1. Fetch contenuto
+      var html = _agentFetchUrl_(fonte.url);
+      if (!html || html.length < 200) { _agentUpdateFonteEsito_(fontiSheet, fonte.row, 'EMPTY', 0); continue; }
+
+      // 2. Hash-first: confronta con hash precedente
+      var hash = _agentMd5_(html.substring(0, 5000));
+      if (hash === fonte.ultimoHash && !opts.forceRescan) {
+        stats.skip_hash++;
+        if (opts.verbose) Logger.log('  SKIP (hash invariato): ' + fonte.nome);
+        continue;
+      }
+
+      // 3. Prepara testo: API/JSON -> grezzo a Claude; HTML -> pulizia
+      var isApi = (String(fonte.tipo).toUpperCase() === 'API' || String(fonte.tipo).toUpperCase() === 'JSON');
+      var cleanText = isApi ? html.substring(0, 20000) : _agentCleanHtml_(html);
+      if (cleanText.length < 100) { _agentUpdateFonteEsito_(fontiSheet, fonte.row, 'EMPTY_CLEAN', 0); continue; }
+
+      var items = _agentExtractWithClaude_(cleanText, fonte, agent);
+      if (!items || items.length === 0) {
+        _agentUpdateFonteEsito_(fontiSheet, fonte.row, 'NO_MATCH', 0);
+        _agentUpdateFonteHash_(fontiSheet, fonte.row, hash);
+        continue;
+      }
+
+      // 4. Deduplica e salva
+      var nuovi = 0;
+      items.forEach(function(item) {
+        if (!item.titolo || item.titolo.length < 10) return;
+        var titoloNorm = item.titolo.toLowerCase().substring(0, 60);
+        if (existingTitles.some(function(t) { return t === titoloNorm; })) return;
+
+        if (!opts.dryRun && resultSheet) {
+          var id = 'AS-' + agent.codice + '-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+          var ambitoNum = item.ambito || _agentDetectAmbito_(item, agent);
+          resultSheet.appendRow([
+            id, agenteId, item.titolo, fonte.nome, item.url || fonte.url,
+            item.data || '', item.sommario || '', (item.tags || []).join(', '),
+            ambitoNum, item.score || 3, item.tipo || 'news',
+            fonte.nome, new Date().toISOString(), false, false, false
+          ]);
+          existingTitles.push(titoloNorm);
+        }
+        nuovi++;
+      });
+
+      stats.nuovi += nuovi;
+      _agentUpdateFonteEsito_(fontiSheet, fonte.row, 'OK', nuovi);
+      _agentUpdateFonteHash_(fontiSheet, fonte.row, hash);
+      if (opts.verbose || nuovi > 0) Logger.log('  ' + fonte.nome + ': ' + nuovi + ' nuovi');
+
+    } catch(e) {
+      stats.errori++;
+      Logger.log('  ERRORE ' + fonte.nome + ': ' + e.message);
+      _agentUpdateFonteEsito_(fontiSheet, fonte.row, 'ERROR', 0);
+    }
+  }
+
+  // Cursore: completato -> pulisci; interrotto -> salva il punto di ripresa
+  try {
+    if (i >= fonti.length) PropertiesService.getScriptProperties().deleteProperty(cursorKey);
+    else PropertiesService.getScriptProperties().setProperty(cursorKey, String(i));
+  } catch(eC2) {}
+  if (interrotto) Logger.log('  [budget tempo] fermato a ' + i + '/' + fonti.length + ' — riprende al prossimo trigger');
+
+  var elapsed = Date.now() - t0;
+  var statoFine = interrotto ? ('PARZIALE (ripresa da ' + i + '/' + fonti.length + ')') : 'COMPLETATO';
+  Logger.log('=== ' + agent.codice + ' ' + statoFine + ': ' + stats.nuovi + ' nuovi, ' + stats.skip_hash + ' skip hash, ' + stats.errori + ' errori (' + Math.round(elapsed / 1000) + 's) ===');
+  return { ok: true, agenteId: agenteId, fontiScansionate: stats.scansionate, nuoviContenuti: stats.nuovi, skipHash: stats.skip_hash, errori: stats.errori, tempoMs: elapsed, completato: !interrotto, prossimoIndice: (interrotto ? i : 0), totaleFonti: fonti.length };
+}
+
+// ============================================================================
+// ALIAS PER TRIGGER GAS (una funzione per agente)
+// ============================================================================
+
+function scanAgente1() { return scanAgente(1); }
+function scanAgente2() { return scanAgente(2); }
+function scanAgente3() { return scanAgente(3); }
+function scanAgente4() { return scanAgente(4); }
+function scanAgente5() { return scanAgente(5); }
+
+/**
+ * DIAGNOSTICA: elenca tutte le fonti di un agente con stato dell'ultimo scan.
+ * Mostra che ogni fonte (es. BandiUp) e' monitorata anche se nel log dello scan
+ * non compare (il log stampa solo le fonti con bandi NUOVI).
+ * Lanciare dall'editor (Esegui -> diagnosiFontiAg1) e leggere il Log.
+ *  - UltimoEsito: OK=trovati nuovi, EMPTY/NO_MATCH=nessun nuovo, ERROR=problema
+ *  - UltimaScan: quando e' stata scansionata l'ultima volta
+ *  - nUltimo: bandi nuovi all'ultimo scan; nTotali: totale storico
+ */
+function diagnosiFontiAg1() { return diagnosiFontiAgente(1); }
+
+/**
+ * BONIFICA: disattiva le fonti di AG1 perennemente "vuote" — quelle con
+ * UltimoEsito che inizia per 'EMPTY' E nessun bando mai raccolto (NRecordTotali=0).
+ * Lo scan diventa piu' veloce e mirato (non sprecano slot di scansione).
+ *
+ * REVERSIBILE: marca la colonna UltimoErrore = 'BONIFICATO_EMPTY' e mette
+ * Attiva=false. Per riattivarle tutte: annullaBonificaFontiAg1().
+ * Oppure a mano: rimetti Attiva=true nella riga del foglio FontiBandi_v5.
+ *
+ * NB: NON tocca le fonti NO_MATCH o con bandi gia' raccolti (le tiene attive).
+ */
+function bonificaFontiAg1() { return bonificaFontiEmptyAgente(1); }
+
+function bonificaFontiEmptyAgente(agenteId) {
+  var sh = _agentGetFontiSheet_();
+  if (!sh || sh.getLastRow() < 2) { Logger.log('Nessuna fonte trovata'); return { ok: false }; }
+  var data = sh.getDataRange().getValues();
+  var h = data[0];
+  var iAg = h.indexOf('Agente'), iAtt = h.indexOf('Attiva'), iNome = h.indexOf('Nome'),
+      iEsito = h.indexOf('UltimoEsito'), iTot = h.indexOf('NRecordTotali'), iErr = h.indexOf('UltimoErrore');
+  if (iAtt < 0 || iEsito < 0) { Logger.log('Colonne Attiva/UltimoEsito assenti'); return { ok: false }; }
+  var disattivate = [];
+  for (var r = 1; r < data.length; r++) {
+    var row = data[r];
+    var ags = String(row[iAg] == null ? '' : row[iAg]).split(/[,;]/).map(function(s) { return Number(s.trim()); });
+    if (ags.indexOf(agenteId) < 0) continue;
+    var attiva = !(row[iAtt] === false || String(row[iAtt]).toLowerCase() === 'false');
+    if (!attiva) continue;
+    var esito = String(row[iEsito] || '');
+    var tot = Number(row[iTot]) || 0;
+    if (esito.indexOf('EMPTY') === 0 && tot === 0) {
+      sh.getRange(r + 1, iAtt + 1).setValue(false);
+      if (iErr >= 0) sh.getRange(r + 1, iErr + 1).setValue('BONIFICATO_EMPTY');
+      disattivate.push(row[iNome]);
+    }
+  }
+  Logger.log('=== BONIFICA AG' + agenteId + ': disattivate ' + disattivate.length + ' fonti vuote (EMPTY, 0 bandi) ===');
+  disattivate.forEach(function(n) { Logger.log('  - ' + n); });
+  Logger.log('Per annullare: annullaBonificaFontiAg1()');
+  return { ok: true, disattivate: disattivate.length, nomi: disattivate };
+}
+
+/** Annulla la bonifica: riattiva tutte le fonti marcate 'BONIFICATO_EMPTY'. */
+function annullaBonificaFontiAg1() {
+  var sh = _agentGetFontiSheet_();
+  if (!sh || sh.getLastRow() < 2) { Logger.log('Nessuna fonte'); return { ok: false }; }
+  var data = sh.getDataRange().getValues();
+  var h = data[0];
+  var iAtt = h.indexOf('Attiva'), iNome = h.indexOf('Nome'), iErr = h.indexOf('UltimoErrore');
+  if (iErr < 0) { Logger.log('Colonna UltimoErrore assente: niente da ripristinare'); return { ok: false }; }
+  var riattivate = [];
+  for (var r = 1; r < data.length; r++) {
+    if (String(data[r][iErr] || '') === 'BONIFICATO_EMPTY') {
+      sh.getRange(r + 1, iAtt + 1).setValue(true);
+      sh.getRange(r + 1, iErr + 1).setValue('');
+      riattivate.push(data[r][iNome]);
+    }
+  }
+  Logger.log('=== ANNULLA BONIFICA: riattivate ' + riattivate.length + ' fonti ===');
+  riattivate.forEach(function(n) { Logger.log('  - ' + n); });
+  return { ok: true, riattivate: riattivate.length, nomi: riattivate };
+}
+
+function diagnosiFontiAgente(agenteId) {
+  var sh = _agentGetFontiSheet_();
+  if (!sh || sh.getLastRow() < 2) { Logger.log('Nessuna fonte trovata'); return []; }
+  var data = sh.getDataRange().getValues();
+  var h = data[0];
+  var iNome = h.indexOf('Nome'), iTipo = h.indexOf('Tipo'), iAg = h.indexOf('Agente'),
+      iAtt = h.indexOf('Attiva'), iScan = h.indexOf('UltimaScan'), iEsito = h.indexOf('UltimoEsito'),
+      iTot = h.indexOf('NRecordTotali'), iUlt = h.indexOf('NRecordUltimo');
+  var out = [];
+  Logger.log('=== DIAGNOSI FONTI AG' + agenteId + ' ===');
+  for (var r = 1; r < data.length; r++) {
+    var row = data[r];
+    var ags = String(row[iAg] == null ? '' : row[iAg]).split(/[,;]/).map(function(s) { return Number(s.trim()); });
+    if (ags.indexOf(agenteId) < 0) continue;
+    var attiva = !(row[iAtt] === false || String(row[iAtt]).toLowerCase() === 'false');
+    var rec = {
+      nome: row[iNome], tipo: row[iTipo], attiva: attiva,
+      ultimaScan: row[iScan] ? String(row[iScan]) : '(mai)',
+      ultimoEsito: row[iEsito] || '(nessuno)',
+      nUltimo: row[iUlt] || 0, nTotali: row[iTot] || 0
+    };
+    out.push(rec);
+    Logger.log((attiva ? '✓ ' : '✗ ') + rec.nome +
+      ' | scan: ' + rec.ultimaScan + ' | esito: ' + rec.ultimoEsito +
+      ' | ultimo: ' + rec.nUltimo + ' | tot: ' + rec.nTotali);
+  }
+  var attive = out.filter(function(x) { return x.attiva; }).length;
+  Logger.log('--- AG' + agenteId + ': ' + out.length + ' fonti (' + attive + ' attive) ---');
+  return out;
+}
+
+// NB: in produzione usare i trigger per-agente (setupAgentTriggers), NON questo.
+// Qui c'e' un budget globale per non andare in hard-timeout nei test manuali:
+// gli agenti non raggiunti partono al lancio successivo (grazie al cursore).
+function scanAllAgenti() {
+  var t0 = Date.now();
+  var GLOBAL_MAX_MS = 270000; // ~4.5 min
+  var results = [];
+  var ids = [1, 2, 3, 4, 5];
+  for (var k = 0; k < ids.length; k++) {
+    if (Date.now() - t0 > GLOBAL_MAX_MS) { Logger.log('scanAllAgenti: budget globale raggiunto, ' + (ids.length - k) + ' agenti rimandati al prossimo lancio'); break; }
+    results.push(scanAgente(ids[k]));
+  }
+  return results;
+}
+
+// ============================================================================
+// SETUP TRIGGER
+// ============================================================================
+
+function setupAgentTriggers() {
+  // Rimuovi trigger agenti esistenti
+  var triggers = ScriptApp.getProjectTriggers();
+  var removed = 0;
+  triggers.forEach(function(t) {
+    if (t.getHandlerFunction().indexOf('scanAgente') === 0) {
+      ScriptApp.deleteTrigger(t);
+      removed++;
+    }
+  });
+
+  // v4.20 — Scacchiera per giorni: un agente al giorno (AG1 bandi 2x: lun+gio).
+  // Riduce carico/costo Claude; col budget+cursore ogni firing e' sicuro.
+  var WD = ScriptApp.WeekDay;
+  function trig(fn, weekday, hour) {
+    ScriptApp.newTrigger(fn).timeBased().onWeekDay(weekday).atHour(hour).create();
+  }
+  trig('scanAgente1', WD.MONDAY, 7);     // AG1 Bandi — lunedì
+  trig('scanAgente2', WD.TUESDAY, 7);    // AG2 Normativa — martedì
+  trig('scanAgente3', WD.WEDNESDAY, 7);  // AG3 Innovazione — mercoledì
+  trig('scanAgente4', WD.THURSDAY, 7);   // AG4 Comunità — giovedì
+  trig('scanAgente5', WD.FRIDAY, 7);     // AG5 Digital — venerdì
+
+  Logger.log('Agent triggers SCACCHIERA SETTIMANALE installati (rimossi ' + removed + ' precedenti). AG1: lun · AG2: mar · AG3: mer · AG4: gio · AG5: ven — ore 07:00.');
+  return { ok: true, removed: removed, schema: 'AG1 lun, AG2 mar, AG3 mer, AG4 gio, AG5 ven @07:00' };
+}
+
+// ============================================================================
+// TEST
+// ============================================================================
+
+function testAgentScan(agenteId, maxFonti) {
+  return scanAgente(agenteId || 1, { dryRun: true, maxFonti: maxFonti || 3, verbose: true });
+}
+
+// ============================================================================
+// HELPER PRIVATE
+// ============================================================================
+
+// v4.20 — Archivio unico: con flag ON gli agenti leggono/scrivono FontiBandi_v5
+// (colonna Agente), non piu' FontiAgenti. OFF = comportamento legacy (FontiAgenti).
+function _agentiDaFontiBandiV5_() {
+  try { return String(PropertiesService.getScriptProperties().getProperty('USE_AGENTI_DA_FONTIBANDIV5')) === 'true'; }
+  catch(e) { return false; }
+}
+function attivaAgentiDaFontiBandi()  { PropertiesService.getScriptProperties().setProperty('USE_AGENTI_DA_FONTIBANDIV5', 'true');  Logger.log('Agenti -> FontiBandi_v5 (archivio unico) ON'); }
+function spegniAgentiDaFontiBandi()  { PropertiesService.getScriptProperties().setProperty('USE_AGENTI_DA_FONTIBANDIV5', 'false'); Logger.log('Agenti -> FontiAgenti (legacy) OFF'); }
+
+function _agentGetFontiSheet_() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  if (_agentiDaFontiBandiV5_()) {
+    return ss.getSheetByName('FontiBandi_v5') || ss.getSheetByName(FONTI_AGENTI_SHEET) || null;
+  }
+  return ss.getSheetByName(FONTI_AGENTI_SHEET) || null;
+}
+
+function _agentGetFonti_(agenteId) {
+  var sh = _agentGetFontiSheet_();
+  if (!sh || sh.getLastRow() < 2) return [];
+  var data = sh.getDataRange().getValues();
+  var headers = data[0];
+  var iAg = headers.indexOf('Agente');
+  var iAttiva = headers.indexOf('Attiva');
+  var iNome = headers.indexOf('Nome');
+  var iUrl = headers.indexOf('URL');
+  var iRss = headers.indexOf('RSS_URL');
+  var iTipo = headers.indexOf('Tipo');
+  var iCat = headers.indexOf('Categoria');
+  var iPr = headers.indexOf('Priorita');
+  var iHash = headers.indexOf('UltimoHash');
+
+  var fonti = [];
+  for (var r = 1; r < data.length; r++) {
+    var row = data[r];
+    // Match agente: supporta singolo ("1") e multi-agente ("1,3") in FontiBandi_v5
+    var _ags = String(row[iAg] == null ? '' : row[iAg]).split(/[,;]/).map(function(s){ return Number(s.trim()); });
+    if (_ags.indexOf(agenteId) < 0) continue;
+    if (row[iAttiva] === false || String(row[iAttiva]).toLowerCase() === 'false') continue;
+    fonti.push({
+      row: r + 1,  // riga nel foglio (1-based, header incluso)
+      nome: row[iNome] || '',
+      url: String(row[iRss] || row[iUrl] || '').trim(),
+      tipo: row[iTipo] || 'HTML',
+      categoria: row[iCat] || '',
+      priorita: Number(row[iPr]) || 2,
+      ultimoHash: String(row[iHash] || '')
+    });
+  }
+  // Priorita 1 prima
+  fonti.sort(function(a, b) { return a.priorita - b.priorita; });
+  return fonti;
+}
+
+function _agentGetOrCreateResultsSheet_() {
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(AGENT_SCAN_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(AGENT_SCAN_SHEET);
+    sh.getRange(1, 1, 1, AGENT_SCAN_HEADERS.length).setValues([AGENT_SCAN_HEADERS]);
+    sh.getRange(1, 1, 1, AGENT_SCAN_HEADERS.length).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function _agentGetExistingTitles_(sheet, agenteId) {
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  var data = sheet.getDataRange().getValues();
+  var iAg = data[0].indexOf('AgenteID');
+  var iTit = data[0].indexOf('Titolo');
+  var titles = [];
+  for (var r = 1; r < data.length; r++) {
+    if (Number(data[r][iAg]) === agenteId) {
+      titles.push(String(data[r][iTit] || '').toLowerCase().substring(0, 60));
+    }
+  }
+  return titles;
+}
+
+function _agentFetchUrl_(url) {
+  try {
+    // --- TED (Tenders Electronic Daily, appalti UE) richiede POST con body JSON ---
+    // Convenzione: la fonte e' l'endpoint /v3/notices/search con la expert query
+    // codificata nel parametro ?query=... (e opzionale &limit=N). Qui la traduciamo
+    // in una vera richiesta POST. Vedi _tedBuildBody_ per il body.
+    if (url.indexOf('api.ted.europa.eu') >= 0 && url.indexOf('/notices/search') >= 0) {
+      return _tedFetch_(url);
+    }
+    // --- EU Funding & Tenders (SEDIA): POST form, risposta enorme -> compattata ---
+    // Convenzione: URL = search-api ...?apiKey=SEDIA&text=<keyword>. Vedi _euftFetch_.
+    if (url.indexOf('api.tech.ec.europa.eu') >= 0 && url.indexOf('search-api') >= 0) {
+      return _euftFetch_(url);
+    }
+    // --- CORDIS (progetti UE finanziati, ANALISI su AG5): GET JSON, compattato ---
+    if (url.indexOf('cordis.europa.eu/search') >= 0 && url.indexOf('format=json') >= 0) {
+      return _cordisFetch_(url);
+    }
+    var resp = UrlFetchApp.fetch(url, {
+      muteHttpExceptions: true,
+      followRedirects: true,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0)' },
+      validateHttpsCertificates: false,
+      deadline: 10
+    });
+    if (resp.getResponseCode() !== 200) return null;
+    return resp.getContentText();
+  } catch(e) { return null; }
+}
+
+/**
+ * Fetch EU Funding & Tenders (SEDIA). POST form-urlencoded (l'unico che GAS riesce
+ * a inviare: il filtro 'query' multipart non e' raggiungibile da GAS). Il keyword
+ * cultura sta nell'URL (text=...). Qui:
+ *  1) scarico il JSON (enorme),
+ *  2) tengo SOLO le call con stato Aperto/Imminente (filtro lato nostro),
+ *  3) estraggo i campi utili in formato COMPATTO (titolo/id/stato/data/link),
+ * cosi' rientra nel buffer di Claude. Ritorna testo compatto o null.
+ */
+function _euftFetch_(url) {
+  try {
+    var resp = UrlFetchApp.fetch(url, {
+      method: 'post', muteHttpExceptions: true,
+      payload: { languages: 'en', pageNumber: '1', pageSize: '50' },
+      headers: { 'Accept': 'application/json' },
+      deadline: 10
+    });
+    if (resp.getResponseCode() !== 200) return null;
+    var data;
+    try { data = JSON.parse(resp.getContentText()); } catch(e0) { return null; }
+    var results = (data && data.results) || [];
+    if (!results.length) return null;
+    var STATO = { '31094501': 'Imminente', '31094502': 'Aperto', '31094503': 'Chiuso' };
+    function _noTag_(s) { return String(s == null ? '' : s).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); }
+    var aperti = [], tutti = [], seen = {};
+    for (var i = 0; i < results.length; i++) {
+      var r = results[i], m = r.metadata || {};
+      function g1(k) { return (m[k] && m[k][0] != null) ? String(m[k][0]) : ''; }
+      var id = g1('callIdentifier') || r.reference || '';
+      var titolo = _noTag_(r.title || g1('callTitle') || r.content || r.summary || '');
+      // Dedup: SEDIA ripete lo stesso bando una volta per lingua -> tieni 1 per id.
+      var dedupKey = id || titolo.toLowerCase();
+      if (seen[dedupKey]) continue;
+      seen[dedupKey] = true;
+      var st = g1('status');
+      var dl = g1('deadlineDate') || g1('startDate') || g1('es_SortDate') || '';
+      var stLabel = STATO[st] || st || 'n/d';
+      var link = r.url || '';
+      var summ = _noTag_(r.summary || r.content || '').substring(0, 180);
+      var riga = '• ' + titolo.substring(0, 180) + ' | id:' + id +
+                 ' | stato:' + stLabel + ' | data:' + dl + ' | ' + link + '\n  ' + summ;
+      tutti.push(riga);
+      if (st === '31094501' || st === '31094502') aperti.push(riga);
+      if (aperti.length >= 40) break;
+    }
+    // Preferisci le aperte; se lo stato non e' leggibile, passa le prime 40 a Claude.
+    var righe = aperti.length ? aperti : tutti.slice(0, 40);
+    if (!righe.length) return null;
+    return 'EU Funding & Tenders — call (' + righe.length + ', keyword nell\'URL):\n' + righe.join('\n');
+  } catch(e) { return null; }
+}
+
+/**
+ * DIAGNOSTICA: mostra esattamente cosa produce _euftFetch_ (cioe' cosa riceve Claude)
+ * per la keyword 'cultural heritage'. Serve a capire se le call EU arrivano, se il
+ * filtro stato tiene qualcosa, e se i campi sono leggibili. Lanciare da editor.
+ */
+function testEuFtFetch() {
+  var url = 'https://api.tech.ec.europa.eu/search-api/prod/rest/search?apiKey=SEDIA&text=' + encodeURIComponent('cultural heritage');
+  var out = _euftFetch_(url);
+  if (out === null) {
+    Logger.log('_euftFetch_ -> NULL (fetch fallito / JSON non valido / 0 risultati dopo filtro stato)');
+    return 0;
+  }
+  Logger.log('_euftFetch_ OK — lunghezza testo: ' + out.length + ' char');
+  Logger.log('--- TESTO PASSATO A CLAUDE (primi 2800 char) ---');
+  Logger.log(out.substring(0, 2800));
+  return out.length;
+}
+
+/**
+ * Fetch CORDIS (progetti UE finanziati). GET JSON pubblico, niente chiave. La
+ * risposta e' verbosa: qui estraggo i campi utili (acronimo, titolo, stato, date,
+ * link al progetto) in formato compatto. NB: sono progetti GIA' finanziati (analisi
+ * di chi ha vinto bandi cultura/turismo), AG5 — non call aperte.
+ */
+function _cordisFetch_(url) {
+  try {
+    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'Accept': 'application/json' }, deadline: 10 });
+    if (resp.getResponseCode() !== 200) return null;
+    var data;
+    try { data = JSON.parse(resp.getContentText()); } catch(e0) { return null; }
+    var hits = data && data.result && data.result.hits && data.result.hits.hit;
+    if (!hits) return null;
+    if (!Array.isArray(hits)) hits = [hits];          // CORDIS: 1 risultato = oggetto singolo
+    if (!hits.length) return null;
+    function _noTag_(s) { return String(s == null ? '' : s).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); }
+    var righe = [];
+    for (var i = 0; i < hits.length && righe.length < 30; i++) {
+      var p = hits[i].project || hits[i] || {};
+      var id = p.id || p.rcn || '';
+      var titolo = _noTag_(p.title || p.acronym || '');
+      var acr = _noTag_(p.acronym || '');
+      var stato = _noTag_(p.status || '');
+      var dal = _noTag_(p.startDate || ''), al = _noTag_(p.endDate || '');
+      var obj = _noTag_(p.objective || p.teaser || '').substring(0, 180);
+      var link = id ? ('https://cordis.europa.eu/project/id/' + id) : '';
+      righe.push('• ' + (acr ? '[' + acr + '] ' : '') + titolo.substring(0, 160) +
+                 ' | stato:' + stato + ' | ' + dal + '→' + al + ' | ' + link + '\n  ' + obj);
+    }
+    if (!righe.length) return null;
+    return 'CORDIS — progetti UE finanziati (' + righe.length + '):\n' + righe.join('\n');
+  } catch(e) { return null; }
+}
+
+/** DIAGNOSTICA: mostra cosa produce _cordisFetch_ (cosa riceve Claude). */
+function testCordisFetch() {
+  var q = "contenttype='project' AND ('cultural heritage' OR 'museum' OR 'cultural tourism')";
+  var url = 'https://cordis.europa.eu/search?q=' + encodeURIComponent(q) + '&p=1&num=10&format=json';
+  var out = _cordisFetch_(url);
+  if (out === null) { Logger.log('_cordisFetch_ -> NULL (fetch/parse fallito o 0 risultati)'); return 0; }
+  Logger.log('_cordisFetch_ OK — ' + out.length + ' char');
+  Logger.log('--- TESTO PASSATO A CLAUDE (primi 2500 char) ---');
+  Logger.log(out.substring(0, 2500));
+  return out.length;
+}
+
+/** Estrae query+limit dall'URL-convenzione TED e costruisce il body POST. */
+function _tedBuildBody_(url) {
+  // Default valido (mai '*': TED lo rifiuta con 400). Famiglia CPV cultura/musei.
+  var q = 'classification-cpv IN (92500000 92520000 92521000 92522000)';
+  var mq = url.match(/[?&]query=([^&]+)/);
+  if (mq) { try { q = decodeURIComponent(mq[1].replace(/\+/g, ' ')); } catch(e0) { q = mq[1]; } }
+  var lim = 20;
+  var ml = url.match(/[?&]limit=(\d+)/);
+  if (ml) lim = Number(ml[1]);
+  // Filtro freschezza: se la query non ha gia' un filtro data, aggiungi
+  // "pubblicati negli ultimi 365 giorni". TED vuole il formato YYYYMMDD
+  // (confermato dal test: i trattini danno 400). Calcolato a ogni fetch
+  // => i risultati restano sempre aggiornati senza intervento manuale.
+  if (q.indexOf('publication-date') < 0) {
+    var dLim = new Date(); dLim.setDate(dLim.getDate() - 365);
+    var ymd = '' + dLim.getFullYear() + ('0' + (dLim.getMonth() + 1)).slice(-2) + ('0' + dLim.getDate()).slice(-2);
+    q = q + ' AND publication-date>=' + ymd;
+  }
+  return {
+    query: q,
+    fields: ['publication-number', 'notice-title', 'links', 'deadline-receipt-request',
+             'buyer-name', 'classification-cpv', 'publication-date', 'place-of-performance'],
+    page: 1,
+    limit: lim,
+    scope: 'ACTIVE',
+    paginationMode: 'PAGE_NUMBER',
+    checkQuerySyntax: false
+  };
+}
+
+/** Esegue la POST verso TED. Ritorna il testo JSON o null. */
+function _tedFetch_(url) {
+  try {
+    var endpoint = url.split('?')[0];
+    var resp = UrlFetchApp.fetch(endpoint, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(_tedBuildBody_(url)),
+      muteHttpExceptions: true,
+      followRedirects: true,
+      headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0 (compatible; SinopiaBot/1.0)' },
+      deadline: 10
+    });
+    if (resp.getResponseCode() !== 200) return null;
+    return resp.getContentText();
+  } catch(e) { return null; }
+}
+
+/**
+ * TEST one-click: verifica l'API TED con piu' varianti di body e logga gli esiti.
+ * Da lanciare dall'editor (Esegui -> testTedApi), poi guardare il Log/Esecuzioni.
+ * Serve a confermare i nomi esatti dei campi PRIMA di attivare la fonte.
+ */
+function testTedApi() {
+  var endpoint = 'https://api.ted.europa.eu/v3/notices/search';
+  // Data limite = 365 giorni fa, in due formati da provare.
+  var d = new Date(); d.setDate(d.getDate() - 365);
+  var yyyy = d.getFullYear(), mm = ('0' + (d.getMonth() + 1)).slice(-2), dd = ('0' + d.getDate()).slice(-2);
+  var dataDash = yyyy + '-' + mm + '-' + dd;   // 2025-06-03
+  var dataComp = yyyy + mm + dd;               // 20250603
+  var qBase = 'classification-cpv IN (92500000 92520000 92521000 92522000) AND place-of-performance=ITA';
+  var mkUrl = function(q) { return endpoint + '?query=' + encodeURIComponent(q) + '&limit=3'; };
+  var varianti = [
+    { nome: 'C_controllo_no_data',  body: _tedBuildBody_(mkUrl(qBase)) },
+    { nome: 'D_data_trattini',      body: _tedBuildBody_(mkUrl(qBase + ' AND publication-date>=' + dataDash)) },
+    { nome: 'E_data_compatta',      body: _tedBuildBody_(mkUrl(qBase + ' AND publication-date>=' + dataComp)) }
+  ];
+  var report = [];
+  varianti.forEach(function(v) {
+    try {
+      var resp = UrlFetchApp.fetch(endpoint, {
+        method: 'post', contentType: 'application/json',
+        payload: JSON.stringify(v.body), muteHttpExceptions: true,
+        headers: { 'Accept': 'application/json' },
+        deadline: 10
+      });
+      var code = resp.getResponseCode();
+      var txt = resp.getContentText() || '';
+      Logger.log('=== TED ' + v.nome + ' -> HTTP ' + code + ' ===');
+      Logger.log('BODY inviato: ' + JSON.stringify(v.body));
+      Logger.log('RISPOSTA (primi 1800 char): ' + txt.substring(0, 1800));
+      report.push({ variante: v.nome, http: code, lung: txt.length });
+    } catch(e) {
+      Logger.log('=== TED ' + v.nome + ' -> ERRORE: ' + e + ' ===');
+      report.push({ variante: v.nome, errore: String(e) });
+    }
+  });
+  Logger.log('RIEPILOGO testTedApi: ' + JSON.stringify(report, null, 2));
+  return report;
+}
+
+/**
+ * TEST esiti/aggiudicazioni TED: invece di indovinare il filtro, MOSTRA il campo
+ * "tipo avviso" (notice-type / form-type) dei risultati cultura, cosi' vediamo i
+ * valori reali che distinguono un BANDO da un ESITO/AGGIUDICAZIONE. scope ALL per
+ * includere anche gli avvisi di aggiudicazione (relativi ad appalti passati).
+ */
+function testTedEsiti() {
+  var endpoint = 'https://api.ted.europa.eu/v3/notices/search';
+  var body = {
+    query: 'classification-cpv IN (92500000 92520000 92521000 92522000) AND place-of-performance=ITA',
+    fields: ['publication-number', 'notice-title', 'notice-type', 'form-type', 'deadline-receipt-request', 'publication-date', 'links'],
+    page: 1, limit: 15, scope: 'ALL', paginationMode: 'PAGE_NUMBER', checkQuerySyntax: false
+  };
+  try {
+    var resp = UrlFetchApp.fetch(endpoint, {
+      method: 'post', contentType: 'application/json',
+      payload: JSON.stringify(body), muteHttpExceptions: true,
+      headers: { 'Accept': 'application/json' },
+      deadline: 10
+    });
+    var code = resp.getResponseCode();
+    Logger.log('=== TED ESITI -> HTTP ' + code + ' ===');
+    if (code !== 200) { Logger.log('RISPOSTA: ' + resp.getContentText().substring(0, 1200)); return { http: code }; }
+    var data = JSON.parse(resp.getContentText());
+    var notices = data.notices || [];
+    Logger.log('Avvisi totali tornati: ' + notices.length + ' (su totalNoticeCount: ' + (data.totalNoticeCount || '?') + ')');
+    var conteggio = {};
+    notices.forEach(function(n, i) {
+      var nt = JSON.stringify(n['notice-type']);
+      var ft = JSON.stringify(n['form-type']);
+      var tit = n['notice-title'] ? JSON.stringify(n['notice-title']).substring(0, 70) : '';
+      conteggio[nt] = (conteggio[nt] || 0) + 1;
+      Logger.log('  #' + (i + 1) + ' notice-type:' + nt + ' | form-type:' + ft + ' | ' + tit);
+    });
+    Logger.log('RIEPILOGO notice-type: ' + JSON.stringify(conteggio, null, 2));
+    Logger.log('>>> I valori di notice-type/form-type che indicano AGGIUDICAZIONE sono quelli da usare nel filtro esiti.');
+    return { http: 200, conteggio: conteggio };
+  } catch(e) {
+    Logger.log('ERRORE testTedEsiti: ' + e);
+    return { errore: String(e) };
+  }
+}
+
+function _agentCleanHtml_(html) {
+  // Preserva link come [URL: href] prima di stripare tag (fix v4.12.3)
+  var cleaned = html.replace(/<a\s+[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi, function(m, href, text) {
+    return text + ' [URL: ' + href + ']';
+  });
+  cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+  cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+  cleaned = cleaned.replace(/<[^>]+>/g, ' ');
+  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+  return cleaned.substring(0, 12000);
+}
+
+function _agentMd5_(text) {
+  var raw = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, text);
+  return raw.map(function(b) { return ('0' + (b & 0xFF).toString(16)).slice(-2); }).join('');
+}
+
+function _agentExtractWithClaude_(text, fonte, agent) {
+  // Controlla se Claude API è configurata
+  var apiKey = '';
+  try {
+    apiKey = PropertiesService.getScriptProperties().getProperty('CLAUDE_API_KEY') || '';
+  } catch(e) {}
+  if (!apiKey) {
+    Logger.log('  WARN: CLAUDE_API_KEY non configurata. Skip Claude extraction.');
+    return [];
+  }
+
+  var prompt = agent.promptSpecializzato + '\n\n'
+    + 'Fonte: ' + fonte.nome + ' (' + fonte.url + ')\n\n'
+    + 'Testo da analizzare:\n' + text + '\n\n'
+    + 'Rispondi SOLO con un JSON array. Per ogni contenuto rilevante trovato:\n'
+    + '[{"titolo":"string max 120 char","sommario":"string max 300 char","url":"URL diretta se disponibile","data":"yyyy-mm-dd se disponibile","tags":["t1","t2"],"score":1-5,"tipo":"bando|norma|news|case_study|report|tool"}]\n'
+    + 'Se non trovi contenuti pertinenti, rispondi: []';
+
+  // Retry con backoff esponenziale (max 3 tentativi)
+  var maxRetries = 3;
+  for (var attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      var resp = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+        method: 'post',
+        contentType: 'application/json',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        payload: JSON.stringify({
+          model: OC_CLAUDE_MODEL,
+          max_tokens: 2500,
+          messages: [{ role: 'user', content: prompt }]
+        }),
+        muteHttpExceptions: true,
+        deadline: 30
+      });
+
+      var httpCode = resp.getResponseCode();
+      if (httpCode === 429 || httpCode >= 500) {
+        if (attempt < maxRetries) {
+          Utilities.sleep(Math.pow(2, attempt) * 1000);  // 2s, 4s
+          continue;
+        }
+        Logger.log('  Claude API HTTP ' + httpCode + ' dopo ' + maxRetries + ' tentativi');
+        return [];
+      }
+
+      var body = JSON.parse(resp.getContentText());
+      var content = body.content && body.content[0] && body.content[0].text || '[]';
+      // Estrai JSON dal testo (gestisce markdown code blocks)
+      var jsonMatch = content.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) return [];
+      return JSON.parse(jsonMatch[0]);
+    } catch(e) {
+      if (attempt < maxRetries) {
+        Utilities.sleep(Math.pow(2, attempt) * 1000);
+        continue;
+      }
+      Logger.log('  Claude API errore dopo ' + maxRetries + ' tentativi: ' + e.message);
+      return [];
+    }
+  }
+  return [];
+}
+
+function _agentDetectAmbito_(item, agent) {
+  // Usa il primo ambito dell'agente come default
+  return agent.ambiti[0] || 3;
+}
+
+function _agentUpdateFonteEsito_(sheet, row, esito, count) {
+  if (!sheet || !row) return;
+  try {
+    var lastCol = sheet.getLastColumn();
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    // v4.28.36: batch read+write — 1 getValues + 1 setValues anziché 4-6 chiamate singole
+    var rowData = sheet.getRange(row, 1, 1, lastCol).getValues()[0];
+    var iEsito = headers.indexOf('UltimoEsito');
+    var iScan = headers.indexOf('UltimaScan');
+    var iTotal = headers.indexOf('NRecordTotali');
+    var iFail = headers.indexOf('FailConsecutivi');
+    if (iEsito >= 0) rowData[iEsito] = esito;
+    if (iScan >= 0) rowData[iScan] = new Date().toISOString();
+    if (esito === 'OK' || esito === 'NO_MATCH') {
+      if (iTotal >= 0) rowData[iTotal] = Number(rowData[iTotal] || 0) + count;
+      if (iFail >= 0) rowData[iFail] = 0;
+    } else {
+      if (iFail >= 0) rowData[iFail] = Number(rowData[iFail] || 0) + 1;
+    }
+    sheet.getRange(row, 1, 1, lastCol).setValues([rowData]);
+  } catch(e) { /* non bloccante */ }
+}
+
+function _agentUpdateFonteHash_(sheet, row, hash) {
+  if (!sheet || !row) return;
+  try {
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    var iHash = headers.indexOf('UltimoHash');
+    if (iHash >= 0) sheet.getRange(row, iHash + 1).setValue(hash);
+  } catch(e) { /* non bloccante */ }
+}

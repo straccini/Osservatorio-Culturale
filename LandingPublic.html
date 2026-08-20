@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sinopia · Osservatorio Culturale</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23935851'/><text x='16' y='23' text-anchor='middle' font-family='Georgia,serif' font-size='22' font-weight='700' fill='white'>S</text></svg>">
+<meta name="description" content="Intelligence per musei e luoghi della cultura. Sondaggi gratuiti di autovalutazione, bandi, normative, innovazione museale.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FFFFFF; --paper-2:#F7F7F8; --surface:#F7F7F8; --surface-2:#EFEFF1;
+  --rule:#E5E5E7; --rule-2:#D2D2D7;
+  --ink:#101010; --ink-2:#3A3A3C; --ink-3:#6E6E73; --ink-4:#A1A1A6;
+  --accent:#935851; --accent-soft:#F0E6E4; --accent-hover:#7A4940;
+  --amb-1:#7C3AED; --amb-2:#10916D; --amb-3:#2563EB; --amb-4:#92400E; --amb-5:#0E7490;
+  --amb-6:#1D4ED8; --amb-7:#7E22CE; --amb-8:#B45309;
+  --font-ui:'Inter','Inter Tight',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-display:'Inter Tight','Inter',-apple-system,sans-serif;
+  --r-sm:8px; --r-md:12px; --r-lg:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-ui); font-size:16px; line-height:1.55; color:var(--ink); background:var(--paper); -webkit-font-smoothing:antialiased; font-feature-settings:'cv11','ss01'; letter-spacing:-0.005em}
+
+.wrap{max-width:1080px; margin:0 auto; padding:0 32px}
+
+.header{padding:24px 0; border-bottom:1px solid var(--rule); display:flex; align-items:center; justify-content:space-between}
+.logo{display:flex; align-items:center; gap:14px; text-decoration:none; color:inherit}
+.logo-mark{width:36px; height:36px; background:var(--ink); border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--paper); font-family:var(--font-display); font-size:15px; font-weight:600; letter-spacing:-0.02em}
+.logo-text{font-family:var(--font-display); font-size:18px; font-weight:600; color:var(--ink); letter-spacing:-0.02em; line-height:1.1}
+.logo-sub{font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-3); font-weight:600; margin-top:2px}
+.header-cta{font-size:13px; color:var(--ink); text-decoration:none; border:1px solid var(--ink); padding:9px 18px; border-radius:999px; font-weight:500; transition:all .15s}
+.header-cta:hover{background:var(--ink); color:var(--paper)}
+
+.hero{padding:120px 0 96px}
+.hero-eyebrow{font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:24px}
+.hero-title{font-family:var(--font-display); font-size:80px; color:var(--ink); line-height:0.98; letter-spacing:-0.035em; font-weight:600; max-width:880px; margin-bottom:32px}
+.hero-title em{font-style:normal; color:var(--ink-4); font-weight:500}
+.hero-desc{font-size:19px; color:var(--ink-3); max-width:620px; line-height:1.55; font-weight:400}
+.hero-actions{display:flex; gap:12px; margin-top:40px; flex-wrap:wrap}
+.btn{padding:14px 28px; border-radius:999px; border:1px solid transparent; font-family:var(--font-ui); font-size:14px; font-weight:500; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:8px; transition:all .15s}
+.btn-primary{background:var(--ink); color:var(--paper); border-color:var(--ink)}
+.btn-primary:hover{background:#000}
+.btn-accent{background:var(--accent); color:var(--paper); border-color:var(--accent)}
+.btn-accent:hover{background:var(--accent-hover); border-color:var(--accent-hover)}
+.btn-secondary{background:transparent; color:var(--ink); border-color:var(--rule)}
+.btn-secondary:hover{border-color:var(--ink); background:var(--surface)}
+
+.surveys{padding:80px 0; border-top:1px solid var(--rule)}
+.section-head{margin-bottom:48px; display:flex; align-items:flex-end; justify-content:space-between; gap:32px; flex-wrap:wrap}
+.section-eyebrow{font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:14px}
+.section-title{font-family:var(--font-display); font-size:42px; font-weight:600; letter-spacing:-0.025em; line-height:1.05; color:var(--ink); max-width:540px}
+.section-sub{font-size:15px; color:var(--ink-3); max-width:340px; line-height:1.55}
+
+.survey-grid{display:grid; grid-template-columns:repeat(2, 1fr); gap:16px}
+.survey-card{background:var(--paper); border:1px solid var(--rule); border-radius:var(--r-lg); padding:32px; transition:all .15s; cursor:pointer; text-decoration:none; color:inherit; display:flex; flex-direction:column; gap:20px; min-height:240px}
+.survey-card:hover{border-color:var(--ink); transform:translateY(-2px)}
+.survey-card-top{display:flex; align-items:center; gap:16px}
+.survey-card-icon{width:44px; height:44px; border:1px solid currentColor; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--card-color, var(--ink)); flex-shrink:0}
+.survey-card-icon svg{width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round}
+.survey-card-num{font-family:var(--font-display); font-size:13px; color:var(--ink-3); font-weight:600; letter-spacing:0.05em; font-variant-numeric:tabular-nums}
+.survey-card-title{font-family:var(--font-display); font-size:24px; color:var(--ink); margin-bottom:8px; letter-spacing:-0.02em; font-weight:500; line-height:1.15}
+.survey-card-desc{font-size:14px; color:var(--ink-3); line-height:1.55; flex:1}
+.survey-card-meta{font-size:12px; color:var(--ink-2); font-weight:500; display:flex; align-items:center; gap:8px; padding-top:18px; border-top:1px solid var(--rule); margin-top:auto}
+.survey-card-meta-arrow{margin-left:auto; transition:transform .15s}
+.survey-card:hover .survey-card-meta-arrow{transform:translateX(4px)}
+
+.matrix-banner{padding:80px 0; border-top:1px solid var(--rule)}
+.matrix-inner{background:var(--ink); color:var(--paper); border-radius:var(--r-lg); padding:64px 56px; display:grid; grid-template-columns:1.4fr 1fr; gap:48px; align-items:center}
+.matrix-text{display:flex; flex-direction:column; gap:18px}
+.matrix-text .section-eyebrow{color:var(--accent)}
+.matrix-text h2{font-family:var(--font-display); font-size:38px; font-weight:600; letter-spacing:-0.025em; line-height:1.05; max-width:480px}
+.matrix-text p{font-size:15px; color:rgba(255,255,255,0.7); max-width:480px; line-height:1.55}
+.matrix-meta{display:flex; gap:24px; margin-top:8px}
+.matrix-meta-item{display:flex; flex-direction:column; gap:4px}
+.matrix-meta-item span:first-child{font-size:11px; color:rgba(255,255,255,0.5); letter-spacing:0.08em; text-transform:uppercase; font-weight:500}
+.matrix-meta-item span:last-child{font-family:var(--font-display); font-size:22px; font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:-0.02em}
+.matrix-cta{display:flex; flex-direction:column; gap:12px; align-items:stretch}
+.matrix-cta .btn{justify-content:center; padding:16px 24px; font-size:15px}
+.matrix-cta .btn-accent{background:var(--accent); color:var(--paper); border-color:var(--accent)}
+.matrix-cta .btn-ghost{background:transparent; color:var(--paper); border:1px solid rgba(255,255,255,0.2)}
+.matrix-cta .btn-ghost:hover{border-color:var(--paper); background:rgba(255,255,255,0.05)}
+
+.how{padding:80px 0; border-top:1px solid var(--rule)}
+.how-steps{display:grid; grid-template-columns:repeat(3, 1fr); gap:32px; margin-top:48px}
+.how-step{display:flex; flex-direction:column; gap:14px}
+.how-num{font-family:var(--font-display); font-size:64px; font-weight:600; color:var(--accent); line-height:1; letter-spacing:-0.04em; font-variant-numeric:tabular-nums}
+.how-step-title{font-family:var(--font-display); font-size:20px; font-weight:500; color:var(--ink); letter-spacing:-0.02em}
+.how-step-desc{font-size:14px; color:var(--ink-3); line-height:1.55}
+
+.about{padding:80px 0; border-top:1px solid var(--rule)}
+.about-inner{display:grid; grid-template-columns:1.4fr 1fr; gap:48px; align-items:start}
+.about-text{display:flex; flex-direction:column; gap:18px}
+.about-title{font-family:var(--font-display); font-size:42px; font-weight:600; letter-spacing:-0.025em; line-height:1.05; color:var(--ink)}
+.about-desc{font-size:15px; color:var(--ink-3); line-height:1.65; max-width:560px}
+.about-desc strong{color:var(--ink); font-weight:600}
+.about-evidence{background:var(--surface); border-radius:var(--r-lg); padding:32px; display:flex; flex-direction:column; gap:24px}
+.about-evidence-title{font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--accent); font-weight:600}
+.about-stat{display:flex; flex-direction:column; gap:2px}
+.about-stat-n{font-family:var(--font-display); font-size:34px; font-weight:600; color:var(--ink); letter-spacing:-0.03em; font-variant-numeric:tabular-nums; line-height:1.05}
+.about-stat-l{font-size:13px; color:var(--ink-3); font-weight:500}
+
+.footer{padding:48px 0; border-top:1px solid var(--rule); display:flex; justify-content:space-between; align-items:center; gap:24px; flex-wrap:wrap; font-size:12px; color:var(--ink-3)}
+.footer strong{color:var(--ink); font-weight:600}
+.footer a{color:var(--ink); text-decoration:none}
+.footer a:hover{color:var(--accent)}
+.footer-links{display:flex; gap:24px}
+
+@media(max-width:840px){
+  .hero{padding:64px 0 48px}
+  .hero-title{font-size:48px}
+  .hero-desc{font-size:16px}
+  .section-title{font-size:30px}
+  .survey-grid{grid-template-columns:1fr}
+  .matrix-inner{grid-template-columns:1fr; padding:40px 32px; gap:32px}
+  .matrix-text h2{font-size:28px}
+  .how-steps{grid-template-columns:1fr; gap:24px}
+  .about-inner{grid-template-columns:1fr; gap:32px}
+  .about-title{font-size:32px}
+  .footer{flex-direction:column; text-align:center}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="header">
+    <a class="logo" href="?">
+      <div class="logo-mark">S</div>
+      <div>
+        <div class="logo-text">Sinopia</div>
+        <div class="logo-sub">Osservatorio Culturale</div>
+      </div>
+    </a>
+    <a class="header-cta" href="#sondaggi">Valuta il tuo museo &rarr;</a>
+  </header>
+
+  <section class="hero">
+    <div class="hero-eyebrow">Osservatorio Culturale &middot; 2026</div>
+    <h1 class="hero-title">Intelligence per musei e <em>luoghi della cultura.</em></h1>
+    <p class="hero-desc">Monitoriamo bandi, normative e innovazione per il settore museale italiano. Sondaggi gratuiti di autovalutazione per direttori e gestori, diagnosi immediata e ipotesi di sviluppo basate sull'AI.</p>
+    <div class="hero-actions">
+      <a href="#sondaggi" class="btn btn-primary">Inizia da un sondaggio mirato</a>
+      <a href="?survey=matrix" class="btn btn-secondary">Vai al Matrix completo</a>
+    </div>
+  </section>
+
+  <section class="surveys" id="sondaggi">
+    <div class="section-head">
+      <div>
+        <div class="section-eyebrow">Sondaggi mirati &middot; gratuiti</div>
+        <h2 class="section-title">Scegli da dove vuoi partire.</h2>
+      </div>
+      <p class="section-sub">8 domande, 3 minuti, diagnosi immediata della maturita' del museo su una singola dimensione.</p>
+    </div>
+
+    <div class="survey-grid">
+
+      <a class="survey-card" href="?survey=accessibilita" style="--card-color:var(--amb-7)">
+        <div class="survey-card-top">
+          <div class="survey-card-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2"/><path d="M12 7.5v5m-4 2l4-2 4 2m-4-2v5"/></svg></div>
+          <span class="survey-card-num">01</span>
+        </div>
+        <div>
+          <div class="survey-card-title">Accessibilita' radicale</div>
+          <div class="survey-card-desc">Fisica, cognitiva, sensoriale e digitale. Quanto e' inclusivo il tuo museo a quattro livelli?</div>
+        </div>
+        <div class="survey-card-meta">8 domande &middot; 3 min <span class="survey-card-meta-arrow">&rarr;</span></div>
+      </a>
+
+      <a class="survey-card" href="?survey=digital" style="--card-color:var(--amb-6)">
+        <div class="survey-card-top">
+          <div class="survey-card-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></svg></div>
+          <span class="survey-card-num">02</span>
+        </div>
+        <div>
+          <div class="survey-card-title">Maturita' digitale</div>
+          <div class="survey-card-desc">Web, social, catalogo digitale, analytics, AI: a che punto sei lungo la curva di adozione tecnologica?</div>
+        </div>
+        <div class="survey-card-meta">8 domande &middot; 3 min <span class="survey-card-meta-arrow">&rarr;</span></div>
+      </a>
+
+      <a class="survey-card" href="?survey=audience" style="--card-color:var(--amb-8)">
+        <div class="survey-card-top">
+          <div class="survey-card-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="17" cy="8" r="2"/><path d="M21 21v-1.5a3 3 0 0 0-2-2.83"/></svg></div>
+          <span class="survey-card-num">03</span>
+        </div>
+        <div>
+          <div class="survey-card-title">Audience &amp; engagement</div>
+          <div class="survey-card-desc">Segmentazione pubblici, scuole, edutainment, co-creazione: chi entra al museo e quanto torna?</div>
+        </div>
+        <div class="survey-card-meta">8 domande &middot; 3 min <span class="survey-card-meta-arrow">&rarr;</span></div>
+      </a>
+
+      <a class="survey-card" href="?survey=welfare" style="--card-color:var(--amb-2)">
+        <div class="survey-card-top">
+          <div class="survey-card-icon"><svg viewBox="0 0 24 24"><path d="M12 21C12 21 4 13.5 4 8.5C4 5.46 6.46 3 9.5 3c1.74 0 3.41.81 4.5 2.09A5.99 5.99 0 0 1 18.5 3C21.54 3 24 5.46 24 8.5c0 5-8 12.5-8 12.5"/></svg></div>
+          <span class="survey-card-num">04</span>
+        </div>
+        <div>
+          <div class="survey-card-title">Welfare culturale</div>
+          <div class="survey-card-desc">Programmi welfare, pubblici fragili, impatto sociale misurato e cornice WHO HEN 67.</div>
+        </div>
+        <div class="survey-card-meta">8 domande &middot; 3 min <span class="survey-card-meta-arrow">&rarr;</span></div>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="matrix-banner">
+    <div class="matrix-inner">
+      <div class="matrix-text">
+        <div class="section-eyebrow">MuseMu Matrix</div>
+        <h2>La diagnosi integrale del tuo museo.</h2>
+        <p>Le 10 dimensioni del modello esteso, ispirato a Museum Matrix di Henkel e integrato col framework Musei Sensibili. Profilo personalizzato, radar a 10 assi, roadmap di sviluppo.</p>
+        <div class="matrix-meta">
+          <div class="matrix-meta-item"><span>Dimensioni</span><span>10</span></div>
+          <div class="matrix-meta-item"><span>Domande</span><span>43</span></div>
+          <div class="matrix-meta-item"><span>Tempo</span><span>~ 8 min</span></div>
+        </div>
+      </div>
+      <div class="matrix-cta">
+        <a class="btn btn-accent" href="?survey=matrix">Compila il Matrix completo &rarr;</a>
+        <a class="btn btn-ghost" href="?action=prenotazione">Prenota una consulenza gratuita</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="how">
+    <div class="section-head">
+      <div>
+        <div class="section-eyebrow">Come funziona</div>
+        <h2 class="section-title">Tre passi, nessuna registrazione.</h2>
+      </div>
+    </div>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="how-num">01</div>
+        <div class="how-step-title">Compila</div>
+        <div class="how-step-desc">8 domande su una dimensione o 43 sul Matrix completo. Anonimo, senza account, conforme GDPR.</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">02</div>
+        <div class="how-step-title">Ricevi la diagnosi</div>
+        <div class="how-step-desc">Score complessivo, radar a 10 assi, tre opportunita' di sviluppo prioritarie. Immediato.</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">03</div>
+        <div class="how-step-title">Approfondisci</div>
+        <div class="how-step-desc">Servizi Sinopia mappati sui tuoi gap, o una call gratuita con Silvano Straccini.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="about">
+    <div class="about-inner">
+      <div class="about-text">
+        <div class="section-eyebrow">Chi siamo</div>
+        <!-- TODO Chi siamo: testo Sinopia da definire -->
+        <h2 class="about-title">Sinopia</h2>
+        <p class="about-desc">Sezione in aggiornamento.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div><strong>Sinopia</strong> &middot; Osservatorio Culturale &middot; Fano (PU)</div>
+    <div class="footer-links">
+      <a href="mailto:s.straccini@gmail.com">s.straccini@gmail.com</a>
+      <a href="?page=privacy">Privacy</a>
+    </div>
+  </footer>
+
+</div>
+
+</body>
+</html>

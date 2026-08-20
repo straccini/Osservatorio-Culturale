@@ -1,0 +1,194 @@
+<!--
+  ============================================================
+  OSSERVATORIO CULTURALE / MUSEMU MATRIX — TOPBAR.HTML
+  v5.0 — Direzione C Curatoriale Sans (24/05/2026)
+  Tipografia Inter + Inter Tight, accent vermillion #935851
+  ------------------------------------------------------------
+  File GAS: "Topbar"
+  Include nel Index.html.
+  ------------------------------------------------------------
+  ARCHITETTURA:
+  Markup statico. Breadcrumb, contatore notifiche e iniziali
+  utente vengono popolati da Navigation.html (OC.hydrate).
+  La ricerca globale viene inoltrata a OC.search().
+  Il toggle tema (dark/light) usa localStorage e data-theme su <html>.
+  ============================================================
+-->
+<!-- v4.18.63 — Banner CTA rimosso dalla home. Contenuto spostato nel popup timer 5 minuti (Index.html) -->
+<div id="anonCtaBar" hidden></div>
+
+<header class="topbar" role="banner">
+
+  <!-- Toggle sidebar mobile -->
+  <button class="topbar-hamburger" id="toggleSidebar" aria-label="Apri/chiudi menu">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h16"/>
+    </svg>
+  </button>
+
+  <!-- Breadcrumb dinamico -->
+  <nav class="breadcrumb" id="breadcrumb" aria-label="Breadcrumb">
+    <span>Osservatorio</span><span class="sep">/</span><b>Home</b>
+  </nav>
+
+  <!-- Ricerca globale -->
+  <form class="topbar-search" id="topbarSearchForm"
+        onsubmit="event.preventDefault(); OC.search(document.getElementById('globalSearch').value);"
+        role="search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input
+      type="search"
+      id="globalSearch"
+      placeholder="Cerca bandi, news, ambiti&hellip;"
+      autocomplete="off"
+      aria-label="Ricerca globale"
+    />
+    <kbd class="kbd">&#8984;K</kbd>
+  </form>
+
+  <!-- Azioni destra -->
+  <div class="topbar-actions">
+
+    <!-- Toggle dimensione testo (accessibilità) -->
+    <button class="theme-toggle" id="fontSizeToggle" aria-label="Aumenta/riduci testo" title="Dimensione testo — clicca per cambiare">
+      <span id="fontSizeLabel" style="font-family:var(--font-ui);font-size:13px;font-weight:700;line-height:1;letter-spacing:-.02em">Aa+</span>
+    </button>
+
+    <!-- Toggle dark / light mode -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Cambia tema" title="Tema chiaro / scuro">
+      <!-- Icona sole (light) -->
+      <svg id="themeIconLight" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <!-- Icona luna (dark) — visibile quando in dark mode -->
+      <svg id="themeIconDark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+
+    <!-- Notifiche (v4.18.14 — campanella con dropdown riepilogo) -->
+    <div class="topbar-notif-wrap" style="position:relative">
+      <button class="topbar-icon" data-action="openNotifiche" aria-label="Notifiche" title="Riepilogo: bandi urgenti, nuovi rilevati oggi, stato scanner, news ultime 24h">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span class="topbar-badge" id="badge-notifiche" hidden>0</span>
+      </button>
+      <div id="notifPanel" hidden style="position:absolute;top:calc(100% + 8px);right:0;width:340px;max-width:calc(100vw - 24px);background:var(--paper,#fff);border:1px solid var(--rule,#E5E5E7);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.10),0 2px 4px rgba(0,0,0,.06);z-index:1000;font-family:var(--font-ui);max-height:calc(100vh - 80px);overflow-y:auto">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--rule,#E5E5E7)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <strong style="font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink,#101010)">Notifiche · Riepilogo del giorno</strong>
+            <span id="notifPanelInfo" style="font-size:11px;color:var(--ink-3,#6E6E73)">—</span>
+          </div>
+          <p style="margin:0;font-size:11.5px;color:var(--ink-3,#6E6E73);line-height:1.45">Occhiata veloce: bandi che scadono presto, novità di oggi, stato dello scanner. Click su una riga per andare al contesto.</p>
+        </div>
+        <div id="notifPanelBody" style="padding:6px 0">
+          <div style="padding:14px 16px;font-size:13px;color:var(--ink-3,#6E6E73);text-align:center">Caricamento…</div>
+        </div>
+        <div style="padding:10px 16px;border-top:1px solid var(--rule,#E5E5E7);display:flex;justify-content:space-between;gap:8px">
+          <button class="btn btn-secondary" onclick="OC.openNotifiche()" title="Ricarica il riepilogo notifiche" style="font-size:11px;padding:5px 10px">🔄 Aggiorna</button>
+          <button class="btn btn-secondary" onclick="OC.closeNotifiche()" title="Chiudi il pannello" style="font-size:11px;padding:5px 10px">Chiudi</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA topbar newsletter rimossa v5.1.8 — resta solo il footer HomeView -->
+    <span id="topbarNlCta" hidden></span>
+
+    <!-- v5.0.5 — Profilo rimosso dalla topbar (resta nella sidebar footer) -->
+    <!-- Elementi nascosti per compatibilita JS (setUser li aggiorna) -->
+    <span id="topbarUserInitials" hidden></span>
+    <span id="topbarUserName" hidden></span>
+    <span id="topbarUserRole" hidden></span>
+
+    <!-- Filtro profilo identita (toggle globale) -->
+    <button id="identFilterBadge" onclick="OC.identToggleFilter()"
+            style="display:none;font-family:var(--font-ui);font-size:11px;font-weight:600;border-radius:20px;padding:5px 14px;cursor:pointer;white-space:nowrap;transition:all .15s;border:none"
+            title="Clicca per attivare/disattivare il filtro profilo">Filtro profilo</button>
+
+    <!-- Identity badge rimosso v5.1.1 — ridondante con filtro profilo -->
+
+    <!-- v5.1.7 — Pulsante utente unificato (login/logout) -->
+    <div class="topbar-user-btn-wrap" style="position:relative">
+      <button class="topbar-user-btn" id="topbarUserBtn" onclick="OC.toggleUserMenu()" title="Account" aria-haspopup="menu" aria-expanded="false">
+        <span id="topbarUserBtnIcon">&#128100;</span>
+        <span id="topbarUserBtnLabel">Ospite</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div id="topbarUserMenu" class="topbar-user-menu" role="menu" hidden>
+        <div id="topbarMenuRole" style="font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;padding:8px 14px 4px">visitatore</div>
+        <button id="topbarMenuLogin" onclick="OC.doLogin();OC.toggleUserMenu();" class="topbar-user-menu-item">Accedi / Registrati</button>
+        <button id="topbarMenuLogout" onclick="OC.doLogout()" class="topbar-user-menu-item" hidden>Esci</button>
+      </div>
+    </div>
+    <!-- Compat nascosti per JS -->
+    <span id="loginBtn" hidden></span>
+    <span id="logoutBtn" hidden></span>
+  </div>
+</header>
+
+<!-- Theme toggle + Font size toggle — inizializzazione (eseguito subito, prima del paint) -->
+<script>
+(function(){
+  // ── Font size toggle — 3 livelli: normale / grande / extra-grande ───────
+  var fsBtn   = document.getElementById('fontSizeToggle');
+  var fsLabel = document.getElementById('fontSizeLabel');
+  var FS_LEVELS = ['', 'large', 'xlarge'];
+  var FS_SIZES  = ['13px', '16px', '20px'];
+  var FS_TITLES = [
+    'Testo normale — clicca per ingrandire',
+    'Testo grande — clicca per ingrandire ancora',
+    'Testo extra-grande — clicca per tornare al normale'
+  ];
+  var _fsIdx = 0;
+
+  function applyFontSize(idx) {
+    _fsIdx = ((idx % 3) + 3) % 3;
+    document.documentElement.setAttribute('data-fontsize', FS_LEVELS[_fsIdx]);
+    fsLabel.style.fontSize = FS_SIZES[_fsIdx];
+    fsBtn.title = FS_TITLES[_fsIdx];
+    fsBtn.setAttribute('aria-label', FS_TITLES[_fsIdx]);
+  }
+
+  var savedFs = localStorage.getItem('oc-fontsize');
+  var initIdx = FS_LEVELS.indexOf(savedFs);
+  applyFontSize(initIdx < 0 ? 0 : initIdx);
+
+  fsBtn.addEventListener('click', function(){
+    var next = (_fsIdx + 1) % 3;
+    localStorage.setItem('oc-fontsize', FS_LEVELS[next]);
+    applyFontSize(next);
+  });
+
+  // ── Theme toggle ─────────────────────────────────────────────────────────
+  var btn = document.getElementById('themeToggle');
+  var iconLight = document.getElementById('themeIconLight');
+  var iconDark  = document.getElementById('themeIconDark');
+
+  function applyTheme(dark){
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : '');
+    iconLight.style.display = dark  ? 'none' : '';
+    iconDark.style.display  = !dark ? 'none' : '';
+  }
+
+  var saved = localStorage.getItem('oc-theme');
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved ? saved === 'dark' : prefersDark);
+
+  btn.addEventListener('click', function(){
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    localStorage.setItem('oc-theme', isDark ? 'light' : 'dark');
+    applyTheme(!isDark);
+  });
+})();
+</script>

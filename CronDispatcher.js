@@ -1,0 +1,246 @@
+/**
+ * ============================================================================
+ *  CronDispatcher.js — Consolidamento trigger in un unico dispatcher orario
+ * ============================================================================
+ *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia — 2026-06-26
+ *
+ *  Problema: limite GAS di 20 trigger/progetto. Lo schedule approvato
+ *  (OC_TRIGGER_SCHEDULE in SetupMaster.js) installa 1 trigger PER job → satura.
+ *
+ *  Soluzione: UN solo trigger orario (ocCronDispatch) che legge lo STESSO
+ *  schedule (job, giorni e ore IDENTICI a quelli approvati) + i job nuovi, e
+ *  lancia quelli dovuti all'ora/giorno corrente. ~20 trigger → 1.
+ *
+ *  SICUREZZA:
+ *   - ocCronSetup(true)  = DRY-RUN: mostra il piano, NON tocca nulla.
+ *   - ocCronSetup(false) = applica: rimuove SOLO i trigger dei job in schedule
+ *     e crea il dispatcher. Ogni trigger NON riconosciuto resta intatto.
+ *   - Il dispatcher esegue ogni job in try/catch, con budget tempo e guardia
+ *     anti-doppio (una sola esecuzione per ora di clock).
+ *
+ *  Funzioni pubbliche:
+ *    ocCronSetup(dryRun)  — dry-run / applica la consolidazione
+ *    ocCronDispatch()     — il dispatcher (target dell'unico trigger orario)
+ *    ocCronStato()        — diagnostica: cosa girerebbe adesso
+ * ============================================================================
+ */
+
+// Job NUOVI (non presenti in OC_TRIGGER_SCHEDULE) gestiti dal dispatcher.
+// NB: scanSourcesBatch NON incluso per non sovrapporsi a scanSourcesBisettimanale.
+var OC_CRON_EXTRA = [
+  // v4.27.20 — REPORT UNIFICATO (spec Silvano 2026-07-13): un solo controllo e
+  // una sola email al giorno. Sostituisce le 3 entry separate:
+  //   qaNotturnaGAS (daily 23) + fontiReportGiornaliero (daily 8) +
+  //   agenteQualitaBandi (daily 5) → reportUnificatoGiornaliero (daily 8).
+  // Le 3 funzioni restano lanciabili a mano dal pannello admin.
+  // v4.27.94 — REPORT GIORNALIERO SOSPESO (decisione Silvano 01/08): va
+  // riprogettato lunedì. La riga resta qui, disattivata, per riattivarlo
+  // togliendo il commento: le funzioni sottostanti (agenteQualitaBandi,
+  // _frEsegui_, _qaEsegui_) NON sono toccate e continuano a girare dentro
+  // sasRun, quindi archiviazione e pulizia proseguono normalmente.
+  // { fn: 'reportUnificatoGiornaliero', tipo: 'daily', ora: 8, desc: 'Report giornaliero unificato: qualità bandi + fonti + QA contenuti (1 email)' },
+  { fn: 'scanNewsletterGmail',   tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 6, desc: 'Ingestione newsletter da Gmail (settimanale)' },
+  // v4.28.2 — SOSPESO (revisione trigger 02/08): la diagnosi fonti per email
+  // è resa ridondante dal RegistroFonti (rfStato) e confluirà nel report
+  // unico riprogettato lunedì. Riattivare togliendo il commento.
+  // { fn: 'agenteFontiMute',       tipo: 'monthdays', giorniMese: [1, 6, 11, 16, 21, 26], ora: 7, desc: 'Fonti mute: diagnosi per-fonte ogni 5 giorni + email' },
+  // v4.25.10 — FRESCHEZZA NEWS: run multipli/giorno. Il run delle 07:00 arriva dal
+  // base schedule (scanSourcesBisettimanale, ora quotidiano); questi 3 completano
+  // il giro round-robin → tutte le fonti coperte più volte al giorno.
+  { fn: 'scanSources',           tipo: 'daily',  ore: [11, 15, 19], desc: 'Scan news rotazione (freschezza pomeriggio/sera)' },
+  // v4.25.10 — PROFONDITÀ: pubblicazioni/editoria settimanale (sabato mattina)
+  { fn: 'pubDiscoveryScan',      tipo: 'weekly', giorno: ScriptApp.WeekDay.SATURDAY, ora: 6, desc: 'Discovery pubblicazioni/editoria (settimanale)' },
+  // v4.27.47 — LIBRI: seconda finestra settimanale (piano novità settimanali §Libri:
+  // +0 libri/7gg al 21/07 con la sola finestra del sabato)
+  { fn: 'pubDiscoveryScan',      tipo: 'weekly', giorno: ScriptApp.WeekDay.WEDNESDAY, ora: 6, desc: 'Discovery pubblicazioni/editoria (2ª finestra, mercoledì)' },
+  // T1 Lavoro Cultura — MONITOR dry-run 2×/sett (mer+sab, dopo le uscite GU mar+ven).
+  // Report email di cosa AVREBBE raccolto; attivazione piena dopo il periodo di osservazione.
+  { fn: 'lavoroCulturaMonitor',  tipo: 'weekly', giorno: ScriptApp.WeekDay.WEDNESDAY, ora: 8, desc: 'Lavoro cultura: scansione GU S4 e salvataggio concorsi (mercoledì)' },
+  { fn: 'lavoroCulturaMonitor',  tipo: 'weekly', giorno: ScriptApp.WeekDay.SATURDAY,  ora: 8, desc: 'Lavoro cultura: scansione GU S4 e salvataggio concorsi (sabato)' },
+  // T3 Normativa — auto-popola il foglio Norme dal flusso news (filtro normativa+cultura)
+  { fn: 'normeAutoPopolaRun',    tipo: 'weekly', giorno: ScriptApp.WeekDay.THURSDAY,  ora: 9, desc: 'Auto-popolamento sezione Norme (settimanale)' },
+  // v4.28.1 — TASSONOMIA T1-T10: classificazione notturna dei contenuti attivi
+  // senza tipologia (60/run; Claude Haiku con fallback euristico)
+  // v4.28.5 — ordine ora 02: prima il job veloce (regione, secondi), poi la
+  // tassonomia (minuti di API); il budget 300s del dispatcher li serve entrambi
+  { fn: 'bcvNormalizzaRegione', tipo: 'daily', ora: 2, desc: 'Bandi: normalizza campo Regione (mappa Radar)' },
+  { fn: 'txBatchNotturno',       tipo: 'daily', ora: 2, desc: 'Tassonomia T1-T10: classifica contenuti attivi (batch notturno)' },
+  // v4.28.3 — FASE 3 SCOUT FONTI (spec Silvano 02/08 sera): lavoro continuo
+  // e graduale (piccole quote/giorno), ciclo settimanale conferma/scarto,
+  // memoria permanente delle decisioni. Nessuna fonte attiva senza approvazione.
+  { fn: 'scMinerRun',            tipo: 'daily', ora: 21, desc: 'Scout-Miner: link nelle news + bibliografie pubblicazioni (ora libera: le 05 sono congestionate da fas+agr+sasRunWeekly)' },
+  { fn: 'scUniversitaRun',       tipo: 'weekly', giorno: ScriptApp.WeekDay.TUESDAY, ora: 20, desc: 'Scout-Università: atenei cultura/turismo (6/run, giro in ~4 settimane)' },
+  { fn: 'scSettimanale',         tipo: 'weekly', giorno: ScriptApp.WeekDay.SUNDAY, ora: 17, desc: 'Scout: riepilogo settimanale candidate da confermare/scartare' },
+  // Flusso redazionale (Redazionale_v1.js, spec 2026-07-10): creazione ven 18 →
+  // revisione admin → richiesta invio a superadmin lun 10 (o conferma anticipata)
+  { fn: 'redazionaleVenerdi',    tipo: 'weekly', giorno: ScriptApp.WeekDay.FRIDAY, ora: 18, desc: 'Redazionale: crea editoriale+bozza digest e avvisa gli admin' },
+  { fn: 'redazionaleLunedi',     tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 10, desc: 'Redazionale: scadenza termine → email autorizzazione al superadmin' },
+  // v4.27 — Arricchimento bandi: Claude Haiku aggiunge descrizione e tipo appalto
+  // ai bandi che ne sono privi. 50 per run, daily ore 3 → ~50/giorno, ~48gg per 2400.
+  { fn: 'enrichBandiRadarBatch', tipo: 'daily',  ora: 3,  desc: 'Arricchimento bandi RADAR via Claude AI (50/run)' },
+  // v4.27.58 — Deep enrichment: fetch URL + Claude per scadenza/descrizione/importo
+  // v4.28.13 — 4 finestre × 40 = 160 tentativi/notte sui bandi senza scadenza
+  { fn: 'enrichBandiDeepBatch',  tipo: 'daily',  ora: 1,  desc: 'Deep enrichment bandi: fetch pagina + estrazione scadenza (40/run, ore 01)' },
+  { fn: 'enrichBandiDeepBatch',  tipo: 'daily',  ora: 4,  desc: 'Deep enrichment bandi: seconda finestra notturna (40/run, ore 04)' },
+  { fn: 'enrichBandiDeepBatch',  tipo: 'daily',  ora: 23, desc: 'Deep enrichment bandi: quarta finestra (40/run, ore 23)' },
+  // v4.27 — apiScanTutto compattato: era trigger standalone lun 07:00 (ApiConnettori.js)
+  { fn: 'apiScanTutto',          tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 7, desc: 'API connettori editoria: iTunes + DOAJ + YouTube (lunedi; TED e quotidiano via fasRunCompleto)' },
+  // Tappa P — audit mensile salute fonti podcast/video (email all'admin, giorno 1)
+  // [ri-innestato v4.27.6: perso nel clobber tra sessioni parallele]
+  // v4.28.2 — SOSPESO (revisione trigger 02/08): l'audit podcast/video per
+  // email confluisce nel report unico + salute del RegistroFonti.
+  // { fn: 'podcastAuditMensile',   tipo: 'monthdays', giorniMese: [1], ora: 9, desc: 'Audit mensile fonti podcast/video mute (email)' },
+  // Attivazione una tantum fonti podcast+social (auto-disabilita dopo il 1° run)
+  // v4.27.42 — attivazione una tantum fonti design/arte internazionale (segnalazione 2026-07)
+  // v4.27.47 — attivazione una tantum canali video internazionali (Louisiana, ARoS, MoMA, Tate)
+  // v4.27.48 — pulizia mensile registro anti-ripetizione digest (righe >180gg)
+  // v4.28.2 — RIMOSSI i 4 seed one-shot (revisione trigger 02/08): gia'
+  // eseguiti (flag OC_*_SEEDED settati), giravano ogni giorno alle 8 a vuoto.
+  // discoveryAutoSeedOnce, fontiDesignArteSeedOnce, videoIntlSeedOnce,
+  // podcastAttiviSeedOnce — le funzioni restano nel codice.
+  { fn: 'ddPrune', tipo: 'monthdays', giorniMese: [1], ora: 4, desc: 'Pulizia registro DigestInviati (>180gg)' },
+  // v4.27.50 — attivazione una tantum podcast attivi (The Week in Art, Talk Art)
+  // v4.27.52 — social: i post APPROVATI in coda vengono pubblicati (se le API
+  // sono configurate) o inoltrati pronti su Telegram (ponte). Mar+ven 10:00.
+  { fn: 'socialPubblicaApprovati', tipo: 'weekly', giorno: ScriptApp.WeekDay.TUESDAY, ora: 10, desc: 'Social: pubblica/inoltra i post approvati (martedì)' },
+  { fn: 'socialPubblicaApprovati', tipo: 'weekly', giorno: ScriptApp.WeekDay.FRIDAY,  ora: 10, desc: 'Social: pubblica/inoltra i post approvati (venerdì)' },
+  // v4.27.59 — Trend: proposta notizia in evidenza ogni ~2 giorni (guardia 44h
+  // interna alla funzione) + pulizia proposte non confermate >14gg
+  { fn: 'trendProponi', tipo: 'daily', ora: 9, desc: 'Trend: proponi notizia in evidenza via Telegram (ogni ~2gg)' },
+  // v4.27.74 — normalizza il campo Regione dei bandi (riempie la mappa del Radar)
+  // v4.27.75 — assegna il tier di priorità alle fonti nuove (idempotente)
+  { fn: 'frBackfillTier', tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 4, desc: 'Regia fonti: tier di priorità alle fonti nuove' },
+  // v4.27.80 — CANALE RSS BANDI RIATTIVATO. Le 167 fonti di FontiBandi_v5
+  // non erano scansionate da NESSUN job: l'ultimo bando RSS risaliva al
+  // 04/06. scanFontiUnifiedRss esisteva ma non era mai stato schedulato.
+  // Due finestre al giorno, 45 fonti per run: ciclo completo in ~2 giorni
+  // restando dentro il limite di 6 minuti per esecuzione.
+  { fn: 'bandiRssScanRotazione', tipo: 'daily', ora: 6,  desc: 'Bandi: scansione RSS fonti (rotazione 45/run)' },
+  { fn: 'bandiRssScanRotazione', tipo: 'daily', ora: 18, desc: 'Bandi: scansione RSS fonti (2ª finestra)' },
+  // v4.27.92 — terza finestra di deep enrichment: dopo la ripulitura delle
+  // scadenze false (1057 azzerate il 01/08) restano ~89 bandi attivi senza
+  // scadenza. A 15 per esecuzione servivano 3 giorni; con tre finestre
+  // (01, 04, 22) la coda si smaltisce in circa 24 ore.
+  { fn: 'enrichBandiDeepBatch', tipo: 'daily', ora: 22, desc: 'Deep enrichment bandi: 3ª finestra (recupero scadenze)' }
+];
+
+/** Schedule consolidato = approvato (SetupMaster) + nuovi. */
+function _ocCronSchedule_() {
+  var base = (typeof OC_TRIGGER_SCHEDULE !== 'undefined') ? OC_TRIGGER_SCHEDULE : [];
+  return base.concat(OC_CRON_EXTRA);
+}
+
+/** WeekDay (enum) per indice 1=Lun..7=Dom (formato 'u'). */
+function _ocWeekDay_(dow) {
+  var W = ScriptApp.WeekDay;
+  return [null, W.MONDAY, W.TUESDAY, W.WEDNESDAY, W.THURSDAY, W.FRIDAY, W.SATURDAY, W.SUNDAY][dow];
+}
+
+/** Un job è dovuto all'ora H (0-23), giorno settimana dow (1-7), giorno mese dom (1-31)? */
+function _ocCronDovuto_(t, H, dow, dom) {
+  if (t.tipo === 'hourly') return (H % (Number(t.ore) || 6)) === 0;
+  var ore = (t.ore && t.ore.length) ? t.ore : [Number(t.ora)];
+  if (ore.indexOf(H) < 0) return false;
+  if (t.tipo === 'weekly') return t.giorno === _ocWeekDay_(dow);
+  // v4.25 — 'monthdays': gira nei giorni del mese indicati (es. [1,6,11,16,21,26] ≈ ogni 5gg)
+  if (t.tipo === 'monthdays') return (t.giorniMese || []).indexOf(Number(dom)) >= 0;
+  return true; // daily
+}
+
+// ----------------------------------------------------------------------------
+// DISPATCHER — unico trigger orario
+// ----------------------------------------------------------------------------
+function ocCronDispatch() {
+  var tz = Session.getScriptTimeZone() || 'Europe/Rome';
+  var now = new Date();
+  var H = Number(Utilities.formatDate(now, tz, 'H'));
+  var dow = Number(Utilities.formatDate(now, tz, 'u')); // 1=Lun..7=Dom
+  var dom = Number(Utilities.formatDate(now, tz, 'd')); // 1-31 giorno del mese
+  var stamp = Utilities.formatDate(now, tz, 'yyyyMMdd-HH');
+
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('OC_CRON_LAST') === stamp) { Logger.log('ocCronDispatch: già eseguito per ' + stamp); return; }
+  props.setProperty('OC_CRON_LAST', stamp);
+
+  var sched = _ocCronSchedule_();
+  var start = Date.now(), eseguiti = [], falliti = [];
+  for (var i = 0; i < sched.length; i++) {
+    var t = sched[i];
+    if (!_ocCronDovuto_(t, H, dow, dom)) continue;
+    if (Date.now() - start > 300000) { Logger.log('ocCronDispatch: budget esaurito, i rimanenti slittano'); break; }
+    if (!/^[A-Za-z0-9_]+$/.test(t.fn)) continue;
+    // v4.28.36: dispatch diretto senza eval() — più sicuro e veloce
+    try { var _fn = this[t.fn] || (typeof globalThis !== 'undefined' ? globalThis[t.fn] : null); if (typeof _fn === 'function') _fn(); else throw new Error('funzione non trovata: ' + t.fn); eseguiti.push(t.fn); }
+    catch (e) { falliti.push(t.fn + ': ' + e.message); Logger.log('ocCronDispatch ' + t.fn + ' ERR: ' + e.message); }
+  }
+  Logger.log('ocCronDispatch ' + stamp + ' — eseguiti: [' + eseguiti.join(', ') + ']' + (falliti.length ? ' | falliti: [' + falliti.join(' ; ') + ']' : ''));
+  return { ora: stamp, eseguiti: eseguiti, falliti: falliti };
+}
+
+// ----------------------------------------------------------------------------
+// SETUP — dry-run / applica
+// ----------------------------------------------------------------------------
+function ocCronSetup(dryRun) {
+  if (dryRun === undefined) dryRun = true;
+  var sched = _ocCronSchedule_();
+  var schedFns = {}; sched.forEach(function(t) { schedFns[t.fn] = true; });
+
+  var triggers = ScriptApp.getProjectTriggers();
+  var inSchedule = [], dispatcherEsistenti = [], altri = [];
+  triggers.forEach(function(tr) {
+    var fn = tr.getHandlerFunction();
+    if (fn === 'ocCronDispatch') dispatcherEsistenti.push(tr);
+    else if (schedFns[fn]) inSchedule.push(fn);
+    else altri.push(fn);
+  });
+
+  var piano = {
+    triggerAttuali: triggers.length,
+    jobInSchedule_daAccorpareNelDispatcher: inSchedule,
+    triggerNonRiconosciuti_PRESERVATI: altri,
+    dispatcherDaCreare: 1,
+    triggerFinaliStimati: 1 + altri.length,
+    quandoGiranoIJob: sched.map(function(t) {
+      return { fn: t.fn, tipo: t.tipo, ore: t.ore ? t.ore : t.ora, giorno: t.giorno ? _ocNomeGiorno_(t.giorno) : '-' };
+    })
+  };
+
+  if (dryRun) {
+    Logger.log('ocCronSetup [DRY-RUN] — nessuna modifica applicata:\n' + JSON.stringify(piano, null, 2));
+    return { dryRun: true, piano: piano };
+  }
+
+  // APPLICA
+  var rimossi = 0, rimossiNomi = [];
+  ScriptApp.getProjectTriggers().forEach(function(tr) {
+    var fn = tr.getHandlerFunction();
+    if (fn === 'ocCronDispatch' || schedFns[fn]) { ScriptApp.deleteTrigger(tr); rimossi++; rimossiNomi.push(fn); }
+  });
+  ScriptApp.newTrigger('ocCronDispatch').timeBased().everyHours(1).create();
+  PropertiesService.getScriptProperties().deleteProperty('OC_CRON_LAST');
+  // Ri-leggi per sapere cosa resta davvero
+  var restanti = ScriptApp.getProjectTriggers().map(function(tr) { return tr.getHandlerFunction(); });
+  Logger.log('ocCronSetup APPLICATO: rimossi ' + rimossi + ' [' + rimossiNomi.join(',') + ']. Restanti: [' + restanti.join(',') + ']');
+  return { dryRun: false, rimossi: rimossi, rimossiNomi: rimossiNomi, dispatcherCreati: 1, restanti: restanti, schedFnKeys: Object.keys(schedFns) };
+}
+
+function _ocNomeGiorno_(wd) {
+  var W = ScriptApp.WeekDay;
+  var map = [[W.MONDAY, 'Lun'], [W.TUESDAY, 'Mar'], [W.WEDNESDAY, 'Mer'], [W.THURSDAY, 'Gio'], [W.FRIDAY, 'Ven'], [W.SATURDAY, 'Sab'], [W.SUNDAY, 'Dom']];
+  for (var i = 0; i < map.length; i++) if (wd === map[i][0]) return map[i][1];
+  return String(wd);
+}
+
+/** Diagnostica: quali job risulterebbero dovuti adesso (senza eseguirli). */
+function ocCronStato() {
+  var tz = Session.getScriptTimeZone() || 'Europe/Rome';
+  var now = new Date();
+  var H = Number(Utilities.formatDate(now, tz, 'H'));
+  var dow = Number(Utilities.formatDate(now, tz, 'u'));
+  var dom = Number(Utilities.formatDate(now, tz, 'd'));
+  var dovuti = _ocCronSchedule_().filter(function(t) { return _ocCronDovuto_(t, H, dow, dom); }).map(function(t) { return t.fn; });
+  var triggerDispatcher = ScriptApp.getProjectTriggers().filter(function(t) { return t.getHandlerFunction() === 'ocCronDispatch'; }).length;
+  var rep = { adesso: Utilities.formatDate(now, tz, 'EEE HH:mm'), dispatcherAttivo: triggerDispatcher > 0, jobDovutiOra: dovuti, ultimoRun: PropertiesService.getScriptProperties().getProperty('OC_CRON_LAST') || '—' };
+  Logger.log('ocCronStato: ' + JSON.stringify(rep, null, 2));
+  return rep;
+}

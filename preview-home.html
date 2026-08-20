@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Osservatorio Culturale — Preview Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+/* ==========================================================
+   OSSERVATORIO CULTURALE — Redesign Editoriale Museale
+   Light + Dark mode, carta da museo, tipografia editoriale
+   ========================================================== */
+
+:root{
+  /* Light — Curatoriale Sans su bianco puro */
+  --paper:#FAFAF7;
+  --paper-2:#F7F5F0;
+  --surface:#F5F3EE;
+  --surface-2:#EDEBE6;
+  --rule:#E5E5E7;
+  --rule-2:#D2D2D7;
+  --rule-strong:#101010;
+
+  --ink:#101010;
+  --ink-2:#3A3A3C;
+  --ink-3:#6E6E73;
+  --ink-4:#74747A;
+  --ink-5:#D2D2D7;
+
+  --accent:#935851;
+  --accent-soft:#F0E6E4;
+  --accent-hover:#7A4940;
+  --link:#935851;
+  --link-hover:#7A4940;
+
+  --amb-1:#7C3AED;
+  --amb-2:#10916D;
+  --amb-3:#2563EB;
+  --amb-4:#92400E;
+  --amb-5:#0E7490;
+
+  --amb-1-soft:#F3E8FF;
+  --amb-2-soft:#D1FAE5;
+  --amb-3-soft:#DBEAFE;
+  --amb-4-soft:#FFEDD5;
+  --amb-5-soft:#CFFAFE;
+
+  --amb-6:#1D4ED8; --amb-7:#7E22CE; --amb-8:#B45309;
+  --amb-9:#18181B; --amb-10:#BE185D;
+  --amb-6-soft:#E0E7FF; --amb-7-soft:#F3E8FF; --amb-8-soft:#FEF3C7;
+  --amb-9-soft:#E4E4E7; --amb-10-soft:#FCE7F3;
+
+  --text-muted: #6E6E73;
+
+  --danger:#C2410C;
+  --warning:#B45309;
+  --success:#0F7B5A;
+
+  --font-display:'Inter Tight','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-italic:'Inter','Inter Tight',sans-serif;
+  --font-ui:'Inter','Inter Tight',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-serif:'EB Garamond', Georgia, serif;
+  --font-mono:ui-monospace,'JetBrains Mono',monospace;
+
+  --bg:var(--paper);
+  --surface-alt:var(--surface-2);
+  --border:var(--rule);
+  --border-strong:var(--rule-2);
+  --ink-2-alias:var(--ink-2);
+
+  --sidebar-w:280px;
+  --topbar-h:64px;
+
+  --r-sm:8px;
+  --r-md:12px;
+  --r-lg:16px;
+  --radius:var(--r-md);
+  --radius-lg:var(--r-lg);
+
+  --shadow-soft:0 0 0 1px rgba(16,16,16,0.04);
+  --shadow-1:var(--shadow-soft);
+  --shadow-2:0 1px 3px rgba(16,16,16,0.06), 0 0 0 1px rgba(16,16,16,0.04);
+  --shadow-3:0 8px 24px -8px rgba(16,16,16,0.12), 0 0 0 1px rgba(16,16,16,0.04);
+}
+
+/* Font size accessibility levels */
+[data-fontsize="large"] .br-title { font-size: 20px; line-height: 1.45; }
+[data-fontsize="large"] .br-meta { font-size: 13px; }
+[data-fontsize="large"] .br-row { padding: 14px 16px; gap: 14px; }
+[data-fontsize="large"] .nav-item .lbl { font-size: 14px; }
+[data-fontsize="large"] .nav-label { font-size: 11px; }
+[data-fontsize="large"] .filter-chip { font-size: 13px; padding: 6px 14px; }
+[data-fontsize="large"] .section-title { font-size: 1.25rem; }
+[data-fontsize="large"] .hstat b { font-size: 1.4rem; }
+[data-fontsize="large"] .hstat span { font-size: 12px; }
+
+[data-fontsize="xlarge"] .br-title { font-size: 23px; line-height: 1.5; }
+[data-fontsize="xlarge"] .br-meta { font-size: 14px; }
+[data-fontsize="xlarge"] .br-row { padding: 17px 20px; gap: 16px; }
+[data-fontsize="xlarge"] .nav-item .lbl { font-size: 15px; }
+[data-fontsize="xlarge"] .nav-label { font-size: 12px; }
+[data-fontsize="xlarge"] .filter-chip { font-size: 14px; padding: 7px 16px; }
+[data-fontsize="xlarge"] .section-title { font-size: 1.4rem; }
+[data-fontsize="xlarge"] .hstat b { font-size: 1.6rem; }
+[data-fontsize="xlarge"] .hstat span { font-size: 13px; }
+[data-fontsize="xlarge"] .sw-tile { padding: 20px; }
+
+[data-theme="dark"]{
+  --paper:#0F0E0C;
+  --paper-2:#1A1815;
+  --surface:#1A1815;
+  --surface-2:#242220;
+  --rule:#2E2A24;
+  --rule-2:#3D3830;
+  --rule-strong:#FAFAFA;
+  --ink:#FAFAFA;
+  --ink-2:#E4E4E7;
+  --ink-3:#A1A1AA;
+  --ink-4:#71717A;
+  --ink-5:#52525B;
+  --accent:#B87A73;
+  --accent-soft:#2E1E1C;
+  --accent-hover:#D4A09A;
+  --link:#B87A73;
+  --link-hover:#D4A09A;
+  --text-muted: #A1A1AA;
+  --amb-1:#A78BFA;
+  --amb-2:#34D399;
+  --amb-3:#60A5FA;
+  --amb-4:#FB923C;
+  --amb-5:#22D3EE;
+  --amb-1-soft:#2E1A4D;
+  --amb-2-soft:#0E2920;
+  --amb-3-soft:#1E2540;
+  --amb-4-soft:#2E1A0A;
+  --amb-5-soft:#0F2A2E;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{ font-size:16px; line-height:1.5; height:100vh; overflow:hidden; }
+body{
+  font-family:var(--font-ui);
+  font-size:1rem;
+  line-height:1.55;
+  color:var(--ink);
+  background:var(--paper);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  font-feature-settings:'cv11','ss01';
+  letter-spacing:-0.005em;
+  height:100vh;
+  overflow:hidden;
+}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;padding:0}
+.serif,.display{font-family:var(--font-display);letter-spacing:-0.02em;font-weight:500}
+h1,h2,h3,h4{font-family:var(--font-serif);letter-spacing:-0.025em;line-height:1.15;font-weight:500;margin:0}
+h1{font-size:2.25rem;font-weight:600}
+h2{font-size:1.625rem}
+h3{font-size:1.25rem}
+h4{font-size:1.0625rem}
+
+/* APP LAYOUT */
+.app{
+  display:grid;
+  grid-template-columns:var(--sidebar-w) 1fr;
+  height:100vh;
+  overflow:hidden;
+}
+
+/* SIDEBAR */
+.sidebar{
+  background:var(--paper);
+  border-right:1px solid var(--rule);
+  position:sticky; top:0;
+  height:100vh; overflow-y:auto;
+  padding:24px 18px 18px 22px;
+  display:flex; flex-direction:column;
+}
+.sidebar::-webkit-scrollbar{width:6px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--rule-2);border-radius:3px}
+
+.brand{
+  padding:0 4px 22px 4px;
+  border-bottom:1px solid var(--rule);
+  margin-bottom:18px;
+}
+.brand-mark{
+  display:flex; align-items:baseline; gap:0;
+  font-family:var(--font-display);
+  font-size:1.5rem;
+  font-weight:600;
+  letter-spacing:-0.02em;
+  color:var(--ink);
+  line-height:1;
+}
+.brand-sub{
+  margin-top:4px;
+  font-size:0.75rem;
+  color:var(--ink-3);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  font-weight:600;
+  display:block;
+  font-family:var(--font-ui);
+}
+
+/* Nav groups */
+.nav-group{margin-bottom:22px}
+.nav-label{
+  font-size:0.75rem; font-weight:600;
+  color:var(--ink-3);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  padding:0 10px 8px 10px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.nav-label .num{color:var(--ink-4);font-variant-numeric:tabular-nums;letter-spacing:.04em;}
+
+.nav-item{
+  display:flex; align-items:center; gap:11px;
+  padding:8px 10px;
+  border-radius:var(--r-sm);
+  font-size:1rem;
+  color:var(--ink-2);
+  cursor:pointer;
+  transition:background .15s, color .15s;
+  width:100%; text-align:left;
+  font-weight:600;
+}
+.nav-item svg{
+  width:28px !important; height:28px !important;
+  min-width:28px; min-height:28px;
+  flex:0 0 28px;
+  padding:4px;
+  box-sizing:content-box;
+  border:1.5px solid var(--rule);
+  border-radius:7px;
+  opacity:1;
+  display:block;
+}
+.nav-item .lbl{flex:1}
+.nav-item:hover{background:var(--surface-2);color:var(--ink)}
+.nav-item.active{
+  background:var(--surface-2);
+  color:var(--ink);
+  font-weight:600;
+  border-radius:var(--r-sm);
+}
+.nav-item.active::before{
+  content:''; width:3px; height:18px;
+  background:var(--accent); border-radius:2px;
+  margin-left:-10px; margin-right:7px; flex:0 0 3px;
+}
+.nav-item.active svg{opacity:1;border-color:var(--accent)}
+
+.nav-badge,.badge{
+  font-size:0.75rem; font-weight:600;
+  color:var(--ink-3);
+  font-variant-numeric:tabular-nums;
+  letter-spacing:0;
+}
+.nav-badge.urgent,.badge.urgent{color:var(--danger)}
+
+/* Ambito items */
+.nav-item.amb{padding-left:10px}
+.amb-dot{
+  width:7px; height:7px; border-radius:50%;
+  background:var(--amb,var(--ink-3));
+  flex:0 0 7px;
+}
+.amb-num{
+  font-family:var(--font-display);
+  font-size:0.75rem;
+  color:var(--ink-3);
+  letter-spacing:.08em;
+  font-variant-numeric:tabular-nums;
+  margin-right:8px;
+  min-width:18px;
+}
+.amb-name{flex:1; font-size:13px; font-weight:400; line-height:1.3;}
+.nav-item.amb.a1{--amb:var(--amb-1);--amb-soft:var(--amb-1-soft)}
+.nav-item.amb.a2{--amb:var(--amb-2);--amb-soft:var(--amb-2-soft)}
+.nav-item.amb.a3{--amb:var(--amb-3);--amb-soft:var(--amb-3-soft)}
+.nav-item.amb.a4{--amb:var(--amb-4);--amb-soft:var(--amb-4-soft)}
+.nav-item.amb.a5{--amb:var(--amb-5);--amb-soft:var(--amb-5-soft)}
+
+/* Strumento speciale */
+.nav-item.nav-item-bordered { background:#935851; border:1.5px solid #935851; border-radius:8px; margin-bottom:6px; color:#fff !important; }
+.nav-item.nav-item-bordered:hover { background:#7A4940; border-color:#7A4940; }
+.nav-item.nav-item-bordered .lbl { font-weight:600; color:#fff; }
+.nav-item.nav-item-bordered svg { stroke:#fff; border-color:rgba(255,255,255,.3); }
+.nav-item.nav-item-bordered .matrix-tag { color:#fff; background:transparent; border:none; opacity:.8; font-weight:600; padding:0; }
+.matrix-tag{
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:0.75rem;
+  color:var(--ink-3);
+  font-weight:400;
+  letter-spacing:0;
+}
+
+/* Accordion */
+.nav-accordion-toggle {
+  width: 100%;
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: none; cursor: pointer; padding: 0 10px 8px 10px;
+  font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-3); text-align: left;
+}
+.nav-accordion-toggle:hover { color: var(--ink); }
+.accordion-chevron {
+  margin-left: auto; flex-shrink: 0;
+  transition: transform .22s ease;
+  color: var(--ink-3);
+}
+.nav-accordion-toggle[aria-expanded="false"] .accordion-chevron {
+  transform: rotate(-90deg);
+}
+.accordion-body {
+  overflow: hidden;
+  max-height: 600px;
+  transition: max-height 0.28s ease-out, opacity 0.2s ease-out;
+}
+.accordion-body.collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+
+/* Sidebar footer */
+.sidebar-footer{
+  margin-top:auto;
+  padding-top:14px;
+  border-top:1px solid var(--rule);
+  display:flex; flex-direction:column; gap:10px;
+}
+
+/* MAIN + TOPBAR */
+.main{min-width:0;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.main-content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+
+.topbar{
+  position:sticky; top:0; z-index:10;
+  height:var(--topbar-h);
+  background:rgba(250,250,247,.92);
+  backdrop-filter:saturate(150%) blur(4px);
+  -webkit-backdrop-filter:saturate(150%) blur(4px);
+  border-bottom:1px solid var(--rule);
+  display:flex; align-items:center; gap:18px;
+  padding:0 36px;
+}
+[data-theme="dark"] .topbar{background:rgba(26,24,21,.92)}
+
+.breadcrumb{
+  font-size:0.875rem;
+  color:var(--ink-3);
+  display:flex; align-items:center; gap:8px;
+  flex:0 0 auto;
+  font-family:var(--font-display);
+  font-style:italic;
+  font-weight:400;
+  letter-spacing:0;
+}
+.breadcrumb b{
+  color:var(--ink); font-weight:600;
+  font-style:normal;
+  font-family:var(--font-ui);
+  letter-spacing:0;
+  font-size:1rem;
+}
+.breadcrumb .sep{color:var(--ink-4);font-style:normal}
+
+/* Search topbar */
+.topbar-search{
+  flex:1; max-width:520px;
+  margin:0 auto;
+  position:relative;
+  display:flex; align-items:center;
+  height:38px;
+  border:1px solid var(--rule);
+  border-radius:var(--r-sm);
+  background:var(--surface);
+  padding:0 14px;
+  transition:border-color .15s, background .15s;
+}
+.topbar-search:focus-within{
+  border-color:var(--rule-strong);
+  background:var(--surface);
+}
+.topbar-search svg{color:var(--ink-3); flex:0 0 16px}
+.topbar-search input{
+  flex:1; border:none; outline:none;
+  background:transparent;
+  font-family:var(--font-ui);
+  font-size:1rem;
+  color:var(--ink);
+  padding:0 12px;
+  height:100%;
+  width:100%;
+}
+.topbar-search input::placeholder{color:var(--ink-4)}
+.kbd{
+  font-size:0.75rem;
+  color:var(--ink-3);
+  font-family:var(--font-ui);
+  font-weight:600;
+  letter-spacing:.05em;
+  padding:2px 5px;
+  border:1px solid var(--rule);
+  border-radius:3px;
+  background:var(--paper-2);
+}
+
+.topbar-actions{display:flex;align-items:center;gap:4px}
+
+.topbar-icon{
+  width:36px; height:36px; border-radius:8px;
+  display:grid; place-items:center;
+  color:var(--accent);
+  border:1.5px solid var(--rule);
+  position:relative;
+  transition:all .15s;
+  cursor:pointer;
+}
+.topbar-icon:hover{background:var(--surface-2);color:var(--accent);border-color:var(--accent)}
+.topbar-badge{
+  position:absolute; top:6px; right:6px;
+  min-width:16px; height:16px; padding:0 4px;
+  border-radius:8px;
+  background:var(--danger); color:#fff;
+  font-size:0.75rem; font-weight:700;
+  display:grid; place-items:center;
+}
+
+.theme-toggle{
+  width:36px; height:36px; border-radius:var(--r-sm);
+  display:grid; place-items:center;
+  color:var(--ink-2);
+  transition:background .15s;
+  cursor:pointer;
+}
+.theme-toggle:hover{background:var(--surface-2);color:var(--ink)}
+
+.topbar-user-btn { display:inline-flex; align-items:center; gap:5px; background:var(--surface-2,#F5F3EE); color:var(--ink,#101010); border:1px solid var(--rule,#E5E5E7); padding:6px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font-ui); white-space:nowrap; }
+.topbar-user-btn:hover { background:var(--surface-2); }
+[data-theme="dark"] .topbar-user-btn { background:var(--surface-2); border-color:var(--rule-2); color:var(--ink); }
+
+/* PAGE */
+.page{
+  padding:32px 48px 80px 48px;
+  max-width:1320px;
+  width:100%;
+  display:block;
+}
+
+/* HOME */
+.home-masthead{
+  border-top:1px solid var(--rule-strong);
+  padding-top:18px;
+  margin-bottom:32px;
+  display:flex; justify-content:space-between; align-items:flex-start;
+  gap:32px;
+}
+.masthead-meta{
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:1rem;
+  color:var(--ink-3);
+  letter-spacing:0;
+  display:flex; flex-direction:column; gap:2px;
+}
+.masthead-meta b{
+  font-style:normal;
+  font-family:var(--font-ui);
+  font-size:0.75rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--ink);
+  font-weight:600;
+}
+.masthead-update{
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--font-display); font-style:italic;
+  font-size:1rem; color:var(--ink-3);
+}
+.update-dot{
+  width:6px; height:6px; border-radius:50%;
+  background:var(--success);
+  position:relative;
+  flex:0 0 6px;
+}
+.update-dot::after{
+  content:''; position:absolute; inset:-3px; border-radius:50%;
+  border:1px solid var(--success); opacity:.4;
+}
+
+/* Stats bar */
+.home-stats-bar{
+  display:flex; flex-wrap:wrap; align-items:center;
+  gap:6px 16px;
+  margin:0 0 32px;
+  padding:14px 20px;
+  background:var(--paper-2);
+  border:1px solid var(--rule);
+  border-radius:var(--r-md);
+}
+.hstat{
+  display:flex; flex-direction:column; align-items:center;
+  text-decoration:none; color:var(--ink-1);
+  font-family:var(--font-ui); gap:1px;
+  cursor:pointer;
+}
+.hstat b{ font-size:1.4rem; font-weight:700; line-height:1; color:var(--ink); }
+.hstat span{ font-size:0.75rem; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-3); font-weight:600; }
+.hstat:hover b{ color:var(--accent); }
+.hstat-sep{ color:var(--ink-4); font-size:1.25rem; line-height:1; align-self:center; }
+
+/* Section heads */
+.section-head{
+  display:flex; justify-content:space-between; align-items:flex-end;
+  border-bottom:1px solid var(--rule-strong);
+  padding-bottom:10px;
+  margin-bottom:22px;
+  margin-top:40px;
+}
+.section-head .left{display:flex;align-items:baseline;gap:14px}
+.section-eyebrow,.eyebrow{
+  font-family:var(--font-ui);
+  font-size:0.75rem; font-weight:600;
+  letter-spacing:.12em; text-transform:uppercase;
+  color:var(--ink-3);
+}
+.section-title{
+  font-family:var(--font-display);
+  font-size:1.25rem; font-weight:600;
+  letter-spacing:-0.02em; line-height:1.1;
+  color:var(--ink); margin:0;
+  display:flex; align-items:center; gap:10px;
+}
+.section-action{
+  font-family:var(--font-ui);
+  font-size:0.75rem; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-2);
+  display:flex; align-items:center; gap:6px;
+  cursor:pointer;
+}
+.section-action:hover{color:var(--link)}
+
+/* ============================================================
+   BR-ROW — Radar Bandi
+   ============================================================ */
+.br-row {
+  display: grid;
+  grid-template-columns: 1fr 160px;
+  gap: 10px 24px;
+  align-items: start;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--rule);
+  transition: background .12s;
+}
+.br-row:hover { background: var(--surface-2); margin: 0 -14px; padding-left: 14px; padding-right: 14px; border-radius: var(--r-sm, 6px); transform:translateY(-1px); transition:transform .2s cubic-bezier(.25,1,.5,1), box-shadow .2s; }
+.br-row.br-urgent { border-left: 4px solid #C8102E; padding-left: 12px; background: rgba(200,16,46,.025); }
+.br-row.br-urgent:hover { margin-left: 0; padding-left: 12px; }
+
+.br-left { min-width: 0; }
+.br-tags { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 5px; }
+
+.br-tema {
+  font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 20px;
+  background: var(--surface-2); color: var(--ink-3);
+  white-space: nowrap;
+}
+.br-a1 { background: #EDE8F5; color: var(--amb-1,#7C3AED); }
+.br-a2 { background: #E4F0EA; color: #0A6B4F; }
+.br-a3 { background: #E1ECF5; color: var(--amb-3,#2563EB); }
+.br-a4 { background: #F5EDE0; color: var(--accent,#935851); }
+.br-a5 { background: #E3F0F2; color: var(--amb-5,#0E7490); }
+
+.br-badge-urgent {
+  font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700;
+  color: var(--danger,#C2410C); background: #FEF2F2; padding: 3px 9px; border-radius: 20px;
+}
+.br-badge-new {
+  font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700;
+  color: var(--success,#0F7B5A); background: #ECFDF5; padding: 3px 9px; border-radius: 20px;
+}
+.br-tipo-badge {
+  font-family: var(--font-ui); font-size: 0.7rem; font-weight: 600;
+  padding: 2px 8px; border-radius: 20px; white-space: nowrap;
+}
+.br-tipo-finanziamento { color: #92400E; background: #FEF3C7; }
+.br-tipo-lavori { color: #065F46; background: #D1FAE5; }
+.br-tipo-servizi { color: #1E40AF; background: #DBEAFE; }
+
+.br-title {
+  font-family: var(--font-display); font-size: 1.05rem; font-weight: 600;
+  color: var(--ink); line-height: 1.3; margin: 0 0 4px 0;
+  cursor: pointer; letter-spacing: -.005em;
+}
+.br-title:hover { color: var(--link); text-decoration: underline; }
+
+.br-summary {
+  font-family: var(--font-ui); font-size: 0.875rem; color: var(--ink-3); line-height: 1.45;
+  margin: 0 0 6px 0;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+.br-meta {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px;
+  font-family: var(--font-ui); font-size: 0.8125rem; color: var(--ink-3);
+  margin-top: 2px;
+}
+.br-ente { font-weight: 600; color: var(--ink-2); }
+.br-sep { color: var(--rule-2); }
+.br-importo-inline { color: var(--success,#0F7B5A); font-weight: 600; }
+
+.br-right {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+  text-align: right;
+}
+
+.br-scad {
+  font-family: var(--font-display); font-size: 1rem; font-weight: 600;
+  color: var(--ink-2); white-space: nowrap; line-height: 1.2;
+}
+.br-scad-urgent { color: #C8102E; }
+.br-scad-med    { color: #92400E; }
+
+.br-giorni {
+  display: inline-block; font-family: var(--font-ui); font-size: 0.8125rem; font-weight: 700;
+  padding: 2px 8px; border-radius: 20px; margin-top: 3px;
+  background: var(--surface-2); color: var(--ink-3);
+}
+.br-gd-urgent { background: #FEE2E2; color: var(--danger,#C2410C); }
+.br-gd-med    { background: #FEF3C7; color: #92400E; }
+.br-gd-ok     { background: var(--surface-2); color: var(--ink-3); }
+
+.br-link {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-ui); font-size: 0.9375rem; font-weight: 700;
+  padding: 8px 14px; border-radius: 7px; width: 100%; box-sizing: border-box;
+  border: 2px solid var(--link); color: var(--link);
+  background: transparent; text-decoration: none;
+  transition: all .15s; white-space: nowrap; cursor: pointer; line-height: 1;
+}
+.br-link:hover { background: var(--link); color: #fff; }
+
+.br-acts {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+}
+.br-act {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1.1;
+  transition: all .15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+}
+.br-act:hover { border-color: var(--ink); background: var(--surface); color: var(--ink); }
+.br-act-read  { background:#FBF7F6; border-color:#EADAD7; color:#6B4B45; }
+.br-act-save  { background:#F3E4E0; border-color:#DDC1BB; color:#935851; }
+.br-act-arch  { background:#E3BEB6; border-color:#CD9A90; color:#5E342D; }
+.br-act-trash { background:#935851; border-color:#935851; color:#FFFFFF; }
+.br-act-read:hover  { border-color:#C9A39C; color:#5E3F39; background:#F3E8E6; }
+.br-act-save:hover  { border-color:var(--accent); color:#7A4940; background:#EBD3CC; }
+.br-act-arch:hover  { border-color:#B07A6F; color:#4A2823; background:#D8AA9F; }
+.br-act-trash:hover { border-color:#7A4940; color:#FFFFFF; background:#7A4940; }
+
+/* ---- News rows ---- */
+.nr-row {
+  display: grid;
+  grid-template-columns: 1fr 160px;
+  gap: 10px 24px;
+  align-items: start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+  transition: background .12s;
+}
+.nr-row:hover { background: var(--surface-2); margin: 0 -14px; padding-left: 14px; padding-right: 14px; border-radius: var(--r-sm); }
+.nr-left { min-width: 0; }
+.nr-tags { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+.nr-fonte{
+  display:inline-block;
+  background:var(--paper-2);
+  color:var(--ink-2);
+  font-family:var(--font-ui);
+  font-size:0.75rem; font-weight:700;
+  letter-spacing:.06em; text-transform:uppercase;
+  padding:2px 7px; border-radius:3px;
+  border:1px solid var(--rule);
+}
+.nr-tag-cat {
+  font-family: var(--font-ui); font-size: 0.75rem; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-3); padding: 2px 7px; background: var(--surface-2); border-radius: 20px;
+}
+.nr-title {
+  font-family: var(--font-display); font-size: 1.05rem; font-weight: 600;
+  color: var(--ink); line-height: 1.3; margin: 0 0 4px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.nr-summary {
+  font-family: var(--font-ui); font-size: 0.875rem; color: var(--ink-3); line-height: 1.45;
+  margin: 0 0 4px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.nr-meta {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px;
+  font-family: var(--font-ui); font-size: 0.8125rem; color: var(--ink-3); margin-top: 2px;
+}
+.nr-data{ font-size: 0.875rem; color: var(--ink-3); }
+.nr-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; text-align: right; }
+.nr-data-right {
+  font-family: var(--font-ui); font-size: 0.875rem; font-weight: 600;
+  color: var(--ink-2); text-align: center; margin-bottom: 8px; line-height: 1.3;
+}
+.nr-score {
+  font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700;
+  color: var(--ink-3); padding: 1px 5px; border-radius: 3px; background: var(--paper-2);
+}
+.nr-score.high { background: #E8F5E9; color: var(--success,#0F7B5A); }
+.nr-score.med  { background: #FFF8E1; color: var(--amb-8,#B45309); }
+
+/* Social Wall tiles */
+.sw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  margin-bottom: 32px;
+}
+.sw-tile {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--sw-col, var(--rule));
+  border-radius: var(--r-md);
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  cursor: pointer;
+  transition: box-shadow .15s, transform .12s;
+  text-decoration: none;
+}
+.sw-tile:hover { box-shadow: var(--shadow-2); transform: translateY(-2px); }
+.sw-tile-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.sw-tile-fonte {
+  font-family: var(--font-ui); font-size: 0.8125rem; font-weight: 700;
+  color: var(--ink-2); flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  letter-spacing: .02em;
+}
+.sw-tile-cat {
+  font-family: var(--font-ui); font-size: 0.75rem; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-3); background: var(--paper-2);
+  padding: 1px 5px; border-radius: 3px;
+}
+.sw-tile-title {
+  font-family: var(--font-display); font-size: 0.9375rem; font-weight: 600;
+  color: var(--ink); line-height: 1.38;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sw-tile-excerpt {
+  font-family: var(--font-ui); font-size: 0.875rem; color: var(--ink-2);
+  line-height: 1.55; margin: 0;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden; flex: 1;
+}
+.sw-tile-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: auto; padding-top: 8px;
+  border-top: 1px solid var(--rule);
+}
+.sw-tile-date { font-family: var(--font-ui); font-size: 0.8125rem; color: var(--ink-3); }
+.sw-tile-link {
+  font-family: var(--font-ui); font-size: 0.8125rem; font-weight: 600;
+  color: var(--sw-col, var(--ink-2));
+}
+
+/* Home welcome block */
+.home-welcome {
+  margin-bottom: 24px;
+}
+.home-saluto {
+  font-family: var(--font-display);
+  font-size: 2rem; font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  line-height: 1.1;
+  margin: 0 0 6px;
+}
+.home-saluto-sub {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--ink-3);
+  margin: 0;
+}
+
+/* Filter chips */
+.filters{
+  display:flex; gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:18px;
+  padding-bottom:18px;
+  border-bottom:1px solid var(--rule);
+}
+.filter-chip{
+  font-family:var(--font-ui);
+  font-size:0.875rem; font-weight:600;
+  padding:7px 14px;
+  border:1px solid var(--rule);
+  border-radius:100px;
+  background:transparent;
+  color:var(--ink-2);
+  transition:all .15s;
+  letter-spacing:.01em;
+  cursor:pointer;
+}
+.filter-chip:hover{border-color:var(--rule-2);color:var(--ink)}
+.filter-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* Toast container (hidden in preview) */
+#oc-toast-container { display: none; }
+
+/* Nav item font fix */
+.nav-item { font-size: 0.8125rem; }
+.tag, .nav-badge, .matrix-tag { font-size: 0.875rem !important; }
+.filter-chip { font-size: 0.9375rem; }
+
+/* Delight */
+.nav-item:hover svg { transform:translateY(-1px); transition:transform .2s cubic-bezier(.25,1,.5,1); }
+.filter-chip { transition:background .15s, color .15s, border-color .15s, transform .15s; }
+.filter-chip:active { transform:scale(0.97); }
+@media (prefers-reduced-motion: reduce) {
+  .nav-item:hover svg, .br-row:hover, .filter-chip:active { transform:none !important; }
+}
+
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" id="sidebar" aria-label="Navigazione principale">
+
+    <!-- Brand -->
+    <div class="brand">
+      <div class="brand-mark" id="brandMark" style="display:flex;align-items:center;gap:8px;min-height:44px">
+        <svg viewBox="0 0 180 48" width="160" height="42" xmlns="http://www.w3.org/2000/svg" aria-label="Sinopia" role="img" style="display:block">
+          <text x="0" y="34"
+                font-family="'Inter Tight', 'Inter', system-ui, sans-serif"
+                font-style="normal"
+                font-weight="600"
+                font-size="32"
+                letter-spacing="-0.025em"
+                fill="#101010">Sinopia</text>
+        </svg>
+      </div>
+      <div class="brand-sub">Osservatorio Culturale &middot; <span>v4.27.0</span></div>
+    </div>
+
+    <!-- Gruppo: Vista generale -->
+    <div class="nav-group">
+      <div class="nav-label">Vista generale</div>
+
+      <a href="#" class="nav-item active" data-page="home" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 10l8-6 8 6v9a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/>
+        </svg>
+        <span class="lbl">Home</span>
+      </a>
+
+      <a href="#" class="nav-item" data-page="chisiamo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="3.5"/>
+          <path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/>
+        </svg>
+        <span class="lbl">Chi siamo</span>
+      </a>
+
+      <a href="#" class="nav-item" data-page="workspace">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3l9 4.5v9L12 21l-9-4.5v-9z"/><path d="M12 12v9M3 7.5L12 12l9-4.5"/>
+        </svg>
+        <span class="lbl">I miei contenuti</span>
+      </a>
+    </div>
+
+    <!-- Gruppo: Strumenti di analisi -->
+    <div class="nav-group">
+      <div class="nav-label">Strumenti di analisi</div>
+      <a href="#" class="nav-item nav-item-bordered">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="lbl">Il mio profilo</span>
+        <span class="matrix-tag">2 min</span>
+      </a>
+      <a href="#" class="nav-item nav-item-bordered">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 10h16M10 20V10"/></svg>
+        <span class="lbl">Valuta il tuo museo</span>
+        <span class="matrix-tag">10 min</span>
+      </a>
+    </div>
+
+    <!-- Gruppo: Ambiti tematici -->
+    <div class="nav-group" id="nav-group-ambiti">
+      <button class="nav-label nav-accordion-toggle" id="ambitiToggle" aria-expanded="true" aria-controls="ambitiList" type="button">
+        <span>Ambiti tematici</span>
+        <span class="num">247</span>
+        <svg class="accordion-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+
+      <div id="ambitiList" class="accordion-body">
+        <a href="#" class="nav-item amb a1" data-page="ambito" data-ambito="1">
+          <span class="amb-dot"></span>
+          <span class="amb-num">01</span>
+          <span class="amb-name">Identit&agrave; museale</span>
+          <span class="nav-badge">48</span>
+        </a>
+        <a href="#" class="nav-item amb a2" data-page="ambito" data-ambito="2">
+          <span class="amb-dot"></span>
+          <span class="amb-num">02</span>
+          <span class="amb-name">Inclusione e accessibilit&agrave;</span>
+          <span class="nav-badge">62</span>
+        </a>
+        <a href="#" class="nav-item amb a3" data-page="ambito" data-ambito="3">
+          <span class="amb-dot"></span>
+          <span class="amb-num">03</span>
+          <span class="amb-name">Mostre e collezioni</span>
+          <span class="nav-badge">71</span>
+        </a>
+        <a href="#" class="nav-item amb a4" data-page="ambito" data-ambito="4">
+          <span class="amb-dot"></span>
+          <span class="amb-num">04</span>
+          <span class="amb-name">Comunit&agrave; e welfare</span>
+          <span class="nav-badge">39</span>
+        </a>
+        <a href="#" class="nav-item amb a5" data-page="ambito" data-ambito="5">
+          <span class="amb-dot"></span>
+          <span class="amb-num">05</span>
+          <span class="amb-name">Digital, AI e gov.</span>
+          <span class="nav-badge">27</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Gruppo: Sezioni -->
+    <div class="nav-group">
+      <div class="nav-label">Sezioni</div>
+
+      <a href="#" class="nav-item" data-page="bandi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 4h9l5 5v11H6z"/><path d="M15 4v5h5"/><path d="M9 14h7M9 17h5"/>
+        </svg>
+        <span class="lbl">Radar Bandi</span>
+        <span class="nav-badge urgent">3</span>
+      </a>
+
+      <a href="#" class="nav-item" data-page="news">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 6h16v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M8 10h8M8 13h8M8 16h5"/>
+        </svg>
+        <span class="lbl">News</span>
+      </a>
+
+      <a href="#" class="nav-item" data-page="podcast">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 12a7 7 0 0 0 14 0"/><path d="M12 19v3"/>
+        </svg>
+        <span class="lbl">Podcast</span>
+      </a>
+
+      <a href="#" class="nav-item" data-page="video">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="6" width="13" height="12" rx="1"/><path d="M16 10l5-3v10l-5-3z"/>
+        </svg>
+        <span class="lbl">Video</span>
+      </a>
+
+      <a href="#" class="nav-item" data-page="libri">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17h14"/>
+        </svg>
+        <span class="lbl">Libri</span>
+      </a>
+
+      <a href="#" class="nav-item" data-page="norme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 3h9l4 4v14H6z"/><path d="M9 8h7M9 12h7M9 16h4"/>
+        </svg>
+        <span class="lbl">Norme</span>
+      </a>
+
+      <a href="#" class="nav-item" data-page="capitali">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4l2.4 5 5.6.8-4 3.8 1 5.4-5-2.6-5 2.6 1-5.4-4-3.8 5.6-.8z"/>
+        </svg>
+        <span class="lbl">Capitali &amp; candidature</span>
+      </a>
+
+      <a href="#" class="nav-item" data-page="social">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="8"/><path d="M4 12h16"/><path d="M12 4a12 12 0 0 1 0 16M12 4a12 12 0 0 0 0 16"/>
+        </svg>
+        <span class="lbl">Social Wall</span>
+      </a>
+
+      <a href="#" class="nav-item" data-page="archivio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="4"/><path d="M5 8v12h14V8"/><path d="M10 13h4"/>
+        </svg>
+        <span class="lbl">Archivio</span>
+        <span class="nav-badge">12</span>
+      </a>
+    </div>
+
+    <!-- Sidebar footer -->
+    <div class="sidebar-footer">
+      <a href="#" class="nav-item" data-action="openGuida">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7"/><circle cx="12" cy="17" r=".5" fill="currentColor"/>
+        </svg>
+        <span class="lbl">Guida &amp; Supporto</span>
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <header class="topbar" role="banner">
+
+      <nav class="breadcrumb" id="breadcrumb" aria-label="Breadcrumb">
+        <span>Osservatorio</span><span class="sep">/</span><b>Home</b>
+      </nav>
+
+      <form class="topbar-search" role="search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="search" placeholder="Cerca bandi, news, ambiti…" autocomplete="off" aria-label="Ricerca globale" />
+        <kbd class="kbd">&#8984;K</kbd>
+      </form>
+
+      <div class="topbar-actions">
+        <!-- Font size toggle -->
+        <button class="theme-toggle" aria-label="Aumenta/riduci testo" title="Dimensione testo" onclick="toggleFontSize()">
+          <span id="fontSizeLabel" style="font-family:var(--font-ui);font-size:13px;font-weight:700;line-height:1;letter-spacing:-.02em">Aa+</span>
+        </button>
+
+        <!-- Theme toggle -->
+        <button class="theme-toggle" id="themeToggle" aria-label="Cambia tema" title="Tema chiaro / scuro" onclick="toggleTheme()">
+          <svg id="themeIconLight" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <svg id="themeIconDark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+
+        <!-- Notifiche -->
+        <button class="topbar-icon" aria-label="Notifiche" title="Notifiche">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span class="topbar-badge">3</span>
+        </button>
+
+        <!-- Utente -->
+        <button class="topbar-user-btn" aria-label="Account">
+          <span>&#128100;</span>
+          <span>Silvano</span>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <div class="main-content">
+      <div class="page active">
+
+        <!-- Masthead / Saluto -->
+        <div class="home-masthead">
+          <div>
+            <div class="home-welcome">
+              <h1 class="home-saluto">Buongiorno, Silvano</h1>
+              <p class="home-saluto-sub">Giovedì 10 luglio 2026 &middot; 3 bandi urgenti in scadenza questa settimana</p>
+            </div>
+          </div>
+          <div class="masthead-update">
+            <span class="update-dot"></span>
+            <span>Aggiornato oggi alle 05:15</span>
+          </div>
+        </div>
+
+        <!-- Stats bar -->
+        <div class="home-stats-bar">
+          <a class="hstat" href="#bandi">
+            <b>247</b>
+            <span>Bandi</span>
+          </a>
+          <span class="hstat-sep">&middot;</span>
+          <a class="hstat" href="#news">
+            <b>1.840</b>
+            <span>News</span>
+          </a>
+          <span class="hstat-sep">&middot;</span>
+          <a class="hstat" href="#podcast">
+            <b>89</b>
+            <span>Podcast</span>
+          </a>
+          <span class="hstat-sep">&middot;</span>
+          <a class="hstat" href="#video">
+            <b>30</b>
+            <span>Video</span>
+          </a>
+          <span class="hstat-sep">&middot;</span>
+          <a class="hstat" href="#libri">
+            <b>54</b>
+            <span>Libri</span>
+          </a>
+          <span class="hstat-sep">&middot;</span>
+          <a class="hstat" href="#norme">
+            <b>18</b>
+            <span>Norme</span>
+          </a>
+        </div>
+
+        <!-- SEZIONE: Bandi urgenti -->
+        <div class="section-head" style="margin-top:0">
+          <div class="left">
+            <span class="section-title">Bandi urgenti</span>
+          </div>
+          <a class="section-action" href="#">
+            Tutti i bandi
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+
+        <!-- Filtri bandi -->
+        <div class="filters">
+          <button class="filter-chip active">Tutti</button>
+          <button class="filter-chip">Urgenti</button>
+          <button class="filter-chip">Nuovi</button>
+          <button class="filter-chip">Patrimonio</button>
+          <button class="filter-chip">Inclusione</button>
+          <button class="filter-chip">Digital</button>
+          <button class="filter-chip">EU</button>
+        </div>
+
+        <!-- Bando 1 — URGENTE -->
+        <div class="br-row br-urgent">
+          <div class="br-left">
+            <div class="br-tags">
+              <span class="br-tema br-a4">Patrimonio</span>
+              <span class="br-badge-urgent">&#9888; Urgente</span>
+              <span class="br-tipo-badge br-tipo-finanziamento">Finanziamento</span>
+            </div>
+            <div class="br-title">Restauro e valorizzazione della Torre Maestra di Grottaglie — Avviso 8.7 FESR 2021–2027</div>
+            <div class="br-summary">Interventi di recupero e riqualificazione del patrimonio culturale degli enti locali pugliesi. Il bando finanzia progettazioni di livello definitivo ed esecutivo, allestimenti, accessibilità e tecnologie culturali nei beni monumentali.</div>
+            <div class="br-meta">
+              <span class="br-ente">Regione Puglia</span>
+              <span class="br-sep">&middot;</span>
+              <span>Puglia</span>
+              <span class="br-sep">&middot;</span>
+              <span class="br-importo-inline">€ 850.000</span>
+              <span class="br-sep">&middot;</span>
+              <span class="br-rilev">Rilevato ieri</span>
+            </div>
+          </div>
+          <div class="br-right">
+            <div class="br-scad br-scad-urgent">15 lug 2026</div>
+            <span class="br-giorni br-gd-urgent">5 giorni</span>
+            <a class="br-link" href="#">Scheda</a>
+          </div>
+          <div class="br-acts">
+            <button class="br-act br-act-read">&#10003; Letto</button>
+            <button class="br-act br-act-save">&#9733; Salva</button>
+            <button class="br-act br-act-arch">Archivia</button>
+            <button class="br-act br-act-trash">Rimuovi</button>
+          </div>
+        </div>
+
+        <!-- Bando 2 — NUOVO -->
+        <div class="br-row">
+          <div class="br-left">
+            <div class="br-tags">
+              <span class="br-tema br-a3">Finanziamento EU</span>
+              <span class="br-badge-new">&#10022; Nuovo</span>
+              <span class="br-tipo-badge br-tipo-finanziamento">Finanziamento</span>
+            </div>
+            <div class="br-title">Creative Europe 2027 — Sostegno a reti culturali europee e cooperazione transnazionale</div>
+            <div class="br-summary">Il programma Creative Europe sostiene la cooperazione tra organizzazioni culturali e creative europee, la circolazione di opere, la mobilità degli artisti e il rafforzamento delle capacità del settore culturale e creativo.</div>
+            <div class="br-meta">
+              <span class="br-ente">Commissione Europea — EACEA</span>
+              <span class="br-sep">&middot;</span>
+              <span>UE</span>
+              <span class="br-sep">&middot;</span>
+              <span class="br-importo-inline">€ 2.500.000</span>
+              <span class="br-sep">&middot;</span>
+              <span class="br-rilev">Rilevato oggi</span>
+            </div>
+          </div>
+          <div class="br-right">
+            <div class="br-scad">24 ago 2026</div>
+            <span class="br-giorni br-gd-med">45 giorni</span>
+            <a class="br-link" href="#">Scheda</a>
+          </div>
+          <div class="br-acts">
+            <button class="br-act br-act-read">&#10003; Letto</button>
+            <button class="br-act br-act-save">&#9733; Salva</button>
+            <button class="br-act br-act-arch">Archivia</button>
+            <button class="br-act br-act-trash">Rimuovi</button>
+          </div>
+        </div>
+
+        <!-- Bando 3 -->
+        <div class="br-row">
+          <div class="br-left">
+            <div class="br-tags">
+              <span class="br-tema br-a5">Digitalizzazione</span>
+              <span class="br-tipo-badge br-tipo-finanziamento">PNRR</span>
+            </div>
+            <div class="br-title">Digitalizzazione delle collezioni museali — PNRR M1C3 Investimento 1.2 — Ministero della Cultura</div>
+            <div class="br-summary">Finanziamenti a musei statali e non statali per la digitalizzazione delle collezioni permanenti, l'accesso aperto ai dati culturali e lo sviluppo di piattaforme digitali per la fruizione del patrimonio.</div>
+            <div class="br-meta">
+              <span class="br-ente">Ministero della Cultura</span>
+              <span class="br-sep">&middot;</span>
+              <span>Nazionale</span>
+              <span class="br-sep">&middot;</span>
+              <span class="br-importo-inline">€ 500.000</span>
+              <span class="br-sep">&middot;</span>
+              <span class="br-rilev">Rilevato 3 giorni fa</span>
+            </div>
+          </div>
+          <div class="br-right">
+            <div class="br-scad">7 ago 2026</div>
+            <span class="br-giorni br-gd-med">28 giorni</span>
+            <a class="br-link" href="#">Scheda</a>
+          </div>
+          <div class="br-acts">
+            <button class="br-act br-act-read">&#10003; Letto</button>
+            <button class="br-act br-act-save">&#9733; Salva</button>
+            <button class="br-act br-act-arch">Archivia</button>
+            <button class="br-act br-act-trash">Rimuovi</button>
+          </div>
+        </div>
+
+        <!-- Bando 4 -->
+        <div class="br-row">
+          <div class="br-left">
+            <div class="br-tags">
+              <span class="br-tema br-a2">Inclusione</span>
+              <span class="br-tipo-badge br-tipo-finanziamento">Filantropia</span>
+            </div>
+            <div class="br-title">Welfare culturale: inclusione e accessibilità nei musei — Bando 2026</div>
+            <div class="br-summary">Fondazione Cariplo sostiene progetti di accessibilità fisica, cognitiva e sensoriale nei musei lombardi e del Nord Italia: LIS, Easy to Read, percorsi tattili, mediazione culturale per pubblici fragili.</div>
+            <div class="br-meta">
+              <span class="br-ente">Fondazione Cariplo</span>
+              <span class="br-sep">&middot;</span>
+              <span>Lombardia</span>
+              <span class="br-sep">&middot;</span>
+              <span class="br-importo-inline">€ 200.000</span>
+              <span class="br-sep">&middot;</span>
+              <span class="br-rilev">Rilevato 5 giorni fa</span>
+            </div>
+          </div>
+          <div class="br-right">
+            <div class="br-scad">10 set 2026</div>
+            <span class="br-giorni br-gd-ok">62 giorni</span>
+            <a class="br-link" href="#">Scheda</a>
+          </div>
+          <div class="br-acts">
+            <button class="br-act br-act-read">&#10003; Letto</button>
+            <button class="br-act br-act-save">&#9733; Salva</button>
+            <button class="br-act br-act-arch">Archivia</button>
+            <button class="br-act br-act-trash">Rimuovi</button>
+          </div>
+        </div>
+
+        <!-- SEZIONE: Ultime news -->
+        <div class="section-head">
+          <div class="left">
+            <span class="section-title">Ultime news</span>
+          </div>
+          <a class="section-action" href="#">
+            Tutte le news
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+
+        <!-- News 1 -->
+        <div class="nr-row">
+          <div class="nr-left">
+            <div class="nr-tags">
+              <span class="nr-fonte">Il Giornale dell'Arte</span>
+              <span class="nr-tag-cat">Patrimonio</span>
+            </div>
+            <div class="nr-title">I musei italiani aumentano i visitatori del 12% nel primo semestre 2026: il turismo culturale traino del settore</div>
+            <div class="nr-summary">I dati del Ministero della Cultura confermano la ripresa del turismo culturale: 28 milioni di visitatori nei musei statali nei primi sei mesi dell'anno, +12% rispetto al 2025.</div>
+            <div class="nr-meta">
+              <span class="nr-data">9 luglio 2026</span>
+              <span style="color:var(--rule-2)">&middot;</span>
+              <span>Rilevanza: <b style="color:var(--success)">Alta</b></span>
+            </div>
+          </div>
+          <div class="nr-right">
+            <div class="nr-data-right">9 lug<br>2026</div>
+            <span class="nr-score high">95</span>
+          </div>
+        </div>
+
+        <!-- News 2 -->
+        <div class="nr-row">
+          <div class="nr-left">
+            <div class="nr-tags">
+              <span class="nr-fonte">MiC</span>
+              <span class="nr-tag-cat">Normativa</span>
+            </div>
+            <div class="nr-title">Decreto ministeriale: nuove linee guida per l'accessibilità nei luoghi della cultura — requisiti WCAG 2.1 e LIS</div>
+            <div class="nr-summary">Il Ministero della Cultura pubblica il decreto attuativo con le linee guida operative per l'abbattimento delle barriere cognitive e sensoriali nei musei e nei siti culturali italiani.</div>
+            <div class="nr-meta">
+              <span class="nr-data">8 luglio 2026</span>
+              <span style="color:var(--rule-2)">&middot;</span>
+              <span>Rilevanza: <b style="color:var(--success)">Alta</b></span>
+            </div>
+          </div>
+          <div class="nr-right">
+            <div class="nr-data-right">8 lug<br>2026</div>
+            <span class="nr-score high">91</span>
+          </div>
+        </div>
+
+        <!-- News 3 -->
+        <div class="nr-row">
+          <div class="nr-left">
+            <div class="nr-tags">
+              <span class="nr-fonte">Artribune</span>
+              <span class="nr-tag-cat">AI &amp; Tech</span>
+            </div>
+            <div class="nr-title">AI generativa nei musei: tre case study europei che hanno cambiato la mediazione culturale nel 2026</div>
+            <div class="nr-summary">Dal Rijksmuseum di Amsterdam al Palazzo Strozzi di Firenze: come i musei stanno integrando i modelli linguistici e gli avatar IA nelle esperienze di visita per diversi profili di pubblico.</div>
+            <div class="nr-meta">
+              <span class="nr-data">7 luglio 2026</span>
+              <span style="color:var(--rule-2)">&middot;</span>
+              <span>Rilevanza: <b style="color:#B45309">Media</b></span>
+            </div>
+          </div>
+          <div class="nr-right">
+            <div class="nr-data-right">7 lug<br>2026</div>
+            <span class="nr-score med">78</span>
+          </div>
+        </div>
+
+        <!-- News 4 -->
+        <div class="nr-row">
+          <div class="nr-left">
+            <div class="nr-tags">
+              <span class="nr-fonte">Economia della Cultura</span>
+              <span class="nr-tag-cat">Finanza</span>
+            </div>
+            <div class="nr-title">PNRR Cultura: aggiornamento sullo stato di avanzamento — 68% dei progetti avviati, 31% completati</div>
+            <div class="nr-summary">Il report semestrale di Invitalia fotografa lo stato di attuazione degli investimenti PNRR M1C3: 1.240 progetti avviati, 450 completati, con particolare concentrazione nel Mezzogiorno.</div>
+            <div class="nr-meta">
+              <span class="nr-data">6 luglio 2026</span>
+              <span style="color:var(--rule-2)">&middot;</span>
+              <span>Rilevanza: <b style="color:#B45309">Media</b></span>
+            </div>
+          </div>
+          <div class="nr-right">
+            <div class="nr-data-right">6 lug<br>2026</div>
+            <span class="nr-score med">74</span>
+          </div>
+        </div>
+
+        <!-- SEZIONE: Social Wall preview -->
+        <div class="section-head">
+          <div class="left">
+            <span class="section-title">Social Wall</span>
+          </div>
+          <a class="section-action" href="#">
+            Tutti i post
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+
+        <div class="sw-grid">
+
+          <!-- Tile 1 — ICOM -->
+          <a class="sw-tile" href="#" style="--sw-col:#7C3AED">
+            <div class="sw-tile-head">
+              <span class="sw-tile-fonte">ICOM Italia</span>
+              <span class="sw-tile-cat">LinkedIn</span>
+            </div>
+            <div class="sw-tile-title">Nuovi standard professionali per la figura del mediatore museale: il documento ICOM aperto alla consultazione pubblica fino al 30 settembre</div>
+            <p class="sw-tile-excerpt">ICOM Italia lancia la consultazione pubblica sugli standard della mediazione culturale. Professionisti, musei e istituzioni culturali sono invitati a partecipare entro il 30 settembre.</p>
+            <div class="sw-tile-footer">
+              <span class="sw-tile-date">9 luglio 2026</span>
+              <span class="sw-tile-link">Leggi →</span>
+            </div>
+          </a>
+
+          <!-- Tile 2 — Fondazione Scuola Patrimonio -->
+          <a class="sw-tile" href="#" style="--sw-col:#10916D">
+            <div class="sw-tile-head">
+              <span class="sw-tile-fonte">Scuola Patrimonio</span>
+              <span class="sw-tile-cat">RSS</span>
+            </div>
+            <div class="sw-tile-title">Corso di alta formazione "Accessibilità e museo inclusivo" — iscrizioni aperte per la sessione autunnale 2026</div>
+            <p class="sw-tile-excerpt">La Fondazione Scuola dei Beni e delle Attività Culturali apre le iscrizioni al corso specialistico sull'accessibilità museale. Crediti formativi riconosciuti, borse di studio disponibili.</p>
+            <div class="sw-tile-footer">
+              <span class="sw-tile-date">8 luglio 2026</span>
+              <span class="sw-tile-link">Leggi →</span>
+            </div>
+          </a>
+
+          <!-- Tile 3 — Regione Puglia -->
+          <a class="sw-tile" href="#" style="--sw-col:#C2410C">
+            <div class="sw-tile-head">
+              <span class="sw-tile-fonte">Regione Puglia</span>
+              <span class="sw-tile-cat">Avviso</span>
+            </div>
+            <div class="sw-tile-title">FESR Puglia: pubblicata la graduatoria provvisoria dell'Avviso 8.6 — Rigenerazione urbana e patrimonio culturale</div>
+            <p class="sw-tile-excerpt">La Regione Puglia pubblica la graduatoria provvisoria dell'Avviso 8.6 con 87 progetti ammessi al finanziamento per un totale di € 42 milioni. Osservazioni entro il 25 luglio.</p>
+            <div class="sw-tile-footer">
+              <span class="sw-tile-date">7 luglio 2026</span>
+              <span class="sw-tile-link">Leggi →</span>
+            </div>
+          </a>
+
+        </div>
+
+      </div><!-- /page -->
+    </div><!-- /main-content -->
+  </div><!-- /main -->
+
+</div><!-- /app -->
+
+<script>
+// Theme toggle
+(function(){
+  var btn = document.getElementById('themeToggle');
+  var iconLight = document.getElementById('themeIconLight');
+  var iconDark  = document.getElementById('themeIconDark');
+
+  function applyTheme(dark){
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : '');
+    iconLight.style.display = dark  ? 'none' : '';
+    iconDark.style.display  = !dark ? 'none' : '';
+    // Also update sidebar SVG text color
+    var svgText = document.querySelector('.brand-mark svg text');
+    if(svgText) svgText.setAttribute('fill', dark ? '#FAFAFA' : '#101010');
+  }
+
+  var saved = localStorage.getItem('oc-theme');
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved ? saved === 'dark' : false);
+
+  window.toggleTheme = function(){
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    localStorage.setItem('oc-theme', isDark ? 'light' : 'dark');
+    applyTheme(!isDark);
+  };
+})();
+
+// Font size toggle
+(function(){
+  var FS_LEVELS = ['', 'large', 'xlarge'];
+  var _fsIdx = 0;
+  var fsLabel = document.getElementById('fontSizeLabel');
+  var FS_SIZES = ['13px','16px','20px'];
+
+  function applyFontSize(idx){
+    _fsIdx = ((idx % 3) + 3) % 3;
+    document.documentElement.setAttribute('data-fontsize', FS_LEVELS[_fsIdx]);
+    if(fsLabel) fsLabel.style.fontSize = FS_SIZES[_fsIdx];
+  }
+
+  var saved = localStorage.getItem('oc-fontsize');
+  var init = FS_LEVELS.indexOf(saved);
+  applyFontSize(init < 0 ? 0 : init);
+
+  window.toggleFontSize = function(){
+    var next = (_fsIdx + 1) % 3;
+    localStorage.setItem('oc-fontsize', FS_LEVELS[next]);
+    applyFontSize(next);
+  };
+})();
+
+// Accordion ambiti
+(function(){
+  var toggle = document.getElementById('ambitiToggle');
+  var body   = document.getElementById('ambitiList');
+  if(!toggle || !body) return;
+  toggle.addEventListener('click', function(){
+    var isOpen = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+    body.classList.toggle('collapsed', isOpen);
+  });
+})();
+</script>
+
+</body>
+</html>

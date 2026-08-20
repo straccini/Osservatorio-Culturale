@@ -1,0 +1,153 @@
+/**
+ * ================================================================
+ * SINOPIA · Newsletter Approve — handler approvazione newsletter via link Telegram
+ * ----------------------------------------------------------------
+ * v4.18.39 (audit 2026-05-14): rinominato da Server_v44_doGet_patch.gs.
+ * La "patch di innesto" descritta storicamente è GIÀ stata applicata
+ * nel doGet di Codice.js (ramo `params.approveNl && params.t`).
+ *
+ * Funzioni esportate (chiamate da Codice.js doGet):
+ *   _renderApproveNewsletterPage_(draftId, token)  → HTML pagina conferma
+ *   _executeApproveNewsletter_(draftId, token)     → esegue invio dopo conferma admin
+ *
+ * Helper privati:
+ *   _approvePage_(css, inner)                       → wrapper HTML
+ *   _hEsc_(s)                                       → escape HTML
+ * ================================================================
+ */
+
+/**
+ * Genera la pagina di conferma approvazione quando si apre il link
+ * arrivato via Telegram. L'utente deve essere admin e il token deve
+ * corrispondere a quello della bozza.
+ */
+function _renderApproveNewsletterPage_(draftId, token) {
+  var email = '';
+  try { email = Session.getActiveUser().getEmail() || ''; } catch(e) { email = ''; }
+
+  var css = 'body{font-family:Inter,system-ui,sans-serif;background:#F4F4F6;margin:0;padding:40px 20px;color:#1D1D1F;}' +
+            '.card{max-width:560px;margin:0 auto;background:#fff;border-radius:14px;padding:28px;box-shadow:0 4px 24px rgba(0,0,0,.06);}' +
+            'h1{font-size:20px;margin:0 0 8px;}' +
+            'p{font-size:14px;line-height:1.55;color:#3A3A3C;margin:8px 0;}' +
+            '.btn{display:inline-block;padding:12px 24px;border-radius:8px;background:#1D1D1F;color:#fff;text-decoration:none;font-weight:600;font-size:14px;margin-top:16px;}' +
+            '.btn.danger{background:#C0392B;}' +
+            '.box{background:#F7F7F9;padding:12px 14px;border-radius:8px;font-size:13px;color:#5A5A5E;margin:12px 0;}' +
+            '.err{background:#FBECEC;color:#8B1E1E;padding:12px 14px;border-radius:8px;}' +
+            '.ok{background:#E8F5EE;color:#1B7A3E;padding:12px 14px;border-radius:8px;}' +
+            '.meta{font-size:12px;color:#8A8A8E;margin-top:14px;}';
+
+  // v4.24.8 — NIENTE gate su Session.getActiveUser(): su deploy ANONIMO e' SEMPRE vuoto
+  // e bloccava chiunque ("Accesso richiesto"), admin compreso. L'autorizzazione e' il
+  // possesso dell'authToken segreto per-bozza (inviato solo in chat Telegram admin),
+  // verificato sotto — stesso pattern magic-link del resto dell'app.
+  // email resta solo a scopo display ("Approvato da"), se per caso disponibile.
+
+  // Carica draft
+  var draft = null;
+  try {
+    var json = PropertiesService.getScriptProperties().getProperty('OC_NL_DRAFT_' + draftId);
+    if (json) draft = JSON.parse(json);
+  } catch(e) {}
+  if (!draft) {
+    return _approvePage_(css,
+      '<h1>Bozza non trovata</h1>' +
+      '<div class="err">La bozza <code>' + _hEsc_(draftId) + '</code> non esiste o è scaduta.</div>');
+  }
+  if (!draft.authToken || draft.authToken !== token) {
+    return _approvePage_(css,
+      '<h1>Token non valido</h1>' +
+      '<div class="err">Il link di approvazione non è valido o è già stato usato.</div>');
+  }
+  if (draft.stato === 'inviato') {
+    return _approvePage_(css,
+      '<h1>Già inviata</h1>' +
+      '<div class="ok">Questa newsletter è già stata inviata a ' + (draft.sentTo||0) + ' destinatari.</div>');
+  }
+
+  // v4.24.13 FIX — Il vecchio <form action=""> faceva submit all'URL transitorio
+  // dell'iframe googleusercontent: confirm=1 NON tornava mai a doGet, l'invio non
+  // partiva e lo stato restava "in_attesa_approvazione" (= "si blocca").
+  // Un LINK ASSOLUTO con target="_top" naviga il top frame su /exec (consentito
+  // dalla sandbox con user-activation — stesso pattern del magic-link).
+  var _webUrl = '';
+  try {
+    // QA 19/08 — stesso difetto: il pulsante ricostruiva /dev.
+    _webUrl = (typeof ADMTK_PROD_URL === 'string' && ADMTK_PROD_URL)
+            ? ADMTK_PROD_URL
+            : (ScriptApp.getService().getUrl() || '');
+  } catch(eU) { _webUrl = ''; }
+  var _confirmUrl = _webUrl + '?approveNl=' + encodeURIComponent(draftId) +
+                    '&t=' + encodeURIComponent(token) + '&confirm=1';
+  var _confirmLink = '<a class="btn" target="_top" rel="noopener" href="' + _hEsc_(_confirmUrl) + '">✉️ Invia adesso</a>';
+
+  // Pagina di conferma: richiede click per confermare (evita invio per preview)
+  var cnf = (draft.bandiUrgenti||[]).length + (draft.bandiRecenti||[]).length;
+  var body =
+    '<h1>Autorizza invio newsletter</h1>' +
+    '<div class="box">' +
+      '<b>Soggetto:</b> ' + _hEsc_(draft.soggetto||'') + '<br>' +
+      '<b>ID bozza:</b> <code>' + _hEsc_(draft.id||'') + '</code><br>' +
+      '<b>Contenuti:</b> ' + cnf + ' bandi · ' +
+        ((draft.news||[]).length) + ' news · ' +
+        ((draft.podcast||[]).length) + ' podcast' +
+    '</div>' +
+    '<p>Stai per autorizzare l\'invio della newsletter a tutti gli iscritti attivi della MailingList.</p>' +
+    '<p class="meta">Richiesto da: ' + _hEsc_(draft.autore||'—') + ' · Approvato da: ' + _hEsc_(email || 'link Telegram autorizzato') + '</p>' +
+    _confirmLink;
+
+  return _approvePage_(css, body);
+}
+
+/**
+ * Esegue l'invio quando l'admin ha cliccato "Invia adesso" (confirm=1).
+ * Richiamata da doGet() quando params.approveNl && params.t && params.confirm.
+ */
+function _executeApproveNewsletter_(draftId, token) {
+  var css = 'body{font-family:Inter,system-ui,sans-serif;background:#F4F4F6;margin:0;padding:40px 20px;color:#1D1D1F;}' +
+            '.card{max-width:560px;margin:0 auto;background:#fff;border-radius:14px;padding:28px;box-shadow:0 4px 24px rgba(0,0,0,.06);}' +
+            'h1{font-size:20px;margin:0 0 8px;}' +
+            '.ok{background:#E8F5EE;color:#1B7A3E;padding:12px 14px;border-radius:8px;font-size:14px;}' +
+            '.err{background:#FBECEC;color:#8B1E1E;padding:12px 14px;border-radius:8px;font-size:14px;}';
+
+  var res = adminConfirmSendWithToken(draftId, token);
+  // v4.24.14 — Gia inviata (doppio caricamento del link): pagina amichevole, nessun nuovo invio
+  if (res && res.ok && res.alreadySent) {
+    return _approvePage_(css,
+      '<h1>Già inviata ✓</h1>' +
+      '<div class="ok">Questa newsletter risulta già inviata a <b>' + (res.sent || 0) + '</b> destinatari' +
+      (res.sentAt ? ' il ' + _hEsc_(String(res.sentAt).substring(0, 16).replace('T', ' ')) : '') +
+      '. Nessun nuovo invio è stato eseguito.</div>');
+  }
+  if (res && res.error === 'invio_in_corso') {
+    return _approvePage_(css,
+      '<h1>Invio in corso…</h1>' +
+      '<div class="box">La conferma è già stata ricevuta e l\'invio sta procedendo. Controlla lo Storico invii tra qualche istante.</div>');
+  }
+  if (!res || !res.ok) {
+    return _approvePage_(css,
+      '<h1>Errore invio</h1>' +
+      '<div class="err">' + _hEsc_(res && res.error || 'errore_sconosciuto') + '</div>');
+  }
+  var msg = 'Newsletter inviata con successo a <b>' + (res.sent||0) + '</b> destinatari.';
+  if (res.errors && res.errors.length) {
+    msg += ' (' + res.errors.length + ' errori — vedi log)';
+  }
+  // v4.24.14 — Warning di persistenza visibili (invio riuscito, stato da sistemare)
+  var warnHtml = (res.warn && res.warn.length)
+    ? '<div class="err" style="margin-top:10px">⚠️ Nota: ' + _hEsc_(res.warn.join(' · ')) + '</div>'
+    : '';
+  return _approvePage_(css, '<h1>Invio completato</h1><div class="ok">' + msg + '</div>' + warnHtml);
+}
+
+function _approvePage_(css, inner) {
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' + css + '</style></head>' +
+         '<body><div class="card">' + inner + '</div></body></html>';
+}
+
+function _hEsc_(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}

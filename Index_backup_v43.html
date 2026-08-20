@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Osservatorio Culturale · Duemilamusei</title>
+
+  <!-- URL GAS (sostituita da doGet string-replace) -->
+  <script>var GAS_URL = 'GAS_URL_PLACEHOLDER';</script>
+
+  <!-- ===== Styles inline ===== -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opt,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* ---------- Palette istituzionale ---------- */
+    --bg:#F7F7F5; --surface:#FFFFFF; --surface-alt:#FAFAF7;
+    --border:#E7E5E0; --border-strong:#D4D2CB;
+    --ink:#111827; --ink-2:#374151; --ink-3:#6B7280; --ink-4:#9CA3AF;
+    --accent:#1E293B; --accent-2:#0E7490;
+    --danger:#B91C1C; --warning:#B45309; --success:#166534;
+
+    /* ---------- 5 Ambiti tematici (coerenti con AMBITO_COLOR in Code.gs) ---------- */
+    --amb-1:#534AB7;  /* 01 Tendenze museali */
+    --amb-2:#0F6E56;  /* 02 Accessibilita / Gaming */
+    --amb-3:#185FA5;  /* 03 Mostre / Exhibition */
+    --amb-4:#854F0B;  /* 04 Progetti comunita */
+    --amb-5:#0E7490;  /* 05 AI per la Cultura */
+
+    /* ---------- Tipografia ---------- */
+    --font-ui:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    --font-serif:'Source Serif 4',Georgia,'Times New Roman',serif;
+    --fs-xs:12px; --fs-sm:13px; --fs-base:15px; --fs-md:16px;
+    --fs-lg:18px; --fs-xl:22px; --fs-2xl:28px; --fs-3xl:34px; --fs-4xl:44px;
+    --lh-tight:1.25; --lh-base:1.55; --lh-read:1.7;
+
+    /* ---------- Layout ---------- */
+    --sidebar-w:272px; --topbar-h:68px;
+    --radius:10px; --radius-lg:14px;
+    --shadow-1:0 1px 2px rgba(17,24,39,.04),0 1px 3px rgba(17,24,39,.05);
+    --shadow-2:0 4px 12px rgba(17,24,39,.06),0 2px 4px rgba(17,24,39,.04);
+    --shadow-3:0 10px 30px rgba(17,24,39,.08);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--font-ui); font-size:var(--fs-base);
+    line-height:var(--lh-base); color:var(--ink); background:var(--bg);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:none;background:none}
+  .serif{font-family:var(--font-serif);letter-spacing:-0.01em}
+
+  /* ========================================================
+     LAYOUT PRINCIPALE
+     ======================================================== */
+  .app{display:grid; grid-template-columns:var(--sidebar-w) 1fr; min-height:100vh}
+
+  /* ========================================================
+     SIDEBAR
+     ======================================================== */
+  .sidebar{
+    background:var(--surface); border-right:1px solid var(--border);
+    position:sticky; top:0; height:100vh; overflow-y:auto;
+    padding:20px 14px; display:flex; flex-direction:column;
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    padding:6px 10px 18px 10px; border-bottom:1px solid var(--border);
+    margin-bottom:14px;
+  }
+  .brand .logo{
+    width:36px; height:36px; border-radius:8px;
+    background:linear-gradient(135deg,var(--accent) 0%,var(--accent-2) 100%);
+    display:grid; place-items:center; color:#fff;
+    font-family:var(--font-serif); font-weight:700; font-size:18px;
+  }
+  .brand .name{display:flex; flex-direction:column; line-height:1.2}
+  .brand .name b{
+    font-family:var(--font-serif); font-weight:700; font-size:16px;
+    color:var(--ink); letter-spacing:-0.01em;
+  }
+  .brand .name span{font-size:11px;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase}
+
+  .nav-group{margin-bottom:18px}
+  .nav-label{
+    font-size:11px; font-weight:600; color:var(--ink-3);
+    letter-spacing:.08em; text-transform:uppercase;
+    padding:6px 12px; margin-bottom:4px;
+  }
+  .nav-item{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 12px; border-radius:8px;
+    font-size:14px; color:var(--ink-2);
+    cursor:pointer; transition:background .15s,color .15s;
+    width:100%; text-align:left;
+  }
+  .nav-item:hover{background:var(--surface-alt);color:var(--ink)}
+  .nav-item.active{background:#111827;color:#fff;font-weight:500}
+  .nav-item.active .badge{background:rgba(255,255,255,.18);color:#fff}
+  .nav-item .ico{width:18px;height:18px;flex:0 0 18px;display:grid;place-items:center;opacity:.85}
+  .nav-item .lbl{flex:1}
+  .nav-item .badge{
+    min-width:22px; height:20px; padding:0 7px;
+    font-size:11px; font-weight:600;
+    background:var(--surface-alt); color:var(--ink-2);
+    border-radius:10px; display:grid; place-items:center;
+  }
+  .nav-item .dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
+  .nav-item .badge.alert{background:#FEE2E2;color:#991B1B}
+  .nav-item.active .badge.alert{background:#FECACA;color:#7F1D1D}
+
+  .sidebar-footer{
+    margin-top:auto; padding:12px;
+    border-top:1px solid var(--border);
+    font-size:12px; color:var(--ink-3);
+    display:flex; align-items:center; gap:10px;
+  }
+  .sidebar-footer .ver{
+    padding:2px 7px; background:var(--surface-alt);
+    border:1px solid var(--border); border-radius:6px;
+    font-weight:600; color:var(--ink-2);
+  }
+
+  /* ========================================================
+     TOPBAR
+     ======================================================== */
+  .topbar{
+    position:sticky; top:0; z-index:10;
+    height:var(--topbar-h);
+    background:rgba(255,255,255,.92);
+    backdrop-filter:saturate(180%) blur(8px);
+    -webkit-backdrop-filter:saturate(180%) blur(8px);
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:16px;
+    padding:0 28px;
+  }
+  .breadcrumb{
+    font-size:13px; color:var(--ink-3);
+    display:flex; align-items:center; gap:8px; flex:0 0 auto;
+  }
+  .breadcrumb b{color:var(--ink);font-weight:600}
+  .breadcrumb .sep{color:var(--ink-4)}
+
+  .search-wrap{flex:1; max-width:640px; margin:0 auto; position:relative}
+  .search{
+    width:100%; height:42px; padding:0 14px 0 42px;
+    border:1px solid var(--border); background:var(--surface-alt);
+    border-radius:10px; font-size:14px; font-family:var(--font-ui);
+    color:var(--ink); transition:border .15s,background .15s,box-shadow .15s;
+  }
+  .search:focus{
+    outline:none; background:#fff;
+    border-color:var(--accent-2);
+    box-shadow:0 0 0 3px rgba(14,116,144,.12);
+  }
+  .search-wrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink-3)}
+  .search-kbd{
+    position:absolute; right:10px; top:50%; transform:translateY(-50%);
+    font-size:11px; color:var(--ink-3);
+    padding:3px 6px; background:#fff; border:1px solid var(--border);
+    border-radius:5px; font-family:var(--font-ui); font-weight:500;
+  }
+
+  .top-actions{display:flex;align-items:center;gap:6px}
+  .icon-btn{
+    width:38px; height:38px; border-radius:8px;
+    display:grid; place-items:center;
+    color:var(--ink-2); position:relative;
+  }
+  .icon-btn:hover{background:var(--surface-alt);color:var(--ink)}
+  .icon-btn .notif-dot{
+    position:absolute; top:8px; right:9px;
+    width:8px; height:8px; border-radius:50%;
+    background:var(--danger); border:2px solid #fff;
+  }
+  .user-chip{
+    display:flex; align-items:center; gap:10px;
+    padding:5px 10px 5px 5px; border-radius:24px;
+    border:1px solid var(--border); background:var(--surface);
+  }
+  .user-chip:hover{background:var(--surface-alt)}
+  .user-chip .avatar{
+    width:28px; height:28px; border-radius:50%;
+    background:linear-gradient(135deg,var(--amb-5),var(--amb-1));
+    color:#fff; font-size:12px; font-weight:600;
+    display:grid; place-items:center;
+  }
+  .user-chip .who{font-size:13px;font-weight:500}
+  .user-chip .role{
+    font-size:11px; color:var(--ink-3); margin-left:2px;
+    padding:2px 6px; background:var(--surface-alt); border-radius:4px;
+  }
+
+  /* ========================================================
+     MAIN & PAGES (sistema SPA con classe .active)
+     ======================================================== */
+  .main{min-width:0}
+  .page{display:none; padding:28px 28px 80px 28px; max-width:1440px}
+  .page.active{display:block}
+
+  .page-head{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    margin-bottom:24px; gap:24px; flex-wrap:wrap;
+  }
+  .page-title{
+    font-family:var(--font-serif); font-size:var(--fs-3xl); font-weight:700;
+    letter-spacing:-0.02em; line-height:1.15; color:var(--ink); margin:0 0 6px 0;
+  }
+  .page-sub{font-size:var(--fs-md);color:var(--ink-3);margin:0;max-width:62ch}
+
+  /* ========================================================
+     HERO HOME
+     ======================================================== */
+  .hero{
+    background:linear-gradient(135deg,#1E293B 0%,#0E7490 100%);
+    color:#fff; border-radius:var(--radius-lg);
+    padding:44px 40px; margin-bottom:28px;
+    position:relative; overflow:hidden;
+  }
+  .hero::after{
+    content:''; position:absolute; right:-60px; bottom:-60px;
+    width:260px; height:260px; border-radius:50%;
+    background:radial-gradient(circle,rgba(255,255,255,.08),transparent 70%);
+  }
+  .hero-eyebrow{
+    font-size:12px; font-weight:600; letter-spacing:.12em;
+    text-transform:uppercase; color:rgba(255,255,255,.75); margin-bottom:10px;
+  }
+  .hero h1{
+    font-family:var(--font-serif); font-weight:700;
+    font-size:var(--fs-4xl); line-height:1.1; letter-spacing:-0.02em;
+    margin:0 0 8px 0; max-width:22ch;
+  }
+  .hero p{
+    font-size:16px; line-height:1.6; color:rgba(255,255,255,.82);
+    margin:0 0 26px 0; max-width:62ch;
+  }
+  .hero-search{
+    position:relative; max-width:720px;
+    background:#fff; border-radius:12px;
+    display:flex; align-items:center; box-shadow:var(--shadow-3);
+  }
+  .hero-search svg{margin-left:18px;color:var(--ink-3);flex:0 0 auto}
+  .hero-search input{
+    flex:1; border:none; outline:none;
+    height:56px; padding:0 16px;
+    font-size:16px; font-family:var(--font-ui);
+    color:var(--ink); background:transparent;
+  }
+  .hero-search input::placeholder{color:var(--ink-4)}
+  .hero-search button{
+    height:42px; margin-right:7px; padding:0 22px;
+    background:var(--ink); color:#fff; border-radius:8px;
+    font-weight:600; font-size:14px;
+  }
+  .hero-search button:hover{background:#000}
+  .hero-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .hero-chip{
+    font-size:13px; padding:6px 12px;
+    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.22);
+    border-radius:20px; color:#fff; transition:background .15s;
+  }
+  .hero-chip:hover{background:rgba(255,255,255,.22)}
+
+  /* ========================================================
+     SEZIONI & COMPONENTI
+     ======================================================== */
+  .section-head{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:14px;
+  }
+  .section-title{
+    font-family:var(--font-serif); font-size:var(--fs-xl); font-weight:700;
+    letter-spacing:-0.01em; color:var(--ink); margin:0;
+    display:flex; align-items:center; gap:10px;
+  }
+  .section-title .pulse{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--danger); position:relative;
+  }
+  .section-title .pulse::after{
+    content:''; position:absolute; inset:-4px; border-radius:50%;
+    border:2px solid var(--danger); opacity:.4;
+    animation:pulse 1.8s ease-out infinite;
+  }
+  @keyframes pulse{
+    0%{transform:scale(.6);opacity:.7}
+    100%{transform:scale(1.6);opacity:0}
+  }
+  .section-action{
+    font-size:13px; color:var(--ink-2); font-weight:500;
+    display:flex; align-items:center; gap:6px;
+  }
+  .section-action:hover{color:var(--accent-2)}
+
+  /* --- Card bandi urgenti --- */
+  .urgent-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:14px; margin-bottom:36px;
+  }
+  .bando-card{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:18px 18px 18px 22px;
+    position:relative; transition:transform .15s,box-shadow .15s;
+    cursor:pointer;
+  }
+  .bando-card::before{
+    content:''; position:absolute; left:0; top:10px; bottom:10px;
+    width:4px; border-radius:0 3px 3px 0; background:var(--danger);
+  }
+  .bando-card.prio-med::before{background:var(--warning)}
+  .bando-card.prio-low::before{background:var(--ink-4)}
+  .bando-card:hover{
+    transform:translateY(-2px); box-shadow:var(--shadow-2);
+    border-color:var(--border-strong);
+  }
+  .bando-meta{
+    display:flex; align-items:center; gap:8px;
+    font-size:12px; color:var(--ink-3); margin-bottom:8px;
+  }
+  .bando-meta .tag{
+    font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+    font-size:11px; padding:2px 7px; border-radius:4px;
+  }
+  .tag.urgent{background:#FEE2E2;color:#991B1B}
+  .tag.med{background:#FEF3C7;color:#92400E}
+  .tag.low{background:#F3F4F6;color:#4B5563}
+  .bando-title{
+    font-family:var(--font-serif); font-size:17px; font-weight:600;
+    line-height:1.3; color:var(--ink); margin:0 0 10px 0;
+  }
+  .bando-footer{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:12px; color:var(--ink-3); padding-top:10px;
+    border-top:1px dashed var(--border);
+  }
+  .bando-footer .days{font-weight:600;color:var(--danger)}
+  .bando-card.prio-med .days{color:var(--warning)}
+  .bando-card.prio-low .days{color:var(--ink-2)}
+
+  /* --- Card ambiti --- */
+  .ambiti-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:14px; margin-bottom:36px;
+  }
+  .ambito-card{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:20px 20px 18px 26px;
+    position:relative; cursor:pointer;
+    transition:transform .15s,box-shadow .15s,border-color .15s;
+  }
+  .ambito-card::before{
+    content:''; position:absolute; left:0; top:0; bottom:0;
+    width:5px; border-radius:10px 0 0 10px;
+    background:var(--amb);
+  }
+  .ambito-card:hover{
+    transform:translateY(-2px); box-shadow:var(--shadow-2);
+    border-color:var(--border-strong);
+  }
+  .ambito-num{
+    font-family:var(--font-serif); font-weight:600;
+    font-size:13px; color:var(--amb); letter-spacing:.1em;
+    text-transform:uppercase; margin-bottom:6px;
+  }
+  .ambito-name{
+    font-family:var(--font-serif); font-size:20px; font-weight:700;
+    letter-spacing:-0.01em; line-height:1.2; color:var(--ink);
+    margin:0 0 6px 0;
+  }
+  .ambito-desc{
+    font-size:13px; color:var(--ink-3); line-height:1.5;
+    margin:0 0 14px 0;
+  }
+  .ambito-counters{
+    display:flex; gap:18px; padding-top:12px;
+    border-top:1px solid var(--border); font-size:12px;
+  }
+  .ambito-counters .c{display:flex;flex-direction:column;gap:2px}
+  .ambito-counters .c strong{
+    font-size:18px; font-weight:600; color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  .ambito-counters .c span{color:var(--ink-3);font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+  .ambito-counters .new{
+    margin-left:auto; color:var(--amb); font-weight:600;
+    font-size:12px; align-self:flex-end;
+  }
+  .a1{--amb:var(--amb-1)} .a2{--amb:var(--amb-2)} .a3{--amb:var(--amb-3)}
+  .a4{--amb:var(--amb-4)} .a5{--amb:var(--amb-5)}
+
+  /* --- Feed news home --- */
+  .split{
+    display:grid; grid-template-columns:2fr 1fr; gap:28px; margin-bottom:40px;
+  }
+  .news-list{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); overflow:hidden;
+  }
+  .news-row{
+    display:grid; grid-template-columns:36px 1fr auto;
+    gap:14px; align-items:flex-start;
+    padding:16px 20px; border-bottom:1px solid var(--border);
+    cursor:pointer; transition:background .12s;
+  }
+  .news-row:last-child{border-bottom:none}
+  .news-row:hover{background:var(--surface-alt)}
+  .news-num{
+    font-family:var(--font-serif); font-weight:600;
+    font-variant-numeric:tabular-nums; font-size:20px;
+    color:var(--ink-4); line-height:1; padding-top:2px;
+  }
+  .news-body{min-width:0}
+  .news-tags{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+  .news-tag{
+    font-size:10px; font-weight:600; letter-spacing:.06em;
+    text-transform:uppercase; padding:2px 7px;
+    border-radius:3px; color:#fff;
+  }
+  .news-title{
+    font-family:var(--font-serif); font-size:16px; font-weight:600;
+    line-height:1.35; color:var(--ink); margin:0 0 4px 0;
+  }
+  .news-meta{font-size:12px;color:var(--ink-3)}
+  .news-meta b{color:var(--ink-2);font-weight:500}
+  .news-score{
+    font-size:11px; font-weight:600; color:var(--ink-2);
+    background:var(--surface-alt); border:1px solid var(--border);
+    padding:4px 8px; border-radius:20px; white-space:nowrap;
+  }
+
+  /* --- Side panel (home destra) --- */
+  .side-panel{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:18px 20px; margin-bottom:16px;
+  }
+  .side-panel h3{
+    font-family:var(--font-serif); font-size:16px; font-weight:600;
+    margin:0 0 12px 0;
+  }
+  .pod-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+  .pod-item:last-child{border-bottom:none}
+  .pod-cover{
+    width:48px; height:48px; border-radius:8px; flex:0 0 48px;
+    background:linear-gradient(135deg,var(--amb-5),var(--amb-1));
+    display:grid; place-items:center; color:#fff;
+  }
+  .pod-body{min-width:0}
+  .pod-title{font-size:14px;font-weight:600;margin:0 0 3px 0;line-height:1.3}
+  .pod-meta{font-size:12px;color:var(--ink-3)}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .stat{background:var(--surface-alt);border-radius:8px;padding:12px 14px}
+  .stat b{
+    font-family:var(--font-serif); font-size:22px; font-weight:700;
+    display:block; color:var(--ink); line-height:1;
+    font-variant-numeric:tabular-nums;
+  }
+  .stat span{font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em}
+
+  /* --- Filtri & tabelle (sotto-pagine) --- */
+  .filters{
+    display:flex; gap:8px; flex-wrap:wrap;
+    margin-bottom:20px; padding:14px 16px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius);
+  }
+  .filter-chip{
+    font-size:13px; padding:7px 14px;
+    border:1px solid var(--border); border-radius:20px;
+    background:var(--surface); color:var(--ink-2);
+    transition:all .15s;
+  }
+  .filter-chip:hover{border-color:var(--ink-3);color:var(--ink)}
+  .filter-chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .table-card{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); overflow:hidden;
+  }
+  .table-head,.table-row{
+    display:grid; grid-template-columns:3fr 1fr 1fr 120px 90px;
+    gap:14px; align-items:center;
+    padding:14px 20px; border-bottom:1px solid var(--border);
+  }
+  .table-head{
+    background:var(--surface-alt); font-size:11px;
+    font-weight:600; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--ink-3);
+  }
+  .table-row:last-child{border-bottom:none}
+  .table-row:hover{background:var(--surface-alt);cursor:pointer}
+  .table-row .t-title{font-family:var(--font-serif);font-weight:600;font-size:15px;line-height:1.35}
+  .table-row .t-title small{
+    display:block; font-family:var(--font-ui); font-weight:400;
+    font-size:12px; color:var(--ink-3); margin-top:2px;
+  }
+  .table-row .t-ente{font-size:13px;color:var(--ink-2)}
+  .table-row .t-ambito{font-size:12px;font-weight:600}
+  .table-row .t-scadenza{font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+  .table-row .t-scadenza b{color:var(--danger);font-weight:600}
+
+  /* --- Hero ambito singolo --- */
+  .ambito-hero{
+    background:var(--amb,var(--amb-5)); color:#fff;
+    border-radius:var(--radius-lg); padding:36px 40px; margin-bottom:24px;
+  }
+  .ambito-hero .eyebrow{
+    font-size:12px; font-weight:600; letter-spacing:.12em;
+    text-transform:uppercase; opacity:.85;
+  }
+  .ambito-hero h1{
+    font-family:var(--font-serif); font-weight:700;
+    font-size:40px; line-height:1.1; letter-spacing:-0.02em;
+    margin:6px 0 10px 0;
+  }
+  .ambito-hero p{font-size:15px;line-height:1.6;opacity:.9;max-width:64ch;margin:0}
+  .ambito-hero .kpi{display:flex;gap:28px;margin-top:22px}
+  .ambito-hero .kpi>div{display:flex;flex-direction:column;gap:2px}
+  .ambito-hero .kpi b{
+    font-family:var(--font-serif); font-weight:700; font-size:26px; line-height:1;
+  }
+  .ambito-hero .kpi span{
+    font-size:11px; opacity:.8; text-transform:uppercase; letter-spacing:.05em;
+  }
+
+  /* ========================================================
+     RESPONSIVE
+     ======================================================== */
+  @media (max-width:1100px){.split{grid-template-columns:1fr}}
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr}
+    .sidebar{
+      position:fixed; z-index:50;
+      transform:translateX(-100%); transition:transform .2s;
+    }
+    .sidebar.open{transform:translateX(0)}
+    .topbar{padding:0 16px}
+    .page{padding:20px 16px 60px 16px}
+    .hero{padding:28px 22px}
+    .hero h1{font-size:30px}
+    .table-head,.table-row{grid-template-columns:1fr;gap:4px}
+    .table-head{display:none}
+  }
+  .menu-btn{
+    display:none; width:38px; height:38px; border-radius:8px;
+    place-items:center; color:var(--ink-2);
+  }
+  @media (max-width:900px){.menu-btn{display:grid}}
+</style>
+
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== Sidebar inline ===== -->
+  <aside class="sidebar" id="sidebar" aria-label="Navigazione principale">
+
+  <!-- ===== Brand ===== -->
+  <div class="brand">
+    <div class="logo">OC</div>
+    <div class="name">
+      <b>Osservatorio</b>
+      <span>Culturale · v4.2</span>
+    </div>
+  </div>
+
+  <!-- ===== Gruppo: Vista generale ===== -->
+  <div class="nav-group">
+    <div class="nav-label">Vista generale</div>
+
+    <a href="#" class="nav-item active" data-page="home" aria-current="page">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span>Home</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="bandi">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+      <span>Radar Bandi</span>
+      <span class="nav-badge urgent" id="badge-bandi-urgenti" hidden>0</span>
+      <span class="nav-badge" id="badge-bandi" hidden>0</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="news">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2z"/><path d="M18 14H10"/><path d="M15 18H10"/><path d="M10 6h8v4h-8V6z"/>
+      </svg>
+      <span>News</span>
+      <span class="nav-badge" id="badge-news" hidden>0</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="podcast">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>
+      <span>Podcast</span>
+      <span class="nav-badge" id="badge-podcast" hidden>0</span>
+    </a>
+  </div>
+
+  <!-- ===== Gruppo: Ambiti tematici (5) ===== -->
+  <div class="nav-group">
+    <div class="nav-label">Ambiti tematici</div>
+
+    <a href="#" class="nav-item amb" data-page="ambito" data-ambito="1">
+      <span class="amb-dot" style="background:var(--amb-1)"></span>
+      <span>01 Tendenze museali</span>
+      <span class="nav-badge" id="badge-amb-1" hidden>0</span>
+    </a>
+    <a href="#" class="nav-item amb" data-page="ambito" data-ambito="2">
+      <span class="amb-dot" style="background:var(--amb-2)"></span>
+      <span>02 Accessibilita / Gaming</span>
+      <span class="nav-badge" id="badge-amb-2" hidden>0</span>
+    </a>
+    <a href="#" class="nav-item amb" data-page="ambito" data-ambito="3">
+      <span class="amb-dot" style="background:var(--amb-3)"></span>
+      <span>03 Mostre / Exhibition</span>
+      <span class="nav-badge" id="badge-amb-3" hidden>0</span>
+    </a>
+    <a href="#" class="nav-item amb" data-page="ambito" data-ambito="4">
+      <span class="amb-dot" style="background:var(--amb-4)"></span>
+      <span>04 Progetti comunita</span>
+      <span class="nav-badge" id="badge-amb-4" hidden>0</span>
+    </a>
+    <a href="#" class="nav-item amb" data-page="ambito" data-ambito="5">
+      <span class="amb-dot" style="background:var(--amb-5)"></span>
+      <span>05 AI per la Cultura</span>
+      <span class="nav-badge" id="badge-amb-5" hidden>0</span>
+    </a>
+  </div>
+
+  <!-- ===== Gruppo: Strumenti (visibilita controllata lato JS in base al ruolo) ===== -->
+  <div class="nav-group" id="nav-strumenti" hidden>
+    <div class="nav-label">Strumenti</div>
+
+    <a href="#" class="nav-item" data-page="digest" data-role="editor,admin" hidden>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      <span>Digest Reader</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="data" data-role="admin" hidden>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/>
+      </svg>
+      <span>Gestione Dati</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="stats" data-role="admin" hidden>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      <span>Statistiche</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="settings" data-role="admin" hidden>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span>Impostazioni</span>
+    </a>
+  </div>
+
+  <!-- ===== Footer utente ===== -->
+  <div class="sidebar-footer">
+    <a href="#" class="nav-item" data-action="openGuida">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <span>Guida & Supporto</span>
+    </a>
+    <div class="user-card" id="userCard">
+      <div class="user-avatar" id="userInitials">·</div>
+      <div class="user-info">
+        <b id="userName">Ospite</b>
+        <span id="userRole">lettore</span>
+      </div>
+    </div>
+  </div>
+
+</aside>
+
+
+  <main class="main">
+
+    <!-- ===== Topbar inline ===== -->
+    <header class="topbar" role="banner">
+
+  <!-- Toggle sidebar mobile -->
+  <button class="topbar-hamburger" id="toggleSidebar" aria-label="Apri/chiudi menu">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+
+  <!-- Breadcrumb dinamico -->
+  <nav class="breadcrumb" id="breadcrumb" aria-label="Breadcrumb">
+    <span>Osservatorio</span><span class="sep">/</span><b>Home</b>
+  </nav>
+
+  <!-- Ricerca globale -->
+  <form class="topbar-search" id="topbarSearchForm" onsubmit="event.preventDefault(); OC.search(document.getElementById('globalSearch').value);" role="search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input
+      type="search"
+      id="globalSearch"
+      placeholder="Cerca bandi, news, ambiti…   (scorciatoia: Ctrl/Cmd + K)"
+      autocomplete="off"
+      aria-label="Ricerca globale"
+    />
+    <kbd class="kbd">⌘K</kbd>
+  </form>
+
+  <!-- Azioni destra -->
+  <div class="topbar-actions">
+    <button class="topbar-icon" data-action="openNotifiche" aria-label="Notifiche">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+      <span class="topbar-badge" id="badge-notifiche" hidden>0</span>
+    </button>
+
+    <button class="topbar-user" data-action="openUserMenu" aria-label="Profilo utente">
+      <span class="user-avatar sm" id="topbarUserInitials">·</span>
+      <span class="user-info sm">
+        <b id="topbarUserName">Ospite</b>
+        <span id="topbarUserRole">lettore</span>
+      </span>
+    </button>
+  </div>
+</header>
+
+
+    <!-- ===== HomeView inline ===== -->
+    <section class="page active" id="page-home">
+
+  <!-- ===== HERO con ricerca globale prominente ===== -->
+  <div class="hero">
+    <div class="hero-eyebrow">
+      Intelligenza culturale · <span id="homeDataOggi">—</span>
+    </div>
+    <h1 class="serif">Tutto il mondo della cultura, in un'unica vista.</h1>
+    <p>
+      News curate, bandi in scadenza, podcast e segnali dagli ambiti
+      strategici — aggiornato in tempo reale dall'AI scanner.
+    </p>
+
+    <div class="hero-search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        id="heroSearch" type="text"
+        placeholder="Cerca bandi, news, ambiti o parole chiave (es. 'PNRR musei', 'residenze artistiche')…"
+        aria-label="Ricerca rapida"
+      />
+      <button type="button" onclick="OC.search(document.getElementById('heroSearch').value)">Cerca</button>
+    </div>
+
+    <div class="hero-chips">
+      <button class="hero-chip" type="button" onclick="OC.search('PNRR cultura')">PNRR cultura</button>
+      <button class="hero-chip" type="button" onclick="OC.filterBandi('urgenti')">Bandi ≤ 7 giorni</button>
+      <button class="hero-chip" type="button" onclick="OC.search('AI musei')">AI per musei</button>
+      <button class="hero-chip" type="button" onclick="OC.search('residenze artistiche')">Residenze artistiche</button>
+      <button class="hero-chip" type="button" onclick="OC.search('accessibilita museo')">Accessibilita museo</button>
+    </div>
+  </div>
+
+  <!-- ===== BANDI IN SCADENZA ≤ 7 giorni ===== -->
+  <div class="section-head">
+    <h2 class="section-title">
+      <span class="pulse"></span>Bandi in scadenza · prossimi 7 giorni
+    </h2>
+    <button class="section-action" type="button" data-goto="bandi">
+      Vedi tutti · <span id="homeBandiTotCount">—</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Griglia bandi urgenti: popolata da OC.renderBandiUrgenti() -->
+  <div class="urgent-grid" id="homeBandiUrgenti" aria-live="polite">
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+  </div>
+  <div class="empty-state" id="homeBandiEmpty" hidden>
+    Nessun bando in scadenza nei prossimi 7 giorni.
+  </div>
+
+  <!-- ===== ULTIMI BANDI MONITORATI (dall'ultima scansione) ===== -->
+  <div class="section-head">
+    <h2 class="section-title">Ultimi bandi monitorati</h2>
+    <button class="section-action" type="button" data-goto="bandi">
+      Vedi tutti
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="urgent-grid" id="homeUltimiBandi" aria-live="polite">
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+  </div>
+  <div class="empty-state" id="homeUltimiBandiEmpty" hidden>
+    Nessun bando monitorato di recente.
+  </div>
+
+  <!-- ===== ESPLORA PER AMBITO (5 ambiti reali) ===== -->
+  <div class="section-head">
+    <h2 class="section-title">Esplora per ambito</h2>
+    <button class="section-action" type="button" data-page="settings">Personalizza</button>
+  </div>
+
+  <div class="ambiti-grid" id="homeAmbiti">
+    <!-- Rendering statico delle 5 card con id univoci:
+         i contatori news/bandi/podcast vengono aggiornati da
+         OC.renderAmbiti(data.ambiti). -->
+
+    <div class="ambito-card a1" data-page="ambito" data-ambito="1">
+      <div class="ambito-num">Ambito 01</div>
+      <h3 class="ambito-name">Tendenze museali</h3>
+      <p class="ambito-desc">Innovazione nei musei, allestimenti, patrimonio e pubblici.</p>
+      <div class="ambito-counters">
+        <div class="c"><strong data-count="news" data-amb="1">0</strong><span>News</span></div>
+        <div class="c"><strong data-count="bandi" data-amb="1">0</strong><span>Bandi</span></div>
+        <div class="c"><strong data-count="podcast" data-amb="1">0</strong><span>Podcast</span></div>
+        <span class="new" data-new="1" hidden>+0 oggi</span>
+      </div>
+    </div>
+
+    <div class="ambito-card a2" data-page="ambito" data-ambito="2">
+      <div class="ambito-num">Ambito 02</div>
+      <h3 class="ambito-name">Accessibilita / Gaming</h3>
+      <p class="ambito-desc">Accessibilita culturale, videogame e cultura pop applicata.</p>
+      <div class="ambito-counters">
+        <div class="c"><strong data-count="news" data-amb="2">0</strong><span>News</span></div>
+        <div class="c"><strong data-count="bandi" data-amb="2">0</strong><span>Bandi</span></div>
+        <div class="c"><strong data-count="podcast" data-amb="2">0</strong><span>Podcast</span></div>
+        <span class="new" data-new="2" hidden>+0 oggi</span>
+      </div>
+    </div>
+
+    <div class="ambito-card a3" data-page="ambito" data-ambito="3">
+      <div class="ambito-num">Ambito 03</div>
+      <h3 class="ambito-name">Mostre / Exhibition</h3>
+      <p class="ambito-desc">Arte contemporanea, mostre, biennali, curatele.</p>
+      <div class="ambito-counters">
+        <div class="c"><strong data-count="news" data-amb="3">0</strong><span>News</span></div>
+        <div class="c"><strong data-count="bandi" data-amb="3">0</strong><span>Bandi</span></div>
+        <div class="c"><strong data-count="podcast" data-amb="3">0</strong><span>Podcast</span></div>
+        <span class="new" data-new="3" hidden>+0 oggi</span>
+      </div>
+    </div>
+
+    <div class="ambito-card a4" data-page="ambito" data-ambito="4">
+      <div class="ambito-num">Ambito 04</div>
+      <h3 class="ambito-name">Progetti comunita</h3>
+      <p class="ambito-desc">Partecipazione, welfare culturale, audience development.</p>
+      <div class="ambito-counters">
+        <div class="c"><strong data-count="news" data-amb="4">0</strong><span>News</span></div>
+        <div class="c"><strong data-count="bandi" data-amb="4">0</strong><span>Bandi</span></div>
+        <div class="c"><strong data-count="podcast" data-amb="4">0</strong><span>Podcast</span></div>
+        <span class="new" data-new="4" hidden>+0 oggi</span>
+      </div>
+    </div>
+
+    <div class="ambito-card a5" data-page="ambito" data-ambito="5">
+      <div class="ambito-num">Ambito 05</div>
+      <h3 class="ambito-name">AI per la Cultura</h3>
+      <p class="ambito-desc">Intelligenza artificiale applicata a patrimonio e creativita.</p>
+      <div class="ambito-counters">
+        <div class="c"><strong data-count="news" data-amb="5">0</strong><span>News</span></div>
+        <div class="c"><strong data-count="bandi" data-amb="5">0</strong><span>Bandi</span></div>
+        <div class="c"><strong data-count="podcast" data-amb="5">0</strong><span>Podcast</span></div>
+        <span class="new" data-new="5" hidden>+0 oggi</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FEED NEWS + SIDE PANEL ===== -->
+  <div class="split">
+    <div>
+      <div class="section-head">
+        <h2 class="section-title">News selezionate</h2>
+        <button class="section-action" type="button" data-goto="news">Tutte le news →</button>
+      </div>
+      <div class="news-list" id="homeNewsList" aria-live="polite">
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+      </div>
+      <div class="empty-state" id="homeNewsEmpty" hidden>
+        Nessuna news disponibile.
+      </div>
+    </div>
+
+    <aside>
+      <div class="side-panel">
+        <h3>Ultimi podcast</h3>
+        <div id="homePodcastList">
+          <div class="skeleton-row sm"></div>
+          <div class="skeleton-row sm"></div>
+          <div class="skeleton-row sm"></div>
+        </div>
+        <div class="empty-state sm" id="homePodcastEmpty" hidden>
+          Nessun podcast recente.
+        </div>
+      </div>
+
+      <div class="side-panel">
+        <h3>Attivita scanner</h3>
+        <div class="stat-grid">
+          <div class="stat"><b id="stat-fonti">—</b><span>Fonti attive</span></div>
+          <div class="stat"><b id="stat-articoli">—</b><span>Articoli/mese</span></div>
+          <div class="stat"><b id="stat-bandi">—</b><span>Bandi attivi</span></div>
+          <div class="stat"><b id="stat-accuratezza">—</b><span>Accuratezza AI</span></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+</section>
+
+
+    <!-- ========================================================
+         SOTTO-PAGINE v4.3 (MVP minimo)
+         - page-bandi : Radar Bandi (elenco + filtro ambito)
+         - page-news  : News (elenco + filtro ambito)
+         - page-podcast : Podcast (elenco)
+         ======================================================== -->
+
+    <!-- ===== PAGE BANDI ===== -->
+    <section class="page" id="page-bandi">
+      <div class="section-head">
+        <h2 class="section-title">Radar Bandi</h2>
+        <span class="muted" id="bandiCount">—</span>
+      </div>
+      <div class="filter-bar" id="bandiFilters">
+        <button class="filter-chip active" data-amb="0">Tutti</button>
+        <button class="filter-chip" data-amb="1">01 Tendenze museali</button>
+        <button class="filter-chip" data-amb="2">02 Accessibilita / Gaming</button>
+        <button class="filter-chip" data-amb="3">03 Mostre / Exhibition</button>
+        <button class="filter-chip" data-amb="4">04 Progetti comunita</button>
+        <button class="filter-chip" data-amb="5">05 AI per la Cultura</button>
+      </div>
+      <div class="list-grid" id="bandiList" aria-live="polite">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+      <div class="empty-state" id="bandiEmpty" hidden>Nessun bando trovato.</div>
+    </section>
+
+    <!-- ===== PAGE NEWS ===== -->
+    <section class="page" id="page-news">
+      <div class="section-head">
+        <h2 class="section-title">News</h2>
+        <span class="muted" id="newsCount">—</span>
+      </div>
+      <div class="filter-bar" id="newsFilters">
+        <button class="filter-chip active" data-amb="0">Tutti</button>
+        <button class="filter-chip" data-amb="1">01 Tendenze museali</button>
+        <button class="filter-chip" data-amb="2">02 Accessibilita / Gaming</button>
+        <button class="filter-chip" data-amb="3">03 Mostre / Exhibition</button>
+        <button class="filter-chip" data-amb="4">04 Progetti comunita</button>
+        <button class="filter-chip" data-amb="5">05 AI per la Cultura</button>
+      </div>
+      <div class="list-grid" id="newsListFull" aria-live="polite">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+      <div class="empty-state" id="newsEmpty" hidden>Nessuna news trovata.</div>
+    </section>
+
+    <!-- ===== PAGE PODCAST ===== -->
+    <section class="page" id="page-podcast">
+      <div class="section-head">
+        <h2 class="section-title">Podcast</h2>
+        <span class="muted" id="podcastCount">—</span>
+      </div>
+      <div class="list-grid" id="podcastListFull" aria-live="polite">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+      <div class="empty-state" id="podcastEmpty" hidden>Nessun podcast trovato.</div>
+    </section>
+
+    <!-- Stili minimal per list-grid e filter-bar -->
+    <style>
+      .muted{color:var(--ink-3); font-size:var(--fs-sm)}
+      .filter-bar{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 18px 0}
+      .filter-chip{
+        border:1px solid var(--border); background:var(--surface);
+        color:var(--ink-2); padding:6px 14px; border-radius:999px;
+        font-size:var(--fs-sm); cursor:pointer; transition:.15s;
+      }
+      .filter-chip:hover{border-color:var(--border-strong)}
+      .filter-chip.active{background:var(--accent); color:#fff; border-color:var(--accent)}
+      .list-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px}
+      .list-card{
+        background:var(--surface); border:1px solid var(--border);
+        border-radius:12px; padding:16px; transition:.15s; cursor:pointer;
+        display:flex; flex-direction:column; gap:10px;
+      }
+      .list-card:hover{border-color:var(--border-strong); box-shadow:var(--shadow-2)}
+      .list-card .lc-meta{display:flex; justify-content:space-between; gap:8px; font-size:var(--fs-xs); color:var(--ink-3)}
+      .list-card .lc-title{font-size:var(--fs-base); font-weight:600; color:var(--ink); line-height:1.35}
+      .list-card .lc-foot{display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:var(--fs-xs); color:var(--ink-3); margin-top:auto}
+      .list-card .amb-dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:middle}
+    </style>
+
+  </main>
+</div>
+
+<!-- ===== Navigation JS inline ===== -->
+<script>
+(function(){
+  'use strict';
+
+  // -------- Config --------
+  var PAGE_TITLES = {
+    home:'Home', bandi:'Radar Bandi', news:'News', podcast:'Podcast',
+    ambito:'Ambito', digest:'Digest Reader', data:'Gestione Dati',
+    stats:'Statistiche', settings:'Impostazioni'
+  };
+
+  // 5 ambiti reali (coerenti con AMBITO_LABEL/AMBITO_COLOR in Code.gs)
+  var AMBITI = {
+    1:{nome:'Tendenze museali',        color:'var(--amb-1)'},
+    2:{nome:'Accessibilita / Gaming',  color:'var(--amb-2)'},
+    3:{nome:'Mostre / Exhibition',     color:'var(--amb-3)'},
+    4:{nome:'Progetti comunita',       color:'var(--amb-4)'},
+    5:{nome:'AI per la Cultura',       color:'var(--amb-5)'}
+  };
+
+  // -------- Helper sicurezza --------
+  function esc(s){
+    return String(s==null?'':s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function $(id){ return document.getElementById(id); }
+  function $$(sel, root){ return (root||document).querySelectorAll(sel); }
+
+  // ==========================================================
+  //  A) NAVIGAZIONE SPA
+  // ==========================================================
+  function go(page, ambito){
+    // 1. Attiva pagina target
+    var pages = $$('.page');
+    for (var i=0;i<pages.length;i++) pages[i].classList.remove('active');
+    var target = $('page-'+page);
+    if (target) target.classList.add('active');
+
+    // 2. Aggiorna nav-item attivo
+    var navs = $$('.nav-item');
+    for (var j=0;j<navs.length;j++) navs[j].classList.remove('active');
+    var sel = '.nav-item[data-page="'+page+'"]';
+    if (page==='ambito' && ambito) sel += '[data-ambito="'+ambito+'"]';
+    var nav = document.querySelector(sel);
+    if (nav) {
+      nav.classList.add('active');
+      nav.setAttribute('aria-current','page');
+    }
+
+    // 3. Breadcrumb
+    var crumb = $('breadcrumb');
+    if (crumb) {
+      if (page==='ambito' && ambito && AMBITI[ambito]){
+        crumb.innerHTML =
+          '<span>Osservatorio</span><span class="sep">/</span>'+
+          '<span>Ambiti</span><span class="sep">/</span>'+
+          '<b>'+esc(AMBITI[ambito].nome)+'</b>';
+      } else {
+        crumb.innerHTML =
+          '<span>Osservatorio</span><span class="sep">/</span>'+
+          '<b>'+esc(PAGE_TITLES[page]||'Home')+'</b>';
+      }
+    }
+
+    // 4. Aggiorna hero ambito se presente
+    if (page==='ambito' && ambito && AMBITI[ambito]) {
+      var hero = $('ambitoHero');
+      if (hero) hero.style.setProperty('--amb', AMBITI[ambito].color);
+      var e = $('ambitoEyebrow');  if (e) e.textContent = 'Ambito 0'+ambito;
+      var n = $('ambitoName');     if (n) n.textContent = AMBITI[ambito].nome;
+      loadAmbito(ambito);
+    }
+
+    // 4bis. v4.3 — trigger load per le list-pages (lazy, con cache)
+    if (page==='bandi')   { loadBandiList(false); }
+    if (page==='news')    { loadNewsList(false); }
+    if (page==='podcast') { loadPodcastList(false); }
+
+    // 5. UX
+    window.scrollTo({top:0, behavior:'smooth'});
+    var sb = $('sidebar');
+    if (sb) sb.classList.remove('open');
+  }
+
+  // ==========================================================
+  //  B) DATA LOADER (google.script.run → Addon_v42.gs)
+  // ==========================================================
+
+  function hasGAS(){
+    return typeof google !== 'undefined' && google.script && google.script.run;
+  }
+
+  function hydrate(){
+    // Popola Home + badge sidebar all'avvio.
+    if (!hasGAS()) { return; }
+    google.script.run
+      .withSuccessHandler(function(data){
+        if (!data) return;
+        renderHome(data);
+        renderSidebarBadges(data.badges || {});
+      })
+      .withFailureHandler(function(err){
+        console.error('getHomepageDataV42:', err);
+      })
+      .getHomepageDataV42();
+
+    // v4.3 — Ultimi bandi monitorati (ultima scansione RADAR)
+    google.script.run
+      .withSuccessHandler(function(list){ renderUltimiBandi(list || []); })
+      .withFailureHandler(function(err){
+        console.error('getUltimiBandiMonitorati:', err);
+        renderUltimiBandi([]);
+      })
+      .getUltimiBandiMonitorati(6);
+  }
+
+  function loadAmbito(ambitoId){
+    if (!hasGAS()) return;
+    google.script.run
+      .withSuccessHandler(renderAmbito)
+      .withFailureHandler(function(err){ console.error('getAmbitoDataV42:',err); })
+      .getAmbitoDataV42(ambitoId);
+  }
+
+  // ---- v4.3 Loader list-pages ----
+  var _cacheBandi = null, _cacheNews = null, _cachePodcast = null;
+
+  function loadBandiList(force){
+    if (!hasGAS()) return;
+    if (_cacheBandi && !force) { renderBandiList(_cacheBandi); return; }
+    skeletonIn('bandiList');
+    google.script.run
+      .withSuccessHandler(function(list){
+        _cacheBandi = list || [];
+        renderBandiList(_cacheBandi);
+      })
+      .withFailureHandler(function(err){
+        console.error('getBandiListV42:', err);
+        renderBandiList([]);
+      })
+      .getBandiListV42(500);
+  }
+
+  function loadNewsList(force){
+    if (!hasGAS()) return;
+    if (_cacheNews && !force) { renderNewsList2(_cacheNews); return; }
+    skeletonIn('newsListFull');
+    google.script.run
+      .withSuccessHandler(function(list){
+        _cacheNews = list || [];
+        renderNewsList2(_cacheNews);
+      })
+      .withFailureHandler(function(err){
+        console.error('getNewsListV42:', err);
+        renderNewsList2([]);
+      })
+      .getNewsListV42(500);
+  }
+
+  function loadPodcastList(force){
+    if (!hasGAS()) return;
+    if (_cachePodcast && !force) { renderPodcastList2(_cachePodcast); return; }
+    skeletonIn('podcastListFull');
+    google.script.run
+      .withSuccessHandler(function(list){
+        _cachePodcast = list || [];
+        renderPodcastList2(_cachePodcast);
+      })
+      .withFailureHandler(function(err){
+        console.error('getPodcastListV42:', err);
+        renderPodcastList2([]);
+      })
+      .getPodcastListV42(300);
+  }
+
+  function skeletonIn(id){
+    var el = $(id); if (!el) return;
+    el.innerHTML = '<div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>';
+  }
+
+  // ==========================================================
+  //  C) RENDERING
+  // ==========================================================
+
+  function renderHome(d){
+    // Data oggi
+    var t = $('homeDataOggi');
+    if (t && d.dataOggi) t.textContent = d.dataOggi;
+
+    // Bandi urgenti
+    renderBandiUrgenti(d.bandiUrgenti || []);
+    var totBandi = (d.badges && d.badges.bandi) != null ? d.badges.bandi : (d.bandiUrgenti||[]).length;
+    var tb = $('homeBandiTotCount'); if (tb) tb.textContent = totBandi;
+
+    // Contatori ambiti
+    renderAmbitiCounters(d.ambiti || []);
+
+    // News
+    renderNewsList(d.news || []);
+
+    // Podcast
+    renderPodcastList(d.podcast || []);
+
+    // Scanner
+    var s = d.scanner || {};
+    var el;
+    el = $('stat-fonti');       if (el) el.textContent = s.fonti || 0;
+    el = $('stat-articoli');    if (el) el.textContent = s.articoliMese || 0;
+    el = $('stat-bandi');       if (el) el.textContent = s.bandiAttivi || 0;
+    el = $('stat-accuratezza'); if (el) el.textContent = (s.accuratezza || 0) + '%';
+  }
+
+  function renderBandiUrgenti(list){
+    var wrap = $('homeBandiUrgenti');
+    if (!wrap) return;
+    if (!list.length) {
+      wrap.innerHTML = '';
+      var em = $('homeBandiEmpty'); if (em) em.hidden = false;
+      return;
+    }
+    var em2 = $('homeBandiEmpty'); if (em2) em2.hidden = true;
+
+    var html = '';
+    list.forEach(function(b){
+      var prioCls = b.priorita==='med' ? 'prio-med' : (b.priorita==='low' ? 'prio-low' : '');
+      var prioLbl = b.priorita==='urgent' ? 'Urgente' : (b.priorita==='med' ? 'Medio' : 'Standard');
+      html += ''
+        + '<div class="bando-card '+prioCls+'" onclick="OC.openBando(\''+esc(b.id)+'\')">'
+        +   '<div class="bando-meta">'
+        +     '<span class="tag '+esc(b.priorita)+'">'+prioLbl+' · '+esc(b.giorni)+' giorni</span>'
+        +     '<span>'+esc(b.ente)+'</span>'
+        +   '</div>'
+        +   '<h3 class="bando-title">'+esc(b.titolo)+'</h3>'
+        +   '<div class="bando-footer">'
+        +     '<span>'+esc(b.settore||b.ambito||'')+(b.importo?' · '+esc(b.importo):'')+'</span>'
+        +     '<span class="days">Scade '+esc(b.scadenza)+'</span>'
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function renderUltimiBandi(list){
+    var wrap = $('homeUltimiBandi');
+    if (!wrap) return;
+    list = list || [];
+    if (!list.length) {
+      wrap.innerHTML = '';
+      var em = $('homeUltimiBandiEmpty'); if (em) em.hidden = false;
+      return;
+    }
+    var em2 = $('homeUltimiBandiEmpty'); if (em2) em2.hidden = true;
+
+    var html = '';
+    list.forEach(function(b){
+      var ambLbl = b.ambito ? 'Ambito ' + esc(String(b.ambito)) : '';
+      var scadLbl = b.scadenza ? 'Scade ' + esc(b.scadenza) : '';
+      html += ''
+        + '<div class="bando-card" onclick="OC.openBando(\''+esc(b.id)+'\')">'
+        +   '<div class="bando-meta">'
+        +     '<span class="tag">Nuovo</span>'
+        +     '<span>'+esc(b.ente||'')+'</span>'
+        +   '</div>'
+        +   '<h3 class="bando-title">'+esc(b.titolo||'')+'</h3>'
+        +   '<div class="bando-footer">'
+        +     '<span>'+esc(b.settore||ambLbl)+'</span>'
+        +     '<span class="days">'+(scadLbl || ('Rilevato '+esc(b.dataRil||'')))+'</span>'
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  // ---- v4.3 Filter state + renderer list-pages ----
+  var _filterBandi = 0, _filterNews = 0;
+
+  function ambColorFor(a){
+    var n = parseInt(a,10);
+    return (n>=1 && n<=5) ? AMBITI[n].color : 'var(--ink-4)';
+  }
+
+  function renderBandiList(list){
+    var wrap = $('bandiList'); if (!wrap) return;
+    var filtered = (_filterBandi>0)
+      ? list.filter(function(b){ return parseInt(b.ambito,10) === _filterBandi; })
+      : list.slice();
+    var cnt = $('bandiCount'); if (cnt) cnt.textContent = filtered.length + ' bandi';
+    var em = $('bandiEmpty');
+    if (!filtered.length) { wrap.innerHTML = ''; if (em) em.hidden = false; return; }
+    if (em) em.hidden = true;
+    var html = '';
+    filtered.forEach(function(b){
+      var col = ambColorFor(b.ambito);
+      var ambLbl = b.ambito ? 'Ambito 0'+esc(String(b.ambito)) : '';
+      html += ''
+        + '<div class="list-card" onclick="OC.openBando(\''+esc(b.id)+'\')">'
+        +   '<div class="lc-meta">'
+        +     '<span><span class="amb-dot" style="background:'+col+'"></span>'+esc(ambLbl||'—')+'</span>'
+        +     '<span>'+esc(b.ente||'')+'</span>'
+        +   '</div>'
+        +   '<div class="lc-title">'+esc(b.titolo||'')+'</div>'
+        +   '<div class="lc-foot">'
+        +     '<span>'+esc(b.settore||'')+'</span>'
+        +     '<span>'+(b.scadenza?'Scade '+esc(b.scadenza):('Rilevato '+esc(b.dataRil||'')))+'</span>'
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function renderNewsList2(list){
+    var wrap = $('newsListFull'); if (!wrap) return;
+    var filtered = (_filterNews>0)
+      ? list.filter(function(n){ return parseInt(n.ambito,10) === _filterNews; })
+      : list.slice();
+    var cnt = $('newsCount'); if (cnt) cnt.textContent = filtered.length + ' news';
+    var em = $('newsEmpty');
+    if (!filtered.length) { wrap.innerHTML = ''; if (em) em.hidden = false; return; }
+    if (em) em.hidden = true;
+    var html = '';
+    filtered.forEach(function(n){
+      var col = ambColorFor(n.ambito);
+      var ambLbl = n.ambito ? 'Ambito 0'+esc(String(n.ambito)) : '';
+      html += ''
+        + '<div class="list-card" onclick="OC.openNewsUrl(\''+esc(n.link||'')+'\')">'
+        +   '<div class="lc-meta">'
+        +     '<span><span class="amb-dot" style="background:'+col+'"></span>'+esc(ambLbl||'—')+'</span>'
+        +     '<span>'+esc(n.fonte||'')+'</span>'
+        +   '</div>'
+        +   '<div class="lc-title">'+esc(n.titolo||'')+'</div>'
+        +   '<div class="lc-foot">'
+        +     '<span>'+esc(n.settore||'')+'</span>'
+        +     '<span>'+esc(n.data||'')+'</span>'
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function renderPodcastList2(list){
+    var wrap = $('podcastListFull'); if (!wrap) return;
+    var cnt = $('podcastCount'); if (cnt) cnt.textContent = list.length + ' podcast';
+    var em = $('podcastEmpty');
+    if (!list.length) { wrap.innerHTML = ''; if (em) em.hidden = false; return; }
+    if (em) em.hidden = true;
+    var html = '';
+    list.forEach(function(p){
+      var col = ambColorFor(p.ambito);
+      html += ''
+        + '<div class="list-card" onclick="OC.openNewsUrl(\''+esc(p.link||'')+'\')">'
+        +   '<div class="lc-meta">'
+        +     '<span><span class="amb-dot" style="background:'+col+'"></span>'+esc(p.show||'')+'</span>'
+        +     '<span>'+esc(p.durata||'')+'</span>'
+        +   '</div>'
+        +   '<div class="lc-title">'+esc(p.titolo||'')+'</div>'
+        +   '<div class="lc-foot">'
+        +     '<span>'+esc(p.tematica||'')+'</span>'
+        +     '<span>'+esc(p.data||'')+'</span>'
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function renderAmbitiCounters(list){
+    list.forEach(function(a){
+      var id = a.id;
+      setCount('news', id, a.news);
+      setCount('bandi', id, a.bandi);
+      setCount('podcast', id, a.podcast);
+
+      var nn = document.querySelector('[data-new="'+id+'"]');
+      if (nn) {
+        if (a.nuoviOggi > 0) { nn.hidden = false; nn.textContent = '+' + a.nuoviOggi + ' oggi'; }
+        else { nn.hidden = true; }
+      }
+    });
+  }
+  function setCount(kind, amb, val){
+    var el = document.querySelector('[data-count="'+kind+'"][data-amb="'+amb+'"]');
+    if (el) el.textContent = val || 0;
+  }
+
+  function renderNewsList(list){
+    var wrap = $('homeNewsList');
+    if (!wrap) return;
+    if (!list.length) {
+      wrap.innerHTML = '';
+      var em = $('homeNewsEmpty'); if (em) em.hidden = false;
+      return;
+    }
+    var em2 = $('homeNewsEmpty'); if (em2) em2.hidden = true;
+
+    var html = '';
+    list.forEach(function(n, idx){
+      var num = String(idx+1); if (num.length<2) num = '0'+num;
+      html += ''
+        + '<div class="news-row" onclick="OC.openNews(\''+esc(n.id)+'\')">'
+        +   '<div class="news-num">'+num+'</div>'
+        +   '<div class="news-body">'
+        +     '<div class="news-tags">'
+        +       '<span class="news-tag" style="background:'+esc(n.ambitoColor)+'">'+esc(n.ambitoLbl)+'</span>'
+        +     '</div>'
+        +     '<h4 class="news-title">'+esc(n.titolo)+'</h4>'
+        +     '<div class="news-meta"><b>'+esc(n.fonte)+'</b> · '+esc(n.data)+' · Lettura '+esc(n.lettura)+' min</div>'
+        +   '</div>'
+        +   '<span class="news-score">AI '+esc(n.score)+'</span>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function renderPodcastList(list){
+    var wrap = $('homePodcastList');
+    if (!wrap) return;
+    if (!list.length) {
+      wrap.innerHTML = '';
+      var em = $('homePodcastEmpty'); if (em) em.hidden = false;
+      return;
+    }
+    var em2 = $('homePodcastEmpty'); if (em2) em2.hidden = true;
+
+    var html = '';
+    list.forEach(function(p){
+      html += ''
+        + '<div class="pod-item" onclick="OC.openPodcast(\''+esc(p.id)+'\')">'
+        +   '<div class="pod-cover">'
+        +     '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>'
+        +   '</div>'
+        +   '<div class="pod-body">'
+        +     '<h4 class="pod-title">'+esc(p.titolo)+'</h4>'
+        +     '<div class="pod-meta">'+esc(p.fonte)+' · '+esc(p.durata)+'</div>'
+        +   '</div>'
+        + '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  function renderSidebarBadges(b){
+    // Badge numerici sidebar (mostra solo se > 0)
+    setBadge('badge-bandi', b.bandi);
+    setBadge('badge-bandi-urgenti', b.bandiUrgenti);
+    setBadge('badge-news', b.news);
+    setBadge('badge-podcast', b.podcast);
+    setBadge('badge-notifiche', b.bandiUrgenti);
+
+    var amb = b.ambiti || {};
+    for (var i=1;i<=5;i++) setBadge('badge-amb-'+i, amb[i]);
+  }
+  function setBadge(id, val){
+    var el = $(id); if (!el) return;
+    val = Number(val||0);
+    if (val > 0) { el.textContent = val; el.hidden = false; }
+    else { el.hidden = true; }
+  }
+
+  function renderAmbito(data){
+    // Callback per pagina ambito: popola liste specifiche se i contenitori esistono.
+    if (!data) return;
+    if (window.console) console.log('Ambito '+data.ambitoId+':', data);
+    var nodeN = $('ambitoNewsList');
+    var nodeB = $('ambitoBandiList');
+    var nodeP = $('ambitoPodcastList');
+    // Implementazione minima — da estendere in AmbitoView.html:
+    if (nodeN) nodeN.setAttribute('data-count', (data.news||[]).length);
+    if (nodeB) nodeB.setAttribute('data-count', (data.bandi||[]).length);
+    if (nodeP) nodeP.setAttribute('data-count', (data.podcast||[]).length);
+  }
+
+  // ==========================================================
+  //  D) GESTIONE UTENTE & RUOLO
+  // ==========================================================
+  function setUser(user){
+    if (!user) return;
+    var ini = user.iniziali || (user.nome ? (user.nome[0]||'·').toUpperCase() : '·');
+    var el;
+    el = $('userInitials');        if (el) el.textContent = ini;
+    el = $('userName');            if (el) el.textContent = user.nome || 'Ospite';
+    el = $('userRole');            if (el) el.textContent = user.ruolo || 'lettore';
+    el = $('topbarUserInitials');  if (el) el.textContent = ini;
+    el = $('topbarUserName');      if (el) el.textContent = user.nome || 'Ospite';
+    el = $('topbarUserRole');      if (el) el.textContent = user.ruolo || 'lettore';
+
+    var ruolo = (user.ruolo||'lettore').toLowerCase();
+    var str = $('nav-strumenti');
+    var anyStrumento = false;
+
+    $$('#nav-strumenti [data-role]').forEach(function(item){
+      var allowed = item.dataset.role.split(',').map(function(s){return s.trim();});
+      if (allowed.indexOf(ruolo) !== -1) { item.hidden = false; anyStrumento = true; }
+      else item.hidden = true;
+    });
+    if (str) str.hidden = !anyStrumento;
+  }
+
+  // ==========================================================
+  //  E) EVENT HANDLERS
+  // ==========================================================
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('[data-page]');
+    if (el) {
+      e.preventDefault();
+      go(el.dataset.page, el.dataset.ambito);
+      return;
+    }
+    el = e.target.closest('[data-goto]');
+    if (el) { e.preventDefault(); go(el.dataset.goto); return; }
+    el = e.target.closest('[data-action]');
+    if (el) {
+      var act = el.dataset.action;
+      if (OC[act] && typeof OC[act]==='function') { e.preventDefault(); OC[act](); }
+    }
+  });
+
+  // Toggle sidebar mobile
+  var tog = $('toggleSidebar');
+  if (tog) tog.addEventListener('click', function(){
+    var sb = $('sidebar'); if (sb) sb.classList.toggle('open');
+  });
+
+  // Keyboard shortcut ⌘K / Ctrl+K
+  document.addEventListener('keydown', function(e){
+    if ((e.metaKey||e.ctrlKey) && e.key && e.key.toLowerCase()==='k'){
+      e.preventDefault();
+      var s = $('globalSearch') || $('heroSearch');
+      if (s) s.focus();
+    }
+    if (e.key==='Escape'){
+      var sb = $('sidebar'); if (sb) sb.classList.remove('open');
+    }
+  });
+
+  // v4.3 — Filter-chip handler (delegation su #bandiFilters / #newsFilters)
+  document.addEventListener('click', function(e){
+    var chip = e.target.closest('.filter-chip');
+    if (!chip) return;
+    var bar = chip.closest('#bandiFilters, #newsFilters');
+    if (!bar) return;
+    e.preventDefault();
+    // toggle active
+    var chips = bar.querySelectorAll('.filter-chip');
+    for (var i=0;i<chips.length;i++) chips[i].classList.remove('active');
+    chip.classList.add('active');
+    var amb = parseInt(chip.getAttribute('data-amb'),10) || 0;
+    if (bar.id === 'bandiFilters') {
+      _filterBandi = amb;
+      if (_cacheBandi) renderBandiList(_cacheBandi);
+    } else if (bar.id === 'newsFilters') {
+      _filterNews = amb;
+      if (_cacheNews) renderNewsList2(_cacheNews);
+    }
+  });
+
+  // ==========================================================
+  //  F) API pubblica OC
+  // ==========================================================
+  window.OC = {
+    go: go,
+    hydrate: hydrate,
+    loadAmbito: loadAmbito,
+    setUser: setUser,
+
+    search: function(q){
+      if (!q) return;
+      go('news'); // fallback visuale in attesa vista risultati
+      if (hasGAS()) {
+        google.script.run
+          .withSuccessHandler(function(results){
+            console.log('Ricerca "'+q+'":', results);
+            // TODO: renderSearchResults(results) quando pronta una SearchView
+          })
+          .withFailureHandler(console.error)
+          .getGlobalSearchV42(q);
+      }
+    },
+
+    filterBandi: function(preset){
+      go('bandi');
+      setTimeout(function(){
+        var chips = $$('#page-bandi .filter-chip');
+        for (var i=0;i<chips.length;i++){
+          if (chips[i].dataset.filter===preset) chips[i].click();
+        }
+      }, 100);
+    },
+
+    openBando:    function(id){ go('bandi');   },
+    openNews:     function(id){ go('news');    },
+    openPodcast:  function(id){ go('podcast'); },
+    openNewsUrl:  function(url){ if (url) window.open(url, '_blank', 'noopener'); },
+    openGuida:    function(){ window.open('https://duemilamusei.it/osservatorio/guida','_blank'); },
+    openNotifiche:function(){ OC.filterBandi('urgenti'); },
+    openUserMenu: function(){ /* dropdown da implementare */ }
+  };
+
+  // Auto-hydrate al DOMContentLoaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', hydrate);
+  } else {
+    hydrate();
+  }
+
+})();
+</script>
+
+
+</body>
+</html>

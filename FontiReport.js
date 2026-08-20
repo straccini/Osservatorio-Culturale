@@ -1,0 +1,453 @@
+/**
+ * ============================================================================
+ *  FontiReport.js — Skill FONTI giornaliera (salute fonti + aggregatori + link bandi)
+ * ============================================================================
+ *  Autore: Claude (Cowork) per Silvano Straccini / Sinopia — 2026-06-26
+ *
+ *  Report giornaliero nativo GAS ("Binario B") che copre:
+ *   #1  fonti silenti / in errore (riusa qaFontiSilenti + anteprimaFontiMorte)
+ *   #3  outage degli aggregatori critici (TED, ANAC/BDNCP, Creative Europe, CORDIS,
+ *       EU Funding&Tenders, MiC) + top fonti news andate a zero
+ *   #4  bandi che NON puntano a un link specifico (homepage/sezione invece del bando)
+ *  e invia il report via email all'admin.
+ *
+ *  La scoperta di nuove fonti (#2) richiede la ricerca web: gira nel cloud-agent
+ *  (skill schedulata) che, per i candidati verificati, chiama fontiAggiungiFeedVerificato().
+ *
+ *  Funzioni pubbliche:
+ *    fontiReportSetupTrigger()        — trigger giornaliero (08:00)
+ *    fontiReportGiornaliero()         — esegue e INVIA il report (target trigger)
+ *    fontiReportAnteprima()           — esegue e ritorna il report SENZA inviare
+ *    fontiAggiungiFeedVerificato(...) — #2: testa e auto-iscrive un feed RSS news
+ * ============================================================================
+ */
+
+var FR_ORA = 8;
+var FR_DEST_DEFAULT = 's.straccini@gmail.com';
+
+// Aggregatori critici da sorvegliare (#3). reachable = HTTP 2xx/3xx.
+var FR_AGGREGATORI = [
+  { nome: 'TED — Tenders Electronic Daily (UE)', url: 'https://ted.europa.eu/en/', cat: 'bandi UE' },
+  { nome: 'ANAC BDNCP — Pubblicità Legale (bandi aperti)', url: 'https://pubblicitalegale.anticorruzione.it/', cat: 'appalti IT' }, // NON dati.anticorruzione.it (opendata WAF-bloccato, storico → non usato)
+  { nome: 'Creative Europe (UE)', url: 'https://culture.ec.europa.eu/creative-europe', cat: 'bandi cultura UE' },
+  { nome: 'CORDIS (UE)', url: 'https://cordis.europa.eu/', cat: 'progetti UE' },
+  { nome: 'EU Funding & Tenders Portal', url: 'https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/home', cat: 'bandi UE' },
+  { nome: 'MiC — Ministero della Cultura (IT)', url: 'https://cultura.gov.it/', cat: 'istituzionale IT' }
+];
+
+// ----------------------------------------------------------------------------
+// TRIGGER
+// ----------------------------------------------------------------------------
+function fontiReportSetupTrigger() {
+  var rimossi = 0;
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    if (t.getHandlerFunction() === 'fontiReportGiornaliero') { ScriptApp.deleteTrigger(t); rimossi++; }
+  });
+  try {
+    ScriptApp.newTrigger('fontiReportGiornaliero').timeBased().everyDays(1).atHour(FR_ORA).create();
+  } catch (e) {
+    var tot = ScriptApp.getProjectTriggers().length;
+    return { ok: false, error: e.message, triggerPresenti: tot, suggerimento: 'Esegui qaDeduplicaTrigger() per liberare uno slot.' };
+  }
+  return { ok: true, rimossi: rimossi, ora: FR_ORA };
+}
+
+// ----------------------------------------------------------------------------
+// ENTRYPOINT
+// ----------------------------------------------------------------------------
+function fontiReportGiornaliero() {
+  var rep = _frEsegui_();
+  try {
+    var dest = (typeof _qaDestinatario_ === 'function') ? _qaDestinatario_() : FR_DEST_DEFAULT;
+    MailApp.sendEmail({ to: dest, subject: 'Report FONTI Osservatorio — ' + rep.data, htmlBody: _frEmailHtml_(rep) });
+    rep.emailInviata = dest;
+  } catch (e) { rep.errori.push('Email: ' + e.message); }
+  return rep;
+}
+
+function fontiReportAnteprima() {
+  var rep = _frEsegui_();
+  Logger.log(JSON.stringify(rep, null, 2));
+  return rep;
+}
+
+function _frEsegui_() {
+  var tz = Session.getScriptTimeZone() || 'Europe/Rome';
+  var rep = {
+    data: Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm'),
+    silenti: null, morteRss: null, aggregatori: null, topAZero: null, bandiLink: null, errori: []
+  };
+
+  // #1 — silenti + morte
+  try { if (typeof qaFontiSilenti === 'function') { var s = qaFontiSilenti(14); rep.silenti = { totale: s.totaleSilenti, fonti: (s.fonti || []).slice(0, 15) }; } } catch (e) { rep.errori.push('Silenti: ' + e.message); }
+  try { if (typeof anteprimaFontiMorte === 'function') { var m = anteprimaFontiMorte(); if (m && m.ok) rep.morteRss = { candidate: m.candidate, fonti: (m.fonti || []).slice(0, 15) }; } } catch (e) { rep.errori.push('Morte: ' + e.message); }
+
+  // #3a — aggregatori critici
+  try { rep.aggregatori = _frAggregatori_(); } catch (e) { rep.errori.push('Aggregatori: ' + e.message); }
+  // #3b — top fonti news andate a zero/errore
+  try { rep.topAZero = _frTopFontiKO_(); } catch (e) { rep.errori.push('TopKO: ' + e.message); }
+
+  // #4 — bandi senza link specifico
+  try { rep.bandiLink = _frBandiLink_(); } catch (e) { rep.errori.push('BandiLink: ' + e.message); }
+
+  return rep;
+}
+
+// ----------------------------------------------------------------------------
+// #3a — reachability aggregatori
+// ----------------------------------------------------------------------------
+function _frAggregatori_() {
+  return FR_AGGREGATORI.map(function(a) {
+    var stato = 'OK', codice = 0;
+    try {
+      var resp = UrlFetchApp.fetch(a.url, { muteHttpExceptions: true, followRedirects: true, deadline: 12, headers: { 'User-Agent': 'Mozilla/5.0 (compatible; OsservatorioBot/1.0)' } });
+      codice = resp.getResponseCode();
+      if (codice < 200 || codice >= 400) stato = 'KO (HTTP ' + codice + ')';
+    } catch (e) { stato = 'IRRAGGIUNGIBILE'; }
+    return { nome: a.nome, cat: a.cat, stato: stato, codice: codice };
+  });
+}
+
+// ----------------------------------------------------------------------------
+// #3b — top fonti per volume andate KO (EMPTY/ERROR o ferme)
+// ----------------------------------------------------------------------------
+function _frTopFontiKO_() {
+  var sh = (typeof _qaSheet_ === 'function') ? _qaSheet_('FontiFeed') : null;
+  if (!sh || sh.getLastRow() < 2) return [];
+  var v = sh.getDataRange().getValues(); var h = v[0];
+  function c(n) { return h.indexOf(n); }
+  var iNome = c('Nome'), iAtt = c('Attiva'), iEsito = c('UltimoEsito'), iTot = c('NRecordTotali'), iUlt = c('NRecordUltimo');
+  var rows = [];
+  for (var r = 1; r < v.length; r++) {
+    if (!v[r][0]) continue;
+    if (!(v[r][iAtt] === true || String(v[r][iAtt]).toUpperCase() === 'TRUE')) continue;
+    rows.push({ nome: String(v[r][iNome] || ''), tot: Number(v[r][iTot] || 0), ult: Number(v[r][iUlt] || 0), esito: String(v[r][iEsito] || '') });
+  }
+  rows.sort(function(a, b) { return b.tot - a.tot; });
+  // top 12 per volume storico → segnala quelle con ultimo esito EMPTY/ERROR
+  return rows.slice(0, 12).filter(function(x) {
+    var e = x.esito.toUpperCase();
+    return e.indexOf('EMPTY') === 0 || e.indexOf('ERROR') === 0;
+  });
+}
+
+// ----------------------------------------------------------------------------
+// #4 — bandi senza link specifico (homepage/sezione invece del bando)
+// ----------------------------------------------------------------------------
+function _frLinkGenerico_(url) {
+  url = String(url || '').trim();
+  if (!url) return 'vuoto';
+  if (!/^https?:\/\//i.test(url)) return 'non-url';
+  var senzaProto = url.replace(/^https?:\/\//i, '').replace(/[?#].*$/, '').replace(/\/+$/, '');
+  var parti = senzaProto.split('/');
+  // solo dominio (es. ente.it) → generico
+  if (parti.length <= 1) return 'homepage';
+  // path corto e senza identificatore (no cifre, no slug lungo) → probabile sezione generica
+  var path = parti.slice(1).join('/');
+  var haId = /\d{2,}/.test(path) || /[a-z0-9-]{12,}/i.test(parti[parti.length - 1]);
+  if (path.length < 6 || !haId) return 'sezione-generica';
+  return '';
+}
+
+function _frBandiLink_() {
+  // v4.27.20 — FIX incoerenza report: leggeva il foglio RADAR legacy (non più
+  // servito dalla webapp, switchover v5 attivo) → "1178 senza link (100%)"
+  // mentre l'agente qualità ne contava 563 su Bandi_v5. Ora legge Bandi_v5
+  // (UrlBando con fallback UrlEnte, come l'esposizione reale).
+  var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName((typeof SH_BANDI_V5 !== 'undefined') ? SH_BANDI_V5 : 'Bandi_v5');
+  if (!sh || sh.getLastRow() < 2) return { attivi: 0, problemi: 0, dettaglio: [] };
+  var v = sh.getDataRange().getValues();
+  var iTit = COL_B.TITOLO - 1, iEnte = COL_B.ENTE - 1, iStato = COL_B.STATO_RECORD - 1;
+  var iUrlB = COL_B.URL_BANDO - 1, iUrlE = COL_B.URL_ENTE - 1;
+  var attivi = 0, problemi = 0, dettaglio = [];
+  for (var r = 1; r < v.length; r++) {
+    if (!v[r][0]) continue;
+    if (String(v[r][iStato] || '').toLowerCase() === 'archiviato') continue;
+    attivi++;
+    var link = String(v[r][iUrlB] || '').trim() || String(v[r][iUrlE] || '').trim();
+    var motivo = _frLinkGenerico_(link);
+    if (motivo) {
+      problemi++;
+      if (dettaglio.length < 20) dettaglio.push({ titolo: String(v[r][iTit] || '').slice(0, 70), ente: String(v[r][iEnte] || '').slice(0, 40), link: link, motivo: motivo });
+    }
+  }
+  return { attivi: attivi, problemi: problemi, perc: attivi ? Math.round(problemi * 100 / attivi) : 0, dettaglio: dettaglio };
+}
+
+// ----------------------------------------------------------------------------
+// #2 — auto-iscrizione di un feed RSS news verificato (chiamata dal discovery)
+// Gate: HTTP 200 + contenuto RSS + non già presente. Audit in Note.
+// ----------------------------------------------------------------------------
+function fontiAggiungiFeedVerificato(url, nome, ambito, gruppo) {
+  try {
+    if (!url || !/^https?:\/\//i.test(url)) return { ok: false, error: 'URL non valido' };
+    var sh = (typeof _qaSheet_ === 'function') ? _qaSheet_('FontiFeed') : getMainSS().getSheetByName('FontiFeed');
+    if (!sh) return { ok: false, error: 'FontiFeed assente' };
+    var v = sh.getDataRange().getValues(); var h = v[0];
+    var iFeed = h.indexOf('URL_Feed');
+    // dedup: già presente?
+    var norm = (typeof _normalizeFeedUrl_ === 'function') ? _normalizeFeedUrl_(url) : String(url).toLowerCase();
+    for (var r = 1; r < v.length; r++) {
+      var ex = (typeof _normalizeFeedUrl_ === 'function') ? _normalizeFeedUrl_(v[r][iFeed]) : String(v[r][iFeed]).toLowerCase();
+      if (ex && ex === norm) return { ok: false, error: 'già presente', nome: String(v[r][1] || '') };
+    }
+    // gate accessibilità + RSS valido
+    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true, deadline: 10, headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Feedfetcher/4.0)' } });
+    if (resp.getResponseCode() !== 200) return { ok: false, error: 'HTTP ' + resp.getResponseCode() };
+    var ct = resp.getContentText('UTF-8') || '';
+    if (ct.indexOf('<?xml') < 0 && ct.indexOf('<rss') < 0 && ct.indexOf('<feed') < 0) return { ok: false, error: 'non è un feed RSS' };
+    var amb = Number(ambito) || 1; if (amb < 1 || amb > 5) amb = 1;
+    var ambLbl = (typeof AMBITO_LABEL !== 'undefined' && AMBITO_LABEL[amb]) ? AMBITO_LABEL[amb] : '';
+    var id = 'FF' + Date.now();
+    // riga conforme a FONTIFEED_HEADERS (20 col)
+    sh.appendRow([id, String(nome || url), String(gruppo || 'Auto-discovery'), 'rss', url, '', amb, ambLbl,
+      '', '', 3, true, new Date(), '', '', 0, 0, 0, '', 'Auto-iscritta (QA discovery) 2026-06-26 — verificata RSS valido']);
+    Logger.log('fontiAggiungiFeedVerificato: aggiunta "' + nome + '" (' + url + ')');
+    return { ok: true, id: id, nome: String(nome || url), ambito: amb };
+  } catch (e) { return { ok: false, error: e.message }; }
+}
+
+/**
+ * Batch curato: aggiunge le fonti RSS già verificate (discovery Via 1).
+ * Ogni candidato passa per il cancello fontiAggiungiFeedVerificato (ri-testa HTTP+RSS+dedup).
+ * I 403 dal mio fetch (Europeana Pro/Artslife) spesso passano dalla rete GAS: se falliscono,
+ * vengono saltati in sicurezza.
+ */
+function fontiAggiungiBatch() {
+  var candidati = [
+    { url: 'https://www.inexhibit.com/feed/',            nome: 'Inexhibit',             ambito: 1 }, // museografia/allestimenti
+    { url: 'https://www.europanostra.org/feed/',         nome: 'Europa Nostra',         ambito: 1 }, // patrimonio/heritage UE
+    { url: 'https://hyperallergic.com/feed/',            nome: 'Hyperallergic',         ambito: 3 }, // arte contemporanea
+    { url: 'https://www.digitalmeetsculture.net/feed/',  nome: 'Digital Meets Culture', ambito: 5 }, // digital heritage
+    { url: 'https://pro.europeana.eu/rss/news.rss',      nome: 'Europeana Pro',         ambito: 5 }, // (403 dal mio fetch: testare da GAS)
+    { url: 'https://www.artslife.com/feed/',             nome: 'Artslife',              ambito: 3 }  // (403 dal mio fetch: testare da GAS)
+  ];
+  var esiti = candidati.map(function(c) {
+    var r = fontiAggiungiFeedVerificato(c.url, c.nome, c.ambito, 'Discovery-curata 2026-06');
+    return { nome: c.nome, esito: r && r.ok ? 'AGGIUNTA' : ('saltata: ' + ((r && r.error) || '?')) };
+  });
+  var aggiunte = esiti.filter(function(e) { return e.esito === 'AGGIUNTA'; }).length;
+  Logger.log('fontiAggiungiBatch: ' + aggiunte + '/' + candidati.length + ' aggiunte\n' + JSON.stringify(esiti, null, 2));
+  return { ok: true, aggiunte: aggiunte, totale: candidati.length, esiti: esiti };
+}
+
+/**
+ * Batch ADDITIVI VERIFICATI (pipeline news): feed RSS controllati uno per uno (HTTP 200 + RSS
+ * valido) durante la verifica profonda del 2026-06-28. Tutti tematici/basso rumore.
+ *  - Regioni.it Cultura + Turismo (URL per-sezione dall'indice ufficiale regioni.it/feed.php)
+ *  - Riviste d'arte: Arte Magazine, Juliet, Espoarte (feed verificati validi)
+ * Ogni candidato ripassa per fontiAggiungiFeedVerificato (HTTP200 + RSS + dedup + audit).
+ * NB: esclusi di proposito (verifica): Gazzetta 5ª Serie (tutti i contratti = alto rumore, serve
+ * connettore bandi dedicato), Senato (403/WAF), SEDIA EU (richiede POST → test lato GAS).
+ */
+function fontiAggiungiBatchIstituzionali() {
+  var candidati = [
+    { url: 'https://www.regioni.it/feed/news/cultura/', nome: 'Regioni.it — Cultura', ambito: 4 }, // comunità/territorio
+    { url: 'https://www.regioni.it/feed/news/turismo/', nome: 'Regioni.it — Turismo', ambito: 1 }, // identità/territorio
+    { url: 'https://www.artemagazine.it/feed/',          nome: 'Arte Magazine',        ambito: 3 }, // mostre/musei
+    { url: 'https://www.juliet-artmagazine.com/feed/',   nome: 'Juliet Art Magazine',  ambito: 3 }, // arte contemporanea
+    { url: 'https://www.espoarte.net/feed/',             nome: 'Espoarte',             ambito: 3 }  // arte contemporanea
+  ];
+  var esiti = candidati.map(function(c) {
+    var r = fontiAggiungiFeedVerificato(c.url, c.nome, c.ambito, 'Istituzionali-discovery 2026-06');
+    return { nome: c.nome, esito: r && r.ok ? 'AGGIUNTA' : ('saltata: ' + ((r && r.error) || '?')) };
+  });
+  var aggiunte = esiti.filter(function(e) { return e.esito === 'AGGIUNTA'; }).length;
+  Logger.log('fontiAggiungiBatchIstituzionali: ' + aggiunte + '/' + candidati.length + '\n' + JSON.stringify(esiti, null, 2));
+  return { ok: true, aggiunte: aggiunte, totale: candidati.length, esiti: esiti };
+}
+
+/**
+ * T2 ESTERO — Batch fonti internazionali VERIFICATE live (curl, 2026-07-07):
+ *  - Res Artis (resartis.org/feed/) — rete mondiale residenze artistiche, 123 item
+ *  - On the Move (on-the-move.org/feed) — finanziamenti mobilità culturale internazionale
+ *  - AAM American Alliance of Museums (aam-us.org/feed/) — musei USA
+ * NON disponibili (verificato): e-flux (nessun RSS pubblico), TransArtists (404),
+ * ArtRabbit (404), Museums Association UK (feed vuoto), culture360 (502),
+ * NEMO (nessun feed). Ogni candidato ripassa dal gate fontiAggiungiFeedVerificato.
+ */
+function fontiAggiungiBatchEstero() {
+  var candidati = [
+    { url: 'https://resartis.org/feed/',      nome: 'Res Artis — Residenze',      ambito: 3 }, // open call residenze mondiali
+    { url: 'https://on-the-move.org/feed',    nome: 'On the Move — Mobilità',     ambito: 3 }, // funding mobilità artisti/operatori
+    { url: 'https://www.aam-us.org/feed/',    nome: 'AAM — Alliance of Museums',  ambito: 1 }  // musei USA/internazionale
+  ];
+  var esiti = candidati.map(function(c) {
+    var r = fontiAggiungiFeedVerificato(c.url, c.nome, c.ambito, 'Estero-T2 2026-07');
+    return { nome: c.nome, esito: r && r.ok ? 'AGGIUNTA' : ('saltata: ' + ((r && r.error) || '?')) };
+  });
+  var aggiunte = esiti.filter(function(e) { return e.esito === 'AGGIUNTA'; }).length;
+  Logger.log('fontiAggiungiBatchEstero: ' + aggiunte + '/' + candidati.length + '\n' + JSON.stringify(esiti, null, 2));
+  return { ok: true, aggiunte: aggiunte, totale: candidati.length, esiti: esiti };
+}
+
+/**
+ * v4.27.42 — DESIGN & ARTE INTERNAZIONALE: fonti dalla segnalazione stampa del
+ * 2026-07-19 (caso Turrell/ARoS, rassegna Sole 24 Ore Domenica). Feed verificati
+ * live 2026-07-20 con fetch esterno:
+ *  - Designboom (feed valido, item stesso giorno) — arte/design/allestimenti
+ *  - ArchDaily via FeedBurner (25 item, aggiornamento orario) — architettura musei
+ *  - Artsy News (12 item, quotidiano) — mercato/mostre internazionali
+ *  - Galerie Magazine (valido, bassa cadenza ~6 item) — arte/design/collezionismo
+ *  - Sole 24 Ore EN: indice RSS su en.ilsole24ore.com/rss — scelti i 2 feed
+ *    più on-topic: "Arteconomy — Musei e Biennali" e "Cultura — Arti visive"
+ *    (sito EN GRATUITO, aggira il paywall della Domenica per l'arte)
+ *  - Dezeen e Archpaper: 403 dal fetch esterno (WAF) → inclusi, il gate
+ *    fontiAggiungiFeedVerificato li ri-testa dalla rete GAS e li salta se chiusi.
+ * GIÀ PRESENTI (esclusi per dedup): Exibart, Colossal, Sole 24 Ore Cultura IT,
+ * Apollo, My Modern Met, ArtNews, Artforum. Domus: nessun RSS pubblico (già
+ * coperta come fonte HTML nel sistema agenti). ARoS/Gagosian/Almine Rech: nessun
+ * feed → candidate social wall (rilancio manuale), vedi docs/SOCIAL_WALL_FONTI.md.
+ * Idempotente: ogni candidato passa dal gate (HTTP 200 + RSS valido + dedup).
+ */
+function fontiAggiungiBatchDesignArte() {
+  var candidati = [
+    { url: 'https://www.designboom.com/feed/',                            nome: 'Designboom',                        ambito: 3 }, // arte/design/installazioni
+    { url: 'http://feeds.feedburner.com/Archdaily',                       nome: 'ArchDaily',                         ambito: 1 }, // architettura musei/culturale
+    { url: 'https://www.artsy.net/rss/news',                              nome: 'Artsy News',                        ambito: 3 }, // mostre/mercato internazionale
+    { url: 'https://galeriemagazine.com/feed/',                           nome: 'Galerie Magazine',                  ambito: 3 }, // arte/design/collezionismo
+    { url: 'https://en.ilsole24ore.com/rss/arteconomy--musei-e-biennali.xml', nome: 'Sole 24 Ore EN — Musei e Biennali', ambito: 1 }, // governance musei (free EN)
+    { url: 'https://en.ilsole24ore.com/rss/cultura--arti-visive.xml',     nome: 'Sole 24 Ore EN — Arti visive',      ambito: 3 }, // arte visiva (free EN)
+    { url: 'https://www.dezeen.com/feed/',                                nome: 'Dezeen',                            ambito: 1 }, // architettura/design (403 esterno: test da GAS)
+    { url: 'https://www.archpaper.com/feed/',                             nome: 'The Architects Newspaper',          ambito: 1 }  // architettura culturale (403 esterno: test da GAS)
+  ];
+  var esiti = candidati.map(function(c) {
+    var r = fontiAggiungiFeedVerificato(c.url, c.nome, c.ambito, 'DesignArte-segnalazione 2026-07');
+    return { nome: c.nome, esito: r && r.ok ? 'AGGIUNTA' : ('saltata: ' + ((r && r.error) || '?')) };
+  });
+  var aggiunte = esiti.filter(function(e) { return e.esito === 'AGGIUNTA'; }).length;
+  Logger.log('fontiAggiungiBatchDesignArte: ' + aggiunte + '/' + candidati.length + '\n' + JSON.stringify(esiti, null, 2));
+  return { ok: true, aggiunte: aggiunte, totale: candidati.length, esiti: esiti };
+}
+
+/**
+ * Auto-seed una tantum del batch Design & Arte (stesso pattern di
+ * discoveryAutoSeedOnce): gira dal dispatcher giornaliero, al primo run aggiunge
+ * il batch e imposta il flag → poi no-op. Idempotente anche senza flag (dedup).
+ */
+function fontiDesignArteSeedOnce() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('OC_DESIGNARTE_SEEDED') === 'true') {
+    return { ok: true, skipped: true };
+  }
+  var rep;
+  try { rep = fontiAggiungiBatchDesignArte(); } catch (e) { rep = { ok: false, error: e.message }; }
+  props.setProperty('OC_DESIGNARTE_SEEDED', 'true');
+  Logger.log('[fontiDesignArteSeedOnce] batch design/arte attivato una tantum: ' + JSON.stringify(rep));
+  return rep;
+}
+
+/**
+ * v4.27.18 — Aggiunge 54 osservatori culturali internazionali come fonti news RSS.
+ * Fonte: uMap "Cultural Observatories: A Global Mapping Attempt" (1340668).
+ * Idempotente: dedup via fontiAggiungiFeedVerificato.
+ * Eseguire dal pannello admin: Impostazioni > Sistema > "+ Osservatori culturali"
+ */
+function fontiAggiungiBatchOsservatori() {
+  var candidati = [
+    { url: 'https://asef.org/feed/', nome: 'ASEF Asia-Europe Foundation (Singapour)', ambito: 1 },
+    { url: 'https://www.boekman.nl/feed/', nome: 'Boekman Foundation (Netherlands)', ambito: 1 },
+    { url: 'http://www.cupore.fi/feed', nome: 'Cupore Cultural Policy Research (Finland)', ambito: 1 },
+    { url: 'https://www.culturalpolicies.net/feed/', nome: 'Compendium Cultural Policies Europe (Deutschland)', ambito: 1 },
+    { url: 'https://culturalpolicyireland.org/feed/', nome: 'Cultural Policy Observatory Ireland', ambito: 1 },
+    { url: 'http://enfoqueconsumosculturales.org.ar/feed/', nome: 'Enfoque Consumos Culturales (Argentina)', ambito: 1 },
+    { url: 'https://www.egmus.eu/feed.xml', nome: 'EGMUS European Museum Statistics (Deutschland)', ambito: 1 },
+    { url: 'https://www.eno-net.phil.fau.eu/feed/', nome: 'ENO-net Arts & Cultural Education (Deutschland)', ambito: 1 },
+    { url: 'https://www.kupoge.de/feed/', nome: 'Kulturpolitische Gesellschaft (Deutschland)', ambito: 1 },
+    { url: 'https://mik.krakow.pl/feed/', nome: 'Malopolskie Obserwatorium Kultury (Poland)', ambito: 1 },
+    { url: 'https://ikm.gda.pl/feed/podcast', nome: 'Instytut Kultury Miejskiej Gdansk (Poland)', ambito: 1 },
+    { url: 'https://cnm.fr/feed/', nome: 'Observatoire CNM Filiere Musicale (France)', ambito: 3 },
+    { url: 'https://droitsculturels.org/observatoire/feed/', nome: 'Observatoire Droits Culturels (Switzerland)', ambito: 2 },
+    { url: 'https://www.ldh-france.org/feed/', nome: 'Observatoire Liberte de Creation (France)', ambito: 2 },
+    { url: 'https://www.observatoire-culture.net/feed/', nome: 'OPC Politiques Culturelles Grenoble (France)', ambito: 1 },
+    { url: 'https://www.observatoirepharos.com/feed', nome: 'Observatoire Pharos Pluralisme Culturel (France)', ambito: 1 },
+    { url: 'https://www.observatoire-culture.ch/feed', nome: 'Observatoire Romand de la Culture (Switzerland)', ambito: 1 },
+    { url: 'https://observatoricultural.blogspot.com/feeds/posts/default', nome: 'Observatori Cultural de Genere (Spain)', ambito: 2 },
+    { url: 'https://oikosobservatorio.com/feed/', nome: 'OIKOS Economia de la Cultura (Spain)', ambito: 1 },
+    { url: 'https://oaaep.unizar.es/feed/', nome: 'Observatorio Arte Esfera Publica (Spain)', ambito: 1 },
+    { url: 'https://www.economicas.uba.ar/investigacion/feed/', nome: 'Observatorio Cultural UBA (Argentina)', ambito: 1 },
+    { url: 'https://www.observatorioatalaya.es/feed/', nome: 'Observatorio Cultural Atalaya (Spain)', ambito: 1 },
+    { url: 'https://observatorioculturalveracruz.blogspot.com/feeds/posts/default', nome: 'Observatorio Cultural Veracruz (Mexico)', ambito: 1 },
+    { url: 'http://culturadesenvolvimentopoa.blogspot.com/feeds/posts/default', nome: 'Observatorio da Cultura POA (Brazil)', ambito: 1 },
+    { url: 'https://fundacionalternativas.org/feed/', nome: 'Observatorio Cultura y Comunicacion (Spain)', ambito: 4 },
+    { url: 'https://observatorioculturamurcia.wordpress.com/feed/', nome: 'Observatorio Cultura de Murcia (Spain)', ambito: 1 },
+    { url: 'https://cervantesobservatorio.fas.harvard.edu/en/rss.xml', nome: 'Cervantes Observatory Harvard (United States)', ambito: 1 },
+    { url: 'https://www.cegal.es/feed/', nome: 'Observatorio de la Libreria (Spain)', ambito: 1 },
+    { url: 'https://www.ocausal.es/es/feed/', nome: 'OCA Contenidos Audiovisuales (Spain)', ambito: 3 },
+    { url: 'https://www.erigaie.org/feed/', nome: 'Observatorio Patrimonio Cultural MIA (Colombia)', ambito: 1 },
+    { url: 'https://observacult.org/feed/', nome: 'Observacult Politicas Culturais (Brazil)', ambito: 1 },
+    { url: 'https://www.uv.mx/opc/feed', nome: 'OPC Politicas Culturales UV (Mexico)', ambito: 1 },
+    { url: 'https://politicasculturales.mx/feed', nome: 'Observatorio Politicas Culturales UACM (Mexico)', ambito: 1 },
+    { url: 'https://polobs.pt/feed/', nome: 'PolObs Politicas Comunicacao e Cultura (Portugal)', ambito: 4 },
+    { url: 'https://observatorio.uartes.edu.ec/feed/', nome: 'Observatorio Politicas y Economia Cultura (Ecuador)', ambito: 1 },
+    { url: 'https://www.ibermuseos.org/feed/', nome: 'Observatorio Iberoamericano de Museos (Spain)', ambito: 1 },
+    { url: 'http://www.fhuce.edu.uy/feed', nome: 'OBUPOC Politicas Culturales (Uruguay)', ambito: 1 },
+    { url: 'https://ocp.piemonte.it/feed/', nome: 'Osservatorio Culturale del Piemonte (Italia)', ambito: 1 },
+    { url: 'http://www.opib.librari.beniculturali.it/feed', nome: 'OPIB Programmi Internazionali Biblioteche (Italia)', ambito: 1 },
+    { url: 'https://spettacolo.cultura.gov.it/feed/', nome: 'Osservatorio dello Spettacolo MiC (Italia)', ambito: 3 },
+    { url: 'https://www.osservatori.net/feed/', nome: 'Osservatorio Innovazione Digitale Cultura (Italia)', ambito: 5 },
+    { url: 'https://www.tsm.tn.it/feed/', nome: 'OPAC Attivita Culturali Trentino (Italia)', ambito: 1 },
+    { url: 'https://spettacolo.emiliaromagnacultura.it/it/osservatorio/feed', nome: 'Osservatorio Spettacolo Emilia-Romagna (Italia)', ambito: 3 },
+    { url: 'https://symbola.net/feed/', nome: 'Fondazione Symbola (Italia)', ambito: 1 },
+    { url: 'https://idpc.gov.co/feed/', nome: 'Patrimonios Integrados (Colombia)', ambito: 1 },
+    { url: 'https://ascun.org.co/feed/', nome: 'RORESU Responsabilidad Social Universitaria (Colombia)', ambito: 4 },
+    { url: 'https://rok.amu.edu.pl/feed/', nome: 'ROK-UAM Obserwatorium Kultury (Poland)', ambito: 1 },
+    { url: 'https://wok.art.pl/feed/', nome: 'Warsaw Observatory of Culture (Poland)', ambito: 1 },
+    { url: 'http://www.kulturforschung.de/feed', nome: 'Zentrum fur Kulturforschung (Deutschland)', ambito: 1 },
+    { url: 'https://www.uv.mx/oum-max/feed', nome: 'Observatorio Universitario de Museos (Mexico)', ambito: 1 }
+  ];
+  var esiti = candidati.map(function(c) {
+    var r = fontiAggiungiFeedVerificato(c.url, c.nome, c.ambito, 'Osservatori-uMap-2026-07');
+    return { nome: c.nome, esito: r && r.ok ? 'AGGIUNTA' : ('saltata: ' + ((r && r.error) || '?')) };
+  });
+  var aggiunte = esiti.filter(function(e) { return e.esito === 'AGGIUNTA'; }).length;
+  var saltate = esiti.filter(function(e) { return e.esito !== 'AGGIUNTA'; }).length;
+  Logger.log('fontiAggiungiBatchOsservatori: ' + aggiunte + '/' + candidati.length + ' aggiunte, ' + saltate + ' saltate');
+  return { ok: true, aggiunte: aggiunte, saltate: saltate, totale: candidati.length, esiti: esiti };
+}
+
+// ----------------------------------------------------------------------------
+// EMAIL
+// ----------------------------------------------------------------------------
+function _frEmailHtml_(rep) {
+  function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  var agg = (rep.aggregatori || []).map(function(a) {
+    var ko = a.stato !== 'OK';
+    return '<tr><td style="padding:5px 10px;border-bottom:1px solid #eee;font-size:12.5px">' + esc(a.nome) + '</td>'
+      + '<td style="padding:5px 10px;border-bottom:1px solid #eee;font-size:12px;color:#888">' + esc(a.cat) + '</td>'
+      + '<td style="padding:5px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:700;color:' + (ko ? '#B3261E' : '#3F7A5E') + '">' + esc(a.stato) + '</td></tr>';
+  }).join('');
+  var aggKO = (rep.aggregatori || []).filter(function(a) { return a.stato !== 'OK'; }).length;
+
+  var sil = rep.silenti ? rep.silenti.totale : '—';
+  var morte = rep.morteRss ? rep.morteRss.candidate : '—';
+  var topko = (rep.topAZero || []).map(function(x) { return '<li style="font-size:12.5px;color:#B3261E">' + esc(x.nome) + ' — ' + esc(x.esito) + ' (storico ' + x.tot + ' record)</li>'; }).join('') || '<li style="font-size:12.5px;color:#3F7A5E">nessuna top-fonte ferma</li>';
+
+  var bl = rep.bandiLink || { attivi: 0, problemi: 0, perc: 0, dettaglio: [] };
+  var blRows = (bl.dettaglio || []).slice(0, 12).map(function(d) {
+    return '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;font-size:12px">' + esc(d.titolo) + '</td>'
+      + '<td style="padding:4px 8px;border-bottom:1px solid #eee;font-size:11px;color:#888">' + esc(d.ente) + '</td>'
+      + '<td style="padding:4px 8px;border-bottom:1px solid #eee;font-size:11px;color:#A35200">' + esc(d.motivo) + '</td></tr>';
+  }).join('');
+
+  var err = rep.errori.length ? '<div style="margin-top:12px;padding:8px 12px;background:#FDF3F3;border:1px solid #F3C9C9;border-radius:8px;font-size:12px;color:#B3261E">Anomalie: ' + rep.errori.map(esc).join(' · ') + '</div>' : '';
+
+  return '<div style="font-family:-apple-system,Arial,sans-serif;max-width:660px;margin:0 auto;color:#1a1a1a">'
+    + '<div style="background:#1a1a1a;padding:18px 22px;border-radius:12px 12px 0 0"><div style="font-family:Georgia,serif;font-style:italic;font-size:20px;color:#E89B7C">Sinopia</div><div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#bbb;margin-top:4px">Report FONTI &middot; ' + esc(rep.data) + '</div></div>'
+    + '<div style="border:1px solid #e8e5e0;border-top:none;border-radius:0 0 12px 12px;padding:18px 22px">'
+    + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">'
+    + '<div style="flex:1;min-width:120px;background:' + (aggKO ? '#FDF3F3' : '#E5EFE7') + ';border-radius:8px;padding:10px 12px"><div style="font-size:22px;font-weight:700;color:' + (aggKO ? '#B3261E' : '#3F7A5E') + '">' + aggKO + '</div><div style="font-size:11px;color:#666">aggregatori KO</div></div>'
+    + '<div style="flex:1;min-width:120px;background:#F3EDE4;border-radius:8px;padding:10px 12px"><div style="font-size:22px;font-weight:700;color:#8B3A1F">' + sil + '</div><div style="font-size:11px;color:#666">fonti silenti</div></div>'
+    + '<div style="flex:1;min-width:120px;background:#F3EDE4;border-radius:8px;padding:10px 12px"><div style="font-size:22px;font-weight:700;color:#8B3A1F">' + morte + '</div><div style="font-size:11px;color:#666">RSS morte (0 record)</div></div>'
+    + '<div style="flex:1;min-width:120px;background:#F3EDE4;border-radius:8px;padding:10px 12px"><div style="font-size:22px;font-weight:700;color:#A35200">' + bl.problemi + '</div><div style="font-size:11px;color:#666">bandi link generico (' + bl.perc + '%)</div></div>'
+    + '</div>'
+    + '<h3 style="font-size:13px;margin:14px 0 6px;color:#8B3A1F">Aggregatori critici (#3)</h3>'
+    + '<table style="width:100%;border-collapse:collapse">' + agg + '</table>'
+    + '<h3 style="font-size:13px;margin:16px 0 6px;color:#8B3A1F">Top fonti news ferme (#3)</h3><ul style="margin:0;padding-left:18px">' + topko + '</ul>'
+    + '<h3 style="font-size:13px;margin:16px 0 6px;color:#8B3A1F">Bandi senza link specifico (#4) — ' + bl.problemi + ' su ' + bl.attivi + '</h3>'
+    + (blRows ? '<table style="width:100%;border-collapse:collapse">' + blRows + '</table>' : '<div style="font-size:12px;color:#3F7A5E">tutti i bandi hanno un link specifico</div>')
+    + '<div style="margin-top:14px;font-size:11.5px;color:#999">#1 silenti/morte: dettaglio con qaFontiSilenti()/qaDiagnosiFontiMorte(). #2 scoperta nuove fonti: gira nel discovery (cloud-agent) → fontiAggiungiFeedVerificato().</div>'
+    + err
+    + '</div></div>';
+}
