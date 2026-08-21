@@ -246,12 +246,57 @@ function buildNewsletterHtml_(draft) {
  * Invia l'HTML a tutti gli iscritti Attivo=true nella sheet MailingList.
  * Ritorna { count, errors:[...] }
  */
+// ============================================================================
+// QA 20/08/2026 — MITTENTE UFFICIALE
+// ----------------------------------------------------------------------------
+// Le newsletter devono partire da sinopiaconsulting@gmail.com.
+// Attenzione: in Apps Script il mittente NON e' liberamente impostabile. MailApp
+// spedisce sempre dall'account che esegue lo script (oggi s.straccini@gmail.com).
+// L'unico modo di cambiarlo e' GmailApp con l'opzione 'from', che accetta solo
+// indirizzi configurati come ALIAS VERIFICATO nell'account che esegue.
+//
+// Configurazione necessaria (una tantum, da fare in Gmail di s.straccini):
+//   Impostazioni -> Account e importazione -> "Invia messaggi come" ->
+//   Aggiungi un altro indirizzo email -> sinopiaconsulting@gmail.com ->
+//   confermare il codice che arriva a quell'indirizzo.
+//
+// Finche' l'alias non e' verificato il codice qui sotto se ne accorge, continua a
+// spedire dall'indirizzo corrente e lo scrive nel log: nessun invio va perso.
+// Per controllare in qualunque momento: ocVerificaMittente()
+// ============================================================================
+var OC_MITTENTE_UFFICIALE = 'sinopiaconsulting@gmail.com';
+
+/** Diagnostica: dice se l'alias del mittente ufficiale e' utilizzabile. */
+function ocVerificaMittente() {
+  var alias = [];
+  try { alias = GmailApp.getAliases() || []; } catch(e) { Logger.log('GmailApp non disponibile: ' + e.message); }
+  var attivo = '';
+  try { attivo = Session.getActiveUser().getEmail() || ''; } catch(e) {}
+  Logger.log('account che esegue lo script: ' + (attivo || '(non leggibile)'));
+  Logger.log('alias configurati: ' + (alias.length ? alias.join(', ') : '(nessuno)'));
+  var ok = alias.indexOf(OC_MITTENTE_UFFICIALE) >= 0;
+  Logger.log(ok
+    ? 'OK — le newsletter partiranno da ' + OC_MITTENTE_UFFICIALE
+    : 'NON configurato — serve aggiungere ' + OC_MITTENTE_UFFICIALE +
+      ' come alias in Gmail (Impostazioni > Account e importazione > Invia messaggi come). ' +
+      'Fino ad allora le mail partono da ' + (attivo || 'account corrente') + '.');
+  return { ok: ok, alias: alias, accountAttivo: attivo, mittenteUfficiale: OC_MITTENTE_UFFICIALE };
+}
+
 function sendNewsletterEmail_(subject, html, opts) {
   opts = opts || {};
   // Sprint 1.4 (2026-05-01): legge da Utenti (OptInDigest=true && Stato=attivo) via Auth.gs.
   // Fallback su vecchia MailingList se Utenti vuoto.
-  var sender   = _safeEmail_() || 'sinopiaconsulting@gmail.com';
   var senderName = 'Osservatorio Culturale';
+  // QA 20/08/2026 — mittente ufficiale se l'alias e' verificato, altrimenti si
+  // prosegue con l'account corrente e lo si annota (vedi nota in cima al file).
+  var aliasOk = false;
+  try { aliasOk = (GmailApp.getAliases() || []).indexOf(OC_MITTENTE_UFFICIALE) >= 0; } catch(eAl) {}
+  var sender = OC_MITTENTE_UFFICIALE;
+  if (!aliasOk) {
+    Logger.log('[newsletter] alias ' + OC_MITTENTE_UFFICIALE + ' non configurato: ' +
+               'le mail partono dall\'account che esegue lo script. Esegui ocVerificaMittente().');
+  }
   var sent = 0;
   var errors = [];
   var destinatari = [];
@@ -317,13 +362,16 @@ function sendNewsletterEmail_(subject, html, opts) {
       // v4.23 GDPR — link di disiscrizione firmato per-destinatario (come i digest)
       var htmlDest = html;
       try { if (typeof _digestUnsubFooter_ === 'function') htmlDest = html.replace('</body>', _digestUnsubFooter_(email) + '</body>'); } catch(_uf){}
-      MailApp.sendEmail({
-        to:      email,
-        subject: subject,
-        htmlBody: htmlDest,
-        name:    senderName,
-        replyTo: sender
-      });
+      if (aliasOk) {
+        GmailApp.sendEmail(email, subject, 'Apri questa email in un client che supporta l\'HTML.', {
+          htmlBody: htmlDest, name: senderName, from: OC_MITTENTE_UFFICIALE, replyTo: OC_MITTENTE_UFFICIALE
+        });
+      } else {
+        MailApp.sendEmail({
+          to: email, subject: subject, htmlBody: htmlDest,
+          name: senderName, replyTo: OC_MITTENTE_UFFICIALE
+        });
+      }
       sent++;
       inviatiOra.push(email);
     } catch(e) {

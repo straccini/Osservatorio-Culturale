@@ -165,7 +165,12 @@ function _generateDigestDraftCore_(opts) {
 
   // 1) Recupero dati dai data-provider esistenti
   var bandiUrg = _safeCall_(function(){ return getHomepageDataV42(); }, { bandiUrgenti:[], news:[], podcast:[] });
-  var bandiNew = _safeCall_(function(){ return getUltimiBandiMonitorati(maxBandi); }, []);
+  // QA 20/08/2026 — il bacino era largo esattamente quanto la sezione (maxBandi) e
+  // getUltimiBandiV5 ordina per data di RILEVAMENTO: le fonti europee (TED, SEDIA)
+  // ingeriscono decine di record al giorno, quelle italiane pochi, quindi i primi 8
+  // erano quasi sempre tutti esteri. Si parte da un bacino ampio e si sceglie il mix
+  // alla fine, dopo i filtri (stesso rimedio applicato alle news in v4.28.34).
+  var bandiNew = _safeCall_(function(){ return getUltimiBandiMonitorati(maxBandi * 10); }, []);
   var video = maxVideo > 0 ? _safeCall_(function(){ return getVideoListV42(maxVideo); }, []) : [];
   var libri = maxLibri > 0 ? _safeCall_(function(){ return getLibriListV42(maxLibri); }, []) : [];
 
@@ -262,6 +267,49 @@ function _generateDigestDraftCore_(opts) {
     pod  = ddCapPerFonte(pod, 2);
     video = ddCapPerFonte(video, 2);
   }
+  // QA 20/08/2026 — MIX ITALIA/ESTERO nei bandi.
+  // Senza questo la sezione risultava composta solo da gare europee. Si riconosce
+  // la provenienza dal dominio del link e dall'ente, si tiene l'ordine cronologico
+  // dentro ciascun gruppo e si alterna partendo dagli italiani, con un tetto di 2
+  // bandi per ente (come gia' si fa per le testate nelle news).
+  var _isEstero_ = function(b) {
+    var l = String(b.link || '').toLowerCase();
+    var e = String(b.ente || '').toLowerCase();
+    if (/(^|\.)europa\.eu|ted\.europa|europarl|\.eu\//.test(l)) return true;
+    if (/commissione europea|european|eu commission|erasmus|creative europe|horizon/.test(e)) return true;
+    if (/\.it(\/|$)|\.gov\.it|regione\.|comune\./.test(l)) return false;
+    return false;   // nel dubbio conta come italiano: meglio mostrarlo che nasconderlo
+  };
+  var _mixBandi_ = function(lista, quanti) {
+    var ita = [], est = [];
+    (lista || []).forEach(function(b){ (_isEstero_(b) ? est : ita).push(b); });
+    var perEnte = {}, out = [];
+    var prendi = function(arr) {
+      while (arr.length) {
+        var b = arr.shift();
+        var k = String(b.ente || '?').toLowerCase().trim();
+        if ((perEnte[k] || 0) >= 2) continue;   // max 2 per ente
+        perEnte[k] = (perEnte[k] || 0) + 1;
+        return b;
+      }
+      return null;
+    };
+    // alterna 2 italiani : 1 estero, cosi' il taglio nazionale resta prevalente
+    while (out.length < quanti && (ita.length || est.length)) {
+      var passo = [ita, ita, est];
+      for (var i = 0; i < passo.length && out.length < quanti; i++) {
+        var b = prendi(passo[i]);
+        if (b) out.push(b);
+      }
+      if (!ita.length && !est.length) break;
+    }
+    return out;
+  };
+  var _nItaPrima = bandiNew.filter(function(b){ return !_isEstero_(b); }).length;
+  bandiNew = _mixBandi_(bandiNew, maxBandi);
+  Logger.log('[digest] bandi: bacino con ' + _nItaPrima + ' italiani · selezionati ' +
+             bandiNew.length + ' di cui esteri ' + bandiNew.filter(_isEstero_).length);
+
   // v4.28.34 — troncamento a maxNews/maxPodcast SOLO ORA, dopo tutti i filtri:
   // prima avveniva sulla fonte (già minuscola) prima dei filtri, svuotando la sezione.
   news = news.slice(0, maxNews);
