@@ -746,6 +746,24 @@
       </div>
     </section>
 
+    <!-- ===== SEGNALAZIONI DELLA COMMUNITY (QA 21/08/2026) =====
+         Pagina dedicata: le stesse segnalazioni pubblicate del carosello home,
+         consultabili tutte. Solo stato 'published'; l'email dell'autore non
+         viene mai esposta (la toglie gia' il backend). -->
+    <section class="page" id="page-segnalazioni">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Segnalazioni</h1>
+          <p class="page-sub">Contenuti segnalati dalla community dell&rsquo;Osservatorio &mdash; verificati e pubblicati dalla redazione</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-secondary" onclick="OC.apriFormSegnalazione && OC.apriFormSegnalazione()" style="font-size:13px" title="Segnala un contenuto alla redazione">&#10133; Segnala un contenuto</button>
+        </div>
+      </div>
+      <div id="segnalazioniPageList"><div class="empty-state">Caricamento segnalazioni&hellip;</div></div>
+    </section>
+
+
     <!-- ===== PAGE PODCAST ===== -->
     <section class="page" id="page-podcast">
       <div class="page-head">
@@ -3186,7 +3204,7 @@
   // A) NAVIGAZIONE SPA
   // ==========================================================
   // Pagine accessibili a ospiti (livello 0) — tutto il resto richiede registrazione
-  var _GUEST_PAGES = { home:1, bandi:1, matrix:1, 'matrix-landing':1, 'sondaggi-catalogo':1, chisiamo:1, 'profilo-pro':1, privacy:1, news:1 };
+  var _GUEST_PAGES = { home:1, bandi:1, matrix:1, 'matrix-landing':1, 'sondaggi-catalogo':1, chisiamo:1, 'profilo-pro':1, privacy:1, news:1, segnalazioni:1 };
 
   function go(page, ambito){
     // Gate ospite: se pagina protetta, mostra card registrazione
@@ -3249,6 +3267,7 @@
     if (page==='lavoro') loadLavoro();  // v4.25.15 — pagina Lavoro cultura
     if (page==='bandi')    { loadBandiList(false); try { _bandiVistaInit_(); } catch(_){} }
     if (page==='news')     loadNewsList(false);
+    if (page==='segnalazioni' && typeof window.loadSegnalazioniPage === 'function') window.loadSegnalazioniPage();
     if (page==='podcast')  loadPodcastList(false);
     if (page==='video')    loadVideoList(false);
     if (page==='libri')    loadLibriList(false);
@@ -15132,6 +15151,60 @@
     }).inviaSegnalazione(payload);
   };
 
+
+  // ── QA 21/08/2026 — pagina Segnalazioni (menu, terza voce dopo News) ──────
+  // Elenca TUTTE le segnalazioni pubblicate (il carosello home ne mostra una).
+  // Il backend esclude gia' l'email dell'autore; qui tutto passa da esc().
+  var _cacheSegnalazioni = null;
+  // NB: questo codice vive dentro una IIFE in un blocco <script> diverso dal router:
+  // senza l'aggancio a window il router non vedrebbe la funzione (scope separato).
+  window.loadSegnalazioniPage = loadSegnalazioniPage;
+  function loadSegnalazioniPage(force) {
+    var box = $('segnalazioniPageList');
+    if (!box) return;
+    if (_cacheSegnalazioni && !force) { _renderSegnalazioniPage_(_cacheSegnalazioni); return; }
+    if (!hasGAS()) { box.innerHTML = '<div class="empty-state">Anteprima locale: dati non disponibili.</div>'; return; }
+    google.script.run
+      .withSuccessHandler(function(r){
+        _cacheSegnalazioni = (r && r.segnalazioni) || [];
+        _renderSegnalazioniPage_(_cacheSegnalazioni);
+      })
+      .withFailureHandler(function(e){
+        box.innerHTML = '<div class="empty-state">Errore nel caricamento: ' + esc(String(e && e.message || e)) + '</div>';
+      })
+      .getSegnalazioniPubblicate(50);
+  }
+  function _renderSegnalazioniPage_(items) {
+    var box = $('segnalazioniPageList');
+    if (!box) return;
+    if (!items.length) {
+      box.innerHTML = '<div class="empty-state">Nessuna segnalazione pubblicata finora.<br>' +
+        '<span style="font-size:13px;color:var(--ink-3)">Hai trovato un bando, una notizia o una risorsa utile? Segnalala alla redazione.</span></div>';
+      return;
+    }
+    var h = items.map(function(sg){
+      var url  = String(sg.url || '').trim();
+      var okUrl = /^https?:\/\//i.test(url);
+      var img  = String(sg.og_image || '').trim();
+      var data = String(sg.dataPubblicazione || '').substring(0, 10);
+      var descr = String(sg.descrizione || '');
+      if (descr.length > 320) descr = descr.substring(0, 320) + '\u2026';
+      return '<article class="card" style="margin-bottom:14px;display:flex;gap:14px;align-items:flex-start">' +
+        (img && /^https?:\/\//i.test(img)
+          ? '<img src="' + esc(img) + '" alt="" loading="lazy" style="width:120px;height:80px;object-fit:cover;border-radius:8px;flex-shrink:0" onerror="this.style.display=(String(this.dataset.hid=1)&&\'none\')">'
+          : '') +
+        '<div style="min-width:0">' +
+          '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-bottom:4px">' +
+            esc(String(sg.tipo || 'segnalazione')) + (data ? ' \u00b7 ' + esc(data) : '') + '</div>' +
+          '<h3 style="margin:0 0 6px;font-size:16px;line-height:1.35">' +
+            (okUrl ? '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(String(sg.titolo || '')) + '</a>'
+                   : esc(String(sg.titolo || ''))) + '</h3>' +
+          (descr ? '<p style="margin:0 0 6px;font-size:13.5px;color:var(--ink-2);line-height:1.5">' + esc(descr) + '</p>' : '') +
+          (sg.nome_autore ? '<div style="font-size:12px;color:var(--ink-3)">segnalata da ' + esc(String(sg.nome_autore)) + '</div>' : '') +
+        '</div></article>';
+    }).join('');
+    box.innerHTML = h;
+  }
 
   // v4.27.53 — Popola la slide "segnalazione della settimana" del carosello.
   // Se non c'e' nulla da mostrare la slide resta nascosta e il carosello

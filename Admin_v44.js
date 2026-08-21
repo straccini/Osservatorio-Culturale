@@ -157,9 +157,11 @@ function _generateDigestDraftCore_(opts) {
   opts = opts || {};
   var maxBandi   = opts.maxBandi   || 8;
   var maxNews    = opts.maxNews    || 6;
-  var maxPodcast = opts.maxPodcast || 3;
-  // v4.25.15 — mix esteso: video e libri configurabili dal pannello redazionale
-  var maxVideo   = (opts.maxVideo  === undefined) ? 2 : Number(opts.maxVideo) || 0;
+  // QA 21/08/2026 (richiesta Silvano 20/08) — un podcast in meno, un video in piu':
+  // la newsletter esce piu' varia a parita' di lunghezza. L'anti-ripetizione sul
+  // registro DigestInviati vale gia' per entrambe le tipologie.
+  var maxPodcast = opts.maxPodcast || 2;
+  var maxVideo   = (opts.maxVideo  === undefined) ? 3 : Number(opts.maxVideo) || 0;
   var maxLibri   = (opts.maxLibri  === undefined) ? 2 : Number(opts.maxLibri) || 0;
   var ambito     = String(opts.filtroAmbito || '').trim();
 
@@ -214,8 +216,14 @@ function _generateDigestDraftCore_(opts) {
   // di tempo, e solo se non è già uscita in un digest precedente (memoria
   // OC_DIGEST_SEGN_SENT, marcata a invio riuscito in adminConfirmSendWithToken).
   var segnalazione = null;
+  // QA 21/08/2026 (richiesta Silvano 20/08) — SEGNALAZIONI FUORI DALLA NEWSLETTER
+  // finche' la sezione non e' strutturata bene. Il blocco resta pronto: per
+  // riattivarlo impostare la ScriptProperty OC_DIGEST_SEGNALAZIONI = 'on'.
+  // Le segnalazioni hanno ora la loro pagina dedicata nel menu (page-segnalazioni).
+  var _segnalazioniOn = false;
+  try { _segnalazioniOn = PropertiesService.getScriptProperties().getProperty('OC_DIGEST_SEGNALAZIONI') === 'on'; } catch(_fs) {}
   try {
-    if (typeof getSegnalazioniPubblicate === 'function') {
+    if (_segnalazioniOn && typeof getSegnalazioniPubblicate === 'function') {
       var _segRes = getSegnalazioniPubblicate(1);
       var _ultima = (_segRes && _segRes.segnalazioni && _segRes.segnalazioni[0]) || null;
       if (_ultima) {
