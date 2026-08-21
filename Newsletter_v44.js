@@ -281,7 +281,25 @@ function sendNewsletterEmail_(subject, html) {
     } catch(e2) { errors.push({ source:'mailinglist', err: e2.message }); }
   }
   if (!destinatari.length) return { count:0, errors: errors.concat([{source:'all', err:'nessun destinatario'}]) };
-  destinatari = Array.from(new Set(destinatari.map(function(e){ return e.toLowerCase().trim(); })));
+
+  destinatari = Array.from(new Set(destinatari.map(function(e){ return String(e).toLowerCase().trim(); })));
+
+  // QA 20/08/2026 — CONTROLLO QUOTA PRIMA DI PARTIRE.
+  // MailApp ha un tetto giornaliero (100 per un account Gmail normale). Prima si
+  // partiva comunque: superata la soglia gli invii fallivano uno a uno, gli errori
+  // venivano raccolti e ignorati, e la bozza risultava "inviato" con meta' lista
+  // servita. Meglio non partire affatto: la bozza resta approvabile e si riprova
+  // domani, invece di spezzare la lista in due senza accorgersene.
+  var quota = -1;
+  try { quota = MailApp.getRemainingDailyQuota(); } catch(eq) {}
+  if (quota >= 0 && quota < destinatari.length) {
+    var msgQ = 'quota insufficiente: ' + destinatari.length + ' destinatari, ' +
+               quota + ' invii disponibili oggi';
+    Logger.log('[newsletter] INVIO ANNULLATO — ' + msgQ);
+    try { if (typeof sendTelegram === 'function') sendTelegram('⛔ Newsletter NON inviata — ' + msgQ); } catch(_t) {}
+    return { count: 0, errors: errors.concat([{ source:'quota', err: msgQ }]),
+             totale_destinatari: destinatari.length, quotaResidua: quota };
+  }
   destinatari.forEach(function(email) {
     try {
       // v4.23 GDPR — link di disiscrizione firmato per-destinatario (come i digest)
@@ -299,6 +317,22 @@ function sendNewsletterEmail_(subject, html) {
       errors.push({ email:email, err:e.message });
     }
   });
+  // QA 20/08/2026 — l'esito non resta piu' muto: finisce nel log e, se qualcosa non
+  // e' partito, arriva anche su Telegram. Prima gli errori per destinatario venivano
+  // raccolti qui e non li guardava nessuno.
+  Logger.log('[newsletter] inviate ' + sent + '/' + destinatari.length +
+             ' — errori: ' + errors.length + ' — quota residua: ' +
+             (function(){ try { return MailApp.getRemainingDailyQuota(); } catch(e){ return '?'; } })());
+  if (errors.length) {
+    var dettaglio = errors.slice(0, 5).map(function(x){ return (x.email || x.source || '?') + ': ' + x.err; }).join(' · ');
+    Logger.log('[newsletter] DETTAGLIO ERRORI — ' + dettaglio);
+    try {
+      if (typeof sendTelegram === 'function') {
+        sendTelegram('⚠️ Newsletter: ' + sent + '/' + destinatari.length +
+                     ' inviate, ' + errors.length + ' errori.\n' + dettaglio);
+      }
+    } catch(_t2) {}
+  }
   return { count: sent, errors: errors, totale_destinatari: destinatari.length };
 }
 
