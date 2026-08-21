@@ -5313,10 +5313,77 @@
   }
   function _regNorm_(s) { return String(s||'').toLowerCase().replace(/[^a-z]/g, ''); }
 
+  // QA 21/08/2026 — vista Europa della mappa bandi (vedi nota in renderBandiMappa).
+  function _renderBandiMappaEuropa_(svg) {
+    var GEO = OC_GEO_EUROPA;
+    // geometrie con calibrazioni diverse: Italia 760x900, Europa 500x500.
+    // Senza questo cambio il continente comparirebbe schiacciato in un angolo.
+    svg.setAttribute('viewBox', '0 0 480 400');
+    var perNazione = {}, ueIntera = 0, tot = 0;
+    (_cacheBandi || []).forEach(function(b){
+      if (!_bandoPassaFiltriMappa_(b)) return;
+      if (!_bandoEU_(b)) return;
+      tot++;
+      var ente = String(b.ente||'').toLowerCase();
+      if (/commissione europea|european commission|eu funding|horizon|creative europe/i.test(ente)) { ueIntera++; return; }
+      var m = String(b.regione||b.ente||'').match(/\b(Francia|Germania|Spagna|Belgio|Paesi Bassi|Austria|Portogallo|Grecia|Polonia|Romania|Bulgaria|Ungheria|Croazia|Slovenia|Slovacchia|Svezia|Finlandia|Danimarca|Irlanda|Lituania|Lettonia|Estonia|Lussemburgo|Malta|Cipro|Rep\.? Ceca|Cechia)\b/i);
+      if (m) {
+        var naz = m[1].replace(/^Cechia$/i, 'Rep. Ceca');
+        perNazione[naz] = (perNazione[naz]||0) + 1;
+      } else { ueIntera++; }
+    });
+    // continente
+    var sh = '';
+    for (var p in GEO.paths) {
+      sh += '<path class="bm-reg" d="' + GEO.paths[p] + '" data-reg="' + esc(p) + '"><title>' + esc(p) + '</title></path>';
+    }
+    for (var p2 in GEO.paths) {
+      var n = perNazione[p2] || 0;
+      if (!n || !GEO.centroidi || !GEO.centroidi[p2]) continue;
+      var c = GEO.centroidi[p2], rad = 10 + Math.min(n, 9) * 1.6;
+      sh += '<circle class="bm-bub" cx="' + c[0] + '" cy="' + c[1] + '" r="' + rad + '" data-reg="' + esc(p2) + '"/>'
+          + '<text class="bm-bubt" x="' + c[0] + '" y="' + (c[1]+4.5) + '">' + n + '</text>';
+    }
+    svg.innerHTML = sh;
+    // sintesi sotto la mappa: prima riga UE intera, poi gli stati per conteggio
+    var lista = $('bandiRegioniLista');
+    if (lista) {
+      var eh = '';
+      if (ueIntera > 0) {
+        eh += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1.5px solid var(--cobalt,#1E3A8A);cursor:pointer" '
+            + 'onclick="var s=$(\'bandiRegione\');if(s)s.value=\'_europa\';OC.setBandiRegione(\'_europa\')">'
+            + '<span style="font-weight:700;color:var(--cobalt,#1E3A8A)">&#127466;&#127482; Validi per l\'intera UE</span>'
+            + '<span style="background:var(--cobalt,#1E3A8A);color:#fff;border-radius:99px;padding:3px 12px;font-size:13px;font-weight:700">' + ueIntera + '</span></div>';
+      }
+      Object.keys(perNazione).sort(function(a,b){ return perNazione[b]-perNazione[a]; }).forEach(function(naz){
+        eh += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--rule-2,#E5E5EA);cursor:pointer" '
+            + 'onclick="var si=$(\'bandiSearch\');if(si)si.value=\'' + esc(naz) + '\';OC.searchBandi(\'' + esc(naz) + '\')">'
+            + '<span style="font-weight:500;color:var(--ink)">' + esc(naz) + '</span>'
+            + '<span style="background:var(--cobalt,#1E3A8A);color:#fff;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:700">' + perNazione[naz] + '</span></div>';
+      });
+      if (!eh) eh = '<div style="padding:12px 0;color:var(--ink-3);text-align:center;font-size:12px">Nessun bando europeo al momento.</div>';
+      lista.innerHTML = eh;
+      lista.hidden = false;
+    }
+    var cEl = $('bandiMappaCnt');
+    if (cEl) cEl.textContent = tot + (tot === 1 ? ' bando' : ' bandi') + ' \u00b7 Unione Europea';
+    var regEl = $('bandiMappaReg'); if (regEl) regEl.textContent = 'Bandi europei';
+  }
+
   function renderBandiMappa() {
     var svg = $('bandiMappaSvg');
     if (!svg || typeof OC_GEO_ITALIA === 'undefined') return;
+    // QA 21/08/2026 — con il toggle Europa attivo la mappa grande diventa il
+    // continente (geometria OC_GEO_EUROPA, gia' inclusa da MappaEuropa.html ma
+    // mai usata per l'SVG principale) e la sintesi sotto elenca gli stati, con
+    // in prima riga i bandi validi per l'intera UE. Ramo separato di proposito:
+    // non tocca il percorso Italia.
+    if (_filterBandiLivello === 'eu' && typeof OC_GEO_EUROPA !== 'undefined') {
+      _renderBandiMappaEuropa_(svg);
+      return;
+    }
     var GEO = OC_GEO_ITALIA;
+    svg.setAttribute('viewBox', '0 0 760 900');   // ripristino dal ramo Europa
     var counts = {}, euCnt = 0, euNazioni = {}, itaNonReg = 0;
     (_cacheBandi || []).forEach(function(b){
       if (!_bandoPassaFiltriMappa_(b)) return;
@@ -5440,6 +5507,13 @@
   function _bandiMappaClick_(e) {
     var t = e.target.getAttribute('data-reg');
     if (!t) return;
+    // QA 21/08/2026 — in vista Europa il click su uno stato filtra per nazione
+    // (le nazioni non esistono nel selettore regioni italiano).
+    if (_filterBandiLivello === 'eu') {
+      var si = $('bandiSearch'); if (si) si.value = t;
+      OC.searchBandi(t);
+      return;
+    }
     var sel = $('bandiRegione'), scelta = null, tn = _regNorm_(t);
     if (sel) {
       for (var i = 0; i < sel.options.length; i++) {
@@ -6069,6 +6143,12 @@
         var liv = String(b.livello || '').toLowerCase();
         if (_filterBandiLivello === 'eu') {
           if (!_bandoEU_(b)) return;
+        } else if (_filterBandiLivello === 'ita') {
+          // QA 21/08/2026 — toggle "Italia": tutti i bandi italiani, cioe' i non-EU.
+          // Prima il toggle impostava livello='nazionale', ma i bandi hanno livello
+          // 'Vari'/'Regione'/...: la lista si svuotava e sembrava rotta finche' non
+          // si sceglieva una regione o "Tutti".
+          if (_bandoEU_(b)) return;
         } else if (liv.indexOf(_filterBandiLivello) < 0) return;
       }
 
@@ -12688,18 +12768,24 @@
       var btnIta = $('bandiLivBtnIta'), btnEu = $('bandiLivBtnEu');
       var boxIta = $('bandiBoxItalia'), boxEu = $('bandiBoxEuropa');
       var regLista = $('bandiRegioniLista');
-      var isIta = geo === 'italia', wasActive = (isIta ? _filterBandiLivello === 'nazionale' : _filterBandiLivello === 'eu');
+      var isIta = geo === 'italia', wasActive = (isIta ? _filterBandiLivello === 'ita' : _filterBandiLivello === 'eu');
       // deseleziona se già attivo
-      _filterBandiLivello = wasActive ? '' : (isIta ? 'nazionale' : 'eu');
-      var itaOn = _filterBandiLivello === 'nazionale', euOn = _filterBandiLivello === 'eu';
+      // QA 21/08/2026 — 'ita' (tutti i bandi italiani), non 'nazionale' (che
+      // matchava il campo livello e svuotava la lista).
+      _filterBandiLivello = wasActive ? '' : (isIta ? 'ita' : 'eu');
+      var itaOn = _filterBandiLivello === 'ita', euOn = _filterBandiLivello === 'eu';
       // bottoni
       if (btnIta) { btnIta.style.background = itaOn ? 'var(--cobalt,#1E3A8A)' : 'transparent'; btnIta.style.color = itaOn ? '#fff' : 'var(--cobalt,#1E3A8A)'; }
       if (btnEu)  { btnEu.style.background  = euOn  ? 'var(--cobalt,#1E3A8A)' : 'transparent'; btnEu.style.color  = euOn  ? '#fff' : 'var(--cobalt,#1E3A8A)'; }
       // box evidenziazione
       if (boxIta) boxIta.style.background = itaOn ? 'var(--accent-soft,#FFF5F0)' : '';
       if (boxEu)  boxEu.style.background  = euOn  ? 'oklch(0.96 0.025 265)' : '';
-      // lista regioni visibile solo se Italia attivo
-      if (regLista) regLista.hidden = !itaOn;
+      // QA 21/08/2026 — la lista sotto la mappa serve a entrambe le viste:
+      // regioni con Italia attiva, nazioni (con prima riga UE) con Europa attiva.
+      // La colonnina Europa laterale si nasconde quando l'Europa diventa la mappa
+      // principale: la sua sintesi si sposta sotto la mappa grande.
+      if (regLista) regLista.hidden = !(itaOn || euOn);
+      if (boxEu) boxEu.style.display = euOn ? 'none' : '';
       if (_cacheBandi) renderBandiList(_cacheBandi);
     },
     // v4.28.59 — bandi senza scadenza ma pertinenti e freschi
