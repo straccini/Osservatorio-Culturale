@@ -75,7 +75,28 @@ function buildNewsletterHtml_(draft) {
     if (_editoriale.foto) parts.push('<img src="' + String(_editoriale.foto) + '" alt="" width="564" style="width:100%;max-width:564px;display:block;margin-bottom:14px"/>');
     parts.push('<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8B3A1F;font-weight:700;margin-bottom:8px;">Approfondimento della settimana</div>');
     parts.push('<div style="font-size:16px;font-weight:700;color:#1D1D1F;margin-bottom:10px;">' + _h_(_editoriale.titolo) + '</div>');
-    parts.push('<p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C;">' + _h_(_editoriale.testo).replace(/\n/g, '<br>') + '</p>');
+    // QA 21/08/2026 (richiesta Silvano 20/08) — l'editoriale nella mail si ferma a
+    // ~10-12 righe: taglio a confine di frase intorno a 850 caratteri, poi pulsante
+    // "Continua a leggere" verso l'app (?apri=editoriale&seg=N). Il frontend apre
+    // l'approfondimento da solo e mette il segno al punto esatto in cui la mail si
+    // e' interrotta. Testi brevi restano interi, senza pulsante.
+    var _edTesto = String(_editoriale.testo || '');
+    var _edTaglio = 0;
+    if (_edTesto.length > 1100) {
+      _edTaglio = _edTesto.lastIndexOf('. ', 850);
+      if (_edTaglio < 400) _edTaglio = _edTesto.indexOf('. ', 850);   // frasi lunghe: primo punto utile
+      if (_edTaglio < 0) _edTaglio = 850;
+      _edTaglio += 1;                                                  // include il punto
+    }
+    var _edMostra = _edTaglio > 0 ? _edTesto.substring(0, _edTaglio) : _edTesto;
+    parts.push('<p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C;">' + _h_(_edMostra).replace(/\n/g, '<br>') + '</p>');
+    if (_edTaglio > 0) {
+      var _edBase = (typeof ADMTK_PROD_URL === 'string' && ADMTK_PROD_URL) ? ADMTK_PROD_URL : webUrl;
+      var _edLink = _edBase + '?apri=editoriale&seg=' + _edTaglio;
+      parts.push('<p style="margin:14px 0 0;"><a href="' + _edLink + '" target="_blank" ' +
+        'style="display:inline-block;background:#1D1D1F;color:#FFFFFF;text-decoration:none;' +
+        'padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;">Continua a leggere &rarr;</a></p>');
+    }
     if (_editoriale.firma) parts.push('<div style="margin-top:12px;font-style:italic;font-size:13px;color:#6E6A62;">' + _h_(_editoriale.firma) + '</div>');
     parts.push('<div style="margin-top:14px;border-bottom:1px solid #E5E5E7;padding-bottom:6px"></div>');
     parts.push('</td></tr>');

@@ -136,6 +136,20 @@ function _classificaTipoBando_(bando) {
   var testo = titolo + ' ' + settore + ' ' + sommario;
   var fonte = String(bando.fonteNome || '').toLowerCase();
 
+  // === LAVORO: concorsi e selezioni di personale (QA 21/08/2026) ============
+  // Prima di questo ramo NESSUN percorso restituiva 'lavoro': il valore lo
+  // scriveva solo il parser GU 4a Serie (LavoroCultura.js). Un concorso caricato
+  // da una fonte normale finiva in 'finanziamento' (i concorsi sono quasi sempre
+  // "avviso pubblico di selezione") e la pagina Lavoro, che filtra
+  // tipoBando==='lavoro', non lo mostrava mai. Va PRIMA di finanziamento.
+  // Esclusi i concorsi che non sono reclutamento (idee, fotografia, arte, design).
+  var _concorsoNonLavoro = /concors[oi]\s+(di\s+)?(idee|progettazion|fotograf|artistic|letterari|poesia|design|videomaking|cortometragg)/i.test(testo);
+  if (!_concorsoNonLavoro && (
+      /concors[oi]\s+pubblic|selezione\s+pubblica|procedura\s+selettiva|avviso\s+di\s+selezione|graduatori[ae]|assunzion|reclutament|profil[oi]\s+professional|posti?\s+di\s+(lavoro|funzionario|istruttore|assistente|operatore|dirigente)|tempo\s+(in)?determinato|mobilit\u00e0\s+(esterna|volontaria)/i.test(testo)
+  )) {
+    return 'lavoro';
+  }
+
   // === FINANZIAMENTO: contributi, sovvenzioni, bandi a fondo perduto ===
   if (/finanziament|contribut[oi]|sovvenzion|grant|subsid|funding|fondo perduto|erogazione|cofinanziament|incentiv[oi]|premio|borsa di studio|call for proposal|avviso.*finanz|bando.*finanz/i.test(testo)) {
     return 'finanziamento';
@@ -198,6 +212,9 @@ function backfillTipoBandi() {
       titolo: vals[r][iTit], settore: vals[r][iSett],
       sommario: vals[r][iSomm], fonteNome: vals[r][iFonte]
     });
+    // QA 21/08/2026 — i record del parser GU S4 nascono gia' con 'lavoro':
+    // la riclassificazione forzata non deve mai degradarli ad altro tipo.
+    if (String(vals[r][iTipo] || '') === 'lavoro') tipo = 'lavoro';
     tipoCol.push([tipo]);
     stats[tipo] = (stats[tipo]||0) + 1;
     stats.totale++;

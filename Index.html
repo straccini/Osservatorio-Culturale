@@ -165,6 +165,12 @@
   <? if (sc) { ?>
   <script>window._sondaggioAutoOpen = '<?= sc ?>';</script>
   <? } ?>
+  <?var _edAp = (typeof apriEditoriale !== 'undefined' && apriEditoriale) ? 1 : 0; ?>
+  <?var _edSeg = (typeof editorialeSegno !== 'undefined' && editorialeSegno) ? parseInt(editorialeSegno, 10) : 0; ?>
+  <? if (_edAp) { ?>
+  <!-- QA 21/08/2026 — arrivo dal "Continua a leggere" della newsletter -->
+  <script>window._edApriBoot = true; window._edSegnoDa = parseInt('<?= _edSeg ?>', 10) || 0;</script>
+  <? } ?>
 
   <!-- ===== Design System Editoriale Museale v4.12 ===== -->
   <?!= include('Styles'); ?>
@@ -4519,6 +4525,12 @@
           }
           // Salva testo completo per overlay
           window._approfondimentoData = { titolo: ed.titolo, testo: testoFull };
+          // QA 21/08/2026 — arrivo dalla newsletter: apri subito l'approfondimento
+          // con il segno al punto in cui la mail si e' interrotta.
+          if (window._edApriBoot) {
+            window._edApriBoot = false;
+            setTimeout(function(){ try { OC._apriApprofondimento(); } catch(_eAb) {} }, 350);
+          }
           box.hidden = false;
         }).withFailureHandler(function(e){console.warn('GAS call failed:',e)}).getEditorialeCorrente();
       }
@@ -14582,7 +14594,23 @@
       var txt = document.getElementById('approfTesto');
       if (tit) tit.textContent = data.titolo || '';
       if (txt) {
-        var testoHtml = esc(data.testo).replace(/\n/g, '<br>');
+        // QA 21/08/2026 — se si arriva dal "Continua a leggere" della newsletter,
+        // un segno indica il punto esatto in cui la mail si e' interrotta e la
+        // pagina scorre fin li'. _edSegnoDa e' l'offset in caratteri del taglio.
+        var _segno = (typeof window._edSegnoDa === 'number' && window._edSegnoDa > 0
+                      && window._edSegnoDa < String(data.testo).length) ? window._edSegnoDa : 0;
+        var testoHtml;
+        if (_segno) {
+          testoHtml = esc(data.testo.substring(0, _segno)).replace(/\n/g, '<br>') +
+            '<span id="edSegnoContinua" style="display:block;margin:14px 0;padding:6px 12px;' +
+            'border-left:3px solid var(--accent,#B8351A);background:rgba(184,53,26,.06);' +
+            'font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent,#B8351A)">' +
+            '&#9656; continui a leggere da qui</span>' +
+            esc(data.testo.substring(_segno)).replace(/\n/g, '<br>');
+          window._edSegnoDa = 0;   // solo alla prima apertura
+        } else {
+          testoHtml = esc(data.testo).replace(/\n/g, '<br>');
+        }
         if (testoHtml.length > 1) {
           var prima = testoHtml.charAt(0);
           var resto = testoHtml.substring(1);
@@ -14591,6 +14619,8 @@
         txt.innerHTML = testoHtml;
       }
       if (ov) { ov.hidden = false; ov.style.display = 'block'; window.scrollTo(0,0); }
+      var _sg = document.getElementById('edSegnoContinua');
+      if (_sg) setTimeout(function(){ try { _sg.scrollIntoView({ behavior:'smooth', block:'center' }); } catch(_eSc) {} }, 250);
     },
     _chiudiApprofondimento: function() {
       var ov = document.getElementById('oc-approfondimento-overlay');
