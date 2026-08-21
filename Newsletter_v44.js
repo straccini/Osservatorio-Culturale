@@ -246,7 +246,8 @@ function buildNewsletterHtml_(draft) {
  * Invia l'HTML a tutti gli iscritti Attivo=true nella sheet MailingList.
  * Ritorna { count, errors:[...] }
  */
-function sendNewsletterEmail_(subject, html) {
+function sendNewsletterEmail_(subject, html, opts) {
+  opts = opts || {};
   // Sprint 1.4 (2026-05-01): legge da Utenti (OptInDigest=true && Stato=attivo) via Auth.gs.
   // Fallback su vecchia MailingList se Utenti vuoto.
   var sender   = _safeEmail_() || 'sinopiaconsulting@gmail.com';
@@ -284,23 +285,34 @@ function sendNewsletterEmail_(subject, html) {
 
   destinatari = Array.from(new Set(destinatari.map(function(e){ return String(e).toLowerCase().trim(); })));
 
-  // QA 20/08/2026 — CONTROLLO QUOTA PRIMA DI PARTIRE.
-  // MailApp ha un tetto giornaliero (100 per un account Gmail normale). Prima si
-  // partiva comunque: superata la soglia gli invii fallivano uno a uno, gli errori
-  // venivano raccolti e ignorati, e la bozza risultava "inviato" con meta' lista
-  // servita. Meglio non partire affatto: la bozza resta approvabile e si riprova
-  // domani, invece di spezzare la lista in due senza accorgersene.
+  // QA 20/08/2026 — INVIO A TRONCONI.
+  // MailApp ha un tetto giornaliero (100 per un account Gmail normale) e la lista
+  // cresce di circa 4 iscritti a settimana. Invece di partire e fallire a meta',
+  // si manda quanto la quota consente e si restituisce l'elenco dei rimanenti: il
+  // chiamante li salva nella bozza e il giro riprende il giorno dopo, da solo
+  // (newsletterRiprendiInvii, registrata nel CronDispatcher).
+  var giaInviati = {};
+  (opts.giaInviati || []).forEach(function(e){ giaInviati[String(e).toLowerCase().trim()] = true; });
+  var daServire = destinatari.filter(function(e){ return !giaInviati[e]; });
+
+  var MARGINE_QUOTA = 5;   // riserva per le email di servizio (autorizzazioni, avvisi)
   var quota = -1;
   try { quota = MailApp.getRemainingDailyQuota(); } catch(eq) {}
-  if (quota >= 0 && quota < destinatari.length) {
-    var msgQ = 'quota insufficiente: ' + destinatari.length + ' destinatari, ' +
-               quota + ' invii disponibili oggi';
-    Logger.log('[newsletter] INVIO ANNULLATO — ' + msgQ);
-    try { if (typeof sendTelegram === 'function') sendTelegram('⛔ Newsletter NON inviata — ' + msgQ); } catch(_t) {}
-    return { count: 0, errors: errors.concat([{ source:'quota', err: msgQ }]),
-             totale_destinatari: destinatari.length, quotaResidua: quota };
+  var capienza = (quota < 0) ? daServire.length : Math.max(0, quota - MARGINE_QUOTA);
+
+  var lotto    = daServire.slice(0, capienza);
+  var restanti = daServire.slice(capienza);
+
+  if (!lotto.length) {
+    var msgQ = daServire.length + ' destinatari in attesa, ' + quota + ' invii disponibili oggi';
+    Logger.log('[newsletter] nessun invio possibile — ' + msgQ);
+    try { if (typeof sendTelegram === 'function') sendTelegram('⏸ Newsletter in pausa: ' + msgQ + '. Riprende domani da sola.'); } catch(_t) {}
+    return { count: 0, errors: errors, totale_destinatari: destinatari.length,
+             restanti: restanti, inviatiOra: [], completato: false, quotaResidua: quota };
   }
-  destinatari.forEach(function(email) {
+
+  var inviatiOra = [];
+  lotto.forEach(function(email) {
     try {
       // v4.23 GDPR — link di disiscrizione firmato per-destinatario (come i digest)
       var htmlDest = html;
@@ -313,6 +325,7 @@ function sendNewsletterEmail_(subject, html) {
         replyTo: sender
       });
       sent++;
+      inviatiOra.push(email);
     } catch(e) {
       errors.push({ email:email, err:e.message });
     }
@@ -320,8 +333,9 @@ function sendNewsletterEmail_(subject, html) {
   // QA 20/08/2026 — l'esito non resta piu' muto: finisce nel log e, se qualcosa non
   // e' partito, arriva anche su Telegram. Prima gli errori per destinatario venivano
   // raccolti qui e non li guardava nessuno.
-  Logger.log('[newsletter] inviate ' + sent + '/' + destinatari.length +
-             ' — errori: ' + errors.length + ' — quota residua: ' +
+  Logger.log('[newsletter] inviate ' + sent + '/' + lotto.length + ' di questo lotto · rimanenti ' + restanti.length + ' su ' + destinatari.length + ' totali' +
+             ' —' +
+             ' errori: ' + errors.length + ' — quota residua: ' +
              (function(){ try { return MailApp.getRemainingDailyQuota(); } catch(e){ return '?'; } })());
   if (errors.length) {
     var dettaglio = errors.slice(0, 5).map(function(x){ return (x.email || x.source || '?') + ': ' + x.err; }).join(' · ');
@@ -333,7 +347,13 @@ function sendNewsletterEmail_(subject, html) {
       }
     } catch(_t2) {}
   }
-  return { count: sent, errors: errors, totale_destinatari: destinatari.length };
+  if (restanti.length) {
+    Logger.log('[newsletter] quota esaurita: ' + restanti.length + ' destinatari restano per il prossimo giro.');
+    try { if (typeof sendTelegram === 'function') sendTelegram('📤 Newsletter: inviate ' + sent + ', ne restano ' + restanti.length + '. Riprende domani da sola.'); } catch(_t3) {}
+  }
+  return { count: sent, errors: errors, totale_destinatari: destinatari.length,
+           restanti: restanti, inviatiOra: inviatiOra, completato: (restanti.length === 0),
+           quotaResidua: quota };
 }
 
 // ================== SECTION & CARD BUILDERS ==================

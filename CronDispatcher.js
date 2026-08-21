@@ -73,6 +73,10 @@ var OC_CRON_EXTRA = [
   { fn: 'scSettimanale',         tipo: 'weekly', giorno: ScriptApp.WeekDay.SUNDAY, ora: 17, desc: 'Scout: riepilogo settimanale candidate da confermare/scartare' },
   // Flusso redazionale (Redazionale_v1.js, spec 2026-07-10): creazione ven 18 →
   // revisione admin → richiesta invio a superadmin lun 10 (o conferma anticipata)
+  // QA 20/08/2026 — completa gli invii rimasti a meta' per esaurimento quota
+  // giornaliera. Non inizia nulla di nuovo: prosegue solo cio' che e' gia' stato
+  // autorizzato, saltando chi ha gia' ricevuto la newsletter.
+  { fn: 'newsletterRiprendiInvii', tipo: 'daily', ora: 7, desc: 'Newsletter: riprende gli invii a tronconi rimasti in sospeso' },
   { fn: 'redazionaleVenerdi',    tipo: 'weekly', giorno: ScriptApp.WeekDay.FRIDAY, ora: 18, desc: 'Redazionale: crea editoriale+bozza digest e avvisa gli admin' },
   { fn: 'redazionaleLunedi',     tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 10, desc: 'Redazionale: scadenza termine → email autorizzazione al superadmin' },
   // v4.27 — Arricchimento bandi: Claude Haiku aggiunge descrizione e tipo appalto

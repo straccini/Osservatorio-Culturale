@@ -417,13 +417,15 @@ function adminConfirmSendWithToken(draftId, authToken) {
   if (draft.stato === 'invio_in_corso') {
     return { ok:false, error:'invio_in_corso' };
   }
+  // QA 20/08/2026 — 'invio_parziale' non e' un errore: e' un giro rimasto a meta'
+  // per esaurimento quota. Si prosegue da dove si era arrivati.
   draft.stato = 'invio_in_corso';
   try { PropertiesService.getScriptProperties().setProperty(OC_DRAFT_PROP_PFX_ + draftId, JSON.stringify(draft)); } catch(_){}
 
   var html, res;
   try {
     html = buildNewsletterHtml_(draft);
-    res  = sendNewsletterEmail_(draft.soggetto, html);
+    res  = sendNewsletterEmail_(draft.soggetto, html, { giaInviati: draft.inviatiA || [] });
   } catch(eS) {
     // Invio fallito: sblocca e riporta in attesa (il link resta riutilizzabile)
     draft.stato = 'in_attesa_approvazione';
@@ -442,6 +444,24 @@ function adminConfirmSendWithToken(draftId, authToken) {
              dettagli: (res && res.errors) || [],
              destinatari: (res && res.totale_destinatari) || 0 };
   }
+  // QA 20/08/2026 — INVIO A TRONCONI: se la quota giornaliera non e' bastata per
+  // tutti, la bozza NON si chiude. Si memorizza chi e' gia' stato servito e lo
+  // stato resta 'invio_parziale': newsletterRiprendiInvii() riprende domani dal
+  // punto esatto, senza mandare doppioni a chi l'ha gia' ricevuta.
+  if (res && res.completato === false) {
+    draft.inviatiA = (draft.inviatiA || []).concat(res.inviatiOra || []);
+    draft.stato    = 'invio_parziale';
+    draft.sentTo   = draft.inviatiA.length;
+    draft.parzialeAggiornatoAl = new Date().toISOString();
+    try { PropertiesService.getScriptProperties().setProperty(OC_DRAFT_PROP_PFX_ + draftId, JSON.stringify(draft)); } catch(_){}
+    try { _updateLogRow_(draftId, { Stato:'invio_parziale', Destinatari: draft.inviatiA.length }); } catch(_){}
+    return { ok: true, parziale: true,
+             sent: res.count || 0,
+             inviatiFinora: draft.inviatiA.length,
+             restanti: (res.restanti || []).length,
+             errors: res.errors || [] };
+  }
+
   var warn = [];
   draft.stato  = 'inviato';
   draft.sentAt = new Date().toISOString();
@@ -490,6 +510,55 @@ function adminConfirmSendWithToken(draftId, authToken) {
   } catch(eR) { warn.push('Storico non aggiornato: ' + eR.message); }
 
   return { ok:true, sent: res.count || 0, errors: res.errors || [], warn: warn };
+}
+
+/**
+ * QA 20/08/2026 — riprende gli invii rimasti a meta' per esaurimento quota.
+ *
+ * Registrata nel CronDispatcher (ogni giorno alle 7). Cerca le bozze in stato
+ * 'invio_parziale' e le fa proseguire da dove erano arrivate: chi ha gia'
+ * ricevuto la newsletter e' elencato in draft.inviatiA e viene saltato, quindi
+ * nessuno riceve doppioni.
+ *
+ * Una bozza per volta: se la quota si esaurisce di nuovo lo stato resta
+ * parziale e domani si riprende ancora. Nessun invio parte senza che
+ * l'autorizzazione sia gia' stata data — qui si completa un invio approvato,
+ * non se ne inizia uno nuovo.
+ */
+function newsletterRiprendiInvii() {
+  var P = PropertiesService.getScriptProperties();
+  var tutte = P.getProperties();
+  var pendenti = [];
+
+  Object.keys(tutte).forEach(function(k) {
+    if (k.indexOf(OC_DRAFT_PROP_PFX_) !== 0) return;
+    var d; try { d = JSON.parse(tutte[k]); } catch(e) { return; }
+    if (d && d.stato === 'invio_parziale' && d.authToken) pendenti.push(d);
+  });
+
+  if (!pendenti.length) {
+    Logger.log('[newsletter] nessun invio da riprendere.');
+    return { ok: true, pendenti: 0 };
+  }
+
+  // la piu' vecchia per prima: chi aspetta da piu' tempo viene servito prima
+  pendenti.sort(function(a, b) { return String(a.createdAt || '').localeCompare(String(b.createdAt || '')); });
+  var d = pendenti[0];
+
+  Logger.log('[newsletter] riprendo ' + d.id + ' — gia' + "'" + ' serviti ' +
+             ((d.inviatiA || []).length) + ', in coda ' + (pendenti.length - 1) + ' altre bozze');
+
+  var res = adminConfirmSendWithToken(d.id, d.authToken);
+  Logger.log('[newsletter] esito ripresa: ' + JSON.stringify(res));
+
+  if (res && res.ok && !res.parziale) {
+    try {
+      if (typeof sendTelegram === 'function') {
+        sendTelegram('✅ Newsletter "' + (d.soggetto || d.id) + '" completata: tutti i destinatari serviti.');
+      }
+    } catch(_t) {}
+  }
+  return { ok: true, pendenti: pendenti.length, ripresa: d.id, esito: res };
 }
 
 // ============================================================================

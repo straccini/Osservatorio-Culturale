@@ -2285,22 +2285,6 @@
           <div style="margin-bottom:14px;padding:10px 14px;background:rgba(16,145,109,.08);border-left:3px solid var(--amb-2,#10916D);border-radius:6px">
             <p style="font-size:12px;color:var(--ink-2);margin:0;line-height:1.6">L&rsquo;<b>invio reale</b> a tutti i profilati avviene con il digest settimanale (coorte C), dal pulsante <b>&ldquo;Invia digest settimanale&rdquo;</b> in cima a questa sezione. Qui sotto puoi fare una <b>prova</b>.</p>
           </div>
-          <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <button class="btn btn-secondary" onclick="OC.verificaProfilati()" style="font-size:12px;padding:6px 12px" title="Conta i profili nel foglio ProfiliPro e quanti sono idonei al digest">&#128269; Verifica rilevamento profilati</button>
-            <span id="profilatiDiag" style="font-size:12px;color:var(--ink-3)">premi per contare i profilati nel foglio</span>
-          </div>
-          <div>
-            <div style="display:flex;align-items:center;margin-bottom:6px">
-              <span style="background:var(--amb-2,#10916D);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">&#10003;</span>
-              <span style="font-size:14px;font-weight:700;color:var(--ink)">Prova di invio <span style="font-size:11px;font-weight:600;color:var(--amb-2,#10916D)">&#9679; invia un'email reale</span></span>
-            </div>
-            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px"><span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; Invio reale:</span> indica un indirizzo (usa la <b>tua</b> email) e premi <b>Invia prova profilato</b>. Usa gli interessi del profilo dell&rsquo;indirizzo; se non ne ha, usa D7/D8/D10 come campione. <i>Per la sola <b>anteprima</b> senza invio, usa &laquo;Anteprima per destinatario&raquo; in fondo alla pagina.</i></p>
-            <div style="margin-left:32px;display:flex;gap:8px;align-items:center">
-              <input type="email" id="profilatoTestEmail" placeholder="La tua email di prova..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
-              <button class="btn btn-secondary" onclick="OC.testDigestProfilatoInvio()" style="padding:8px 16px;font-size:13px;border-color:var(--amb-2,#10916D);color:var(--amb-2,#10916D);white-space:nowrap" title="Invia subito un digest profilato (ProfiloPro) REALE all'indirizzo indicato">Invia prova profilato</button>
-            </div>
-            <div id="profilatoTestResult" style="margin-left:32px;margin-top:8px;font-size:12px;color:var(--ink-3);min-height:16px"></div>
-          </div>
         </div>
       </div>
 
@@ -2345,8 +2329,7 @@
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
             <h3 style="margin:0;font-size:15px">Salute fonti &mdash; cruscotto monitoraggio</h3>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <span id="bonificaResult" style="font-size:12px"></span>
-              <button class="btn btn-secondary" onclick="OC.bonificaFonti()" style="font-size:12px;padding:6px 12px" title="Archivia i bandi BDNCP non-cultura (reversibile)">Bonifica</button>
+            <!-- QA 20/08/2026 — rimossi 3 comandi che chiamavano funzioni backend inesistenti (bonificaFontiNonCultura, getDiagnosiCoorti, testDigestProfilatoUI): non facevano nulla. Vedi docs/PULSANTI-RIMOSSI.md -->
               <button class="btn btn-secondary" onclick="OC.loadStatoFonti()" style="font-size:12px;padding:6px 12px">&#8635; Aggiorna</button>
             </div>
           </div>
