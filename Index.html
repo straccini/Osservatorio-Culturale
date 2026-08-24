@@ -5333,18 +5333,56 @@
     // geometrie con calibrazioni diverse (Italia 760x900): il viewBox arriva
     // dalla geometria stessa, cosi' rigenerare la mappa non richiede di toccare qui.
     svg.setAttribute('viewBox', GEO.viewBox || '0 0 480 400');
-    var perNazione = {}, ueIntera = 0, tot = 0;
+    // QA 24/08/2026 — ATTRIBUZIONE NAZIONE. Prima quasi tutto finiva in "UE
+    // intera": i bandi TED nascevano con regione vuota (ora il parser salva il
+    // paese) e l'euristica conosceva solo i nomi italiani. Tre livelli:
+    // 1. campo regione (record nuovi), 2. nome nazione in piu' lingue dentro
+    // ente/titolo (record vecchi), 3. altrimenti conteggio UE intera.
+    var NAZIONI_RE = [
+      ['Francia', /\bfrancia|france|français/i], ['Germania', /\bgermania|germany|deutschland/i],
+      ['Spagna', /\bspagna|spain|españa|espana/i], ['Portogallo', /\bportogallo|portugal/i],
+      ['Belgio', /\bbelgio|belgium|belgique|belgië/i], ['Paesi Bassi', /paesi bassi|netherlands|nederland/i],
+      ['Austria', /\baustria|österreich|oesterreich/i], ['Polonia', /\bpolonia|poland|polska/i],
+      ['Rep. Ceca', /rep\.? ceca|cechia|czech|česk/i], ['Slovacchia', /slovacchia|slovakia|slovensk/i],
+      ['Ungheria', /ungheria|hungary|magyar/i], ['Slovenia', /slovenia|sloveni/i],
+      ['Croazia', /croazia|croatia|hrvatsk/i], ['Romania', /\bromania|român/i],
+      ['Bulgaria', /bulgaria|българия/i], ['Grecia', /\bgrecia|greece|ελλ/i],
+      ['Svezia', /\bsvezia|sweden|sverige/i], ['Finlandia', /finlandia|finland|suomi/i],
+      ['Danimarca', /danimarca|denmark|danmark/i], ['Irlanda', /\birlanda|ireland|éire/i],
+      ['Lituania', /lituania|lithuania|lietuv/i], ['Lettonia', /lettonia|latvia|latvij/i],
+      ['Estonia', /\bestonia|eesti/i], ['Lussemburgo', /lussemburgo|luxembourg/i],
+      ['Malta', /\bmalta\b/i], ['Cipro', /\bcipro|cyprus|κύπρος/i], ['Italia', /\bitalia\b|\bitaly\b/i]
+    ];
+    var perNazione = {}, ueIntera = { n:0, urg:0 }, tot = 0;
+    function _nazStat_(naz) {
+      if (!perNazione[naz]) perNazione[naz] = { n:0, urg:0, minGiorni:null, minScad:'' };
+      return perNazione[naz];
+    }
     (_cacheBandi || []).forEach(function(b){
       if (!_bandoPassaFiltriMappa_(b)) return;
       if (!_bandoEU_(b)) return;
       tot++;
-      var ente = String(b.ente||'').toLowerCase();
-      if (/commissione europea|european commission|eu funding|horizon|creative europe/i.test(ente)) { ueIntera++; return; }
-      var m = String(b.regione||b.ente||'').match(/\b(Francia|Germania|Spagna|Belgio|Paesi Bassi|Austria|Portogallo|Grecia|Polonia|Romania|Bulgaria|Ungheria|Croazia|Slovenia|Slovacchia|Svezia|Finlandia|Danimarca|Irlanda|Lituania|Lettonia|Estonia|Lussemburgo|Malta|Cipro|Rep\.? Ceca|Cechia)\b/i);
-      if (m) {
-        var naz = m[1].replace(/^Cechia$/i, 'Rep. Ceca');
-        perNazione[naz] = (perNazione[naz]||0) + 1;
-      } else { ueIntera++; }
+      var giorni = (b.giorni != null && !isNaN(parseInt(b.giorni,10))) ? parseInt(b.giorni,10) : null;
+      var naz = '';
+      var reg = String(b.regione||'').trim();
+      if (reg) { for (var i0=0;i0<NAZIONI_RE.length;i0++) if (NAZIONI_RE[i0][1].test(reg)) { naz = NAZIONI_RE[i0][0]; break; } }
+      if (!naz) {
+        var blob = String(b.ente||'') + ' ' + String(b.titolo||'');
+        if (!/commissione europea|european commission|eu funding|horizon|creative europe/i.test(blob)) {
+          for (var i1=0;i1<NAZIONI_RE.length;i1++) if (NAZIONI_RE[i1][1].test(blob)) { naz = NAZIONI_RE[i1][0]; break; }
+        }
+      }
+      if (naz) {
+        var st = _nazStat_(naz);
+        st.n++;
+        if (giorni !== null && giorni >= 0 && giorni <= 15) st.urg++;
+        if (giorni !== null && giorni >= 0 && (st.minGiorni === null || giorni < st.minGiorni)) {
+          st.minGiorni = giorni; st.minScad = String(b.scadenza||'');
+        }
+      } else {
+        ueIntera.n++;
+        if (giorni !== null && giorni >= 0 && giorni <= 15) ueIntera.urg++;
+      }
     });
     // continente: prima gli stati non-UE di sfondo (grigio, non cliccabili)...
     var sh = '';
@@ -5362,7 +5400,7 @@
           + 'style="cursor:pointer" opacity="0.92"><title>' + esc(p) + '</title></path>';
     }
     for (var p2 in GEO.paths) {
-      var n = perNazione[p2] || 0;
+      var n = perNazione[p2] ? perNazione[p2].n : 0;
       if (!n || !GEO.centroidi || !GEO.centroidi[p2]) continue;
       var c = GEO.centroidi[p2], rad = 8 + Math.min(n, 9) * 1.4;
       sh += '<circle cx="' + c[0] + '" cy="' + c[1] + '" r="' + rad + '" data-reg="' + esc(p2) + '" '
@@ -5375,17 +5413,26 @@
     var lista = $('bandiRegioniLista');
     if (lista) {
       var eh = '';
-      if (ueIntera > 0) {
-        eh += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1.5px solid var(--cobalt,#1E3A8A);cursor:pointer" '
+      var _rSum_ = function(st) {
+        var out = st.n + (st.n === 1 ? ' bando' : ' bandi');
+        if (st.urg) out += ' \u00b7 ' + st.urg + ' in scadenza \u226415gg';
+        if (st.minScad) out += ' \u00b7 prossima: ' + esc(st.minScad);
+        return out;
+      };
+      if (ueIntera.n > 0) {
+        eh += '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1.5px solid var(--cobalt,#1E3A8A);cursor:pointer" '
             + 'onclick="var s=$(\'bandiRegione\');if(s)s.value=\'_europa\';OC.setBandiRegione(\'_europa\')">'
             + '<span style="font-weight:700;color:var(--cobalt,#1E3A8A)">&#127466;&#127482; Validi per l\'intera UE</span>'
-            + '<span style="background:var(--cobalt,#1E3A8A);color:#fff;border-radius:99px;padding:3px 12px;font-size:13px;font-weight:700">' + ueIntera + '</span></div>';
+            + '<span style="font-size:12px;color:var(--ink-3)">' + (ueIntera.urg ? ueIntera.urg + ' in scadenza \u226415gg' : '') + '</span>'
+            + '<span style="background:var(--cobalt,#1E3A8A);color:#fff;border-radius:99px;padding:3px 12px;font-size:13px;font-weight:700">' + ueIntera.n + '</span></div>';
       }
-      Object.keys(perNazione).sort(function(a,b){ return perNazione[b]-perNazione[a]; }).forEach(function(naz){
-        eh += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--rule-2,#E5E5EA);cursor:pointer" '
+      Object.keys(perNazione).sort(function(a,b){ return perNazione[b].n - perNazione[a].n; }).forEach(function(naz){
+        var st = perNazione[naz];
+        eh += '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--rule-2,#E5E5EA);cursor:pointer" '
             + 'onclick="var si=$(\'bandiSearch\');if(si)si.value=\'' + esc(naz) + '\';OC.searchBandi(\'' + esc(naz) + '\')">'
-            + '<span style="font-weight:500;color:var(--ink)">' + esc(naz) + '</span>'
-            + '<span style="background:var(--cobalt,#1E3A8A);color:#fff;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:700">' + perNazione[naz] + '</span></div>';
+            + '<span style="font-weight:600;color:var(--ink);min-width:110px">' + esc(naz) + '</span>'
+            + '<span style="font-size:12px;color:var(--ink-3);flex:1;text-align:right">' + _rSum_(st) + '</span>'
+            + '<span style="background:var(--cobalt,#1E3A8A);color:#fff;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:700">' + st.n + '</span></div>';
       });
       if (!eh) eh = '<div style="padding:12px 0;color:var(--ink-3);text-align:center;font-size:12px">Nessun bando europeo al momento.</div>';
       lista.innerHTML = eh;

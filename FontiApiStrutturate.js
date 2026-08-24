@@ -384,6 +384,24 @@ function _tedCpvDescrizione_(cpvArr) {
   return '';
 }
 
+// QA 24/08/2026 — codici paese TED (ISO alpha-2/alpha-3) → nome italiano,
+// lo stesso usato dalla mappa Europa (OC_GEO_EUROPA) e dai filtri.
+var FAS_PAESI_UE = {
+  IT:'Italia', ITA:'Italia', FR:'Francia', FRA:'Francia', DE:'Germania', DEU:'Germania',
+  ES:'Spagna', ESP:'Spagna', PT:'Portogallo', PRT:'Portogallo', BE:'Belgio', BEL:'Belgio',
+  NL:'Paesi Bassi', NLD:'Paesi Bassi', LU:'Lussemburgo', LUX:'Lussemburgo',
+  AT:'Austria', AUT:'Austria', PL:'Polonia', POL:'Polonia', CZ:'Rep. Ceca', CZE:'Rep. Ceca',
+  SK:'Slovacchia', SVK:'Slovacchia', HU:'Ungheria', HUN:'Ungheria', SI:'Slovenia', SVN:'Slovenia',
+  HR:'Croazia', HRV:'Croazia', RO:'Romania', ROU:'Romania', BG:'Bulgaria', BGR:'Bulgaria',
+  GR:'Grecia', EL:'Grecia', GRC:'Grecia', SE:'Svezia', SWE:'Svezia', FI:'Finlandia', FIN:'Finlandia',
+  DK:'Danimarca', DNK:'Danimarca', IE:'Irlanda', IRL:'Irlanda', LT:'Lituania', LTU:'Lituania',
+  LV:'Lettonia', LVA:'Lettonia', EE:'Estonia', EST:'Estonia', CY:'Cipro', CYP:'Cipro', MT:'Malta', MLT:'Malta'
+};
+function _fasPaeseNome_(code) {
+  var c = String(code || '').trim().toUpperCase();
+  return FAS_PAESI_UE[c] || '';
+}
+
 function fasParserTedApiPost(opts) {
   opts = opts || {};
   var dryRun = !!opts.dryRun;
@@ -442,7 +460,7 @@ function fasParserTedApiPost(opts) {
         // 'deadline-receipt-request' è popolato al 100%. È il motivo per cui
         // TUTTI i bandi TED arrivavano senza scadenza e quindi non venivano
         // mai esposti (la regola richiede scadenza certa).
-        fields: ['publication-number', 'notice-title', 'buyer-name', 'notice-type', 'classification-cpv', 'deadline-receipt-request']
+        fields: ['publication-number', 'notice-title', 'buyer-name', 'buyer-country', 'notice-type', 'classification-cpv', 'deadline-receipt-request']
       };
 
       var resp = UrlFetchApp.fetch('https://api.ted.europa.eu/v3/notices/search', {
@@ -485,6 +503,11 @@ function fasParserTedApiPost(opts) {
         // finiva "[object Object]"). _tedText_ estrae IT→EN→prima lingua.
         var oggetto = _tedText_(n['notice-title']);
         var buyer = _tedText_(n['buyer-name']);
+        // QA 24/08/2026 — il paese del committente finiva perso e ogni bando
+        // TED risultava genericamente "UE": mappa e sintesi per nazione vuote.
+        var _bcRaw = n['buyer-country'];
+        if (Object.prototype.toString.call(_bcRaw) === '[object Array]') _bcRaw = _bcRaw[0];
+        var paese = _fasPaeseNome_(typeof _bcRaw === 'object' && _bcRaw ? (_bcRaw.value || _bcRaw.code || '') : _bcRaw);
         var cpvArr = n['classification-cpv'] || [];
         var tipologia = _tedTipologia_(n['notice-type']);
         var cpvDesc = _tedCpvDescrizione_(cpvArr);
@@ -520,7 +543,7 @@ function fasParserTedApiPost(opts) {
             titolo: titolo.substring(0, 300),
             ente: buyer || 'Committente UE (TED)',
             livello: 'EU',
-            regione: '',
+            regione: paese,   // QA 24/08 — nome italiano della nazione, per mappa e sintesi
             settore: 'Appalti pubblici cultura — TED',
             tipoBando: 'servizio_fornitura',
             urlBando: link,
