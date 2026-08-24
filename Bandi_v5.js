@@ -143,9 +143,18 @@ function _classificaTipoBando_(bando) {
   // "avviso pubblico di selezione") e la pagina Lavoro, che filtra
   // tipoBando==='lavoro', non lo mostrava mai. Va PRIMA di finanziamento.
   // Esclusi i concorsi che non sono reclutamento (idee, fotografia, arte, design).
-  var _concorsoNonLavoro = /concors[oi]\s+(di\s+)?(idee|progettazion|fotograf|artistic|letterari|poesia|design|videomaking|cortometragg)/i.test(testo);
+  var _concorsoNonLavoro = /concors[oi]\s+(di\s+)?(idee|progettazion|fotograf|artistic|letterari|poesia|design|videomaking|cortometragg)/i.test(testo)
+    || /direttore\s+dei\s+lavori|direzione\s+(dei\s+)?lavori/i.test(testo);   // ruolo tecnico di cantiere, non reclutamento
   if (!_concorsoNonLavoro && (
-      /concors[oi]\s+pubblic|selezione\s+pubblica|procedura\s+selettiva|avviso\s+di\s+selezione|graduatori[ae]|assunzion|reclutament|profil[oi]\s+professional|posti?\s+di\s+(lavoro|funzionario|istruttore|assistente|operatore|dirigente)|tempo\s+(in)?determinato|mobilit\u00e0\s+(esterna|volontaria)/i.test(testo)
+      /concors[oi]\s+pubblic|procedura\s+selettiva|graduatori[ae]|assunzion|reclutament|profil[oi]\s+professional|tempo\s+(in)?determinato|mobilit\u00e0\s+(esterna|volontaria)/i.test(testo)
+      // QA 21/08/2026 bis — "selezione" in tutte le forme reali: "selezione pubblica",
+      // "avviso di selezione", "avviso pubblico per la selezione di/del", "selezione per".
+      // Il caso concreto sfuggito: "Avviso pubblico per la selezione del direttore della
+      // Fondazione Marche Cultura" cadeva in finanziamento per "avviso pubblico".
+      || /selezione\s+(pubblica|per|di|del|della|dei)/i.test(testo)
+      || /avviso\s+(pubblico\s+)?(per\s+la\s+|di\s+)?selezion/i.test(testo)
+      || /(nomina|selezione|incarico)\s+.{0,25}(direttore|direttric|dirigente)/i.test(testo)
+      || /posti?\s+di\s+(lavoro|funzionario|istruttore|assistente|operatore|dirigente|direttore)/i.test(testo)
   )) {
     return 'lavoro';
   }

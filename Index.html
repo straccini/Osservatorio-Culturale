@@ -5313,12 +5313,26 @@
   }
   function _regNorm_(s) { return String(s||'').toLowerCase().replace(/[^a-z]/g, ''); }
 
+  // QA 21/08/2026 — numero di bandi sui pulsanti Italia/Europa, sempre aggiornato
+  // dai re-render della mappa (i conteggi rispettano i filtri attivi tranne il
+  // toggle geografico stesso, altrimenti il pulsante non attivo mostrerebbe 0).
+  function _bandiAggiornaContatoriGeo_() {
+    var nIta = 0, nEu = 0;
+    (_cacheBandi || []).forEach(function(b){
+      if (!_bandoPassaFiltriMappa_(b)) return;
+      if (_bandoEU_(b)) nEu++; else nIta++;
+    });
+    var bi = $('bandiLivBtnIta'), be = $('bandiLivBtnEu');
+    if (bi) bi.innerHTML = 'Italia <span style="opacity:.75;font-weight:600">(' + nIta + ')</span>';
+    if (be) be.innerHTML = 'Europa <span style="opacity:.75;font-weight:600">(' + nEu + ')</span>';
+  }
+
   // QA 21/08/2026 — vista Europa della mappa bandi (vedi nota in renderBandiMappa).
   function _renderBandiMappaEuropa_(svg) {
     var GEO = OC_GEO_EUROPA;
-    // geometrie con calibrazioni diverse: Italia 760x900, Europa 500x500.
-    // Senza questo cambio il continente comparirebbe schiacciato in un angolo.
-    svg.setAttribute('viewBox', '0 0 480 400');
+    // geometrie con calibrazioni diverse (Italia 760x900): il viewBox arriva
+    // dalla geometria stessa, cosi' rigenerare la mappa non richiede di toccare qui.
+    svg.setAttribute('viewBox', GEO.viewBox || '0 0 480 400');
     var perNazione = {}, ueIntera = 0, tot = 0;
     (_cacheBandi || []).forEach(function(b){
       if (!_bandoPassaFiltriMappa_(b)) return;
@@ -5332,8 +5346,14 @@
         perNazione[naz] = (perNazione[naz]||0) + 1;
       } else { ueIntera++; }
     });
-    // continente
+    // continente: prima gli stati non-UE di sfondo (grigio, non cliccabili)...
     var sh = '';
+    if (GEO.contorno) {
+      for (var pc in GEO.contorno) {
+        sh += '<path d="' + GEO.contorno[pc] + '" fill="var(--rule-2,#D8DBE0)" stroke="var(--paper,#fff)" stroke-width="0.7" pointer-events="none"><title>' + esc(pc) + '</title></path>';
+      }
+    }
+    // ...poi i 27 stati UE, cliccabili
     for (var p in GEO.paths) {
       sh += '<path class="bm-reg" d="' + GEO.paths[p] + '" data-reg="' + esc(p) + '"><title>' + esc(p) + '</title></path>';
     }
@@ -5367,6 +5387,7 @@
     }
     var cEl = $('bandiMappaCnt');
     if (cEl) cEl.textContent = tot + (tot === 1 ? ' bando' : ' bandi') + ' \u00b7 Unione Europea';
+    _bandiAggiornaContatoriGeo_();
     var regEl = $('bandiMappaReg'); if (regEl) regEl.textContent = 'Bandi europei';
   }
 
@@ -5503,6 +5524,7 @@
                : (selReg || 'tutta Italia + Europa');
       cEl.textContent = tot + (tot === 1 ? ' bando' : ' bandi') + ' · ' + dove;
     }
+    _bandiAggiornaContatoriGeo_();
   }
   function _bandiMappaClick_(e) {
     var t = e.target.getAttribute('data-reg');
@@ -5545,6 +5567,9 @@
     _bandiVistaInitDone = true;
     OC.bandiQuick('tutti');   // v4.27.68 — apre con "Tutti i bandi" (richiesta 30/07)
     OC.bandiVista('mappa');
+    // QA 21/08/2026 (richiesta Silvano) — all'apertura Italia e' gia' selezionata:
+    // mappa accesa E lista dei bandi italiani subito visibile, senza click.
+    OC.bandiGeoToggle('italia');
   }
   // Refresh mappa a ogni re-render della lista (i setter filtri chiamano renderBandiList)
   var _renderBandiListCore_ = renderBandiList;
