@@ -624,10 +624,16 @@ function fasRunFase1() {
   if (report.totaleNuovi > 0) {
     try {
       if (typeof _tgSend_ === 'function') {
-        _tgSend_('📡 *Fonti Strutturate*\n\n' +
-          (report.ted ? 'TED EU: ' + report.ted.nuovi + ' nuovi\n' : '') +
-          (report.pnrr ? 'PNRR/MiC: ' + report.pnrr.nuovi + ' nuovi\n' : '') +
-          (report.retry ? 'Fonti riattivate: ' + report.retry.riattivate + '/' + report.retry.testate : ''));
+        // QA 24/08/2026 — righe SOLO se portano un numero: le voci a zero sono
+        // rumore, e "riattivate 0/8" ripetuto ogni giorno insegna a ignorare il
+        // canale. Le fonti silenti restano nel report settimanale, il posto
+        // giusto per i trend.
+        var _righeFas = [];
+        if (report.ted && report.ted.nuovi > 0)   _righeFas.push('TED EU: ' + report.ted.nuovi + ' nuovi');
+        if (report.pnrr && report.pnrr.nuovi > 0) _righeFas.push('PNRR/MiC: ' + report.pnrr.nuovi + ' nuovi');
+        if (report.retry && report.retry.riattivate > 0)
+          _righeFas.push('✅ Fonti riattivate: ' + report.retry.riattivate + '/' + report.retry.testate);
+        if (_righeFas.length) _tgSend_('📡 *Fonti Strutturate*\n' + _righeFas.join('\n'));
       }
     } catch(_){}
   }

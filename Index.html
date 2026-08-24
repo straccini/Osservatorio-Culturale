@@ -5353,16 +5353,22 @@
         sh += '<path d="' + GEO.contorno[pc] + '" fill="var(--rule-2,#D8DBE0)" stroke="var(--paper,#fff)" stroke-width="0.7" pointer-events="none"><title>' + esc(pc) + '</title></path>';
       }
     }
-    // ...poi i 27 stati UE, cliccabili
+    // ...poi i 27 stati UE, cliccabili. Riempimenti INLINE e non via classe
+    // bm-reg: quella e' calibrata sulla mappa Italia (bianco su fondo rosato)
+    // e qui produceva sagome vuote. Stile modello UE: stati blu, bolle chiare.
     for (var p in GEO.paths) {
-      sh += '<path class="bm-reg" d="' + GEO.paths[p] + '" data-reg="' + esc(p) + '"><title>' + esc(p) + '</title></path>';
+      sh += '<path d="' + GEO.paths[p] + '" data-reg="' + esc(p) + '" '
+          + 'fill="var(--cobalt,#1E3A8A)" stroke="#fff" stroke-width="0.8" '
+          + 'style="cursor:pointer" opacity="0.92"><title>' + esc(p) + '</title></path>';
     }
     for (var p2 in GEO.paths) {
       var n = perNazione[p2] || 0;
       if (!n || !GEO.centroidi || !GEO.centroidi[p2]) continue;
-      var c = GEO.centroidi[p2], rad = 10 + Math.min(n, 9) * 1.6;
-      sh += '<circle class="bm-bub" cx="' + c[0] + '" cy="' + c[1] + '" r="' + rad + '" data-reg="' + esc(p2) + '"/>'
-          + '<text class="bm-bubt" x="' + c[0] + '" y="' + (c[1]+4.5) + '">' + n + '</text>';
+      var c = GEO.centroidi[p2], rad = 8 + Math.min(n, 9) * 1.4;
+      sh += '<circle cx="' + c[0] + '" cy="' + c[1] + '" r="' + rad + '" data-reg="' + esc(p2) + '" '
+          + 'fill="#fff" stroke="var(--cobalt,#1E3A8A)" stroke-width="1.2" style="cursor:pointer"/>'
+          + '<text x="' + c[0] + '" y="' + (c[1]+3.5) + '" text-anchor="middle" '
+          + 'style="font-size:10px;font-weight:700;fill:var(--cobalt,#1E3A8A);pointer-events:none">' + n + '</text>';
     }
     svg.innerHTML = sh;
     // sintesi sotto la mappa: prima riga UE intera, poi gli stati per conteggio
@@ -12810,7 +12816,10 @@
       // La colonnina Europa laterale si nasconde quando l'Europa diventa la mappa
       // principale: la sua sintesi si sposta sotto la mappa grande.
       if (regLista) regLista.hidden = !(itaOn || euOn);
-      if (boxEu) boxEu.style.display = euOn ? 'none' : '';
+      // QA 24/08/2026 (screen Silvano) — con Italia selezionata (default) la
+      // colonnina Europa sparisce: solo mappa Italia. Resta visibile nel solo
+      // stato neutro (nessun toggle attivo), dove fa da richiamo alla vista EU.
+      if (boxEu) boxEu.style.display = (euOn || itaOn) ? 'none' : '';
       if (_cacheBandi) renderBandiList(_cacheBandi);
     },
     // v4.28.59 — bandi senza scadenza ma pertinenti e freschi
