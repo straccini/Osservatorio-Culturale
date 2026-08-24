@@ -682,6 +682,11 @@ function _sasCalcolaHealthScore_(mon) {
   else if (mon.bandiNuovi7gg + mon.newsNuove7gg < SAS_SOGLIE.CONTENUTI_SETTIMANA_MIN) score -= 10;
   // Bonus agenti attivi
   if (mon.agentiAttivi >= 5) score = Math.min(100, score + 5);
+  // QA 24/08/2026 — un sistema agenti completamente FERMO prima costava solo
+  // il bonus mancato: il report diceva 95/100 con 0/5 attivi da settimane, e
+  // nessuno se n'e' accorto. Un sottosistema spento e' un guasto, non un
+  // dettaglio: -10.
+  if (mon.agentiAttivi === 0) score -= 10;
   return Math.max(0, Math.min(100, score));
 }
 
@@ -814,11 +819,19 @@ function _sasElaboraStrategia_(kpi, trend) {
   }
 
   // Agenti
-  if (kpi.agentiAttivi < 5) {
+  if (kpi.agentiAttivi === 0) {
+    // QA 24/08/2026 — 0/5 non e' "solo": e' il sistema fermo. Con priorita'
+    // bassa (pallino verde) questo stato e' passato inosservato per settimane.
     strategia.push({
       area: 'agenti',
-      priorita: 'bassa',
-      raccomandazione: 'Solo ' + kpi.agentiAttivi + '/5 agenti attivi. Verificare fonti mancanti per agenti inattivi.'
+      priorita: 'alta',
+      raccomandazione: 'Sistema agenti FERMO (0/5): nessuna fonte assegnata in FontiAgenti o trigger scanAgente assenti dal CronDispatcher. Decidere se reinnestarlo o dismetterlo.'
+    });
+  } else if (kpi.agentiAttivi < 5) {
+    strategia.push({
+      area: 'agenti',
+      priorita: 'media',
+      raccomandazione: kpi.agentiAttivi + '/5 agenti attivi. Verificare fonti mancanti per gli agenti inattivi.'
     });
   }
 
