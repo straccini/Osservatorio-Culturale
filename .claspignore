@@ -1,0 +1,9 @@
+# QA 24/08/2026 — cosa NON deve mai finire nel progetto Apps Script.
+# Nato da un incidente reale: clasp push ha caricato docs/genmappa-europa.js
+# (script Node con require) e GAS, eseguendolo al caricamento, ha buttato giu'
+# l'intera app con "ReferenceError: require is not defined".
+# NB: qui si elencano solo le ESCLUSIONI; tutto il resto viene pushato.
+.git/**
+docs/**
+**/*.md
+**/*.txt
