@@ -76,6 +76,11 @@ var OC_CRON_EXTRA = [
   // QA 20/08/2026 — completa gli invii rimasti a meta' per esaurimento quota
   // giornaliera. Non inizia nulla di nuovo: prosegue solo cio' che e' gia' stato
   // autorizzato, saltando chi ha gia' ricevuto la newsletter.
+  // QA 25/08/2026 — le decisioni di Silvano sul foglio FontiCandidate
+  // (Stato=approvata/scartata) si applicano da sole ogni mattina: lui edita il
+  // foglio e basta, niente piu' esecuzioni manuali dall'editor. Idempotente:
+  // la funzione salta le righe gia' processate (DataDecisione valorizzata).
+  { fn: 'scApplicaDecisioni', tipo: 'daily', ora: 6, desc: 'Scout: applica le decisioni approvata/scartata dal foglio FontiCandidate' },
   { fn: 'newsletterRiprendiInvii', tipo: 'daily', ora: 7, desc: 'Newsletter: riprende gli invii a tronconi rimasti in sospeso' },
   { fn: 'redazionaleVenerdi',    tipo: 'weekly', giorno: ScriptApp.WeekDay.FRIDAY, ora: 18, desc: 'Redazionale: crea editoriale+bozza digest e avvisa gli admin' },
   { fn: 'redazionaleLunedi',     tipo: 'weekly', giorno: ScriptApp.WeekDay.MONDAY, ora: 10, desc: 'Redazionale: scadenza termine → email autorizzazione al superadmin' },
