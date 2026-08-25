@@ -555,6 +555,47 @@ function scRiparaAnci() {
 // Self-test (offline)
 // ---------------------------------------------------------------------------
 
+/**
+ * QA 24/08/2026 — Export compatto per la skill settimanale scout-fonti.
+ * Stampa nel log un JSON con: candidate in valutazione, registro fonti con
+ * stato e resa, contatori silenti/ritirate. Si esegue dall'editor e si
+ * incolla il log nella sessione Claude che gira la skill: e' il ponte dati
+ * tra i fogli (che la sessione non puo' leggere) e gli agenti di analisi.
+ */
+function scDumpPerSkill() {
+  var out = { generato: new Date().toISOString(), candidate: [], registro: [], contatori: null };
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var shC = ss.getSheetByName(SC_SHEET);
+    if (shC && shC.getLastRow() > 1) {
+      var v = shC.getDataRange().getValues(), h = v[0];
+      for (var r = 1; r < v.length; r++) {
+        var o = {}; h.forEach(function(c, i2){ o[c] = v[r][i2]; });
+        if (String(o.Stato || '') === 'in_valutazione') {
+          out.candidate.push({ nome: o.Nome, dominio: o.Dominio, url: o.URLPagina,
+            feed: o.FeedRilevato, metodo: o.Metodo, categoria: o.CategoriaProposta,
+            trovataDa: o.TrovataDa, occorrenze: o.Occorrenze });
+        }
+      }
+    }
+    var shR = ss.getSheetByName(typeof RF_SHEET !== 'undefined' ? RF_SHEET : 'RegistroFonti');
+    if (shR && shR.getLastRow() > 1) {
+      var v2 = shR.getDataRange().getValues(), h2 = v2[0];
+      for (var r2 = 1; r2 < v2.length; r2++) {
+        var o2 = {}; h2.forEach(function(c, i3){ o2[c] = v2[r2][i3]; });
+        out.registro.push(o2);
+      }
+    }
+    if (typeof getFontiCounters === 'function') { try { out.contatori = getFontiCounters().counters || null; } catch(_){} }
+  } catch(e) { out.errore = e.message; }
+  var json = JSON.stringify(out);
+  // il log tronca le righe lunghe: spezzo a blocchi da 4000
+  Logger.log('=== SCOUT DUMP INIZIO (' + json.length + ' char) ===');
+  for (var p = 0; p < json.length; p += 4000) Logger.log(json.substring(p, p + 4000));
+  Logger.log('=== SCOUT DUMP FINE ===');
+  return { ok: true, chars: json.length, candidate: out.candidate.length, registro: out.registro.length };
+}
+
 function scSelfTest() {
   var pass = 0, fail = 0, falliti = [];
   function eq(nome, atteso, ottenuto) {
