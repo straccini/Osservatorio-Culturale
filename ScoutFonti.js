@@ -39,9 +39,9 @@ var SC_BLACKLIST_RE = /(facebook\.|youtube\.|youtu\.be|twitter\.|x\.com|instagra
 // tutta roba citata in OGNI pagina web (font, CDN, analytics, consent,
 // shortener, social) che il miner contava come "candidata". Rumore che ruba
 // slot di valutazione a fonti vere e allena Silvano a ignorare i riepiloghi.
-var SC_BLACKLIST_INFRA_RE = /(googleapis\.|googletagmanager\.|gstatic\.|cloudflare\.|cloudfront\.|akamai|fastly\.|jsdelivr\.|unpkg\.|cdn\.|cdnjs|mailchimp\.|list-manage\.|sendinblue|brevo\.|iubenda\.|cookiedatabase\.|cookielaw|onetrust|gmpg\.org|sanity\.io|goo\.gl|t\.me\b|bsky\.app|shorturl|tinyurl|feedburner\.|disqus\.|gravatar\.|wp\.com|wordpress\.org|schema\.org|fonts\.)/i;
+var SC_BLACKLIST_INFRA_RE = /(googleapis\.|googletagmanager\.|gstatic\.|cloudflare\.|cloudfront\.|akamai|fastly\.|jsdelivr\.|unpkg\.|cdn\.|cdnjs|mailchimp\.|list-manage\.|sendinblue|brevo\.|iubenda\.|cookiedatabase\.|cookielaw|onetrust|gmpg\.org|sanity\.io|goo\.gl|t\.me\b|bsky\.app|shorturl|tinyurl|feedburner\.|disqus\.|gravatar\.|wp\.com|wordpress\.org|schema\.org|fonts\.|doubleclick|adnxs\.|advertis|hs-analytics|hsadspixel|analytics\.|pixel\.|typekit|typotheque|bootstrapcdn|blazemedia|ezsubscription|pinterest\.)/i;
 // sottodomini di servizio di fonti gia' note (shop., docs., cdn., reader., static.)
-var SC_SOTTODOM_SERVIZIO_RE = /^(shop|docs|cdn|static|assets|img|images|media|reader|api|mail|newsletter|tracking|link|click|status)\./i;
+var SC_SOTTODOM_SERVIZIO_RE = /^(shop|docs|cdn|static|assets|img|imgcdn|images|media|reader|api|mail|newsletter|tracking|link|click|status|ads?|adv|devads|service|tvtest|boutique|soutenir|rendering-manager|securepubads|webfonts|use|js|i[0-9]|ar|mercati\w*)\./i;
 
 // Atenei italiani con facoltà/dipartimenti cultura, beni culturali, turismo.
 // Sono SEED del canale università: passano comunque dalla coda di approvazione.
