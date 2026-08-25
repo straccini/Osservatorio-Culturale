@@ -33,6 +33,15 @@ var SC_HEADERS = [
 
 // Domini che non saranno MAI proposti come fonte (piattaforme generaliste)
 var SC_BLACKLIST_RE = /(facebook\.|youtube\.|youtu\.be|twitter\.|x\.com|instagram\.|linkedin\.|google\.|wikipedia\.|amazon\.|apple\.|spotify\.|whatsapp\.|telegram\.|tiktok\.|doi\.org|bit\.ly|t\.co\b|mailchi\.mp|substack\.com\/?$|gov\.uk|w3\.org|creativecommons\.)/i;
+// QA 24/08/2026 — SECONDA CINTA: infrastruttura web, non fonti. L'elenco
+// candidate del 24/08 conteneva fonts.googleapis, cdnjs, googletagmanager,
+// mailchimp, iubenda, cookiedatabase, gmpg, cdn.sanity, goo.gl, t.me, bsky:
+// tutta roba citata in OGNI pagina web (font, CDN, analytics, consent,
+// shortener, social) che il miner contava come "candidata". Rumore che ruba
+// slot di valutazione a fonti vere e allena Silvano a ignorare i riepiloghi.
+var SC_BLACKLIST_INFRA_RE = /(googleapis\.|googletagmanager\.|gstatic\.|cloudflare\.|cloudfront\.|akamai|fastly\.|jsdelivr\.|unpkg\.|cdn\.|cdnjs|mailchimp\.|list-manage\.|sendinblue|brevo\.|iubenda\.|cookiedatabase\.|cookielaw|onetrust|gmpg\.org|sanity\.io|goo\.gl|t\.me\b|bsky\.app|shorturl|tinyurl|feedburner\.|disqus\.|gravatar\.|wp\.com|wordpress\.org|schema\.org|fonts\.)/i;
+// sottodomini di servizio di fonti gia' note (shop., docs., cdn., reader., static.)
+var SC_SOTTODOM_SERVIZIO_RE = /^(shop|docs|cdn|static|assets|img|images|media|reader|api|mail|newsletter|tracking|link|click|status)\./i;
 
 // Atenei italiani con facoltà/dipartimenti cultura, beni culturali, turismo.
 // Sono SEED del canale università: passano comunque dalla coda di approvazione.
@@ -194,7 +203,7 @@ function _scSafe_(v) {
 /** Scrive una candidata (per nome colonna). Ritorna false se dominio già deciso. */
 function _scProponi_(cand, decisi) {
   var dom = cand.dominio || _scDominio_(cand.urlPagina);
-  if (!dom || decisi[dom] || SC_BLACKLIST_RE.test(dom)) return false;
+  if (!dom || decisi[dom] || SC_BLACKLIST_RE.test(dom) || SC_BLACKLIST_INFRA_RE.test(dom) || SC_SOTTODOM_SERVIZIO_RE.test(dom)) return false;
   // v4.28.6 SICUREZZA: solo http(s). Le URL arrivano da HTML esterno e da
   // metadati Crossref e finiscono in UrlFetchApp: uno schema diverso
   // (javascript:, data:, file:) non deve mai entrare nel registro.
@@ -257,7 +266,7 @@ function scMinerNews(opts) {
         var mm, reA = /href=["'](https?:\/\/[^"']+)["']/gi;
         while ((mm = reA.exec(html)) !== null) {
           var d = _scDominio_(mm[1]);
-          if (!d || d === artDom || decisi[d] || SC_BLACKLIST_RE.test(d)) continue;
+          if (!d || d === artDom || decisi[d] || SC_BLACKLIST_RE.test(d) || SC_BLACKLIST_INFRA_RE.test(d) || SC_SOTTODOM_SERVIZIO_RE.test(d)) continue;
           if (!contati[d]) contati[d] = { n: 0, esempio: mm[1], articolo: String(v[rr][iTit] || '').substring(0, 70) };
           contati[d].n++;
         }
@@ -328,7 +337,7 @@ function scMinerBiblio(opts) {
           if (proposte >= 3) return;
           var u = ref.URL || '';
           var d = _scDominio_(u);
-          if (!d || decisi[d] || SC_BLACKLIST_RE.test(d)) return;
+          if (!d || decisi[d] || SC_BLACKLIST_RE.test(d) || SC_BLACKLIST_INFRA_RE.test(d) || SC_SOTTODOM_SERVIZIO_RE.test(d)) return;
           var disc = _scFeedDiscovery_('https://' + d);
           if (_scProponi_({
             dominio: d, nome: (ref['container-title'] || ref.unstructured || d).toString().substring(0, 60),
