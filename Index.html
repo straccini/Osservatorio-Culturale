@@ -2939,7 +2939,7 @@
              lo governa dall'app: admin e redattori nominati in OC_EDITOR_EMAILS. -->
         <div class="admin-card" style="margin-bottom:14px">
           <h3>Notizia in evidenza &middot; trend</h3>
-          <p class="hint">Ogni due giorni il sistema propone una notizia per la home. La proposta resta qui e su Telegram: <strong>compare in home solo dopo l&rsquo;approvazione</strong> di un admin o di un redattore abilitato.</p>
+          <p class="hint">Ogni due giorni il sistema propone una notizia per la home. La proposta resta qui e su Telegram: <strong>compare in home solo dopo l&rsquo;approvazione</strong> di un admin o di un redattore abilitato. Uno scarto lascia in home la notizia gi&agrave; in evidenza. Con l&rsquo;<strong>autopilota</strong> attivo, se nessuno risponde entro marted&igrave; la proposta viene pubblicata automaticamente.</p>
 
           <div id="trendEvidenzaBox" style="margin:12px 0"></div>
 
@@ -4626,13 +4626,29 @@
       var slot = $('homeTrendSlot');
       if (!slot) return;
       if (!ev || !ev.titolo) { slot.hidden = true; slot.innerHTML = ''; return; }
-      var link = ev.url ? ' onclick="OC.openUrl(\'' + esc(ev.url) + '\')" style="cursor:pointer"' : '';
+      // v4.32 — BOX SPECIALE in prima riga: trattamento visivo distinto dalle
+      // card normali (doppio bordo accent, fascia eyebrow, titolo serif grande).
+      var link = ev.url ? ' onclick="OC.openUrl(\'' + esc(ev.url) + '\')"' : '';
+      var dataPub = '';
+      try {
+        if (ev.dataPubblicazione) {
+          var _dEv = new Date(ev.dataPubblicazione);
+          if (!isNaN(_dEv.getTime())) dataPub = _dEv.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
+        }
+      } catch(_){}
       slot.innerHTML =
-        '<div class="home-list-row"' + link + ' style="border:1px solid var(--rule);border-left:3px solid var(--accent,#935851);border-radius:12px;padding:16px 20px;background:var(--paper,#fff)">'
-        + '<div class="hlr-left">'
-        + '<div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent,#935851);font-weight:700;margin-bottom:6px">In evidenza &middot; Trend</div>'
-        + '<p class="hlr-title" style="font-size:16px">' + esc(ev.titolo) + '</p>'
-        + (ev.fonte ? '<div class="hlr-meta"><span>' + esc(ev.fonte) + '</span></div>' : '')
+        '<div role="link" tabindex="0"' + link + ' style="cursor:' + (ev.url ? 'pointer' : 'default') + ';border:2px solid var(--accent,#935851);border-radius:14px;overflow:hidden;background:var(--paper,#fff);box-shadow:0 2px 10px rgba(0,0,0,.06)">'
+        + '<div style="display:flex;align-items:center;gap:10px;background:var(--accent,#935851);color:#fff;padding:7px 20px">'
+        +   '<span style="font-size:14px" aria-hidden="true">📈</span>'
+        +   '<span style="font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:700">In evidenza &middot; La notizia di tendenza</span>'
+        +   (dataPub ? '<span style="margin-left:auto;font-size:11px;opacity:.85">' + esc(dataPub) + '</span>' : '')
+        + '</div>'
+        + '<div style="padding:18px 22px">'
+        +   '<p style="font-family:var(--font-serif,Georgia);font-size:clamp(17px,2.6vw,21px);font-weight:600;line-height:1.32;color:var(--ink,#101010);margin:0">' + esc(ev.titolo) + '</p>'
+        +   '<div style="display:flex;align-items:center;gap:12px;margin-top:8px;font-size:12.5px;color:var(--ink-3,#6E6A62)">'
+        +     (ev.fonte ? '<span>' + esc(ev.fonte) + '</span>' : '')
+        +     (ev.url ? '<span style="margin-left:auto;color:var(--accent,#935851);font-weight:600">Leggi &rarr;</span>' : '')
+        +   '</div>'
         + '</div></div>';
       slot.hidden = false;
     }).withFailureHandler(function(e){console.warn('GAS call failed:',e)}).getTrendInEvidenza();
@@ -12964,9 +12980,16 @@
                 + '</div>'
               : '<div style="font-size:12.5px;color:var(--ink-3,#6E6A62);border-top:1px solid var(--rule,#E8E4DC);padding-top:10px">Nessuna notizia in evidenza in questo momento.</div>';
           }
+          // v4.32 — stato autopilota del martedì (silenzio-assenso)
+          var ap = !!r.autopilota;
+          var apHtml = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px dashed var(--rule,#D5D0C4);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:12.5px;color:var(--ink-2)">'
+            + '<span>🤖 Autopilota del marted&igrave;: <strong style="color:' + (ap ? 'var(--amb-2,#3F7A5E)' : 'var(--ink-3,#6E6A62)') + '">' + (ap ? 'ATTIVO' : 'spento') + '</strong> &mdash; '
+            + (ap ? 'se nessuno risponde entro marted&igrave;, la proposta si pubblica da sola.' : 'le proposte senza risposta restano in attesa.') + '</span>'
+            + '<button class="btn btn-secondary" style="font-size:11px;padding:5px 12px;margin-left:auto" onclick="OC.trendAutopilota(' + (ap ? 'false' : 'true') + ',this)">' + (ap ? 'Disattiva' : 'Attiva') + '</button>'
+            + '</div>';
           var ps = r.proposte || [];
-          if (!ps.length) { box.innerHTML = '<div style="color:var(--ink-3,#6E6A62)">Nessuna proposta in elenco. Usa <em>Proponi adesso</em> per valutare le candidate.</div>'; return; }
-          var html = '';
+          if (!ps.length) { box.innerHTML = apHtml + '<div style="color:var(--ink-3,#6E6A62)">Nessuna proposta in elenco. Usa <em>Proponi adesso</em> per valutare le candidate.</div>'; return; }
+          var html = apHtml;
           ps.forEach(function(p){
             var attesa = (p.stato === 'proposta' || !p.stato);
             html += '<div style="border-bottom:1px solid var(--rule,#E8E4DC);padding:12px 0">'
@@ -12987,6 +13010,19 @@
         })
         .withFailureHandler(function(e){ if (btn) btn.disabled=false; box.textContent = 'Errore: ' + (e && e.message || e); })
         .trProposteRedazione(tk);
+    },
+    // v4.32 — Autopilota del martedì: on/off (admin o redattori abilitati)
+    trendAutopilota: function(on, btn){
+      if (btn) btn.disabled = true;
+      var tk = (window.OC_SESSION && OC_SESSION.token) || '';
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (btn) btn.disabled = false;
+          if (typeof showToast==='function') showToast(r && r.ok ? ('Autopilota ' + (r.autopilota ? 'attivato' : 'spento')) : ((r&&r.error)||'errore'), r && r.ok ? 'ok' : 'err');
+          OC.trendRedLoad(null);
+        })
+        .withFailureHandler(function(e){ if (btn) btn.disabled=false; if (typeof showToast==='function') showToast('Autopilota: ' + (e && e.message || e), 'err'); })
+        .trAutopilotaImposta(!!on, tk);
     },
     trendRedAzione: function(id, azione, btn){
       if (azione === 'elimina' && !confirm('Eliminare definitivamente questa proposta?')) return;
