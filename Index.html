@@ -165,6 +165,12 @@
   <? if (sc) { ?>
   <script>window._sondaggioAutoOpen = '<?= sc ?>';</script>
   <? } ?>
+  <?var _edAp = (typeof apriEditoriale !== 'undefined' && apriEditoriale) ? 1 : 0; ?>
+  <?var _edSeg = (typeof editorialeSegno !== 'undefined' && editorialeSegno) ? parseInt(editorialeSegno, 10) : 0; ?>
+  <? if (_edAp) { ?>
+  <!-- QA 21/08/2026 — arrivo dal "Continua a leggere" della newsletter -->
+  <script>window._edApriBoot = true; window._edSegnoDa = parseInt('<?= _edSeg ?>', 10) || 0;</script>
+  <? } ?>
 
   <!-- ===== Design System Editoriale Museale v4.12 ===== -->
   <?!= include('Styles'); ?>
@@ -745,6 +751,24 @@
         <span class="empty-hint">Le fonti vengono scansionate ogni 6 ore. Nuovi articoli arriveranno presto.</span>
       </div>
     </section>
+
+    <!-- ===== SEGNALAZIONI DELLA COMMUNITY (QA 21/08/2026) =====
+         Pagina dedicata: le stesse segnalazioni pubblicate del carosello home,
+         consultabili tutte. Solo stato 'published'; l'email dell'autore non
+         viene mai esposta (la toglie gia' il backend). -->
+    <section class="page" id="page-segnalazioni">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Segnalazioni</h1>
+          <p class="page-sub">Contenuti segnalati dalla community dell&rsquo;Osservatorio &mdash; verificati e pubblicati dalla redazione</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-secondary" onclick="OC.apriFormSegnalazione && OC.apriFormSegnalazione()" style="font-size:13px" title="Segnala un contenuto alla redazione">&#10133; Segnala un contenuto</button>
+        </div>
+      </div>
+      <div id="segnalazioniPageList"><div class="empty-state">Caricamento segnalazioni&hellip;</div></div>
+    </section>
+
 
     <!-- ===== PAGE PODCAST ===== -->
     <section class="page" id="page-podcast">
@@ -2285,22 +2309,6 @@
           <div style="margin-bottom:14px;padding:10px 14px;background:rgba(16,145,109,.08);border-left:3px solid var(--amb-2,#10916D);border-radius:6px">
             <p style="font-size:12px;color:var(--ink-2);margin:0;line-height:1.6">L&rsquo;<b>invio reale</b> a tutti i profilati avviene con il digest settimanale (coorte C), dal pulsante <b>&ldquo;Invia digest settimanale&rdquo;</b> in cima a questa sezione. Qui sotto puoi fare una <b>prova</b>.</p>
           </div>
-          <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <button class="btn btn-secondary" onclick="OC.verificaProfilati()" style="font-size:12px;padding:6px 12px" title="Conta i profili nel foglio ProfiliPro e quanti sono idonei al digest">&#128269; Verifica rilevamento profilati</button>
-            <span id="profilatiDiag" style="font-size:12px;color:var(--ink-3)">premi per contare i profilati nel foglio</span>
-          </div>
-          <div>
-            <div style="display:flex;align-items:center;margin-bottom:6px">
-              <span style="background:var(--amb-2,#10916D);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">&#10003;</span>
-              <span style="font-size:14px;font-weight:700;color:var(--ink)">Prova di invio <span style="font-size:11px;font-weight:600;color:var(--amb-2,#10916D)">&#9679; invia un'email reale</span></span>
-            </div>
-            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px"><span style="color:var(--amb-2,#10916D);font-weight:700">&#9679; Invio reale:</span> indica un indirizzo (usa la <b>tua</b> email) e premi <b>Invia prova profilato</b>. Usa gli interessi del profilo dell&rsquo;indirizzo; se non ne ha, usa D7/D8/D10 come campione. <i>Per la sola <b>anteprima</b> senza invio, usa &laquo;Anteprima per destinatario&raquo; in fondo alla pagina.</i></p>
-            <div style="margin-left:32px;display:flex;gap:8px;align-items:center">
-              <input type="email" id="profilatoTestEmail" placeholder="La tua email di prova..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
-              <button class="btn btn-secondary" onclick="OC.testDigestProfilatoInvio()" style="padding:8px 16px;font-size:13px;border-color:var(--amb-2,#10916D);color:var(--amb-2,#10916D);white-space:nowrap" title="Invia subito un digest profilato (ProfiloPro) REALE all'indirizzo indicato">Invia prova profilato</button>
-            </div>
-            <div id="profilatoTestResult" style="margin-left:32px;margin-top:8px;font-size:12px;color:var(--ink-3);min-height:16px"></div>
-          </div>
         </div>
       </div>
 
@@ -2345,8 +2353,7 @@
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
             <h3 style="margin:0;font-size:15px">Salute fonti &mdash; cruscotto monitoraggio</h3>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <span id="bonificaResult" style="font-size:12px"></span>
-              <button class="btn btn-secondary" onclick="OC.bonificaFonti()" style="font-size:12px;padding:6px 12px" title="Archivia i bandi BDNCP non-cultura (reversibile)">Bonifica</button>
+            <!-- QA 20/08/2026 — rimossi 3 comandi che chiamavano funzioni backend inesistenti (bonificaFontiNonCultura, getDiagnosiCoorti, testDigestProfilatoUI): non facevano nulla. Vedi docs/PULSANTI-RIMOSSI.md -->
               <button class="btn btn-secondary" onclick="OC.loadStatoFonti()" style="font-size:12px;padding:6px 12px">&#8635; Aggiorna</button>
             </div>
           </div>
@@ -2932,7 +2939,7 @@
              lo governa dall'app: admin e redattori nominati in OC_EDITOR_EMAILS. -->
         <div class="admin-card" style="margin-bottom:14px">
           <h3>Notizia in evidenza &middot; trend</h3>
-          <p class="hint">Ogni due giorni il sistema propone una notizia per la home. La proposta resta qui e su Telegram: <strong>compare in home solo dopo l&rsquo;approvazione</strong> di un admin o di un redattore abilitato.</p>
+          <p class="hint">Ogni due giorni il sistema propone una notizia per la home. La proposta resta qui e su Telegram: <strong>compare in home solo dopo l&rsquo;approvazione</strong> di un admin o di un redattore abilitato. Uno scarto lascia in home la notizia gi&agrave; in evidenza. Con l&rsquo;<strong>autopilota</strong> attivo, se nessuno risponde entro marted&igrave; la proposta viene pubblicata automaticamente.</p>
 
           <div id="trendEvidenzaBox" style="margin:12px 0"></div>
 
@@ -3203,7 +3210,7 @@
   // A) NAVIGAZIONE SPA
   // ==========================================================
   // Pagine accessibili a ospiti (livello 0) — tutto il resto richiede registrazione
-  var _GUEST_PAGES = { home:1, bandi:1, matrix:1, 'matrix-landing':1, 'sondaggi-catalogo':1, chisiamo:1, 'profilo-pro':1, privacy:1, news:1 };
+  var _GUEST_PAGES = { home:1, bandi:1, matrix:1, 'matrix-landing':1, 'sondaggi-catalogo':1, chisiamo:1, 'profilo-pro':1, privacy:1, news:1, segnalazioni:1 };
 
   function go(page, ambito){
     // Gate ospite: se pagina protetta, mostra card registrazione
@@ -3266,6 +3273,7 @@
     if (page==='lavoro') loadLavoro();  // v4.25.15 — pagina Lavoro cultura
     if (page==='bandi')    { loadBandiList(false); try { _bandiVistaInit_(); } catch(_){} }
     if (page==='news')     loadNewsList(false);
+    if (page==='segnalazioni' && typeof window.loadSegnalazioniPage === 'function') window.loadSegnalazioniPage();
     if (page==='podcast')  loadPodcastList(false);
     if (page==='video')    loadVideoList(false);
     if (page==='libri')    loadLibriList(false);
@@ -4517,6 +4525,12 @@
           }
           // Salva testo completo per overlay
           window._approfondimentoData = { titolo: ed.titolo, testo: testoFull };
+          // QA 21/08/2026 — arrivo dalla newsletter: apri subito l'approfondimento
+          // con il segno al punto in cui la mail si e' interrotta.
+          if (window._edApriBoot) {
+            window._edApriBoot = false;
+            setTimeout(function(){ try { OC._apriApprofondimento(); } catch(_eAb) {} }, 350);
+          }
           box.hidden = false;
         }).withFailureHandler(function(e){console.warn('GAS call failed:',e)}).getEditorialeCorrente();
       }
@@ -4612,13 +4626,29 @@
       var slot = $('homeTrendSlot');
       if (!slot) return;
       if (!ev || !ev.titolo) { slot.hidden = true; slot.innerHTML = ''; return; }
-      var link = ev.url ? ' onclick="OC.openUrl(\'' + esc(ev.url) + '\')" style="cursor:pointer"' : '';
+      // v4.32 — BOX SPECIALE in prima riga: trattamento visivo distinto dalle
+      // card normali (doppio bordo accent, fascia eyebrow, titolo serif grande).
+      var link = ev.url ? ' onclick="OC.openUrl(\'' + esc(ev.url) + '\')"' : '';
+      var dataPub = '';
+      try {
+        if (ev.dataPubblicazione) {
+          var _dEv = new Date(ev.dataPubblicazione);
+          if (!isNaN(_dEv.getTime())) dataPub = _dEv.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
+        }
+      } catch(_){}
       slot.innerHTML =
-        '<div class="home-list-row"' + link + ' style="border:1px solid var(--rule);border-left:3px solid var(--accent,#935851);border-radius:12px;padding:16px 20px;background:var(--paper,#fff)">'
-        + '<div class="hlr-left">'
-        + '<div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent,#935851);font-weight:700;margin-bottom:6px">In evidenza &middot; Trend</div>'
-        + '<p class="hlr-title" style="font-size:16px">' + esc(ev.titolo) + '</p>'
-        + (ev.fonte ? '<div class="hlr-meta"><span>' + esc(ev.fonte) + '</span></div>' : '')
+        '<div role="link" tabindex="0"' + link + ' style="cursor:' + (ev.url ? 'pointer' : 'default') + ';border:2px solid var(--accent,#935851);border-radius:14px;overflow:hidden;background:var(--paper,#fff);box-shadow:0 2px 10px rgba(0,0,0,.06)">'
+        + '<div style="display:flex;align-items:center;gap:10px;background:var(--accent,#935851);color:#fff;padding:7px 20px">'
+        +   '<span style="font-size:14px" aria-hidden="true">📈</span>'
+        +   '<span style="font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:700">In evidenza &middot; La notizia di tendenza</span>'
+        +   (dataPub ? '<span style="margin-left:auto;font-size:11px;opacity:.85">' + esc(dataPub) + '</span>' : '')
+        + '</div>'
+        + '<div style="padding:18px 22px">'
+        +   '<p style="font-family:var(--font-serif,Georgia);font-size:clamp(17px,2.6vw,21px);font-weight:600;line-height:1.32;color:var(--ink,#101010);margin:0">' + esc(ev.titolo) + '</p>'
+        +   '<div style="display:flex;align-items:center;gap:12px;margin-top:8px;font-size:12.5px;color:var(--ink-3,#6E6A62)">'
+        +     (ev.fonte ? '<span>' + esc(ev.fonte) + '</span>' : '')
+        +     (ev.url ? '<span style="margin-left:auto;color:var(--accent,#935851);font-weight:600">Leggi &rarr;</span>' : '')
+        +   '</div>'
         + '</div></div>';
       slot.hidden = false;
     }).withFailureHandler(function(e){console.warn('GAS call failed:',e)}).getTrendInEvidenza();
@@ -5299,10 +5329,151 @@
   }
   function _regNorm_(s) { return String(s||'').toLowerCase().replace(/[^a-z]/g, ''); }
 
+  // QA 21/08/2026 — numero di bandi sui pulsanti Italia/Europa, sempre aggiornato
+  // dai re-render della mappa (i conteggi rispettano i filtri attivi tranne il
+  // toggle geografico stesso, altrimenti il pulsante non attivo mostrerebbe 0).
+  function _bandiAggiornaContatoriGeo_() {
+    var nIta = 0, nEu = 0;
+    (_cacheBandi || []).forEach(function(b){
+      if (!_bandoPassaFiltriMappa_(b)) return;
+      if (_bandoEU_(b)) nEu++; else nIta++;
+    });
+    var bi = $('bandiLivBtnIta'), be = $('bandiLivBtnEu');
+    if (bi) bi.innerHTML = 'Italia <span style="opacity:.75;font-weight:600">(' + nIta + ')</span>';
+    if (be) be.innerHTML = 'Europa <span style="opacity:.75;font-weight:600">(' + nEu + ')</span>';
+  }
+
+  // QA 21/08/2026 — vista Europa della mappa bandi (vedi nota in renderBandiMappa).
+  function _renderBandiMappaEuropa_(svg) {
+    var GEO = OC_GEO_EUROPA;
+    // geometrie con calibrazioni diverse (Italia 760x900): il viewBox arriva
+    // dalla geometria stessa, cosi' rigenerare la mappa non richiede di toccare qui.
+    svg.setAttribute('viewBox', GEO.viewBox || '0 0 480 400');
+    // QA 24/08/2026 — ATTRIBUZIONE NAZIONE. Prima quasi tutto finiva in "UE
+    // intera": i bandi TED nascevano con regione vuota (ora il parser salva il
+    // paese) e l'euristica conosceva solo i nomi italiani. Tre livelli:
+    // 1. campo regione (record nuovi), 2. nome nazione in piu' lingue dentro
+    // ente/titolo (record vecchi), 3. altrimenti conteggio UE intera.
+    var NAZIONI_RE = [
+      ['Francia', /\bfrancia|france|français/i], ['Germania', /\bgermania|germany|deutschland/i],
+      ['Spagna', /\bspagna|spain|españa|espana/i], ['Portogallo', /\bportogallo|portugal/i],
+      ['Belgio', /\bbelgio|belgium|belgique|belgië/i], ['Paesi Bassi', /paesi bassi|netherlands|nederland/i],
+      ['Austria', /\baustria|österreich|oesterreich/i], ['Polonia', /\bpolonia|poland|polska/i],
+      ['Rep. Ceca', /rep\.? ceca|cechia|czech|česk/i], ['Slovacchia', /slovacchia|slovakia|slovensk/i],
+      ['Ungheria', /ungheria|hungary|magyar/i], ['Slovenia', /slovenia|sloveni/i],
+      ['Croazia', /croazia|croatia|hrvatsk/i], ['Romania', /\bromania|român/i],
+      ['Bulgaria', /bulgaria|българия/i], ['Grecia', /\bgrecia|greece|ελλ/i],
+      ['Svezia', /\bsvezia|sweden|sverige/i], ['Finlandia', /finlandia|finland|suomi/i],
+      ['Danimarca', /danimarca|denmark|danmark/i], ['Irlanda', /\birlanda|ireland|éire/i],
+      ['Lituania', /lituania|lithuania|lietuv/i], ['Lettonia', /lettonia|latvia|latvij/i],
+      ['Estonia', /\bestonia|eesti/i], ['Lussemburgo', /lussemburgo|luxembourg/i],
+      ['Malta', /\bmalta\b/i], ['Cipro', /\bcipro|cyprus|κύπρος/i], ['Italia', /\bitalia\b|\bitaly\b/i]
+    ];
+    var perNazione = {}, ueIntera = { n:0, urg:0 }, tot = 0;
+    function _nazStat_(naz) {
+      if (!perNazione[naz]) perNazione[naz] = { n:0, urg:0, minGiorni:null, minScad:'' };
+      return perNazione[naz];
+    }
+    (_cacheBandi || []).forEach(function(b){
+      if (!_bandoPassaFiltriMappa_(b)) return;
+      if (!_bandoEU_(b)) return;
+      tot++;
+      var giorni = (b.giorni != null && !isNaN(parseInt(b.giorni,10))) ? parseInt(b.giorni,10) : null;
+      var naz = '';
+      var reg = String(b.regione||'').trim();
+      if (reg) { for (var i0=0;i0<NAZIONI_RE.length;i0++) if (NAZIONI_RE[i0][1].test(reg)) { naz = NAZIONI_RE[i0][0]; break; } }
+      if (!naz) {
+        var blob = String(b.ente||'') + ' ' + String(b.titolo||'');
+        if (!/commissione europea|european commission|eu funding|horizon|creative europe/i.test(blob)) {
+          for (var i1=0;i1<NAZIONI_RE.length;i1++) if (NAZIONI_RE[i1][1].test(blob)) { naz = NAZIONI_RE[i1][0]; break; }
+        }
+      }
+      if (naz) {
+        var st = _nazStat_(naz);
+        st.n++;
+        if (giorni !== null && giorni >= 0 && giorni <= 15) st.urg++;
+        if (giorni !== null && giorni >= 0 && (st.minGiorni === null || giorni < st.minGiorni)) {
+          st.minGiorni = giorni; st.minScad = String(b.scadenza||'');
+        }
+      } else {
+        ueIntera.n++;
+        if (giorni !== null && giorni >= 0 && giorni <= 15) ueIntera.urg++;
+      }
+    });
+    // continente: prima gli stati non-UE di sfondo (grigio, non cliccabili)...
+    var sh = '';
+    if (GEO.contorno) {
+      for (var pc in GEO.contorno) {
+        sh += '<path d="' + GEO.contorno[pc] + '" fill="var(--rule-2,#D8DBE0)" stroke="var(--paper,#fff)" stroke-width="0.7" pointer-events="none"><title>' + esc(pc) + '</title></path>';
+      }
+    }
+    // ...poi i 27 stati UE, cliccabili. Riempimenti INLINE e non via classe
+    // bm-reg: quella e' calibrata sulla mappa Italia (bianco su fondo rosato)
+    // e qui produceva sagome vuote. Stile modello UE: stati blu, bolle chiare.
+    for (var p in GEO.paths) {
+      sh += '<path d="' + GEO.paths[p] + '" data-reg="' + esc(p) + '" '
+          + 'fill="var(--cobalt,#1E3A8A)" stroke="#fff" stroke-width="0.8" '
+          + 'style="cursor:pointer" opacity="0.92"><title>' + esc(p) + '</title></path>';
+    }
+    for (var p2 in GEO.paths) {
+      var n = perNazione[p2] ? perNazione[p2].n : 0;
+      if (!n || !GEO.centroidi || !GEO.centroidi[p2]) continue;
+      var c = GEO.centroidi[p2], rad = 8 + Math.min(n, 9) * 1.4;
+      sh += '<circle cx="' + c[0] + '" cy="' + c[1] + '" r="' + rad + '" data-reg="' + esc(p2) + '" '
+          + 'fill="#fff" stroke="var(--cobalt,#1E3A8A)" stroke-width="1.2" style="cursor:pointer"/>'
+          + '<text x="' + c[0] + '" y="' + (c[1]+3.5) + '" text-anchor="middle" '
+          + 'style="font-size:10px;font-weight:700;fill:var(--cobalt,#1E3A8A);pointer-events:none">' + n + '</text>';
+    }
+    svg.innerHTML = sh;
+    // sintesi sotto la mappa: prima riga UE intera, poi gli stati per conteggio
+    var lista = $('bandiRegioniLista');
+    if (lista) {
+      var eh = '';
+      var _rSum_ = function(st) {
+        var out = st.n + (st.n === 1 ? ' bando' : ' bandi');
+        if (st.urg) out += ' \u00b7 ' + st.urg + ' in scadenza \u226415gg';
+        if (st.minScad) out += ' \u00b7 prossima: ' + esc(st.minScad);
+        return out;
+      };
+      if (ueIntera.n > 0) {
+        eh += '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1.5px solid var(--cobalt,#1E3A8A);cursor:pointer" '
+            + 'onclick="var s=$(\'bandiRegione\');if(s)s.value=\'_europa\';OC.setBandiRegione(\'_europa\')">'
+            + '<span style="font-weight:700;color:var(--cobalt,#1E3A8A)">&#127466;&#127482; Validi per l\'intera UE</span>'
+            + '<span style="font-size:12px;color:var(--ink-3)">' + (ueIntera.urg ? ueIntera.urg + ' in scadenza \u226415gg' : '') + '</span>'
+            + '<span style="background:var(--cobalt,#1E3A8A);color:#fff;border-radius:99px;padding:3px 12px;font-size:13px;font-weight:700">' + ueIntera.n + '</span></div>';
+      }
+      Object.keys(perNazione).sort(function(a,b){ return perNazione[b].n - perNazione[a].n; }).forEach(function(naz){
+        var st = perNazione[naz];
+        eh += '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--rule-2,#E5E5EA);cursor:pointer" '
+            + 'onclick="var si=$(\'bandiSearch\');if(si)si.value=\'' + esc(naz) + '\';OC.searchBandi(\'' + esc(naz) + '\')">'
+            + '<span style="font-weight:600;color:var(--ink);min-width:110px">' + esc(naz) + '</span>'
+            + '<span style="font-size:12px;color:var(--ink-3);flex:1;text-align:right">' + _rSum_(st) + '</span>'
+            + '<span style="background:var(--cobalt,#1E3A8A);color:#fff;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:700">' + st.n + '</span></div>';
+      });
+      if (!eh) eh = '<div style="padding:12px 0;color:var(--ink-3);text-align:center;font-size:12px">Nessun bando europeo al momento.</div>';
+      lista.innerHTML = eh;
+      lista.hidden = false;
+    }
+    var cEl = $('bandiMappaCnt');
+    if (cEl) cEl.textContent = tot + (tot === 1 ? ' bando' : ' bandi') + ' \u00b7 Unione Europea';
+    _bandiAggiornaContatoriGeo_();
+    var regEl = $('bandiMappaReg'); if (regEl) regEl.textContent = 'Bandi europei';
+  }
+
   function renderBandiMappa() {
     var svg = $('bandiMappaSvg');
     if (!svg || typeof OC_GEO_ITALIA === 'undefined') return;
+    // QA 21/08/2026 — con il toggle Europa attivo la mappa grande diventa il
+    // continente (geometria OC_GEO_EUROPA, gia' inclusa da MappaEuropa.html ma
+    // mai usata per l'SVG principale) e la sintesi sotto elenca gli stati, con
+    // in prima riga i bandi validi per l'intera UE. Ramo separato di proposito:
+    // non tocca il percorso Italia.
+    if (_filterBandiLivello === 'eu' && typeof OC_GEO_EUROPA !== 'undefined') {
+      _renderBandiMappaEuropa_(svg);
+      return;
+    }
     var GEO = OC_GEO_ITALIA;
+    svg.setAttribute('viewBox', '0 0 760 900');   // ripristino dal ramo Europa
     var counts = {}, euCnt = 0, euNazioni = {}, itaNonReg = 0;
     (_cacheBandi || []).forEach(function(b){
       if (!_bandoPassaFiltriMappa_(b)) return;
@@ -5422,10 +5593,18 @@
                : (selReg || 'tutta Italia + Europa');
       cEl.textContent = tot + (tot === 1 ? ' bando' : ' bandi') + ' · ' + dove;
     }
+    _bandiAggiornaContatoriGeo_();
   }
   function _bandiMappaClick_(e) {
     var t = e.target.getAttribute('data-reg');
     if (!t) return;
+    // QA 21/08/2026 — in vista Europa il click su uno stato filtra per nazione
+    // (le nazioni non esistono nel selettore regioni italiano).
+    if (_filterBandiLivello === 'eu') {
+      var si = $('bandiSearch'); if (si) si.value = t;
+      OC.searchBandi(t);
+      return;
+    }
     var sel = $('bandiRegione'), scelta = null, tn = _regNorm_(t);
     if (sel) {
       for (var i = 0; i < sel.options.length; i++) {
@@ -5457,6 +5636,9 @@
     _bandiVistaInitDone = true;
     OC.bandiQuick('tutti');   // v4.27.68 — apre con "Tutti i bandi" (richiesta 30/07)
     OC.bandiVista('mappa');
+    // QA 21/08/2026 (richiesta Silvano) — all'apertura Italia e' gia' selezionata:
+    // mappa accesa E lista dei bandi italiani subito visibile, senza click.
+    OC.bandiGeoToggle('italia');
   }
   // Refresh mappa a ogni re-render della lista (i setter filtri chiamano renderBandiList)
   var _renderBandiListCore_ = renderBandiList;
@@ -6055,6 +6237,12 @@
         var liv = String(b.livello || '').toLowerCase();
         if (_filterBandiLivello === 'eu') {
           if (!_bandoEU_(b)) return;
+        } else if (_filterBandiLivello === 'ita') {
+          // QA 21/08/2026 — toggle "Italia": tutti i bandi italiani, cioe' i non-EU.
+          // Prima il toggle impostava livello='nazionale', ma i bandi hanno livello
+          // 'Vari'/'Regione'/...: la lista si svuotava e sembrava rotta finche' non
+          // si sceglieva una regione o "Tutti".
+          if (_bandoEU_(b)) return;
         } else if (liv.indexOf(_filterBandiLivello) < 0) return;
       }
 
@@ -12674,18 +12862,27 @@
       var btnIta = $('bandiLivBtnIta'), btnEu = $('bandiLivBtnEu');
       var boxIta = $('bandiBoxItalia'), boxEu = $('bandiBoxEuropa');
       var regLista = $('bandiRegioniLista');
-      var isIta = geo === 'italia', wasActive = (isIta ? _filterBandiLivello === 'nazionale' : _filterBandiLivello === 'eu');
+      var isIta = geo === 'italia', wasActive = (isIta ? _filterBandiLivello === 'ita' : _filterBandiLivello === 'eu');
       // deseleziona se già attivo
-      _filterBandiLivello = wasActive ? '' : (isIta ? 'nazionale' : 'eu');
-      var itaOn = _filterBandiLivello === 'nazionale', euOn = _filterBandiLivello === 'eu';
+      // QA 21/08/2026 — 'ita' (tutti i bandi italiani), non 'nazionale' (che
+      // matchava il campo livello e svuotava la lista).
+      _filterBandiLivello = wasActive ? '' : (isIta ? 'ita' : 'eu');
+      var itaOn = _filterBandiLivello === 'ita', euOn = _filterBandiLivello === 'eu';
       // bottoni
       if (btnIta) { btnIta.style.background = itaOn ? 'var(--cobalt,#1E3A8A)' : 'transparent'; btnIta.style.color = itaOn ? '#fff' : 'var(--cobalt,#1E3A8A)'; }
       if (btnEu)  { btnEu.style.background  = euOn  ? 'var(--cobalt,#1E3A8A)' : 'transparent'; btnEu.style.color  = euOn  ? '#fff' : 'var(--cobalt,#1E3A8A)'; }
       // box evidenziazione
       if (boxIta) boxIta.style.background = itaOn ? 'var(--accent-soft,#FFF5F0)' : '';
       if (boxEu)  boxEu.style.background  = euOn  ? 'oklch(0.96 0.025 265)' : '';
-      // lista regioni visibile solo se Italia attivo
-      if (regLista) regLista.hidden = !itaOn;
+      // QA 21/08/2026 — la lista sotto la mappa serve a entrambe le viste:
+      // regioni con Italia attiva, nazioni (con prima riga UE) con Europa attiva.
+      // La colonnina Europa laterale si nasconde quando l'Europa diventa la mappa
+      // principale: la sua sintesi si sposta sotto la mappa grande.
+      if (regLista) regLista.hidden = !(itaOn || euOn);
+      // QA 24/08/2026 (screen Silvano) — con Italia selezionata (default) la
+      // colonnina Europa sparisce: solo mappa Italia. Resta visibile nel solo
+      // stato neutro (nessun toggle attivo), dove fa da richiamo alla vista EU.
+      if (boxEu) boxEu.style.display = (euOn || itaOn) ? 'none' : '';
       if (_cacheBandi) renderBandiList(_cacheBandi);
     },
     // v4.28.59 — bandi senza scadenza ma pertinenti e freschi
@@ -12783,9 +12980,16 @@
                 + '</div>'
               : '<div style="font-size:12.5px;color:var(--ink-3,#6E6A62);border-top:1px solid var(--rule,#E8E4DC);padding-top:10px">Nessuna notizia in evidenza in questo momento.</div>';
           }
+          // v4.32 — stato autopilota del martedì (silenzio-assenso)
+          var ap = !!r.autopilota;
+          var apHtml = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px dashed var(--rule,#D5D0C4);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:12.5px;color:var(--ink-2)">'
+            + '<span>🤖 Autopilota del marted&igrave;: <strong style="color:' + (ap ? 'var(--amb-2,#3F7A5E)' : 'var(--ink-3,#6E6A62)') + '">' + (ap ? 'ATTIVO' : 'spento') + '</strong> &mdash; '
+            + (ap ? 'se nessuno risponde entro marted&igrave;, la proposta si pubblica da sola.' : 'le proposte senza risposta restano in attesa.') + '</span>'
+            + '<button class="btn btn-secondary" style="font-size:11px;padding:5px 12px;margin-left:auto" onclick="OC.trendAutopilota(' + (ap ? 'false' : 'true') + ',this)">' + (ap ? 'Disattiva' : 'Attiva') + '</button>'
+            + '</div>';
           var ps = r.proposte || [];
-          if (!ps.length) { box.innerHTML = '<div style="color:var(--ink-3,#6E6A62)">Nessuna proposta in elenco. Usa <em>Proponi adesso</em> per valutare le candidate.</div>'; return; }
-          var html = '';
+          if (!ps.length) { box.innerHTML = apHtml + '<div style="color:var(--ink-3,#6E6A62)">Nessuna proposta in elenco. Usa <em>Proponi adesso</em> per valutare le candidate.</div>'; return; }
+          var html = apHtml;
           ps.forEach(function(p){
             var attesa = (p.stato === 'proposta' || !p.stato);
             html += '<div style="border-bottom:1px solid var(--rule,#E8E4DC);padding:12px 0">'
@@ -12806,6 +13010,19 @@
         })
         .withFailureHandler(function(e){ if (btn) btn.disabled=false; box.textContent = 'Errore: ' + (e && e.message || e); })
         .trProposteRedazione(tk);
+    },
+    // v4.32 — Autopilota del martedì: on/off (admin o redattori abilitati)
+    trendAutopilota: function(on, btn){
+      if (btn) btn.disabled = true;
+      var tk = (window.OC_SESSION && OC_SESSION.token) || '';
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (btn) btn.disabled = false;
+          if (typeof showToast==='function') showToast(r && r.ok ? ('Autopilota ' + (r.autopilota ? 'attivato' : 'spento')) : ((r&&r.error)||'errore'), r && r.ok ? 'ok' : 'err');
+          OC.trendRedLoad(null);
+        })
+        .withFailureHandler(function(e){ if (btn) btn.disabled=false; if (typeof showToast==='function') showToast('Autopilota: ' + (e && e.message || e), 'err'); })
+        .trAutopilotaImposta(!!on, tk);
     },
     trendRedAzione: function(id, azione, btn){
       if (azione === 'elimina' && !confirm('Eliminare definitivamente questa proposta?')) return;
@@ -14580,7 +14797,23 @@
       var txt = document.getElementById('approfTesto');
       if (tit) tit.textContent = data.titolo || '';
       if (txt) {
-        var testoHtml = esc(data.testo).replace(/\n/g, '<br>');
+        // QA 21/08/2026 — se si arriva dal "Continua a leggere" della newsletter,
+        // un segno indica il punto esatto in cui la mail si e' interrotta e la
+        // pagina scorre fin li'. _edSegnoDa e' l'offset in caratteri del taglio.
+        var _segno = (typeof window._edSegnoDa === 'number' && window._edSegnoDa > 0
+                      && window._edSegnoDa < String(data.testo).length) ? window._edSegnoDa : 0;
+        var testoHtml;
+        if (_segno) {
+          testoHtml = esc(data.testo.substring(0, _segno)).replace(/\n/g, '<br>') +
+            '<span id="edSegnoContinua" style="display:block;margin:14px 0;padding:6px 12px;' +
+            'border-left:3px solid var(--accent,#B8351A);background:rgba(184,53,26,.06);' +
+            'font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent,#B8351A)">' +
+            '&#9656; continui a leggere da qui</span>' +
+            esc(data.testo.substring(_segno)).replace(/\n/g, '<br>');
+          window._edSegnoDa = 0;   // solo alla prima apertura
+        } else {
+          testoHtml = esc(data.testo).replace(/\n/g, '<br>');
+        }
         if (testoHtml.length > 1) {
           var prima = testoHtml.charAt(0);
           var resto = testoHtml.substring(1);
@@ -14589,6 +14822,8 @@
         txt.innerHTML = testoHtml;
       }
       if (ov) { ov.hidden = false; ov.style.display = 'block'; window.scrollTo(0,0); }
+      var _sg = document.getElementById('edSegnoContinua');
+      if (_sg) setTimeout(function(){ try { _sg.scrollIntoView({ behavior:'smooth', block:'center' }); } catch(_eSc) {} }, 250);
     },
     _chiudiApprofondimento: function() {
       var ov = document.getElementById('oc-approfondimento-overlay');
@@ -15149,6 +15384,60 @@
     }).inviaSegnalazione(payload);
   };
 
+
+  // ── QA 21/08/2026 — pagina Segnalazioni (menu, terza voce dopo News) ──────
+  // Elenca TUTTE le segnalazioni pubblicate (il carosello home ne mostra una).
+  // Il backend esclude gia' l'email dell'autore; qui tutto passa da esc().
+  var _cacheSegnalazioni = null;
+  // NB: questo codice vive dentro una IIFE in un blocco <script> diverso dal router:
+  // senza l'aggancio a window il router non vedrebbe la funzione (scope separato).
+  window.loadSegnalazioniPage = loadSegnalazioniPage;
+  function loadSegnalazioniPage(force) {
+    var box = $('segnalazioniPageList');
+    if (!box) return;
+    if (_cacheSegnalazioni && !force) { _renderSegnalazioniPage_(_cacheSegnalazioni); return; }
+    if (!hasGAS()) { box.innerHTML = '<div class="empty-state">Anteprima locale: dati non disponibili.</div>'; return; }
+    google.script.run
+      .withSuccessHandler(function(r){
+        _cacheSegnalazioni = (r && r.segnalazioni) || [];
+        _renderSegnalazioniPage_(_cacheSegnalazioni);
+      })
+      .withFailureHandler(function(e){
+        box.innerHTML = '<div class="empty-state">Errore nel caricamento: ' + esc(String(e && e.message || e)) + '</div>';
+      })
+      .getSegnalazioniPubblicate(50);
+  }
+  function _renderSegnalazioniPage_(items) {
+    var box = $('segnalazioniPageList');
+    if (!box) return;
+    if (!items.length) {
+      box.innerHTML = '<div class="empty-state">Nessuna segnalazione pubblicata finora.<br>' +
+        '<span style="font-size:13px;color:var(--ink-3)">Hai trovato un bando, una notizia o una risorsa utile? Segnalala alla redazione.</span></div>';
+      return;
+    }
+    var h = items.map(function(sg){
+      var url  = String(sg.url || '').trim();
+      var okUrl = /^https?:\/\//i.test(url);
+      var img  = String(sg.og_image || '').trim();
+      var data = String(sg.dataPubblicazione || '').substring(0, 10);
+      var descr = String(sg.descrizione || '');
+      if (descr.length > 320) descr = descr.substring(0, 320) + '\u2026';
+      return '<article class="card" style="margin-bottom:14px;display:flex;gap:14px;align-items:flex-start">' +
+        (img && /^https?:\/\//i.test(img)
+          ? '<img src="' + esc(img) + '" alt="" loading="lazy" style="width:120px;height:80px;object-fit:cover;border-radius:8px;flex-shrink:0" onerror="this.style.display=(String(this.dataset.hid=1)&&\'none\')">'
+          : '') +
+        '<div style="min-width:0">' +
+          '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-bottom:4px">' +
+            esc(String(sg.tipo || 'segnalazione')) + (data ? ' \u00b7 ' + esc(data) : '') + '</div>' +
+          '<h3 style="margin:0 0 6px;font-size:16px;line-height:1.35">' +
+            (okUrl ? '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(String(sg.titolo || '')) + '</a>'
+                   : esc(String(sg.titolo || ''))) + '</h3>' +
+          (descr ? '<p style="margin:0 0 6px;font-size:13.5px;color:var(--ink-2);line-height:1.5">' + esc(descr) + '</p>' : '') +
+          (sg.nome_autore ? '<div style="font-size:12px;color:var(--ink-3)">segnalata da ' + esc(String(sg.nome_autore)) + '</div>' : '') +
+        '</div></article>';
+    }).join('');
+    box.innerHTML = h;
+  }
 
   // v4.27.53 — Popola la slide "segnalazione della settimana" del carosello.
   // Se non c'e' nulla da mostrare la slide resta nascosta e il carosello

@@ -136,6 +136,29 @@ function _classificaTipoBando_(bando) {
   var testo = titolo + ' ' + settore + ' ' + sommario;
   var fonte = String(bando.fonteNome || '').toLowerCase();
 
+  // === LAVORO: concorsi e selezioni di personale (QA 21/08/2026) ============
+  // Prima di questo ramo NESSUN percorso restituiva 'lavoro': il valore lo
+  // scriveva solo il parser GU 4a Serie (LavoroCultura.js). Un concorso caricato
+  // da una fonte normale finiva in 'finanziamento' (i concorsi sono quasi sempre
+  // "avviso pubblico di selezione") e la pagina Lavoro, che filtra
+  // tipoBando==='lavoro', non lo mostrava mai. Va PRIMA di finanziamento.
+  // Esclusi i concorsi che non sono reclutamento (idee, fotografia, arte, design).
+  var _concorsoNonLavoro = /concors[oi]\s+(di\s+)?(idee|progettazion|fotograf|artistic|letterari|poesia|design|videomaking|cortometragg)/i.test(testo)
+    || /direttore\s+dei\s+lavori|direzione\s+(dei\s+)?lavori/i.test(testo);   // ruolo tecnico di cantiere, non reclutamento
+  if (!_concorsoNonLavoro && (
+      /concors[oi]\s+pubblic|procedura\s+selettiva|graduatori[ae]|assunzion|reclutament|profil[oi]\s+professional|tempo\s+(in)?determinato|mobilit\u00e0\s+(esterna|volontaria)/i.test(testo)
+      // QA 21/08/2026 bis — "selezione" in tutte le forme reali: "selezione pubblica",
+      // "avviso di selezione", "avviso pubblico per la selezione di/del", "selezione per".
+      // Il caso concreto sfuggito: "Avviso pubblico per la selezione del direttore della
+      // Fondazione Marche Cultura" cadeva in finanziamento per "avviso pubblico".
+      || /selezione\s+(pubblica|per|di|del|della|dei)/i.test(testo)
+      || /avviso\s+(pubblico\s+)?(per\s+la\s+|di\s+)?selezion/i.test(testo)
+      || /(nomina|selezione|incarico)\s+.{0,25}(direttore|direttric|dirigente)/i.test(testo)
+      || /posti?\s+di\s+(lavoro|funzionario|istruttore|assistente|operatore|dirigente|direttore)/i.test(testo)
+  )) {
+    return 'lavoro';
+  }
+
   // === FINANZIAMENTO: contributi, sovvenzioni, bandi a fondo perduto ===
   if (/finanziament|contribut[oi]|sovvenzion|grant|subsid|funding|fondo perduto|erogazione|cofinanziament|incentiv[oi]|premio|borsa di studio|call for proposal|avviso.*finanz|bando.*finanz/i.test(testo)) {
     return 'finanziamento';
@@ -198,6 +221,9 @@ function backfillTipoBandi() {
       titolo: vals[r][iTit], settore: vals[r][iSett],
       sommario: vals[r][iSomm], fonteNome: vals[r][iFonte]
     });
+    // QA 21/08/2026 — i record del parser GU S4 nascono gia' con 'lavoro':
+    // la riclassificazione forzata non deve mai degradarli ad altro tipo.
+    if (String(vals[r][iTipo] || '') === 'lavoro') tipo = 'lavoro';
     tipoCol.push([tipo]);
     stats[tipo] = (stats[tipo]||0) + 1;
     stats.totale++;
@@ -945,10 +971,10 @@ function _parseFonteRSS_(fonte) {
   }
 
   items.slice(0, 30).forEach(function(item) {
-    var titolo = _xmlText_(item, 'title') || _xmlText_(item, 'title', XmlService.getNamespace('http://www.w3.org/2005/Atom'));
-    var link   = _xmlText_(item, 'link')  || _xmlText_(item, 'link',  XmlService.getNamespace('http://www.w3.org/2005/Atom'));
-    var descr  = _xmlText_(item, 'description') || _xmlText_(item, 'summary') || '';
-    var pubDate= _xmlText_(item, 'pubDate') || _xmlText_(item, 'published') || _xmlText_(item, 'updated') || '';
+    var titolo = _xmlChildText_(item, 'title') || _xmlChildText_(item, 'title', XmlService.getNamespace('http://www.w3.org/2005/Atom'));
+    var link   = _xmlChildText_(item, 'link')  || _xmlChildText_(item, 'link',  XmlService.getNamespace('http://www.w3.org/2005/Atom'));
+    var descr  = _xmlChildText_(item, 'description') || _xmlChildText_(item, 'summary') || '';
+    var pubDate= _xmlChildText_(item, 'pubDate') || _xmlChildText_(item, 'published') || _xmlChildText_(item, 'updated') || '';
 
     if (!titolo || !link) return;
     risultati.push({
@@ -968,7 +994,11 @@ function _parseFonteRSS_(fonte) {
   return risultati;
 }
 
-function _xmlText_(el, tagName, ns) {
+// QA 20/08/2026 — era _xmlText_, in collisione con NewsScanner.js. Quella lavora su
+// stringhe con regex, questa su Element di XmlService: vinceva NewsScanner (ordine
+// alfabetico) e il parser RSS dei bandi v5 sollevava eccezione a ogni fonte, che
+// finiva contata come PARSE_ERR e accumulava FailConsecutivi.
+function _xmlChildText_(el, tagName, ns) {
   try {
     var child = ns ? el.getChild(tagName, ns) : el.getChild(tagName);
     return child ? child.getValue() : null;
@@ -1023,7 +1053,7 @@ function _parseFonteSitemap_(fonte) {
   // Filtra solo URL che contengono parole chiave bandi
   var keywords = ['bando', 'bandi', 'avviso', 'avvisi', 'finanziamento', 'contributo', 'grant'];
   urls.slice(0, 200).forEach(function(urlEl) {
-    var loc = _xmlText_(urlEl, 'loc', smNs) || _xmlText_(urlEl, 'loc') || '';
+    var loc = _xmlChildText_(urlEl, 'loc', smNs) || _xmlChildText_(urlEl, 'loc') || '';
     var locLow = loc.toLowerCase();
     var rilevante = keywords.some(function(k) { return locLow.indexOf(k) >= 0; });
     if (!rilevante) return;

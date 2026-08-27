@@ -249,6 +249,25 @@ function fasRetryFontiSilenti(opts) {
       for (var r = 1; r < vals.length && report.testate < maxFonti; r++) {
         var fail = Number(vals[r][iFail] || 0);
         if (fail < 3) continue; // solo fonti silenti
+        // QA 24/08/2026 — PENSIONAMENTO. "Riattivate: 0/8" ogni notte per
+        // settimane = le stesse 8 fonti irrecuperabili ritentate a vita.
+        // Dopo 15 fallimenti totali la fonte viene ritirata: Attiva=false,
+        // esito RITIRATA, contatore azzerato cosi' esce dal giro (e dal
+        // conteggio "silenti" del report, che a quel punto misura solo le
+        // fonti su cui vale ancora la pena indagare). Recupero manuale:
+        // qaRssDiagnosi/qaRssResetEsegui, o riattivazione dal pannello fonti.
+        if (fail >= 15) {
+          if (!dryRun) {
+            sh.getRange(r + 1, iAtt + 1).setValue(false);
+            sh.getRange(r + 1, iEsito + 1).setValue('RITIRATA');
+            sh.getRange(r + 1, iFail + 1).setValue(0);
+            if (iErr >= 0) sh.getRange(r + 1, iErr + 1).setValue('ritirata dopo 15 tentativi falliti (' + new Date().toISOString().slice(0,10) + ')');
+          }
+          report.ritirate = (report.ritirate || 0) + 1;
+          report.dettagli.push({ nome: String(vals[r][iNome] || ''), sheet: shName, azione: 'ritirata', failTotali: fail });
+          Logger.log('[FAS] RITIRATA (15+ fallimenti): ' + String(vals[r][iNome] || ''));
+          continue;
+        }
 
         var url = String(vals[r][iUrl] || '').trim();
         var nome = String(vals[r][iNome] || '').trim();
@@ -279,10 +298,14 @@ function fasRetryFontiSilenti(opts) {
             Logger.log('[FAS] RIATTIVATA: ' + nome + ' (' + code + ', ' + contentLen + ' chars)');
           } else {
             report.ancoraFallite++;
+            // QA 24/08/2026 — senza questo incremento il contatore restava
+            // congelato e il pensionamento non sarebbe mai scattato.
+            if (!dryRun) sh.getRange(r + 1, iFail + 1).setValue(fail + 1);
             report.dettagli.push({ nome: nome, sheet: shName, azione: 'ancora_fallita', code: code, chars: contentLen });
           }
         } catch(eF) {
           report.ancoraFallite++;
+          if (!dryRun) sh.getRange(r + 1, iFail + 1).setValue(fail + 1);
           report.dettagli.push({ nome: nome, sheet: shName, azione: 'network_error', errore: eF.message });
         }
       }
@@ -361,6 +384,24 @@ function _tedCpvDescrizione_(cpvArr) {
   return '';
 }
 
+// QA 24/08/2026 — codici paese TED (ISO alpha-2/alpha-3) → nome italiano,
+// lo stesso usato dalla mappa Europa (OC_GEO_EUROPA) e dai filtri.
+var FAS_PAESI_UE = {
+  IT:'Italia', ITA:'Italia', FR:'Francia', FRA:'Francia', DE:'Germania', DEU:'Germania',
+  ES:'Spagna', ESP:'Spagna', PT:'Portogallo', PRT:'Portogallo', BE:'Belgio', BEL:'Belgio',
+  NL:'Paesi Bassi', NLD:'Paesi Bassi', LU:'Lussemburgo', LUX:'Lussemburgo',
+  AT:'Austria', AUT:'Austria', PL:'Polonia', POL:'Polonia', CZ:'Rep. Ceca', CZE:'Rep. Ceca',
+  SK:'Slovacchia', SVK:'Slovacchia', HU:'Ungheria', HUN:'Ungheria', SI:'Slovenia', SVN:'Slovenia',
+  HR:'Croazia', HRV:'Croazia', RO:'Romania', ROU:'Romania', BG:'Bulgaria', BGR:'Bulgaria',
+  GR:'Grecia', EL:'Grecia', GRC:'Grecia', SE:'Svezia', SWE:'Svezia', FI:'Finlandia', FIN:'Finlandia',
+  DK:'Danimarca', DNK:'Danimarca', IE:'Irlanda', IRL:'Irlanda', LT:'Lituania', LTU:'Lituania',
+  LV:'Lettonia', LVA:'Lettonia', EE:'Estonia', EST:'Estonia', CY:'Cipro', CYP:'Cipro', MT:'Malta', MLT:'Malta'
+};
+function _fasPaeseNome_(code) {
+  var c = String(code || '').trim().toUpperCase();
+  return FAS_PAESI_UE[c] || '';
+}
+
 function fasParserTedApiPost(opts) {
   opts = opts || {};
   var dryRun = !!opts.dryRun;
@@ -419,7 +460,7 @@ function fasParserTedApiPost(opts) {
         // 'deadline-receipt-request' è popolato al 100%. È il motivo per cui
         // TUTTI i bandi TED arrivavano senza scadenza e quindi non venivano
         // mai esposti (la regola richiede scadenza certa).
-        fields: ['publication-number', 'notice-title', 'buyer-name', 'notice-type', 'classification-cpv', 'deadline-receipt-request']
+        fields: ['publication-number', 'notice-title', 'buyer-name', 'buyer-country', 'notice-type', 'classification-cpv', 'deadline-receipt-request']
       };
 
       var resp = UrlFetchApp.fetch('https://api.ted.europa.eu/v3/notices/search', {
@@ -462,6 +503,11 @@ function fasParserTedApiPost(opts) {
         // finiva "[object Object]"). _tedText_ estrae IT→EN→prima lingua.
         var oggetto = _tedText_(n['notice-title']);
         var buyer = _tedText_(n['buyer-name']);
+        // QA 24/08/2026 — il paese del committente finiva perso e ogni bando
+        // TED risultava genericamente "UE": mappa e sintesi per nazione vuote.
+        var _bcRaw = n['buyer-country'];
+        if (Object.prototype.toString.call(_bcRaw) === '[object Array]') _bcRaw = _bcRaw[0];
+        var paese = _fasPaeseNome_(typeof _bcRaw === 'object' && _bcRaw ? (_bcRaw.value || _bcRaw.code || '') : _bcRaw);
         var cpvArr = n['classification-cpv'] || [];
         var tipologia = _tedTipologia_(n['notice-type']);
         var cpvDesc = _tedCpvDescrizione_(cpvArr);
@@ -497,7 +543,7 @@ function fasParserTedApiPost(opts) {
             titolo: titolo.substring(0, 300),
             ente: buyer || 'Committente UE (TED)',
             livello: 'EU',
-            regione: '',
+            regione: paese,   // QA 24/08 — nome italiano della nazione, per mappa e sintesi
             settore: 'Appalti pubblici cultura — TED',
             tipoBando: 'servizio_fornitura',
             urlBando: link,
@@ -624,10 +670,16 @@ function fasRunFase1() {
   if (report.totaleNuovi > 0) {
     try {
       if (typeof _tgSend_ === 'function') {
-        _tgSend_('📡 *Fonti Strutturate*\n\n' +
-          (report.ted ? 'TED EU: ' + report.ted.nuovi + ' nuovi\n' : '') +
-          (report.pnrr ? 'PNRR/MiC: ' + report.pnrr.nuovi + ' nuovi\n' : '') +
-          (report.retry ? 'Fonti riattivate: ' + report.retry.riattivate + '/' + report.retry.testate : ''));
+        // QA 24/08/2026 — righe SOLO se portano un numero: le voci a zero sono
+        // rumore, e "riattivate 0/8" ripetuto ogni giorno insegna a ignorare il
+        // canale. Le fonti silenti restano nel report settimanale, il posto
+        // giusto per i trend.
+        var _righeFas = [];
+        if (report.ted && report.ted.nuovi > 0)   _righeFas.push('TED EU: ' + report.ted.nuovi + ' nuovi');
+        if (report.pnrr && report.pnrr.nuovi > 0) _righeFas.push('PNRR/MiC: ' + report.pnrr.nuovi + ' nuovi');
+        if (report.retry && report.retry.riattivate > 0)
+          _righeFas.push('✅ Fonti riattivate: ' + report.retry.riattivate + '/' + report.retry.testate);
+        if (_righeFas.length) _tgSend_('📡 *Fonti Strutturate*\n' + _righeFas.join('\n'));
       }
     } catch(_){}
   }
@@ -1983,56 +2035,65 @@ function fasParserSediaEU(opts) {
  * API: https://dati.lombardia.it basato su Socrata/SODA.
  */
 function fasParserLombardia(opts) {
+  // QA 24/08/2026 — RISCRITTO. Il dataset ks5g-bke7 non esiste piu' sul portale
+  // ("dataset.missing", verificato dal vivo) e il connettore era stato spento
+  // come "endpoint inerte (v4.20)": in realta' era morto l'id, non l'endpoint.
+  // Il dataset attuale e' bukx-h2uy — "Anagrafica dei bandi regionali", vivo e
+  // aggiornato (verificato: bandi con chiusura fino a ottobre 2026).
+  // Campi: codice_bando, titolo_bando, direzione_generale, ente,
+  // apertura_adesione, chiusura_adesione, tipo_strumento. NON c'e' un link al
+  // bando: si costruisce il rimando alla piattaforma bandi regionale e si mette
+  // il codice nel sommario, che e' cio' che serve per ritrovarlo.
   opts = opts || {};
   var dryRun = !!opts.dryRun;
   var report = { ok: true, nuovi: 0, duplicati: 0, errori: 0, dettagli: [] };
   var existingUrls = _fasLoadExistingUrls_();
 
-  // SODA API query per bandi cultura
-  var url = 'https://www.dati.lombardia.it/resource/ks5g-bke7.json?$where=contains(upper(titolo_bando),\'CULTUR\')+OR+contains(upper(titolo_bando),\'MUSEO\')&$limit=30&$order=data_pubblicazione+DESC';
+  var oggi = Utilities.formatDate(new Date(), 'Europe/Rome', 'yyyy-MM-dd');
+  // solo bandi ancora aperti; il filtro cultura si fa dopo, sui testi
+  var url = 'https://www.dati.lombardia.it/resource/bukx-h2uy.json' +
+            '?$where=chiusura_adesione>\'' + oggi + '\'' +
+            '&$order=apertura_adesione DESC&$limit=100';
 
   try {
     var resp = UrlFetchApp.fetch(url, {
-      muteHttpExceptions: true, deadline: 10,
+      muteHttpExceptions: true, deadline: 15,
       headers: { 'Accept': 'application/json', 'User-Agent': 'SinopiaBot/1.0' }
     });
     if (resp.getResponseCode() !== 200) {
-      // Fallback: CKAN API
-      url = 'https://www.dati.lombardia.it/api/views.json?category=Bandi&limit=20';
-      resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, deadline: 10, headers: { 'Accept': 'application/json' } });
-    }
-    if (resp.getResponseCode() !== 200) {
+      report.errori++;
       report.dettagli.push({ fonte: 'Lombardia OData', errore: 'HTTP ' + resp.getResponseCode() });
       return report;
     }
-
     var data;
-    try { data = JSON.parse(resp.getContentText()); } catch(_) {
-      report.errori++;
-      return report;
-    }
-    if (!Array.isArray(data)) data = data.results || data.result || [];
+    try { data = JSON.parse(resp.getContentText()); } catch(_) { report.errori++; return report; }
+    if (!Array.isArray(data)) { report.errori++; return report; }
 
+    var RE_CULTURA = /cultur|museo|musei|bibliotec|archiv|patrimon|turis|spettacol|cinema|teatr|music|restaur|borgh|mulini storici|belle arti|beni cultural/i;
     data.forEach(function(item) {
-      var titolo = item.titolo_bando || item.title || item.name || '';
-      var link = item.link_bando || item.url || '';
-      if (!link && item.id) link = 'https://www.dati.lombardia.it/resource/' + item.id;
-      if (!titolo || !link) return;
+      var titolo = String(item.titolo_bando || '').trim();
+      var codice = String(item.codice_bando || '').trim();
+      if (!titolo || !codice) return;
+      // filtro cultura su titolo + direzione generale (es. "AUTONOMIA E CULTURA")
+      var blob = titolo + ' ' + String(item.direzione_generale || '');
+      if (!RE_CULTURA.test(blob)) return;
 
-      var allText = (titolo + ' ' + (item.descrizione || item.description || '')).toLowerCase();
-      if (!/cultur|museo|musei|patrimoni|turis|restaur/.test(allText)) return;
-
+      // link stabile per-bando alla piattaforma regionale + codice come chiave dedup
+      var link = 'https://www.bandi.regione.lombardia.it/servizi/servizio/bandi?search=' + encodeURIComponent(codice);
       if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
+
       if (!dryRun) {
         _fasSaveBando_({
-          titolo: String(titolo).substring(0, 300),
-          ente: 'Regione Lombardia',
+          titolo: titolo.substring(0, 300),
+          ente: String(item.ente || 'Regione Lombardia'),
           livello: 'Regionale',
           regione: 'Lombardia',
-          settore: 'Bandi regionali cultura',
+          settore: String(item.direzione_generale || 'Bandi regionali'),
           urlBando: link,
-          sommario: String(item.descrizione || item.description || '').substring(0, 500),
-          scadenza: _fasNormalizzaData_(item.data_scadenza || item.scadenza || ''),
+          sommario: ('Codice bando: ' + codice +
+                     (item.tipo_strumento ? ' · ' + item.tipo_strumento : '') +
+                     (item.apertura_adesione ? ' · apre ' + String(item.apertura_adesione).slice(0,10) : '')).substring(0, 500),
+          scadenza: _fasNormalizzaData_(String(item.chiusura_adesione || '').slice(0, 10)),
           ambito: 1,
           fonteNome: 'Lombardia OData'
         });
@@ -2040,8 +2101,8 @@ function fasParserLombardia(opts) {
       }
       report.nuovi++;
     });
-    report.dettagli.push({ fonte: 'Lombardia', risultati: data.length });
-    Logger.log('[FAS] Lombardia: ' + data.length + ' risultati, ' + report.nuovi + ' nuovi');
+    report.dettagli.push({ fonte: 'Lombardia', esaminati: data.length, cultura: report.nuovi + report.duplicati });
+    Logger.log('[FAS] Lombardia: ' + data.length + ' bandi aperti, ' + report.nuovi + ' nuovi cultura');
   } catch(e) {
     report.errori++;
     report.dettagli.push({ fonte: 'Lombardia', errore: e.message });
@@ -2065,7 +2126,10 @@ function fasRunFase2b() {
   // verificato (18 bandi cultura UE, filtro 12/12, dedup EN/IT). Gli altri restano OFF.
   report.anac = { ok: true, skipped: true, motivo: 'endpoint inerte (v4.20)' };
   report.opencup = { ok: true, skipped: true, motivo: 'endpoint inerte (v4.20)' };
-  report.lombardia = { ok: true, skipped: true, motivo: 'endpoint inerte (v4.20)' };
+  // QA 24/08/2026 — riattivata: non era l'endpoint a essere inerte, era morto
+  // il dataset. Ora punta all'anagrafica bandi vera (vedi fasParserLombardia).
+  try { report.lombardia = fasParserLombardia({ dryRun: dryRun }); }
+  catch(eL) { report.lombardia = { ok: false, error: eL.message }; }
   try {
     report.sedia = fasParserSediaEU({ dryRun: false });
     report.totaleNuovi += (report.sedia && report.sedia.nuovi) ? report.sedia.nuovi : 0;
