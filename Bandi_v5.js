@@ -144,7 +144,11 @@ function _classificaTipoBando_(bando) {
   // tipoBando==='lavoro', non lo mostrava mai. Va PRIMA di finanziamento.
   // Esclusi i concorsi che non sono reclutamento (idee, fotografia, arte, design).
   var _concorsoNonLavoro = /concors[oi]\s+(di\s+)?(idee|progettazion|fotograf|artistic|letterari|poesia|design|videomaking|cortometragg)/i.test(testo)
-    || /direttore\s+dei\s+lavori|direzione\s+(dei\s+)?lavori/i.test(testo);   // ruolo tecnico di cantiere, non reclutamento
+    || /direttore\s+dei\s+lavori|direzione\s+(dei\s+)?lavori/i.test(testo)   // ruolo tecnico di cantiere, non reclutamento
+    // QA 04/09/2026 — "selezione di COSE", non di persone: i bandi CER Puglia
+    // ("Avviso per la selezione di proposte progettuali...") finivano in
+    // tipoBando='lavoro' e comparivano nella pagina concorsi.
+    || /selezione\s+(di\s+|delle?\s+|dei\s+)?(propost[ae]\b|progett[oi]\b|idee|iniziative|manifestazioni|eventi|opere\b|spettacoli|impres[ae]\b|soggett[oi]\s+attuator|partner\b|operator[ei]\s+economic|fornitor|sponsor)/i.test(testo);
   if (!_concorsoNonLavoro && (
       /concors[oi]\s+pubblic|procedura\s+selettiva|graduatori[ae]|assunzion|reclutament|profil[oi]\s+professional|tempo\s+(in)?determinato|mobilit\u00e0\s+(esterna|volontaria)/i.test(testo)
       // QA 21/08/2026 bis — "selezione" in tutte le forme reali: "selezione pubblica",

@@ -50,6 +50,19 @@ var LC_ENTE_GENERICO_RE = /^(COMUNE DI|PROVINCIA|CITTA' METROPOLITANA|REGIONE|UN
 // L2 — professioni/discipline culturali cercate nella pagina di dettaglio
 var LC_PROFESSIONE_RE = /(bibliotecari|archivist[ai]|storico dell'arte|storia dell'arte|restaurator|curator[ei]|museal[ei]|museolog|beni culturali|funzionari[oa][^.]{0,40}cultur|istruttore[^.]{0,40}cultural|educatore museale|assistente[^.]{0,30}(museo|biblioteca|archivio)|servizi cultural|settore cultura|promozione cultural|archeolog|L-ART|M-STO\/08|biblioteconomia)/i;
 
+/**
+ * v4.33 — Priorità di verifica L2 (più basso = prima): la resa culturale
+ * sta negli enti locali e nelle fondazioni, quasi mai negli istituti CNR.
+ */
+function _lcPrioritaL2_(titolo) {
+  var t = String(titolo || '');
+  if (/^(COMUNE DI|PROVINCIA|CITTA' METROPOLITANA|UNIONE (DEI |DI )?COMUNI|COMUNITA' MONTANA|ROMA CAPITALE)/i.test(t)) return 0;
+  if (/^(FONDAZION|ISTITUZION|AZIENDA SPECIALE|CONSORZIO|ENTE\b|REGIONE)/i.test(t)) return 1;
+  if (/^UNIVERSITA/i.test(t)) return 2;
+  if (/CONSIGLIO NAZIONALE DELLE RICERCHE|ISTITUTO NAZIONALE DI RICERCA/i.test(t)) return 4;
+  return 3;
+}
+
 /** Estrae la scadenza dal titolo GU: "(scad. 18 luglio 2026)" → Date. */
 function _lcParseScadenza_(titolo) {
   var m = String(titolo || '').match(/scad\.\s*(\d{1,2})\s+([a-zà]+)\s+(\d{4})/i);
@@ -99,60 +112,15 @@ function fasParserGuS4Cultura(opts) {
 
     var existingUrls = (typeof _fasLoadExistingUrls_ === 'function') ? _fasLoadExistingUrls_() : {};
 
-    for (var i = 0; i < items.length; i++) {
-      var it = items[i];
-      var mT = it.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/);
-      var mL = it.match(/<link>([\s\S]*?)<\/link>/);
-      var titolo = mT ? mT[1].replace(/\s+/g, ' ').trim() : '';
-      var link = mL ? mL[1].trim() : '';
-      if (!titolo || !link) continue;
-      // v2 — il feed GU usa link http:// → forza https (fetch più affidabile)
-      link = link.replace(/^http:\/\//i, 'https://');
-
-      // Salta annullamenti/rettifiche e avvisi senza scadenza concorsuale
-      if (/ANNULLAMENTO|RETTIFICA|REVOCA/i.test(titolo)) { report.esclusi++; continue; }
-
-      var isCultura = LC_ENTE_CULTURA_RE.test(titolo);
-      var motivo = isCultura ? 'L1-ente-cultura' : '';
-
-      // L2 — verifica professione nella pagina di dettaglio per TUTTI gli enti
-      // non-L1 salvo blacklist (v4.27.37: prima solo comuni/regioni/universita)
-      if (!isCultura && !opts.noDeep && !LC_ENTE_ESCLUSO_RE.test(titolo)) {
-        report.l2Candidati++;
-        if (report.l2Fetch >= deepCap) { report.l2SaltatiPerCap++; continue; }
-        report.l2Fetch++;
-        try {
-          var det = UrlFetchApp.fetch(link, {
-            muteHttpExceptions: true, followRedirects: true, deadline: 12,
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
-          });
-          if (det.getResponseCode() === 200) {
-            var body = det.getContentText('UTF-8') || '';
-            var mProf = body.match(LC_PROFESSIONE_RE);
-            if (mProf) { isCultura = true; motivo = 'L2-professione: ' + mProf[1]; report.l2Match++; }
-          } else {
-            // v2 — fetch fallito: contato nel report (distingue "nessun match" da "fetch KO")
-            report.l2Errori++;
-            Logger.log('[LC] L2 HTTP ' + det.getResponseCode() + ' — ' + titolo.substring(0, 60));
-          }
-          Utilities.sleep(300);
-        } catch (eDet) {
-          report.l2Errori++;
-          Logger.log('[LC] L2 errore fetch: ' + eDet.message.substring(0, 80) + ' — ' + titolo.substring(0, 60));
-        }
-      }
-
-      if (!isCultura) { report.esclusi++; continue; }
-
-      if (existingUrls[link.toLowerCase()]) { report.duplicati++; continue; }
-
+    // Salvataggio condiviso (usato da L1 e L2)
+    function _salva(titolo, link, motivo) {
+      if (existingUrls[link.toLowerCase()]) { report.duplicati++; return; }
       var scad = _lcParseScadenza_(titolo);
       var ente = _lcParseEnte_(titolo);
       if (report.dettagli.length < 25) {
         report.dettagli.push({ titolo: titolo.substring(0, 110), motivo: motivo,
           scadenza: scad ? Utilities.formatDate(scad, 'Europe/Rome', 'dd/MM/yyyy') : 'n.d.' });
       }
-
       if (!dryRun) {
         _fasSaveBando_({
           titolo: titolo,
@@ -169,6 +137,65 @@ function fasParserGuS4Cultura(opts) {
         existingUrls[link.toLowerCase()] = true;
       }
       report.nuovi++;
+    }
+
+    // v4.33 — DUE PASSATE. Diagnosi 04/09: 18 scansioni consecutive a 0 salvati.
+    // Con il tetto deepCap la verifica L2 seguiva l'ORDINE DEL FEED, che in
+    // Gazzetta è: ministeri → enti di ricerca (decine di istituti CNR, quasi
+    // mai culturali) → università → ENTI LOCALI. Il tetto si esauriva sul CNR
+    // e i comuni — i datori di lavoro culturali più frequenti — restavano
+    // sistematicamente "oltre cap", mai verificati. Ora: prima si raccolgono
+    // tutti gli item (L1 salva subito, senza fetch), poi le pagine di dettaglio
+    // si controllano in ordine di PRIORITÀ culturale, CNR in coda.
+    var l2Lista = [];
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      var mT = it.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/);
+      var mL = it.match(/<link>([\s\S]*?)<\/link>/);
+      var titolo = mT ? mT[1].replace(/\s+/g, ' ').trim() : '';
+      var link = mL ? mL[1].trim() : '';
+      if (!titolo || !link) continue;
+      // v2 — il feed GU usa link http:// → forza https (fetch più affidabile)
+      link = link.replace(/^http:\/\//i, 'https://');
+
+      // Salta annullamenti/rettifiche e avvisi senza scadenza concorsuale
+      if (/ANNULLAMENTO|RETTIFICA|REVOCA/i.test(titolo)) { report.esclusi++; continue; }
+
+      if (LC_ENTE_CULTURA_RE.test(titolo)) { _salva(titolo, link, 'L1-ente-cultura'); continue; }
+      if (opts.noDeep || LC_ENTE_ESCLUSO_RE.test(titolo)) { report.esclusi++; continue; }
+      l2Lista.push({ titolo: titolo, link: link, prio: _lcPrioritaL2_(titolo) });
+    }
+    report.l2Candidati = l2Lista.length;
+    l2Lista.sort(function (a, b) { return a.prio - b.prio; });
+
+    for (var k = 0; k < l2Lista.length; k++) {
+      var cand = l2Lista[k];
+      if (report.l2Fetch >= deepCap) { report.l2SaltatiPerCap++; continue; }
+      report.l2Fetch++;
+      var trovato = false;
+      try {
+        var det = UrlFetchApp.fetch(cand.link, {
+          muteHttpExceptions: true, followRedirects: true, deadline: 12,
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+        });
+        if (det.getResponseCode() === 200) {
+          var body = det.getContentText('UTF-8') || '';
+          var mProf = body.match(LC_PROFESSIONE_RE);
+          if (mProf) {
+            trovato = true; report.l2Match++;
+            _salva(cand.titolo, cand.link, 'L2-professione: ' + mProf[1]);
+          }
+        } else {
+          // v2 — fetch fallito: contato nel report (distingue "nessun match" da "fetch KO")
+          report.l2Errori++;
+          Logger.log('[LC] L2 HTTP ' + det.getResponseCode() + ' — ' + cand.titolo.substring(0, 60));
+        }
+        Utilities.sleep(300);
+      } catch (eDet) {
+        report.l2Errori++;
+        Logger.log('[LC] L2 errore fetch: ' + eDet.message.substring(0, 80) + ' — ' + cand.titolo.substring(0, 60));
+      }
+      if (!trovato) report.esclusi++;
     }
 
     Logger.log('[LC] GU S4: feed=' + report.totFeed + ' · L1 cultura=' + report.l1Cultura +
