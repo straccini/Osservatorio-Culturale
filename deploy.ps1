@@ -21,6 +21,7 @@
 # ============================================================================
 param(
   [string]$Descrizione = ("deploy " + (Get-Date -Format "yyyy-MM-dd HH:mm")),
+  [string]$Branch = "fix/collisioni-namespace",
   [switch]$SenzaDeploy
 )
 $ErrorActionPreference = "Stop"
@@ -28,8 +29,17 @@ $DEPLOYMENT_ID = "AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakn
 
 Set-Location $PSScriptRoot
 Write-Host ""
-Write-Host "1/4  git pull..." -ForegroundColor Cyan
-git pull
+# 1. AGGANCIO AL BRANCH GIUSTO (v4.33): prima si andava in deploy su qualunque
+#    branch fosse la copia locale, col rischio di pubblicare codice vecchio "con
+#    successo". Ora lo script si porta SEMPRE sul branch di lavoro e ne prende
+#    l'ultima versione dal remoto. Cambiare -Branch solo se si sa cosa si fa.
+Write-Host ("1/4  git checkout " + $Branch + " + pull...") -ForegroundColor Cyan
+git checkout $Branch
+if ($LASTEXITCODE -ne 0) {
+  Write-Host ("ERRORE: impossibile passare al branch " + $Branch + ". Hai modifiche locali non salvate? Deploy annullato.") -ForegroundColor Red
+  exit 1
+}
+git pull origin $Branch
 if ($LASTEXITCODE -ne 0) {
   Write-Host "ERRORE: git pull fallito. Niente push finche' il pull non passa." -ForegroundColor Red
   exit 1
