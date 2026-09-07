@@ -51,6 +51,38 @@ viene bloccato. Nessuna di queste è usata dai cron, quindi l'automazione non è
    `generateDigestQueueAll`): oggi un anonimo senza token può invocarle. Chiuderle
    richiede distinguere "trigger" da "web anonimo" (es. secret interno per i cron).
 
+## Revisione catena Admin Token (richiesta 07/09) — 10 punti
+
+Analisi di `AdminToken_v1.js`, `CurrentUser_v44.js`, `Auth.js`, e dell'iniezione in
+`Codice.js` (doGet). Il modello: token statico da 24 caratteri in ScriptProperties
+(`oc_admin_token_v1`), accesso via `?adm=TOKEN`, iniettato nella pagina e validato
+lato server a ogni chiamata.
+
+| # | Domanda | Esito |
+|---|---|---|
+| 1 | Il token compare nei log? | Sì, ma **solo nel log dell'editor** (`showAdminToken`/`diagAdminToken`/`generateAdminToken` fanno `Logger.log`), visibile al solo proprietario. Il `[doGet]` logga solo i primi 6 caratteri. Accettabile. |
+| 2 | Può finire nella cronologia del browser? | Sì: è nell'URL `?adm=` che si salva come bookmark → resta in cronologia/preferiti. **Rischio inerente al modello a URL.** Mitigato: il sandbox di Google rimuove `?adm` dal frame interno e sposta il token in `sessionStorage`. |
+| 3 | Può trapelare via Referer? | Possibile, basso: l'URL esterno `script.google.com/...?adm=` potrebbe finire nell'header Referer verso risorse esterne caricate dalla pagina. I browser moderni tagliano la query cross-origin di default. |
+| 4 | Salvato in localStorage/sessionStorage? | In **sessionStorage** (`oc_admin_token`), non localStorage: si cancella alla chiusura della scheda. Scelta corretta. |
+| 5 | Passato dal client a ogni chiamata? | Sì, e **validato lato server ogni volta** (`_validateAdminToken_`, stateless). È la parte robusta del disegno. |
+| 6 | Chi ha il token può impersonare l'admin per sempre? | Sì, finché non lo si rigenera: **il token non ha scadenza**. Chi lo ottiene (cronologia, bookmark, log) è admin fino a `resetAdminToken`. Da tenere presente. |
+| 7 | Esiste scadenza reale o solo della cache? | Solo la sessione cache (24h) scade; **il token in ScriptProperties non scade**. I controlli usano la validazione stateless, quindi la cache è di fatto ininfluente. |
+| 8 | `resetAdminToken` invalida subito gli accessi precedenti? | Sì: cancella la proprietà → `_validateAdminToken_` rifiuta immediatamente il vecchio token su tutte le chiamate `google.script.run`. |
+| 9 | Si può ottenere il token via `google.script.run`? | **ERA IL BUCO CRITICO — ORA CHIUSO.** `showAdminToken`/`diagAdminToken`/`generateAdminToken` restituivano il token nel valore di ritorno; poiché in Apps Script ogni funzione è invocabile via `google.script.run`, un anonimo poteva chiamarle e leggere il segreto. Ora il token resta **solo nel log dell'editor**, non torna al browser. |
+| 10 | Le funzioni admin possono girare senza verifica server indipendente? | I controlli validano il token lato server a ogni chiamata (bene). Le funzioni di manutenzione senza guard sono state affrontate sopra (8 protette). |
+
+**Fix applicati (v4.34):**
+- `showAdminToken`, `diagAdminToken`, `generateAdminToken` → non restituiscono più il
+  token/URL al chiamante (solo log editor). Chiude l'esfiltrazione via `google.script.run`.
+- `resetAdminToken(confirmToken)` → richiede il token corrente come conferma: niente più
+  reset anonimo (DoS sull'accesso admin). Recupero se perso: eliminare la proprietà
+  `oc_admin_token_v1` dall'editor, poi `generateAdminToken()`.
+
+**Residui accettati (rischio inerente al modello, non risolvibili senza redesign):**
+punti 2, 3, 6, 7 — il token vive in un URL e non scade. Mitigazione pratica: non
+condividere mai lo screenshot/bookmark con `?adm=`, e rigenerare il token
+periodicamente. Un redesign (token a scadenza + rotazione) è un lavoro a parte.
+
 ## Le TUE azioni (le uniche che non posso fare io)
 Queste vivono fuori dal codice e richiedono te:
 
