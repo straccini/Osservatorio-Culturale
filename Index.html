@@ -2705,21 +2705,21 @@
             </div>
             <!-- v4.27.87 — separazione canali: i bandi hanno scadenza certa e
                  ente banditore; le testate vanno nella sezione News -->
-            <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin:14px 0 8px">Separazione canali bandi / news</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <details style="margin:14px 0 0"><summary style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);cursor:pointer;padding:4px 0">Separazione canali bandi / news &middot; avanzate</summary>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
               <button class="btn btn-secondary" onclick="OC.adminTool('canaliDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quali fonti del canale bandi sono in realtà testate giornalistiche">🔎 Canali (anteprima)</button>
               <button class="btn btn-secondary" onclick="if(confirm('Disattiva dal canale bandi le fonti riconosciute come testate. I loro contenuti continuano ad arrivare nella sezione News. Procedere?')) OC.adminTool('canaliApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Disattiva le testate dal canale bandi (restano attive per le News)">📰 Canali (applica)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('puliziaNewsDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quanti record presenti tra i bandi provengono da testate">🔎 Pulizia news (anteprima)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('puliziaNewsApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Archivia i record da testate finiti tra i bandi (la purge a 20gg li rimuoverà)">🧹 Pulizia news (applica)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('fontiDuplicate', this)" style="font-size:12px;padding:6px 12px" title="Fonti presenti due volte nel foglio (stesso nome o stesso URL)">👥 Fonti duplicate</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('ripristinaFonti', this)" style="font-size:12px;padding:6px 12px;border-color:var(--success,#0F7B5A);color:var(--success,#0F7B5A)" title="Riattiva le fonti disattivate per errore dalla separazione dei canali (es. IndiceBandi)">♻ Ripristina fonti bandi</button>
-            </div>
+            </div></details>
             <!-- v4.27.97 — le altre sezioni: i flag FontiFeed sono accesi per
                  podcast e video, ma le fonti non erano state travasate (video
                  a zero dal 07/05). Gli scanner con lista vuota restituiscono 0
                  in silenzio: da qui si ripristinano e si verifica subito. -->
-            <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin:14px 0 8px">Fonti podcast, video e libri</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <details style="margin:14px 0 0"><summary style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);cursor:pointer;padding:4px 0">Fonti podcast, video e libri &middot; avanzate</summary>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
               <button class="btn btn-secondary" onclick="OC.adminTool('sezioniAnteprima', this)" style="font-size:12px;padding:6px 12px" title="Quante fonti vede lo scanner per podcast e video, e quante ne mancano">🔎 Fonti sezioni (stato)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('podcastMigraDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: fonti podcast rimaste sul vecchio foglio e invisibili allo scanner">🔎 Podcast: migra (anteprima)</button>
               <button class="btn btn-secondary" onclick="if(confirm('Copia su FontiFeed le fonti podcast rimaste sul foglio legacy. Il vecchio foglio non viene toccato. Procedere?')) OC.adminTool('podcastMigraApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Copia le fonti podcast mancanti su FontiFeed (dedup per URL)">🎧 Podcast: migra (applica)</button>
@@ -2727,14 +2727,14 @@
               <button class="btn btn-secondary" onclick="if(confirm('Ripristina i 25 canali YouTube come fonti video su FontiFeed. Procedere?')) OC.adminTool('videoRiseminaApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Riscrive le fonti video su FontiFeed (erano sparite: sezione ferma dal 07/05)">🎬 Video: ripristina (applica)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('scanPodcastVideo', this)" style="font-size:12px;padding:6px 12px" title="Lancia subito la scansione podcast + video per verificare il ripristino">▶ Scan podcast+video (adesso)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('pubScan', this)" style="font-size:12px;padding:6px 12px" title="Discovery pubblicazioni: pool query ampliato da 6 a 20 (era esaurito)">📚 Libri: discovery (adesso)</button>
-            </div>
+            </div></details>
             <!-- v4.28.0 — REGISTRO FONTI UNICO (Fase 1 regia fonti):
                  FontiBandi_v5 resta dedicato al Radar; tutte le altre
                  categorie (news, lavoro, podcast, video, norme, libri,
                  social) convergono in RegistroFonti. Il flag si accende
                  solo dopo la verifica della migrazione. -->
-            <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin:14px 0 8px">Registro fonti unico</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <details style="margin:14px 0 0"><summary style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);cursor:pointer;padding:4px 0">Registro fonti unico &middot; avanzate (una-tantum)</summary>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
               <button class="btn btn-secondary" onclick="OC.adminTool('rfSetup', this)" style="font-size:12px;padding:6px 12px" title="Crea il foglio RegistroFonti con lo schema formale a 24 colonne (idempotente)">🗂 Registro: setup</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('rfMigraDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quante fonti verrebbero migrate da FontiFeed, SocialFonti, FontiPodcast e Fonti legacy, per categoria">🔎 Registro: migra (anteprima)</button>
               <button class="btn btn-secondary" onclick="if(confirm('Copia tutte le fonti dei fogli storici nel RegistroFonti (dedup per URL). I fogli storici NON vengono toccati. Procedere?')) OC.adminTool('rfMigraApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Esegue la migrazione nel registro unico">🗂 Registro: migra (applica)</button>
@@ -2748,7 +2748,7 @@
               <button class="btn btn-secondary" onclick="OC.adminTool('rfDisattiva', this)" style="font-size:12px;padding:6px 12px" title="Torna ai fogli precedenti (FontiFeed) senza perdere nulla">↩ Registro: disattiva</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('rfArchiviaLegacyDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quali fogli verranno rinominati con asterisco">🔎 Archivia fogli legacy (anteprima)</button>
               <button class="btn btn-secondary" onclick="if(confirm('Rinomina i fogli legacy con * (non utilizzare). I dati restano intatti per 2 settimane.')) OC.adminTool('rfArchiviaLegacy', this)" style="font-size:12px;padding:6px 12px;border-color:var(--warning);color:var(--warning)" title="Rinomina Fonti, FontiFeed, FontiPodcast, SocialFonti con asterisco">⭐ Archivia fogli legacy (applica)</button>
-            </div>
+            </div></details>
             <!-- v4.28.1 — TASSONOMIA T1-T10 (Fase 2): ogni contenuto riceve
                  una tipologia + grado di aderenza 0-100. Batch notturno 02:00
                  sui contenuti attivi; qui la versione manuale con anteprima. -->
