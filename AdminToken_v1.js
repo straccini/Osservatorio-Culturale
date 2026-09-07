@@ -70,7 +70,11 @@ function generateAdminToken() {
     Logger.log('per browser, e si rinnova automaticamente ad ogni utilizzo.');
     Logger.log('==================================================================');
 
-    return { ok: true, token: token, url: fullUrl, message: 'Token generato. Salva l URL come bookmark.' };
+    // v4.34 SEC — NON restituire il token nel valore di ritorno: qualunque
+    // funzione è invocabile via google.script.run, quindi un anonimo poteva
+    // chiamare generateAdminToken() e leggere il segreto. Ora il token vive solo
+    // nel log dell'editor (visibile al solo proprietario).
+    return { ok: true, message: 'Token generato. Copialo dal LOG dell\'editor GAS (Esegui → Log). Non viene mostrato altrove.' };
   } catch(e) {
     Logger.log('generateAdminToken ERRORE: ' + e.message);
     return { ok: false, error: e.message };
@@ -99,7 +103,8 @@ function diagAdminToken() {
   var u = getCurrentUser_v44(token);
   Logger.log('8. getCurrentUser_v44(token) = ' + JSON.stringify(u));
   Logger.log('=== FINE DIAG ===');
-  return { token: token, valid: typeof _validateAdminToken_ === 'function' ? _validateAdminToken_(token) : 'N/A', ruolo: r.ruolo, user: u };
+  // v4.34 SEC — non restituire il token al chiamante (google.script.run): solo log editor.
+  return { ok: true, tokenPresente: !!token, valid: typeof _validateAdminToken_ === 'function' ? _validateAdminToken_(token) : 'N/A', ruolo: r.ruolo, message: 'Dettagli nel log dell\'editor GAS.' };
 }
 
 function showAdminToken() {
@@ -113,7 +118,9 @@ function showAdminToken() {
     var fullUrl = webappUrl + (webappUrl.indexOf('?') >= 0 ? '&' : '?') + 'adm=' + token;
     Logger.log('Token corrente: ' + token);
     Logger.log('URL: ' + fullUrl);
-    return { ok: true, token: token, url: fullUrl };
+    // v4.34 SEC — il token/URL non tornano al chiamante (google.script.run):
+    // sono solo nel log dell'editor. Evita che un anonimo li recuperi.
+    return { ok: true, message: 'Token e URL nel LOG dell\'editor GAS (Esegui → Log).' };
   } catch(e) { return { ok: false, error: e.message }; }
 }
 
@@ -121,12 +128,50 @@ function showAdminToken() {
 // resetAdminToken() — invalida token (per revoke / rotazione)
 // ============================================================================
 
-function resetAdminToken() {
+function resetAdminToken(confirmToken) {
   try {
+    // v4.34 SEC — evita il reset anonimo (DoS sull'accesso admin) via
+    // google.script.run: se un token esiste già, il reset richiede di
+    // riportare il token corrente come conferma. Recupero se lo si è perso:
+    // eliminare a mano la proprietà "oc_admin_token_v1" da
+    // Impostazioni progetto → Proprietà script, poi generateAdminToken().
+    var current = PropertiesService.getScriptProperties().getProperty(ADMTK_PROP_KEY);
+    if (current && String(confirmToken || '').trim() !== String(current).trim()) {
+      return { ok: false, error: 'Per rigenerare il token serve il token corrente come conferma (o eliminare la proprietà dall\'editor).' };
+    }
     PropertiesService.getScriptProperties().deleteProperty(ADMTK_PROP_KEY);
     Logger.log('Token admin invalidato. Esegui generateAdminToken() per crearne uno nuovo.');
     return { ok: true, message: 'Token invalidato' };
   } catch(e) { return { ok: false, error: e.message }; }
+}
+
+// ============================================================================
+// rotateAdminToken() — ROTAZIONE IN UN COLPO SOLO (esegui da editor GAS)
+// v4.34 — pensata per il proprietario non tecnico: sostituisce il token vecchio
+// con uno nuovo e scrive il NUOVO URL nel log. Un'unica funzione da eseguire.
+// Il valore di ritorno NON contiene il token (anti-esfiltrazione): il nuovo URL
+// si legge dal log dell'editor (Esegui → Registro di esecuzione).
+// ============================================================================
+
+function rotateAdminToken() {
+  try {
+    var p = PropertiesService.getScriptProperties();
+    var vecchio = p.getProperty(ADMTK_PROP_KEY) || '(nessuno)';
+    var token = Utilities.getUuid().replace(/-/g, '').substring(0, 24);
+    p.setProperty(ADMTK_PROP_KEY, token);
+    var fullUrl = ADMTK_PROD_URL + (ADMTK_PROD_URL.indexOf('?') >= 0 ? '&' : '?') + 'adm=' + token;
+    Logger.log('==================================================================');
+    Logger.log('TOKEN ADMIN RUOTATO');
+    Logger.log('Vecchio token invalidato: ' + vecchio);
+    Logger.log('Nuovo token: ' + token);
+    Logger.log('NUOVO URL da salvare come bookmark (sostituisci il vecchio):');
+    Logger.log(fullUrl);
+    Logger.log('==================================================================');
+    return { ok: true, message: 'Token ruotato. Copia il NUOVO URL dal log dell\'editor e aggiorna il bookmark. Il vecchio URL non funziona più.' };
+  } catch(e) {
+    Logger.log('rotateAdminToken ERRORE: ' + e.message);
+    return { ok: false, error: e.message };
+  }
 }
 
 // ============================================================================

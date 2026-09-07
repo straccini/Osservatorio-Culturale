@@ -339,7 +339,9 @@ function toggleFonteUnified(tipo, id, attiva) {
 // MAIN: deleteFonteUnified(tipo, id)
 // ============================================================================
 
-function deleteFonteUnified(tipo, id) {
+function deleteFonteUnified(tipo, id, token) {
+  // v4.34 SEC — eliminazione fonte: solo admin (client passa il token di sessione).
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden: richiede admin' };
   try {
     var sh = getFonteSheet(tipo);
     if (!sh) return { ok: false, error: 'Foglio non trovato per tipo ' + tipo };

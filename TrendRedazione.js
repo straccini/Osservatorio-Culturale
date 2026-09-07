@@ -58,7 +58,21 @@ function trProposteRedazione(token) {
       }
     }
   } catch (e) { return { ok: false, error: e.message }; }
-  return { ok: true, proposte: out, evidenza: getTrendInEvidenza(), criterio: trCriterioAttivo() };
+  return { ok: true, proposte: out, evidenza: getTrendInEvidenza(), criterio: trCriterioAttivo(),
+           autopilota: (typeof _trAutopilotaOn_ === 'function') ? _trAutopilotaOn_() : false };
+}
+
+/**
+ * v4.32 — Accende/spegne l'autopilota del martedì (silenzio-assenso):
+ * con l'autopilota attivo, una proposta rimasta senza risposta viene
+ * pubblicata da sola il martedì mattina dal cron trendProponi.
+ */
+function trAutopilotaImposta(on, token) {
+  if (!trPuoGestireTrend(token)) return { ok: false, error: 'forbidden' };
+  var p = PropertiesService.getScriptProperties();
+  if (on) p.setProperty('OC_TREND_AUTOPILOT', 'on');
+  else p.deleteProperty('OC_TREND_AUTOPILOT');
+  return { ok: true, autopilota: !!on };
 }
 
 /** Azione dalla redazione: pubblica / scarta / elimina. */

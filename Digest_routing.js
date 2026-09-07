@@ -140,6 +140,40 @@ function getDigestRecipientsByCohort() {
       }
     }
 
+    // === C-bis) v4.34 (opzione B) — AGGIUNGI i compilatori Matrix senza sessione ===
+    // Prima l'invio del martedì partiva SOLO da Sessioni_v1/RichiestePrenotazione:
+    // chi aveva compilato il questionario ma la cui sessione era scaduta/assente
+    // non riceveva mai il digest personalizzato. Ora entra in coorte B anche il
+    // compilatore Matrix opt-in (rispetta OptInMatrix del foglio Utenti se c'è).
+    if (shC && shC.getLastRow() > 1) {
+      var optMatrix = {};
+      try {
+        if (typeof getUtentiPerOptIn === 'function') {
+          getUtentiPerOptIn('matrix').forEach(function(u){ optMatrix[u.email] = true; });
+        }
+      } catch(_){}
+      var hasUtentiOpt = Object.keys(optMatrix).length > 0;
+      var cVals2 = shC.getDataRange().getValues();
+      var cHead2 = cVals2[0];
+      var iEmC2 = cHead2.indexOf('email'), iRid2 = cHead2.indexOf('response_id');
+      var aggiuntiMatrix = 0;
+      for (var rc2 = cVals2.length - 1; rc2 >= 1; rc2--) {
+        var emC2 = String(cVals2[rc2][iEmC2] || '').trim().toLowerCase();
+        var rid2 = String(cVals2[rc2][iRid2] || '').trim();
+        if (!emC2 || !rid2) continue;
+        if (coorteB[emC2]) continue;                    // già presente
+        if (hasUtentiOpt && !optMatrix[emC2]) continue; // rispetta opt-in quando c'è la tabella
+        coorteB[emC2] = {
+          email: emC2, nome: '', source: 'matrix_contact',
+          segmento: 'matrix', matrixCompletato: true,
+          responseId: rid2, tematica: null, leadScore: 0
+        };
+        allEmails[emC2] = 'B';
+        aggiuntiMatrix++;
+      }
+      if (aggiuntiMatrix) Logger.log('[coorti] +' + aggiuntiMatrix + ' compilatori Matrix senza sessione (opzione B)');
+    }
+
     // === D) Lead score CRM (se modulo presente) ===
     if (typeof crm_getLeadScore === 'function') {
       Object.keys(coorteB).forEach(function(em){
@@ -339,6 +373,17 @@ function sendDigestAuto2coorti(opts) {
     var baseUrl = ScriptApp.getService().getUrl();
     var subjGen = 'Osservatorio Culturale · Digest del ' + Utilities.formatDate(new Date(), 'Europe/Rome', 'd MMM yyyy');
 
+    // v4.34 (P5) — MITTENTE UFFICIALE: prima i digest a 2 coorti partivano
+    // dall'indirizzo dell'esecutore (s.straccini). Ora, se l'alias verificato è
+    // disponibile, partono da sinopiaconsulting come la newsletter generalista.
+    var _fromAlias = '';
+    try {
+      var _mitt = (typeof OC_MITTENTE_UFFICIALE !== 'undefined') ? OC_MITTENTE_UFFICIALE : 'sinopiaconsulting@gmail.com';
+      var _aliases = GmailApp.getAliases() || [];
+      if (_aliases.indexOf(_mitt) >= 0) _fromAlias = _mitt;
+      else Logger.log('[coorti] alias ' + _mitt + ' non verificato: invio dal mittente predefinito');
+    } catch(_e) { Logger.log('[coorti] getAliases: ' + (_e && _e.message)); }
+
     // 3. INVIO COORTE A (generalisti) — solo se ci sono news da mandare
     if (!opts.onlyLead && hasContenuto) {
       rec.generalisti.forEach(function(dest){
@@ -350,11 +395,9 @@ function sendDigestAuto2coorti(opts) {
           var readerUrl = token ? (baseUrl + '?reader=1&t=' + token) : null;
           if (token) try { _saveDigestForToken(token, itemIds, [], []); } catch(_){}
           var html = buildDigestHTML(items, { Nome: dest.nome, Email: dest.email }, readerUrl, dest.ambiti || []);
-          GmailApp.sendEmail(dest.email, subjGen, 'Visualizza in HTML.', {
-            htmlBody: html,
-            name: 'Sinopia · Osservatorio Culturale',
-            replyTo: 'sinopiaconsulting@gmail.com'
-          });
+          var _optA = { htmlBody: html, name: 'Sinopia · Osservatorio Culturale', replyTo: 'sinopiaconsulting@gmail.com' };
+          if (_fromAlias) _optA.from = _fromAlias;
+          GmailApp.sendEmail(dest.email, subjGen, 'Visualizza in HTML.', _optA);
           _digestMarkSent_(dest.email, 'coorti');
           report.generalisti_inviati++;
           Utilities.sleep(300);
@@ -393,10 +436,16 @@ function sendDigestAuto2coorti(opts) {
           // Senza Matrix e senza news non c'è nulla da inviare a questo lead
           if (!html && !hasContenuto) { Logger.log('[DIGEST] Skip lead senza contenuto ne Matrix: ' + lead.email); return; }
           if (!html && lead.tematica) {
-            // Layout 2: digest tematico
-            html = buildTematicDigest(items, lead.tematica, lead);
-            subject = 'Sinopia · ' + items.length + ' contenuti su ' + (lead.tematica || 'tematica') + ' per ' + (lead.nome || 'il tuo museo');
-            report.leadCaldi_tematici++;
+            // Layout 2: digest tematico — v4.34 (P4): buildTematicDigest ora
+            // ritorna '' se NON trova contenuti davvero pertinenti alla tematica.
+            // In quel caso NON si spaccia un'email generica per tematica: si cade
+            // sul layout standard qui sotto (contenuto onesto, oggetto generico).
+            var _htmlTem = buildTematicDigest(items, lead.tematica, lead);
+            if (_htmlTem) {
+              html = _htmlTem;
+              subject = 'Sinopia · ' + items.length + ' contenuti su ' + (lead.tematica || 'tematica') + ' per ' + (lead.nome || 'il tuo museo');
+              report.leadCaldi_tematici++;
+            }
           }
           if (!html) {
             // Layout 3: fallback standard
@@ -404,11 +453,9 @@ function sendDigestAuto2coorti(opts) {
             subject = subjGen;
             report.leadCaldi_fallback++;
           }
-          GmailApp.sendEmail(lead.email, subject, 'Visualizza in HTML.', {
-            htmlBody: html,
-            name: 'Sinopia · Osservatorio Culturale',
-            replyTo: 'sinopiaconsulting@gmail.com'
-          });
+          var _optB = { htmlBody: html, name: 'Sinopia · Osservatorio Culturale', replyTo: 'sinopiaconsulting@gmail.com' };
+          if (_fromAlias) _optB.from = _fromAlias;
+          GmailApp.sendEmail(lead.email, subject, 'Visualizza in HTML.', _optB);
           _digestMarkSent_(lead.email, 'coorti');
           _coorteBEmailsSent[lead.email] = true; // v4.25
           report.leadCaldi_inviati++;
@@ -515,7 +562,11 @@ function buildTematicDigest(items, tematica, lead) {
     var hay = _norm(it.Titolo) + ' ' + _norm(it.SommarioAI) + ' ' + _norm(it.SommarioEditato);
     return kws.some(function(k){ return hay.indexOf(_norm(k)) >= 0; });
   });
-  if (matched.length === 0) matched = items.slice(0, 8); // fallback: primi 8
+  // v4.34 (P4) — niente più "primi 8 qualsiasi": se non ci sono news pertinenti
+  // si prosegue solo se ci sono BANDI pertinenti (calcolati sotto); altrimenti la
+  // funzione ritorna '' e il chiamante manda il digest standard, senza promettere
+  // una pertinenza tematica inesistente.
+  var _newsPertinenti = matched.length;
   // v4.24 — Dedup fuzzy: rimuove contenuti con titoli troppo simili
   if (typeof _dedupFuzzyByTitle_ === 'function') {
     var _mapped = matched.map(function(it) { return { titolo: it.Titolo || it.titolo || '', _orig: it }; });
@@ -591,6 +642,13 @@ function buildTematicDigest(items, tematica, lead) {
       }
     }
   } catch(eBandi) { Logger.log('buildTematicDigest bandi: ' + (eBandi && eBandi.message)); }
+
+  // v4.34 (P4) — GUARDIA DI ONESTÀ: né news né bandi pertinenti alla tematica →
+  // non inviare un'email tematica finta. Il chiamante userà il digest standard.
+  if (_newsPertinenti === 0 && !bandiHtml) {
+    Logger.log('[buildTematicDigest] nessun contenuto pertinente a "' + tematica + '": salto il layout tematico');
+    return '';
+  }
 
   // Bandi section (before news)
   html += bandiHtml;

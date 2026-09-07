@@ -1076,6 +1076,17 @@ function doGet(e) {
   // ---------- 2) App principale (template con scriptlet) ----------
   var t = HtmlService.createTemplateFromFile('Index');
 
+  // QA 21/08/2026 — link "Continua a leggere" della newsletter: la sandbox GAS
+  // strappa i parametri dal location.search del frontend, quindi ?apri=editoriale
+  // va iniettato server-side come le altre variabili di template (stesso pattern
+  // di sondaggioCodice e del token admin).
+  t.apriEditoriale = (params && params.apri === 'editoriale') ? 1 : 0;
+  t.editorialeSegno = 0;
+  if (t.apriEditoriale && params.seg) {
+    var _segN = parseInt(params.seg, 10);
+    if (_segN > 0 && _segN < 100000) t.editorialeSegno = _segN;
+  }
+
   var page = t.evaluate()
     .setTitle('Osservatorio Culturale · Sinopia — Bandi, News e Risorse per Musei e Cultura')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')

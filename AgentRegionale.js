@@ -144,7 +144,19 @@ function agrRunOggi() {
 
   // Telegram
   if (report.totaleNuovi > 0 && typeof _tgSend_ === 'function') {
-    try { _tgSend_('*AGR Gruppo ' + gruppo + '*\n' + report.regioni.map(function(r) { return r.regione + ': ' + r.nuovi + ' nuovi'; }).join('\n')); } catch(_){}
+    // QA 24/08/2026 — solo le regioni con risultati: l'elenco quotidiano di
+    // "0 nuovi" per ogni regione era rumore. Se tutto il gruppo e' a zero non
+    // parte nessun messaggio; gli errori si' (sono un'anomalia, non routine).
+    try {
+      var _conNuovi = report.regioni.filter(function(r) { return (r.nuovi || 0) > 0; });
+      if (_conNuovi.length) {
+        _tgSend_('*AGR Gruppo ' + gruppo + '*\n' +
+          _conNuovi.map(function(r) { return r.regione + ': ' + r.nuovi + ' nuovi'; }).join('\n') +
+          (report.errori ? '\n\u26a0\ufe0f errori: ' + report.errori : ''));
+      } else if (report.errori > 0) {
+        _tgSend_('\u26a0\ufe0f *AGR Gruppo ' + gruppo + '*: nessun nuovo bando e ' + report.errori + ' errori di scansione.');
+      }
+    } catch(_){}
   }
 
   return report;
