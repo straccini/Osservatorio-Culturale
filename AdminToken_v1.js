@@ -146,6 +146,35 @@ function resetAdminToken(confirmToken) {
 }
 
 // ============================================================================
+// rotateAdminToken() — ROTAZIONE IN UN COLPO SOLO (esegui da editor GAS)
+// v4.34 — pensata per il proprietario non tecnico: sostituisce il token vecchio
+// con uno nuovo e scrive il NUOVO URL nel log. Un'unica funzione da eseguire.
+// Il valore di ritorno NON contiene il token (anti-esfiltrazione): il nuovo URL
+// si legge dal log dell'editor (Esegui → Registro di esecuzione).
+// ============================================================================
+
+function rotateAdminToken() {
+  try {
+    var p = PropertiesService.getScriptProperties();
+    var vecchio = p.getProperty(ADMTK_PROP_KEY) || '(nessuno)';
+    var token = Utilities.getUuid().replace(/-/g, '').substring(0, 24);
+    p.setProperty(ADMTK_PROP_KEY, token);
+    var fullUrl = ADMTK_PROD_URL + (ADMTK_PROD_URL.indexOf('?') >= 0 ? '&' : '?') + 'adm=' + token;
+    Logger.log('==================================================================');
+    Logger.log('TOKEN ADMIN RUOTATO');
+    Logger.log('Vecchio token invalidato: ' + vecchio);
+    Logger.log('Nuovo token: ' + token);
+    Logger.log('NUOVO URL da salvare come bookmark (sostituisci il vecchio):');
+    Logger.log(fullUrl);
+    Logger.log('==================================================================');
+    return { ok: true, message: 'Token ruotato. Copia il NUOVO URL dal log dell\'editor e aggiorna il bookmark. Il vecchio URL non funziona più.' };
+  } catch(e) {
+    Logger.log('rotateAdminToken ERRORE: ' + e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+// ============================================================================
 // checkAdminSession(eParams) — chiamato da doGet per validare ?adm=TOKEN
 // ============================================================================
 
