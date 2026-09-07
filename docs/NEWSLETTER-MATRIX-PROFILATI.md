@@ -226,4 +226,20 @@ l'infrastruttura minima per contare i rientri c'è.
    l'area dopo il digest") basta per capire se la personalizzazione rende.
 7. **Allineare i commenti/costanti ai trigger reali** (P7): pura igiene, 10 minuti.
 
-Nessuna di queste modifiche è stata applicata: questo documento è la base per decidere.
+## 6. Decisioni prese e applicate (v4.34 · 07/09/2026)
+
+Silvano ha scelto e sono state implementate:
+
+- **P2+P3 — Invio diretto esteso (opzione B)**: eliminata la generazione delle bozze
+  Matrix della domenica (36 accumulate senza scopo). Il martedì l'invio diretto ora pesca
+  **anche dai compilatori del questionario senza sessione attiva** (coorte B estesa da
+  ContactsMatrix, rispettando OptInMatrix): nessun profilato storico si perde più.
+  `cronGenerateDigestWeekly` la domenica prepara ora solo la bozza generalista.
+- **P5 — Mittente unico**: i digest a 2 coorti partono da `sinopiaconsulting@gmail.com`
+  (alias verificato) come la newsletter generalista, non più dall'indirizzo personale.
+- **P4 — Fallback tematico onesto**: `buildTematicDigest` ritorna vuoto se non trova
+  contenuti davvero pertinenti alla tematica; il lead riceve allora il digest standard
+  (contenuto reale, oggetto generico) invece di un'email tematica finta.
+
+Restano aperte, non ancora affrontate: P1 (ramo coorte A generalista), P6 (agenti
+sospesi), P7 (commenti/costanti da allineare), P8 (contatore rientri lettori).

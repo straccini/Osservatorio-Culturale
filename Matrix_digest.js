@@ -856,20 +856,17 @@ function cronGenerateDigestWeekly() {
   };
 
   try {
-    // 1) Bozze segmentate per i compilatori Matrix
-    Logger.log('[1/3] Generazione bozze segmentate per compilatori Matrix...');
-    try {
-      report.segmentati = generateDigestQueueAll({});
-      Logger.log('  Segmentati: generati=' + (report.segmentati.generati||0) +
-                 ' skipped=' + (report.segmentati.skipped||0) +
-                 ' errori=' + (report.segmentati.errori||0));
-    } catch(e) {
-      report.errori.push('segmentati: ' + e.message);
-      Logger.log('  ERR segmentati: ' + e.message);
-    }
+    // 1) v4.34 (opzione B) — NIENTE PIÙ bozze segmentate della domenica.
+    // Prima si generavano 4 bozze Matrix/settimana in DigestQueue che nessuno
+    // inviava mai (il martedì sendDigestProfilatiMartedi le rigenera e invia
+    // direttamente): 36 bozze accumulate senza scopo. I digest Matrix
+    // personalizzati partono ora solo il martedì, direttamente, e raggiungono
+    // anche i compilatori senza sessione (coorte B estesa in Digest_routing).
+    Logger.log('[1/2] Bozze segmentate Matrix: SALTATE (opzione B — invio diretto il martedì)');
+    report.segmentati = { skipped: true, nota: 'opzione B: invio diretto martedì, nessuna bozza domenicale' };
 
     // 2) Bozza generalista per MailingList
-    Logger.log('[2/3] Generazione bozza generalista...');
+    Logger.log('[2/2] Generazione bozza generalista...');
     try {
       if (typeof adminGenerateDigestDraft === 'function') {
         report.generalista = adminGenerateDigestDraft({
@@ -891,11 +888,11 @@ function cronGenerateDigestWeekly() {
 
     // 3) Notifica Telegram all'admin
     Logger.log('[3/3] Notifica Telegram all\'admin...');
-    var msg = '*Digest weekly · bozze pronte*\n\n' +
+    var msg = '*Digest weekly · bozza generalista pronta*\n\n' +
               '_' + Utilities.formatDate(startedAt, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm') + '_\n\n' +
-              '*Segmentati Matrix:* ' + (report.segmentati ? (report.segmentati.generati||0) : 0) + ' bozze\n' +
-              '*Generalista:* ' + (report.generalista && report.generalista.ok ? '1 bozza pronta' : 'errore') + '\n\n' +
-              'Apri il pannello admin per revisione e invio.';
+              '*Generalista:* ' + (report.generalista && report.generalista.ok ? '1 bozza pronta per la revisione' : 'errore') + '\n' +
+              '*Profilati Matrix:* invio automatico diretto martedì (nessuna bozza da rivedere)\n\n' +
+              'Apri il pannello admin per revisione e invio della generalista.';
     try {
       if (typeof sendTelegram === 'function') {
         var tg = sendTelegram(msg);
