@@ -1171,7 +1171,9 @@ function getUtentiPerOptIn(optInKey) {
  * Esegui UNA VOLTA dall'editor GAS dopo il sync.
  * @return { ok, importati: {dalMailingList,daContactsMatrix,daAdminSeed}, totale, errori }
  */
-function migraUtentiDaTutto() {
+function migraUtentiDaTutto(token) {
+  // v4.34 SEC — migrazione utenti: solo admin (client passa il token di sessione).
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden: richiede admin' };
   Logger.log('=== MIGRAZIONE UTENTI: MailingList + ContactsMatrix + AdminSeed -> Utenti ===');
   var report = { dalMailingList: 0, daContactsMatrix: 0, daAdminSeed: 0, gia_presenti: 0, errori: [] };
   try {

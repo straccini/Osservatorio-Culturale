@@ -534,7 +534,9 @@ function autoArchiveAllOld(sogliaGiorni) {
 // Esposta via google.script.run per pulizia massiva da pannello admin.
 // ============================================================================
 
-function autoDeleteAllVeryOld(sogliaMesi) {
+function autoDeleteAllVeryOld(sogliaMesi, token) {
+  // v4.34 SEC — cancellazione massiva: solo admin (client passa il token di sessione).
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden: richiede admin' };
   sogliaMesi = sogliaMesi || (typeof OC_AUTO_DELETE_MONTHS !== 'undefined' ? OC_AUTO_DELETE_MONTHS : 12);
   var out = { ok:true, sogliaMesi: sogliaMesi, results: {}, totale: 0 };
   var tipi = ['bando','item','podcast'];

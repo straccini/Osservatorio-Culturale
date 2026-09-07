@@ -7759,7 +7759,7 @@
         loadTagStats();
       })
       .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
-      .setupMatrixDimColumns();
+      .setupMatrixDimColumns((window.OC_SESSION && OC_SESSION.token) || '');
   }
 
   function tagMatrixBatch(){
@@ -9407,7 +9407,7 @@
         if (out) out.innerHTML = s;
       })
       .withFailureHandler(function(e){ if (out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
-      .autoDeleteAllVeryOld(n);
+      .autoDeleteAllVeryOld(n, (window.OC_SESSION && OC_SESSION.token) || '');
   }
 
   function runMigraUtenti() {
@@ -9424,7 +9424,7 @@
         } else { out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc((r&&r.error)||'')+'</span>'; }
       })
       .withFailureHandler(function(e){ out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(e)+'</span>'; })
-      .migraUtentiDaTutto();
+      .migraUtentiDaTutto((window.OC_SESSION && OC_SESSION.token) || '');
   }
 
   // Sprint 2-5 finalize (2026-05-11) — Setup one-click v4.18
@@ -9489,7 +9489,7 @@
         if (out) out.innerHTML = html;
       })
       .withFailureHandler(function(e) { if (out) out.innerHTML = '<div style="color:var(--danger,#C2410C)">Errore di rete: ' + esc(String(e)) + '</div>'; })
-      .runAllSetupV418();
+      .runAllSetupV418((window.OC_SESSION && OC_SESSION.token) || '');
   }
 
   function debugAuthClient() {
@@ -9539,7 +9539,7 @@
         if (out) out.innerHTML = html;
       })
       .withFailureHandler(function(e) { if (out) out.innerHTML = '<div style="color:var(--danger,#C2410C)">Errore: ' + esc(String(e)) + '</div>'; })
-      .runAllSetupV418Status();
+      .runAllSetupV418Status((window.OC_SESSION && OC_SESSION.token) || '');
   }
 
   function runMigraBandiAmbito() {
@@ -9668,7 +9668,7 @@
         else alert('Reset non riuscito: '+(r && r.err || 'sconosciuto'));
       })
       .withFailureHandler(function(e){ alert('Errore: '+e); })
-      .resetFailFonteV5ByUrl(url);
+      .resetFailFonteV5ByUrl(url, (window.OC_SESSION && OC_SESSION.token) || '');
   }
 
   function runScannerPodcast(){
@@ -13846,7 +13846,7 @@
         .withFailureHandler(function(err){
           if (out) { out.style.color = 'var(--danger,#C2410C)'; out.textContent = '✗ Errore: ' + (err && err.message || err); }
         })
-        .setupDedupAutoTrigger();
+        .setupDedupAutoTrigger((window.OC_SESSION && OC_SESSION.token) || '');
     },
     // v4.18.40 (2026-05-15) — Elenca fonti bandi disattivate (Attiva=FALSE)
     loadFontiDisattivate: function(){

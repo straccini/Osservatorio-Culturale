@@ -1902,7 +1902,9 @@ function getFontiBandiDisattivate() {
 /**
  * Resetta i fail consecutivi su una fonte (riabilita dopo errori).
  */
-function resetFailFonteV5ByUrl(url) {
+function resetFailFonteV5ByUrl(url, token) {
+  // v4.34 SEC — reset contatori fonte: solo admin (client passa il token di sessione).
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden: richiede admin' };
   try {
     if (!url) return { ok: false, err: 'URL mancante' };
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
@@ -3216,7 +3218,9 @@ function getQualityCheckLog(opts, token) {
  *
  * Da chiamare UNA volta dall'editor GAS per installare il trigger.
  */
-function setupDedupAutoTrigger() {
+function setupDedupAutoTrigger(token) {
+  // v4.34 SEC — installazione trigger: solo admin (client passa il token di sessione).
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden: richiede admin' };
   // Rimuovi trigger esistente
   var triggers = ScriptApp.getProjectTriggers();
   triggers.forEach(function(t) {
