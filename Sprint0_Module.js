@@ -417,8 +417,8 @@ function _h4_checkAddon() {
  */
 function _h2c_dumpForLabeling() {
   var ss = getMainSS();
-  var src = ss.getSheetByName('ITEMS');
-  if (!src) throw new Error('Sheet ITEMS non trovato');
+  var src = ss.getSheetByName((typeof SH !== 'undefined' && SH && SH.ITEMS) ? SH.ITEMS : 'Items');
+  if (!src) throw new Error('Sheet Items non trovato');
 
   var data = src.getDataRange().getValues();
   var headers = data[0];

@@ -48,10 +48,10 @@ var OC_DIGEST_QUEUE_HEADERS = [
 ];
 
 /**
- * _h_() — HTML entity escaping per email digest.
+ * _mdH_() — HTML entity escaping per email digest.
  * Previene XSS e injection nelle email HTML generate.
  */
-function _h_(val) {
+function _mdH_(val) {
   return String(val == null ? '' : val)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -318,10 +318,10 @@ function _queryContenutiPerDim_(target, dim, limit) {
     var headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
     var iDim = headers.indexOf('MatrixDim');
     if (iDim < 0) return [];
-    var iTit = _findCol_(headers, ['Titolo','titolo','Title','title']);
-    var iLink = _findCol_(headers, ['Link','link','URL','url','URL_bando','UrlBando','LinkBando']);
-    var iSca  = _findCol_(headers, ['Scadenza','scadenza','DataPubblicazione','Data','data','DataRilevamento']);
-    var iEnt  = _findCol_(headers, ['Ente','ente','Fonte','fonte','Autore','autore','Serie']);
+    var iTit = _mdFindCol_(headers, ['Titolo','titolo','Title','title']);
+    var iLink = _mdFindCol_(headers, ['Link','link','URL','url','URL_bando','UrlBando','LinkBando']);
+    var iSca  = _mdFindCol_(headers, ['Scadenza','scadenza','DataPubblicazione','Data','data','DataRilevamento']);
+    var iEnt  = _mdFindCol_(headers, ['Ente','ente','Fonte','fonte','Autore','autore','Serie']);
 
     var rows = sh.getRange(2, 1, sh.getLastRow()-1, headers.length).getValues();
     var out = [];
@@ -343,7 +343,7 @@ function _queryContenutiPerDim_(target, dim, limit) {
   }
 }
 
-function _findCol_(headers, candidates) {
+function _mdFindCol_(headers, candidates) {
   for (var i = 0; i < candidates.length; i++) {
     var idx = headers.indexOf(candidates[i]);
     if (idx >= 0) return idx;
@@ -426,9 +426,9 @@ function _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcas
 
   // Header personalizzato
   parts.push('<tr><td style="padding:28px 28px 18px 28px;background:linear-gradient(135deg,#0E7490 0%,#2E5266 100%);color:#FFFFFF;">');
-  parts.push('<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.85">MuseMu Matrix · Digest personalizzato · ' + _h_(dateStr) + '</div>');
-  parts.push('<div style="font-size:22px;font-weight:700;margin-top:8px;">' + _h_(museumName) + '</div>');
-  parts.push('<div style="font-size:13px;margin-top:6px;opacity:.9">Profilo: <b>' + _h_(profile) + '</b> · Score sintetico: <b>' + _h_(score) + '/100</b></div>');
+  parts.push('<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.85">MuseMu Matrix · Digest personalizzato · ' + _mdH_(dateStr) + '</div>');
+  parts.push('<div style="font-size:22px;font-weight:700;margin-top:8px;">' + _mdH_(museumName) + '</div>');
+  parts.push('<div style="font-size:13px;margin-top:6px;opacity:.9">Profilo: <b>' + _mdH_(profile) + '</b> · Score sintetico: <b>' + _mdH_(score) + '/100</b></div>');
   parts.push('</td></tr>');
 
   // Box "Cosa trovi qui"
@@ -444,9 +444,9 @@ function _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcas
   top3.forEach(function(o, i) {
     var col = ['#0E7490','#B8902A','#2E5266'][i] || '#666';
     parts.push('<td style="width:33%;padding:6px 4px"><div style="background:#FAFAFA;border-top:3px solid ' + col + ';padding:10px 12px;border-radius:6px">');
-    parts.push('<div style="font-size:11px;color:' + col + ';font-weight:700">#' + (i+1) + ' · ' + _h_(o.dimensionCode) + '</div>');
-    parts.push('<div style="font-size:13px;color:#1D1D1F;margin-top:3px;line-height:1.3">' + _h_(o.dimensionName) + '</div>');
-    parts.push('<div style="font-size:11px;color:#888;margin-top:3px">score ' + _h_(o.score) + '/100</div>');
+    parts.push('<div style="font-size:11px;color:' + col + ';font-weight:700">#' + (i+1) + ' · ' + _mdH_(o.dimensionCode) + '</div>');
+    parts.push('<div style="font-size:13px;color:#1D1D1F;margin-top:3px;line-height:1.3">' + _mdH_(o.dimensionName) + '</div>');
+    parts.push('<div style="font-size:11px;color:#888;margin-top:3px">score ' + _mdH_(o.score) + '/100</div>');
     parts.push('</div></td>');
   });
   parts.push('</tr></table></td></tr>');
@@ -461,7 +461,7 @@ function _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcas
     if (!totDim) return;
 
     parts.push('<tr><td style="padding:24px 28px 6px 28px;border-top:1px solid #ECECEE;">');
-    parts.push('<div style="font-size:13px;color:#0E7490;font-weight:700">' + _h_(dim) + ' · ' + _h_(o.dimensionName) + '</div>');
+    parts.push('<div style="font-size:13px;color:#0E7490;font-weight:700">' + _mdH_(dim) + ' · ' + _mdH_(o.dimensionName) + '</div>');
     parts.push('<div style="font-size:11px;color:#888;margin-top:2px">' + totDim + ' aggiornamenti pertinenti questa settimana</div>');
     parts.push('</td></tr>');
 
@@ -483,13 +483,13 @@ function _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcas
   if (webUrl) {
     parts.push('<tr><td style="padding:28px 28px 12px 28px;text-align:center;border-top:1px solid #ECECEE;">');
     parts.push('<div style="font-size:13px;color:#3A3A3C;margin-bottom:10px">Vuoi rivedere il tuo report MuseMu Matrix o ricompilare il questionario per misurare i progressi?</div>');
-    parts.push('<a href="' + _h_(webUrl) + '#matrix-landing" style="display:inline-block;background:#B8902A;color:#FFFFFF;padding:10px 22px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;">Apri il tuo MuseMu Matrix →</a>');
+    parts.push('<a href="' + _mdH_(webUrl) + '#matrix-landing" style="display:inline-block;background:#B8902A;color:#FFFFFF;padding:10px 22px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;">Apri il tuo MuseMu Matrix →</a>');
     parts.push('</td></tr>');
   }
 
   // Footer
   parts.push('<tr><td style="padding:14px 28px 28px 28px;border-top:1px solid #ECECEE;">');
-  parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;">Ricevi questa email perche hai completato il questionario MuseMu Matrix per ' + _h_(museumName) + ' e hai espresso consenso al follow-up. Dati trattati ai sensi del Reg. UE 2016/679.</p>');
+  parts.push('<p style="margin:0;font-size:11px;line-height:1.5;color:#8A8A8E;">Ricevi questa email perche hai completato il questionario MuseMu Matrix per ' + _mdH_(museumName) + ' e hai espresso consenso al follow-up. Dati trattati ai sensi del Reg. UE 2016/679.</p>');
   // v4.18.54 — Footer unsubscribe link
   if (typeof _digestUnsubFooter_ === 'function' && email) {
     parts.push(_digestUnsubFooter_(email, { style: 'matrix' }));
@@ -504,7 +504,7 @@ function _buildDigestSegmentatoHtml_(report, top3, bandiByDim, newsByDim, podcas
 function _dsSubsectionHeader_(title) {
   return '<tr><td style="padding:8px 28px 4px 28px;">' +
          '<div style="font-size:11px;color:#8A8A8E;font-weight:700;letter-spacing:.08em;text-transform:uppercase">' +
-         _h_(title) + '</div></td></tr>';
+         _mdH_(title) + '</div></td></tr>';
 }
 
 function _dsCard_(item, color, kind) {
@@ -513,12 +513,12 @@ function _dsCard_(item, color, kind) {
   var ente = item.ente || '';
   var sca = item.scadenza || '';
   var meta = [ente, sca].filter(String).join(' · ');
-  var titHtml = link ? '<a href="' + _h_(link) + '" style="color:#1D1D1F;text-decoration:none;">' + _h_(titolo) + '</a>' : _h_(titolo);
+  var titHtml = link ? '<a href="' + _mdH_(link) + '" style="color:#1D1D1F;text-decoration:none;">' + _mdH_(titolo) + '</a>' : _mdH_(titolo);
   return '<tr><td style="padding:6px 28px;">' +
          '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">' +
          '<tr><td style="border-left:3px solid ' + color + ';padding:8px 12px;background:#FAFAFA;border-radius:0 6px 6px 0;">' +
          '<div style="font-size:13px;color:#1D1D1F;line-height:1.4;font-weight:600">' + titHtml + '</div>' +
-         (meta ? '<div style="font-size:11px;color:#5A5A5E;margin-top:3px">' + _h_(meta) + '</div>' : '') +
+         (meta ? '<div style="font-size:11px;color:#5A5A5E;margin-top:3px">' + _mdH_(meta) + '</div>' : '') +
          '</td></tr></table></td></tr>';
 }
 

@@ -1,7 +1,24 @@
 # Osservatorio Culturale — Codebase Map
 
 **Stack**: Google Apps Script (GAS) + HTML/JS frontend + Google Sheets backend
-**Versione corrente**: v4.18.x · deployment @291 del 15/05/2026
+**Versione corrente nel repo**: v5.1.9 (28/05/2026, ultimo commit `7d6d271`)
+**Deployment GAS attivo**: **@980** (precedente @979) — verificato con Silvano il 14/08/2026
+
+> ## ⚠️ IL REPOSITORY È INDIETRO RISPETTO ALLA PRODUZIONE
+>
+> Verificato il 14/08/2026 interrogando l'URL pubblico. La produzione contiene lavoro
+> fatto nell'editor web GAS e **mai riportato in git**:
+>
+> - la sidebar live dichiara **v4.23.0**, versione che non esiste in nessun file né in nessun commit
+> - **70 endpoint** invocati dal frontend live non sono definiti qui: `loginConEmail`, `registraUtente`, `initSession`, `statoLoginPubblico`, tutto il flusso `segnalazioni*`, `editoriale*`, `redazionale*`, `trend*`, `getProfilo`/`saveProfilo`, `getEditoria`, `getLavoroOpportunita`, `backupSpreadsheet`
+> - **5 pagine** solo in produzione: `editoria`, `lavoro`, `privacy`, `profilo-pro`, `profilo-pro-tpl`
+> - nessuna pagina del repo manca in produzione: la divergenza è a senso unico
+>
+> **`clasp push` da qui cancellerebbe tutto quel lavoro.** Sequenza obbligata:
+> `clasp pull` → commit dello stato reale → merge delle modifiche locali → `clasp push`.
+>
+> Finché la riconciliazione non è fatta, ogni analisi condotta su questo repository
+> descrive un'istantanea del 28/05, non ciò che è in esecuzione.
 **URL produzione DEFINITIVO** (accesso "Chiunque"): `https://script.google.com/macros/s/AKfycbyUpp_zM0I4vg3AKVXQKsvhwiKUHFP4YOURGjh5a05evdeEQpuOQIjakngeWyfIzVqs/exec`
 **URL precedente DEPRECATO** (v4.6.0 e antecedenti): `https://script.google.com/macros/s/AKfycbzpfAFUPEtfHD-zSWmYkhOQ9z_nLyPogWRZhZfCr2Xy6p3Jh8QICSemUHPeEICEIa5O/exec`
 **Script ID**: `1VXXzcHRB6kv34Dvqfp5p0x1zMzRtDhSDzmf-jsMtiD2hK2U0gG6uaTPx`

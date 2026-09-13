@@ -1,0 +1,34 @@
+# Pagine #page-* servite dalla produzione GAS (deployment @980) — rilevate 14/08/2026
+# Le 5 marcate SOLO-PROD non esistono in questo repository.
+
+admin
+ambito
+archivio
+bandi
+capitali
+cestino
+chisiamo
+compilatori
+digest
+editoria    # SOLO-PROD
+fonti-diagnostica
+home
+kb
+lavoro    # SOLO-PROD
+libri
+matrix
+matrix-landing
+news
+norme
+podcast
+privacy    # SOLO-PROD
+profilo-pro    # SOLO-PROD
+profilo-pro-tpl    # SOLO-PROD
+search
+settings
+social
+sondaggi-catalogo
+sondaggio
+stats
+video
+workspace

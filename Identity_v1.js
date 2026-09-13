@@ -292,11 +292,11 @@ function getFilteredContent(email, tipo, limit) {
       if (shB && shB.getLastRow() >= 2) {
         var bData = shB.getDataRange().getValues();
         var bHead = bData[0];
-        var iAmb = _findCol_(bHead, 'Ambito');
-        var iReg = _findCol_(bHead, 'Regione');
-        var iStato = _findCol_(bHead, 'StatoRecord');
-        var iTitolo = _findCol_(bHead, 'Titolo');
-        var iUrl = _findCol_(bHead, 'UrlBando');
+        var iAmb = _idFindCol_(bHead, 'Ambito');
+        var iReg = _idFindCol_(bHead, 'Regione');
+        var iStato = _idFindCol_(bHead, 'StatoRecord');
+        var iTitolo = _idFindCol_(bHead, 'Titolo');
+        var iUrl = _idFindCol_(bHead, 'UrlBando');
 
         for (var r = 1; r < bData.length && items.length < limit; r++) {
           if (String(bData[r][iStato] || '') === 'archiviato') continue;
@@ -429,7 +429,7 @@ function _identNormalize_(input) {
   return map;
 }
 
-function _findCol_(headers, name) {
+function _idFindCol_(headers, name) {
   for (var i = 0; i < headers.length; i++) {
     if (String(headers[i]).toLowerCase() === name.toLowerCase()) return i;
   }

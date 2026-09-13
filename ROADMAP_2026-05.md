@@ -1,5 +1,5 @@
 # Roadmap miglioramento Sinopia · Osservatorio Culturale
-**Versione corrente**: v4.18.45 · deploy @282 (2026-05-15)
+**Versione corrente**: v5.1.9 · 28/05/2026 (allineata in QA 2026-08-14; deployment GAS da verificare)
 
 **Aggiornamento 2026-05-15**: completato cleanup notturno (v4.18.38→.39) + estensione MiC + duplicati + quality check bandi + icone sidebar uniformate + logo SVG inline. Roadmap reimpostata su **apertura piattaforma freemium**.
 

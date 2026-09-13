@@ -129,11 +129,24 @@ function _tgEsc_(s) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
-function setupTelegram() {
-  setTelegramConfig(
-    '8033930905:AAHRSwFlg1xHCNVD4y5i6viOrDLP8P_c0KY',
-    '5830184824'
-  );
+/**
+ * Setup manuale della configurazione Telegram.
+ *
+ * QA 2026-08-14 — SICUREZZA: questa funzione conteneva token e chat_id in chiaro.
+ * Il repository e' pubblico su GitHub, quindi il token era esposto ed e' da
+ * considerarsi compromesso: va REVOCATO da @BotFather e sostituito.
+ * I valori non vanno piu' scritti nel codice: passali come argomenti da editor GAS,
+ * finiscono in ScriptProperties (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID) che non
+ * vengono versionate.
+ *
+ * Uso da editor GAS:  setupTelegram('<nuovo_token>', '<chat_id>')
+ */
+function setupTelegram(botToken, chatId) {
+  if (!botToken || !chatId) {
+    throw new Error('setupTelegram(botToken, chatId): passa i valori come argomenti. ' +
+      'Non inserirli nel codice — il repository e\' pubblico.');
+  }
+  setTelegramConfig(botToken, chatId);
   Logger.log('Configurazione Telegram salvata.');
   Logger.log('Status: ' + JSON.stringify(getTelegramConfigStatus()));
 }
