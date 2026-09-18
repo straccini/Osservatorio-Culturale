@@ -26,7 +26,11 @@
  *    Se lead supera 30pt → notifica Telegram via _tgSend_
  *
  *  Endpoint pubblici:
- *    sendDigestAuto2coorti()       → cron lunedì 07:00 (sostituisce sendDigestAuto)
+ *    sendDigestAuto2coorti()       → invio Coorte A generalisti (manuale) + B lead
+ *                                    Nota: Coorte B parte il MARTEDÌ via
+ *                                    sendDigestProfilatiMartedi (07:30). Non esiste
+ *                                    più un cron "lunedì 07:00": schedule reale in
+ *                                    SetupMaster.js.
  *    getDigestRecipientsByCohort() → admin preview: chi riceverà cosa
  *    previewDigestPerEmail(email)  → admin: anteprima digest HTML per email specifica
  *
@@ -744,7 +748,7 @@ function previewDigestPerEmail(email, token) {
     if (inB) {
       var html, layout;
       if (inB.matrixCompletato && inB.responseId && typeof generateDigestForUser === 'function') {
-        var r = generateDigestForUser(email, inB.responseId, { save:false, includeAgentContent:true });
+        var r = generateDigestForUser(email, inB.responseId, { save:false, includeAgentContent:false });
         html = r && r.html || ''; layout = 'matrix-personalizzato';
       } else if (inB.tematica) {
         html = buildTematicDigest(items, inB.tematica, inB); layout = 'tematico';

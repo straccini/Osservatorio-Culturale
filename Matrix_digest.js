@@ -826,8 +826,13 @@ function testDigestMatrixForEmail(email, token) {
 // ============================================================================
 
 var OC_DIGEST_TRIGGER_HANDLER = 'cronGenerateDigestWeekly';
+// NOTA (v4.35): la pianificazione AUTORITATIVA di cronGenerateDigestWeekly è in
+// SetupMaster.js — DOMENICA 18:00 (genera le bozze da rivedere lunedì). Le
+// costanti sottostanti servono solo alla funzione legacy setupMatrixDigestTrigger()
+// (installa un trigger martedì 06:00) che NON è più il percorso in uso: usare
+// setupMasterTriggers(). Lasciate per compatibilità/diagnostica.
 var OC_DIGEST_TRIGGER_DAY = ScriptApp.WeekDay.TUESDAY;
-var OC_DIGEST_TRIGGER_HOUR = 6; // martedi 06:00
+var OC_DIGEST_TRIGGER_HOUR = 6; // legacy setupMatrixDigestTrigger (non in uso)
 var OC_DIGEST_LAST_RUN_PROP = 'OC_DIGEST_LAST_RUN';
 var OC_DIGEST_LAST_RESULT_PROP = 'OC_DIGEST_LAST_RESULT';
 
