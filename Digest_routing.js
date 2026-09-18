@@ -831,14 +831,14 @@ function sendDigestProfilatiMartedi(opts) {
       return { ok:false, error:'Quota email insufficiente (' + quota + ')' };
     }
 
-    // ── 1. COORTE B (personalizzati + contenuti agenti unificati) — SOLO MARTEDÌ (o forzato) ──
+    // ── 1. COORTE B (digest Matrix personalizzati) — SOLO MARTEDÌ (o forzato) ──
     var coorteBEmails = [];
     if (isMartedi || opts.forceCoorteB) {
-      Logger.log('[DigestProfilati] Martedi: invio Coorte B con contenuti agenti unificati...');
+      Logger.log('[DigestProfilati] Martedi: invio Coorte B (digest Matrix personalizzati)...');
       var coorteBResult = sendDigestAuto2coorti({
         dryRun: opts.dryRun,
         onlyLead: true,
-        includeAgentContent: true,  // v4.25: agenti nel digest Matrix
+        includeAgentContent: false,  // v4.35: agenti AG1-AG5 dismessi → nessun contenuto agenti
         token: opts.token
       });
       if (coorteBResult) {
