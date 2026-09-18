@@ -2666,8 +2666,8 @@
             <button class="btn btn-secondary" onclick="OC.adminTool('enrichV5Apply', this)" style="font-size:12px;padding:6px 12px" title="Genera descrizione e tipo (Claude) per i bandi con scadenza ma senza descrizione">✨ Arricchisci bandi (30)</button>
           </div>
 
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;margin:12px 0 6px">Arricchimento bandi (v4.27)</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+          <details style="margin:12px 0 0"><summary style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;cursor:pointer;padding:4px 0">Arricchimento bandi (v4.27) &middot; avanzate</summary>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;margin-top:8px">
             <button class="btn btn-secondary" onclick="OC.adminTool('enrichRadarDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quanti bandi verrebbero arricchiti">Arricchimento &middot; anteprima</button>
             <button class="btn btn-warning" onclick="if(confirm('Arricchire fino a 20 bandi con Claude AI?'))OC.adminTool('enrichRadarApply', this)" style="font-size:12px;padding:6px 12px" title="Usa Claude Haiku per aggiungere descrizione e tipo appalto ai bandi">Arricchisci bandi</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('puliziaNonBandoDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: identifica record non-bando (allegati, pagine GAL, voci di menu) da archiviare">Pulizia non-bando &middot; anteprima</button>
@@ -2676,7 +2676,7 @@
             <button class="btn btn-warning" onclick="if(confirm('Archiviare i bandi senza scadenza rilevati da più di 90 giorni?'))OC.adminTool('archiviaVecchiApply', this)" style="font-size:12px;padding:6px 12px" title="Archivia bandi senza scadenza rilevati da oltre 90 giorni (zavorra storica)">Vecchi senza scadenza &middot; archivia</button>
             <button class="btn btn-secondary" onclick="OC.adminTool('enrichDeepDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: bandi senza scadenza o descrizione che verrebbero arricchiti visitando il link originale">Deep enrich &middot; anteprima</button>
             <button class="btn btn-warning" onclick="if(confirm('Visitare i link di 15 bandi e estrarre scadenza/descrizione con Claude?'))OC.adminTool('enrichDeepApply', this)" style="font-size:12px;padding:6px 12px" title="Visita il link del bando, estrae il testo, e usa Claude per trovare scadenza, descrizione e importo. Notturno automatico ore 01+04.">Deep enrich (15)</button>
-          </div>
+          </div></details>
 
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;margin:12px 0 6px">Fonti</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
@@ -2752,12 +2752,12 @@
             <!-- v4.28.1 — TASSONOMIA T1-T10 (Fase 2): ogni contenuto riceve
                  una tipologia + grado di aderenza 0-100. Batch notturno 02:00
                  sui contenuti attivi; qui la versione manuale con anteprima. -->
-            <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin:14px 0 8px">Tassonomia T1&#8211;T10</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <details style="margin:14px 0 0"><summary style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);cursor:pointer;padding:4px 0">Tassonomia T1&#8211;T10 &middot; avanzate</summary>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
               <button class="btn btn-secondary" onclick="OC.adminTool('txBatchDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: quanti contenuti attivi sono ancora senza tipologia, per sezione">🔎 Classifica (anteprima)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('txBatchApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Classifica fino a 60 contenuti adesso (Claude, con fallback a parole chiave)">🏷 Classifica (adesso)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('txStato', this)" style="font-size:12px;padding:6px 12px" title="Copertura per sezione: classificati, da fare, aderenza debole, distribuzione per tipologia">📊 Tassonomia: stato</button>
-            </div>
+            </div></details>
             <!-- v4.28.3 — FASE 3 SCOUT FONTI: il miner scava nei contenuti già
                  censiti (link nelle news, bibliografie) + presidio università.
                  Ciclo settimanale: domenica arriva il riepilogo; le decisioni
@@ -2777,14 +2777,14 @@
                  Bandi: link fonte e scadenza IMPRESCINDIBILI, recupero attivo.
                  Altre categorie: sui campi si soprassiede, la coerenza
                  tematica si garantisce (aderenza < 30 = fuori tema). -->
-            <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin:14px 0 8px">Redattore &middot; qualit&agrave; delle informazioni</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <details style="margin:14px 0 0"><summary style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);cursor:pointer;padding:4px 0">Redattore &middot; qualit&agrave; delle informazioni &middot; avanzate</summary>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
               <button class="btn btn-secondary" onclick="OC.adminTool('redBandiStato', this)" style="font-size:12px;padding:6px 12px" title="Completezza dei bandi attivi campo per campo, in ordine di importanza: link, scadenza, descrizione, importo, regione">📋 Bandi: completezza</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('redBandiRecuperoDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima del recupero orchestrato (deep enrichment + regione)">🔎 Bandi: recupero (anteprima)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('redBandiRecupero', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Lancia subito il recupero: 15 bandi al deep enrichment (priorità senza-scadenza) + normalizza regione">🛠 Bandi: recupero (adesso)</button>
               <button class="btn btn-secondary" onclick="OC.adminTool('redCoerenzaDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima: contenuti esposti chiaramente fuori tema (aderenza sotto 30) in news, podcast, video, libri">🔎 Coerenza tematica (anteprima)</button>
               <button class="btn btn-secondary" onclick="if(confirm('Archivia i contenuti chiaramente fuori tema (aderenza sotto 30). Controllare prima l\'anteprima. Procedere?')) OC.adminTool('redCoerenzaApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Archivia i fuori tema confermati dall'anteprima">🧭 Coerenza tematica (applica)</button>
-            </div>
+            </div></details>
           </div>
           <!-- v4.27.59 — GESTIONE TREND: proposte notizia in evidenza (approvazione Telegram) -->
           <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--rule,#E5E5E7)">
