@@ -95,5 +95,31 @@ Queste vivono fuori dal codice e richiedono te:
 2. **Password admin/editor più forti**: nelle Proprietà script, `ADMIN_PASSWORD` (oggi
    corta) ed `EDITOR_PASSWORD` — sostituiscile con passphrase lunghe (4+ parole).
 
-*Nota: le 8 funzioni protette si attivano col prossimo deploy. Nessuna modifica alla
-produzione o al foglio è stata fatta da questa sessione.*
+## Addendum v4.35 (19/09/2026) — difetto sistemico dei guard "tokenless"
+
+Investigando il backlog "route doPost" ho trovato un difetto più ampio e l'ho corretto.
+
+**La causa.** Dopo il passaggio alla validazione ruolo *stateless* (v5.1.10, che ha
+rimosso il fallback a `Session`), `getCurrentUser_v44()` **senza token** restituisce
+sempre `anonimo`. Molte funzioni chiamavano il guard così (`getCurrentUser_v44()`)
+mentre il client le invocava **senza passare il token** → restituivano
+"Riservato a editor/admin" / "Azione riservata agli utenti registrati" **anche
+all'admin e agli utenti registrati**. Due funzioni (fonti podcast, seeding social)
+erano invece **del tutto prive di guard**.
+
+**Verificato NON essere un buco:** `saveMailing` (iscrizione newsletter pubblica da
+footer/modal/registrazione) e `deleteSocialFonteById` (già guardata) — la prima resta
+volutamente aperta, la seconda era solo tokenless.
+
+**Corretto (token esplicito client→guard, e `body.token` nelle route doPost):**
+- `deleteFonteBandiById`, `toggleFonteBandiField` (BandiCRUD) — erano rotte per l'admin
+- `deleteFontePodcastById`, `toggleFontePodcastField` (PodcastManager) — **erano SENZA guard**
+- `deleteFonteArticoli` (rotta), `seedSocialFontiIstituzionali` (**senza guard**), + le
+  3 CRUD Social Wall (`deleteSocialFonteById`/`toggleSocialFonteField`/`addSocialFonte`)
+- `markRead`, `toggleSaved` (Workflow) — erano rotte per gli utenti registrati
+
+Esito: anonimo sempre bloccato; admin/editor e utenti registrati di nuovo operativi.
+
+**Backlog residuo (nessun rischio noto, valore medio):** contatore rientri lettori
+(P8 del dossier newsletter). Le route doPost restano protette dal guard globale di ruolo
+(`doPost` riga 1394) più il guard per-funzione ora coerente.
