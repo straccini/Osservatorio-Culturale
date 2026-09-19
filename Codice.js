@@ -1524,10 +1524,10 @@ function doPost(e) {
         return jsonOk(addSocialFonte(body));
       case 'deleteSocialFonte':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(deleteSocialFonteById(body.id));
+        return jsonOk(deleteSocialFonteById(body.id, body.token));
       case 'toggleSocialFonte':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(toggleSocialFonteField(body.id,'Attiva'));
+        return jsonOk(toggleSocialFonteField(body.id,'Attiva', body.token));
 
       // * PODCAST v3.2
       case 'getPodcasts':     return jsonOk(getPodcasts(body));

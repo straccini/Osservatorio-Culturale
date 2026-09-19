@@ -14958,14 +14958,14 @@
           } else { if(fb) fb.textContent = (r&&r.error)||'Errore'; }
         })
         .withFailureHandler(function(e){ if(fb) fb.textContent = 'Errore: '+e; })
-        .addSocialFonte({ nome: nome.trim(), url: url.trim(), tipo: ($('swTipo')||{}).value||'blog', categoria: ($('swCat')||{}).value||'' });
+        .addSocialFonte({ nome: nome.trim(), url: url.trim(), tipo: ($('swTipo')||{}).value||'blog', categoria: ($('swCat')||{}).value||'', token: (window.OC_SESSION && OC_SESSION.token) || null });
     },
     toggleSocialFonteAtt: function(id){
       if (!hasGAS()) return;
       google.script.run
         .withSuccessHandler(function(){ _cacheSocialWall = null; OC.reloadSocialFonti(); })
         .withFailureHandler(function(e){ showToast('Errore toggle: '+e,'err'); })
-        .toggleSocialFonteField(id, 'Attiva');
+        .toggleSocialFonteField(id, 'Attiva', (window.OC_SESSION && OC_SESSION.token) || null);
     },
     deleteSocialFonte: function(id){
       if (!confirm('Eliminare questa fonte dal Social Wall?')) return;
@@ -14973,7 +14973,7 @@
       google.script.run
         .withSuccessHandler(function(){ _cacheSocialWall = null; OC.reloadSocialFonti(); })
         .withFailureHandler(function(e){ showToast('Errore delete: '+e,'err'); })
-        .deleteSocialFonteById(id);
+        .deleteSocialFonteById(id, (window.OC_SESSION && OC_SESSION.token) || null);
     },
     seedSocialFontiSettings: function(){
       if (!hasGAS()) return;

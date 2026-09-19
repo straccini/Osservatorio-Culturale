@@ -136,7 +136,7 @@ function _createSocialFontiSheet(SS) {
 }
 
 function addSocialFonte(body) {
-  var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
+  var _u = getCurrentUser_v44(body && body.token); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
   const SS=getMainSS();
   let sh=SS.getSheetByName('SocialFonti'); if(!sh) sh=_createSocialFontiSheet(SS);
   const id='SW'+Date.now();
@@ -145,12 +145,12 @@ function addSocialFonte(body) {
   return {ok:true,id};
 }
 
-function deleteSocialFonteById(id) {
-  var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
+function deleteSocialFonteById(id, token) {
+  var _u = getCurrentUser_v44(token); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
   return _deleteRowById(getMainSS().getSheetByName('SocialFonti'), id);
 }
-function toggleSocialFonteField(id, field) {
-  var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
+function toggleSocialFonteField(id, field, token) {
+  var _u = getCurrentUser_v44(token); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
   return _toggleField(getMainSS().getSheetByName('SocialFonti'), id, field);
 }
 
