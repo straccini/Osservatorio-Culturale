@@ -130,10 +130,10 @@ function _wfConfig_(tipo) {
 // letto non incide negativamente sull'esperienza utente).
 // ============================================================================
 
-function markRead(tipo, id) {
+function markRead(tipo, id, token) {
   // Role guard: richiede almeno lettore (livello >= 1)
   try {
-    var _u = getCurrentUser_v44();
+    var _u = getCurrentUser_v44(token);
     if (!_u || _u.ruolo === 'guest' || _u.ruolo === 'anonimo' || _u.ruolo === 'ospite') {
       return { error: 'Azione riservata agli utenti registrati' };
     }
@@ -164,10 +164,10 @@ function markRead(tipo, id) {
 // quando disponibile (per items).
 // ============================================================================
 
-function toggleSaved(tipo, id) {
+function toggleSaved(tipo, id, token) {
   // Role guard: richiede almeno lettore (livello >= 1)
   try {
-    var _u = getCurrentUser_v44();
+    var _u = getCurrentUser_v44(token);
     if (!_u || _u.ruolo === 'guest' || _u.ruolo === 'anonimo' || _u.ruolo === 'ospite') {
       return { error: 'Azione riservata agli utenti registrati' };
     }
@@ -534,7 +534,9 @@ function autoArchiveAllOld(sogliaGiorni) {
 // Esposta via google.script.run per pulizia massiva da pannello admin.
 // ============================================================================
 
-function autoDeleteAllVeryOld(sogliaMesi) {
+function autoDeleteAllVeryOld(sogliaMesi, token) {
+  // v4.34 SEC — cancellazione massiva: solo admin (client passa il token di sessione).
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden: richiede admin' };
   sogliaMesi = sogliaMesi || (typeof OC_AUTO_DELETE_MONTHS !== 'undefined' ? OC_AUTO_DELETE_MONTHS : 12);
   var out = { ok:true, sogliaMesi: sogliaMesi, results: {}, totale: 0 };
   var tipi = ['bando','item','podcast'];

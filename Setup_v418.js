@@ -26,7 +26,9 @@
  * ============================================================================
  */
 
-function runAllSetupV418() {
+function runAllSetupV418(token) {
+  // v4.34 SEC — setup completo: solo admin (client passa il token di sessione).
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden: richiede admin' };
   var t0 = new Date().getTime();
   var report = {
     ok: true,
@@ -195,7 +197,9 @@ function runSinopiaFix() {
 /**
  * Verifica stato setup senza eseguire (controllo idempotenza).
  */
-function runAllSetupV418Status() {
+function runAllSetupV418Status(token) {
+  // v4.34 SEC — stato setup: solo admin (client passa il token di sessione).
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden: richiede admin' };
   try {
     var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
     var checks = {};

@@ -55,6 +55,16 @@ var SAS_SOGLIE = {
   DEDUP_THRESHOLD: 50              // warn se >50 duplicati trovati
 };
 
+// v4.35 (18/09/2026) — DECISIONE: gli agenti tematici AG1-AG5 sono DISMESSI in
+// via definitiva. Sospesi dal 02/08 (Fase 3), la loro funzione di scouting fonti
+// e contenuti e' stata sostituita dal sistema Scout fonti (miner + ciclo
+// settimanale), che e' operativo. Con questo flag a true il supervisore tratta
+// "0/5 agenti" come stato ATTESO (non un guasto): niente piu' penalita' health
+// score, niente piu' allarme rosso "reinnestarlo o dismetterlo". Per riattivarli
+// un domani: rimettere questo flag a false E impostare OC_AGENTI_ATTIVI='true'.
+var SAS_AGENTI_DISMESSI = true;
+
+
 // ============================================================================
 // SETUP
 // ============================================================================
@@ -682,6 +692,13 @@ function _sasCalcolaHealthScore_(mon) {
   else if (mon.bandiNuovi7gg + mon.newsNuove7gg < SAS_SOGLIE.CONTENUTI_SETTIMANA_MIN) score -= 10;
   // Bonus agenti attivi
   if (mon.agentiAttivi >= 5) score = Math.min(100, score + 5);
+  // QA 24/08/2026 — un sistema agenti completamente FERMO prima costava solo
+  // il bonus mancato: il report diceva 95/100 con 0/5 attivi da settimane, e
+  // nessuno se n'e' accorto. Un sottosistema spento e' un guasto, non un
+  // dettaglio: -10.
+  // v4.35 — ma se gli agenti sono DISMESSI (scelta, non guasto), 0/5 e' lo stato
+  // atteso: nessuna penalita'.
+  if (mon.agentiAttivi === 0 && !SAS_AGENTI_DISMESSI) score -= 10;
   return Math.max(0, Math.min(100, score));
 }
 
@@ -814,11 +831,22 @@ function _sasElaboraStrategia_(kpi, trend) {
   }
 
   // Agenti
-  if (kpi.agentiAttivi < 5) {
+  if (SAS_AGENTI_DISMESSI) {
+    // v4.35 — agenti dismessi: stato deciso, non un problema. Nessuna
+    // raccomandazione (lo scouting fonti e' coperto dal sistema Scout).
+  } else if (kpi.agentiAttivi === 0) {
+    // QA 24/08/2026 — 0/5 non e' "solo": e' il sistema fermo. Con priorita'
+    // bassa (pallino verde) questo stato e' passato inosservato per settimane.
     strategia.push({
       area: 'agenti',
-      priorita: 'bassa',
-      raccomandazione: 'Solo ' + kpi.agentiAttivi + '/5 agenti attivi. Verificare fonti mancanti per agenti inattivi.'
+      priorita: 'alta',
+      raccomandazione: 'Sistema agenti FERMO (0/5): nessuna fonte assegnata in FontiAgenti o trigger scanAgente assenti dal CronDispatcher. Decidere se reinnestarlo o dismetterlo.'
+    });
+  } else if (kpi.agentiAttivi < 5) {
+    strategia.push({
+      area: 'agenti',
+      priorita: 'media',
+      raccomandazione: kpi.agentiAttivi + '/5 agenti attivi. Verificare fonti mancanti per gli agenti inattivi.'
     });
   }
 
@@ -863,7 +891,7 @@ function _sasInviaReportSettimanale_(report) {
     msg += '*Bandi nuovi:* ' + (kpi.bandiNuovi7gg || 0) + ' | *News:* ' + (kpi.newsNuove7gg || 0) + '\n';
     msg += '*Fonti attive:* ' + (kpi.fontiAttive || 0) + ' | *Silenti:* ' + (kpi.fontiSilenti || 0) + '\n';
     msg += '*Utenti:* ' + (kpi.sessioniTotali || 0) + ' (+' + (kpi.sessioniNuove7gg || 0) + ' nuovi)\n';
-    msg += '*Agenti:* ' + (kpi.agentiAttivi || 0) + '/5 attivi\n\n';
+    msg += '*Agenti:* ' + (SAS_AGENTI_DISMESSI ? 'dismessi (sostituiti dallo Scout fonti)' : ((kpi.agentiAttivi || 0) + '/5 attivi')) + '\n\n';
 
     if (report.strategia && report.strategia.length > 0) {
       msg += '*Raccomandazioni:*\n';

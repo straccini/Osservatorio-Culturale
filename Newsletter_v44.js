@@ -75,7 +75,28 @@ function buildNewsletterHtml_(draft) {
     if (_editoriale.foto) parts.push('<img src="' + String(_editoriale.foto) + '" alt="" width="564" style="width:100%;max-width:564px;display:block;margin-bottom:14px"/>');
     parts.push('<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8B3A1F;font-weight:700;margin-bottom:8px;">Approfondimento della settimana</div>');
     parts.push('<div style="font-size:16px;font-weight:700;color:#1D1D1F;margin-bottom:10px;">' + _h_(_editoriale.titolo) + '</div>');
-    parts.push('<p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C;">' + _h_(_editoriale.testo).replace(/\n/g, '<br>') + '</p>');
+    // QA 21/08/2026 (richiesta Silvano 20/08) — l'editoriale nella mail si ferma a
+    // ~10-12 righe: taglio a confine di frase intorno a 850 caratteri, poi pulsante
+    // "Continua a leggere" verso l'app (?apri=editoriale&seg=N). Il frontend apre
+    // l'approfondimento da solo e mette il segno al punto esatto in cui la mail si
+    // e' interrotta. Testi brevi restano interi, senza pulsante.
+    var _edTesto = String(_editoriale.testo || '');
+    var _edTaglio = 0;
+    if (_edTesto.length > 1100) {
+      _edTaglio = _edTesto.lastIndexOf('. ', 850);
+      if (_edTaglio < 400) _edTaglio = _edTesto.indexOf('. ', 850);   // frasi lunghe: primo punto utile
+      if (_edTaglio < 0) _edTaglio = 850;
+      _edTaglio += 1;                                                  // include il punto
+    }
+    var _edMostra = _edTaglio > 0 ? _edTesto.substring(0, _edTaglio) : _edTesto;
+    parts.push('<p style="margin:0;font-size:14px;line-height:1.65;color:#3A3A3C;">' + _h_(_edMostra).replace(/\n/g, '<br>') + '</p>');
+    if (_edTaglio > 0) {
+      var _edBase = (typeof ADMTK_PROD_URL === 'string' && ADMTK_PROD_URL) ? ADMTK_PROD_URL : webUrl;
+      var _edLink = _edBase + '?apri=editoriale&seg=' + _edTaglio;
+      parts.push('<p style="margin:14px 0 0;"><a href="' + _edLink + '" target="_blank" ' +
+        'style="display:inline-block;background:#1D1D1F;color:#FFFFFF;text-decoration:none;' +
+        'padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;">Continua a leggere &rarr;</a></p>');
+    }
     if (_editoriale.firma) parts.push('<div style="margin-top:12px;font-style:italic;font-size:13px;color:#6E6A62;">' + _h_(_editoriale.firma) + '</div>');
     parts.push('<div style="margin-top:14px;border-bottom:1px solid #E5E5E7;padding-bottom:6px"></div>');
     parts.push('</td></tr>');
@@ -246,11 +267,57 @@ function buildNewsletterHtml_(draft) {
  * Invia l'HTML a tutti gli iscritti Attivo=true nella sheet MailingList.
  * Ritorna { count, errors:[...] }
  */
-function sendNewsletterEmail_(subject, html) {
+// ============================================================================
+// QA 20/08/2026 — MITTENTE UFFICIALE
+// ----------------------------------------------------------------------------
+// Le newsletter devono partire da sinopiaconsulting@gmail.com.
+// Attenzione: in Apps Script il mittente NON e' liberamente impostabile. MailApp
+// spedisce sempre dall'account che esegue lo script (oggi s.straccini@gmail.com).
+// L'unico modo di cambiarlo e' GmailApp con l'opzione 'from', che accetta solo
+// indirizzi configurati come ALIAS VERIFICATO nell'account che esegue.
+//
+// Configurazione necessaria (una tantum, da fare in Gmail di s.straccini):
+//   Impostazioni -> Account e importazione -> "Invia messaggi come" ->
+//   Aggiungi un altro indirizzo email -> sinopiaconsulting@gmail.com ->
+//   confermare il codice che arriva a quell'indirizzo.
+//
+// Finche' l'alias non e' verificato il codice qui sotto se ne accorge, continua a
+// spedire dall'indirizzo corrente e lo scrive nel log: nessun invio va perso.
+// Per controllare in qualunque momento: ocVerificaMittente()
+// ============================================================================
+var OC_MITTENTE_UFFICIALE = 'sinopiaconsulting@gmail.com';
+
+/** Diagnostica: dice se l'alias del mittente ufficiale e' utilizzabile. */
+function ocVerificaMittente() {
+  var alias = [];
+  try { alias = GmailApp.getAliases() || []; } catch(e) { Logger.log('GmailApp non disponibile: ' + e.message); }
+  var attivo = '';
+  try { attivo = Session.getActiveUser().getEmail() || ''; } catch(e) {}
+  Logger.log('account che esegue lo script: ' + (attivo || '(non leggibile)'));
+  Logger.log('alias configurati: ' + (alias.length ? alias.join(', ') : '(nessuno)'));
+  var ok = alias.indexOf(OC_MITTENTE_UFFICIALE) >= 0;
+  Logger.log(ok
+    ? 'OK — le newsletter partiranno da ' + OC_MITTENTE_UFFICIALE
+    : 'NON configurato — serve aggiungere ' + OC_MITTENTE_UFFICIALE +
+      ' come alias in Gmail (Impostazioni > Account e importazione > Invia messaggi come). ' +
+      'Fino ad allora le mail partono da ' + (attivo || 'account corrente') + '.');
+  return { ok: ok, alias: alias, accountAttivo: attivo, mittenteUfficiale: OC_MITTENTE_UFFICIALE };
+}
+
+function sendNewsletterEmail_(subject, html, opts) {
+  opts = opts || {};
   // Sprint 1.4 (2026-05-01): legge da Utenti (OptInDigest=true && Stato=attivo) via Auth.gs.
   // Fallback su vecchia MailingList se Utenti vuoto.
-  var sender   = _safeEmail_() || 'sinopiaconsulting@gmail.com';
   var senderName = 'Osservatorio Culturale';
+  // QA 20/08/2026 — mittente ufficiale se l'alias e' verificato, altrimenti si
+  // prosegue con l'account corrente e lo si annota (vedi nota in cima al file).
+  var aliasOk = false;
+  try { aliasOk = (GmailApp.getAliases() || []).indexOf(OC_MITTENTE_UFFICIALE) >= 0; } catch(eAl) {}
+  var sender = OC_MITTENTE_UFFICIALE;
+  if (!aliasOk) {
+    Logger.log('[newsletter] alias ' + OC_MITTENTE_UFFICIALE + ' non configurato: ' +
+               'le mail partono dall\'account che esegue lo script. Esegui ocVerificaMittente().');
+  }
   var sent = 0;
   var errors = [];
   var destinatari = [];
@@ -281,25 +348,81 @@ function sendNewsletterEmail_(subject, html) {
     } catch(e2) { errors.push({ source:'mailinglist', err: e2.message }); }
   }
   if (!destinatari.length) return { count:0, errors: errors.concat([{source:'all', err:'nessun destinatario'}]) };
-  destinatari = Array.from(new Set(destinatari.map(function(e){ return e.toLowerCase().trim(); })));
-  destinatari.forEach(function(email) {
+
+  destinatari = Array.from(new Set(destinatari.map(function(e){ return String(e).toLowerCase().trim(); })));
+
+  // QA 20/08/2026 — INVIO A TRONCONI.
+  // MailApp ha un tetto giornaliero (100 per un account Gmail normale) e la lista
+  // cresce di circa 4 iscritti a settimana. Invece di partire e fallire a meta',
+  // si manda quanto la quota consente e si restituisce l'elenco dei rimanenti: il
+  // chiamante li salva nella bozza e il giro riprende il giorno dopo, da solo
+  // (newsletterRiprendiInvii, registrata nel CronDispatcher).
+  var giaInviati = {};
+  (opts.giaInviati || []).forEach(function(e){ giaInviati[String(e).toLowerCase().trim()] = true; });
+  var daServire = destinatari.filter(function(e){ return !giaInviati[e]; });
+
+  var MARGINE_QUOTA = 5;   // riserva per le email di servizio (autorizzazioni, avvisi)
+  var quota = -1;
+  try { quota = MailApp.getRemainingDailyQuota(); } catch(eq) {}
+  var capienza = (quota < 0) ? daServire.length : Math.max(0, quota - MARGINE_QUOTA);
+
+  var lotto    = daServire.slice(0, capienza);
+  var restanti = daServire.slice(capienza);
+
+  if (!lotto.length) {
+    var msgQ = daServire.length + ' destinatari in attesa, ' + quota + ' invii disponibili oggi';
+    Logger.log('[newsletter] nessun invio possibile — ' + msgQ);
+    try { if (typeof sendTelegram === 'function') sendTelegram('⏸ Newsletter in pausa: ' + msgQ + '. Riprende domani da sola.'); } catch(_t) {}
+    return { count: 0, errors: errors, totale_destinatari: destinatari.length,
+             restanti: restanti, inviatiOra: [], completato: false, quotaResidua: quota };
+  }
+
+  var inviatiOra = [];
+  lotto.forEach(function(email) {
     try {
       // v4.23 GDPR — link di disiscrizione firmato per-destinatario (come i digest)
       var htmlDest = html;
       try { if (typeof _digestUnsubFooter_ === 'function') htmlDest = html.replace('</body>', _digestUnsubFooter_(email) + '</body>'); } catch(_uf){}
-      MailApp.sendEmail({
-        to:      email,
-        subject: subject,
-        htmlBody: htmlDest,
-        name:    senderName,
-        replyTo: sender
-      });
+      if (aliasOk) {
+        GmailApp.sendEmail(email, subject, 'Apri questa email in un client che supporta l\'HTML.', {
+          htmlBody: htmlDest, name: senderName, from: OC_MITTENTE_UFFICIALE, replyTo: OC_MITTENTE_UFFICIALE
+        });
+      } else {
+        MailApp.sendEmail({
+          to: email, subject: subject, htmlBody: htmlDest,
+          name: senderName, replyTo: OC_MITTENTE_UFFICIALE
+        });
+      }
       sent++;
+      inviatiOra.push(email);
     } catch(e) {
       errors.push({ email:email, err:e.message });
     }
   });
-  return { count: sent, errors: errors, totale_destinatari: destinatari.length };
+  // QA 20/08/2026 — l'esito non resta piu' muto: finisce nel log e, se qualcosa non
+  // e' partito, arriva anche su Telegram. Prima gli errori per destinatario venivano
+  // raccolti qui e non li guardava nessuno.
+  Logger.log('[newsletter] inviate ' + sent + '/' + lotto.length + ' di questo lotto · rimanenti ' + restanti.length + ' su ' + destinatari.length + ' totali' +
+             ' —' +
+             ' errori: ' + errors.length + ' — quota residua: ' +
+             (function(){ try { return MailApp.getRemainingDailyQuota(); } catch(e){ return '?'; } })());
+  if (errors.length) {
+    var dettaglio = errors.slice(0, 5).map(function(x){ return (x.email || x.source || '?') + ': ' + x.err; }).join(' · ');
+    Logger.log('[newsletter] DETTAGLIO ERRORI — ' + dettaglio);
+    try {
+      if (typeof sendTelegram === 'function') {
+        sendTelegram('⚠️ Newsletter: ' + sent + '/' + destinatari.length +
+                     ' inviate, ' + errors.length + ' errori.\n' + dettaglio);
+      }
+    } catch(_t2) {}
+  }
+  if (restanti.length) {
+    Logger.log('[newsletter] quota esaurita: ' + restanti.length + ' destinatari restano per il prossimo giro.');
+    try { if (typeof sendTelegram === 'function') sendTelegram('📤 Newsletter: inviate ' + sent + ', ne restano ' + restanti.length + '. Riprende domani da sola.'); } catch(_t3) {}
+  }
+  return { count: sent, errors: errors, totale_destinatari: destinatari.length,
+           restanti: restanti, inviatiOra: inviatiOra, completato: (restanti.length === 0),
+           quotaResidua: quota };
 }
 
 // ================== SECTION & CARD BUILDERS ==================

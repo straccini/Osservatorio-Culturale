@@ -176,7 +176,9 @@ function _ensureMatrixDimColumn_(sheet) {
  * One-shot: garantisce colonna MatrixDim sui 3 fogli di contenuto.
  * Ritorna { items, bandi, podcast } con indice colonna risultante.
  */
-function setupMatrixDimColumns() {
+function setupMatrixDimColumns(token) {
+  // v4.34 SEC — modifica struttura fogli: solo admin (client passa il token di sessione).
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden: richiede admin' };
   Logger.log('=== SETUP COLONNA MatrixDim sui 3 fogli ===');
   var res = {};
   try {

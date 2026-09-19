@@ -95,6 +95,20 @@ function trendProponi(opts) {
           out.sostituita = String(v[i][0]);
           continue; // l'item resta riproponibile: non lo aggiungo a proposteIds
         }
+        // v4.32 — AUTOPILOTA (silenzio-assenso): se attivo, il martedì una
+        // proposta rimasta senza risposta si pubblica da sola. La pubblicazione
+        // sostituisce l'evidenza corrente come farebbe il click su "Pubblica";
+        // uno scarto manuale invece lascia in home quella che c'è già.
+        if (_trAutopilotaOn_() && new Date().getDay() === 2) {
+          var _dp = v[i][5];
+          var _dpT = (_dp instanceof Date) ? _dp : (_dp ? new Date(_dp) : null);
+          var _oggi0 = new Date(); _oggi0.setHours(0, 0, 0, 0);
+          if (_dpT && !isNaN(_dpT.getTime()) && _dpT.getTime() < _oggi0.getTime()) {
+            var _esA = trendEsegui(String(v[i][0]), 'pubblica', { tk: String(v[i][7] || ''), _autopilota: true });
+            out.autopilota = { id: String(v[i][0]), titolo: String(v[i][2] || ''), esito: _esA };
+            return out;
+          }
+        }
         out.motivoSkip = 'proposta gia pendente: ' + v[i][0];
         return out;
       }
@@ -120,12 +134,36 @@ function trendProponi(opts) {
       + (cand.link ? esc(cand.link) + '\n' : '')
       + '\n✅ Pubblica in evidenza:\n' + appUrl + '?trend=ok&id=' + id + '&tk=' + token
       + '\n\n❌ Scarta:\n' + appUrl + '?trend=no&id=' + id + '&tk=' + token
-      + '\n\nSenza conferma la proposta decade tra ' + TR_GIORNI_SCADENZA_PROPOSTA + ' giorni (la news resta in elenco).';
+      + '\n\n' + (_trAutopilotaOn_()
+          ? '🤖 Autopilota attivo: senza risposta entro martedì la notizia sarà pubblicata da sola. Uno scarto lascia in home quella attuale.'
+          : 'Senza conferma la proposta decade tra ' + TR_GIORNI_SCADENZA_PROPOSTA + ' giorni (la news resta in elenco).');
     var tg = _trTgBroadcast_(msg);
     out.proposta = { id: id, itemId: cand.id, titolo: cand.titolo, fonte: cand.fonte, motivo: cand.motivo || '(fallback score)', telegram: tg };
     Logger.log('[trend] proposta ' + id + ' — tg inviati ' + tg.inviati + '/' + tg.configurate);
   } catch (e) { out.ok = false; out.errore = e.message; Logger.log('[trendProponi] ' + e.message); }
   return out;
+}
+
+/**
+ * @private Data robusta dai campi di getNewsListV42. Il campo `data` arriva
+ * già formattato dd/MM/yyyy (stringa): new Date() lo legge come MM/dd e
+ * scarta tutto — era questo a produrre "nessuna candidata" per settimane.
+ */
+function _trParseData_(v) {
+  if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+  var s = String(v || '').trim();
+  if (!s) return null;
+  var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  var d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/** @private L'autopilota del martedì è attivo? (silenzio-assenso) */
+function _trAutopilotaOn_() {
+  try {
+    return String(PropertiesService.getScriptProperties().getProperty('OC_TREND_AUTOPILOT') || '') === 'on';
+  } catch (e) { return false; }
 }
 
 /**
@@ -144,9 +182,8 @@ function _trSelezionaCandidata_(proposteIds) {
     for (var i = 0; i < news.length; i++) {
       var n = news[i];
       if (!n || !n.id || proposteIds[String(n.id)]) continue;
-      var d = n.dataAcquisizione || n.data || '';
-      var dt = d ? new Date(d) : null;
-      if (!dt || isNaN(dt.getTime()) || dt.getTime() < cutoff) continue;
+      var dt = _trParseData_(n.dataAcquisizione || n.data);
+      if (!dt || dt.getTime() < cutoff) continue;
       out.push({ id: String(n.id), titolo: String(n.titolo || ''), fonte: String(n.fonte || ''),
                  link: String(n.link || ''), score: Number(n.score || 0),
                  sommario: String(n.sommario || ''), ambito: String(n.ambito || '') });
@@ -249,7 +286,11 @@ function trendEsegui(id, azione, auth) {
       PropertiesService.getScriptProperties().setProperty('OC_TREND_EVIDENZA', JSON.stringify(ev));
       sh.getRange(row + 1, 7).setValue('pubblicata');
       sh.getRange(row + 1, 9).setValue(new Date());
-      try { _trTgBroadcast_('✅ Trend PUBBLICATA in evidenza: ' + titolo); } catch (_) {}
+      try {
+        _trTgBroadcast_((auth._autopilota
+          ? '🤖 Trend pubblicata in AUTOMATICO (autopilota del martedì, nessuna risposta): '
+          : '✅ Trend PUBBLICATA in evidenza: ') + titolo);
+      } catch (_) {}
       return { ok: true, azione: 'pubblica', titolo: titolo };
     }
     if (azione === 'scarta') {
