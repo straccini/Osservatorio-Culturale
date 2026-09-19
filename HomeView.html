@@ -202,8 +202,6 @@
   </section>
 
   <!-- ===== BANDI IN EVIDENZA + NEWS (griglia 2 colonne) ===== -->
-  <!-- v4.27.59 — Notizia in evidenza (Trend approvata via Telegram) -->
-  <div id="homeTrendSlot" hidden style="margin:8px 0 20px"></div>
 
   <div class="home-bn-grid">
     <div class="home-bn-col">
@@ -230,6 +228,8 @@
         <div class="left"><h2 class="section-title">News <em>selezionate</em></h2></div>
         <button class="section-action" type="button" data-goto="news">Tutte &rarr;</button>
       </div>
+      <!-- v4.36 — Notizia di tendenza (Trend approvata): box in cima alla sezione News -->
+      <div id="homeTrendSlot" hidden style="margin:0 0 14px"></div>
       <div id="homeNewsList" aria-live="polite"><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div><div class="home-list-skeleton"></div></div>
       <div class="empty-state" id="homeNewsEmpty" hidden>Nessuna news segnalata.</div>
     </div>

@@ -315,8 +315,33 @@ function trendRimuoviEvidenza(adminToken) {
 function getTrendInEvidenza() {
   try {
     var raw = PropertiesService.getScriptProperties().getProperty('OC_TREND_EVIDENZA');
-    return raw ? JSON.parse(raw) : null;
-  } catch (e) { return null; }
+    if (raw) { var o = JSON.parse(raw); if (o && o.titolo) return o; }
+  } catch (e) {}
+  // v4.36 — RETE DI SICUREZZA: se la property manca o è vuota ma nel foglio una
+  // proposta risulta 'pubblicata', ricostruisci l'evidenza dal foglio (e ripristina
+  // la property). Evita il box vuoto in home quando la pubblicazione ha aggiornato
+  // il foglio ma non la property (o la property è stata persa).
+  try {
+    var sh = _trSheet_();
+    if (sh.getLastRow() < 2) return null;
+    var v = sh.getDataRange().getValues();
+    for (var i = v.length - 1; i >= 1; i--) {
+      if (String(v[i][6] || '') === 'pubblicata') {
+        var d = v[i][8];
+        var ev = {
+          itemId: String(v[i][1] || ''),
+          titolo: String(v[i][2] || ''),
+          fonte: String(v[i][3] || ''),
+          url: String(v[i][4] || ''),
+          dataPubblicazione: (d instanceof Date) ? d.toISOString() : String(d || '')
+        };
+        if (!ev.titolo) continue;
+        try { PropertiesService.getScriptProperties().setProperty('OC_TREND_EVIDENZA', JSON.stringify(ev)); } catch (_) {}
+        return ev;
+      }
+    }
+  } catch (e) {}
+  return null;
 }
 
 /** Lista proposte per l'area di gestione admin (ultime 25, più recenti prima). */
