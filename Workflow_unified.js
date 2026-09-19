@@ -130,10 +130,10 @@ function _wfConfig_(tipo) {
 // letto non incide negativamente sull'esperienza utente).
 // ============================================================================
 
-function markRead(tipo, id) {
+function markRead(tipo, id, token) {
   // Role guard: richiede almeno lettore (livello >= 1)
   try {
-    var _u = getCurrentUser_v44();
+    var _u = getCurrentUser_v44(token);
     if (!_u || _u.ruolo === 'guest' || _u.ruolo === 'anonimo' || _u.ruolo === 'ospite') {
       return { error: 'Azione riservata agli utenti registrati' };
     }
@@ -164,10 +164,10 @@ function markRead(tipo, id) {
 // quando disponibile (per items).
 // ============================================================================
 
-function toggleSaved(tipo, id) {
+function toggleSaved(tipo, id, token) {
   // Role guard: richiede almeno lettore (livello >= 1)
   try {
-    var _u = getCurrentUser_v44();
+    var _u = getCurrentUser_v44(token);
     if (!_u || _u.ruolo === 'guest' || _u.ruolo === 'anonimo' || _u.ruolo === 'ospite') {
       return { error: 'Azione riservata agli utenti registrati' };
     }

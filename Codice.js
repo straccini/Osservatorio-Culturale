@@ -1501,17 +1501,17 @@ function doPost(e) {
         return jsonOk(addFonteArticoli(body));
       case 'deleteFonteArticoli':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(deleteFonteArticoli(body.id));
+        return jsonOk(deleteFonteArticoli(body.id, body.token));
       case 'getFontiBandi':    return jsonOk(getFontiBandi());
       case 'addFonteBandi':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
         return jsonOk(addFonteBandi(body));
       case 'deleteFonteBandi':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(deleteFonteBandiById(body.id));
+        return jsonOk(deleteFonteBandiById(body.id, body.token));
       case 'toggleFonteBandi':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(toggleFonteBandiField(body.id,'Attiva'));
+        return jsonOk(toggleFonteBandiField(body.id,'Attiva', body.token));
 
       // Social Wall
       case 'getSocialWall':    return jsonOk(getSocialWall());
@@ -1548,10 +1548,10 @@ function doPost(e) {
         return jsonOk(addFontePodcast(body));
       case 'deleteFontePodcast':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(deleteFontePodcastById(body.id));
+        return jsonOk(deleteFontePodcastById(body.id, body.token));
       case 'toggleFontePodcast':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(toggleFontePodcastField(body.id,'Attiva'));
+        return jsonOk(toggleFontePodcastField(body.id,'Attiva', body.token));
       case 'scanFontePodcast':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
         return jsonOk(scanSingolaFontePodcast(body.id));

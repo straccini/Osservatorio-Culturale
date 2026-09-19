@@ -8770,7 +8770,7 @@
         if (kind === 'bandi') reloadFontiBandiTable(); else reloadFontiPodTable();
       })
       .withFailureHandler(function(e) { alert('Errore: '+e); })
-      [fn](id, 'Attiva');
+      [fn](id, 'Attiva', (window.OC_SESSION && OC_SESSION.token) || null);
   }
 
   function delFonte(id, btn) {
@@ -8783,7 +8783,7 @@
         if (kind === 'bandi') reloadFontiBandiTable(); else reloadFontiPodTable();
       })
       .withFailureHandler(function(e) { alert('Errore: '+e); })
-      [fn](id);
+      [fn](id, (window.OC_SESSION && OC_SESSION.token) || null);
   }
 
   function testFonteBandi(id) {
@@ -9314,7 +9314,7 @@
         }
       })
       .withFailureHandler(function(e){ showToast('Errore: ' + (e.message || e), 'err'); })
-      .toggleSaved(tipo, id);
+      .toggleSaved(tipo, id, (window.OC_SESSION && OC_SESSION.token) || null);
   }
 
   // Ri-renderizza la lista della pagina attualmente visibile (da cache)
@@ -10763,7 +10763,7 @@
     google.script.run
       .withSuccessHandler(function(){ showToast('Segnato come letto', 'ok'); })
       .withFailureHandler(function(e){ showToast('Errore: ' + (e.message || e), 'err'); })
-      .markRead(tipo, id);
+      .markRead(tipo, id, (window.OC_SESSION && OC_SESSION.token) || null);
     var card = (el && el.closest) ? (el.closest('.br-row') || el.closest('.bando-row') || el.closest('.news-row') || el.closest('.pod-item')) : null;
     if (card) card.classList.add('item-letto');
   }
@@ -14985,7 +14985,7 @@
           OC.reloadSocialFonti();
         })
         .withFailureHandler(function(e){ showToast('Errore: '+e,'err'); })
-        .seedSocialFontiIstituzionali();
+      .seedSocialFontiIstituzionali((window.OC_SESSION && OC_SESSION.token) || null);
     },
     seedSocialFonti: function(){
       if (!hasGAS()) return;
@@ -14998,7 +14998,7 @@
           loadSocialWall(true);
         })
         .withFailureHandler(function(e){ showToast('Errore seed fonti: ' + e); if(btn) btn.disabled = false; })
-        .seedSocialFontiIstituzionali();
+      .seedSocialFontiIstituzionali((window.OC_SESSION && OC_SESSION.token) || null);
     },
     // Detail panel + cache
     _detailCache: _detailCache,
