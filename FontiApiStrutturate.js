@@ -1414,10 +1414,19 @@ function fasParserCkanRegionale(opts) {
  */
 // v5.2: endpoint full-text (struttura template con titolo, ente, CPV, importo)
 var FAS_BDNCP_BASE = 'https://pubblicitalegale.anticorruzione.it/api/v0/avvisi-full-text';
+// v4.38 — Recall sotto-soglia (richiesta Silvano 25/09, pre-lancio): la BDNCP è
+// l'UNICA fonte che copre le gare sotto-soglia (obbligo pubblicità dal 2024), ma
+// filtrava solo su 12 keyword. Allargato il ventaglio dei termini culturali per
+// pescare più gare sotto-soglia (ogni keyword = una query, restano ~2 dozzine).
+// Il filtro di pertinenza a valle (isBandoCulturale + gate) tiene alta la precisione.
 var FAS_BDNCP_KEYWORDS = [
   'museo', 'musei', 'biblioteca', 'patrimonio culturale', 'beni culturali',
   'archivio', 'restauro', 'archeolog', 'teatro', 'mostra', 'allestimento',
-  'valorizzazione culturale'
+  'valorizzazione culturale',
+  // v4.38 — aggiunte
+  'pinacoteca', 'ecomuseo', 'casa museo', 'soprintendenza', 'catalogazione',
+  'digitalizzazione beni culturali', 'spettacolo dal vivo', 'festival',
+  'servizi educativi', 'mediazione culturale', 'conservazione', 'audience development'
 ];
 
 function fasParserBdncpCultura(opts) {
@@ -2128,7 +2137,12 @@ function fasRunFase2b() {
   report.opencup = { ok: true, skipped: true, motivo: 'endpoint inerte (v4.20)' };
   // QA 24/08/2026 — riattivata: non era l'endpoint a essere inerte, era morto
   // il dataset. Ora punta all'anagrafica bandi vera (vedi fasParserLombardia).
-  try { report.lombardia = fasParserLombardia({ dryRun: dryRun }); }
+  // v4.38 — FIX: qui non esiste alcuna variabile `dryRun` → ReferenceError catturato
+  // dal try/catch, quindi la Lombardia non partiva MAI (sempre ok:false). Ora gira.
+  try {
+    report.lombardia = fasParserLombardia({ dryRun: false });
+    report.totaleNuovi += (report.lombardia && report.lombardia.nuovi) ? report.lombardia.nuovi : 0;
+  }
   catch(eL) { report.lombardia = { ok: false, error: eL.message }; }
   try {
     report.sedia = fasParserSediaEU({ dryRun: false });
