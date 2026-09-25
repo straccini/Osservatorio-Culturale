@@ -1,5 +1,8 @@
 .claude/**
 **/.claude/**
+.clawhub/**
+**/.clawhub/**
+memory/**
 node_modules/**
 .git/**
 *.md
