@@ -605,6 +605,111 @@ function scDumpPerSkill() {
   return { ok: true, chars: json.length, candidate: out.candidate.length, registro: out.registro.length };
 }
 
+// ---------------------------------------------------------------------------
+// Triage automatico — v4.35
+// ---------------------------------------------------------------------------
+// Classifica le candidate in_valutazione con logica deterministica:
+//   1. SCARTA   domini che oggi sarebbero fermati dalle blacklist (infra, CDN,
+//               tracker, sottodomini servizio) — entrati prima dell'aggiornamento
+//   2. SCARTA   domini off-topic (fuori scope geografico/tematico)
+//   3. APPROVA  domini chiaramente pertinenti (cultura, musei, arte, turismo,
+//               università seed, testate di settore note)
+//   4. LASCIA   in_valutazione tutto il resto (revisione manuale)
+// Non tocca righe già decise (DataDecisione non vuota).
+
+var SC_TRIAGE_APPROVA_RE = /(muse[io]|galleri[ae]|cultur|patrimoni|heritage|archeolog|monumenti|restaur|beni\s*cultural|allestiment|access|turism|touris|festival|teatr|opera\b|liric|sinfonic|conservator|accademia|fondazion|soprintend|unesco|icom|icomos|biennale|triennale|mostr[ae]|exhibit|curator|mediac|bibliote|archivi|editoria|pubblica[zt]ion|concert|orchestra|danz|coreograf|scultur|pittur|affresc|ceramica|artigian|borghi|gastronomia|enogastronom|sagr[ae]|fiest[ae]|carneval|folklore|tradizion|impresa\s*cultural|industri[ae]\s*creativ|design|architettur|urbanistic|paesaggi|giardini\s*storic|parchi\s*cultural|digital\s*humanit|DH\b|bando|avviso|grant|fund|finanzia|PNRR|FESR|Creative\s*Europe|Horizon|interreg|cohesion)/i;
+
+// Domini off-topic: fuori scope geografico o settoriale
+var SC_TRIAGE_SCARTA_OFFTOPIC_RE = /(reune\.com\.co|rcicolombia\.org|redunete\.net|ascunretos\.com|unimagdalena|\.co\.co\b|\.com\.co\b|\.com\.br\b|\.com\.mx\b|casino|betting|gambling|forex|crypto\s*trading|slot\s*machine|poker\s*online)/i;
+
+// Testate/portali arte-cultura italiani noti — approvazione diretta
+var SC_TRIAGE_FONTI_NOTE_RE = /(finestresullarte|artribune|exibart|ilgiornaledellar|arslife|artemagazine|arteconomy|luxuryandtourism|borsaturismoarcheologico|patrimoniosos|beniculturali|archeome|giornaledi[sp]icilia|fabrianostorica|museionline|rivistasegno|julietartmagazine|flashartonline|platformaarte|domusweb|abitare|designboom|architettura|archiportale|inexhibit|klat|doppiozero|chefarte|che-fare\.com|labsus|vita\.it|secondowelfare|percorsid|istitutoitalianodiarchitettura)/i;
+
+function scTriageAutomatico(opzioni) {
+  opzioni = opzioni || {};
+  var dryRun = !!opzioni.dryRun;
+  var sh = _scSheet_(false);
+  if (!sh || sh.getLastRow() < 2) return { ok: true, messaggio: 'nessuna candidata' };
+  var v = sh.getDataRange().getValues();
+  var h = v[0].map(function (x) { return String(x || '').trim(); });
+  function c(n) { return h.indexOf(n); }
+  var iStato = c('Stato'), iDec = c('DataDecisione'), iDom = c('Dominio'),
+      iNome = c('Nome'), iMet = c('Metodo'), iFeed = c('FeedRilevato'),
+      iUrl = c('URLPagina'), iDa = c('TrovataDa'), iCat = c('CategoriaProposta'),
+      iProv = c('Provenienza'), iNote = c('Note');
+
+  var approvate = 0, scartate = 0, invariate = 0, dettaglio = [];
+
+  // domini dei seed universitari → approvazione diretta
+  var domUni = {};
+  SC_UNIVERSITA.forEach(function (u) { domUni[_scDominio_(u.url)] = true; });
+
+  for (var r = 1; r < v.length; r++) {
+    var stato = String(v[r][iStato] || '').toLowerCase().trim();
+    if (stato !== 'in_valutazione') continue;
+    if (v[r][iDec]) continue;
+
+    var dominio = String(v[r][iDom] || '').toLowerCase().trim();
+    var nome    = String(v[r][iNome] || '');
+    var metodo  = String(v[r][iMet] || '');
+    var feed    = String(v[r][iFeed] || '');
+    var url     = String(v[r][iUrl] || '');
+    var trovataDa = String(v[r][iDa] || '');
+    var prov    = String(v[r][iProv] || '');
+    var nota    = String(v[r][iNote] || '');
+    var testo   = [nome, dominio, url, prov, nota].join(' ');
+    var decisione = null;
+    var motivo  = '';
+
+    // ── SCARTA: blacklist infrastruttura ──────────────────────────────────
+    if (SC_BLACKLIST_RE.test(dominio) || SC_BLACKLIST_INFRA_RE.test(dominio)) {
+      decisione = 'scartata'; motivo = 'blacklist infra/piattaforma';
+    }
+    // ── SCARTA: sottodominio di servizio (shop., docs., cdn., adv., ...) ─
+    else if (SC_SOTTODOM_SERVIZIO_RE.test(dominio)) {
+      decisione = 'scartata'; motivo = 'sottodominio servizio';
+    }
+    // ── SCARTA: off-topic geografico/tematico ────────────────────────────
+    else if (SC_TRIAGE_SCARTA_OFFTOPIC_RE.test(dominio) || SC_TRIAGE_SCARTA_OFFTOPIC_RE.test(testo)) {
+      decisione = 'scartata'; motivo = 'off-topic';
+    }
+    // ── APPROVA: università seed ─────────────────────────────────────────
+    else if (domUni[dominio] || trovataDa === 'universita') {
+      decisione = 'approvata'; motivo = 'università seed';
+    }
+    // ── APPROVA: testata/portale arte-cultura noto ───────────────────────
+    else if (SC_TRIAGE_FONTI_NOTE_RE.test(dominio)) {
+      decisione = 'approvata'; motivo = 'fonte cultura nota';
+    }
+    // ── APPROVA: contenuto chiaramente pertinente + ha feed ──────────────
+    else if (SC_TRIAGE_APPROVA_RE.test(testo) && metodo === 'rss' && feed) {
+      decisione = 'approvata'; motivo = 'pertinente con feed';
+    }
+    // ── LASCIA: dubbio, serve revisione umana ────────────────────────────
+    else {
+      invariate++;
+      continue;
+    }
+
+    dettaglio.push({ riga: r + 1, dominio: dominio, nome: nome, decisione: decisione, motivo: motivo });
+
+    if (!dryRun) {
+      sh.getRange(r + 1, iStato + 1).setValue(decisione);
+    }
+    if (decisione === 'approvata') approvate++;
+    else scartate++;
+  }
+
+  var rep = {
+    ok: true, dryRun: dryRun,
+    approvate: approvate, scartate: scartate, invariate: invariate,
+    totale: approvate + scartate + invariate,
+    dettaglio: dettaglio
+  };
+  Logger.log('[scTriageAutomatico] ' + JSON.stringify(rep));
+  return rep;
+}
+
 function scSelfTest() {
   var pass = 0, fail = 0, falliti = [];
   function eq(nome, atteso, ottenuto) {
