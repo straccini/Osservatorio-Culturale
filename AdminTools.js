@@ -112,6 +112,8 @@ function adminRunTool(tool, token) {
       case 'scUniversitaNow':    r = scUniversitaRun({}); break;
       case 'scSettimanaleNow':   r = scSettimanale(); break;
       case 'scApplicaDecisioni': r = scApplicaDecisioni(); break;
+      case 'scTriageDry':        r = scTriageAutomatico({ dryRun: true }); break;
+      case 'scTriageApplica':    r = scTriageAutomatico({ dryRun: false }); break;
       case 'scRiparaAnci':       r = scRiparaAnci(); break;
       case 'scSelfTest':         r = scSelfTest(); break;
       // ── Redattore (v4.28.4 — Fase 3, politica a due livelli) ────────────

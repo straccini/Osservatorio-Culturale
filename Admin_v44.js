@@ -157,15 +157,22 @@ function _generateDigestDraftCore_(opts) {
   opts = opts || {};
   var maxBandi   = opts.maxBandi   || 8;
   var maxNews    = opts.maxNews    || 6;
-  var maxPodcast = opts.maxPodcast || 3;
-  // v4.25.15 — mix esteso: video e libri configurabili dal pannello redazionale
-  var maxVideo   = (opts.maxVideo  === undefined) ? 2 : Number(opts.maxVideo) || 0;
+  // QA 21/08/2026 (richiesta Silvano 20/08) — un podcast in meno, un video in piu':
+  // la newsletter esce piu' varia a parita' di lunghezza. L'anti-ripetizione sul
+  // registro DigestInviati vale gia' per entrambe le tipologie.
+  var maxPodcast = opts.maxPodcast || 2;
+  var maxVideo   = (opts.maxVideo  === undefined) ? 3 : Number(opts.maxVideo) || 0;
   var maxLibri   = (opts.maxLibri  === undefined) ? 2 : Number(opts.maxLibri) || 0;
   var ambito     = String(opts.filtroAmbito || '').trim();
 
   // 1) Recupero dati dai data-provider esistenti
   var bandiUrg = _safeCall_(function(){ return getHomepageDataV42(); }, { bandiUrgenti:[], news:[], podcast:[] });
-  var bandiNew = _safeCall_(function(){ return getUltimiBandiMonitorati(maxBandi); }, []);
+  // QA 20/08/2026 — il bacino era largo esattamente quanto la sezione (maxBandi) e
+  // getUltimiBandiV5 ordina per data di RILEVAMENTO: le fonti europee (TED, SEDIA)
+  // ingeriscono decine di record al giorno, quelle italiane pochi, quindi i primi 8
+  // erano quasi sempre tutti esteri. Si parte da un bacino ampio e si sceglie il mix
+  // alla fine, dopo i filtri (stesso rimedio applicato alle news in v4.28.34).
+  var bandiNew = _safeCall_(function(){ return getUltimiBandiMonitorati(maxBandi * 10); }, []);
   var video = maxVideo > 0 ? _safeCall_(function(){ return getVideoListV42(maxVideo); }, []) : [];
   var libri = maxLibri > 0 ? _safeCall_(function(){ return getLibriListV42(maxLibri); }, []) : [];
 
@@ -209,8 +216,14 @@ function _generateDigestDraftCore_(opts) {
   // di tempo, e solo se non è già uscita in un digest precedente (memoria
   // OC_DIGEST_SEGN_SENT, marcata a invio riuscito in adminConfirmSendWithToken).
   var segnalazione = null;
+  // QA 21/08/2026 (richiesta Silvano 20/08) — SEGNALAZIONI FUORI DALLA NEWSLETTER
+  // finche' la sezione non e' strutturata bene. Il blocco resta pronto: per
+  // riattivarlo impostare la ScriptProperty OC_DIGEST_SEGNALAZIONI = 'on'.
+  // Le segnalazioni hanno ora la loro pagina dedicata nel menu (page-segnalazioni).
+  var _segnalazioniOn = false;
+  try { _segnalazioniOn = PropertiesService.getScriptProperties().getProperty('OC_DIGEST_SEGNALAZIONI') === 'on'; } catch(_fs) {}
   try {
-    if (typeof getSegnalazioniPubblicate === 'function') {
+    if (_segnalazioniOn && typeof getSegnalazioniPubblicate === 'function') {
       var _segRes = getSegnalazioniPubblicate(1);
       var _ultima = (_segRes && _segRes.segnalazioni && _segRes.segnalazioni[0]) || null;
       if (_ultima) {
@@ -262,6 +275,49 @@ function _generateDigestDraftCore_(opts) {
     pod  = ddCapPerFonte(pod, 2);
     video = ddCapPerFonte(video, 2);
   }
+  // QA 20/08/2026 — MIX ITALIA/ESTERO nei bandi.
+  // Senza questo la sezione risultava composta solo da gare europee. Si riconosce
+  // la provenienza dal dominio del link e dall'ente, si tiene l'ordine cronologico
+  // dentro ciascun gruppo e si alterna partendo dagli italiani, con un tetto di 2
+  // bandi per ente (come gia' si fa per le testate nelle news).
+  var _isEstero_ = function(b) {
+    var l = String(b.link || '').toLowerCase();
+    var e = String(b.ente || '').toLowerCase();
+    if (/(^|\.)europa\.eu|ted\.europa|europarl|\.eu\//.test(l)) return true;
+    if (/commissione europea|european|eu commission|erasmus|creative europe|horizon/.test(e)) return true;
+    if (/\.it(\/|$)|\.gov\.it|regione\.|comune\./.test(l)) return false;
+    return false;   // nel dubbio conta come italiano: meglio mostrarlo che nasconderlo
+  };
+  var _mixBandi_ = function(lista, quanti) {
+    var ita = [], est = [];
+    (lista || []).forEach(function(b){ (_isEstero_(b) ? est : ita).push(b); });
+    var perEnte = {}, out = [];
+    var prendi = function(arr) {
+      while (arr.length) {
+        var b = arr.shift();
+        var k = String(b.ente || '?').toLowerCase().trim();
+        if ((perEnte[k] || 0) >= 2) continue;   // max 2 per ente
+        perEnte[k] = (perEnte[k] || 0) + 1;
+        return b;
+      }
+      return null;
+    };
+    // alterna 2 italiani : 1 estero, cosi' il taglio nazionale resta prevalente
+    while (out.length < quanti && (ita.length || est.length)) {
+      var passo = [ita, ita, est];
+      for (var i = 0; i < passo.length && out.length < quanti; i++) {
+        var b = prendi(passo[i]);
+        if (b) out.push(b);
+      }
+      if (!ita.length && !est.length) break;
+    }
+    return out;
+  };
+  var _nItaPrima = bandiNew.filter(function(b){ return !_isEstero_(b); }).length;
+  bandiNew = _mixBandi_(bandiNew, maxBandi);
+  Logger.log('[digest] bandi: bacino con ' + _nItaPrima + ' italiani · selezionati ' +
+             bandiNew.length + ' di cui esteri ' + bandiNew.filter(_isEstero_).length);
+
   // v4.28.34 — troncamento a maxNews/maxPodcast SOLO ORA, dopo tutti i filtri:
   // prima avveniva sulla fonte (già minuscola) prima dei filtri, svuotando la sezione.
   news = news.slice(0, maxNews);
@@ -417,13 +473,15 @@ function adminConfirmSendWithToken(draftId, authToken) {
   if (draft.stato === 'invio_in_corso') {
     return { ok:false, error:'invio_in_corso' };
   }
+  // QA 20/08/2026 — 'invio_parziale' non e' un errore: e' un giro rimasto a meta'
+  // per esaurimento quota. Si prosegue da dove si era arrivati.
   draft.stato = 'invio_in_corso';
   try { PropertiesService.getScriptProperties().setProperty(OC_DRAFT_PROP_PFX_ + draftId, JSON.stringify(draft)); } catch(_){}
 
   var html, res;
   try {
     html = buildNewsletterHtml_(draft);
-    res  = sendNewsletterEmail_(draft.soggetto, html);
+    res  = sendNewsletterEmail_(draft.soggetto, html, { giaInviati: draft.inviatiA || [] });
   } catch(eS) {
     // Invio fallito: sblocca e riporta in attesa (il link resta riutilizzabile)
     draft.stato = 'in_attesa_approvazione';
@@ -442,6 +500,24 @@ function adminConfirmSendWithToken(draftId, authToken) {
              dettagli: (res && res.errors) || [],
              destinatari: (res && res.totale_destinatari) || 0 };
   }
+  // QA 20/08/2026 — INVIO A TRONCONI: se la quota giornaliera non e' bastata per
+  // tutti, la bozza NON si chiude. Si memorizza chi e' gia' stato servito e lo
+  // stato resta 'invio_parziale': newsletterRiprendiInvii() riprende domani dal
+  // punto esatto, senza mandare doppioni a chi l'ha gia' ricevuta.
+  if (res && res.completato === false) {
+    draft.inviatiA = (draft.inviatiA || []).concat(res.inviatiOra || []);
+    draft.stato    = 'invio_parziale';
+    draft.sentTo   = draft.inviatiA.length;
+    draft.parzialeAggiornatoAl = new Date().toISOString();
+    try { PropertiesService.getScriptProperties().setProperty(OC_DRAFT_PROP_PFX_ + draftId, JSON.stringify(draft)); } catch(_){}
+    try { _updateLogRow_(draftId, { Stato:'invio_parziale', Destinatari: draft.inviatiA.length }); } catch(_){}
+    return { ok: true, parziale: true,
+             sent: res.count || 0,
+             inviatiFinora: draft.inviatiA.length,
+             restanti: (res.restanti || []).length,
+             errors: res.errors || [] };
+  }
+
   var warn = [];
   draft.stato  = 'inviato';
   draft.sentAt = new Date().toISOString();
@@ -490,6 +566,55 @@ function adminConfirmSendWithToken(draftId, authToken) {
   } catch(eR) { warn.push('Storico non aggiornato: ' + eR.message); }
 
   return { ok:true, sent: res.count || 0, errors: res.errors || [], warn: warn };
+}
+
+/**
+ * QA 20/08/2026 — riprende gli invii rimasti a meta' per esaurimento quota.
+ *
+ * Registrata nel CronDispatcher (ogni giorno alle 7). Cerca le bozze in stato
+ * 'invio_parziale' e le fa proseguire da dove erano arrivate: chi ha gia'
+ * ricevuto la newsletter e' elencato in draft.inviatiA e viene saltato, quindi
+ * nessuno riceve doppioni.
+ *
+ * Una bozza per volta: se la quota si esaurisce di nuovo lo stato resta
+ * parziale e domani si riprende ancora. Nessun invio parte senza che
+ * l'autorizzazione sia gia' stata data — qui si completa un invio approvato,
+ * non se ne inizia uno nuovo.
+ */
+function newsletterRiprendiInvii() {
+  var P = PropertiesService.getScriptProperties();
+  var tutte = P.getProperties();
+  var pendenti = [];
+
+  Object.keys(tutte).forEach(function(k) {
+    if (k.indexOf(OC_DRAFT_PROP_PFX_) !== 0) return;
+    var d; try { d = JSON.parse(tutte[k]); } catch(e) { return; }
+    if (d && d.stato === 'invio_parziale' && d.authToken) pendenti.push(d);
+  });
+
+  if (!pendenti.length) {
+    Logger.log('[newsletter] nessun invio da riprendere.');
+    return { ok: true, pendenti: 0 };
+  }
+
+  // la piu' vecchia per prima: chi aspetta da piu' tempo viene servito prima
+  pendenti.sort(function(a, b) { return String(a.createdAt || '').localeCompare(String(b.createdAt || '')); });
+  var d = pendenti[0];
+
+  Logger.log('[newsletter] riprendo ' + d.id + ' — gia' + "'" + ' serviti ' +
+             ((d.inviatiA || []).length) + ', in coda ' + (pendenti.length - 1) + ' altre bozze');
+
+  var res = adminConfirmSendWithToken(d.id, d.authToken);
+  Logger.log('[newsletter] esito ripresa: ' + JSON.stringify(res));
+
+  if (res && res.ok && !res.parziale) {
+    try {
+      if (typeof sendTelegram === 'function') {
+        sendTelegram('✅ Newsletter "' + (d.soggetto || d.id) + '" completata: tutti i destinatari serviti.');
+      }
+    } catch(_t) {}
+  }
+  return { ok: true, pendenti: pendenti.length, ripresa: d.id, esito: res };
 }
 
 // ============================================================================
