@@ -7,3 +7,10 @@
 docs/**
 **/*.md
 **/*.txt
+# Tooling Claude Code / skill: mai nell'app Apps Script (anche i .json interni,
+# perché skipSubdirectories:false + jsonExtensions=.json li pescherebbe).
+.claude/**
+**/.claude/**
+.clawhub/**
+**/.clawhub/**
+memory/**
