@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "skills": {
+    "gstack-openclaw-office-hours": {
+      "version": "1.0.0",
+      "installedAt": 1786717985346,
+      "ownerHandle": "garrytan"
+    },
+    "gstack-openclaw-ceo-review": {
+      "version": "1.0.0",
+      "installedAt": 1786717990874,
+      "ownerHandle": "garrytan"
+    },
+    "gstack-openclaw-investigate": {
+      "version": "1.0.0",
+      "installedAt": 1786717996082,
+      "ownerHandle": "garrytan"
+    },
+    "gstack-openclaw-retro": {
+      "version": "1.0.0",
+      "installedAt": 1786718001336,
+      "ownerHandle": "garrytan"
+    }
+  }
+}
