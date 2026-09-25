@@ -90,6 +90,37 @@ function _bandiNonBando_(b) {
 // nel titolo. Serve a bloccare i titoli generici scrapati senza data.
 var _BANDO_SEGNALE_RE = /(bando|avviso|manifestazione\s+d.?interesse|gara\b|procedura\s+(aperta|negoziata|ristretta)|call\b|invito\s+a\s+presentare|selezione\s+(pubblica|per)|concorso\b|contribut|finanziament|sovvenzion|sostegno\s+(a|per|alle|ai)|premio\b|borsa\b|residenz|affidamento\b|appalto\b|concessione\b|graduatoria\b|proroga\b|riapertura\b|sportello\b)/i;
 
+// v4.38 — RETE ANTI-NOTIZIA. Il problema (segnalato da Silvano 25/09, pre-lancio):
+// nel Radar Bandi finivano NOTIZIE culturali perché il loro titolo cita parole
+// come "premio", "residenza", "call". Casi reali: "…Intervista alla curatrice del
+// Premio Paul Thorel", "La storica residenza del filosofo Rosmini ospita una
+// biblioteca", "Call for Abstract – convegno dottorale".
+//
+// _BANDO_EDITORIALE_RE — frasario chiaramente giornalistico/evento (non bando).
+var _BANDO_EDITORIALE_RE = /(\bintervist|a\s+tu\s+per\s+tu|\braccont(a|ano|iamo)\b|ci\s+racconta|\brecension|\breportage\b|in\s+mostra\b|\bmostra\s+(a|al|alla|in|del|dei|di)\b|inaugura(?:ta|to|zione)?\b|apre\s+(al\s+pubblico|le\s+porte|i\s+battenti)|riapre\b|\bospita\b|il\s+ritratto\b|viaggio\s+(nel|nella|nei|tra|attraverso)|cosa\s+vedere|le\s+foto\b|photogallery|\bgallery\b|la\s+storia\s+di\b|vita\s+di\b|\bbiografia\b|il\s+libro\b|il\s+film\b|il\s+documentario\b|la\s+puntata\b|\bopinione\b|\beditoriale\b|\bintervento\s+di\b|call\s+for\s+(abstract|paper|papers)|\bconvegno\b|\bcongresso\b|\bconferenza\s+(internazionale|nazionale|stampa)\b)/i;
+
+// _BANDO_SEGNALE_FORTE_RE — segnali che qualificano DAVVERO un bando/gara/contributo.
+// Servono a non far bastare una parola debole (premio/residenza/call) quando il
+// titolo è editoriale e non c'è scadenza.
+var _BANDO_SEGNALE_FORTE_RE = /(\bbando\b|avviso\s+(pubblico|di\s+selezione|di\s+mobilit)|manifestazione\s+d.?interesse|procedura\s+(aperta|negoziata|ristretta)|\bgara\b|\bappalto\b|invito\s+a\s+presentare\s+(proposte|domande|progetti)|domand[ae]\s+di\s+(partecipazione|contributo|ammissione|finanziamento)|present(are|azione)\s+(le\s+)?domand|contribut|finanziament|sovvenzion|fondo\s+perduto|\bconcorso\s+pubblico\b|selezione\s+pubblica|borsa\s+di\s+studio|\bsportello\b|graduatori|dotazione\s+(finanziaria|complessiva)|scadenz|termine\s+(per|di)\s+(la\s+)?present|risorse\s+(disponibili|complessive)|\beuro\b|€)/i;
+
+/**
+ * v4.38 — true se il record ha l'aspetto di una NOTIZIA/EVENTO editoriale e NON di
+ * un bando: titolo editoriale, nessuna scadenza e nessun segnale forte di bando
+ * (né nel titolo né nel sommario). Conservativo: con una scadenza o un segnale
+ * forte, NON è considerato notizia (un bando vero ha l'uno o l'altro).
+ */
+function _bandiSembraNotizia_(b) {
+  var t = String((b && b.titolo) || '').trim();
+  if (!t) return false;
+  if (!_BANDO_EDITORIALE_RE.test(t)) return false;              // non ha frasario da notizia
+  var g = (b && b.giorni !== undefined) ? b.giorni : null;
+  if (g !== null && g >= 0) return false;                       // ha una scadenza → trattalo da bando
+  var somm = String((b && b.sommario) || '') + ' ' + String((b && b.descrizione) || '');
+  if (_BANDO_SEGNALE_FORTE_RE.test(t) || _BANDO_SEGNALE_FORTE_RE.test(somm)) return false; // segnale forte
+  return true;                                                  // editoriale, senza scadenza, senza segnale forte
+}
+
 /**
  * v4.27.49 — GATE D'INGRESSO (scanner → foglio Bandi_v5): blocca al
  * SALVATAGGIO i record senza natura di bando, invece di lasciarli entrare e
@@ -103,6 +134,10 @@ function bandoIngressoValido_(b) {
   if (!t || t.length < 8) return false;                    // titolo assente/troppo corto
   if (_bandiNonBando_({ titolo: t })) return false;        // junk/nav/pubblicazione
   if (_BANDO_TITOLO_NUMERO_RE.test(t)) return false;       // titolo solo-numero
+  // v4.38 — RETE ANTI-NOTIZIA all'ingresso: le notizie/eventi editoriali non
+  // entrano nemmeno nel foglio Bandi_v5 (prima rete). Passa comunque ciò che ha
+  // scadenza o un segnale forte di bando (gestito dentro _bandiSembraNotizia_).
+  if (_bandiSembraNotizia_(b)) return false;
   return true;
 }
 
@@ -176,6 +211,9 @@ function _bandiMotivoScarto_(b) {
   if (!tit || _BANDO_TITOLO_NUMERO_RE.test(tit)) return 'titolo-non-informativo';
   var g = (b && b.giorni !== undefined) ? b.giorni : null;
   if (g !== null && g < 0) return 'scaduto';
+  // v4.38 — RETE ANTI-NOTIZIA in esposizione: pulisce SUBITO il Radar dalle
+  // notizie già presenti nel foglio (l'ingresso ferma solo le nuove).
+  if (_bandiSembraNotizia_(b)) return 'notizia-editoriale';
   var descr = String((b && b.sommario) || '').replace(/\s+/g, ' ').trim();
   if (g === null && descr.length < 20) return 'senza-scadenza-e-senza-descrizione';
   // v4.27.73 — senza scadenza il titolo deve dichiarare la natura di bando
@@ -289,7 +327,15 @@ function bandiGateSelfTest() {
     // --- v4.27.75 — SOGLIA PER TIER ---
     { in:{ titolo:'Bando pubblico qualificazione attività commerciali', settore:'musei', sommario:'Breve nota di quaranta caratteri circa.', cpv:'', link:'https://galesempio.it/bando', fonteNome:'GAL Terra Protetta' }, attesoIn:false, nome:'Tier C: senza scadenza + descrizione corta' },
     { in:{ titolo:'Bando pubblico per la valorizzazione del patrimonio museale', settore:'musei', sommario:'Avviso rivolto a musei ed ecomusei del territorio per interventi di valorizzazione, allestimento e servizi educativi al pubblico. Dotazione complessiva 500.000 euro, domande a sportello fino a esaurimento delle risorse disponibili.', cpv:'', link:'https://galesempio.it/bandi/valorizzazione-patrimonio-museale-2026', fonteNome:'GAL Terra Protetta' }, attesoIn:true, nome:'Tier C: senza scadenza ma descrizione ricca (passa)' },
-    { in:{ titolo:'Avviso PNRR digitalizzazione dei musei', settore:'musei', sommario:'Avviso del Ministero della Cultura.', cpv:'', link:'https://cultura.gov.it/avviso-digital-2026', fonteNome:'MiC — Ministero della Cultura' }, attesoIn:true, attesoTipo:'diretto', nome:'Tier A permissivo (MiC, descrizione breve)' }
+    { in:{ titolo:'Avviso PNRR digitalizzazione dei musei', settore:'musei', sommario:'Avviso del Ministero della Cultura.', cpv:'', link:'https://cultura.gov.it/avviso-digital-2026', fonteNome:'MiC — Ministero della Cultura' }, attesoIn:true, attesoTipo:'diretto', nome:'Tier A permissivo (MiC, descrizione breve)' },
+    // --- v4.38 — RETE ANTI-NOTIZIA: casi reali segnalati da Silvano (25/09), devono essere SCARTATI ---
+    { in:{ titolo:'Le imperfezioni come spazio di libertà in mostra a Roma. Intervista alla curatrice del Premio Paul Thorel', settore:'musei', sommario:'Al museo MACRO la mostra riunisce le opere delle vincitrici.', cpv:'', link:'https://artribune.com/musei/imperfezioni' }, attesoIn:false, nome:'Notizia: intervista + in mostra (cita "Premio")' },
+    { in:{ titolo:'Sul Lago Maggiore la storica residenza del filosofo Antonio Rosmini ospita una incredibile biblioteca', settore:'musei', sommario:'Il Centro internazionale di Studi Rosminiani ha accolto per la prima volta l arte contemporanea.', cpv:'', link:'https://esempio.it/rosmini' }, attesoIn:false, nome:'Notizia: residenza/ospita (non bando)' },
+    { in:{ titolo:'Anai segnala: Call for Abstract: I Convegno dottorale, Università di Torino', settore:'', sommario:'Patrimonio culturale e produzione storico-artistica: circolazione e trasformazioni.', cpv:'', link:'https://esempio.it/cfa' }, attesoIn:false, nome:'Evento accademico: call for abstract / convegno' },
+    // --- v4.38 — BANDI VERI con parole "deboli" (premio/residenza/call): devono PASSARE ---
+    { in:{ titolo:'Bando Premio Paul Thorel 2026 per la fotografia', settore:'arte contemporanea', sommario:'Avviso pubblico rivolto ad artisti under 35, dotazione 20.000 euro, domande di partecipazione entro il 30 novembre.', cpv:'', link:'https://esempio.it/bandi/premio-thorel-2026', giorni:60 }, attesoIn:true, nome:'Bando vero "Premio" con scadenza (passa)' },
+    { in:{ titolo:'Bando residenza d artista 2026 al museo civico', settore:'musei', sommario:'Domande di partecipazione entro il 15 dicembre, contributo di 8.000 euro per il vincitore.', cpv:'', link:'https://esempio.it/bandi/residenza-artista-2026', giorni:45 }, attesoIn:true, nome:'Bando vero "residenza" con scadenza (passa)' },
+    { in:{ titolo:'Collective Projects: ancora aperta la call 2026/2027 rivolta agli ETS', settore:'cultura', sommario:'Contributo a fondo perduto per progetti culturali; presentazione domande a sportello, risorse complessive disponibili.', cpv:'', link:'https://compagniadisanpaolo.it/bandi/collective-projects' }, attesoIn:true, nome:'Bando vero "call" senza scadenza ma con segnale forte (passa)' }
   ];
 
   var risultati = [];
