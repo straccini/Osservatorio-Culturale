@@ -395,6 +395,11 @@ function sendNewsletterEmail_(subject, html, opts) {
       }
       sent++;
       inviatiOra.push(email);
+      // v4.37 — registra nel registro anti-duplicato condiviso (DigestSentLog):
+      // così l'invio automatico del martedì (Coorte B) salta chi ha già ricevuto
+      // la generalista del lunedì (finestra OC_DIGEST_DEDUP_DAYS). Prima l'invio
+      // manuale non registrava nulla → possibile doppio invio agli iscritti.
+      try { if (typeof _digestMarkSent_ === 'function') _digestMarkSent_(email, 'generalista'); } catch(_dm){}
     } catch(e) {
       errors.push({ email:email, err:e.message });
     }

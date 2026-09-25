@@ -452,10 +452,15 @@ function sendDigestAuto2coorti(opts) {
             }
           }
           if (!html) {
-            // Layout 3: fallback standard
-            html = buildDigestHTML(items, { Nome: lead.nome, Email: lead.email }, null);
-            subject = subjGen;
-            report.leadCaldi_fallback++;
+            // v4.37 FIX DOPPIO INVIO — NIENTE più generalista di ripiego in Coorte B.
+            // Causava il doppio invio: chi è anche in MailingList riceveva la
+            // generalista lunedì (invio manuale) e di NUOVO martedì come fallback
+            // (l'invio diretto esteso v4.34 aveva aggiunto i contatti Matrix alla
+            // Coorte B; senza report Matrix valido cadevano qui). La Coorte B del
+            // martedì manda SOLO contenuti personalizzati (Matrix o tematico):
+            // se non ce ne sono, si salta — la generalista l'hanno già avuta lunedì.
+            Logger.log('[DIGEST] Skip Coorte B senza contenuto personalizzato (evita doppia generalista): ' + lead.email);
+            return;
           }
           var _optB = { htmlBody: html, name: 'Sinopia · Osservatorio Culturale', replyTo: 'sinopiaconsulting@gmail.com' };
           if (_fromAlias) _optB.from = _fromAlias;
