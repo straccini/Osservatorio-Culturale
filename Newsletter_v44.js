@@ -237,6 +237,15 @@ function buildNewsletterHtml_(draft) {
     });
   }
 
+  // v4.38 — BOX "PROFILATI" (richiesta Silvano 25/09): invito additivo a scegliere
+  // gli ambiti per ricevere news e bandi tematici. Racchiuso tra i marcatori
+  // OC_PROFBOX_START/END: in anteprima e per gli iscritti NON profilati resta;
+  // all'invio, per chi è già profilato, sendNewsletterEmail_ lo toglie. Non
+  // sostituisce l'invio generalista.
+  try {
+    if (typeof _ocProfilazioneBoxRow_ === 'function') parts.push(_ocProfilazioneBoxRow_(webUrl, 28));
+  } catch(_pbErr) { Logger.log('[newsletter] box profilati: ' + _pbErr.message); }
+
   // CTA
   if (webUrl) {
     parts.push('<tr><td style="padding:24px 28px;text-align:center;">');
@@ -377,12 +386,20 @@ function sendNewsletterEmail_(subject, html, opts) {
              restanti: restanti, inviatiOra: [], completato: false, quotaResidua: quota };
   }
 
+  // v4.38 — chi è GIÀ profilato non vede il box "Profilati" (letto una sola volta).
+  var _profiledSet = {};
+  try { if (typeof _ocProfiledEmailsSet_ === 'function') _profiledSet = _ocProfiledEmailsSet_(); } catch(_ps){}
+
   var inviatiOra = [];
   lotto.forEach(function(email) {
     try {
       // v4.23 GDPR — link di disiscrizione firmato per-destinatario (come i digest)
       var htmlDest = html;
-      try { if (typeof _digestUnsubFooter_ === 'function') htmlDest = html.replace('</body>', _digestUnsubFooter_(email) + '</body>'); } catch(_uf){}
+      // v4.38 — box "Profilati" solo agli iscritti NON profilati
+      try {
+        if (_profiledSet[email] && typeof _ocStripProfBox_ === 'function') htmlDest = _ocStripProfBox_(htmlDest);
+      } catch(_pb){}
+      try { if (typeof _digestUnsubFooter_ === 'function') htmlDest = htmlDest.replace('</body>', _digestUnsubFooter_(email) + '</body>'); } catch(_uf){}
       if (aliasOk) {
         GmailApp.sendEmail(email, subject, 'Apri questa email in un client che supporta l\'HTML.', {
           htmlBody: htmlDest, name: senderName, from: OC_MITTENTE_UFFICIALE, replyTo: OC_MITTENTE_UFFICIALE
