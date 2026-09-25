@@ -863,6 +863,23 @@ function sendDigestProfilatiMartedi(opts) {
       Logger.log('[DigestProfilati] Oggi non e martedi (' + report.giorno + '), skip Coorte B');
     }
 
+    // ── 1-bis. VENERDÌ: mail TEMATICA agli iscritti profilati (IN AGGIUNTA) ──
+    // v4.38 — terzo invio settimanale. Gira sullo STESSO trigger daily di questo
+    // dispatcher, quindi non serve installare nulla. noLock:true perché il lock
+    // di questo flusso è già acquisito sopra.
+    if (oggi.getDay() === 5 || opts.forceTematico) {
+      Logger.log('[DigestProfilati] Venerdi: invio mail tematica agli iscritti profilati...');
+      try {
+        var temaRes = sendDigestTematicoProfilati({ dryRun: opts.dryRun, noLock: true, token: opts.token, force: !!opts.forceTematico });
+        if (temaRes) {
+          report.tematico_inviati = temaRes.inviati || 0;
+          report.tematico_skip = temaRes.skip_dedup || 0;
+          report.tematico_errori = temaRes.errori || 0;
+          report.tematico_profilati = temaRes.profilati_totali || 0;
+        }
+      } catch(eT) { Logger.log('[DigestProfilati] tematico venerdi err: ' + (eT && eT.message)); }
+    }
+
     // ── 2. AGENTI — solo per utenti NON già serviti da Coorte B ──
     // Il martedì: i profilati hanno già ricevuto i contenuti agenti nel digest unificato.
     // Invio agenti solo a chi ha opt-in agente ma NON è in Coorte B.
@@ -1089,6 +1106,238 @@ function _digestMarkSent_(email, sistema) {
     var sh = _getDigestSentLogSheet_();
     sh.appendRow([String(email).toLowerCase().trim(), sistema || 'unknown', new Date()]);
   } catch(e) { Logger.log('_digestMarkSent_ error: ' + (e && e.message)); }
+}
+
+/**
+ * v4.38 — Come _digestWasRecentlySent_ ma controlla SOLO un tipo di invio
+ * (colonna "Sistema"). Serve alla mail tematica del venerdì, che è AGGIUNTIVA:
+ * non deve saltare chi ha già ricevuto la generalista del lunedì, ma solo chi
+ * ha già ricevuto un'altra tematica negli ultimi giorni.
+ * @param {string} email
+ * @param {string} sistema  tipo di invio da confrontare (es. 'tematica')
+ * @param {number} [dedupDays]
+ * @return {boolean}
+ */
+function _digestWasRecentlySentScope_(email, sistema, dedupDays) {
+  if (!email) return false;
+  dedupDays = dedupDays || 5;
+  try {
+    var prop = PropertiesService.getScriptProperties().getProperty('OC_DIGEST_DEDUP_DAYS');
+    if (prop) dedupDays = parseInt(prop) || 5;
+  } catch(_){}
+  var sh = _getDigestSentLogSheet_();
+  if (sh.getLastRow() < 2) return false;
+  var data = sh.getDataRange().getValues();
+  var cutoff = new Date(Date.now() - dedupDays * 86400000);
+  var emailLower = String(email).toLowerCase().trim();
+  var sysLower = String(sistema || '').toLowerCase().trim();
+  for (var r = data.length - 1; r >= 1; r--) {
+    if (String(data[r][0] || '').toLowerCase().trim() !== emailLower) continue;
+    if (sysLower && String(data[r][1] || '').toLowerCase().trim() !== sysLower) continue;
+    var d = data[r][2];
+    if (d instanceof Date && d > cutoff) return true;
+    if (typeof d === 'string') { var dt = new Date(d); if (!isNaN(dt) && dt > cutoff) return true; }
+  }
+  return false;
+}
+
+// ============================================================================
+// v4.38 — TERZO INVIO SETTIMANALE: mail TEMATICA agli iscritti PROFILATI (venerdì)
+// ----------------------------------------------------------------------------
+// Requisito (Silvano 25/09): 3 newsletter/settimana —
+//   a) lunedì   → generalista a TUTTI gli iscritti (invio manuale, Newsletter_v44)
+//   b) venerdì  → tematica agli iscritti che hanno scelto gli ambiti (QUI, IN AGGIUNTA)
+//   c) martedì  → digest Matrix personalizzato ai musei (Coorte B)
+//
+// «In aggiunta» = il profilato riceve SIA la generalista del lunedì SIA questa.
+// Per questo NON si usa l'anti-doppione generico (bloccherebbe tutti dopo lunedì):
+// si usa _digestWasRecentlySentScope_(email,'tematica'), che confronta solo le
+// tematiche precedenti. Destinatari e ambiti arrivano da getDigestRecipientsByCohort()
+// (i «generalisti» sono già la MailingList MENO i musei della Coorte B, con .ambiti).
+// Le news arrivano da _digestNewsRecentiPerDigest_ (ultimi 7 giorni), NON dal pool
+// InclusiNelDigest che il martedì viene azzerato. buildDigestHTML filtra le news
+// sugli ambiti del lettore; le altre sezioni (bandi/podcast/…) restano complete.
+// ============================================================================
+
+/**
+ * News recenti nel FORMATO che buildDigestHTML si aspetta (stesse chiavi di
+ * getItemsByIds: Ambito/Titolo/SommarioAI/TagAI/FonteURL/Fonte/DataPubblicazione…).
+ * Legge il foglio Items per RECENZA (non per flag InclusiNelDigest).
+ * @param {number} [days=7]  finestra di recenza
+ * @param {number} [maxN=40] tetto elementi
+ * @return {Array<Object>}
+ */
+function _digestNewsRecentiPerDigest_(days, maxN) {
+  days = days || 7; maxN = maxN || 40;
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName((typeof SH !== 'undefined' && SH && SH.ITEMS) ? SH.ITEMS : 'Items');
+    if (!sh || sh.getLastRow() < 2) return [];
+    var rows = sh.getDataRange().getValues();
+    var h = rows[0];
+    var iArch = h.indexOf('Archiviato');
+    var iDate = h.indexOf('DataPubblicazione');
+    if (iDate < 0) iDate = h.indexOf('Data');
+    if (iDate < 0) iDate = h.indexOf('DataRilevamento');
+    var cutoff = new Date(Date.now() - days * 86400000);
+    var out = [], seen = {};
+    for (var i = 1; i < rows.length; i++) {
+      var r = rows[i];
+      if (!r[0]) continue;
+      if (iArch >= 0 && (r[iArch] === true || r[iArch] === 1 || String(r[iArch]).toLowerCase() === 'true')) continue;
+      var dObj = null;
+      if (iDate >= 0) {
+        var raw = r[iDate];
+        dObj = (raw instanceof Date) ? raw : (raw ? new Date(raw) : null);
+        if (!dObj || isNaN(dObj.getTime()) || dObj < cutoff) continue; // fuori finestra o data assente
+      }
+      var item = {};
+      h.forEach(function(col, idx){ item[col] = r[idx]; });
+      if (item.SommarioEditato) item.SommarioAI = item.SommarioEditato;
+      var key = String(item.Titolo || '').trim().toLowerCase().replace(/\s+/g, ' ');
+      if (!key || seen[key]) continue;
+      seen[key] = true;
+      if (item.DataPubblicazione instanceof Date && typeof formatDate === 'function') item.DataPubblicazione = formatDate(item.DataPubblicazione);
+      if (item.Scadenza instanceof Date && typeof formatDate === 'function') item.Scadenza = formatDate(item.Scadenza);
+      out.push({ _d: dObj, item: item });
+    }
+    out.sort(function(a, b){ return (b._d ? b._d.getTime() : 0) - (a._d ? a._d.getTime() : 0); });
+    var items = out.slice(0, maxN).map(function(x){ return x.item; });
+    if (typeof ddCapPerFonte === 'function' && items.length) {
+      try { items = ddCapPerFonte(items, 2); } catch(_){}
+    }
+    return items;
+  } catch(e) { Logger.log('[tematico] news recenti: ' + e.message); return []; }
+}
+
+/** Oggetto della mail tematica, costruito sugli ambiti scelti dal lettore. */
+function _tematicoSubject_(ambiti) {
+  try {
+    var labels = (ambiti || []).map(function(a){
+      return (typeof AMBITO_LABEL !== 'undefined' && AMBITO_LABEL[a]) ? AMBITO_LABEL[a] : null;
+    }).filter(Boolean);
+    if (labels.length) return 'Sinopia · La tua selezione: ' + labels.slice(0, 2).join(', ');
+  } catch(_){}
+  return 'Sinopia · La tua selezione settimanale';
+}
+
+/**
+ * Invio della mail tematica agli iscritti profilati. Di norma parte il VENERDÌ.
+ * @param {Object} [opts] {dryRun, force, noLock, token}
+ *   - noLock: non acquisire il LockService (quando è chiamata da un flusso già in lock)
+ *   - force:  invia anche se oggi non è venerdì (per i test)
+ * @return {Object} report
+ */
+function sendDigestTematicoProfilati(opts) {
+  opts = opts || {};
+  if (opts.token && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(opts.token)) {
+    return { ok:false, error:'forbidden' };
+  }
+  var t0 = Date.now();
+  var oggi = new Date();
+  var isVenerdi = oggi.getDay() === 5;
+  var report = {
+    ok: true, dryRun: !!opts.dryRun,
+    giorno: ['dom','lun','mar','mer','gio','ven','sab'][oggi.getDay()],
+    timestamp: oggi.toISOString(),
+    profilati_totali: 0, inviati: 0, errori: 0, skip_dedup: 0, items: 0
+  };
+  if (!(isVenerdi || opts.force)) { report.skipped = 'non_venerdi'; Logger.log('[tematico] oggi non è venerdì (' + report.giorno + '), skip'); return report; }
+  var lock = null;
+  try {
+    if (!opts.noLock) {
+      lock = LockService.getScriptLock();
+      if (!lock.tryLock(5000)) return { ok:false, error:'Altro invio in corso. Riprova tra qualche minuto.' };
+    }
+    var quota = 0; try { quota = MailApp.getRemainingDailyQuota(); } catch(_){}
+    if (quota < 5) { if (lock) try{lock.releaseLock();}catch(_){} return { ok:false, error:'Quota email insufficiente (' + quota + ')' }; }
+
+    var rec = getDigestRecipientsByCohort();
+    if (!rec.ok) { if (lock) try{lock.releaseLock();}catch(_){} return { ok:false, error: rec.error }; }
+    var profilati = (rec.generalisti || []).filter(function(g){ return g.ambiti && g.ambiti.length; });
+    report.profilati_totali = profilati.length;
+    if (!profilati.length) { if (lock) try{lock.releaseLock();}catch(_){} Logger.log('[tematico] nessun iscritto profilato'); report.duration_ms = Date.now() - t0; return report; }
+
+    var items = _digestNewsRecentiPerDigest_(7, 40);
+    report.items = items.length;
+    var itemIds = items.map(function(i){ return i.ID; }).filter(Boolean);
+
+    var baseUrl = ''; try { baseUrl = ScriptApp.getService().getUrl() || ''; } catch(_){}
+    var _fromAlias = '';
+    try {
+      var _mitt = (typeof OC_MITTENTE_UFFICIALE !== 'undefined') ? OC_MITTENTE_UFFICIALE : 'sinopiaconsulting@gmail.com';
+      if ((GmailApp.getAliases() || []).indexOf(_mitt) >= 0) _fromAlias = _mitt;
+    } catch(_){}
+
+    profilati.forEach(function(dest){
+      if (opts.dryRun) { report.inviati++; return; }
+      try {
+        // anti-doppione SOLO sulle tematiche precedenti (la generalista del lunedì non blocca)
+        if (_digestWasRecentlySentScope_(dest.email, 'tematica')) { report.skip_dedup++; Logger.log('[tematico] skip dedup: ' + dest.email); return; }
+        var token = null; try { token = _getOrCreateToken(dest.email); } catch(_){}
+        var readerUrl = token ? (baseUrl + '?reader=1&t=' + token) : null;
+        if (token) try { _saveDigestForToken(token, itemIds, [], []); } catch(_){}
+        var html = buildDigestHTML(items, { Nome: dest.nome, Email: dest.email }, readerUrl, dest.ambiti || []);
+        var _opt = { htmlBody: html, name: 'Sinopia · Osservatorio Culturale', replyTo: 'sinopiaconsulting@gmail.com' };
+        if (_fromAlias) _opt.from = _fromAlias;
+        GmailApp.sendEmail(dest.email, _tematicoSubject_(dest.ambiti), 'Visualizza in HTML.', _opt);
+        _digestMarkSent_(dest.email, 'tematica');
+        report.inviati++;
+        if (typeof crm_recordEvent === 'function') { try { crm_recordEvent(dest.email, 'digest_tematico_sent', 1, {}); } catch(_){} }
+        Utilities.sleep(300);
+      } catch(e) { Logger.log('[tematico] errore ' + dest.email + ': ' + e.message); report.errori++; }
+    });
+
+    // Log su DigestLog
+    try {
+      var ssL = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+      var shLog = ssL.getSheetByName((typeof SH !== 'undefined' && SH.LOG) ? SH.LOG : 'DigestLog');
+      if (shLog) shLog.appendRow(['DT' + Date.now(), new Date(), report.items, 'tematico prof:' + report.inviati + ' skip:' + report.skip_dedup + ' err:' + report.errori, opts.dryRun ? 'dry-run' : 'inviato']);
+    } catch(eLog) { Logger.log('[tematico] log: ' + eLog.message); }
+
+    report.duration_ms = Date.now() - t0;
+    Logger.log('[tematico] completato: ' + JSON.stringify(report));
+    if (lock) try { lock.releaseLock(); } catch(_){}
+    return report;
+  } catch(e) {
+    Logger.log('[tematico] FATAL: ' + e.message);
+    if (lock) try { lock.releaseLock(); } catch(_){}
+    return { ok:false, error: e.message };
+  }
+}
+
+/**
+ * Test reale: invia UNA mail tematica [TEST] a un indirizzo, usando i suoi ambiti
+ * (se non è profilato mostra tutti gli ambiti come campione). Non registra
+ * l'anti-doppione, così si può ripetere.
+ * @param {string} email
+ * @param {string} [token] token admin (richiesto dal frontend)
+ * @return {Object}
+ */
+function testInviaDigestTematico(email, token) {
+  if (token && typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden' };
+  if (!email) return { ok:false, error:'email mancante' };
+  try {
+    var quota = 0; try { quota = MailApp.getRemainingDailyQuota(); } catch(_){}
+    if (quota < 2) return { ok:false, error:'Quota insufficiente (' + quota + ')' };
+    var emailLower = String(email).toLowerCase().trim();
+    var rec = getDigestRecipientsByCohort();
+    var dest = null;
+    (rec.generalisti || []).forEach(function(g){ if (String(g.email).toLowerCase() === emailLower) dest = g; });
+    var ambiti = (dest && dest.ambiti && dest.ambiti.length) ? dest.ambiti : [1,2,3,4,5];
+    var nota = (dest && dest.ambiti && dest.ambiti.length) ? '' : ' (nessun ambito profilato per questo indirizzo: mostro tutti gli ambiti come campione)';
+    var items = _digestNewsRecentiPerDigest_(7, 40);
+    var baseUrl = ''; try { baseUrl = ScriptApp.getService().getUrl() || ''; } catch(_){}
+    var tok = null; try { tok = _getOrCreateToken(emailLower); } catch(_){}
+    var readerUrl = tok ? (baseUrl + '?reader=1&t=' + tok) : null;
+    var html = buildDigestHTML(items, { Nome: (dest && dest.nome) || '', Email: emailLower }, readerUrl, ambiti);
+    var _fromAlias = '';
+    try { var m = (typeof OC_MITTENTE_UFFICIALE !== 'undefined') ? OC_MITTENTE_UFFICIALE : 'sinopiaconsulting@gmail.com'; if ((GmailApp.getAliases() || []).indexOf(m) >= 0) _fromAlias = m; } catch(_){}
+    var _opt = { htmlBody: html, name: 'Sinopia · Osservatorio Culturale (TEST)', replyTo: 'sinopiaconsulting@gmail.com' };
+    if (_fromAlias) _opt.from = _fromAlias;
+    GmailApp.sendEmail(emailLower, '[TEST] ' + _tematicoSubject_(ambiti), 'Visualizza in HTML.', _opt);
+    return { ok:true, email: emailLower, ambiti: ambiti, items: items.length, message: 'Inviato test tematico a ' + emailLower + nota };
+  } catch(e) { return { ok:false, error: e.message }; }
 }
 
 // ============================================================================

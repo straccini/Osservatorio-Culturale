@@ -2254,6 +2254,21 @@
 
           <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
 
+          <!-- v4.38 — Mail TEMATICA del venerdì (iscritti profilati, in aggiunta) -->
+          <div style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;margin-bottom:6px">
+              <span style="background:#B8351A;color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0">V</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink)">Mail tematica del venerd&igrave; (iscritti profilati)</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin:0 0 8px 32px">Terzo invio settimanale: agli iscritti che hanno scelto i loro <b>ambiti</b> parte il <b>venerd&igrave;</b> una selezione tematica di news sulle categorie preferite, <b>in aggiunta</b> alla generalista del luned&igrave;. Parte da sola sullo stesso automatismo del marted&igrave; (nessun trigger da installare). Per provarla: indica la <b>tua</b> email e premi <b>Invia prova tematica</b> (usa i tuoi ambiti; se non ne hai, un campione con tutti).</p>
+            <div style="margin-left:32px;display:flex;gap:8px;align-items:center">
+              <input type="email" id="tematicoSendTestEmail" placeholder="La tua email di prova..." style="flex:1;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;font-size:13px" />
+              <button class="btn btn-secondary" onclick="OC.testDigestTematicoInvio()" style="padding:8px 16px;font-size:13px;border-color:#B8351A;color:#B8351A;white-space:nowrap" title="Invia subito una mail tematica REALE all'indirizzo indicato">Invia prova tematica</button>
+            </div>
+          </div>
+
+          <div style="border-bottom:1px solid var(--rule);margin:0 0 16px"></div>
+
           <!-- Step 4 — Invio -->
           <div style="margin-bottom:16px">
             <div style="display:flex;align-items:center;margin-bottom:6px">
@@ -7875,6 +7890,27 @@
       })
       .withFailureHandler(function(e){ if (out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc(e) + '</span>'; })
       .testInviaDigestMatrix(email, (window.OC_SESSION&&window.OC_SESSION.token)||null);
+  }
+
+  // v4.38 — INVIO REALE mail tematica (venerdì) a un'email specifica (test, non registra dedup)
+  function testDigestTematicoInvio(){
+    if (!hasGAS()) return;
+    var email = String(((document.getElementById('tematicoSendTestEmail')||{}).value) || '').trim();
+    var out = $('digestSegmResult');
+    if (!email || email.indexOf('@') < 0) { if (out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Inserisci una email valida.</span>'; return; }
+    if (out) out.innerHTML = '<span style="color:#666">Generazione + invio REALE mail tematica a ' + esc(email) + ' (10-20s)…</span>';
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r && r.ok) {
+          var amb = (r.ambiti && r.ambiti.length) ? ' <span style="font-size:11px;color:var(--ink-3)">· ambiti: ' + esc(r.ambiti.join(', ')) + ' · news: ' + esc(r.items||0) + '</span>' : '';
+          if (out) out.innerHTML = '<span style="color:#B8351A;font-weight:700">✓ Mail tematica inviata a ' + esc(r.email) + '</span>' + amb + (r.message ? '<div style="font-size:11px;color:var(--ink-3);margin-top:2px">' + esc(r.message) + '</div>' : '');
+          showToast && showToast('Mail tematica inviata a ' + r.email, 'ok');
+        } else {
+          if (out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc((r && r.error) || 'sconosciuto') + '</span>';
+        }
+      })
+      .withFailureHandler(function(e){ if (out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: ' + esc(e) + '</span>'; })
+      .testInviaDigestTematico(email, (window.OC_SESSION&&window.OC_SESSION.token)||null);
   }
 
   // v4.21 — Test digest Matrix per email specifica
@@ -14841,6 +14877,7 @@
     generaQueueAll: generaQueueAll,
     testDigestSegmentato: testDigestSegmentato,
     testDigestMatrixInvio: testDigestMatrixInvio,
+    testDigestTematicoInvio: testDigestTematicoInvio,
     nlAutoAuthOn: nlAutoAuthOn,
     nlAutoAuthOff: nlAutoAuthOff,
     testDigestMatrixPerEmail: testDigestMatrixPerEmail,
