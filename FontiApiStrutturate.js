@@ -1834,6 +1834,21 @@ function fasParserAnac(opts) {
 }
 
 /**
+ * v4.38 — TEST manuale ANAC OCDS (da eseguire dall'editor GAS o dal frontend).
+ * Esegue in DRY-RUN: nessuna scrittura sul foglio, ritorna solo il conteggio e i
+ * dettagli, così si verifica se l'endpoint OCDS ANAC è tornato a dare risultati
+ * prima di affidarcisi. Se ritorna ok:false o nuovi:0, l'endpoint è ancora inerte.
+ * @param {string} [token] token admin (richiesto se chiamato dal frontend)
+ * @return {Object} report del parser
+ */
+function testAnacOcds(token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok:false, error:'forbidden' };
+  var r = fasParserAnac({ dryRun: true, maxBandi: 30 });
+  Logger.log('[testAnacOcds] ' + JSON.stringify(r));
+  return r;
+}
+
+/**
  * Parser OpenCUP — Investimenti pubblici cultura.
  * API: https://opencup.gov.it/portale/progetto/-/cup/
  */
@@ -2133,7 +2148,19 @@ function fasRunFase2b() {
   // v4.20 — ANAC, OpenCUP, Lombardia disabilitati: endpoint inerti (0 risultati / errori costanti).
   // v2.2 (T2, 2026-07-08) — SEDIA EU RIATTIVATO: parser multipart corretto e
   // verificato (18 bandi cultura UE, filtro 12/12, dedup EN/IT). Gli altri restano OFF.
-  report.anac = { ok: true, skipped: true, motivo: 'endpoint inerte (v4.20)' };
+  // v4.38 — ANAC OCDS RIATTIVATO (richiesta Silvano 27/09): copre TUTTI i CIG,
+  // incl. sotto-soglia — la leva più grande per i bandi cultura sotto-soglia.
+  // Riacceso in SICUREZZA: fasParserAnac ha già la gestione errori completa
+  // (HTTP≠200 → ok:false, tutto in try/catch); se l'endpoint è ancora inerte
+  // logga e salta senza rompere la Fase 2b. Verifica manuale: testAnacOcds().
+  try {
+    report.anac = fasParserAnac({ dryRun: false, maxBandi: 50 });
+    report.totaleNuovi += (report.anac && report.anac.nuovi) ? report.anac.nuovi : 0;
+    Logger.log('[FAS] FASE 2b — ANAC OCDS: ' + (report.anac ? report.anac.nuovi : 0) + ' contratti cultura nuovi');
+  } catch (eAnac) {
+    report.anac = { ok: false, error: eAnac.message };
+    Logger.log('[FAS] FASE 2b — ANAC OCDS errore: ' + eAnac.message);
+  }
   report.opencup = { ok: true, skipped: true, motivo: 'endpoint inerte (v4.20)' };
   // QA 24/08/2026 — riattivata: non era l'endpoint a essere inerte, era morto
   // il dataset. Ora punta all'anagrafica bandi vera (vedi fasParserLombardia).
