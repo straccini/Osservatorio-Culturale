@@ -534,11 +534,17 @@ function maScopertaFonti() {
     }
   } catch(e) { result.dettagli.push({ azione: 'seas_reclassify', errore: e.message }); }
 
-  // 3. Auto-approva score >= 80
+  // 3. v4.38 — AUTO-APPROVAZIONE col GATE ALTA CONFIDENZA (super-agente fonti):
+  // non più solo score>=80, ma score alto E tier A/B E ambito pertinente; il resto
+  // resta in coda di revisione. (esplora:false: scoperta+riclassifica già fatte sopra.)
   try {
-    if (typeof seasApproveBatch === 'function') {
-      var r3 = seasApproveBatch(80);
-      result.approvate = (r3 && r3.approvate) || 0;
+    if (typeof superAgenteFonti === 'function') {
+      var r3 = superAgenteFonti({ esplora: false });
+      result.approvate = (r3 && r3.autoApprovate) || 0;
+      result.inRevisione = (r3 && r3.inRevisione) || 0;
+    } else if (typeof seasApproveBatch === 'function') {
+      var r3b = seasApproveBatch(80);
+      result.approvate = (r3b && r3b.approvate) || 0;
     }
   } catch(e) { result.dettagli.push({ azione: 'seas_approve', errore: e.message }); }
 
