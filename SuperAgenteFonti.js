@@ -152,6 +152,55 @@ function superAgenteFontiSelfTest() {
   return { ok: fail === 0, pass: pass, fail: fail, dettagli: out };
 }
 
+// ============================================================================
+//  ENDPOINT FRONTEND — coda di revisione a un tap (token-based)
+//  Le seasApproveCandidate/seasRejectCandidate esistenti gate-ano su
+//  _isCurrentUserAdmin_() SENZA token → falliscono dal deploy anonimo. Questi
+//  wrapper accettano il token di sessione, come il resto dell'app.
+// ============================================================================
+
+/**
+ * Elenco candidate fonti da rivedere, arricchito con tier e "alta confidenza".
+ * @param {string} token
+ * @return {Object} {ok, candidati:[{id,titolo,url,ambito,score,tier,alta}], totale}
+ */
+function getFontiCandidateReview(token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok: false, error: 'forbidden' };
+  var cg = (typeof seasGetCandidates === 'function') ? seasGetCandidates({ limit: 100 }) : { candidati: [] };
+  var out = ((cg && cg.candidati) || []).map(function (c) {
+    var tier = (typeof frTierDaFonte === 'function') ? frTierDaFonte(c.titolo || c.dominio, c.url) : 'C';
+    return { id: c.id, titolo: c.titolo || c.dominio || c.url, url: c.url, dominio: c.dominio, ambito: c.ambito, score: c.score, tier: tier, tipo: c.tipo, alta: _saAltaConfidenza_(c.score, tier, c.ambito) };
+  });
+  return { ok: true, candidati: out, totale: out.length };
+}
+
+/** Approva una candidata fonte (coda di revisione). @param {string} candidateId @param {string} token */
+function saApprovaFonte(candidateId, token) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok: false, error: 'forbidden' };
+  if (!candidateId) return { ok: false, error: 'id mancante' };
+  return _saApprovaInterno_({ id: candidateId });
+}
+
+/** Rifiuta una candidata fonte. @param {string} candidateId @param {string} token @param {string} [motivo] */
+function saRifiutaFonte(candidateId, token, motivo) {
+  if (typeof _isCurrentUserAdmin_ === 'function' && !_isCurrentUserAdmin_(token)) return { ok: false, error: 'forbidden' };
+  if (!candidateId) return { ok: false, error: 'id mancante' };
+  try {
+    if (typeof _seasGetOrCreateSheet_ !== 'function') return { ok: false, error: 'SEAS assente' };
+    var sh = _seasGetOrCreateSheet_();
+    var vals = sh.getDataRange().getValues(), head = vals[0];
+    var iId = head.indexOf('ID'), iStato = head.indexOf('Stato'), iDec = head.indexOf('DataDecisione'), iNote = head.indexOf('Note');
+    for (var r = 1; r < vals.length; r++) {
+      if (String(vals[r][iId]) !== String(candidateId)) continue;
+      sh.getRange(r + 1, iStato + 1).setValue(typeof SEAS_STATI !== 'undefined' ? SEAS_STATI.RIFIUTATA : 'rifiutata');
+      sh.getRange(r + 1, iDec + 1).setValue(new Date());
+      if (motivo && iNote >= 0) sh.getRange(r + 1, iNote + 1).setValue(String(motivo));
+      return { ok: true };
+    }
+    return { ok: false, error: 'candidata non trovata' };
+  } catch (e) { return { ok: false, error: e.message }; }
+}
+
 /** Trigger settimanale del super-agente (martedì ~05:40). Idempotente. */
 function setupSuperAgenteFontiTrigger() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
