@@ -206,7 +206,7 @@ function renderQuestion(idx){
   var h='<div class="sr-hero">'
     +'<div class="sr-eyebrow">Sinopia &middot; MuseMu Matrix</div>'
     +'<div class="sr-title">'+esc(s.surveyTitle||'Autovalutazione')+'</div>'
-    +'<div class="sr-sub">'+esc(s.surveySub||'Diagnosi rapida e riservata della maturita\' della tua struttura culturale.')+'</div>'
+    +'<div class="sr-sub">'+esc(s.surveySub||'Diagnosi rapida e riservata della maturità della tua struttura culturale.')+'</div>'
     +'<div class="sr-meta-row">'
     +'<div class="sr-meta-item"><span>Domande</span><span>'+tot+'</span></div>'
     +'<div class="sr-meta-item"><span>Tempo</span><span>'+esc(s.metadata&&s.metadata.estimatedCompletionTime||'~ 8 min')+'</span></div>'
@@ -240,7 +240,7 @@ function renderQuestion(idx){
         +'<div class="sr-likert-lbl">'+esc(labels[i-1])+'</div></div>';
     }
     h+='</div>';
-    h+='<div class="sr-likert-scale"><span>Opportunita\'</span><span>Eccellenza</span></div>';
+    h+='<div class="sr-likert-scale"><span>Opportunità</span><span>Eccellenza</span></div>';
   } else if(q.type==='multiselect_compositive' && q.options){
     h+='<div class="sr-multi">';
     var sel=state.responses[q.code]||[];
@@ -355,7 +355,7 @@ function renderReport(result){
     dimScores.push(Math.round(scoring[code]||0));
   }
   var total = Math.round(dimScores.reduce(function(a,b){return a+b},0) / 9);
-  var reading = total>=80?'Eccellente' : total>=60?'Margine di crescita' : total>=40?'Da sviluppare' : 'Priorita\' urgente';
+  var reading = total>=80?'Eccellente' : total>=60?'Margine di crescita' : total>=40?'Da sviluppare' : 'Priorità urgente';
 
   var suggestions=[];
   if(state.schema.dimensions){
@@ -365,15 +365,15 @@ function renderReport(result){
   }
   if(suggestions.length===0){
     suggestions=[
-      {title:'Maturita\' digitale e integrazione tecnologica', text:'Un assistente conversazionale AI sulle collezioni puo\' portarvi nel quartile superiore in 6-9 mesi.', service:'MuseGPT'},
-      {title:'Accessibilita\' radicale a 4 livelli', text:'Un audit Easy-to-Read europeo + CAA su 3 percorsi tematici e\' il primo intervento ad alto impatto/basso costo.', service:'A4 Audit'},
-      {title:'Ecosistema territoriale e governance partecipativa', text:'Un piano di gestione partecipativa formalizzato col distretto culturale riduce la vulnerabilita\' agli avvicendamenti.', service:'MaMa'}
+      {title:'Maturità digitale e integrazione tecnologica', text:'Un assistente conversazionale AI sulle collezioni può portarvi nel quartile superiore in 6-9 mesi.', service:'MuseGPT'},
+      {title:'Accessibilità radicale a 4 livelli', text:'Un audit Easy-to-Read europeo + CAA su 3 percorsi tematici è il primo intervento ad alto impatto/basso costo.', service:'A4 Audit'},
+      {title:'Ecosistema territoriale e governance partecipativa', text:'Un piano di gestione partecipativa formalizzato col distretto culturale riduce la vulnerabilità agli avvicendamenti.', service:'MaMa'}
     ];
   }
 
   var h='<div class="sr-divider"><div class="sr-divider-label">Risultato</div>';
   h+='<h2>Il tuo profilo MuseMu Matrix</h2>';
-  h+='<p>Una fotografia onesta della maturita\' del museo sulle 9 dimensioni (anteprima semplificata), con le tre opportunita\' di sviluppo a maggior impatto e i servizi Sinopia che possono accelerarle.</p></div>';
+  h+='<p>Una fotografia onesta della maturità del museo sulle 9 dimensioni (anteprima semplificata), con le tre opportunità di sviluppo a maggior impatto e i servizi Sinopia che possono accelerarle.</p></div>';
 
   h+='<div class="sr-report-grid">';
   h+='<div class="sr-score-card">';

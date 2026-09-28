@@ -107,15 +107,15 @@ var SURVEY_SLUG_MAP = {
 // Titoli landing per ogni sondaggio
 var SURVEY_TITLES = {
   'D7':  'Quanto e accessibile il tuo museo?',
-  'D6':  'Maturita digitale del tuo museo',
+  'D6':  'Maturità digitale del tuo museo',
   'D8':  'Il tuo museo coinvolge il pubblico?',
   'D10': 'Welfare culturale e impatto sociale',
-  'D1':  'Identita e narrazione del tuo museo',
+  'D1':  'Identità e narrazione del tuo museo',
   'D2':  'Collezioni e patrimonio',
   'D3':  'Spazi e esperienza del visitatore',
   'D4':  'Programma e offerta culturale',
   'D5':  'Servizi e accoglienza',
-  'D9':  'Governance e sostenibilita'
+  'D9':  'Governance e sostenibilità'
 };
 
 function getMatrixSurveySchema(dimCode) {
