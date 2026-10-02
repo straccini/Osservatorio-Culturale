@@ -2796,20 +2796,16 @@
               <button class="btn btn-secondary" onclick="if(confirm('Archivia i contenuti chiaramente fuori tema (aderenza sotto 30). Controllare prima l\'anteprima. Procedere?')) OC.adminTool('redCoerenzaApply', this)" style="font-size:12px;padding:6px 12px;border-color:var(--accent);color:var(--accent)" title="Archivia i fuori tema confermati dall'anteprima">🧭 Coerenza tematica (applica)</button>
             </div></details>
           </div>
-          <!-- v4.27.59 — GESTIONE TREND: proposte notizia in evidenza (approvazione Telegram) -->
+          <!-- v4.38 — Social / Telegram (riordinato: blocco Trend duplicato rimosso; la gestione trend resta nel tab Segnalazioni) -->
           <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--rule,#E5E5E7)">
-            <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin-bottom:8px">Gestione Trend &middot; notizia in evidenza</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-              <button class="btn btn-secondary" onclick="OC.adminTool('trendProponi', this)" style="font-size:12px;padding:6px 12px" title="Seleziona subito la miglior news delle ultime 72h e invia la proposta su Telegram (ignora la cadenza dei 2 giorni)">📈 Proponi trend ora</button>
-              <button class="btn btn-secondary" onclick="OC.trendLoad(this)" style="font-size:12px;padding:6px 12px" title="Carica l'elenco delle proposte trend e lo stato dell'evidenza corrente">🔄 Carica proposte</button>
-              <button class="btn btn-secondary" onclick="OC.trendRimuoviEvidenza(this)" style="font-size:12px;padding:6px 12px" title="Toglie la notizia in evidenza dalla home (torna una news normale)">✖ Rimuovi evidenza</button>
+            <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin-bottom:8px">Social / Telegram</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-secondary" onclick="OC.adminTool('lavoroScanDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima scanner GU Concorsi con i filtri ampliati (dry-run, nessuna scrittura)">🔎 Lavoro scan anteprima</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('socialEditoriale', this)" style="font-size:12px;padding:6px 12px" title="Genera ORA la bozza IG+LinkedIn dall'editoriale approvato corrente (idempotente per settimana; parte anche in automatico all'invio della newsletter)">📣 Editoriale → social</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('rassegnaTop', this)" style="font-size:12px;padding:6px 12px" title="Diagnostica: referenze multi-fonte (rassegna stampa) delle 5 news con score più alto della settimana">🗞 Rassegna top news</button>
+              <button class="btn btn-secondary" onclick="OC.adminTool('socialStato', this)" style="font-size:12px;padding:6px 12px" title="Stato canali social: ponte Telegram, credenziali Instagram/LinkedIn, post in attesa di pubblicazione">📊 Stato canali social</button>
+              <button class="btn btn-primary" onclick="OC.adminTool('socialPonte', this)" style="font-size:12px;padding:6px 14px;background:var(--amb-5,#0E7490)" title="Invia su Telegram i post approvati, pronti da copiare e incollare su Instagram e LinkedIn">▶ Invia post su Telegram</button>
             </div>
-            <div id="trendAdminList" style="font-size:12.5px;color:var(--ink-2)"></div>
-            <button class="btn btn-secondary" onclick="OC.adminTool('lavoroScanDry', this)" style="font-size:12px;padding:6px 12px" title="Anteprima scanner GU Concorsi con i filtri ampliati (dry-run, nessuna scrittura)">🔎 Lavoro scan anteprima</button>
-            <button class="btn btn-secondary" onclick="OC.adminTool('socialEditoriale', this)" style="font-size:12px;padding:6px 12px" title="Genera ORA la bozza IG+LinkedIn dall'editoriale approvato corrente (idempotente per settimana; parte anche in automatico all'invio della newsletter)">📣 Editoriale → social</button>
-            <button class="btn btn-secondary" onclick="OC.adminTool('rassegnaTop', this)" style="font-size:12px;padding:6px 12px" title="Diagnostica: referenze multi-fonte (rassegna stampa) delle 5 news con score più alto della settimana">🗞 Rassegna top news</button>
-            <button class="btn btn-secondary" onclick="OC.adminTool('socialStato', this)" style="font-size:12px;padding:6px 12px" title="Stato canali social: ponte Telegram, credenziali Instagram/LinkedIn, post in attesa di pubblicazione">📊 Stato canali social</button>
-            <button class="btn btn-primary" onclick="OC.adminTool('socialPonte', this)" style="font-size:12px;padding:6px 14px;background:var(--amb-5,#0E7490)" title="Invia su Telegram i post approvati, pronti da copiare e incollare su Instagram e LinkedIn">▶ Invia post su Telegram</button>
           </div>
 
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700;margin:12px 0 6px">Setup &amp; automazione</div>
@@ -4280,25 +4276,6 @@
       .getStatoFontiDashboard({ giorni: 10 });
   }
 
-  // v5.4 — Bonifica manuale fonti non-cultura (pulsante cruscotto Salute)
-  function bonificaFonti(){
-    if (!hasGAS()) return;
-    if (!confirm('Archiviare i bandi BDNCP non-cultura? L\'operazione è reversibile (StatoRecord=archiviato).')) return;
-    var out = $('bonificaResult');
-    if (out) out.innerHTML = '<span style="color:#666">Bonifica in corso…</span>';
-    var tok=''; try { tok = sessionStorage.getItem('oc_admin_token') || ''; } catch(_){}
-    google.script.run
-      .withSuccessHandler(function(r){
-        if (r && r.ok){
-          if (out) out.innerHTML = '<span style="color:var(--amb-2,#10916D)">&#10003; '+(r.nonCultura||0)+' archiviati (su '+(r.esaminatiBdncp||0)+')</span>';
-          loadStatoFonti();
-        } else {
-          if (out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">'+esc(r&&r.error||'Errore')+(r&&r.error==='forbidden'?' (serve login admin)':'')+'</span>';
-        }
-      })
-      .withFailureHandler(function(e){ if(out) out.innerHTML = '<span style="color:var(--danger,#C2410C)">Errore: '+esc(String(e))+'</span>'; })
-      .bonificaFontiNonCultura(tok);
-  }
 
   function _renderStatoFonti(d){
     var body = $('statoFontiBody'); if (!body) return;
@@ -9870,51 +9847,7 @@
       .sendDigestAuto2coorti({ token: (window.OC_SESSION&&window.OC_SESSION.token)||null });
   }
 
-  // ── Prova digest profilato (ProfiloPro / interessi) ──
-  function testDigestProfilatoInvio(){
-    if (!hasGAS()) return;
-    var inp = document.getElementById('profilatoTestEmail');
-    var dest = String((inp && inp.value) || '').trim();
-    var out = $('profilatoTestResult');
-    if (dest.indexOf('@') < 0) { if (out) out.textContent = 'Inserisci un indirizzo email valido.'; return; }
-    if (out) out.textContent = 'Generazione + invio digest profilato a ' + dest + ' in corso (15-25s)…';
-    google.script.run
-      .withSuccessHandler(function(r){
-        if (r && r.ok) {
-          if (out) out.innerHTML = '<b style="color:var(--amb-2,#10916D)">✓ Inviato</b> a ' + dest + ' &middot; interessi ' + (r.interessi||'—') + ' &middot; ' + (r.totale||0) + ' contenuti.';
-          showToast && showToast('Digest profilato di prova inviato a ' + dest, 'ok');
-        } else {
-          if (out) out.textContent = 'Errore: ' + (r && r.error || 'sconosciuto');
-          showToast && showToast('Errore: ' + (r && r.error || 'sconosciuto'), 'err');
-        }
-      })
-      .withFailureHandler(function(e){ if (out) out.textContent = 'Errore di rete: ' + e; })
-      .testDigestProfilatoUI(dest, (window.OC_SESSION&&window.OC_SESSION.token)||null);
-  }
 
-  // ── Diagnostico rilevamento profilati (perché 0?) ──
-  function verificaProfilati(){
-    if (!hasGAS()) return;
-    var out = $('profilatiDiag');
-    if (out) out.textContent = 'Conteggio…';
-    google.script.run
-      .withSuccessHandler(function(r){
-        if (!r || r.ok === false) { if (out) out.textContent = 'Errore: ' + (r && r.error || 'sconosciuto'); return; }
-        if (!out) return;
-        if (!r.profiliFoglio) {
-          out.innerHTML = '<b style="color:var(--warning)">0 profili</b> nel foglio: nessuno ha ancora compilato &laquo;Il mio profilo&raquo; n&eacute; scelto ambiti. Per provare, compila un profilo con interessi (o usa la prova qui sotto con D7/D8/D10).';
-          return;
-        }
-        var h = '<b style="color:var(--amb-2,#10916D)">' + r.profiliFoglio + '</b> profili nel foglio (' + r.profiliConInteressi + ' con interessi) &middot; digest <b>profilati (coorte C): ' + r.coorteC + '</b>.';
-        if (r.inMatrix > 0) {
-          h += ' <span style="color:var(--warning)"><b>' + r.inMatrix + '</b> di questi hanno fatto anche il <b>Matrix</b></span> &rarr; ricevono il digest <b>Matrix</b> (coorte B), non quello profilato: per questo possono risultare 0 tra i profilati pur avendo un profilo.';
-        }
-        h += '<br><span style="color:var(--ink-3)">Coorti digest totali: A lettori ' + r.coorteA + ' &middot; B Matrix/lead ' + r.coorteB + ' &middot; C profilati ' + r.coorteC + '.</span>';
-        out.innerHTML = h;
-      })
-      .withFailureHandler(function(e){ if (out) out.textContent = 'Errore di rete: ' + e; })
-      .getDiagnosiCoorti((window.OC_SESSION&&window.OC_SESSION.token)||null);
-  }
 
   // ── v4.22 E1 — Editoriale settimanale admin ──
   function _loadEditoriale() {
@@ -12765,7 +12698,6 @@
     saveChiSiamo: saveChiSiamo,
     resetChiSiamo: resetChiSiamo,
     loadStatoFonti: loadStatoFonti,
-    bonificaFonti: bonificaFonti,
     // v4.18.14 — Campanella con pannello dropdown riepilogo
     openNotifiche: function(){
       var panel = $('notifPanel');
@@ -14870,8 +14802,6 @@
     },
     anteprimaInvioSettimanale: anteprimaInvioSettimanale,
     inviaDigestSettimanale: inviaDigestSettimanale,
-    testDigestProfilatoInvio: testDigestProfilatoInvio,
-    verificaProfilati: verificaProfilati,
     // v4.22 E1 — Approfondimento della settimana
     _switchDigestTab: _switchDigestTab,
     _loadEditoriale: _loadEditoriale,
@@ -14940,8 +14870,6 @@
     testDigestEmail: testDigestEmail,
     anteprimaInvioSettimanale: anteprimaInvioSettimanale,
     inviaDigestSettimanale: inviaDigestSettimanale,
-    testDigestProfilatoInvio: testDigestProfilatoInvio,
-    verificaProfilati: verificaProfilati,
     inviaTuttiPending: inviaTuttiPending,
     reloadQueue: reloadQueue,
     // Sprint 1.3 D2.4 - Cron weekly admin
