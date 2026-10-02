@@ -52,7 +52,10 @@ function addFontePodcast(body) {
   return { ok:true, id };
 }
 
-function deleteFontePodcastById(id) {
+function deleteFontePodcastById(id, token) {
+  // v4.35 SEC — era senza guard: chiunque poteva eliminare una fonte podcast.
+  var _u = (typeof getCurrentUser_v44 === 'function') ? getCurrentUser_v44(token) : null;
+  if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
   const sh = _getFontiPodSheet();
   const rows = sh.getDataRange().getValues();
   for (let i = rows.length-1; i >= 1; i--) {
@@ -61,7 +64,10 @@ function deleteFontePodcastById(id) {
   return { error:'Non trovato' };
 }
 
-function toggleFontePodcastField(id, field) {
+function toggleFontePodcastField(id, field, token) {
+  // v4.35 SEC — era senza guard.
+  var _u = (typeof getCurrentUser_v44 === 'function') ? getCurrentUser_v44(token) : null;
+  if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
   const sh = _getFontiPodSheet();
   const rows = sh.getDataRange().getValues();
   const h = rows[0];

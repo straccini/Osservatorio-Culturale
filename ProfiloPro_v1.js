@@ -20,41 +20,41 @@ var _PRO_CATEGORIE = {
   'Progettazione e allestimenti': ['Museografo/Allestitore','Architetto museale','Lighting designer','Progettista culturale','Exhibition designer'],
   'Ricerca e formazione': ['Ricercatore/Docente universitario','Dottorando','Borsista/Assegnista','Formatore','Studente'],
   'Pubblica Amministrazione': ['Funzionario beni culturali','Dirigente ente locale','Assessore/Consigliere','Responsabile cultura','Funzionario regionale'],
-  'Consulenza e libera professione': ['Consulente strategico','Progettista bandi','Consulente accessibilita','Consulente digitale','Consulente gestionale'],
+  'Consulenza e libera professione': ['Consulente strategico','Progettista bandi','Consulente accessibilità','Consulente digitale','Consulente gestionale'],
   'Altro': ['Volontario','Tirocinante','Appassionato','Giornalista culturale','Altro']
 };
 var _PRO_ENTI = {
   'Istituzione museale': ['Museo statale','Museo civico','Museo diocesano','Museo privato','Ecomuseo','Museo universitario'],
-  'Ente pubblico': ['Comune','Provincia/Citta metropolitana','Regione','Soprintendenza','Ministero della Cultura'],
+  'Ente pubblico': ['Comune','Provincia/Città metropolitana','Regione','Soprintendenza','Ministero della Cultura'],
   'Fondazione e non profit': ['Fondazione di partecipazione','Fondazione bancaria','Fondazione privata','Associazione culturale','Cooperativa sociale'],
-  'Impresa e servizi': ['Impresa culturale','Startup innovativa','Societa di servizi museali','Studio professionale','Agenzia di comunicazione'],
-  'Formazione e ricerca': ['Universita','Accademia di Belle Arti','Scuola di specializzazione','Centro di ricerca','Istituto di formazione'],
+  'Impresa e servizi': ['Impresa culturale','Startup innovativa','Società di servizi museali','Studio professionale','Agenzia di comunicazione'],
+  'Formazione e ricerca': ['Università','Accademia di Belle Arti','Scuola di specializzazione','Centro di ricerca','Istituto di formazione'],
   'Reti e sistemi': ['Sistema museale regionale','Rete museale tematica','Distretto culturale','DMO/DMC turistica','Consorzio culturale'],
   'Altro': ['Altro ente','Privato cittadino']
 };
 var _PRO_DIM_STRUTTURA = ['Micro','Piccola','Media','Grande'];
 var _PRO_SENIORITY = ['<3 anni','3-10 anni','10-20 anni','>20 anni'];
 var _PRO_DIM_HELP = {
-  D1:{titolo:'Identita e marca',desc:'Branding e identita visiva museale, naming, posizionamento, reputazione e storytelling istituzionale.',
-    temi:['Branding e identita visiva museale','Naming e posizionamento','Reputazione e brand del territorio','Storytelling istituzionale']},
+  D1:{titolo:'Identità e marca',desc:'Branding e identità visiva museale, naming, posizionamento, reputazione e storytelling istituzionale.',
+    temi:['Branding e identità visiva museale','Naming e posizionamento','Reputazione e brand del territorio','Storytelling istituzionale']},
   D2:{titolo:'Patrimonio e collezioni',desc:'Catalogazione, conservazione, digitalizzazione, prestiti, ricerca e provenienza.',
     temi:['Catalogazione e inventari','Conservazione e restauro','Digitalizzazione e open data del patrimonio','Prestiti e movimentazione','Ricerca e provenienza']},
-  D3:{titolo:'Spazi e allestimenti',desc:'Museografia, illuminotecnica, segnaletica, riallestimenti e sostenibilita espositiva.',
-    temi:['Museografia e progettazione espositiva','Illuminotecnica','Segnaletica e wayfinding','Riallestimenti e nuovi percorsi','Sostenibilita degli allestimenti']},
+  D3:{titolo:'Spazi e allestimenti',desc:'Museografia, illuminotecnica, segnaletica, riallestimenti e sostenibilità espositiva.',
+    temi:['Museografia e progettazione espositiva','Illuminotecnica','Segnaletica e wayfinding','Riallestimenti e nuovi percorsi','Sostenibilità degli allestimenti']},
   D4:{titolo:'Programma educativo',desc:'Didattica scuole, laboratori famiglie, BES, formazione insegnanti, educazione al patrimonio.',
-    temi:['Didattica per le scuole','Laboratori e attivita famiglie','Programmi per BES e fragilita','Formazione insegnanti','Educazione al patrimonio']},
-  D5:{titolo:'Servizi al visitatore',desc:'Accoglienza, biglietteria, bookshop, membership e qualita dell esperienza.',
-    temi:['Accoglienza e front office','Biglietteria e prenotazioni','Bookshop e servizi aggiuntivi','Membership e fidelizzazione','Qualita dell esperienza']},
-  D6:{titolo:'Maturita digitale',desc:'AI applicata, app, analytics, realta aumentata/virtuale e trasformazione digitale.',
-    temi:['Intelligenza artificiale applicata','App e web app per il pubblico','Analytics e dati di visita','Realta aumentata / virtuale','Innovazione e trasformazione digitale']},
-  D7:{titolo:'Accessibilita',desc:'Accessibilita fisica e sensoriale, LIS, CAA, easy-to-read, percorsi cognitivi e progettazione universale.',
-    temi:['Accessibilita fisica e sensoriale','LIS e audiodescrizioni','CAA ed easy-to-read','Percorsi cognitivi e inclusione','Progettazione universale']},
+    temi:['Didattica per le scuole','Laboratori e attività famiglie','Programmi per BES e fragilità','Formazione insegnanti','Educazione al patrimonio']},
+  D5:{titolo:'Servizi al visitatore',desc:'Accoglienza, biglietteria, bookshop, membership e qualità dell’esperienza.',
+    temi:['Accoglienza e front office','Biglietteria e prenotazioni','Bookshop e servizi aggiuntivi','Membership e fidelizzazione','Qualità dell’esperienza']},
+  D6:{titolo:'Maturità digitale',desc:'AI applicata, app, analytics, realtà aumentata/virtuale e trasformazione digitale.',
+    temi:['Intelligenza artificiale applicata','App e web app per il pubblico','Analytics e dati di visita','Realtà aumentata / virtuale','Innovazione e trasformazione digitale']},
+  D7:{titolo:'Accessibilità',desc:'Accessibilità fisica e sensoriale, LIS, CAA, easy-to-read, percorsi cognitivi e progettazione universale.',
+    temi:['Accessibilità fisica e sensoriale','LIS e audiodescrizioni','CAA ed easy-to-read','Percorsi cognitivi e inclusione','Progettazione universale']},
   D8:{titolo:'Audience engagement',desc:'Audience development, partecipazione, social media, pubblici giovani e edutainment.',
     temi:['Audience development','Partecipazione e co-creazione','Social media e community','Pubblici giovani e nuovi pubblici','Edutainment']},
-  D9:{titolo:'Governance',desc:'Modelli gestionali, bandi e fondi UE/PNRR, reti museali, sostenibilita economica e PPP.',
-    temi:['Modelli gestionali e forme giuridiche','Bandi, PNRR e fondi UE','Reti e sistemi museali','Sostenibilita economica','Partenariati pubblico-privato']},
-  D10:{titolo:'Welfare culturale',desc:'Cultura e salute, impatto sociale, cultura di comunita, coesione e presidio territoriale.',
-    temi:['Cultura e salute / benessere','Impatto sociale e valutazione','Cultura di comunita','Coesione e inclusione sociale','Cultura come presidio territoriale']}
+  D9:{titolo:'Governance',desc:'Modelli gestionali, bandi e fondi UE/PNRR, reti museali, sostenibilità economica e PPP.',
+    temi:['Modelli gestionali e forme giuridiche','Bandi, PNRR e fondi UE','Reti e sistemi museali','Sostenibilità economica','Partenariati pubblico-privato']},
+  D10:{titolo:'Welfare culturale',desc:'Cultura e salute, impatto sociale, cultura di comunità, coesione e presidio territoriale.',
+    temi:['Cultura e salute / benessere','Impatto sociale e valutazione','Cultura di comunità','Coesione e inclusione sociale','Cultura come presidio territoriale']}
 };
 var _PRO_DIM_BY_RUOLO = {
   'Direttore':['D1','D9','D10'],'Curatore':['D2','D3'],

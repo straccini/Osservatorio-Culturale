@@ -317,7 +317,15 @@ function buildDigestHTML(items, dest, readerUrl, filterAmbiti) {
       : '';
   } catch (_sezErr) { Logger.log('[DigestService] sezioni extra: ' + _sezErr.message); }
 
-  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Digest</title></head><body style="margin:0;padding:0;background:#E4E0D8;font-family:Arial,Helvetica,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#E4E0D8" style="padding:28px 0"><tr><td align="center"><table width="640" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #cfc9be">${_headerHtml}${editorialeBlock}${readerBtn}<tr><td style="padding:4px 36px 36px"><table width="100%" cellpadding="0" cellspacing="0">${sectionsHTML}${sezioniExtra}</table>${lavoroBlock}${capitaleCta}</td></tr><tr><td style="border-top:2px solid #111111">${_footerLogoHtml}${unsubFooter}</td></tr></table></td></tr></table></body></html>`;
+  // v4.38 — BOX "PROFILATI": solo agli iscritti NON profilati (filterAmbiti vuoto).
+  // Chi ha già scelto degli ambiti riceve contenuti filtrati e non vede l'invito.
+  var profBoxRow = '';
+  try {
+    var _isProfilato = Array.isArray(filterAmbiti) && filterAmbiti.length > 0;
+    if (!_isProfilato && typeof _ocProfilazioneBoxRow_ === 'function') profBoxRow = _ocProfilazioneBoxRow_(_appUrl, 36);
+  } catch(_pbErr) { Logger.log('[DigestService] box profilati: ' + _pbErr.message); }
+
+  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Digest</title></head><body style="margin:0;padding:0;background:#E4E0D8;font-family:Arial,Helvetica,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#E4E0D8" style="padding:28px 0"><tr><td align="center"><table width="640" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #cfc9be">${_headerHtml}${editorialeBlock}${readerBtn}<tr><td style="padding:4px 36px 36px"><table width="100%" cellpadding="0" cellspacing="0">${sectionsHTML}${sezioniExtra}</table>${lavoroBlock}${capitaleCta}</td></tr>${profBoxRow}<tr><td style="border-top:2px solid #111111">${_footerLogoHtml}${unsubFooter}</td></tr></table></td></tr></table></body></html>`;
 }
 
 /**
@@ -400,4 +408,99 @@ function _digestCapitaleCta_(appUrl) {
     + '<div style="font-size:14px;color:#5A5A5A;line-height:1.5;margin-bottom:14px">Il tuo territorio puo candidarsi. Scopri scadenze, percorsi e requisiti per le candidature italiane ed europee.</div>'
     + '<a href="' + link + '" style="display:inline-block;background:#935851;color:#fff;text-decoration:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600">Scopri le candidature aperte &rarr;</a>'
     + '</div>';
+}
+
+// ============================================================================
+// v4.38 — BOX "PROFILATI" per la newsletter generalista (richiesta Silvano 25/09)
+// ----------------------------------------------------------------------------
+// Invito, dentro la newsletter di TUTTI gli iscritti, a profilarsi per ricevere
+// news e bandi sulle categorie di interesse. NON sostituisce l'invio generalista:
+// è un blocco additivo. Nella generalista lunedì (buildNewsletterHtml_) il box è
+// racchiuso tra i marcatori OC_PROFBOX_START/END così l'invio per-destinatario
+// può TOGLIERLO a chi è già profilato (vedi _ocStripProfBox_ + _ocProfiledEmailsSet_).
+// Nel digest a coorti (buildDigestHTML) il box compare solo se il destinatario
+// non ha ambiti scelti (= non profilato).
+// ============================================================================
+
+/**
+ * Riga <tr> del box "Profilati", con marcatori per la rimozione per-destinatario.
+ * @param {string} [appUrl] URL webapp (senza query) per il deep-link al profilo
+ * @param {number} [padX]   padding orizzontale in px (28 newsletter, 36 digest)
+ * @return {string} HTML (una riga di tabella email-safe)
+ */
+function _ocProfilazioneBoxRow_(appUrl, padX) {
+  var px = padX || 28;
+  var base = appUrl || '';
+  var href = base + (base.indexOf('?') >= 0 ? '&' : '?') + 'goto=profilo-pro';
+  return '<!--OC_PROFBOX_START-->'
+    + '<tr><td style="padding:8px ' + px + 'px 4px">'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F6F3EC;border:1px solid #D5D0C4">'
+    + '<tr><td style="padding:20px 22px">'
+    + '<div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#B8351A;font-weight:700;margin-bottom:8px;font-family:Arial,Helvetica,sans-serif">Il tuo Osservatorio, su misura</div>'
+    + '<div style="font-size:16px;font-weight:700;color:#1D1D1F;line-height:1.35;margin-bottom:8px;font-family:Georgia,serif">Ricevi news e bandi per le categorie che ti interessano</div>'
+    + '<p style="margin:0 0 14px;font-size:13px;line-height:1.6;color:#3A3A3C;font-family:Arial,Helvetica,sans-serif">Profila i tuoi interessi: scegli gli ambiti che segui e riceverai una selezione tematica di news e bandi dedicata alle categorie che ti stanno a cuore. Continuerai comunque a ricevere questa panoramica settimanale.</p>'
+    + '<a href="' + href + '" style="display:inline-block;background:#B8351A;color:#FFFFFF;text-decoration:none;padding:11px 24px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif">Profila i tuoi interessi &rarr;</a>'
+    + '</td></tr></table>'
+    + '</td></tr>'
+    + '<!--OC_PROFBOX_END-->';
+}
+
+/**
+ * Toglie il box "Profilati" dall'HTML (tutto ciò che sta tra i marcatori inclusi).
+ * Usato per non mostrarlo a chi è già profilato.
+ * @param {string} html
+ * @return {string} HTML senza il box
+ */
+function _ocStripProfBox_(html) {
+  try { return String(html).replace(/<!--OC_PROFBOX_START-->[\s\S]*?<!--OC_PROFBOX_END-->/g, ''); }
+  catch(_) { return html; }
+}
+
+/**
+ * Insieme delle email GIÀ profilate (hanno scelto ambiti/categorie), lette una
+ * sola volta. Fonti: ProfiliPro.interessi_dimensioni non vuoto (chip dell'area)
+ * + ContactsMatrix.preferences_json.dimensioni (preferenze Matrix). A queste
+ * persone il box "Profilati" non serve e viene tolto.
+ * @return {Object} mappa { emailLowercase: true }
+ */
+function _ocProfiledEmailsSet_() {
+  var set = {};
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    // 1) ProfiliPro — chip degli ambiti scelti nell'area personale
+    try {
+      var ppName = (typeof PROFILO_PRO_SHEET !== 'undefined') ? PROFILO_PRO_SHEET : 'ProfiliPro';
+      var shPP = ss.getSheetByName(ppName);
+      if (shPP && shPP.getLastRow() > 1) {
+        var v = shPP.getDataRange().getValues(), h = v[0];
+        var iem = h.indexOf('email'), iint = h.indexOf('interessi_dimensioni');
+        if (iem >= 0 && iint >= 0) {
+          for (var r = 1; r < v.length; r++) {
+            var em = String(v[r][iem] || '').trim().toLowerCase();
+            if (em && String(v[r][iint] || '').trim()) set[em] = true;
+          }
+        }
+      }
+    } catch(ePP) { Logger.log('[profiledSet] ProfiliPro: ' + ePP.message); }
+    // 2) ContactsMatrix — preferenze/dimensioni Matrix
+    try {
+      var shC = ss.getSheetByName('ContactsMatrix');
+      if (shC && shC.getLastRow() > 1) {
+        var cv = shC.getDataRange().getValues(), ch = cv[0];
+        var icem = ch.indexOf('email'), icpref = ch.indexOf('preferences_json');
+        if (icem >= 0 && icpref >= 0) {
+          for (var rc = 1; rc < cv.length; rc++) {
+            var emc = String(cv[rc][icem] || '').trim().toLowerCase();
+            if (!emc || set[emc]) continue;
+            if (!cv[rc][icpref]) continue;
+            try {
+              var o = JSON.parse(cv[rc][icpref]);
+              if (o && o.dimensioni && (Array.isArray(o.dimensioni) ? o.dimensioni.length : o.dimensioni)) set[emc] = true;
+            } catch(_){}
+          }
+        }
+      }
+    } catch(eCM) { Logger.log('[profiledSet] ContactsMatrix: ' + eCM.message); }
+  } catch(e) { Logger.log('[profiledSet] ' + e.message); }
+  return set;
 }

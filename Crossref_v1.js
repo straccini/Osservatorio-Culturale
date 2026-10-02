@@ -229,26 +229,54 @@ function approveCrossrefCandidate(id, token) {
       sh.getRange(r + 1, idx.stato + 1).setValue('approved');
       sh.getRange(r + 1, idx.timestamp_decisione + 1).setValue(new Date());
 
-      // Crea voce in Bandi_v5 (se foglio esiste e schema disponibile)
+      // v4.38 — NON copiare più il link della NOTIZIA (non è il bando). Cerca il
+      // BANDO UFFICIALE su BDNCP/ANAC dal titolo della news: se lo trova, salva
+      // quello (link ufficiale, passa dal gate _fasSaveBando_). Altrimenti crea
+      // uno stub SOLO se il titolo supera il gate d'ingresso (niente news pure).
+      var newsTit = String(vals[r][idx.news_titolo] || '');
+      var newsFonte = String(vals[r][idx.news_fonte] || '');
+      var res = { bandoUfficiale: false, bandoStub: false };
       try {
-        var shBandi = ss.getSheetByName(typeof SH_BANDI_V5 === 'string' ? SH_BANDI_V5 : 'Bandi_v5');
-        if (shBandi && typeof COL_B !== 'undefined') {
-          var nr = new Array(typeof COL_B_HEADERS !== 'undefined' ? COL_B_HEADERS.length : 26).fill('');
-          nr[COL_B.ID - 1]               = 'BC' + Date.now();
-          nr[COL_B.FINGERPRINT - 1]      = '';
-          nr[COL_B.DATA_RILEVAMENTO - 1] = new Date();
-          nr[COL_B.TITOLO - 1]           = '[da cross-ref news] ' + (vals[r][idx.news_titolo] || '');
-          nr[COL_B.ENTE - 1]             = vals[r][idx.news_fonte] || '';
-          nr[COL_B.URL_BANDO - 1]        = vals[r][idx.news_link] || '';
-          // STATO_RECORD = 'candidato' (da rifinire manualmente)
-          nr[COL_B.STATO_RECORD - 1]     = 'candidato';
-          nr[COL_B.STATUS - 1]           = 'Nuovo';
-          nr[COL_B.SOMMARIO - 1]         = 'Origine: news con keyword "' + (vals[r][idx.keyword_match] || '') + '". Da rifinire manualmente: scadenza, importo, ente effettivo, URL ufficiale.';
-          shBandi.appendRow(nr);
+        var termini = (typeof _agTermini_ === 'function') ? _agTermini_(newsTit, 4) : [];
+        var cand = (typeof _bdncpCerca_ === 'function' && termini.length) ? _bdncpCerca_(termini.join(' '), 15) : [];
+        var best = null, bestScore = 0;
+        cand.forEach(function (c) {
+          var s = (typeof _agMatch_ === 'function') ? _agMatch_(newsTit, newsFonte, c.titolo, c.ente) : 0;
+          if (s > bestScore) { bestScore = s; best = c; }
+        });
+        var soglia = (typeof ANB_SOGLIA_CAND !== 'undefined') ? ANB_SOGLIA_CAND : 0.32;
+        if (best && bestScore >= soglia && typeof _fasSaveBando_ === 'function') {
+          _fasSaveBando_({
+            titolo: String(best.titolo).substring(0, 300), ente: best.ente || 'BDNCP', livello: 'Nazionale',
+            regione: best.luogo || '', settore: best.cpv || 'Appalto cultura — via notizia (BDNCP/ANAC)',
+            urlBando: best.link, sommario: (best.titolo + ' · segnalato da: ' + newsFonte).substring(0, 500),
+            scadenza: best.scadenza || '', ambito: 3, fonteNome: 'News→Bando (ANAC)', cpv: best.cpv || ''
+          });
+          res.bandoUfficiale = true;
         }
-      } catch(eB) { Logger.log('append Bandi_v5: ' + eB.message); }
+      } catch (eA) { Logger.log('[crossref] ricerca ANAC: ' + eA.message); }
 
-      return { ok:true, id:id, statoNuovo:'approved', bandi_v5_creato:true };
+      if (!res.bandoUfficiale) {
+        try {
+          var okGate = (typeof bandoIngressoValido_ !== 'function') || bandoIngressoValido_({ titolo: newsTit });
+          var shBandi = ss.getSheetByName(typeof SH_BANDI_V5 === 'string' ? SH_BANDI_V5 : 'Bandi_v5');
+          if (okGate && shBandi && typeof COL_B !== 'undefined') {
+            var nr = new Array(typeof COL_B_HEADERS !== 'undefined' ? COL_B_HEADERS.length : 26).fill('');
+            nr[COL_B.ID - 1]               = 'BC' + Date.now();
+            nr[COL_B.DATA_RILEVAMENTO - 1] = new Date();
+            nr[COL_B.TITOLO - 1]           = '[da verificare] ' + newsTit;
+            nr[COL_B.ENTE - 1]             = newsFonte;
+            nr[COL_B.URL_BANDO - 1]        = vals[r][idx.news_link] || '';
+            nr[COL_B.STATO_RECORD - 1]     = 'candidato';
+            nr[COL_B.STATUS - 1]           = 'Nuovo';
+            nr[COL_B.SOMMARIO - 1]         = 'Origine: news ("' + (vals[r][idx.keyword_match] || '') + '"). Bando ufficiale non trovato su ANAC: rifinire scadenza/importo/ente/URL a mano.';
+            shBandi.appendRow(nr);
+            res.bandoStub = true;
+          }
+        } catch (eB) { Logger.log('append Bandi_v5: ' + eB.message); }
+      }
+
+      return { ok:true, id:id, statoNuovo:'approved', bandoUfficiale: res.bandoUfficiale, bandoStub: res.bandoStub };
     }
     return { ok:false, error:'id non trovato' };
   } catch(e) { return { ok:false, error: e.message }; }

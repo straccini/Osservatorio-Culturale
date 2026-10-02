@@ -136,7 +136,7 @@ function _createSocialFontiSheet(SS) {
 }
 
 function addSocialFonte(body) {
-  var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
+  var _u = getCurrentUser_v44(body && body.token); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
   const SS=getMainSS();
   let sh=SS.getSheetByName('SocialFonti'); if(!sh) sh=_createSocialFontiSheet(SS);
   const id='SW'+Date.now();
@@ -145,12 +145,12 @@ function addSocialFonte(body) {
   return {ok:true,id};
 }
 
-function deleteSocialFonteById(id) {
-  var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
+function deleteSocialFonteById(id, token) {
+  var _u = getCurrentUser_v44(token); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
   return _deleteRowById(getMainSS().getSheetByName('SocialFonti'), id);
 }
-function toggleSocialFonteField(id, field) {
-  var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
+function toggleSocialFonteField(id, field, token) {
+  var _u = getCurrentUser_v44(token); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
   return _toggleField(getMainSS().getSheetByName('SocialFonti'), id, field);
 }
 
@@ -158,7 +158,10 @@ function toggleSocialFonteField(id, field) {
  * Seed Social Wall — 15 istituzioni fondamentali del settore cultura italiano/europeo.
  * Idempotente: salta le URL già presenti. Eseguire una sola volta dopo deploy.
  */
-function seedSocialFontiIstituzionali() {
+function seedSocialFontiIstituzionali(token) {
+  // v4.35 SEC — era senza guard: azione di seeding riservata a editor/admin.
+  var _u = (typeof getCurrentUser_v44 === 'function') ? getCurrentUser_v44(token) : null;
+  if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
   const SS = getMainSS();
   let sh = SS.getSheetByName('SocialFonti');
   if (!sh) sh = _createSocialFontiSheet(SS);
@@ -349,7 +352,7 @@ function addFonteArticoli(body) {
   sh.appendRow([id,body.nome,body.url,body.rssurl||body.url,amb,AMBITO_LABEL[amb]||'',true,'',0]);
   return {ok:true,id};
 }
-function deleteFonteArticoli(id) {
-  var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
+function deleteFonteArticoli(id, token) {
+  var _u = getCurrentUser_v44(token); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
   return _deleteRowById(getMainSS().getSheetByName(SH.FONTI), id);
 }

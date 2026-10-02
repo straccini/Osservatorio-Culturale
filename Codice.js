@@ -1076,6 +1076,17 @@ function doGet(e) {
   // ---------- 2) App principale (template con scriptlet) ----------
   var t = HtmlService.createTemplateFromFile('Index');
 
+  // QA 21/08/2026 — link "Continua a leggere" della newsletter: la sandbox GAS
+  // strappa i parametri dal location.search del frontend, quindi ?apri=editoriale
+  // va iniettato server-side come le altre variabili di template (stesso pattern
+  // di sondaggioCodice e del token admin).
+  t.apriEditoriale = (params && params.apri === 'editoriale') ? 1 : 0;
+  t.editorialeSegno = 0;
+  if (t.apriEditoriale && params.seg) {
+    var _segN = parseInt(params.seg, 10);
+    if (_segN > 0 && _segN < 100000) t.editorialeSegno = _segN;
+  }
+
   var page = t.evaluate()
     .setTitle('Osservatorio Culturale · Sinopia — Bandi, News e Risorse per Musei e Cultura')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
@@ -1490,17 +1501,17 @@ function doPost(e) {
         return jsonOk(addFonteArticoli(body));
       case 'deleteFonteArticoli':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(deleteFonteArticoli(body.id));
+        return jsonOk(deleteFonteArticoli(body.id, body.token));
       case 'getFontiBandi':    return jsonOk(getFontiBandi());
       case 'addFonteBandi':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
         return jsonOk(addFonteBandi(body));
       case 'deleteFonteBandi':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(deleteFonteBandiById(body.id));
+        return jsonOk(deleteFonteBandiById(body.id, body.token));
       case 'toggleFonteBandi':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(toggleFonteBandiField(body.id,'Attiva'));
+        return jsonOk(toggleFonteBandiField(body.id,'Attiva', body.token));
 
       // Social Wall
       case 'getSocialWall':    return jsonOk(getSocialWall());
@@ -1513,10 +1524,10 @@ function doPost(e) {
         return jsonOk(addSocialFonte(body));
       case 'deleteSocialFonte':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(deleteSocialFonteById(body.id));
+        return jsonOk(deleteSocialFonteById(body.id, body.token));
       case 'toggleSocialFonte':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(toggleSocialFonteField(body.id,'Attiva'));
+        return jsonOk(toggleSocialFonteField(body.id,'Attiva', body.token));
 
       // * PODCAST v3.2
       case 'getPodcasts':     return jsonOk(getPodcasts(body));
@@ -1537,10 +1548,10 @@ function doPost(e) {
         return jsonOk(addFontePodcast(body));
       case 'deleteFontePodcast':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(deleteFontePodcastById(body.id));
+        return jsonOk(deleteFontePodcastById(body.id, body.token));
       case 'toggleFontePodcast':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
-        return jsonOk(toggleFontePodcastField(body.id,'Attiva'));
+        return jsonOk(toggleFontePodcastField(body.id,'Attiva', body.token));
       case 'scanFontePodcast':
         if (role!=='admin') return jsonOk({error:'Accesso negato'});
         return jsonOk(scanSingolaFontePodcast(body.id));
