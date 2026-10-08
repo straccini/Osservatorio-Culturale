@@ -1,10 +1,10 @@
 ---
 name: regia-progettazione-culturale
 description: |
-  Skill di REGIA (dispatcher) per la progettazione culturale di Duemilamusei: davanti a un progetto, capisce di che tipo è e INSTRADA alle skill verticali giuste, nell'ordine giusto, anche in catena. È la "mappa iniziale" del lavoro culturale.
-  ATTIVA per: "ho un progetto culturale", "da dove parto", "quale skill uso", "imposta il progetto", "regia", "aiutami a capire come muovermi", "ho un bando/avviso culturale e non so come procedere", progetto museale/territoriale/candidatura ancora da inquadrare, richiesta ampia o ambigua in cultura/turismo/beni culturali dove NON è già evidente la singola skill.
-  ATTIVA anche per orchestrare più skill insieme: dall'idea al bando, dal concept alla gara, dalla candidatura al piano, dalla progettazione alla rendicontazione PNRR.
-  NON attivare quando l'intento è già specifico e chiaro (es. "scrivi la scheda di musealizzazione", "compila il Format 9 DNSH", "analizza questo disciplinare"): in quel caso cede il passo alla skill verticale corrispondente.
+  Skill di REGIA (dispatcher) per la progettazione culturale di Duemilamusei: inquadra un progetto e instrada alle skill verticali giuste, nell'ordine giusto, anche in catena. È la mappa iniziale del lavoro culturale.
+  ATTIVA per: "ho un progetto culturale", "da dove parto", "quale skill uso", "imposta il progetto", "regia", "come mi muovo", bando/avviso culturale da inquadrare, richiesta ampia o ambigua in cultura/turismo/beni culturali dove non è evidente la singola skill.
+  ATTIVA anche per orchestrare più skill: dall'idea al bando, dal concept alla gara, dalla candidatura al piano, dalla progettazione alla rendicontazione PNRR B2.2.
+  NON attivare quando l'intento è già specifico (es. "scrivi la scheda di musealizzazione", "compila il Format 9 DNSH", "analizza questo disciplinare"): cede il passo alla verticale.
   Calibrata su Silvano Straccini / Duemilamusei.
 ---
 
