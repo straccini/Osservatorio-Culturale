@@ -33,6 +33,15 @@ var SC_HEADERS = [
 
 // Domini che non saranno MAI proposti come fonte (piattaforme generaliste)
 var SC_BLACKLIST_RE = /(facebook\.|youtube\.|youtu\.be|twitter\.|x\.com|instagram\.|linkedin\.|google\.|wikipedia\.|amazon\.|apple\.|spotify\.|whatsapp\.|telegram\.|tiktok\.|doi\.org|bit\.ly|t\.co\b|mailchi\.mp|substack\.com\/?$|gov\.uk|w3\.org|creativecommons\.)/i;
+// QA 24/08/2026 — SECONDA CINTA: infrastruttura web, non fonti. L'elenco
+// candidate del 24/08 conteneva fonts.googleapis, cdnjs, googletagmanager,
+// mailchimp, iubenda, cookiedatabase, gmpg, cdn.sanity, goo.gl, t.me, bsky:
+// tutta roba citata in OGNI pagina web (font, CDN, analytics, consent,
+// shortener, social) che il miner contava come "candidata". Rumore che ruba
+// slot di valutazione a fonti vere e allena Silvano a ignorare i riepiloghi.
+var SC_BLACKLIST_INFRA_RE = /(googleapis\.|googletagmanager\.|gstatic\.|cloudflare\.|cloudfront\.|akamai|fastly\.|jsdelivr\.|unpkg\.|cdn\.|cdnjs|mailchimp\.|list-manage\.|sendinblue|brevo\.|iubenda\.|cookiedatabase\.|cookielaw|onetrust|gmpg\.org|sanity\.io|goo\.gl|t\.me\b|bsky\.app|shorturl|tinyurl|feedburner\.|disqus\.|gravatar\.|wp\.com|wordpress\.org|schema\.org|fonts\.|doubleclick|adnxs\.|advertis|hs-analytics|hsadspixel|analytics\.|pixel\.|typekit|typotheque|bootstrapcdn|blazemedia|ezsubscription|pinterest\.)/i;
+// sottodomini di servizio di fonti gia' note (shop., docs., cdn., reader., static.)
+var SC_SOTTODOM_SERVIZIO_RE = /^(shop|docs|cdn|static|assets|img|imgcdn|images|media|reader|api|mail|newsletter|tracking|link|click|status|ads?|adv|devads|service|tvtest|boutique|soutenir|rendering-manager|securepubads|webfonts|use|js|i[0-9]|ar|mercati\w*)\./i;
 
 // Atenei italiani con facoltà/dipartimenti cultura, beni culturali, turismo.
 // Sono SEED del canale università: passano comunque dalla coda di approvazione.
@@ -194,7 +203,7 @@ function _scSafe_(v) {
 /** Scrive una candidata (per nome colonna). Ritorna false se dominio già deciso. */
 function _scProponi_(cand, decisi) {
   var dom = cand.dominio || _scDominio_(cand.urlPagina);
-  if (!dom || decisi[dom] || SC_BLACKLIST_RE.test(dom)) return false;
+  if (!dom || decisi[dom] || SC_BLACKLIST_RE.test(dom) || SC_BLACKLIST_INFRA_RE.test(dom) || SC_SOTTODOM_SERVIZIO_RE.test(dom)) return false;
   // v4.28.6 SICUREZZA: solo http(s). Le URL arrivano da HTML esterno e da
   // metadati Crossref e finiscono in UrlFetchApp: uno schema diverso
   // (javascript:, data:, file:) non deve mai entrare nel registro.
@@ -257,7 +266,7 @@ function scMinerNews(opts) {
         var mm, reA = /href=["'](https?:\/\/[^"']+)["']/gi;
         while ((mm = reA.exec(html)) !== null) {
           var d = _scDominio_(mm[1]);
-          if (!d || d === artDom || decisi[d] || SC_BLACKLIST_RE.test(d)) continue;
+          if (!d || d === artDom || decisi[d] || SC_BLACKLIST_RE.test(d) || SC_BLACKLIST_INFRA_RE.test(d) || SC_SOTTODOM_SERVIZIO_RE.test(d)) continue;
           if (!contati[d]) contati[d] = { n: 0, esempio: mm[1], articolo: String(v[rr][iTit] || '').substring(0, 70) };
           contati[d].n++;
         }
@@ -328,7 +337,7 @@ function scMinerBiblio(opts) {
           if (proposte >= 3) return;
           var u = ref.URL || '';
           var d = _scDominio_(u);
-          if (!d || decisi[d] || SC_BLACKLIST_RE.test(d)) return;
+          if (!d || decisi[d] || SC_BLACKLIST_RE.test(d) || SC_BLACKLIST_INFRA_RE.test(d) || SC_SOTTODOM_SERVIZIO_RE.test(d)) return;
           var disc = _scFeedDiscovery_('https://' + d);
           if (_scProponi_({
             dominio: d, nome: (ref['container-title'] || ref.unstructured || d).toString().substring(0, 60),
@@ -554,6 +563,152 @@ function scRiparaAnci() {
 // ---------------------------------------------------------------------------
 // Self-test (offline)
 // ---------------------------------------------------------------------------
+
+/**
+ * QA 24/08/2026 — Export compatto per la skill settimanale scout-fonti.
+ * Stampa nel log un JSON con: candidate in valutazione, registro fonti con
+ * stato e resa, contatori silenti/ritirate. Si esegue dall'editor e si
+ * incolla il log nella sessione Claude che gira la skill: e' il ponte dati
+ * tra i fogli (che la sessione non puo' leggere) e gli agenti di analisi.
+ */
+function scDumpPerSkill() {
+  var out = { generato: new Date().toISOString(), candidate: [], registro: [], contatori: null };
+  try {
+    var ss = (typeof getMainSS === 'function') ? getMainSS() : SpreadsheetApp.getActiveSpreadsheet();
+    var shC = ss.getSheetByName(SC_SHEET);
+    if (shC && shC.getLastRow() > 1) {
+      var v = shC.getDataRange().getValues(), h = v[0];
+      for (var r = 1; r < v.length; r++) {
+        var o = {}; h.forEach(function(c, i2){ o[c] = v[r][i2]; });
+        if (String(o.Stato || '') === 'in_valutazione') {
+          out.candidate.push({ nome: o.Nome, dominio: o.Dominio, url: o.URLPagina,
+            feed: o.FeedRilevato, metodo: o.Metodo, categoria: o.CategoriaProposta,
+            trovataDa: o.TrovataDa, occorrenze: o.Occorrenze });
+        }
+      }
+    }
+    var shR = ss.getSheetByName(typeof RF_SHEET !== 'undefined' ? RF_SHEET : 'RegistroFonti');
+    if (shR && shR.getLastRow() > 1) {
+      var v2 = shR.getDataRange().getValues(), h2 = v2[0];
+      for (var r2 = 1; r2 < v2.length; r2++) {
+        var o2 = {}; h2.forEach(function(c, i3){ o2[c] = v2[r2][i3]; });
+        out.registro.push(o2);
+      }
+    }
+    if (typeof getFontiCounters === 'function') { try { out.contatori = getFontiCounters().counters || null; } catch(_){} }
+  } catch(e) { out.errore = e.message; }
+  var json = JSON.stringify(out);
+  // il log tronca le righe lunghe: spezzo a blocchi da 4000
+  Logger.log('=== SCOUT DUMP INIZIO (' + json.length + ' char) ===');
+  for (var p = 0; p < json.length; p += 4000) Logger.log(json.substring(p, p + 4000));
+  Logger.log('=== SCOUT DUMP FINE ===');
+  return { ok: true, chars: json.length, candidate: out.candidate.length, registro: out.registro.length };
+}
+
+// ---------------------------------------------------------------------------
+// Triage automatico — v4.35
+// ---------------------------------------------------------------------------
+// Classifica le candidate in_valutazione con logica deterministica:
+//   1. SCARTA   domini che oggi sarebbero fermati dalle blacklist (infra, CDN,
+//               tracker, sottodomini servizio) — entrati prima dell'aggiornamento
+//   2. SCARTA   domini off-topic (fuori scope geografico/tematico)
+//   3. APPROVA  domini chiaramente pertinenti (cultura, musei, arte, turismo,
+//               università seed, testate di settore note)
+//   4. LASCIA   in_valutazione tutto il resto (revisione manuale)
+// Non tocca righe già decise (DataDecisione non vuota).
+
+var SC_TRIAGE_APPROVA_RE = /(muse[io]|galleri[ae]|cultur|patrimoni|heritage|archeolog|monumenti|restaur|beni\s*cultural|allestiment|access|turism|touris|festival|teatr|opera\b|liric|sinfonic|conservator|accademia|fondazion|soprintend|unesco|icom|icomos|biennale|triennale|mostr[ae]|exhibit|curator|mediac|bibliote|archivi|editoria|pubblica[zt]ion|concert|orchestra|danz|coreograf|scultur|pittur|affresc|ceramica|artigian|borghi|gastronomia|enogastronom|sagr[ae]|fiest[ae]|carneval|folklore|tradizion|impresa\s*cultural|industri[ae]\s*creativ|design|architettur|urbanistic|paesaggi|giardini\s*storic|parchi\s*cultural|digital\s*humanit|DH\b|bando|avviso|grant|fund|finanzia|PNRR|FESR|Creative\s*Europe|Horizon|interreg|cohesion)/i;
+
+// Domini off-topic: fuori scope geografico o settoriale
+var SC_TRIAGE_SCARTA_OFFTOPIC_RE = /(reune\.com\.co|rcicolombia\.org|redunete\.net|ascunretos\.com|unimagdalena|\.co\.co\b|\.com\.co\b|\.com\.br\b|\.com\.mx\b|casino|betting|gambling|forex|crypto\s*trading|slot\s*machine|poker\s*online)/i;
+
+// Testate/portali arte-cultura italiani noti — approvazione diretta
+var SC_TRIAGE_FONTI_NOTE_RE = /(finestresullarte|artribune|exibart|ilgiornaledellar|arslife|artemagazine|arteconomy|luxuryandtourism|borsaturismoarcheologico|patrimoniosos|beniculturali|archeome|giornaledi[sp]icilia|fabrianostorica|museionline|rivistasegno|julietartmagazine|flashartonline|platformaarte|domusweb|abitare|designboom|architettura|archiportale|inexhibit|klat|doppiozero|chefarte|che-fare\.com|labsus|vita\.it|secondowelfare|percorsid|istitutoitalianodiarchitettura)/i;
+
+function scTriageAutomatico(opzioni) {
+  opzioni = opzioni || {};
+  var dryRun = !!opzioni.dryRun;
+  var sh = _scSheet_(false);
+  if (!sh || sh.getLastRow() < 2) return { ok: true, messaggio: 'nessuna candidata' };
+  var v = sh.getDataRange().getValues();
+  var h = v[0].map(function (x) { return String(x || '').trim(); });
+  function c(n) { return h.indexOf(n); }
+  var iStato = c('Stato'), iDec = c('DataDecisione'), iDom = c('Dominio'),
+      iNome = c('Nome'), iMet = c('Metodo'), iFeed = c('FeedRilevato'),
+      iUrl = c('URLPagina'), iDa = c('TrovataDa'), iCat = c('CategoriaProposta'),
+      iProv = c('Provenienza'), iNote = c('Note');
+
+  var approvate = 0, scartate = 0, invariate = 0, dettaglio = [];
+
+  // domini dei seed universitari → approvazione diretta
+  var domUni = {};
+  SC_UNIVERSITA.forEach(function (u) { domUni[_scDominio_(u.url)] = true; });
+
+  for (var r = 1; r < v.length; r++) {
+    var stato = String(v[r][iStato] || '').toLowerCase().trim();
+    if (stato !== 'in_valutazione') continue;
+    if (v[r][iDec]) continue;
+
+    var dominio = String(v[r][iDom] || '').toLowerCase().trim();
+    var nome    = String(v[r][iNome] || '');
+    var metodo  = String(v[r][iMet] || '');
+    var feed    = String(v[r][iFeed] || '');
+    var url     = String(v[r][iUrl] || '');
+    var trovataDa = String(v[r][iDa] || '');
+    var prov    = String(v[r][iProv] || '');
+    var nota    = String(v[r][iNote] || '');
+    var testo   = [nome, dominio, url, prov, nota].join(' ');
+    var decisione = null;
+    var motivo  = '';
+
+    // ── SCARTA: blacklist infrastruttura ──────────────────────────────────
+    if (SC_BLACKLIST_RE.test(dominio) || SC_BLACKLIST_INFRA_RE.test(dominio)) {
+      decisione = 'scartata'; motivo = 'blacklist infra/piattaforma';
+    }
+    // ── SCARTA: sottodominio di servizio (shop., docs., cdn., adv., ...) ─
+    else if (SC_SOTTODOM_SERVIZIO_RE.test(dominio)) {
+      decisione = 'scartata'; motivo = 'sottodominio servizio';
+    }
+    // ── SCARTA: off-topic geografico/tematico ────────────────────────────
+    else if (SC_TRIAGE_SCARTA_OFFTOPIC_RE.test(dominio) || SC_TRIAGE_SCARTA_OFFTOPIC_RE.test(testo)) {
+      decisione = 'scartata'; motivo = 'off-topic';
+    }
+    // ── APPROVA: università seed ─────────────────────────────────────────
+    else if (domUni[dominio] || trovataDa === 'universita') {
+      decisione = 'approvata'; motivo = 'università seed';
+    }
+    // ── APPROVA: testata/portale arte-cultura noto ───────────────────────
+    else if (SC_TRIAGE_FONTI_NOTE_RE.test(dominio)) {
+      decisione = 'approvata'; motivo = 'fonte cultura nota';
+    }
+    // ── APPROVA: contenuto chiaramente pertinente + ha feed ──────────────
+    else if (SC_TRIAGE_APPROVA_RE.test(testo) && metodo === 'rss' && feed) {
+      decisione = 'approvata'; motivo = 'pertinente con feed';
+    }
+    // ── LASCIA: dubbio, serve revisione umana ────────────────────────────
+    else {
+      invariate++;
+      continue;
+    }
+
+    dettaglio.push({ riga: r + 1, dominio: dominio, nome: nome, decisione: decisione, motivo: motivo });
+
+    if (!dryRun) {
+      sh.getRange(r + 1, iStato + 1).setValue(decisione);
+    }
+    if (decisione === 'approvata') approvate++;
+    else scartate++;
+  }
+
+  var rep = {
+    ok: true, dryRun: dryRun,
+    approvate: approvate, scartate: scartate, invariate: invariate,
+    totale: approvate + scartate + invariate,
+    dettaglio: dettaglio
+  };
+  Logger.log('[scTriageAutomatico] ' + JSON.stringify(rep));
+  return rep;
+}
 
 function scSelfTest() {
   var pass = 0, fail = 0, falliti = [];

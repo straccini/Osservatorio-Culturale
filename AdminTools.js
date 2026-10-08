@@ -112,8 +112,15 @@ function adminRunTool(tool, token) {
       case 'scUniversitaNow':    r = scUniversitaRun({}); break;
       case 'scSettimanaleNow':   r = scSettimanale(); break;
       case 'scApplicaDecisioni': r = scApplicaDecisioni(); break;
+      case 'scTriageDry':        r = scTriageAutomatico({ dryRun: true }); break;
+      case 'scTriageApplica':    r = scTriageAutomatico({ dryRun: false }); break;
       case 'scRiparaAnci':       r = scRiparaAnci(); break;
       case 'scSelfTest':         r = scSelfTest(); break;
+      // ── Super-agente fonti (v4.38 — auto-approva solo alta confidenza) ──
+      case 'saFontiDry':         r = superAgenteFonti({ dryRun: true }); break;
+      case 'saFontiRun':         r = superAgenteFonti({}); break;
+      case 'saFontiCandidati':   r = (typeof seasGetCandidates === 'function') ? seasGetCandidates({ limit: 50 }) : { ok:false, error:'SEAS assente' }; break;
+      case 'saFontiSelfTest':    r = superAgenteFontiSelfTest(); break;
       // ── Redattore (v4.28.4 — Fase 3, politica a due livelli) ────────────
       case 'redBandiStato':      r = redBandiStato(); break;
       case 'redBandiRecuperoDry':r = redBandiRecupero({ dryRun: true }); break;

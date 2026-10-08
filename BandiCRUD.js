@@ -1178,12 +1178,12 @@ function addFonteBandi(body) {
     return { ok: false, error: e.message };
   }
 }
-function deleteFonteBandiById(id) {
-  var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
+function deleteFonteBandiById(id, token) {
+  var _u = getCurrentUser_v44(token); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
   return _deleteRowById(getMainSS().getSheetByName('FontiBandi_v5'), id);
 }
-function toggleFonteBandiField(id, field) {
-  var _u = getCurrentUser_v44(); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
+function toggleFonteBandiField(id, field, token) {
+  var _u = getCurrentUser_v44(token); if (!_u || (_u.ruolo !== 'admin' && _u.ruolo !== 'editor')) return { error: 'Riservato a editor/admin' };
   return _toggleField(getMainSS().getSheetByName('FontiBandi_v5'), id, field);
 }
 // [22 funzioni diagnostica/migrazione estratte in DiagnosticaMigrazione.js]
