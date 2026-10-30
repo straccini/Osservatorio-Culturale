@@ -140,6 +140,22 @@ Dopo `clasp push` la distribuzione attiva NON cambia automaticamente: per portar
 
 ---
 
+## Connettori MCP (Claude Code)
+
+Il repo dichiara 4 server MCP a scope progetto in `.mcp.json` (caricati automaticamente da Claude Code, sessioni cloud incluse):
+
+| Server | Funzione | Richiede |
+|---|---|---|
+| `perplexity` | Ricerca web in tempo reale (search/ask/research/reason) | env `PERPLEXITY_API_KEY` |
+| `firecrawl` | Scraping/analisi siti web (pagine bandi senza RSS) | env `FIRECRAWL_API_KEY` |
+| `playwright` | Automazione browser — collaudo web app GAS | — |
+| `rube` | Composio: centinaia di app (Gmail, Slack, Notion…) via OAuth | login al primo uso (`/mcp` → rube → Authenticate) |
+
+Setup completo (API key, comandi Windows, secrets cloud, troubleshooting): **`docs/MCP_SETUP.md`**.
+⚠️ `.mcp.json` e `docs/` sono esclusi dal push clasp via `.claspignore` — non devono finire su GAS. Le API key stanno SOLO nelle variabili d'ambiente, mai nel repo.
+
+---
+
 ## Funzioni pubbliche chiamabili da frontend (`google.script.run`)
 
 ### Identità e autenticazione

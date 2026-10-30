@@ -10,3 +10,5 @@ landing-netlify/**
 backup-*/**
 *.bak
 ~$*.docx
+.mcp.json
+docs/**
