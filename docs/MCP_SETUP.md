@@ -70,6 +70,16 @@ d'ambiente** → aggiungi `PERPLEXITY_API_KEY` e `FIRECRAWL_API_KEY`.
 Playwright funziona subito (Chromium è preinstallato); Rube richiede
 l'autenticazione OAuth al primo uso.
 
+Esiti verificati in sessione cloud (2026-10-30):
+- **playwright**: ✅ connesso e funzionante senza configurazione
+- **perplexity / firecrawl**: server avviati, ma le chiamate restituiscono
+  `401 Unauthorized` finché i due secrets non vengono aggiunti all'ambiente
+- **rube**: ⚠️ il proxy di rete dell'ambiente cloud rifiuta il tunnel verso
+  `rube.app` (`ERR_PROXY_TUNNEL 502`). Per usarlo nelle sessioni cloud occorre
+  consentire il dominio `rube.app` nella **network policy** dell'ambiente
+  (claude.ai/code → impostazioni ambiente → accesso di rete). Sul PC locale
+  Rube funziona normalmente, senza proxy di mezzo.
+
 ---
 
 ## 4 · Autenticazione Rube (Composio)
@@ -99,6 +109,8 @@ In sessione: `/mcp` mostra stato e strumenti di ciascun server.
 | Server "failed" su Windows | Manca il wrapper `cmd /c` (solo scope utente) | Riaggiungi il server con `-- cmd /c npx ...` |
 | Perplexity/Firecrawl "failed" | Variabile d'ambiente mancante o chiave errata | Verifica `echo $env:PERPLEXITY_API_KEY` in PowerShell |
 | Rube "needs authentication" | OAuth non completato | `/mcp` → rube → Authenticate |
+| `401 Unauthorized` da Perplexity/Firecrawl | Chiave mancante o non valida (il server parte comunque) | Imposta/correggi la variabile d'ambiente o il secret cloud |
+| Rube "failed" in sessione cloud (`ERR_PROXY_TUNNEL 502`) | Network policy dell'ambiente blocca `rube.app` | Consenti `rube.app` nelle impostazioni di rete dell'ambiente |
 | Playwright non apre il browser | Browser non scaricato | `npx playwright install chromium` |
 
 ## 7 · Riferimenti
